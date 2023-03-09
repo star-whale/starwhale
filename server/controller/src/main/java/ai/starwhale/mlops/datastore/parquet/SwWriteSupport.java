@@ -38,6 +38,7 @@ public class SwWriteSupport extends WriteSupport<Map<String, Object>> {
     private final String tableSchema;
     private final String metadata;
     private RecordConsumer recordConsumer;
+    private boolean error = false;
 
     public SwWriteSupport(Map<String, ColumnType> schema, String tableSchema, String metadata) {
         this.schema = schema;
@@ -76,8 +77,18 @@ public class SwWriteSupport extends WriteSupport<Map<String, Object>> {
 
     @Override
     public void write(Map<String, Object> record) {
-        this.recordConsumer.startMessage();
-        ColumnTypeObject.writeMapValue(recordConsumer, this.schema, record);
-        this.recordConsumer.endMessage();
+        try {
+            this.recordConsumer.startMessage();
+            ColumnTypeObject.writeMapValue(recordConsumer, this.schema, record);
+            this.recordConsumer.endMessage();
+        } catch (Throwable e) {
+            error = true;
+            throw e;
+        }
+    }
+
+    @Override
+    public FinalizedWriteContext finalizeWrite() {
+        return new FinalizedWriteContext(Map.of(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(error)));
     }
 }

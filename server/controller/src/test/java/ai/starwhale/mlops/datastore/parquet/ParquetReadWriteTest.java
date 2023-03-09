@@ -19,12 +19,14 @@ package ai.starwhale.mlops.datastore.parquet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ParquetConfig;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.nio.ByteBuffer;
@@ -166,4 +168,89 @@ public class ParquetReadWriteTest {
         assertThat(reader.read(), nullValue());
         reader.close();
     }
+
+    @Test
+    public void testReadTheErrorWrite() {
+        var schema = new TableSchema(new TableSchemaDesc("id", List.of(
+                ColumnSchemaDesc.builder().name("id").type("INT64").build(),
+                ColumnSchemaDesc.builder()
+                    .name("data/img")
+                    .type("OBJECT")
+                    .pythonType("starwhale.core.dataset.type.GrayscaleImage")
+                    .attributes(List.of(
+                        ColumnSchemaDesc.builder()
+                            .name("link")
+                            .type("OBJECT")
+                            .pythonType("starwhale.core.dataset.type.Link")
+                            .attributes(List.of(
+                                ColumnSchemaDesc.builder().name("uri").type("STRING").build(),
+                                ColumnSchemaDesc.builder()
+                                    .name("extra_info")
+                                    .type("MAP")
+                                    .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                    .valueType(ColumnSchemaDesc.builder().type("INT64").build())
+                                    .build(),
+                                ColumnSchemaDesc.builder().name("owner").type("UNKNOWN").build()
+                            ))
+                            .build(),
+                        ColumnSchemaDesc.builder().name("_BaseArtifact__cache_bytes").type("BYTES").build(),
+                        ColumnSchemaDesc.builder().name("owner").type("UNKNOWN").build()
+                    )).build())));
+
+        List<Map<String, Object>> records = List.of(
+            new HashMap<>() {
+                {
+                    put("id", "0000000000000000");
+                    put("data/img", new HashMap<String, Object>() {
+                        {
+                            put("link", new HashMap<String, Object>() {
+                                {
+                                    put("extra_info", Map.of(
+                                            "bin_offset", "0000000000000000",
+                                            "bin_size", "00000000000003e0")
+                                    );
+                                    put("uri", "11111111111111111");
+                                    put("owner", null);
+                                }
+                            });
+                            put("_BaseArtifact__cache_bytes", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
+                            put("owner", null);
+                        }
+                    });
+                }
+            }
+        );
+
+        var parquetConfig = new ParquetConfig();
+        parquetConfig.setCompressionCodec(CompressionCodec.SNAPPY);
+        parquetConfig.setRowGroupSize(1024 * 1024);
+        parquetConfig.setPageSize(4096);
+        parquetConfig.setPageRowCountLimit(1000);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            try (var writer = new SwParquetWriterBuilder(
+                    this.storageAccessService,
+                    schema.getColumnTypeMapping(),
+                    schema.toJsonString(),
+                    "meta",
+                    "test",
+                    parquetConfig).build()) {
+
+                for (var record : records) {
+                    writer.write(record);
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                throw e;
+            }
+        });
+
+        assertThrows(SwProcessException.class, () -> {
+            try (var reader = new SwParquetReaderBuilder(
+                    this.storageAccessService, "test").withConf(new Configuration()).build()) {
+                reader.read();
+            }
+        });
+    }
+
 }

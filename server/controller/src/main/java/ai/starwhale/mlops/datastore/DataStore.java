@@ -500,7 +500,7 @@ public class DataStore {
         return ret;
     }
 
-    private boolean saveOneTable(long minNoUpdatePeriodMillis) {
+    private boolean saveOneTable(long minNoUpdatePeriodMillis) throws IOException {
         for (var table : this.dirtyTables.keySet()) {
             table.lock();
             try {

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from requests_mock import Mocker
 
+from starwhale import Text
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import wrapper, data_store
 from starwhale.consts.env import SWEnv
@@ -139,4 +140,16 @@ class TestDataset(BaseTestCase):
             [{"id": f"{i}"} for i in range(0, 4)],
             list(dataset.scan_id(None, None)),
             "scan_id",
+        )
+
+    def test_data_store_update_table_with_sw_object(self) -> None:
+        dataset = wrapper.Dataset("dt", "test")
+        row = {"data/text": Text("my_text")}
+        dataset.put("0", **row)
+        dataset.close()
+
+        self.assertEqual(
+            [{"id": "0", "data/text": Text("my_text")}],
+            list(dataset.scan("0", None)),
+            "scan",
         )

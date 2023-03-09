@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public interface MemoryTable {
 
     void unlock();
 
-    void save();
+    void save() throws IOException;
 
     long getFirstWalLogId();
 

@@ -145,7 +145,7 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public void save() {
+    public void save() throws IOException {
         String metadata;
         try {
             metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
@@ -178,8 +178,9 @@ public class MemoryTableImpl implements MemoryTable {
                     writer.write(recordMap);
                 }
             }
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to save " + this.tableName, e);
+        } catch (Throwable e) {
+            log.error("fail to save table:{}, error:{}", this.tableName, e.getMessage(), e);
+            throw e;
         }
         this.firstWalLogId = -1;
     }

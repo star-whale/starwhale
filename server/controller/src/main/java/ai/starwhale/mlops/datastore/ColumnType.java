@@ -225,10 +225,6 @@ public abstract class ColumnType {
             var v1 = entry.getValue();
             if (minDiffKey == null || key.compareTo(minDiffKey) < 0) {
                 var v2 = map2.get(key);
-                if (v2 == null) {
-                    throw new IllegalArgumentException(
-                            "can not compare " + type1 + " with " + type2 + ". " + key + " not found");
-                }
                 var t = ColumnType.compare(attr1.get(key), v1, attr2.get(key), v2);
                 if (t != 0) {
                     minDiffKey = key;
