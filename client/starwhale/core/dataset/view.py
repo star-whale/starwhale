@@ -146,6 +146,7 @@ class DatasetTermView(BaseTermView):
         else:
             _uri = project_uri
 
+        cls.must_have_project(_uri)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _datasets, _pager = Dataset.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_datasets, show_removed, fullname)
@@ -225,7 +226,6 @@ class DatasetTermView(BaseTermView):
 class DatasetTermViewRich(DatasetTermView):
     @classmethod
     @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -245,6 +245,7 @@ class DatasetTermViewRich(DatasetTermView):
             "runtime": cls.place_holder_for_empty(),
         }
 
+        cls.print_header()
         cls.print_table("Dataset List", _datasets, custom_column=custom_column)
         return _datasets, _pager
 
