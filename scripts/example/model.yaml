@@ -1,9 +1,6 @@
 version: 1.0
 name: simple-test
 
-model:
-  - model/empty.pt
-
 run:
   handler: src.evaluator:SimplePipeline
 

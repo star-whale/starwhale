@@ -141,8 +141,6 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
   ```yaml
   version: 1.0
   name: nmt
-  config:
-    - config/hyperparam.json
   run:
     ppl: code.ppl:NMTPipeline
   desc: nmt by pytorch

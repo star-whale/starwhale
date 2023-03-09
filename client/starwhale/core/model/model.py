@@ -106,7 +106,6 @@ class ModelConfig(ASDictMixin):
         self,
         name: str,
         run: t.Dict[str, t.Any],
-        config: t.Optional[t.List[str]] = None,
         desc: str = "",
         tag: t.Optional[t.List[str]] = None,
         version: str = DEFAULT_STARWHALE_API_VERSION,
@@ -114,7 +113,6 @@ class ModelConfig(ASDictMixin):
     ):
         # TODO: format model name
         self.name = name
-        self.config = config or []
         # TODO: support artifacts: local or remote
         self.run = ModelRunConfig(**run)
         self.desc = desc
@@ -672,12 +670,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def load_model_config(cls, yaml_path: Path) -> ModelConfig:
         cls._do_validate_yaml(yaml_path)
         _config = ModelConfig.create_by_yaml(yaml_path)
-
-        for _fpath in _config.config:
-            if not (yaml_path.parent / _fpath).exists():
-                raise FileFormatError(
-                    f"model - {yaml_path.parent / _fpath} is not existed"
-                )
 
         # TODO: add more model.yaml section validation
         # TODO: add 'swcli model check' cmd

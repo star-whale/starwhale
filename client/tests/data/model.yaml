@@ -1,9 +1,6 @@
 version: 1.0
 name: mnist
 
-config:
-  - config/hyperparam.json
-
 run:
   handler: mnist.evaluator:MNISTInference
   exclude_pkg_data:
