@@ -1,5 +1,8 @@
-venv
-.git
-.history
-.vscode
-.venv
+venv/*
+.git/*
+.history*
+.vscode/*
+.venv/*
+data/*
+.idea/*
+*.py[cod]
