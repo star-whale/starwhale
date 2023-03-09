@@ -14,7 +14,6 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.walk import Walker
-from fs.tarfs import TarFS
 
 from starwhale import PipelineHandler
 from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
@@ -236,18 +235,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
-        _f = self.store.src_dir / DEFAULT_EVALUATION_JOBS_FNAME
+        _f = self.store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FNAME
         logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
         Parser.generate_job_yaml(ppl, workdir, _f)
 
     def _gen_model_serving(self, ppl: str, workdir: Path) -> None:
-        rc_dir = (
-            f"{self.store.src_dir_name}/{SW_AUTO_DIRNAME}/{SW_EVALUATION_EXAMPLE_DIR}"
+        rc_dir = str(
+            self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
+            / SW_EVALUATION_EXAMPLE_DIR
         )
         # render spec
         svc = self._get_service(ppl, workdir, hijack=Hijack(True, rc_dir))
-        file = self.store.src_dir / DEFAULT_EVALUATION_SVC_META_FNAME
-        ensure_file(file, json.dumps(svc.get_spec(), indent=4))
+        file = self.store.hidden_sw_dir / DEFAULT_EVALUATION_SVC_META_FNAME
+        ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
 
         if len(svc.example_resources) == 0:
             return
@@ -258,7 +258,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             raise NoSupportError("duplicate file names in examples")
 
         # copy example resources for online evaluation in server instance
-        dst = self.store.src_dir / SW_AUTO_DIRNAME / SW_EVALUATION_EXAMPLE_DIR
+        dst = self.store.hidden_sw_dir / SW_EVALUATION_EXAMPLE_DIR
         ensure_dir(dst)
         for f in svc.example_resources:
             shutil.copy2(f, dst)
@@ -333,8 +333,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         step_name: str = "",
         task_index: int = 0,
         task_num: int = 0,
-        base_info: t.Dict[str, t.Any] = {},
+        base_info: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> None:
+        base_info = base_info or {}
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
             CREATED_AT_KEY: now_str(),
@@ -354,11 +355,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         ensure_dir(_run_dir)
 
         _module = cls._get_module(_model_config)
-        _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
+        _yaml_path = str(workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME)
 
         # generate if not exists
         if not os.path.exists(_yaml_path):
-            _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
+            _new_yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
             Parser.generate_job_yaml(_module, workdir, _new_yaml_path)
             _yaml_path = str(_new_yaml_path)
 
@@ -499,23 +500,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest = self._get_bundle_info()
         _store = self.store
         _om = {}
+        yaml_path = _store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FNAME
         if _store.snapshot_workdir.exists():
-            pth = _store.src_dir / DEFAULT_EVALUATION_JOBS_FNAME
-            if pth.exists():
-                _om = load_yaml(pth)
+            if yaml_path.exists():
+                _om = load_yaml(yaml_path)
             else:
-                ignore_error("step_spec not found in model snapshot_workdir")
-        elif _store.bundle_path.exists():
-            if _store.bundle_path.is_file() and tarfile.is_tarfile(_store.bundle_path):
-                with TarFS(str(_store.bundle_path)) as tar:
-                    with tar.open("src/" + DEFAULT_EVALUATION_JOBS_FNAME) as f:
-                        _om = yaml.safe_load(f)
-            else:
-                ignore_error(
-                    "model bundle_path is not tarfile, step_spec not extracted"
-                )
+                logger.warning("step_spec not found in model snapshot_workdir")
         else:
-            ignore_error("step_spec not found in model")
+            logger.warning("step_spec not found in model")
         if _om:
             _manifest["step_spec"] = _om
         return _manifest
