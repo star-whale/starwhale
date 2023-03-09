@@ -317,9 +317,9 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        jobs, pager = EvaluationJob.list(
-            URI(project_uri, expected_type=URIType.PROJECT), page, size
-        )
+        _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        cls.must_have_project(_uri)
+        jobs, pager = EvaluationJob.list(_uri, page, size)
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
         return (jobs, pager)
 
@@ -327,7 +327,6 @@ class JobTermView(BaseTermView):
 class JobTermViewRich(JobTermView):
     @classmethod
     @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -398,6 +397,7 @@ class JobTermViewRich(JobTermView):
                 _m["finished_at"],
             )
             # TODO: add duration
+        cls.print_header()
         console.print(table)
         return _jobs, _pager
 

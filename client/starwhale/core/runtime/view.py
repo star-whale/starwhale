@@ -214,6 +214,7 @@ class RuntimeTermView(BaseTermView):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         filters = filters or []
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        cls.must_have_project(_uri)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _runtimes, _pager = Runtime.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
@@ -303,7 +304,6 @@ class RuntimeTermView(BaseTermView):
 class RuntimeTermViewRich(RuntimeTermView):
     @classmethod
     @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -324,6 +324,7 @@ class RuntimeTermViewRich(RuntimeTermView):
             "runtime": cls.place_holder_for_empty(),
         }
 
+        cls.print_header()
         cls.print_table("Runtime List", _data, custom_column=custom_column)
         return _data, _pager
 

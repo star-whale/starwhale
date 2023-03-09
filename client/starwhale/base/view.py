@@ -57,23 +57,24 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
+    def print_header() -> None:
+        sw = SWCliConfigMixed()
+        grid = Table.grid(expand=True)
+        grid.add_column(justify="center", ratio=1)
+        grid.add_column(justify="right")
+        grid.add_row(
+            f":star: {sw.current_instance} ({sw._current_instance_obj['uri']}) :whale:",  # type: ignore
+            f":clown_face:{sw._current_instance_obj['user_name']}@{sw._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",
+            # type: ignore
+        )
+        p = Panel(grid, title="Starwhale Instance", title_align="left")
+        rprint(p)
+
+    @staticmethod
     def _header(func: t.Callable) -> t.Callable:
         @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-            sw = SWCliConfigMixed()
-
-            def _print() -> None:
-                grid = Table.grid(expand=True)
-                grid.add_column(justify="center", ratio=1)
-                grid.add_column(justify="right")
-                grid.add_row(
-                    f":star: {sw.current_instance} ({sw._current_instance_obj['uri']}) :whale:",  # type: ignore
-                    f":clown_face:{sw._current_instance_obj['user_name']}@{sw._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",  # type: ignore
-                )
-                p = Panel(grid, title="Starwhale Instance", title_align="left")
-                rprint(p)
-
-            _print()
+            BaseTermView.print_header()
             return func(*args, **kwargs)  # type: ignore
 
         return _wrapper
@@ -340,3 +341,12 @@ class BaseTermView(SWCliConfigMixed):
                 }
             )
         return result
+
+    @staticmethod
+    def must_have_project(uri: URI) -> None:
+        if uri.project:
+            return
+        console.print(
+            "Please specify the project uri with --project or set the default project for current instance"
+        )
+        sys.exit(1)

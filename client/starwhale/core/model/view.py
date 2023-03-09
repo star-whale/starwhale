@@ -205,6 +205,7 @@ class ModelTermView(BaseTermView):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         filters = filters or {}
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        cls.must_have_project(_uri)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _models, _pager = Model.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_models, show_removed, fullname)
@@ -302,7 +303,6 @@ class ModelTermView(BaseTermView):
 class ModelTermViewRich(ModelTermView):
     @classmethod
     @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -322,6 +322,7 @@ class ModelTermViewRich(ModelTermView):
             "runtime": cls.place_holder_for_empty(""),
         }
 
+        cls.print_header()
         cls.print_table("Model List", _models, custom_column=custom_column)
         return _models, _pager
 
