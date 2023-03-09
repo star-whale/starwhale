@@ -4,7 +4,6 @@ import { themedStyled } from '../theme/styletron'
 
 export const TreeContainer = themedStyled('div', () => ({
     display: 'flex',
-    padding: '20px 20px 20px 0',
     flex: 1,
     flexDirection: 'column',
 }))

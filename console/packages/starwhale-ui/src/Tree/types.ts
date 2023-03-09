@@ -10,6 +10,7 @@ export type TreeNodeDataExtendT = {
     path: string
     isSelected?: boolean
     isLeafNode?: boolean
+    isShow?: boolean
 }
 
 export type TreePropsT = {
@@ -18,7 +19,18 @@ export type TreePropsT = {
 
     selectable?: boolean
     selectedIds?: any[]
-    onSelectedIdsChange?: (selectedIds: any[]) => void
+    onSelectedIdsChange?: (selectedIds: any[]) => any
 
-    muliple?: boolean
+    multiple?: boolean
+}
+
+export type TreeNodePropsT = {
+    node: TreeNodeData
+    label: TreeNodeData
+    multiple?: boolean
+    selectable?: boolean
+    isSelected?: boolean
+    isSelectedIndeterminate?: boolean
+    onChange?: (bool: boolean) => void
+    actions?: React.ReactNode
 }
