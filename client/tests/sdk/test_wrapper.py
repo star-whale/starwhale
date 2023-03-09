@@ -142,7 +142,7 @@ class TestDataset(BaseTestCase):
             "scan_id",
         )
 
-    def test_data_store_update_table_with_sw_object(self) -> None:
+    def test_dataset_update_with_sw_object(self) -> None:
         dataset = wrapper.Dataset("dt", "test")
         row = {"data/text": Text("my_text")}
         dataset.put("0", **row)
