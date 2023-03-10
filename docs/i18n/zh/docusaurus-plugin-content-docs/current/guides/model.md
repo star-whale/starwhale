@@ -69,8 +69,6 @@ model.yaml 对于 `Starwhale Model` 至关重要，描述模型包中文件是�
 |run|模型包运行的配置|是|Dict||
 |run.handler|模型评测的入口点，格式为 {module 路径}:{类名} |是|String||
 |run.envs|模型包运行时注入的环境变量，格式为 {名称}={值}|否|List[String]||
-|run.pkg_data|swmp中包含的文件或目录，支持wildcard方式描述|否|List[String]||
-|run.exclude_pkg_data|swmp中排除的文件或目录，支持wildcard方式描述|否|List[String]||
 
 ### 3.2 使用示例
 

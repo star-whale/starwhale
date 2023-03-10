@@ -3,11 +3,6 @@ name: mnist
 
 run:
   handler: mnist.evaluator:MNISTInference
-  exclude_pkg_data:
-    - venv
-    - .git
-    - .history
-    - .vscode
 
 desc: mnist by pytorch
 

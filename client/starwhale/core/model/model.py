@@ -73,16 +73,12 @@ class ModelRunConfig(ASDictMixin):
         handler: str,
         type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
-        pkg_data: t.Union[t.List[str], None] = None,
-        exclude_pkg_data: t.Union[t.List[str], None] = None,
         envs: t.Union[t.List[str], None] = None,
         **kw: t.Any,
     ):
         self.handler = handler.strip()
         self.typ = type
         self.runtime = runtime.strip()
-        self.pkg_data = pkg_data or []
-        self.exclude_pkg_data = exclude_pkg_data or []
         self.envs = envs or []
         self.kw = kw
 
