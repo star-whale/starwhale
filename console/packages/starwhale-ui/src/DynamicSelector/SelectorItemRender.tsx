@@ -1,10 +1,6 @@
-import { ColumnFilterModel, DataTypeT } from '@starwhale/core/datastore'
 import React, { RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
-import { FilterPropsT, ValueT } from '../Search/types'
-// import { FilterPropsT, ValueT } from './types'
-// import { dataStoreToFilter } from './utils'
 import {
     AutosizeInputContainer,
     defaultLabelRemoveIcon,
@@ -13,6 +9,7 @@ import {
     SelectItemContainer,
 } from './StyledComponent'
 import { SelectorItemRenderPropsT } from './types'
+import { useWhatChanged } from '@simbathesailor/use-what-changed'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
@@ -140,21 +137,13 @@ export function SelectorItemRender(
         }
     }, [isFocus, isEditing])
 
-    // // truncate values when first item is empty but with the same react key
-    // useEffect(() => {
-    //     if (!rawValues.op && !rawValues.property && !rawValues.value) {
-    //         setValues({})
-    //         setSearch(undefined)
-    //     }
-    // }, [rawValues])
-
     const sharedProps = React.useMemo(
         () => ({
             $isEditing: isEditing,
             $isFocus: isFocus,
             search,
         }),
-        [isEditing, search]
+        [isEditing, isFocus, search]
     )
 
     console.log('selector render', selectedIds, itemRef, sharedProps, value)
@@ -170,6 +159,8 @@ export function SelectorItemRender(
             inputRef,
         })
     }, [addItemRef])
+
+    useWhatChanged([itemOption, selectedIds])
 
     return (
         <SelectItemContainer

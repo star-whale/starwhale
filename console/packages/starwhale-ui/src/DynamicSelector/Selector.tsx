@@ -13,6 +13,7 @@ import {
 } from './StyledComponent'
 import SelectorPopover from './SelectorPopover'
 import Tree from '../Tree/Tree'
+import { KEY_STRINGS } from 'baseui/menu'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
@@ -55,7 +56,7 @@ export function DynamicSelector<T = any>({
     const [editingIndex, setEditingIndex] = useState<number>(-1)
     const itemRefs = useRef<{
         [key: string]: {
-            focus: () => void
+            inputRef: { current: null | HTMLInputElement }
         }
     }>({})
 
@@ -76,46 +77,8 @@ export function DynamicSelector<T = any>({
         }
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        // const valueExists = isValueExist(value)
-        // switch (event.keyCode) {
-        //     case 27:
-        //         handleReset()
-        //         break
-        //     case 9: // tab
-        //     case 13: // enter
-        //         if (valueExists && op && property) {
-        //             const newValues = {
-        //                 value,
-        //                 op,
-        //                 property,
-        //             }
-        //             setValues(newValues)
-        //             onChange?.(newValues)
-        //             setEditing(false)
-        //         }
-        //         break
-        //     case 8: // backspace
-        //         event.stopPropagation()
-        //         if (removing && !valueExists) {
-        //             // first remove op
-        //             if (op) {
-        //                 setOp(undefined)
-        //                 return
-        //             }
-        //             // second remove property
-        //             if (property) setProperty(undefined)
-        //             setRemoving(false)
-        //             // remove prev item when there is no label value to delete
-        //             if (!op && !property && !valueExists) onChange?.(undefined)
-        //         }
-        //         if (!valueExists) {
-        //             setRemoving(true)
-        //         }
-        //         break
-        //     default:
-        //         break
-        // }
+    const handleReset = () => {
+        setIsEditing(false)
     }
 
     const handleClick = (index: number) => {
@@ -134,9 +97,19 @@ export function DynamicSelector<T = any>({
         focusItem(values.length)
     }
 
-    const handleAddItemRef = (index: number, ref: any) => {
-        if (ref) {
-            itemRefs.current[index] = ref
+    const handleAddItemRef = (index: number, itemRef: any) => {
+        if (!itemRef) return
+        itemRefs.current[index] = itemRef
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        switch (event.key) {
+            case KEY_STRINGS.Escape:
+                handleReset()
+                break
+            default:
+                handleEdit(event as any)
+                break
         }
     }
 
@@ -214,7 +187,7 @@ export function DynamicSelector<T = any>({
     }
 
     return (
-        <SelectorContainer role='button' tabIndex={0} ref={ref} onKeyDown={handleEdit} onClick={handleEdit}>
+        <SelectorContainer role='button' tabIndex={0} ref={ref} onKeyDown={handleKeyDown} onClick={handleEdit}>
             <StartEnhancer {...shareProps}>
                 {typeof startEnhancer === 'function' ? startEnhancer() : startEnhancer}
             </StartEnhancer>

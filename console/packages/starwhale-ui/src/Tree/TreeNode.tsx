@@ -1,5 +1,4 @@
 import React from 'react'
-import { TreeLabelInteractable } from 'baseui/tree-view'
 import Checkbox from '../Checkbox'
 import { TreeNodeContainer } from './StyledComponent'
 import { TreeNodePropsT } from './types'
@@ -58,11 +57,9 @@ export default function TreeNode({
     }
 
     return (
-        <TreeLabelInteractable>
-            <TreeNodeContainer>
-                {TreeNodeitem()}
-                {actions}
-            </TreeNodeContainer>
-        </TreeLabelInteractable>
+        <TreeNodeContainer>
+            {TreeNodeitem()}
+            {actions}
+        </TreeNodeContainer>
     )
 }
