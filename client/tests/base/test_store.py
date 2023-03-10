@@ -31,3 +31,9 @@ def test_local_file_object_store(
     dst = tmp_path / "test" / "test_store.py"
     assert dst.exists()
     assert dst.stat().st_ino == file.path.stat().st_ino
+
+    # copy with exclude
+    for i, exclude in enumerate(["*.py", "test_store.py", "/*"]):
+        store.copy_dir(pathlib.Path(__file__).parent, tmp_path / f"test-{i}", [exclude])
+        dst = tmp_path / f"test-{i}" / "test_store.py"
+        assert not dst.exists()

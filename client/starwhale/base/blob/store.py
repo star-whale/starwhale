@@ -92,7 +92,9 @@ class LocalFileStore(ObjectStore):
         dst_dir = Path(dst_dir)
         excludes = excludes or BuiltinPyExcludes
         for src in src_dir.rglob("*"):
-            exclude = any([fnmatch.fnmatch(str(src), ex) for ex in excludes])
+            exclude = any(
+                [fnmatch.fnmatch(str(src), str(src_dir / ex)) for ex in excludes]
+            )
             if not src.is_file() or exclude:
                 continue
             file = self._put(path=src)
