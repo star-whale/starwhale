@@ -59,6 +59,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetWriter;
 
 @Slf4j
 public class MemoryTableImpl implements MemoryTable {
@@ -158,14 +159,16 @@ public class MemoryTableImpl implements MemoryTable {
         var columnSchema = this.schema.getColumnTypeMapping();
         columnSchema.put(TIMESTAMP_COLUMN_NAME, ColumnTypeScalar.INT64);
         columnSchema.put(DELETED_FLAG_COLUMN_NAME, ColumnTypeScalar.BOOL);
-        try (var writer = new SwParquetWriterBuilder(
+        ParquetWriter<Map<String, Object>> writer = null;
+        SwParquetWriterBuilder builder = new SwParquetWriterBuilder(
                 this.storageAccessService,
                 columnSchema,
                 this.schema.toJsonString(),
                 metadata,
                 this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
-                this.parquetConfig)
-                .build()) {
+                this.parquetConfig);
+        try {
+            writer = builder.build();
             for (var entry : this.recordMap.entrySet()) {
                 for (var record : entry.getValue()) {
                     var recordMap = new HashMap<String, Object>();
@@ -178,9 +181,15 @@ public class MemoryTableImpl implements MemoryTable {
                     writer.write(recordMap);
                 }
             }
+            builder.success();
         } catch (Throwable e) {
+            builder.error();
             log.error("fail to save table:{}, error:{}", this.tableName, e.getMessage(), e);
             throw e;
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
         }
         this.firstWalLogId = -1;
     }

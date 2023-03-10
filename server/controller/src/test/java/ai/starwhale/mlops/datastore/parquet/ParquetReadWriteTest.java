@@ -228,20 +228,24 @@ public class ParquetReadWriteTest {
         parquetConfig.setPageRowCountLimit(1000);
 
         assertThrows(UnsupportedOperationException.class, () -> {
-            try (var writer = new SwParquetWriterBuilder(
+            var builder = new SwParquetWriterBuilder(
                     this.storageAccessService,
                     schema.getColumnTypeMapping(),
                     schema.toJsonString(),
                     "meta",
                     "test",
-                    parquetConfig).build()) {
-
+                    parquetConfig);
+            var writer = builder.build();
+            try {
                 for (var record : records) {
                     writer.write(record);
                 }
+                builder.success();
             } catch (Throwable e) {
-                e.printStackTrace();
+                builder.error();
                 throw e;
+            } finally {
+                writer.close();
             }
         });
 

@@ -21,7 +21,10 @@ import ai.starwhale.mlops.datastore.ParquetConfig;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import cn.hutool.json.JSONUtil;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
@@ -30,8 +33,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Object>, SwParquetWriterBuilder> {
 
     private final Map<String, ColumnType> schema;
-    private final String tableSchema;
-    private final String metadata;
+    private final Map<String, String> extraMeta = new HashMap<>();
 
     public SwParquetWriterBuilder(
             StorageAccessService storageAccessService,
@@ -42,8 +44,14 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
             ParquetConfig config) {
         super(new SwOutputFile(storageAccessService, path));
         this.schema = schema;
-        this.tableSchema = tableSchema;
-        this.metadata = metadata;
+
+        this.extraMeta.put(SwReadSupport.PARQUET_SCHEMA_KEY,
+                JSONUtil.toJsonStr(this.schema.entrySet().stream()
+                    .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
+                    .collect(Collectors.toList())));
+        this.extraMeta.put(SwReadSupport.SCHEMA_KEY, tableSchema);
+        this.extraMeta.put(SwReadSupport.META_DATA_KEY, metadata);
+
         switch (config.getCompressionCodec()) {
             case SNAPPY:
                 this.withCompressionCodec(CompressionCodecName.SNAPPY);
@@ -77,8 +85,16 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
         return this;
     }
 
+    public void success() {
+        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(false));
+    }
+
+    public void error() {
+        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(true));
+    }
+
     @Override
     protected WriteSupport<Map<String, Object>> getWriteSupport(Configuration configuration) {
-        return new SwWriteSupport(this.schema, this.tableSchema, this.metadata);
+        return new SwWriteSupport(this.schema, this.extraMeta);
     }
 }
