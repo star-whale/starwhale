@@ -87,8 +87,10 @@ export default function TreeView(props: TreeViewProps) {
             case ' ':
             case 'Enter':
                 e.preventDefault()
-                if(node.children && node.children?.length > 0)
+                if (node.children && node.children?.length > 0) {
                     onToggle?.(node)
+                }
+                
                 onSelect?.(node)
                 break
             case 'Home':
