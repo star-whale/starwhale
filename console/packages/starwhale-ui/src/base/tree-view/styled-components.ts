@@ -14,7 +14,7 @@ export const StyledTreeItemList = styled<
         $isChildNode?: boolean
         $expanded?: boolean
     }
->('ul', ({ $theme, $indentGuides, $isChildNode, $expanded = true }) => {
+>('ul', ({ $theme, $indentGuides, $isChildNode, $expanded = true}) => {
     const direction: string = $theme.direction === 'rtl' ? 'Right' : 'Left'
     return {
         marginTop: 0,
@@ -82,7 +82,8 @@ export const StyledItemContent = styled<
         'paddingRight': $theme.sizing.scale200,
         'paddingTop': $theme.sizing.scale100,
         'paddingBottom': $theme.sizing.scale100,
-        'outline': $isSelected && $isFocusVisible ? `3px solid ${$theme.colors.accent}` : 'none',
+        'backgroundColor': $isSelected ? $theme.brandBgSecondary : 'transparent',
+        'outline': $isSelected && $isFocusVisible ? `1px solid ${$theme.colors.accent}` : 'none',
         'outlineOffset': '-3px',
 
         ':hover': {

@@ -75,6 +75,7 @@ function useTreeDataSelection({
 }) {
     const onToggle = (node: TreeNodeDataT) => {
         onSelectedIdsChange((prevSelectedIds: any[]) => {
+            console.log('onSelectedIdsChange', node, prevSelectedIds)
             let ids = [node.id]
 
             if (node.isLeafNode) {
@@ -92,15 +93,19 @@ function useTreeDataSelection({
                     : [...prevSelectedIds, ...ids]
             }
 
-            if (!multiple) {
-                return ids[0]
-            }
-
             const index = prevSelectedIds.indexOf(node.id)
             if (index > -1) {
                 prevSelectedIds.splice(index, 1)
+                console.log(1, prevSelectedIds)
+
                 return [...prevSelectedIds]
             }
+            console.log(2)
+            if (!multiple) {
+                return prevSelectedIds[0]
+            }
+
+            console.log(3)
 
             return [...prevSelectedIds, node.id]
         })
@@ -122,6 +127,7 @@ function Tree({
     renderActions = (node: TreeNodeDataT) => null,
     multiple = true,
     search: rawSearch,
+    keyboardControlNode,
 }: TreePropsT) {
     const [data, setData] = React.useState(treeData)
     const [search, setSearch] = React.useState('')
@@ -172,13 +178,20 @@ function Tree({
     //     setData(rawData)
     // }, [rawData])
 
+    console.log(selectedIds)
+
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearch?.(e.target.value)
     const onToggle = (node: any) => setData((prevData) => toggleIsExpanded(prevData, node) as any)
 
     return (
         <TreeContainer>
             {searchable && <TreeSearch value={search} onChange={onChange} />}
-            <TreeView data={$data} onToggle={onToggle} />
+            <TreeView
+                data={$data}
+                onToggle={onToggle}
+                keyboardControlNode={keyboardControlNode}
+                onSelect={$onSelectToggle}
+            />
         </TreeContainer>
     )
 }

@@ -1,4 +1,5 @@
 import { TreeNodeData } from '../base/tree-view'
+import { Search } from 'baseui/icon'
 
 export type TreeNodeDataT = TreeNodeData<TreeNodeInfoT> & TreeNodeDataExtendT
 
@@ -16,12 +17,14 @@ export type TreeNodeDataExtendT = {
 export type TreePropsT = {
     data: TreeNodeData[]
     searchable?: boolean
+    search?: string
 
     selectable?: boolean
     selectedIds?: any[]
     onSelectedIdsChange?: (selectedIds: any[]) => any
 
     multiple?: boolean
+    keyboardControlNode?: { current: null }
 }
 
 export type TreeNodePropsT = {

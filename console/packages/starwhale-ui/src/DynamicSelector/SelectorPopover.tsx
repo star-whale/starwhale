@@ -19,7 +19,7 @@ function SelectorPopover({
 
     const handleClose = () => ref.current && setIsOpen(false)
 
-    console.log('TreePopover', isOpen)
+    // console.log('TreePopover', isOpen)
 
     return (
         <Popover
@@ -36,13 +36,14 @@ function SelectorPopover({
                 },
                 Inner: {
                     style: {
-                        padding: '8px 12px',
+                        padding: '12px 12px',
                         backgroundColor: '#FFF',
                         minHeight: '200px',
+                        minWidth: '300px',
                     },
                 },
             }}
-            content={() => <div className='popover'>{content()}</div>}
+            content={() => <div className='popover'>{typeof content === 'function' ? content() : content}</div>}
         >
             <p>{children}</p>
         </Popover>

@@ -25,9 +25,10 @@ import { isFocusVisible } from '../utils/focusVisible'
 import { getOverride, getOverrideProps } from '../helpers/overrides'
 
 import type { SyntheticEvent } from 'react'
+import { useEffect } from 'react';
 
 export default function TreeView(props: TreeViewProps) {
-    const { data, indentGuides = false, onToggle, overrides = {}, renderAll, getId = defaultGetId } = props
+    const { data, indentGuides = false, onToggle, onSelect, overrides = {}, renderAll, getId = defaultGetId } = props
     const { Root: RootOverride } = overrides
 
     const Root = getOverride(RootOverride) || StyledTreeItemList
@@ -47,17 +48,17 @@ export default function TreeView(props: TreeViewProps) {
         const refs = treeItemRefs[id]
         // @ts-expect-error
         const node = refs && refs.current
-        if (node) node.focus()
+        // if (node) node.focus()
     }
 
     const onKeyDown = (e: KeyboardEvent, node: TreeNodeData) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const elementId = (e.target as any as HTMLLIElement).getAttribute('data-nodeid')
+        // const elementId = (e.target as any as HTMLLIElement).getAttribute('data-nodeid')
         // this check prevents bubbling
         // @ts-ignore
-        if (elementId !== getId(node) && parseInt(elementId) !== getId(node)) {
-            return
-        }
+        // if (elementId !== getId(node) && parseInt(elementId) !== getId(node)) {
+        //     return
+        // }
         switch (e.key) {
             case 'ArrowRight':
                 e.preventDefault()
@@ -86,7 +87,9 @@ export default function TreeView(props: TreeViewProps) {
             case ' ':
             case 'Enter':
                 e.preventDefault()
-                onToggle && onToggle(node)
+                if(node.children && node.children?.length > 0)
+                    onToggle?.(node)
+                onSelect?.(node)
                 break
             case 'Home':
                 e.preventDefault()
@@ -135,6 +138,39 @@ export default function TreeView(props: TreeViewProps) {
             setFocusVisible(false)
         }
     }
+
+    // cascade with keyboardControlNode to trigger key event
+    useEffect(() => {
+        if (!props.keyboardControlNode?.current) return 
+        const node = props.keyboardControlNode.current as HTMLElement
+        const handle = (event: KeyboardEvent) => {
+            // set default select
+            focusTreeItem(selectedNodeId ?? getId(data[0]))
+            
+            function findTreeNodeData(tmpData: TreeNodeData[]): TreeNodeData | undefined {
+                for (let i = 0; i < tmpData.length; i++) {
+                    const node = tmpData[i]
+                    if (getId(node) === selectedNodeId) {
+                        return node
+                    }
+                    if (node.children) {
+                        const result = findTreeNodeData(node.children)
+                        if (result) return result
+                    }
+                }
+            }
+            const nodeData = findTreeNodeData(data)
+            // @ts-ignore
+            onKeyDown(event, nodeData)
+        }
+        node.addEventListener('keydown', handle)
+        return () => {
+            if (!node) return 
+            node.removeEventListener('keydown',handle)
+        }
+
+    }, [props.keyboardControlNode, onKeyDown, focusTreeItem , selectedNodeId, data, onFocus])
+
 
     return (
         <Root role='tree' {...getOverrideProps(RootOverride)}>
