@@ -32,6 +32,7 @@ import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
+import ai.starwhale.mlops.datastore.parquet.SwWriter;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -59,7 +61,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 
 @Slf4j
 public class MemoryTableImpl implements MemoryTable {
@@ -159,37 +160,30 @@ public class MemoryTableImpl implements MemoryTable {
         var columnSchema = this.schema.getColumnTypeMapping();
         columnSchema.put(TIMESTAMP_COLUMN_NAME, ColumnTypeScalar.INT64);
         columnSchema.put(DELETED_FLAG_COLUMN_NAME, ColumnTypeScalar.BOOL);
-        ParquetWriter<Map<String, Object>> writer = null;
-        SwParquetWriterBuilder builder = new SwParquetWriterBuilder(
-                this.storageAccessService,
-                columnSchema,
-                this.schema.toJsonString(),
-                metadata,
-                this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
-                this.parquetConfig);
+
         try {
-            writer = builder.build();
-            for (var entry : this.recordMap.entrySet()) {
-                for (var record : entry.getValue()) {
-                    var recordMap = new HashMap<String, Object>();
-                    if (record.getValues() != null) {
-                        recordMap.putAll(record.getValues());
-                    }
-                    recordMap.put(this.schema.getKeyColumn(), entry.getKey());
-                    recordMap.put(TIMESTAMP_COLUMN_NAME, record.getTimestamp());
-                    recordMap.put(DELETED_FLAG_COLUMN_NAME, record.isDeleted());
-                    writer.write(recordMap);
-                }
-            }
-            builder.success();
+            SwWriter.writeWithBuilder(
+                    new SwParquetWriterBuilder(this.storageAccessService, columnSchema,
+                        this.schema.toJsonString(), metadata,
+                        this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()), this.parquetConfig),
+                    this.recordMap.entrySet().stream()
+                        .map(entry -> {
+                            var list = new ArrayList<Map<String, Object>>();
+                            for (var record : entry.getValue()) {
+                                var recordMap = new HashMap<String, Object>();
+                                if (record.getValues() != null) {
+                                    recordMap.putAll(record.getValues());
+                                }
+                                recordMap.put(this.schema.getKeyColumn(), entry.getKey());
+                                recordMap.put(TIMESTAMP_COLUMN_NAME, record.getTimestamp());
+                                recordMap.put(DELETED_FLAG_COLUMN_NAME, record.isDeleted());
+                                list.add(recordMap);
+                            }
+                            return list;
+                        }).flatMap(Collection::stream).iterator());
         } catch (Throwable e) {
-            builder.error();
             log.error("fail to save table:{}, error:{}", this.tableName, e.getMessage(), e);
             throw e;
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
         this.firstWalLogId = -1;
     }
