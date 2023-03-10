@@ -26,7 +26,7 @@ import ai.starwhale.mlops.datastore.ParquetConfig;
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
-import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import java.nio.ByteBuffer;
@@ -103,17 +103,6 @@ public class ParquetReadWriteTest {
                                         .build())
                                 .build())
                         .build())));
-        var parquetConfig = new ParquetConfig();
-        parquetConfig.setCompressionCodec(CompressionCodec.SNAPPY);
-        parquetConfig.setRowGroupSize(1024 * 1024);
-        parquetConfig.setPageSize(4096);
-        parquetConfig.setPageRowCountLimit(1000);
-        var writer = new SwParquetWriterBuilder(this.storageAccessService,
-                schema.getColumnTypeMapping(),
-                schema.toJsonString(),
-                "meta",
-                "test",
-                parquetConfig).build();
         List<Map<String, Object>> records = List.of(
                 new HashMap<>() {
                     {
@@ -151,10 +140,21 @@ public class ParquetReadWriteTest {
                     }
                 }),
                 Map.of("key", "6", "j", List.of(), "jj", Map.of(), "k", Map.of()));
-        for (var record : records) {
-            writer.write(record);
-        }
-        writer.close();
+        var parquetConfig = new ParquetConfig();
+        parquetConfig.setCompressionCodec(CompressionCodec.SNAPPY);
+        parquetConfig.setRowGroupSize(1024 * 1024);
+        parquetConfig.setPageSize(4096);
+        parquetConfig.setPageRowCountLimit(1000);
+
+        SwWriter.writeWithBuilder(
+                new SwParquetWriterBuilder(
+                    this.storageAccessService,
+                    schema.getColumnTypeMapping(),
+                    schema.toJsonString(),
+                    "meta",
+                    "test",
+                    parquetConfig),
+                records.stream().iterator());
         var conf = new Configuration();
         var reader = new SwParquetReaderBuilder(this.storageAccessService, "test").withConf(conf).build();
         assertThat(reader.read(), is(records.get(0)));
@@ -238,7 +238,7 @@ public class ParquetReadWriteTest {
                     parquetConfig), records.stream().iterator());
         });
 
-        assertThrows(SwProcessException.class, () -> {
+        assertThrows(SwValidationException.class, () -> {
             try (var reader = new SwParquetReaderBuilder(
                     this.storageAccessService, "test").withConf(new Configuration()).build()) {
                 reader.read();

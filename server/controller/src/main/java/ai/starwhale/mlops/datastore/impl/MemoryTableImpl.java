@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -106,44 +107,56 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     private void load() {
+        Set<String> paths;
         try {
-            var path = this.storageAccessService.list(dataPathPrefix).max(Comparator.naturalOrder()).orElse(null);
-            if (path == null) {
-                return;
-            }
-            var conf = new Configuration();
-            try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
-                for (; ; ) {
-                    var record = reader.read();
-                    if (this.schema == null) {
-                        this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
-                        var metaBuilder = TableMeta.MetaData.newBuilder();
-                        try {
-                            JsonFormat.parser().merge(conf.get(SwReadSupport.META_DATA_KEY), metaBuilder);
-                        } catch (InvalidProtocolBufferException e) {
-                            throw new SwProcessException(ErrorType.DATASTORE, "failed to parse metadata", e);
+            paths = this.storageAccessService.list(dataPathPrefix).collect(Collectors.toSet());
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
+        }
+
+        while (!paths.isEmpty()) {
+            var path = paths.stream().max(Comparator.naturalOrder()).orElse(null);
+            try {
+                var conf = new Configuration();
+                try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
+                    for (; ; ) {
+                        var record = reader.read();
+                        if (this.schema == null) {
+                            this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
+                            var metaBuilder = TableMeta.MetaData.newBuilder();
+                            try {
+                                JsonFormat.parser().merge(conf.get(SwReadSupport.META_DATA_KEY), metaBuilder);
+                            } catch (InvalidProtocolBufferException e) {
+                                throw new SwProcessException(ErrorType.DATASTORE, "failed to parse metadata", e);
+                            }
+                            var metadata = metaBuilder.build();
+                            this.lastWalLogId = metadata.getLastWalLogId();
+                            this.lastUpdateTime = metadata.getLastUpdateTime();
                         }
-                        var metadata = metaBuilder.build();
-                        this.lastWalLogId = metadata.getLastWalLogId();
-                        this.lastUpdateTime = metadata.getLastUpdateTime();
-                    }
-                    if (record == null) {
-                        break;
-                    }
-                    var key = record.remove(this.schema.getKeyColumn());
-                    var timestamp = (Long) record.remove(TIMESTAMP_COLUMN_NAME);
-                    var deletedFlag = (Boolean) record.remove(DELETED_FLAG_COLUMN_NAME);
-                    this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
-                            .add(MemoryRecord.builder()
+                        if (record == null) {
+                            break;
+                        }
+                        var key = record.remove(this.schema.getKeyColumn());
+                        var timestamp = (Long) record.remove(TIMESTAMP_COLUMN_NAME);
+                        var deletedFlag = (Boolean) record.remove(DELETED_FLAG_COLUMN_NAME);
+                        this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
+                                .add(MemoryRecord.builder()
                                     .timestamp(timestamp)
                                     .deleted(deletedFlag)
                                     .values(record)
                                     .build());
+                    }
                 }
+                break;
+            } catch (SwValidationException e) {
+                log.warn("fail to load table:{} with path:{}, because it is invalid, try to load previous file again.",
+                            this.tableName, path);
+                paths.remove(path);
+            } catch (RuntimeException | IOException e) {
+                throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
             }
-        } catch (IOException | RuntimeException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
         }
+
     }
 
     @Override

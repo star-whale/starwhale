@@ -31,9 +31,6 @@ public class SwWriter {
                 writer.write(iterator.next());
             }
             builder.success();
-        } catch (Throwable e) {
-            builder.error();
-            throw e;
         } finally {
             if (writer != null) {
                 writer.close();

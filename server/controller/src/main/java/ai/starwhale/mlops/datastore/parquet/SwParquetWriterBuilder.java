@@ -51,6 +51,7 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
                     .collect(Collectors.toList())));
         this.extraMeta.put(SwReadSupport.SCHEMA_KEY, tableSchema);
         this.extraMeta.put(SwReadSupport.META_DATA_KEY, metadata);
+        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(true));
 
         switch (config.getCompressionCodec()) {
             case SNAPPY:
@@ -87,10 +88,6 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
 
     public void success() {
         this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(false));
-    }
-
-    public void error() {
-        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(true));
     }
 
     @Override
