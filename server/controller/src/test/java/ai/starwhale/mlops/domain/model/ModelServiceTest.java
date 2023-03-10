@@ -81,12 +81,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -129,7 +132,7 @@ public class ModelServiceTest {
                             .build();
                 });
         versionConvertor = mock(ModelVersionVoConverter.class);
-        given(versionConvertor.convert(any(ModelVersionEntity.class)))
+        given(versionConvertor.convert(any(ModelVersionEntity.class), any()))
                 .willAnswer(invocation -> {
                     ModelVersionEntity entity = invocation.getArgument(0);
                     return ModelVersionVo.builder()
@@ -304,11 +307,13 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testListModelInfo() {
+    public void testListModelInfo() throws IOException {
         given(modelMapper.findByName(same("m1"), same(1L), any()))
                 .willReturn(ModelEntity.builder().id(1L).build());
         given(modelVersionMapper.list(same(1L), any(), any()))
                 .willReturn(List.of(ModelVersionEntity.builder().versionOrder(2L).build()));
+        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
+        given(storageAccessService.get(any())).willReturn(is);
 
         var res = service.listModelInfo("1", "m1");
         assertThat(res, hasItem(allOf(
@@ -332,7 +337,7 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testGetModelInfo() {
+    public void testGetModelInfo() throws IOException {
         given(modelMapper.find(same(1L)))
                 .willReturn(ModelEntity.builder().id(1L).build());
 
@@ -348,6 +353,8 @@ public class ModelServiceTest {
         given(modelVersionMapper.findByLatest(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
 
+        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
+        given(storageAccessService.get(any())).willReturn(is);
         var res = service.getModelInfo(ModelQuery.builder()
                 .projectUrl("p1")
                 .modelUrl("m1")
@@ -389,9 +396,11 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testListModelVersionHistory() {
+    public void testListModelVersionHistory() throws IOException {
         given(modelVersionMapper.list(anyLong(), anyString(), anyString()))
                 .willReturn(List.of(ModelVersionEntity.builder().id(1L).build()));
+        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
+        given(storageAccessService.get(any())).willReturn(is);
         var res = service.listModelVersionHistory(
                 ModelVersionQuery.builder()
                         .projectUrl("1")
@@ -450,9 +459,9 @@ public class ModelServiceTest {
         given(storagePathCoordinator.allocateModelPath(any(), any(), any()))
                 .willReturn("path2");
 
-        try (var mock = mockStatic(TarFileUtil.class)) {
-            mock.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                    .thenReturn(new byte[]{1});
+        try (var mockIOUtils = mockStatic(IOUtils.class); var mockTarFileUtil = mockStatic(TarFileUtil.class)) {
+            mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
+                    .thenReturn("");
             given(modelVersionMapper.find(3L))
                     .willReturn(ModelVersionEntity.builder()
                             .id(1L)
@@ -480,21 +489,24 @@ public class ModelServiceTest {
                     + "  path: src/model/empty.pt\n"
                     + "  signature: 786a02f742015903c6\n"
                     + "version: kjvunxjq24iif5grsbazgae7xwbe3om7ogd65eey\n";
-            mock.when(() -> TarFileUtil.getContent(any())).thenReturn(manifestContent.getBytes());
+            mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
+                    .thenReturn(manifestContent);
 
             service.uploadManifest(dsFile, request);
 
+            mockTarFileUtil.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
+                    .thenReturn(manifestContent.getBytes());
             service.uploadSrc(3L, dsFile, request);
-            mock.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
+            mockTarFileUtil.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
             service.uploadModel(3L, "123456", dsFile, request);
             verify(storageAccessService, times(1)).put(any(), any(InputStream.class));
 
             given(modelVersionMapper.find(3L))
                     .willReturn(ModelVersionEntity.builder()
-                        .id(3L)
-                        .status(ModelVersionEntity.STATUS_AVAILABLE)
-                        .build()
+                            .id(3L)
+                            .status(ModelVersionEntity.STATUS_AVAILABLE)
+                            .build()
                     );
             request.setProject("1");
             assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, dsFile, request));
@@ -559,37 +571,42 @@ public class ModelServiceTest {
                 + "version: m1\n";
 
         given(modelVersionMapper.find(same(1L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path1").manifest(manifestContent).build());
+                ModelVersionEntity.builder().storagePath("path1").build());
         given(modelVersionMapper.find(same(2L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path2").manifest(manifestContent).build());
+                ModelVersionEntity.builder().storagePath("path2").build());
         given(modelVersionMapper.find(same(3L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path3").manifest(manifestContent).build());
+                ModelVersionEntity.builder().storagePath("path3").build());
         // case 1: not exist version test
         var responseForManifest = new MockHttpServletResponse();
         assertThrows(BundleException.class,
                 () -> service.pull(
-                    FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v4",
-                    responseForManifest));
+                        FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v4",
+                        responseForManifest));
         // case 2: guess name and path error
         assertThrows(SwValidationException.class,
                 () -> service.pull(
-                    null, "", "", "", "1", "m1", "v1",
-                    responseForManifest));
+                        null, "", "", "", "1", "m1", "v1",
+                        responseForManifest));
+        var is = new ByteArrayInputStream(manifestContent.getBytes());
+        var manifestInputStream = new LengthAbleInputStream(is, manifestContent.getBytes().length);
+        manifestInputStream.mark(0);
+        given(storageAccessService.get(any())).willReturn(manifestInputStream);
         assertThrows(SwValidationException.class,
                 () -> service.pull(
-                    null, "empty1.pt", "src/model/empty1.pt", "", "1", "m1", "v1",
-                    responseForManifest));
+                        null, "empty1.pt", "src/model/empty1.pt", "", "1", "m1", "v1",
+                        responseForManifest));
 
         // case 3: validation error test
         given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/file1"));
         given(storageAccessService.list("path2/src")).willReturn(Stream.of());
         given(storageAccessService.list("path3/src")).willThrow(IOException.class);
+        manifestInputStream.reset();
         service.pull(
                 FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v1",
                 responseForManifest);
         assertThat("upload manifest to response",
-                    Objects.equals(responseForManifest.getHeader("Content-Length"),
-                    String.valueOf(manifestContent.getBytes().length)));
+                Objects.equals(responseForManifest.getHeader("Content-Length"),
+                        String.valueOf(manifestContent.getBytes().length)));
 
         // case 4: pull model file
         var modelPath = "sw/controller/project/foo/model/iiiiii";
@@ -597,18 +614,20 @@ public class ModelServiceTest {
         given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("iiiiii"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willThrow(IOException.class);
         var responseForModel = new MockHttpServletResponse();
+        manifestInputStream.reset();
         assertThrows(SwProcessException.class,
                 () -> service.pull(
-                    FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "foo", "m1", "v3",
-                    responseForModel));
+                        FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "foo", "m1", "v3",
+                        responseForModel));
 
         modelPath = "sw/controller/project/foo/model/uuuuuuuuuu";
         given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("uuuuuuuuuu"))).willReturn(modelPath);
         given(storageAccessService.get(modelPath)).willReturn(
                 new LengthAbleInputStream(new ByteArrayInputStream(new byte[100]), 100));
+        manifestInputStream.reset();
         service.pull(
-                    null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "foo", "m1", "v1",
-                    responseForModel
+                null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "foo", "m1", "v1",
+                responseForModel
         );
         assertThat("upload model to response", Objects.equals(responseForModel.getHeader("Content-Length"), "100"));
 
@@ -616,7 +635,7 @@ public class ModelServiceTest {
         var responseForNormal = new MockHttpServletResponse();
         try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
             given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/a.py", "path1/src/b.py"));
-
+            manifestInputStream.reset();
             service.pull(
                     FileDesc.SRC_TAR, "src.tar", "", "", "foo", "m1", "v1",
                     responseForNormal);
