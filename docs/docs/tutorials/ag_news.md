@@ -278,11 +278,6 @@ name: text_cls
 run:
   ppl: code.ppl:TextClassificationHandler
   pip_req: requirements.txt
-  exclude_pkg_data:
-    - venv
-    - .git
-    - .history
-    - .vscode
 
 desc: TextClassification by PyTorch
 
