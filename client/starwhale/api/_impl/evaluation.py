@@ -301,7 +301,9 @@ class PipelineHandler(metaclass=ABCMeta):
                         data_id=_idx_with_ds,
                         index=_idx,
                         result=_result,
-                        ds_data={} if self.ignore_dataset_data else _features,
+                        ds_data={}
+                        if self.ignore_dataset_data
+                        else _features.copy(),  # drop DataRow._Features type, keep dict type for features
                     )
 
         if self.flush_result:

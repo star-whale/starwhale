@@ -306,6 +306,7 @@ class Dataset:
 
     def __iter__(self) -> t.Iterator[DataRow]:
         for row in self._get_data_loader():
+            row._patch_shadow_dataset(self)
             yield row
 
     def __getitem__(
@@ -331,7 +332,7 @@ class Dataset:
             loader = self._get_data_loader(disable_consumption=True)
             if isinstance(item, (int, str)):
                 row = next(loader.tabular_dataset.scan(item, item, end_inclusive=True))
-                return loader._unpack_row(row, skip_fetch_data)
+                return loader._unpack_row(row, skip_fetch_data, shadow_dataset=self)
             elif isinstance(item, slice):
                 step = item.step or 1
                 if step <= 0:
@@ -343,7 +344,13 @@ class Dataset:
                 rows = []
                 for row in loader.tabular_dataset.scan(item.start, item.stop):
                     if cnt % step == 0:
-                        rows.append(loader._unpack_row(row, skip_fetch_data))
+                        rows.append(
+                            loader._unpack_row(
+                                row,
+                                skip_fetch_data,
+                                shadow_dataset=self,
+                            )
+                        )
                     cnt += 1
                 return rows
             else:
@@ -498,7 +505,7 @@ class Dataset:
     def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
         loader = self._get_data_loader(disable_consumption=True)
         row = next(loader.tabular_dataset.scan())
-        return loader._unpack_row(row, skip_fetch_data)
+        return loader._unpack_row(row, skip_fetch_data, shadow_dataset=self)
 
     def to_pytorch(
         self,
@@ -552,6 +559,7 @@ class Dataset:
         else:
             raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
+        # TODO: add gc/rehash for update swds-bin format artifact features
         # TODO improve accuracy of _rows_cnt during building
         self._rows_cnt += 1
         _row_writer.update(row)
@@ -607,6 +615,7 @@ class Dataset:
         else:
             raise TypeError(f"key({key}) is not str, int or slice type")
 
+        # TODO: add gc/rehash for delete swds-bin format artifact features
         # TODO: raise not-found key error?
         loader = self._get_data_loader(disable_consumption=True)
         for item in items:

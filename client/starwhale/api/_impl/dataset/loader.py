@@ -23,29 +23,72 @@ from starwhale.core.dataset.tabular import (
 
 _DEFAULT_LOADER_CACHE_SIZE = 20
 
+if t.TYPE_CHECKING:
+    from .model import Dataset
+
 
 @total_ordering
 class DataRow:
     class _Features(dict):
+        _PROTECTED_PREFIX = "_starwhale_"
+
+        def __setitem__(self, key: t.Any, value: t.Any) -> None:
+            super().__setitem__(key, value)
+            self._patch_shadow_dataset(key, value)
+
+        def __delitem__(self, key: t.Any) -> None:
+            super().__delitem__(key)
+            # datastore will ignore none column for scanning by default
+            self._patch_shadow_dataset(key, None)
+
         def __setattr__(self, name: str, value: t.Any) -> None:
-            self[name] = value
+            if name.startswith(self._PROTECTED_PREFIX):
+                super().__setattr__(name, value)
+            else:
+                self[name] = value
 
         def __getattr__(self, name: str) -> t.Any:
-            if name in self:
+            if name.startswith(self._PROTECTED_PREFIX):
+                return super().__getattribute__(name)
+            elif name in self:
                 return self[name]
             else:
-                raise AttributeError(f"No found attribute: {name}")
+                raise AttributeError(f"Not found attribute: {name}")
 
         def __delattr__(self, name: str) -> None:
-            if name in self:
+            if name.startswith(self._PROTECTED_PREFIX):
+                raise RuntimeError(f"cannot delete internal attribute: {name}")
+            elif name in self:
                 del self[name]
             else:
-                raise AttributeError(f"No found attribute: {name}")
+                raise AttributeError(f"Not found attribute: {name}")
+
+        def _patch_shadow_dataset(self, key: t.Any, value: t.Any) -> None:
+            # TODO: merge batch update
+            ds = getattr(self, "_starwhale_shadow_dataset", None)
+            if ds is not None:
+                # pass dict type into dataset __setitem__, not the DataRow._Features type
+                ds.__setitem__(self._starwhale_index, {key: value})
+
+        def _with_shadow_dataset(
+            self, dataset: Dataset, index: t.Union[str, int]
+        ) -> DataRow._Features:
+            from .model import Dataset
+
+            if not isinstance(dataset, Dataset):
+                raise TypeError(
+                    f"shadow dataset only supports starwhale.Dataset type: {dataset}"
+                )
+
+            self._starwhale_shadow_dataset = dataset
+            self._starwhale_index = index
+            return self
 
     def __init__(
         self,
         index: t.Union[str, int],
         features: t.Dict,
+        shadow_dataset: t.Optional[Dataset] = None,
     ) -> None:
         if not isinstance(index, (str, int)):
             raise TypeError(f"index({index}) is not int or str type")
@@ -53,22 +96,36 @@ class DataRow:
 
         if not isinstance(features, dict):
             raise TypeError(f"features({features}) is not dict type")
-        self.features: t.Dict = DataRow._Features(features)
+        self.features = DataRow._Features(features)
+        if shadow_dataset is not None:
+            self.features._with_shadow_dataset(shadow_dataset, index)
+        self._shadow_dataset = shadow_dataset
+
+    def _patch_shadow_dataset(self, dataset: Dataset) -> None:
+        if self._shadow_dataset is not None and self._shadow_dataset is not dataset:
+            raise RuntimeError("shadow dataset has already been set")
+
+        if dataset is not None:
+            self._shadow_dataset = dataset
+            self.features._with_shadow_dataset(dataset, self.index)
 
     def __str__(self) -> str:
         return f"{self.index}"
 
     def __repr__(self) -> str:
-        return f"index:{self.index}, features:{self.features}"
+        return f"index:{self.index}, features:{self.features}, shadow dataset: {self._shadow_dataset}"
 
     def __iter__(self) -> t.Iterator:
-        return iter((self.index, self.features))
+        return iter(self._get_items())
 
     def __getitem__(self, i: int) -> t.Any:
-        return (self.index, self.features)[i]
+        return self._get_items()[i]
 
     def __len__(self) -> int:
-        return len(self.__dict__)
+        return len(self._get_items())
+
+    def _get_items(self) -> t.Tuple:
+        return (self.index, self.features)
 
     def __lt__(self, obj: DataRow) -> bool:
         return str(self.index) < str(obj.index)
@@ -184,20 +241,26 @@ class DataLoader:
             mq.put(None)
 
     def _unpack_row(
-        self, row: TabularDatasetRow, skip_fetch_data: bool = False
+        self,
+        row: TabularDatasetRow,
+        skip_fetch_data: bool = False,
+        shadow_dataset: t.Optional[Dataset] = None,
     ) -> DataRow:
         for at in row.artifacts:
             at.owner = self.dataset_uri
             if skip_fetch_data:
                 continue
             at.fetch_data()
-        return DataRow(index=row.id, features=row.features)
+        return DataRow(
+            index=row.id, features=row.features, shadow_dataset=shadow_dataset
+        )
 
     def _unpack_row_with_queue(
         self,
         in_mq: queue.Queue[_TMetaQItem],
         out_mq: queue.Queue[_TRowQItem],
         skip_fetch_data: bool = False,
+        shadow_dataset: t.Optional[Dataset] = None,
     ) -> None:
         while True:
             meta = in_mq.get(block=True, timeout=None)
@@ -208,7 +271,9 @@ class DataLoader:
                 raise meta
             else:
                 try:
-                    row = self._unpack_row(meta, skip_fetch_data)
+                    row = self._unpack_row(
+                        meta, skip_fetch_data, shadow_dataset=shadow_dataset
+                    )
                     if row and isinstance(row, DataRow):
                         out_mq.put(row)
                 except Exception as e:
