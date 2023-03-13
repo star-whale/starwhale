@@ -32,6 +32,7 @@ import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
+import ai.starwhale.mlops.datastore.parquet.SwWriter;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -50,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -104,48 +107,60 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     private void load() {
+        Set<String> paths;
         try {
-            var path = this.storageAccessService.list(dataPathPrefix).max(Comparator.naturalOrder()).orElse(null);
-            if (path == null) {
-                return;
-            }
-            var conf = new Configuration();
-            try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
-                for (; ; ) {
-                    var record = reader.read();
-                    if (this.schema == null) {
-                        this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
-                        var metaBuilder = TableMeta.MetaData.newBuilder();
-                        try {
-                            JsonFormat.parser().merge(conf.get(SwReadSupport.META_DATA_KEY), metaBuilder);
-                        } catch (InvalidProtocolBufferException e) {
-                            throw new SwProcessException(ErrorType.DATASTORE, "failed to parse metadata", e);
+            paths = this.storageAccessService.list(dataPathPrefix).collect(Collectors.toSet());
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
+        }
+
+        while (!paths.isEmpty()) {
+            var path = paths.stream().max(Comparator.naturalOrder()).orElse(null);
+            try {
+                var conf = new Configuration();
+                try (var reader = new SwParquetReaderBuilder(this.storageAccessService, path).withConf(conf).build()) {
+                    for (; ; ) {
+                        var record = reader.read();
+                        if (this.schema == null) {
+                            this.schema = TableSchema.fromJsonString(conf.get(SwReadSupport.SCHEMA_KEY));
+                            var metaBuilder = TableMeta.MetaData.newBuilder();
+                            try {
+                                JsonFormat.parser().merge(conf.get(SwReadSupport.META_DATA_KEY), metaBuilder);
+                            } catch (InvalidProtocolBufferException e) {
+                                throw new SwProcessException(ErrorType.DATASTORE, "failed to parse metadata", e);
+                            }
+                            var metadata = metaBuilder.build();
+                            this.lastWalLogId = metadata.getLastWalLogId();
+                            this.lastUpdateTime = metadata.getLastUpdateTime();
                         }
-                        var metadata = metaBuilder.build();
-                        this.lastWalLogId = metadata.getLastWalLogId();
-                        this.lastUpdateTime = metadata.getLastUpdateTime();
-                    }
-                    if (record == null) {
-                        break;
-                    }
-                    var key = record.remove(this.schema.getKeyColumn());
-                    var timestamp = (Long) record.remove(TIMESTAMP_COLUMN_NAME);
-                    var deletedFlag = (Boolean) record.remove(DELETED_FLAG_COLUMN_NAME);
-                    this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
-                            .add(MemoryRecord.builder()
+                        if (record == null) {
+                            break;
+                        }
+                        var key = record.remove(this.schema.getKeyColumn());
+                        var timestamp = (Long) record.remove(TIMESTAMP_COLUMN_NAME);
+                        var deletedFlag = (Boolean) record.remove(DELETED_FLAG_COLUMN_NAME);
+                        this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
+                                .add(MemoryRecord.builder()
                                     .timestamp(timestamp)
                                     .deleted(deletedFlag)
                                     .values(record)
                                     .build());
+                    }
                 }
+                break;
+            } catch (SwValidationException e) {
+                log.warn("fail to load table:{} with path:{}, because it is invalid, try to load previous file again.",
+                            this.tableName, path);
+                paths.remove(path);
+            } catch (RuntimeException | IOException e) {
+                throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
             }
-        } catch (IOException | RuntimeException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
         }
+
     }
 
     @Override
-    public void save() {
+    public void save() throws IOException {
         String metadata;
         try {
             metadata = JsonFormat.printer().print(TableMeta.MetaData.newBuilder()
@@ -158,28 +173,30 @@ public class MemoryTableImpl implements MemoryTable {
         var columnSchema = this.schema.getColumnTypeMapping();
         columnSchema.put(TIMESTAMP_COLUMN_NAME, ColumnTypeScalar.INT64);
         columnSchema.put(DELETED_FLAG_COLUMN_NAME, ColumnTypeScalar.BOOL);
-        try (var writer = new SwParquetWriterBuilder(
-                this.storageAccessService,
-                columnSchema,
-                this.schema.toJsonString(),
-                metadata,
-                this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
-                this.parquetConfig)
-                .build()) {
-            for (var entry : this.recordMap.entrySet()) {
-                for (var record : entry.getValue()) {
-                    var recordMap = new HashMap<String, Object>();
-                    if (record.getValues() != null) {
-                        recordMap.putAll(record.getValues());
-                    }
-                    recordMap.put(this.schema.getKeyColumn(), entry.getKey());
-                    recordMap.put(TIMESTAMP_COLUMN_NAME, record.getTimestamp());
-                    recordMap.put(DELETED_FLAG_COLUMN_NAME, record.isDeleted());
-                    writer.write(recordMap);
-                }
-            }
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to save " + this.tableName, e);
+
+        try {
+            SwWriter.writeWithBuilder(
+                    new SwParquetWriterBuilder(this.storageAccessService, columnSchema,
+                        this.schema.toJsonString(), metadata,
+                        this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()), this.parquetConfig),
+                    this.recordMap.entrySet().stream()
+                        .map(entry -> {
+                            var list = new ArrayList<Map<String, Object>>();
+                            for (var record : entry.getValue()) {
+                                var recordMap = new HashMap<String, Object>();
+                                if (record.getValues() != null) {
+                                    recordMap.putAll(record.getValues());
+                                }
+                                recordMap.put(this.schema.getKeyColumn(), entry.getKey());
+                                recordMap.put(TIMESTAMP_COLUMN_NAME, record.getTimestamp());
+                                recordMap.put(DELETED_FLAG_COLUMN_NAME, record.isDeleted());
+                                list.add(recordMap);
+                            }
+                            return list;
+                        }).flatMap(Collection::stream).iterator());
+        } catch (Throwable e) {
+            log.error("fail to save table:{}, error:{}", this.tableName, e.getMessage(), e);
+            throw e;
         }
         this.firstWalLogId = -1;
     }

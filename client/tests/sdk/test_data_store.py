@@ -11,9 +11,14 @@ import pyarrow as pa  # type: ignore
 import requests
 from requests_mock import Mocker
 
+from starwhale import Text
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
-from starwhale.api._impl.data_store import TableEmptyException, TableWriterException
+from starwhale.api._impl.data_store import (
+    SwType,
+    TableEmptyException,
+    TableWriterException,
+)
 
 from .test_base import BaseTestCase
 
@@ -1069,6 +1074,56 @@ class TestMemoryTable(BaseTestCase):
             ],
             list(table.scan({"k": "k", "a": "x"})),
             "some columns",
+        )
+
+    def test_write_with_object(self) -> None:
+        table = data_store.MemoryTable(
+            "test",
+            data_store.TableSchema(
+                "k", [data_store.ColumnSchema("k", data_store.INT64)]
+            ),
+        )
+        table.insert({"k": 0, "data/text": Text("my_text")})
+        self.assertEqual(
+            [{"k": 0, "data/text": Text("my_text"), "*": 0}],
+            list(table.scan()),
+            "get",
+        )
+
+        column_schemas = []
+        for col in table.get_schema().columns.values():
+            d = SwType.encode_schema(col.type)
+            d["name"] = col.name
+            column_schemas.append(d)
+
+        # TODO wait to resolve UNKNOWN type
+        self.assertEqual(
+            column_schemas,
+            [
+                {"type": "INT64", "name": "k"},
+                {
+                    "type": "OBJECT",
+                    "attributes": [
+                        {"type": "STRING", "name": "_content"},
+                        {"type": "BYTES", "name": "fp"},
+                        {"type": "BYTES", "name": "_BaseArtifact__cache_bytes"},
+                        {"type": "STRING", "name": "_type"},
+                        {"type": "STRING", "name": "display_name"},
+                        {"type": "STRING", "name": "_mime_type"},
+                        {
+                            "type": "TUPLE",
+                            "elementType": {"type": "UNKNOWN"},
+                            "name": "shape",
+                        },
+                        {"type": "STRING", "name": "_dtype_name"},
+                        {"type": "STRING", "name": "encoding"},
+                        {"type": "UNKNOWN", "name": "link"},
+                        {"type": "UNKNOWN", "name": "owner"},
+                    ],
+                    "pythonType": "starwhale.core.dataset.type.Text",
+                    "name": "data/text",
+                },
+            ],
         )
 
 

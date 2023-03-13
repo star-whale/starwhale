@@ -476,7 +476,92 @@ public class MemoryTableImplTest {
         }
 
         @Test
-        public void testUpdateFromWal() {
+        public void testUpdatePythonObject() throws IOException {
+            var schema = new TableSchemaDesc("id", List.of(
+                    ColumnSchemaDesc.builder().name("id").type("INT64").build(),
+                    ColumnSchemaDesc.builder()
+                            .name("data/img")
+                            .type("OBJECT")
+                            .pythonType("starwhale.core.dataset.type.GrayscaleImage")
+                            .attributes(List.of(
+                                ColumnSchemaDesc.builder()
+                                    .name("link")
+                                    .type("OBJECT")
+                                    .pythonType("starwhale.core.dataset.type.Link")
+                                    .attributes(List.of(
+                                        ColumnSchemaDesc.builder().name("uri").type("STRING").build(),
+                                        ColumnSchemaDesc.builder()
+                                            .name("extra_info")
+                                            .type("MAP")
+                                            .keyType(ColumnSchemaDesc.builder().type("STRING").build())
+                                            .valueType(ColumnSchemaDesc.builder().type("INT64").build())
+                                            .build(),
+                                        ColumnSchemaDesc.builder().name("owner").type("UNKNOWN").build()
+                                    ))
+                                    .build(),
+                                ColumnSchemaDesc.builder().name("_BaseArtifact__cache_bytes").type("BYTES").build(),
+                                ColumnSchemaDesc.builder().name("owner").type("UNKNOWN").build()
+                            ))
+                            .build()));
+            var base64 = "TVE9PQ==";
+
+            this.memoryTable.update(schema, List.of(
+                new HashMap<>() {
+                    {
+                        put("id", "0000000000000000");
+                        put("data/img", new HashMap<String, Object>() {
+                            {
+                                put("link", new HashMap<String, Object>() {
+                                    {
+                                        put("extra_info", Map.of(
+                                                "bin_offset", "0000000000000000",
+                                                "bin_size", "00000000000003e0")
+                                        );
+                                        put("uri", "11111111111111111");
+                                        put("owner", null);
+                                    }
+                                });
+                                put("_BaseArtifact__cache_bytes", base64);
+                                put("owner", null);
+                            }
+                        });
+                    }
+                }
+            ));
+            // TODO waiting to resolve
+            assertThrows(UnsupportedOperationException.class, () -> this.memoryTable.save());
+
+            var it = this.memoryTable.scan(
+                    Long.MAX_VALUE, Map.of("data/img", "data/img"), null, false, null, false, false);
+            var results = new ArrayList<RecordResult>();
+            while (it.hasNext()) {
+                results.add(it.next());
+            }
+
+            var colMapping = this.memoryTable.getSchema().getColumnTypeMapping();
+            assertThat("results", results.size(), is(1));
+
+            var img = colMapping.get("data/img").encode(results.get(0).getValues().get("data/img"), false);
+            assertThat("results", img, is(new HashMap<String, Object>() {
+                {
+                    put("link", new HashMap<String, Object>() {
+                        {
+                            put("extra_info", Map.of(
+                                    "bin_offset", "0000000000000000",
+                                    "bin_size", "00000000000003e0")
+                            );
+                            put("uri", "11111111111111111");
+                            put("owner", null);
+                        }
+                    });
+                    put("_BaseArtifact__cache_bytes", base64);
+                    put("owner", null);
+                }
+            }));
+        }
+
+        @Test
+        public void testUpdateFromWal() throws IOException {
             this.memoryTable.update(
                     new TableSchemaDesc("key", List.of(
                             ColumnSchemaDesc.builder().name("key").type("STRING").build(),

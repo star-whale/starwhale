@@ -22,6 +22,7 @@ import ai.starwhale.mlops.datastore.ColumnTypeObject;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +47,8 @@ public class SwReadSupport extends ReadSupport<Map<String, Object>> {
 
     public static final String META_DATA_KEY = "sw_meta";
 
+    public static final String ERROR_FLAG_KEY = "error";
+
     @Override
     public ReadContext init(InitContext context) {
         return new ReadContext(context.getFileSchema());
@@ -56,6 +59,11 @@ public class SwReadSupport extends ReadSupport<Map<String, Object>> {
             Map<String, String> metadata,
             MessageType messageType,
             ReadContext readContext) {
+        var errorFlag = metadata.get(ERROR_FLAG_KEY);
+        if (Boolean.parseBoolean(errorFlag)) {
+            throw new SwValidationException(
+                    SwValidationException.ValidSubject.DATASTORE, "the file is invalid, ignore it!");
+        }
         var schemaStr = metadata.get(SCHEMA_KEY);
         if (schemaStr == null) {
             throw new SwProcessException(ErrorType.DATASTORE, "no table schema found");

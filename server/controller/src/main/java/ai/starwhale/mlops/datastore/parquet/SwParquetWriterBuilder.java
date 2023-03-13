@@ -21,6 +21,7 @@ import ai.starwhale.mlops.datastore.ParquetConfig;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -32,6 +33,7 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
     private final Map<String, ColumnType> schema;
     private final String tableSchema;
     private final String metadata;
+    private final Map<String, String> extraMeta = new HashMap<>();
 
     public SwParquetWriterBuilder(
             StorageAccessService storageAccessService,
@@ -44,6 +46,7 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
         this.schema = schema;
         this.tableSchema = tableSchema;
         this.metadata = metadata;
+
         switch (config.getCompressionCodec()) {
             case SNAPPY:
                 this.withCompressionCodec(CompressionCodecName.SNAPPY);
@@ -77,8 +80,12 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
         return this;
     }
 
+    public void success() {
+        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(false));
+    }
+
     @Override
     protected WriteSupport<Map<String, Object>> getWriteSupport(Configuration configuration) {
-        return new SwWriteSupport(this.schema, this.tableSchema, this.metadata);
+        return new SwWriteSupport(this.schema, this.extraMeta, this.tableSchema, this.metadata);
     }
 }
