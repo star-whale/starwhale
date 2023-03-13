@@ -92,7 +92,7 @@ const unauthedRoutes = getUnauthedRoutes(defaultRoutes[0])
 const Routes = () => {
     const [, theme] = themedUseStyletron()
     const styles = useStyles({ theme })
-    const { token } = useAuth()
+    const { token, standaloneMode } = useAuth()
 
     if (!token) {
         return (
@@ -115,7 +115,7 @@ const Routes = () => {
                 <div className={styles.root}>
                     <Route>
                         <ApiHeader />
-                        <Header />
+                        {standaloneMode ? null : <Header />}
                         <Switch>
                             {/* setting */}
                             <Route exact path='/settings/:path?'>

@@ -194,11 +194,17 @@ def _cancel(job: str, force: bool) -> None:
     default=DEFAULT_REPORT_COLS,
     help="Max table column size for print",
 )
+@click.option("--web", is_flag=True, help="Open job info page in browser")
 @click.pass_obj
 def _info(
-    view: t.Type[JobTermView], job: str, page: int, size: int, max_report_cols: int
+    view: t.Type[JobTermView],
+    job: str,
+    page: int,
+    size: int,
+    max_report_cols: int,
+    web: bool,
 ) -> None:
-    view(job).info(page, size, max_report_cols)
+    view(job).info(page, size, max_report_cols, web)
 
 
 @eval_job_cmd.command("compare", aliases=["cmp"])

@@ -119,13 +119,32 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
+        web: bool = False,
     ) -> None:
         _rt = self.job.info(page, size)
         if not _rt:
             console.print(":tea: not found info")
             return
 
-        if _rt.get("manifest"):
+        manifest = _rt.get("manifest")
+        if web:
+            if not manifest or not manifest.get("version"):
+                console.print(":tea: not found eval id")
+                sys.exit(1)
+            ver = manifest.get("version")
+            # TODO support changing host and port
+            host = "127.0.0.1"
+            port = 8000
+            url = f"http://{host}:{port}/projects/{self.uri.project}/evaluations/{ver}/results?token=local"
+            console.print(f":tea: open {url} in browser")
+            import uvicorn
+
+            from starwhale.web.server import Server
+
+            uvicorn.run(Server.default(), host=host, port=port, log_level="error")
+            return
+
+        if manifest:
             console.rule(
                 f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}"
             )
@@ -369,7 +388,7 @@ class JobTermViewRich(JobTermView):
             _model = "--"
             if "model" in _m:
                 _model = _s(_m["model"])
-            else:
+            elif "modelName" in _m:
                 _model = f"{_m['modelName']}:{_s(_m['modelVersion'])}"
 
             _name = "--"
@@ -420,6 +439,7 @@ class JobTermViewJson(JobTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         max_report_cols: int = DEFAULT_REPORT_COLS,
+        web: bool = False,
     ) -> None:
         _rt = self.job.info(page, size)
         if not _rt:

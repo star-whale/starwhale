@@ -657,7 +657,7 @@ class TableSchema:
 
 
 def _get_table_path(root_path: str, table_name: str) -> str:
-    return str(pathlib.Path(root_path) / table_name)
+    return str(pathlib.Path(root_path) / table_name.lstrip("/"))
 
 
 def _parse_parquet_name(name: str) -> Tuple[str, int]:

@@ -3,6 +3,7 @@ import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { BaseNavTabs } from '../components/BaseNavTabs'
 import BaseLayout from './BaseLayout'
 import ProjectSidebar from './Project/ProjectSidebar'
+import { useAuth } from '@/api/Auth'
 
 export interface IBaseSubLayoutProps {
     header?: React.ReactNode
@@ -21,8 +22,13 @@ export default function BaseSubLayout({
     children,
     sidebar,
 }: IBaseSubLayoutProps) {
+    const { standaloneMode } = useAuth()
     return (
-        <BaseLayout extra={extra} breadcrumbItems={breadcrumbItems} sidebar={sidebar ?? ProjectSidebar}>
+        <BaseLayout
+            extra={extra}
+            breadcrumbItems={breadcrumbItems}
+            sidebar={sidebar ?? standaloneMode ? undefined : ProjectSidebar}
+        >
             {header}
             {navItems ? (
                 <>
