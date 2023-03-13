@@ -20,15 +20,15 @@ const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
 
-function SelectorItemByTree({ value, onChange, search, inputRef, info }: SelectorItemPropsT) {
+function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
     return (
         <Tree
-            data={info}
+            data={info.data}
             selectedIds={value as any}
             onSelectedIdsChange={onChange as any}
             search={search}
             searchable={false}
-            multiple
+            multiple={$multiple}
             keyboardControlNode={inputRef as any}
         />
     )
@@ -251,12 +251,33 @@ export default (props: DynamicSelectorPropsT<any>) => {
     const options = [
         {
             id: 'tree',
-            info: treeData,
-            getData: findTreeNode,
+            info: {
+                data: treeData,
+            },
+            multiple: false,
+            getData: (info: any, id: string) => findTreeNode(info.data, id),
             getDataToLabel: (data: any) => data?.label,
             getDataToValue: (data: any) => data?.id,
             render: SelectorItemByTree as React.FC<any>,
         },
     ]
-    return <DynamicSelector {...props} options={options} />
+    const options2 = [
+        {
+            id: 'tree',
+            info: {
+                data: treeData,
+            },
+            multiple: true,
+            getData: (info: any, id: string) => findTreeNode(info.data, id),
+            getDataToLabel: (data: any) => data?.label,
+            getDataToValue: (data: any) => data?.id,
+            render: SelectorItemByTree as React.FC<any>,
+        },
+    ]
+    return (
+        <>
+            <DynamicSelector {...props} options={options} />
+            <DynamicSelector options={options2} />
+        </>
+    )
 }

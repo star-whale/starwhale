@@ -62,9 +62,10 @@ export function SelectorItemRender(
             $isEditing: isEditing && isFocus,
             $isFocus: isFocus,
             $isGrid: true,
+            $multiple: itemOption.multiple,
             search,
         }),
-        [isEditing, isFocus, search]
+        [isEditing, isFocus, search, itemOption.multiple]
     )
 
     const handleChange = (ids: any) => {

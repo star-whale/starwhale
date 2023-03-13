@@ -90,9 +90,9 @@ export const SelectItemContainer = themedStyled('div', ({ $isGrid }) => {
 })
 SelectItemContainer.displayName = 'SelectItemContainer'
 
-export const LabelsContainer = themedStyled('div', () => ({
+export const LabelsContainer = themedStyled('div', ({ $multiple }) => ({
     display: 'Grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
+    gridTemplateColumns: !$multiple ? '1fr' : 'repeat(2, 1fr)',
     gap: '1px',
 }))
 LabelsContainer.displayName = 'LabelsContainer'
