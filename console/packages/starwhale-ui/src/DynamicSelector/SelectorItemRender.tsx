@@ -6,10 +6,11 @@ import {
     defaultLabelRemoveIcon,
     LabelContainer,
     LabelRemove,
+    LabelsContainer,
     SelectItemContainer,
 } from './StyledComponent'
 import { SelectorItemRenderPropsT } from './types'
-import { useWhatChanged } from '@simbathesailor/use-what-changed'
+import SelectorPopover from './SelectorPopover'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
@@ -31,13 +32,13 @@ export function SelectorItemRender(
         isEditing = false,
         style = {},
         addItemRef,
+        data,
         ...rest
     }: SelectorItemRenderPropsT,
     itemRef: RefObject<any>
 ) {
     const [selectedIds, setSelectedIds] = React.useState<string[]>([])
     const [search, setSearch] = useState<any>()
-    const [editing, setEditing] = useState(false)
     const [removing, setRemoving] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -56,9 +57,29 @@ export function SelectorItemRender(
         }
     }
 
+    const sharedProps = React.useMemo(
+        () => ({
+            $isEditing: isEditing && isFocus,
+            $isFocus: isFocus,
+            $isGrid: true,
+            search,
+        }),
+        [isEditing, isFocus, search]
+    )
+
+    const handleChange = (ids: any) => {
+        setSelectedIds(ids)
+        onChange?.(ids)
+    }
+
+    const handleRemove = (id: any) => {
+        const newIds = selectedIds.filter((item) => item !== id)
+        setSelectedIds(newIds)
+        onChange?.(newIds as any)
+    }
+
     const handleReset = () => {
         setRemoving(false)
-        setEditing(false)
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -69,33 +90,17 @@ export function SelectorItemRender(
                 break
             case 9: // tab
             case 13: // enter
-                // if (valueExists && op && property) {
-                //     const newValues = {
-                //         value,
-                //         op,
-                //         property,
-                //     }
-                //     setValues(newValues)
-                //     onChange?.(newValues)
-                //     setEditing(false)
-                // }
                 break
             case 8: // backspace
                 event.stopPropagation()
                 if (removing && !valueExists) {
-                    // first remove op
-                    // if (op) {
-                    //     setOp(undefined)
-                    //     return
-                    // }
-                    // second remove property
-                    // if (property) setProperty(undefined)
                     setRemoving(false)
-                    // remove prev item when there is no label value to delete
-                    // if (!op && !property && !valueExists) onChange?.(undefined)
                 }
                 if (!valueExists) {
                     setRemoving(true)
+                }
+                if (removing) {
+                    handleRemove(selectedIds[selectedIds.length - 1])
                 }
                 break
             default:
@@ -103,50 +108,32 @@ export function SelectorItemRender(
         }
     }
 
-    // const handleFocus = () => {
-    //     rest.onClick?.()
-    //     setEditing(true)
-    //     inputRef.current?.focus()
-    // }
-
-    const fieldDropdownRef = useRef(null)
-    const opDropdownRef = useRef(null)
-
-    // reset to raw status
-    useClickAway(ref, (e) => {
-        if (containsNode(fieldDropdownRef.current, e.target)) return
-        if (containsNode(opDropdownRef.current, e.target)) return
-        if (containsNode(document.querySelector('.popover'), e.target)) return
-
-        handleReset()
-    })
-
-    // // keep focus when editing
-    // useEffect(() => {
-    //     if (editing && search) {
-    //         setEditing(true)
-    //         inputRef.current?.focus()
-    //     }
-    // }, [editing, search])
-
-    // // keep focus by parent component
-    useEffect(() => {
-        if (isFocus && isEditing) {
-            setEditing(true)
-            inputRef.current?.focus()
-        }
-    }, [isFocus, isEditing])
-
-    const sharedProps = React.useMemo(
-        () => ({
-            $isEditing: isEditing,
-            $isFocus: isFocus,
-            search,
-        }),
-        [isEditing, isFocus, search]
+    const getLabel = React.useCallback(
+        (label: string, id: number | string) => {
+            return (
+                <LabelContainer key={id} title={label} className='label'>
+                    {label}
+                    <LabelRemove className='label-remove' role='button' onClick={() => handleRemove(id)} tabIndex={0}>
+                        {defaultLabelRemoveIcon()}
+                    </LabelRemove>
+                </LabelContainer>
+            )
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [selectedIds, onChange]
     )
 
-    console.log('selector render', selectedIds, itemRef, sharedProps, value)
+    const $selectedLabels = React.useMemo(() => {
+        return selectedIds.map((id) => {
+            const itemData = itemOption.getData(itemOption.info, id)
+            const label = itemOption.getDataToLabel(itemData)
+            return getLabel(label, id)
+        })
+    }, [selectedIds, itemOption, getLabel])
+
+    // const $valueLabels = React.useMemo(() => {
+    //     if (isEditing && !isValueExist(value)) return
+    // }, [selectedIds, itemOption, getLabel])
 
     React.useImperativeHandle(itemRef, () => ({
         focus: () => {
@@ -160,7 +147,18 @@ export function SelectorItemRender(
         })
     }, [addItemRef])
 
-    useWhatChanged([itemOption, selectedIds])
+    // reset to raw status
+    useClickAway(ref, (e) => {
+        if (containsNode(document.querySelector('.popover'), e.target)) return
+        handleReset()
+    })
+
+    // keep focus by parent component
+    React.useEffect(() => {
+        if (isFocus && isEditing) {
+            inputRef.current?.focus()
+        }
+    }, [isFocus, isEditing])
 
     return (
         <SelectItemContainer
@@ -169,28 +167,43 @@ export function SelectorItemRender(
             tabIndex={0}
             // @ts-ignore
             onKeyDown={handleKeyDown}
-            // onClick={handleFocus}
             style={style}
+            {...sharedProps}
         >
-            <itemOption.render {...sharedProps} value={selectedIds} onChange={setSelectedIds} inputRef={inputRef} />
-            {!isEditing && isValueExist(value) && (
+            <LabelsContainer {...sharedProps}>{$selectedLabels}</LabelsContainer>
+            <SelectorPopover
+                isOpen={sharedProps.$isEditing}
+                rows={Math.ceil($selectedLabels.length / 2)}
+                content={
+                    <itemOption.render
+                        {...sharedProps}
+                        value={selectedIds}
+                        onChange={handleChange}
+                        inputRef={inputRef}
+                        info={itemOption.info}
+                    />
+                }
+            />
+            {/* {!isEditing && isValueExist(value) && (
                 <LabelContainer title={value.value} className='label'>
                     {value}
                     <LabelRemove className='label-remove' role='button' onClick={onRemove} tabIndex={0}>
                         {defaultLabelRemoveIcon()}
                     </LabelRemove>
                 </LabelContainer>
+            )} */}
+            {isEditing && (
+                <AutosizeInputContainer className='autosize-input' {...sharedProps}>
+                    {/* @ts-ignore */}
+                    <AutosizeInput
+                        inputRef={inputRef as any}
+                        value={search}
+                        onChange={handleInputChange}
+                        // overrides={{ Input: FilterValue as any }}
+                        $style={{ width: '100%', height: '100%' }}
+                    />
+                </AutosizeInputContainer>
             )}
-            <AutosizeInputContainer className='autosize-input' {...sharedProps}>
-                {/* @ts-ignore */}
-                <AutosizeInput
-                    inputRef={inputRef as any}
-                    value={search}
-                    onChange={handleInputChange}
-                    // overrides={{ Input: FilterValue as any }}
-                    $style={{ width: '100%', height: '100%' }}
-                />
-            </AutosizeInputContainer>
         </SelectItemContainer>
     )
 }

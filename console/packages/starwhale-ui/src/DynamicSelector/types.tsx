@@ -4,6 +4,7 @@ export interface DynamicSelectorPropsT<T> {
     startEnhancer?: () => React.ReactNode
     placeholder?: React.ReactNode
     options?: SelectorItemOptionT<T>[]
+    data?: T
 }
 
 export type SelectorItemValueT = {
@@ -14,7 +15,10 @@ export type SelectorItemValueT = {
 export type SelectorItemOptionT<T = any> = {
     id?: string | number
     label: ((item: SelectorItemOptionT) => React.ReactNode) | string
-    component: (item: SelectorItemOptionT) => React.FC<any>
+    getComponent: (item: SelectorItemOptionT) => React.FC<any>
+    getData: (data: T, id: string | number) => any
+    getDataToLabel: (data: T) => string
+    getDataToValue: (data: T) => string | number
     info?: T
     [key: string]: any
 }
@@ -24,8 +28,11 @@ export type SelectorSharedPropsT = {
 }
 
 export type SelectorItemRenderPropsT = {
+    isEditing?: boolean
+    isFocus?: boolean
     value?: SelectorItemValueT
     onChange?: (args: SelectorItemValueT) => void
+    onRemove?: () => void
     options?: SelectorItemOptionT[]
 }
 
@@ -34,4 +41,5 @@ export type SelectorItemPropsT = {
     onChange?: (args: SelectorItemValueT) => void
     search?: string
     inputRef?: React.RefObject<HTMLInputElement>
+    data?: any
 } & SelectorSharedPropsT

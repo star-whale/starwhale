@@ -244,3 +244,20 @@ export const defaultGetId = (node: TreeNodeData): TreeNodeId => {
   }
   return node.id;
 };
+
+export const findTreeNode = (data: any, id: string):TreeNodeData | null => {
+    if (!data) return null
+    let result = null
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i]
+        if (item.id === id) {
+            result = item
+            break
+        }
+        if (item.children && item.children.length > 0) {
+            result = findTreeNode(item.children, id)
+            if (result) break
+        }
+    }
+    return result
+}

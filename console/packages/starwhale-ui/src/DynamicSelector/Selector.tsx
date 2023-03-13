@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { useClickAway } from 'react-use'
 import _ from 'lodash'
 import SelectorItemRender from './SelectorItemRender'
@@ -8,44 +8,35 @@ import {
     defaultStartEnhancer,
     Placeholder,
     SelectorContainer,
-    SelectorItemContainer,
+    SelectorItemsContainer,
     StartEnhancer,
 } from './StyledComponent'
-import SelectorPopover from './SelectorPopover'
 import Tree from '../Tree/Tree'
 import { KEY_STRINGS } from 'baseui/menu'
+import { findTreeNode } from '../base/tree-view/utils'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
-const isValueExist = (value: any) => {
-    if (value === 0) return true
-    return !!value
-}
-function SelectorItemByTree({ $isEditing, value, onChange, search, inputRef }: SelectorItemPropsT) {
-    console.log('render', value)
 
+function SelectorItemByTree({ value, onChange, search, inputRef, info }: SelectorItemPropsT) {
     return (
-        <SelectorPopover
-            isOpen={$isEditing}
-            content={
-                <Tree
-                    selectedIds={value}
-                    onSelectedIdsChange={onChange}
-                    search={search}
-                    searchable={false}
-                    multiple
-                    keyboardControlNode={inputRef as any}
-                />
-            }
+        <Tree
+            data={info}
+            selectedIds={value as any}
+            onSelectedIdsChange={onChange as any}
+            search={search}
+            searchable={false}
+            multiple
+            keyboardControlNode={inputRef as any}
         />
     )
 }
 
 export function DynamicSelector<T = any>({
     onChange,
-    startEnhancer = defaultStartEnhancer,
+    startEnhancer,
     placeholder = 'Select Item',
     options = [],
     ...rest
@@ -53,7 +44,7 @@ export function DynamicSelector<T = any>({
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [values, setValues] = useState<SelectorItemValueT[]>(rest.value ?? [])
-    const [editingIndex, setEditingIndex] = useState<number>(-1)
+    const [editingIndex, setEditingIndex] = useState<number>(0)
     const itemRefs = useRef<{
         [key: string]: {
             inputRef: { current: null | HTMLInputElement }
@@ -97,7 +88,7 @@ export function DynamicSelector<T = any>({
         focusItem(values.length)
     }
 
-    const handleAddItemRef = (index: number, itemRef: any) => {
+    const handleAddItemRef = (itemRef: any, index: number) => {
         if (!itemRef) return
         itemRefs.current[index] = itemRef
     }
@@ -113,57 +104,59 @@ export function DynamicSelector<T = any>({
         }
     }
 
+    const handleChange = (newValue: any, index: number) => {
+        let newValues = []
+        if (!newValue) {
+            newValues = values.filter((key, i) => i !== index)
+        } else {
+            newValues = values.map((tmp, i) => (i === index ? newValue : tmp))
+        }
+        setValues(newValues)
+        onChange?.(newValues)
+        setEditingIndex(newValues.length)
+    }
+
+    const getSharedProps = React.useCallback(
+        (i: number) => {
+            return {
+                isEditing,
+                options,
+                containerRef: ref,
+                onRemove: () => handelRemove(i),
+                onKeyDown: (e: KeyboardEvent) => handleKeyDown(e),
+                onClick: () => handleClick(i),
+                addItemRef: (itemRef: any) => handleAddItemRef(itemRef, i),
+                onChange: (newValue: any) => handleChange(newValue, i),
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [isEditing, options, ref]
+    )
+
     const count = React.useRef(100)
     const $values = React.useMemo(() => {
         count.current += 1
-        const tmps =
-            values?.map((value, index) => {
-                return (
-                    <SelectorItemRender
-                        key={index}
-                        value={value}
-                        options={options}
-                        isEditing={isEditing}
-                        isFocus={editingIndex === index}
-                        onRemove={() => handelRemove(index)}
-                        onClick={() => handleClick(index)}
-                        addItemRef={(ref: any) => handleAddItemRef(index, ref)}
-                        onKeyDown={handleKeyDown}
-                        // @ts-ignore
-                        containerRef={ref}
-                        onChange={(newValue: any) => {
-                            let newValues = []
-                            if (!newValue) {
-                                newValues = values.filter((key, i) => i !== index)
-                            } else {
-                                newValues = values.map((tmp, i) => (i === index ? newValue : tmp))
-                            }
-                            newValues = newValues.filter(
-                                (tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value)
-                            )
-                            setValues(newValues)
-                            onChange?.(newValues)
-                            setEditingIndex(-1)
-                        }}
-                    />
-                )
-            }) ?? []
+        const tmps = []
+        // values?.map((value, index) => {
+        //     return (
+        //         <SelectorItemRender
+        //             key={index}
+        //             value={value}
+        //             isFocus={editingIndex === index}
+        //             {...getSharedProps(index)}
+        //         />
+        //     )
+        // }) ?? []
 
         const lastIndex = values.length
         tmps.push(
             <SelectorItemRender
                 // key={count.current}
-                key={lastIndex}
-                options={options}
+                key={0}
                 value={{}}
-                isEditing={isEditing}
-                isFocus={editingIndex === lastIndex}
-                style={{ flex: 1 }}
-                onClick={() => () => handleClick(lastIndex)}
-                addItemRef={(ref: any) => handleAddItemRef(lastIndex, ref)}
-                onKeyDown={handleKeyDown}
-                // @ts-ignore
-                containerRef={ref}
+                // isFocus={editingIndex === lastIndex}
+                isFocus
+                {...getSharedProps(lastIndex)}
                 onChange={(newValue: any) => {
                     const newValues = [...values]
                     // remove prev item
@@ -180,28 +173,86 @@ export function DynamicSelector<T = any>({
         )
 
         return tmps
-    }, [values, isEditing, options, onChange, editingIndex, itemRefs])
+    }, [values, onChange, getSharedProps])
 
     const shareProps = {
         $isEditing: isEditing,
+        $isGrid: true,
     }
 
     return (
-        <SelectorContainer role='button' tabIndex={0} ref={ref} onKeyDown={handleKeyDown} onClick={handleEdit}>
-            <StartEnhancer {...shareProps}>
-                {typeof startEnhancer === 'function' ? startEnhancer() : startEnhancer}
-            </StartEnhancer>
-            <Placeholder>{!isEditing && values.length === 0 && defalutPlaceholder(placeholder)}</Placeholder>
-            <SelectorItemContainer>{$values}</SelectorItemContainer>
+        <SelectorContainer
+            {...shareProps}
+            role='button'
+            tabIndex={0}
+            ref={ref}
+            onKeyDown={handleKeyDown as any}
+            onClick={handleEdit}
+        >
+            {startEnhancer && (
+                <StartEnhancer {...shareProps}>
+                    {typeof startEnhancer === 'function' ? startEnhancer() : startEnhancer}
+                </StartEnhancer>
+            )}
+            <Placeholder {...shareProps}>
+                {!isEditing && values.length === 0 && defalutPlaceholder(placeholder)}
+            </Placeholder>
+            <SelectorItemsContainer {...shareProps}>{$values}</SelectorItemsContainer>
         </SelectorContainer>
     )
 }
 
+const treeData = [
+    {
+        id: '1',
+        label: 'Fruit',
+        isExpanded: true,
+        info: { label: 'Fruit' },
+        children: [
+            {
+                id: '2',
+                label: 'Apple',
+                isExpanded: true,
+                children: [],
+            },
+
+            {
+                id: '3',
+                label: 'Test',
+                isExpanded: true,
+                children: [],
+            },
+
+            {
+                id: '4',
+                label: 'Test2',
+                isExpanded: true,
+                children: [],
+            },
+
+            {
+                id: '5',
+                label: 'Test2',
+                isExpanded: true,
+                children: [],
+            },
+
+            {
+                id: '6',
+                label: 'Test2',
+                isExpanded: true,
+                children: [],
+            },
+        ],
+    },
+]
+
 export default (props: DynamicSelectorPropsT<any>) => {
     const options = [
         {
-            id: '',
-            data: {},
+            id: 'tree',
+            info: treeData,
+            getData: findTreeNode,
             getDataToLabel: (data: any) => data?.label,
             getDataToValue: (data: any) => data?.id,
             render: SelectorItemByTree as React.FC<any>,

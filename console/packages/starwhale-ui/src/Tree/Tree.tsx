@@ -4,30 +4,6 @@ import { TreeContainer, TreeSearch } from './StyledComponent'
 import { TreeNodeDataT, TreePropsT } from './types'
 import TreeNode from './TreeNode'
 
-const treeData = [
-    {
-        id: '1',
-        label: 'Fruit',
-        isExpanded: true,
-        info: { label: 'Fruit' },
-        children: [
-            {
-                id: '2',
-                label: 'Apple',
-                isExpanded: true,
-                children: [],
-            },
-
-            {
-                id: '3',
-                label: 'Test',
-                isExpanded: true,
-                children: [],
-            },
-        ],
-    },
-]
-
 type TreeDataLoaderT = {
     search: string
     searchFilter: (search: string, node: TreeNodeData) => boolean
@@ -37,7 +13,7 @@ type TreeDataLoaderT = {
 function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender }: TreeDataLoaderT) {
     const walk = (treeNodes: TreeNodeData[], path: any[] = []): TreeNodeDataT[] => {
         return treeNodes
-            .map((node: TreeNodeData, index: number): TreeNodeDataT => {
+            ?.map((node: TreeNodeData, index: number): TreeNodeDataT => {
                 const pathTmp = [...path, index]
 
                 return {
@@ -67,58 +43,66 @@ function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender }: Tr
 }
 
 function useTreeDataSelection({
+    selectedIds: prevSelectedIds,
     onSelectedIdsChange,
     multiple = true,
 }: {
+    selectedIds: any[]
     onSelectedIdsChange: (ids: any[]) => any[]
     multiple?: boolean
 }) {
-    const onToggle = (node: TreeNodeDataT) => {
-        onSelectedIdsChange((prevSelectedIds: any[]) => {
-            console.log('onSelectedIdsChange', node, prevSelectedIds)
-            let ids = [node.id]
+    return {
+        onToggle: React.useCallback(
+            (toggleNode: TreeNodeDataT) => {
+                if (!toggleNode) return prevSelectedIds
 
-            if (node.isLeafNode) {
-                const childrenCount = node?.children?.length || 0
-                const childrenSelectedCount =
-                    node?.children?.filter((child) => prevSelectedIds.includes(child.id)).length || 0
-                const isSelected = childrenSelectedCount > 0 && childrenCount === childrenSelectedCount
-                const isSelectedIndeterminate = childrenSelectedCount > 0 && childrenSelectedCount < childrenCount
-                ids = node.children?.map((child: TreeNodeDataT) => child?.id) ?? []
-                if (isSelectedIndeterminate) {
-                    return [...prevSelectedIds, ...ids]
+                const $onToggle = (node: TreeNodeDataT) => {
+                    let ids = [node.id]
+
+                    if (node.isLeafNode) {
+                        const childrenCount = node?.children?.length || 0
+                        const childrenSelectedCount =
+                            node?.children?.filter((child) => prevSelectedIds.includes(child.id)).length || 0
+                        const isSelected = childrenSelectedCount > 0 && childrenCount === childrenSelectedCount
+                        const isSelectedIndeterminate =
+                            childrenSelectedCount > 0 && childrenSelectedCount < childrenCount
+                        ids = node.children?.map((child: TreeNodeDataT) => child?.id) ?? []
+                        // select all
+                        if (isSelectedIndeterminate) {
+                            return Array.from(new Set([...prevSelectedIds, ...ids]))
+                        }
+                        // disselect all
+                        if (isSelected) return prevSelectedIds.filter((id: any) => !ids.includes(id))
+
+                        return Array.from(new Set([...prevSelectedIds, ...ids]))
+                    }
+
+                    const index = prevSelectedIds.indexOf(node.id)
+                    if (index > -1) {
+                        prevSelectedIds.splice(index, 1)
+                        return [...prevSelectedIds]
+                    }
+
+                    if (!multiple) {
+                        return prevSelectedIds[0]
+                    }
+
+                    return [...prevSelectedIds, node.id]
                 }
-                return isSelected
-                    ? prevSelectedIds.filter((id: any) => !ids.includes(id))
-                    : [...prevSelectedIds, ...ids]
-            }
-
-            const index = prevSelectedIds.indexOf(node.id)
-            if (index > -1) {
-                prevSelectedIds.splice(index, 1)
-                console.log(1, prevSelectedIds)
-
-                return [...prevSelectedIds]
-            }
-            console.log(2)
-            if (!multiple) {
-                return prevSelectedIds[0]
-            }
-
-            console.log(3)
-
-            return [...prevSelectedIds, node.id]
-        })
+                const $newIds = $onToggle(toggleNode)
+                onSelectedIdsChange?.($newIds)
+                return $newIds
+            },
+            [onSelectedIdsChange, prevSelectedIds, multiple]
+        ),
     }
-
-    return { onToggle }
 }
 
 const searchFilter = (searchTmp: string, node: TreeNodeDataT) =>
     node.info?.label?.toLocaleLowerCase().includes(searchTmp.toLowerCase())
 
-function Tree({
-    data: rawData = [],
+export function Tree({
+    data: rawData,
     searchable = true,
     selectable = true,
     selectedIds = [],
@@ -129,12 +113,12 @@ function Tree({
     search: rawSearch,
     keyboardControlNode,
 }: TreePropsT) {
-    const [data, setData] = React.useState(treeData)
+    const [data, setData] = React.useState(rawData)
     const [search, setSearch] = React.useState('')
-    const { onToggle: $onSelectToggle } = useTreeDataSelection({ onSelectedIdsChange, multiple })
+    const { onToggle: $onSelectToggle } = useTreeDataSelection({ selectedIds, onSelectedIdsChange, multiple })
 
     useEffect(() => {
-        setSearch(rawSearch)
+        setSearch(rawSearch ?? '')
     }, [rawSearch])
 
     const nodeRender = React.useCallback(
@@ -174,11 +158,9 @@ function Tree({
         nodeRender,
     })
 
-    // useEffect(() => {
-    //     setData(rawData)
-    // }, [rawData])
-
-    console.log(selectedIds)
+    useEffect(() => {
+        setData(rawData)
+    }, [rawData])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearch?.(e.target.value)
     const onToggle = (node: any) => setData((prevData) => toggleIsExpanded(prevData, node) as any)
