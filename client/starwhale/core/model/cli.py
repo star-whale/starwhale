@@ -1,4 +1,5 @@
 import typing as t
+from pathlib import Path
 
 import click
 
@@ -25,12 +26,15 @@ def model_cmd(ctx: click.Context) -> None:
 @click.option(
     "-f",
     "--model-yaml",
-    default=DefaultYAMLName.MODEL,
-    help="mode yaml filename, default use ${workdir}/model.yaml file",
+    default=None,
+    help="mode yaml path, default use ${workdir}/model.yaml file",
 )
 @click.option("--runtime", default="", help="runtime uri")
 def _build(workdir: str, project: str, model_yaml: str, runtime: str) -> None:
-    ModelTermView.build(workdir, project, model_yaml, runtime)
+    yaml_path = model_yaml if model_yaml else Path(workdir) / DefaultYAMLName.MODEL
+    ModelTermView.build(
+        workdir=workdir, project=project, yaml_path=yaml_path, runtime_uri=runtime
+    )
 
 
 @model_cmd.command("tag", help="Model Tag Management, add or remove")

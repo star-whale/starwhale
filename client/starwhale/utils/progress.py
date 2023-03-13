@@ -4,6 +4,7 @@ import typing as t
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
 from starwhale.utils import console
+from starwhale.consts import ENV_DISABLE_PROGRESS_BAR
 
 
 def run_with_progress_bar(
@@ -11,7 +12,7 @@ def run_with_progress_bar(
     operations: t.Sequence[t.Tuple[t.Any, ...]],
     **kw: t.Any,
 ) -> None:
-    if os.environ.get("DISABLE_PROGRESS_BAR"):
+    if os.environ.get(ENV_DISABLE_PROGRESS_BAR) == "0":
         for op in operations:
             if len(op) == 4:
                 op[0](**op[3])

@@ -42,7 +42,7 @@ swcli model build [OPTIONS] WORKDIR
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
 |`--project`|`-p`|❌|String|`swcli project select`命令设定的project|Project URI|
-|`--model-yaml`|`-f`|❌|String|model.yaml|建议使用默认的model.yaml，无需修改。|
+|`--model-yaml`|`-f`|❌|String|${workdir}/model.yaml|model yaml文件的路径。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示模型包构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
 
 ## 3. 分发模型包

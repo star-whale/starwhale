@@ -1,4 +1,4 @@
-from starwhale.api import track
+from starwhale.api import model, track
 from starwhale.api.job import step, Context, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.base.uri import URI, URIType
@@ -41,6 +41,7 @@ dataset = Dataset.dataset
 
 __all__ = [
     "__version__",
+    "model",
     "PipelineHandler",
     "multi_classification",
     "Dataset",

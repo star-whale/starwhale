@@ -10,11 +10,16 @@ import platform
 from pathlib import Path
 from datetime import datetime
 from functools import cmp_to_key
+from contextlib import contextmanager
 
 import yaml
 from rich.console import Console
 
-from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
+from starwhale.consts import (
+    FMT_DATETIME,
+    SW_DEV_DUMMY_VERSION,
+    ENV_DISABLE_PROGRESS_BAR,
+)
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.error import NoSupportError
 
@@ -187,6 +192,17 @@ def get_current_shell() -> str:
     import shellingham
 
     return str(shellingham.detect_shell()[0])
+
+
+@contextmanager
+def disable_progress_bar() -> t.Generator[None, None, None]:
+    old_flag = os.environ.get(ENV_DISABLE_PROGRESS_BAR, "")
+
+    os.environ[ENV_DISABLE_PROGRESS_BAR] = "0"
+    try:
+        yield
+    finally:
+        os.environ[ENV_DISABLE_PROGRESS_BAR] = old_flag
 
 
 def make_dir_gitignore(d: Path) -> None:

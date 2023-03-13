@@ -171,7 +171,7 @@ class StandaloneModelTestCase(TestCase):
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list[self.name]) == 0
 
-        ModelTermView.build(self.workdir, "self")
+        ModelTermView.build(self.workdir, "self", Path(self.workdir) / "model.yaml")
 
     def test_get_file_desc(self):
         _file = Path("tmp/file.txt")
@@ -477,7 +477,7 @@ def test_build_with_custom_config_file(
 
     model_uri = URI(name, expected_type=URIType.MODEL)
     sm = StandaloneModel(model_uri)
-    sm.build(workdir=workdir, yaml_name=cfg)
+    sm.build(workdir=workdir, yaml_path=workdir / cfg)
 
     build_version = sm.uri.object.version
 

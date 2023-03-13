@@ -12,7 +12,7 @@ from starwhale.core.model.model import StandaloneModel
 
 def _get_cls(src_dir: Path) -> Any:
     mp = src_dir / DefaultYAMLName.MODEL
-    model_config = StandaloneModel.load_model_config(mp)
+    model_config = StandaloneModel.load_model_config(mp, src_dir)
     handler_path = model_config.run.handler
 
     _cls = import_object(src_dir, handler_path)

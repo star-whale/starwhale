@@ -41,6 +41,7 @@ from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
+    copy_file,
     file_stat,
     ensure_dir,
     ensure_file,
@@ -115,14 +116,6 @@ class ModelConfig(ASDictMixin):
         self.tag = tag or []
         self.version = version
         self.kw = kw
-
-        self._do_validate()
-
-    def _do_validate(self) -> None:
-        # TODO: use attr validator
-        # TODO: add more validation
-        # TODO: add name check
-        ...
 
     @classmethod
     def create_by_yaml(cls, path: Path) -> ModelConfig:
@@ -209,7 +202,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.typ = InstanceType.STANDALONE
         self.store = ModelStorage(uri)
         self.tag = StandaloneTag(uri)
-        self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest class
         self.models: t.List[t.Dict[str, t.Any]] = []
         self.sources: t.List[t.Dict[str, t.Any]] = []
         self.yaml_name = DefaultYAMLName.MODEL
@@ -312,7 +305,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         yaml_name: str = DefaultYAMLName.MODEL,
     ) -> str:
         _mp = workdir / yaml_name
-        _model_config = cls.load_model_config(_mp)
+        _model_config = cls.load_model_config(_mp, workdir)
         return cls._get_module(_model_config)
 
     @classmethod
@@ -339,7 +332,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             "task_num": task_num,
         }
         # load model config by yaml
-        _model_config = cls.load_model_config(workdir / model_yaml_name)
+        _model_config = cls.load_model_config(workdir / model_yaml_name, workdir)
 
         if not version:
             version = gen_uniq_version()
@@ -589,9 +582,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return rs, {}
 
     def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
-        yaml_name = kw.get("yaml_name", DefaultYAMLName.MODEL)
-        _mp = workdir / yaml_name
-        _model_config = self.load_model_config(_mp)
+        yaml_path = Path(kw.get("yaml_path", workdir / DefaultYAMLName.MODEL))
+        _model_config = self.load_model_config(yaml_path, workdir)
 
         logger.debug(f"build workdir:{workdir}")
 
@@ -602,7 +594,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._copy_src,
                 15,
                 "copy src",
-                dict(workdir=workdir, yaml_name=yaml_name),
+                dict(workdir=workdir, yaml_path=yaml_path),
             ),
             (
                 self._gen_steps,
@@ -663,7 +655,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         super()._render_manifest()
 
     @classmethod
-    def load_model_config(cls, yaml_path: Path) -> ModelConfig:
+    def load_model_config(cls, yaml_path: Path, workdir: Path) -> ModelConfig:
         cls._do_validate_yaml(yaml_path)
         _config = ModelConfig.create_by_yaml(yaml_path)
 
@@ -686,7 +678,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             f":file_folder: workdir: [underline]{self.store.snapshot_workdir}[/]"
         )
 
-    def _copy_src(self, workdir: Path, yaml_name: str) -> None:
+    def _copy_src(self, workdir: Path, yaml_path: Path) -> None:
         logger.info(
             f"[step:copy]start to copy src {workdir} -> {self.store.src_dir} ..."
         )
@@ -701,11 +693,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             str(workdir.resolve()), str(self.store.src_dir.resolve()), excludes=excludes
         )
 
-        # rename model config if not default to make sure model.yaml exists
-        # prevent using the wrong config when running in the cloud
-        if yaml_name != DefaultYAMLName.MODEL:
-            d = self.store.src_dir
-            os.rename(d / yaml_name, d / DefaultYAMLName.MODEL)
+        # TODO: use an internal protected model yaml path
+        # make sure model.yaml exists, prevent using the wrong config when running in the cloud
+        target_yaml_path = self.store.src_dir / DefaultYAMLName.MODEL
+        copy_file(yaml_path, target_yaml_path)
+
         logger.info("[step:copy]finish copy files")
 
     @classmethod
@@ -728,7 +720,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         host: str,
         port: int,
     ) -> None:
-        _model_config = cls.load_model_config(workdir / model_yaml)
+        _model_config = cls.load_model_config(workdir / model_yaml, workdir)
         svc = cls._get_service(_model_config.run.handler, workdir)
         svc.serve(host, port, _model_config.name)
 
