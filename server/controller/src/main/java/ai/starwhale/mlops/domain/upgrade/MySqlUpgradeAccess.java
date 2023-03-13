@@ -25,20 +25,24 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 
+@Component
 public class MySqlUpgradeAccess implements UpgradeAccess {
 
     private static final String STATUS_NORMAL = "NORMAL";
     private static final String STATUS_UPGRADING = "UPGRADING";
     private static final String MODULE_CONTROLLER = "CONTROLLER";
 
-    @Autowired
-    private ServerStatusMapper serverStatusMapper;
+    private final ServerStatusMapper serverStatusMapper;
+    private final UpgradeLogMapper upgradeLogMapper;
 
-    @Autowired
-    private UpgradeLogMapper upgradeLogMapper;
+    public MySqlUpgradeAccess(ServerStatusMapper serverStatusMapper, UpgradeLogMapper upgradeLogMapper) {
+        this.serverStatusMapper = serverStatusMapper;
+        this.upgradeLogMapper = upgradeLogMapper;
+    }
+
 
     @Override
     public boolean isUpgrading() {

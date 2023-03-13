@@ -19,10 +19,12 @@ package ai.starwhale.mlops.domain.upgrade.step;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class UpgradeStepManager {
 
@@ -37,6 +39,7 @@ public class UpgradeStepManager {
     }
 
     public void runSteps(Upgrade upgrade) {
+        log.info("Run upgrade steps.");
         StepTask stepTask = new StepTask(upgrade, steps);
         ScheduledFuture<?> schedule = threadPoolTaskScheduler.schedule(stepTask, new PeriodicTrigger(3000));
         stepTask.setFuture(schedule);

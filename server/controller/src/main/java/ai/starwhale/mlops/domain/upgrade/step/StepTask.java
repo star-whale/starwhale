@@ -20,7 +20,9 @@ import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.STATUS;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StepTask implements Runnable {
 
     private final Upgrade upgrade;
@@ -43,6 +45,7 @@ public class StepTask implements Runnable {
     @Override
     public synchronized void run() {
         UpgradeStep step = runCurrent();
+        log.info(String.format("Run upgrade step %d", current + 1));
         if (step != null && step.isComplete()) {
             // complete
             step.complete();
@@ -61,9 +64,11 @@ public class StepTask implements Runnable {
             }
             return step;
         } else {
-            future.cancel(false);
-            future = null;
             upgrade.setStatus(STATUS.COMPLETE);
+            if (future != null) {
+                future.cancel(false);
+            }
+
             return null;
         }
     }

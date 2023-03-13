@@ -23,15 +23,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @Configuration
 public class UpgradeConfiguration {
 
-    @Bean
-    public UpgradeAccess getUpgradeAccess() {
-        return new MySqlUpgradeAccess();
-    }
 
     @Bean
     public ThreadPoolTaskScheduler getThreadPoolTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setThreadNamePrefix("Upgrade task - ");
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(10);
         return scheduler;
     }
 
