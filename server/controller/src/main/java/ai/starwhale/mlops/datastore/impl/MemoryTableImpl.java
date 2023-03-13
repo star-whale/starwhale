@@ -30,7 +30,6 @@ import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.datastore.parquet.SwParquetReaderBuilder;
-import ai.starwhale.mlops.datastore.parquet.SwParquetWriterBuilder;
 import ai.starwhale.mlops.datastore.parquet.SwReadSupport;
 import ai.starwhale.mlops.datastore.parquet.SwWriter;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -175,10 +174,13 @@ public class MemoryTableImpl implements MemoryTable {
         columnSchema.put(DELETED_FLAG_COLUMN_NAME, ColumnTypeScalar.BOOL);
 
         try {
-            SwWriter.writeWithBuilder(
-                    new SwParquetWriterBuilder(this.storageAccessService, columnSchema,
-                        this.schema.toJsonString(), metadata,
-                        this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()), this.parquetConfig),
+            SwWriter.write(
+                    this.storageAccessService,
+                    columnSchema,
+                    this.schema.toJsonString(),
+                    metadata,
+                    this.dataPathPrefix + this.dataPathSuffixFormat.format(new Date()),
+                    this.parquetConfig,
                     this.recordMap.entrySet().stream()
                         .map(entry -> {
                             var list = new ArrayList<Map<String, Object>>();

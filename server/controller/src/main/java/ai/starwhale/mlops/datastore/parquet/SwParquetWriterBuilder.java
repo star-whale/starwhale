@@ -80,8 +80,8 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
         return this;
     }
 
-    public void success() {
-        this.extraMeta.put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(false));
+    protected Map<String, String> getExtraMeta() {
+        return this.extraMeta;
     }
 
     @Override

@@ -16,21 +16,33 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
+import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ParquetConfig;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 public class SwWriter {
-    public static void writeWithBuilder(
-            SwParquetWriterBuilder builder, Iterator<Map<String, Object>> iterator) throws IOException {
+
+    public static void write(
+                StorageAccessService storageAccessService,
+                Map<String, ColumnType> schema,
+                String tableSchema,
+                String metadata,
+                String path,
+                ParquetConfig config,
+                Iterator<Map<String, Object>> iterator) throws IOException {
         ParquetWriter<Map<String, Object>> writer = null;
+        var builder = new SwParquetWriterBuilder(
+                storageAccessService, schema, tableSchema, metadata, path, config);
         try {
             writer = builder.build();
             while (iterator.hasNext()) {
                 writer.write(iterator.next());
             }
-            builder.success();
+            builder.getExtraMeta().put(SwReadSupport.ERROR_FLAG_KEY, String.valueOf(false));
         } finally {
             if (writer != null) {
                 writer.close();
