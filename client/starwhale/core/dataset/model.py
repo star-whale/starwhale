@@ -84,7 +84,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
                 info.update(
                     {
                         "index": row.id,
-                        "features": row.data,
+                        "features": row.features,
                         "id": idx,
                     }
                 )

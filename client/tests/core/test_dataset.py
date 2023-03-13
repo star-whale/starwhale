@@ -301,7 +301,7 @@ class StandaloneDatasetTestCase(TestCase):
         m_scan.return_value = [
             TabularDatasetRow(
                 id="label-0",
-                data={
+                features={
                     "img": GrayscaleImage(
                         link=Link(
                             "123",
@@ -313,11 +313,11 @@ class StandaloneDatasetTestCase(TestCase):
                     ),
                     "label": 0,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
             ),
             TabularDatasetRow(
                 id="label-1",
-                data={
+                features={
                     "img": GrayscaleImage(
                         link=Link(
                             "456",
@@ -329,7 +329,7 @@ class StandaloneDatasetTestCase(TestCase):
                     ),
                     "label": 1,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
             ),
         ]
         content = b"\x00_\xfe\xc3\x00\x00\x00\x00"

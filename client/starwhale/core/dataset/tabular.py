@@ -98,18 +98,18 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
 
-    DATA_PREFIX = "data/"
+    _FEATURES_PREFIX = "features/"
 
     def __init__(
         self,
         id: t.Union[str, int],
-        data_origin: DataOriginType = DataOriginType.NEW,
-        data: t.Optional[t.Dict[str, t.Any]] = None,
+        origin: DataOriginType = DataOriginType.NEW,
+        features: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.data_origin = data_origin
-        self.data = data or {}
+        self.origin = origin
+        self.features = features or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
@@ -119,22 +119,22 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        data_origin: str = DataOriginType.NEW.value,
+        origin: str = DataOriginType.NEW.value,
         **kw: t.Any,
     ) -> TabularDatasetRow:
         _content = {}
         _extra_kw = {}
         for k, v in kw.items():
-            if k.startswith(cls.DATA_PREFIX):
-                _, name = k.split(cls.DATA_PREFIX, 1)
+            if k.startswith(cls._FEATURES_PREFIX):
+                _, name = k.split(cls._FEATURES_PREFIX, 1)
                 _content[name] = JsonDict.to_data(v)
             else:
                 _extra_kw[k] = v
 
         return cls(
             id=id,
-            data_origin=DataOriginType(data_origin),
-            data=_content,
+            origin=DataOriginType(origin),
+            features=_content,
             **_extra_kw,
         )
 
@@ -142,8 +142,8 @@ class TabularDatasetRow(ASDictMixin):
         s = deepcopy(self.__dict__)
         o = deepcopy(o.__dict__)
 
-        s.pop("data_origin", None)
-        o.pop("data_origin", None)
+        s.pop("origin", None)
+        o.pop("origin", None)
         return s == o
 
     def _do_validate(self) -> None:
@@ -153,37 +153,38 @@ class TabularDatasetRow(ASDictMixin):
         if self.id == "":
             raise FieldTypeOrValueError("id is empty")
 
-        if not isinstance(self.data, dict) or not self.data:
+        if not isinstance(self.features, dict) or not self.features:
             raise FieldTypeOrValueError("no data field")
 
-        if not isinstance(self.data_origin, DataOriginType):
-            raise NoSupportError(f"data origin: {self.data_origin}")
+        if not isinstance(self.origin, DataOriginType):
+            raise NoSupportError(f"data origin: {self.origin}")
 
     def __str__(self) -> str:
         return f"row-{self.id}"
 
     def __repr__(self) -> str:
-        return f"row-{self.id}" f"{self.data} "
+        return f"row-{self.id}" f"{self.features} "
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
-        d = super().asdict(ignore_keys=ignore_keys or ["data", "extra_kw"])
+        d = super().asdict(ignore_keys=ignore_keys or ["features", "extra_kw"])
         d.update(_do_asdict_convert(self.extra_kw))
-        for k, v in self.data.items():
-            d[f"{self.DATA_PREFIX}{k}"] = JsonDict.from_data(v)
+        for k, v in self.features.items():
+            d[f"{self._FEATURES_PREFIX}{k}"] = JsonDict.from_data(v)
         return d
 
     @classmethod
-    def artifacts_of_data(cls, content: t.Dict) -> t.List[BaseArtifact]:
+    def artifacts_of(cls, features: t.Dict) -> t.List[BaseArtifact]:
         artifacts = []
-        for v in content.values():
+        for v in features.values():
             if isinstance(v, dict):
-                artifacts.extend(cls.artifacts_of_data(v))
+                artifacts.extend(cls.artifacts_of(v))
             elif isinstance(v, BaseArtifact):
                 artifacts.append(v)
         return artifacts
 
+    @property
     def artifacts(self) -> t.List[BaseArtifact]:
-        return TabularDatasetRow.artifacts_of_data(self.data)
+        return TabularDatasetRow.artifacts_of(self.features)
 
 
 _TDType = t.TypeVar("_TDType", bound="TabularDataset")
@@ -192,7 +193,7 @@ _TDType = t.TypeVar("_TDType", bound="TabularDataset")
 class TabularDataset:
     _map_types = {
         "data_format": DataFormatType,
-        "data_origin": DataOriginType,
+        "origin": DataOriginType,
         "object_store_type": ObjectStoreType,
     }
 
@@ -326,7 +327,7 @@ class TabularDataset:
             last_append_seq_id = max(
                 int(_row.extra_kw.get("_append_seq_id", -1)), last_append_seq_id
             )
-            _row.data_origin = DataOriginType.INHERIT
+            _row.origin = DataOriginType.INHERIT
             self.put(_row)
 
         # TODO: deepcopy fork_td info dict?

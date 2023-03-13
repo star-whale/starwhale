@@ -246,7 +246,7 @@ class TestModelPipelineHandler(TestCase):
             [{"id": 0, "value": 1}],
             [
                 TabularDatasetRow(
-                    data={
+                    features={
                         "image": GrayscaleImage(
                             link=Link(
                                 fname,
@@ -258,7 +258,7 @@ class TestModelPipelineHandler(TestCase):
                         ),
                         "label": label_data,
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                     id=0,
                 ).asdict(),
             ],

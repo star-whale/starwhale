@@ -274,7 +274,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     _exception = None
 
-                for (_idx, _data), _result in zip(rows, _results):
+                for (_idx, _features), _result in zip(rows, _results):
                     cnt += 1
                     _idx_with_ds = f"{_uri.object}{join_str}{_idx}"
 
@@ -293,16 +293,15 @@ class PipelineHandler(metaclass=ABCMeta):
                     )
 
                     if not self.ignore_dataset_data:
-                        artifacts = TabularDatasetRow.artifacts_of_data(_data)
-                        for at in artifacts:
-                            if at.link:
-                                at.clear_cache()
+                        for artifact in TabularDatasetRow.artifacts_of(_features):
+                            if artifact.link:
+                                artifact.clear_cache()
 
                     result_storage.save(
                         data_id=_idx_with_ds,
                         index=_idx,
                         result=_result,
-                        ds_data={} if self.ignore_dataset_data else _data,
+                        ds_data={} if self.ignore_dataset_data else _features,
                     )
 
         if self.flush_result:
