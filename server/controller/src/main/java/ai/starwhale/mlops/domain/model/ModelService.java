@@ -442,7 +442,7 @@ public class ModelService {
         String manifestContent;
         Set<String> existed = new HashSet<>();
         try (final InputStream inputStream = multipartFile.getInputStream()) {
-            manifestContent = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            manifestContent = IOUtils.toString(multipartFile.getInputStream(), StandardCharsets.UTF_8);
 
             // parse model file's signature, valid if existed
             var metaInfo = yamlMapper.readValue(manifestContent, MetaInfo.class);
