@@ -2,44 +2,60 @@ import { LabelSmall } from 'baseui/typography'
 import IconFont from '../IconFont'
 import { themedStyled } from '../theme/styletron'
 
-export const SelectorContainer = themedStyled('div', ({ $isEditing }) => ({
-    'display': 'flex',
-    'height': '32px',
-    'lineHeight': '20px',
-    'alignItems': 'center',
-    'padding': '4px',
-    'borderRadius': '4px',
-    '&::-webkit-scrollbar': {
-        height: '4px !important',
-    },
-    'flexGrow': '0',
-    '&:hover': {
-        borderColor: '#799EE8 !important',
-    },
+export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) => {
+    const $style = $isGrid
+        ? {
+              maxHeight: '128px',
+              height: 'auto',
+              minHeight: '32px',
+              alignItems: 'flex-start',
+              overflowX: 'auto',
+              overflowY: 'auto',
+          }
+        : {
+              height: '32px',
+              alignItems: 'center',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+          }
 
-    'overflowX': 'auto',
-    'overflowY': 'hidden',
-    'borderWidth': '1px',
-    'borderColor': $isEditing ? '#799EE8' : '#CFD7E6',
-}))
+    return {
+        'display': 'flex',
+        'lineHeight': '20px',
+        'padding': '4px',
+        'borderRadius': '4px',
+        '&::-webkit-scrollbar': {
+            height: '4px !important',
+        },
+        'flexGrow': '0',
+        '&:hover': {
+            borderColor: '#799EE8 !important',
+        },
+        'borderWidth': '1px',
+        'borderColor': $isEditing ? '#799EE8' : '#CFD7E6',
+        ...$style,
+    }
+})
+SelectorContainer.displayName = 'SelectorContainer'
 
-export const SelectorItemContainer = themedStyled('div', () => ({
+export const SelectorItemsContainer = themedStyled('div', ({ $isGrid }) => ({
     display: 'flex',
     flexGrow: '1',
     gap: '10px',
-    height: '32px',
+    height: $isGrid ? 'auto' : '30px',
     lineHeight: '20px',
     alignItems: 'center',
-    // display: 'Grid',
-    // gridAutoColumns: '1fr 1fr',
 }))
+SelectorItemsContainer.displayName = 'SelectorItemsContainer'
 
 export const StartEnhancer = themedStyled('div', () => ({
     width: '34px',
+    height: '22px',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
 }))
+StartEnhancer.displayName = 'StartEnhancer'
 
 export const Placeholder = themedStyled('div', () => ({
     position: 'relative',
@@ -47,20 +63,39 @@ export const Placeholder = themedStyled('div', () => ({
     width: 0,
     alignItems: 'center',
 }))
+Placeholder.displayName = 'Placeholder'
 
-export const SelectItemContainer = themedStyled('div', () => ({
-    'position': 'relative',
-    'display': 'flex',
-    'flexWrap': 'nowrap',
-    'gap': '1px',
-    'cursor': 'pointer',
-    'width': 'auto',
-    'height': '22px',
-    'lineHeight': '22px',
-    '&:hover .label': {
-        backgroundColor: '#EDF3FF',
-    },
+export const SelectItemContainer = themedStyled('div', ({ $isGrid }) => {
+    const $style = $isGrid
+        ? {
+              width: '100%',
+          }
+        : {
+              display: 'flex',
+              flexWrap: 'nowrap',
+              width: 'auto',
+              height: '22px',
+          }
+
+    return {
+        'position': 'relative',
+        'gap': '1px',
+        'cursor': 'pointer',
+        'lineHeight': '22px',
+        '&:hover .label': {
+            backgroundColor: '#EDF3FF',
+        },
+        ...$style,
+    }
+})
+SelectItemContainer.displayName = 'SelectItemContainer'
+
+export const LabelsContainer = themedStyled('div', () => ({
+    display: 'Grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '1px',
 }))
+LabelsContainer.displayName = 'LabelsContainer'
 
 export const LabelContainer = themedStyled('div', () => ({
     height: '22px',
@@ -73,7 +108,9 @@ export const LabelContainer = themedStyled('div', () => ({
     overflow: ' hidden',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
 }))
+LabelContainer.displayName = 'LabelContainer'
 
 export const LabelRemove = themedStyled('div', () => ({
     height: '22px',
@@ -87,6 +124,7 @@ export const LabelRemove = themedStyled('div', () => ({
     display: 'flex',
     alignItems: 'center',
 }))
+LabelRemove.displayName = 'LabelRemove'
 
 export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }) => ({
     minWidth: $isEditing ? '100px' : 0,
@@ -98,6 +136,7 @@ export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }) => ({
     width: $isEditing ? '100%' : 0,
     height: '100%',
 }))
+AutosizeInputContainer.displayName = 'AutosizeInputContainer'
 
 export const defaultStartEnhancer = () => <IconFont type='filter' size={12} kind='gray' />
 export const defaultLabelRemoveIcon = () => (
@@ -115,5 +154,16 @@ export const defaultLabelRemoveIcon = () => (
     />
 )
 export const defalutPlaceholder = (children) => (
-    <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute', width: '150px' }}>{children}</LabelSmall>
+    <LabelSmall
+        $style={{
+            color: 'rgba(2,16,43,0.40)',
+            position: 'absolute',
+            width: '150px',
+            height: '22px',
+            top: 0,
+            lineHeight: '22px',
+        }}
+    >
+        {children}
+    </LabelSmall>
 )

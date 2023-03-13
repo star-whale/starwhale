@@ -3,6 +3,7 @@ import Checkbox from '../Checkbox'
 import { TreeNodeContainer } from './StyledComponent'
 import { TreeNodePropsT } from './types'
 import Radio from '../Radio'
+import { TreeLabelInteractable } from '../base/tree-view'
 
 export default function TreeNode({
     multiple,
@@ -57,9 +58,11 @@ export default function TreeNode({
     }
 
     return (
-        <TreeNodeContainer>
-            {TreeNodeitem()}
-            {actions}
-        </TreeNodeContainer>
+        <TreeLabelInteractable>
+            <TreeNodeContainer>
+                {TreeNodeitem()}
+                {actions}
+            </TreeNodeContainer>
+        </TreeLabelInteractable>
     )
 }

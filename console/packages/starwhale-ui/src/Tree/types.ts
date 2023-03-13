@@ -1,5 +1,4 @@
 import { TreeNodeData } from '../base/tree-view'
-import { Search } from 'baseui/icon'
 
 export type TreeNodeDataT = TreeNodeData<TreeNodeInfoT> & TreeNodeDataExtendT
 

@@ -1,15 +1,18 @@
 import { Popover } from 'baseui/popover'
 import { PLACEMENT } from 'baseui/toast'
 import React, { useEffect, useState } from 'react'
-import Tree from './Tree'
-import { TreePropsT } from './types'
 
 function SelectorPopover({
     isOpen: $isOpen,
     children,
     content,
-    ...rest
-}: TreePropsT & { isOpen: boolean; children: React.ReactNode }) {
+    rows,
+}: {
+    rows: number
+    isOpen: boolean
+    children?: React.ReactNode
+    content: React.ReactNode | (() => React.ReactNode)
+}) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = React.useRef<HTMLElement>(null)
 
@@ -19,11 +22,10 @@ function SelectorPopover({
 
     const handleClose = () => ref.current && setIsOpen(false)
 
-    // console.log('TreePopover', isOpen)
-
     return (
         <Popover
-            placement={PLACEMENT.bottomLeft}
+            placement={PLACEMENT.bottomRight}
+            showArrow
             autoFocus={false}
             isOpen={isOpen}
             innerRef={ref}
@@ -31,7 +33,7 @@ function SelectorPopover({
             overrides={{
                 Body: {
                     style: {
-                        marginTop: '32px',
+                        marginTop: `${(rows + 1) * 22 + 10}px`,
                     },
                 },
                 Inner: {

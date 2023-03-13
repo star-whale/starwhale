@@ -39,6 +39,7 @@ const useStyles = createUseStyles({
         display: 'grid',
         gap: 40,
         gridTemplateColumns: '280px 300px 280px',
+        gridTemplateRows: 'minmax(0px, max-content)',
     },
     row4: {
         display: 'grid',
@@ -379,8 +380,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
 
             <Divider orientation='top'>{t('Datasets')}</Divider>
-            <div className={styles.row3}>
-                <DynamicSelector />
+            {/* <div className={styles.row3}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
                     <DatasetSelector projectId={projectId} />
                 </FormItem>
@@ -399,10 +399,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         Add
                     </Button>
                 </div>
-            </div>
+            </div> */}
             <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
-                    <MultiTags placeholder='' getValueLabel={getValueLabel} />
+                    {/* <MultiTags placeholder='' getValueLabel={getValueLabel} /> */}
+                    <DynamicSelector />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>
