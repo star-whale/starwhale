@@ -41,16 +41,17 @@ export default function TreeNode({
         }
         return (
             <Radio
-                value={isSelected}
+                checked={isSelected}
+                labelPlacement='right'
                 overrides={{
-                    Label: {
+                    Root: {
                         style: {
                             marginTop: '0px',
                             marginBottom: '0px',
                         },
                     },
                 }}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target?.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target?.checked)}
             >
                 {label}
             </Radio>

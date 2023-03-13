@@ -20,11 +20,13 @@ export type SelectorItemOptionT<T = any> = {
     getDataToLabel: (data: T) => string
     getDataToValue: (data: T) => string | number
     info?: T
+    multiple?: boolean
     [key: string]: any
 }
 
 export type SelectorSharedPropsT = {
     $isEditing?: boolean
+    $multiple?: boolean
 }
 
 export type SelectorItemRenderPropsT = {

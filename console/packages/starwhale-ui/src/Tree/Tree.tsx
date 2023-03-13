@@ -59,6 +59,14 @@ function useTreeDataSelection({
                 const $onToggle = (node: TreeNodeDataT) => {
                     let ids = [node.id]
 
+                    if (!multiple) {
+                        const index = prevSelectedIds.indexOf(node.id)
+                        if (index > -1) {
+                            return []
+                        }
+                        return ids
+                    }
+
                     if (node.isLeafNode) {
                         const childrenCount = node?.children?.length || 0
                         const childrenSelectedCount =
@@ -81,10 +89,6 @@ function useTreeDataSelection({
                     if (index > -1) {
                         prevSelectedIds.splice(index, 1)
                         return [...prevSelectedIds]
-                    }
-
-                    if (!multiple) {
-                        return prevSelectedIds[0]
                     }
 
                     return [...prevSelectedIds, node.id]
