@@ -9,7 +9,7 @@ from starwhale import dataset
 ds_name = "sintel/version/latest"
 ds = dataset(ds_name)
 row = ds[1024]
-data = row.data
+data = row.features
 fig, ax = plt.subplots(
     3, 3, figsize=(25, 16), gridspec_kw={"wspace": 0.1, "hspace": 0.1}
 )

@@ -666,7 +666,7 @@ class TestDataLoader(TestCase):
         self.assertEqual(len(_label_uris_map), 8)
 
     def test_data_row(self) -> None:
-        dr = DataRow(index=1, data={"data": Image(), "label": 1})
+        dr = DataRow(index=1, features={"data": Image(), "label": 1})
         index, data = dr
         assert index == 1
         assert isinstance(data["data"], Image)
@@ -674,22 +674,19 @@ class TestDataLoader(TestCase):
         assert dr[0] == 1
         assert len(dr) == 2
 
-        dr_another = DataRow(index=2, data={"data": Image(), "label": 2})
+        dr_another = DataRow(index=2, features={"data": Image(), "label": 2})
         assert dr < dr_another
         assert dr != dr_another
 
-        dr_third = DataRow(index=1, data={"data": Image(fp=b""), "label": 10})
+        dr_third = DataRow(index=1, features={"data": Image(fp=b""), "label": 10})
         assert dr >= dr_third
 
     def test_data_row_exceptions(self) -> None:
         with self.assertRaises(TypeError):
-            DataRow(index=b"", data=Image(), content={})  # type: ignore
+            DataRow(index=b"", features=Image())  # type: ignore
 
         with self.assertRaises(TypeError):
-            DataRow(index=1, data=b"", content={})  # type: ignore
-
-        with self.assertRaises(TypeError):
-            DataRow(index=1, data=Image(), content=1)  # type: ignore
+            DataRow(index=1, features=b"")  # type: ignore
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")

@@ -24,7 +24,7 @@ def draw_bbox(draw, bbox_view_):
 ds_name = "svhn/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-data = row.data
+data = row.features
 with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
     for num in data["numbers"]:

@@ -8,8 +8,8 @@ from starwhale import dataset
 ds_name = "pfp/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-image = row.data["image"]
-mask = row.data["mask"]
+image = row.features["image"]
+mask = row.features["mask"]
 with PILImage.open(io.BytesIO(image.to_bytes())) as img, PILImage.open(
     io.BytesIO(mask.to_bytes())
 ).convert("RGBA") as msk:

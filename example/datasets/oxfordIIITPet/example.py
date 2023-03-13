@@ -26,7 +26,7 @@ def draw_bbox(draw, bbox_view_):
 ds_name = "oxfordIIITPet/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-data = row.data
+data = row.features
 image = data.pop("image")
 mask = data.pop("mask")
 with PILImage.open(io.BytesIO(image.to_bytes())) as img, PILImage.open(

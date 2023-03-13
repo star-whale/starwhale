@@ -13,7 +13,7 @@ ds_name = "cityscapes_disparity/version/latest"
 ds = dataset(ds_name)
 print(ds.info)
 row = ds.fetch_one()
-data = row.data
+data = row.features
 l_img_bytes = data["left_image_8bit"].to_bytes()
 r_img_bytes = data["right_image_8bit"].to_bytes()
 msk_img_bytes = data["disparity_mask"].to_bytes()

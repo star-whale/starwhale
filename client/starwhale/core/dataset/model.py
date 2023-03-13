@@ -76,7 +76,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
                 info.update(
                     {
                         "index": data_row.index,
-                        "data": data_row.data,
+                        "features": data_row.features,
                         "id": idx,
                     }
                 )
@@ -84,7 +84,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
                 info.update(
                     {
                         "index": row.id,
-                        "data": row.data,
+                        "features": row.data,
                         "id": idx,
                     }
                 )

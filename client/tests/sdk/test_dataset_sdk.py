@@ -48,7 +48,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                 ds.append(
                     DataRow(
                         index=i,
-                        data={"data": Binary(f"data-{i}".encode()), "label": i},
+                        features={"data": Binary(f"data-{i}".encode()), "label": i},
                     )
                 )
             ds.commit()
@@ -60,7 +60,7 @@ class _DatasetSDKTestBase(BaseTestCase):
                 ds.append(
                     DataRow(
                         index=f"{i}",
-                        data={"data": Binary(f"data-{i}".encode()), "label": i},
+                        features={"data": Binary(f"data-{i}".encode()), "label": i},
                     )
                 )
             ds.commit()
@@ -97,7 +97,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 11
         ds = dataset("mnist", create=True)
         assert len(ds) == 0
-        ds.append(DataRow(index=0, data={"data": Binary(b""), "label": 1}))
+        ds.append(DataRow(index=0, features={"data": Binary(b""), "label": 1}))
         assert len(ds) == 1
         for i in range(1, size):
             ds.append((i, {"data": Binary(), "label": i}))
@@ -125,7 +125,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         size = 10
         ds.extend(
             [
-                DataRow(index=i, data={"data": Binary(), "label": i})
+                DataRow(index=i, features={"data": Binary(), "label": i})
                 for i in range(0, size)
             ]
         )
@@ -152,8 +152,12 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 0
         assert ds._row_writer is None
 
-        ds["index-2"] = DataRow(index="index-2", data={"data": Binary(), "label": 2})
-        ds["index-1"] = DataRow(index="index-1", data={"data": Binary(), "label": 1})
+        ds["index-2"] = DataRow(
+            index="index-2", features={"data": Binary(), "label": 2}
+        )
+        ds["index-1"] = DataRow(
+            index="index-1", features={"data": Binary(), "label": 1}
+        )
 
         assert len(ds) == 2
         assert ds._row_writer is not None
@@ -185,7 +189,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds[1:3] = ((1, Binary(), {}), (2, Binary(), {}))
 
         with self.assertRaises(TypeError):
-            ds[DataRow(1, Binary(), {})] = DataRow(1, Binary(), {})
+            ds[DataRow(1, Binary())] = DataRow(1, Binary())  # type: ignore
 
     def test_parallel_setitem(self) -> None:
         ds = dataset("mnist", create=True)
@@ -194,7 +198,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         def _do_task(_start: int) -> None:
             for i in range(_start, size):
-                ds.append(DataRow(index=i, data={"data": Binary(), "label": i}))
+                ds.append(DataRow(index=i, features={"data": Binary(), "label": i}))
 
         pool = ThreadPoolExecutor(max_workers=10)
         tasks = [pool.submit(_do_task, i * 10) for i in range(0, 9)]
@@ -225,7 +229,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         load_ds = dataset(ds.uri)
         assert len(list(load_ds)) == 3
-        assert load_ds[2].data["label"] == "2-9"  # type: ignore
+        assert load_ds[2].features["label"] == "2-9"  # type: ignore
         assert len(load_ds) == 3
 
     def test_readonly(self) -> None:
@@ -315,7 +319,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         reopen_ds = dataset(ds.uri)
         items = list(reopen_ds)
         assert len(items) == len(reopen_ds) == 100
-        assert "label" in items[-1].data
+        assert "label" in items[-1].features
         assert isinstance(items[-1].index, int)
 
     def test_build_from_handler_existed(self) -> None:
@@ -443,16 +447,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 10
         ds.flush()
 
-        ds.append(DataRow(index=1, data={"data": Binary(b"101"), "label": 101}))
+        ds.append(DataRow(index=1, features={"data": Binary(b"101"), "label": 101}))
         # assert len(ds) == 10 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=100, data={"data": Binary(b"100"), "label": 100}))
+        ds.append(DataRow(index=100, features={"data": Binary(b"100"), "label": 100}))
         # assert len(ds) == 11 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
-        ds.append(DataRow(index=101, data={"data": Binary(b"101"), "label": 101}))
+        ds.append(DataRow(index=101, features={"data": Binary(b"101"), "label": 101}))
         ds.commit()
         ds.close()
 
         load_ds = dataset(ds.uri)
-        assert load_ds[1].data["label"] == 101  # type: ignore
+        assert load_ds[1].features["label"] == 101  # type: ignore
         assert {d.index for d in load_ds} == set(list(range(0, 10)) + [100, 101])
         assert len(load_ds) == 12
         _summary = load_ds.summary()
@@ -482,8 +486,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         _d = ds[0]
         assert isinstance(_d, DataRow)
         assert _d.index == 0
-        assert _d.data["data"].to_bytes() == b"data-0"
-        assert _d.data["label"] == 0
+        assert _d.features["data"].to_bytes() == b"data-0"
+        assert _d.features["label"] == 0
 
     def test_load_with_tag(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -667,7 +671,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         for i in range(0, cnt):
             ds.append(
                 DataRow(
-                    index=i, data={"data": Binary(f"data-{i}".encode()), "label": i}
+                    index=i, features={"data": Binary(f"data-{i}".encode()), "label": i}
                 )
             )
 
@@ -880,19 +884,19 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         head = ds.head(n=1)
         assert len(head) == 1
         assert head[0]["index"] == "0"
-        assert "raw" not in head[0]["data"]
+        assert "raw" not in head[0]["features"]
 
         head = ds.head(n=2)
         assert len(head) == 2
         assert head[0]["index"] == "0"
         assert head[1]["index"] == "1"
-        assert not head[0]["data"]["data"]._BaseArtifact__cache_bytes
-        assert not head[1]["data"]["data"]._BaseArtifact__cache_bytes
+        assert not head[0]["features"]["data"]._BaseArtifact__cache_bytes
+        assert not head[1]["features"]["data"]._BaseArtifact__cache_bytes
 
         head = ds.head(n=2, show_raw_data=True)
         assert len(head) == 2
-        assert head[0]["data"]["data"].to_bytes() == b"data-0"
-        assert head[1]["data"]["data"].to_bytes() == b"data-1"
+        assert head[0]["features"]["data"].to_bytes() == b"data-0"
+        assert head[1]["features"]["data"].to_bytes() == b"data-1"
 
     @Mocker()
     def test_copy(self, rm: Mocker) -> None:
@@ -954,7 +958,7 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_binary_type_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
-        assert isinstance(ds["0"].data["data"], Binary)  # type: ignore
+        assert isinstance(ds["0"].features["data"], Binary)  # type: ignore
 
         torch_loader = tdata.DataLoader(
             ds.to_pytorch(skip_default_transform=False), batch_size=None
@@ -965,7 +969,7 @@ class TestPytorch(_DatasetSDKTestBase):
     def test_binary_type_with_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
-        assert isinstance(ds["0"].data["data"], Binary)  # type: ignore
+        assert isinstance(ds["0"].features["data"], Binary)  # type: ignore
 
         torch_loader = tdata.DataLoader(
             ds.to_pytorch(skip_default_transform=False), batch_size=2

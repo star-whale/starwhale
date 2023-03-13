@@ -24,7 +24,7 @@ def draw_bbox(draw, bbox_view_):
 ds_name = "wider_face/version/latest"
 ds = dataset(ds_name)
 row = ds["0--Parade/0_Parade_marchingband_1_205.jpg"]
-data = row.data
+data = row.features
 with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
     for face in data["faces"]:

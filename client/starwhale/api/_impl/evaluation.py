@@ -247,7 +247,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 try:
                     if self._is_ppl_batch():
                         _results = self.ppl(
-                            [row.data for row in rows],
+                            [row.features for row in rows],
                             index=[row.index for row in rows],
                             index_with_dataset=[
                                 f"{_uri.object}{join_str}{row.index}" for row in rows
@@ -257,7 +257,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     else:
                         _results = [
                             self.ppl(
-                                rows[0].data,
+                                rows[0].features,
                                 index=rows[0].index,
                                 index_with_dataset=f"{_uri.object}{join_str}{rows[0].index}",
                                 dataset_info=dataset_info,

@@ -379,7 +379,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         self, row_data: t.Union[t.Tuple, DataRow, t.Dict], append_seq_id: int
     ) -> t.Tuple[t.Union[str, int], t.Dict]:
         if isinstance(row_data, DataRow):
-            idx, row = row_data.index, row_data.data
+            idx, row = row_data.index, row_data.features
         elif isinstance(row_data, dict):
             idx, row = append_seq_id, row_data
         elif isinstance(row_data, tuple):

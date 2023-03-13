@@ -208,9 +208,9 @@ class DatasetTermView(BaseTermView):
             output = (
                 f":deciduous_tree: id: {row['index']} \n"
                 ":cyclone: data:\n"
-                f"\t :dim_button: type: {row['data']} \n"
+                f"\t :dim_button: type: {row['features']} \n"
             )
-            for _k, _v in row["data"].items():
+            for _k, _v in row["features"].items():
                 ds_type: t.Any
                 try:
                     ds_type = _get_type(_v)

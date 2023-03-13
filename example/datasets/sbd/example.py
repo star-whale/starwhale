@@ -9,7 +9,7 @@ from starwhale import dataset
 ds_name = "sbd/version/latest"
 ds = dataset(ds_name)
 row = ds["2008_000202"]
-data = row.data
+data = row.features
 with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
 
