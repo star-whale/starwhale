@@ -34,7 +34,7 @@ import org.apache.ibatis.jdbc.SQL;
 public interface ModelVersionMapper {
 
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, manifest, created_time, modified_time, eval_jobs, status";
+            + " storage_path, created_time, modified_time, eval_jobs, status";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
@@ -63,9 +63,9 @@ public interface ModelVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into model_version (model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, manifest, eval_jobs)"
+            + " storage_path, eval_jobs)"
             + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta},"
-            + " #{storagePath}, #{manifest}, #{evalJobs})")
+            + " #{storagePath}, #{evalJobs})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 
@@ -131,9 +131,6 @@ public interface ModelVersionMapper {
                     }
                     if (StrUtil.isNotEmpty(version.getEvalJobs())) {
                         SET("eval_jobs=#{evalJobs}");
-                    }
-                    if (StrUtil.isNotEmpty(version.getManifest())) {
-                        SET("manifest=#{manifest}");
                     }
                     if (Objects.nonNull(version.getStatus())) {
                         SET("status=#{status}");

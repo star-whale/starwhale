@@ -41,7 +41,7 @@ public class ModelVersionVoConverter {
         this.jobSpecParser = jobSpecParser;
     }
 
-    public ModelVersionVo convert(ModelVersionEntity entity)
+    public ModelVersionVo convert(ModelVersionEntity entity, String manifest)
             throws ConvertException {
         try {
             return ModelVersionVo.builder()
@@ -50,7 +50,7 @@ public class ModelVersionVoConverter {
                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                     .tag(entity.getVersionTag())
                     .meta(entity.getVersionMeta())
-                    .manifest(entity.getManifest())
+                    .manifest(manifest)
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getEvalJobs()))
                     .build();

@@ -53,9 +53,8 @@ public class ModelVersionConverterTest {
                 .versionOrder(2L)
                 .versionTag("tag1")
                 .versionMeta("meta1")
-                .manifest("manifest1")
                 .evalJobs("default:\n- concurrency: 2")
-                .build());
+                .build(), "manifest1");
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),

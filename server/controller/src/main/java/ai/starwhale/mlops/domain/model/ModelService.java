@@ -75,6 +75,7 @@ import com.google.common.base.Joiner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -89,6 +90,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -237,8 +239,8 @@ public class ModelService {
                 "Unable to find the compare version of model "), HttpStatus.BAD_REQUEST);
         }
         try {
-            var baseFiles = parseManifestFiles(baseModel.getManifest());
-            var compareFiles = parseManifestFiles(compareModel.getManifest());
+            var baseFiles = parseManifestFiles(getManifest(baseModel));
+            var compareFiles = parseManifestFiles(getManifest(compareModel));
             FileNode.compare(baseFiles, compareFiles);
             return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
         } catch (JsonProcessingException e) {
@@ -281,7 +283,7 @@ public class ModelService {
         try {
             // Get file list from manifest
             // TODO read from datastore
-            var manifest = version.getManifest();
+            var manifest = getManifest(version);
 
             return ModelInfoVo.builder()
                     .id(idConvertor.convert(model.getId()))
@@ -290,7 +292,7 @@ public class ModelService {
                     .versionName(version.getVersionName())
                     .versionTag(version.getVersionTag())
                     .versionMeta(version.getVersionMeta())
-                    .manifest(version.getManifest())
+                    .manifest(manifest)
                     .createdTime(version.getCreatedTime().getTime())
                     .files(parseManifestFiles(manifest))
                     .build();
@@ -350,7 +352,7 @@ public class ModelService {
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity);
+            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity));
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
                 //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
                 vo.setAlias(VersionAliasConverter.LATEST);
@@ -437,10 +439,10 @@ public class ModelService {
         final String modelPackagePath = entityExists ? modelVersionEntity.getStoragePath()
                 : storagePathCoordinator.allocateModelPath(projectId, uploadRequest.name(),
                 uploadRequest.version());
-        String manifestContent = "";
+        String manifestContent;
         Set<String> existed = new HashSet<>();
         try (final InputStream inputStream = multipartFile.getInputStream()) {
-            manifestContent = new String(TarFileUtil.getContent(multipartFile.getInputStream()));
+            manifestContent = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 
             // parse model file's signature, valid if existed
             var metaInfo = yamlMapper.readValue(manifestContent, MetaInfo.class);
@@ -470,7 +472,6 @@ public class ModelService {
 
         if (entityExists) {
             // update manifest
-            modelVersionEntity.setManifest(manifestContent);
             modelVersionEntity.setStatus(ModelVersionEntity.STATUS_UN_AVAILABLE);
             modelVersionMapper.update(modelVersionEntity);
         } else {
@@ -482,7 +483,6 @@ public class ModelService {
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getSwmp())
                 .evalJobs("")
-                .manifest(manifestContent)
                 .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
                 .build();
             modelVersionMapper.insert(modelVersionEntity);
@@ -584,9 +584,11 @@ public class ModelService {
             throw new SwValidationException(ValidSubject.MODEL,
                 "at least one of name or path is not null when download");
         }
+
+        String manifest = getManifest(modelVersionEntity);
         // read from manifest
         try {
-            var metaInfo = yamlMapper.readValue(modelVersionEntity.getManifest(), MetaInfo.class);
+            var metaInfo = yamlMapper.readValue(manifest, MetaInfo.class);
             // get file type by path
             for (MetaInfo.Resource file : metaInfo.getResources()) {
                 if (file.getPath().equals(path) || file.getName().equals(name)) {
@@ -611,7 +613,7 @@ public class ModelService {
         switch (fileDesc) {
             case MANIFEST:
                 this.pullFile(
-                        name, () -> new ByteArrayInputStream(modelVersionEntity.getManifest().getBytes()), httpResponse
+                        name, () -> new ByteArrayInputStream(manifest.getBytes()), httpResponse
                 );
                 return;
             case SRC:
@@ -642,6 +644,16 @@ public class ModelService {
                     }
                 }, httpResponse);
 
+    }
+
+    private String getManifest(ModelVersionEntity modelVersionEntity) {
+        try {
+            var p = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), MODEL_MANIFEST);
+            var is = storageAccessService.get(p);
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "get manifest error", e);
+        }
     }
 
     public void pullFile(String name, Supplier<InputStream> streamSupplier, HttpServletResponse httpResponse) {
