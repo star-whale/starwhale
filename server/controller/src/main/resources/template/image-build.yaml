@@ -27,7 +27,7 @@ spec:
               swcli runtime copy cloud://server/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION .;
               swcli runtime extract --target-dir /tmp/extract/ $SW_RUNTIME_VERSION;
               cp -r /tmp/extract/** /opt/starwhale.user/runtime;
-              swcli runtime dockerize -t sw-build --push --dry-run --use-starwhale-builder --reset-qemu-static $SW_RUNTIME_VERSION;
+              swcli runtime dockerize -t sw-build --dry-run $SW_RUNTIME_VERSION;
               _SNAPSHOT_DIR=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".snapshot_workdir");
               cp $_SNAPSHOT_DIR/export/docker/Dockerfile /opt/starwhale.user/runtime || exit 1;
       containers:
