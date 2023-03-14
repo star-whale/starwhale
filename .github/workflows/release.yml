@@ -89,12 +89,12 @@ jobs:
           cp -R docs/i18n/zh/docusaurus-plugin-content-docs/version-* docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/
 
       - name: Publish to Github Pages
-        if: ${{ github.ref == 'refs/heads/main'}}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build
           user_name: github-actions[bot]
+          keep_files: true
           cname: doc.starwhale.ai
           user_email: "github-actions[bot]@users.noreply.github.com"
 
