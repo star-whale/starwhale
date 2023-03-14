@@ -20,12 +20,16 @@ export function useDatastoreTablesByPrefix(prefix: string) {
         isSuccess: allTables.isSuccess,
         isLoading: allTables.isLoading,
         names: tables,
-        tables: tables.map((table) => {
-            return {
-                short: table.replace(`${prefix}`, ''),
-                name: table,
-            }
-        }),
+        tables: React.useMemo(
+            () =>
+                tables.map((table) => {
+                    return {
+                        short: table.replace(`${prefix}`, ''),
+                        name: table,
+                    }
+                }),
+            [tables, prefix]
+        ),
     }
 }
 

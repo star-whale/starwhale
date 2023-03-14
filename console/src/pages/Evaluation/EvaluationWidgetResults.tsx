@@ -9,6 +9,10 @@ import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router-dom'
 import { Button, IconFont } from '@starwhale/ui'
+import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
+import { useJob } from '@/domain/job/hooks/useJob'
+import { updatePanelSetting } from '@/domain/panel/services/panel'
+import { toaster } from 'baseui/toast'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -187,6 +191,13 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 
 function EvaluationWidgetResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const { job } = useJob()
+    const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : ''
+    const settingInfo = useFetchPanelSetting(projectId, storeKey)
+    const onStateChange = async (data: any) => {
+        await updatePanelSetting(projectId, storeKey, data)
+        toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
+    }
 
     const tables = React.useMemo(() => {
         const names = []
@@ -222,7 +233,7 @@ function EvaluationWidgetResults() {
                     return <EvaluationViewer table={name} key={name} filter={filter} />
                 })}
             </div>
-            <FullTablesEditor />
+            <FullTablesEditor initialState={settingInfo.data} onStateChange={onStateChange} />
         </div>
     )
 }

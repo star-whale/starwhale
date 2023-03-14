@@ -3,7 +3,7 @@ import { klona } from 'klona/full'
 import _ from 'lodash'
 import { WidgetConfig, WidgetGroupType, WidgetMeta, WidgetStoreState, WidgetType } from '../types/index'
 import { generateId } from '../utils/generators'
-import { PANEL_DYNAMIC_MATCHES, replacer, Replacer } from '../utils/replacer'
+import { PANEL_DYNAMIC_MATCHES, replacer, Replacer } from './utils/replacer'
 
 const PersistProperty = {
     type: true,

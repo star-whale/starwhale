@@ -1,6 +1,6 @@
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { EventBus } from '../events/types'
-import { Matcher } from '../utils/replacer'
+import { Matcher } from '../widget/utils/replacer'
 
 export type WidgetMeta = Record<string, unknown>
 export type WidgetType = string
