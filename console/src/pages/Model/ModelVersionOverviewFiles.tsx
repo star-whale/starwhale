@@ -299,7 +299,8 @@ function CodeViewer({
 }: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean }) {
     const styles = useStyles()
     const [theme, setTheme] = useLocalStorage<string>(THEMES[0].id)
-    const [language, setLanguage] = React.useState('yaml')
+    const [language, setLanguage] = React.useState<string | undefined>(undefined)
+    const [line, setLine] = React.useState(1)
     const [languages, setLanguages] = React.useState<monaco.languages.ILanguageExtensionPoint[]>([])
     const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
     const monacoRef = React.useRef<typeof monaco | null>(null)
@@ -341,8 +342,11 @@ function CodeViewer({
                             clearable={false}
                             options={languages.map((lg) => ({ id: lg.id, label: lg.id }))}
                             onChange={(params) => {
-                                if (!params.option) return
-                                setLanguage?.(params.option.id as string)
+                                if (!params.option) {
+                                    setLanguage(undefined)
+                                } else {
+                                    setLanguage?.(params.option.id as string)
+                                }
                             }}
                             value={language ? [{ id: language }] : []}
                         />
@@ -389,10 +393,12 @@ function CodeViewer({
                                     theme={theme as string}
                                     height={height - 58}
                                     width={width - 6}
-                                    defaultLanguage='yaml'
                                     language={language}
+                                    path={file?.name}
                                     value={value}
+                                    line={line}
                                     onMount={onMount}
+                                    onChange={() => setLine(1)}
                                 />
                             )}
                             {isDiff && (
