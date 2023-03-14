@@ -41,3 +41,7 @@ jobs:
       - name: Build and push server-base image
         working-directory: ./docker
         run: make build-release-base-server
+
+      - name: Build and push nodejs base image
+        working-directory: ./docker
+        run: make build-nodejs
