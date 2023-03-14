@@ -70,15 +70,24 @@ public class AgentCache implements CommandLineRunner {
         agents.remove(agentSerialNumber);
     }
 
-    public void nodeReport(Node node) {
+    public Agent nodeReport(Node node) {
         log.debug("node reported {}", node.getSerialNumber());
         if (StringUtils.hasText(node.getSerialNumber())) {
             Agent agentReported = agentConverter.fromNode(node);
             Agent residentAgent = agents.get(node.getSerialNumber());
             if (null == residentAgent) {
                 agents.put(node.getSerialNumber(), agentReported);
-                save(agentReported);
+                agentReported = save(agentReported);
+                return new AgentUnModifiable(agentReported);
+            } else {
+                residentAgent.setAgentVersion(agentReported.getAgentVersion());
+                residentAgent.setStatus(agentReported.getStatus());
+                residentAgent.setNodeInfo(agentReported.getNodeInfo());
+                residentAgent.setConnectTime(agentReported.getConnectTime());
+                return new AgentUnModifiable(residentAgent);
             }
+        } else {
+            return null;
         }
     }
 
