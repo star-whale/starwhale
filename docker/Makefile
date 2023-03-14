@@ -10,7 +10,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 # Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
 FIXED_VERSION_BASE_IMAGE := 0.2.5
-FIXED_VERSION_NODEJS_IMAGE := 0.1.2
+FIXED_VERSION_NODEJS_IMAGE := 0.1.3
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.2
 
 GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
@@ -98,7 +98,8 @@ build-server-for-local-usage:
 		-f Dockerfile.server .
 
 build-nodejs:
-	$(call build-image,$(GHCR_BASE_IMAGE),Dockerfile.nodejs,nodejs:${FIXED_VERSION_NODEJS_IMAGE} nodejs:latest)
+	docker manifest inspect $(GHCR_IO_REPO)/nodejs:${FIXED_VERSION_NODEJS_IMAGE} || \
+	$(call build-image,,Dockerfile.nodejs,nodejs:${FIXED_VERSION_NODEJS_IMAGE} nodejs:latest)
 
 YARN_VOLUME=yarn-cache
 build-console: build-gradio-ui
