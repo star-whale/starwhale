@@ -59,6 +59,12 @@ jobs:
           cp -R gh-pages/.archived-versions/versioned_docs docs/
           cp -R gh-pages/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/version-* docs/i18n/zh/docusaurus-plugin-content-docs/
 
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
       - name: Generate new release version
         working-directory: ./docs
         env:
