@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkstarwhale_docs=self.webpackChunkstarwhale_docs||[]).push([[4195],{2841:function(e,t,s){s.r(t);var a=s(7294),c=s(6550);t.default=()=>a.createElement(c.l_,{to:"/docs/overview/getting_started"})}}]);
