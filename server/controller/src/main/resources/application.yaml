@@ -106,11 +106,6 @@ spring:
     locations: "classpath:db/migration"
     ignore-missing-migrations: true
     out-of-order: true
-  security:
-    user:
-      name: starwhale
-      password: abcd1234
-      roles: OWNER
   mvc:
     view:
       suffix: .html
@@ -125,12 +120,12 @@ server:
   shutdown: graceful
 logging:
   level:
-    root: info
-    ai.starwhale.mlops: debug
-    org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:DEBUG}
+    root: ${SW_ROOT_LOG_LEVEL:warn}
+    ai.starwhale.mlops: ${SW_BIZ_LOG_LEVEL:warn}
+    org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:info}
 
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics}
