@@ -1,7 +1,5 @@
 FROM ubuntu:20.04
 
-COPY external/sources.list /etc/apt/sources.list
-
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
 ENV TZ=Etc/UTC
