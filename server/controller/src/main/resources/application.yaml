@@ -52,8 +52,8 @@ sw:
       service-provider: ${SW_INSTANCE_URI}/obj-store
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
-      access-key: ${SW_STORAGE_ACCESSKEY:minioadmin}
-      secret-key: ${SW_STORAGE_SECRETKEY:minioadmin}
+      access-key: ${SW_STORAGE_ACCESSKEY:starwhale}
+      secret-key: ${SW_STORAGE_SECRETKEY:starwhale}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
       huge-file-threshold: 10485760 # 10MB
