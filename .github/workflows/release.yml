@@ -296,6 +296,12 @@ jobs:
         with:
           strip_v: true
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build and push docker image
         working-directory: ./docker
         env:
