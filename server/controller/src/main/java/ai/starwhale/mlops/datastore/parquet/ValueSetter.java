@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
+import ai.starwhale.mlops.datastore.type.BaseValue;
+
 public interface ValueSetter {
 
-    void setValue(Object value);
+    void setValue(BaseValue value);
 }

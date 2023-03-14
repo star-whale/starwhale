@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+package ai.starwhale.mlops.datastore.impl;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import ai.starwhale.mlops.datastore.type.BaseValue;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.NonNull;
 
-@Getter
-@EqualsAndHashCode(callSuper = true)
-public class ColumnTypeTuple extends ColumnTypeList {
+public class RecordEncoder {
 
-    public static final String TYPE_NAME = "TUPLE";
-
-    ColumnTypeTuple(ColumnType elementType) {
-        super(elementType);
-    }
-
-    @Override
-    public String toString() {
-        return "(" + elementType + ")";
-    }
-
-    @Override
-    public String getTypeName() {
-        return ColumnTypeTuple.TYPE_NAME;
+    public static Map<String, Object> encodeRecord(
+            @NonNull Map<String, BaseValue> record,
+            boolean rawResult,
+            boolean encodeWithType) {
+        var ret = new HashMap<String, Object>();
+        record.forEach((k, v) -> ret.put(k, BaseValue.encode(v, rawResult, encodeWithType)));
+        return ret;
     }
 }

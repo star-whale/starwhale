@@ -39,6 +39,7 @@ public class RecordsExporterCsvTest {
                             "ke1", "V1",
                             "ke3", List.of(4, 5, 6))
             ),
+            null,
             null);
 
     @Test

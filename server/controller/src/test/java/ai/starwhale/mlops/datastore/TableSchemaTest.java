@@ -17,34 +17,54 @@
 package ai.starwhale.mlops.datastore;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class TableSchemaTest {
 
+    private TableSchemaDesc desc;
     private TableSchema schema;
+    private final ColumnSchemaDesc listSchemaDesc = ColumnSchemaDesc.builder()
+            .name("list")
+            .type("LIST")
+            .elementType(ColumnSchemaDesc.builder().name("element").type("STRING").build())
+            .build();
+    private final ColumnSchemaDesc mapSchemaDesc = ColumnSchemaDesc.builder()
+            .name("map")
+            .type("MAP")
+            .keyType(ColumnSchemaDesc.builder().name("key").type("STRING").build())
+            .valueType(ColumnSchemaDesc.builder().name("value").type("INT32").build())
+            .build();
+    private final ColumnSchemaDesc objectSchemaDesc = ColumnSchemaDesc.builder()
+            .name("obj")
+            .type("OBJECT")
+            .pythonType("t")
+            .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                    ColumnSchemaDesc.builder().name("b").type("INT64").build()))
+            .build();
 
     @BeforeEach
     public void setUp() {
-        this.schema = new TableSchema(
-                new TableSchemaDesc("k",
-                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("a").type("INT32").build())));
+        this.desc = new TableSchemaDesc("k",
+                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
+                        ColumnSchemaDesc.builder().name("a").type("INT32").build(),
+                        this.listSchemaDesc,
+                        this.mapSchemaDesc,
+                        this.objectSchemaDesc));
+        this.schema = new TableSchema(this.desc);
     }
 
     @Test
     public void testConstructor() {
+        assertThat(this.schema.getKeyColumn(), is("k"));
+        assertThat(this.schema.getColumnSchemaByName("list").toColumnSchemaDesc(), is(this.listSchemaDesc));
+        assertThat(this.schema.getColumnSchemaByName("map").toColumnSchemaDesc(), is(this.mapSchemaDesc));
+        assertThat(this.schema.getColumnSchemaByName("obj").toColumnSchemaDesc(), is(this.objectSchemaDesc));
         new TableSchema(new TableSchemaDesc(
                 "k",
                 List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
@@ -53,236 +73,245 @@ public class TableSchemaTest {
     }
 
     @Test
-    public void testConstructorException() {
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(new TableSchemaDesc(null,
-                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build()))),
-                "null key");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(new TableSchemaDesc("k", null)),
-                "null columns");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(new TableSchemaDesc("k", List.of())),
-                "empty columns");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("a").type("STRING").build()))),
-                "no key");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(ColumnSchemaDesc.builder().name("k").type("UNKNOWN").build()))),
-                "invalid key type unknown");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(ColumnSchemaDesc.builder()
-                                        .name("k")
-                                        .type("LIST")
-                                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
-                                        .build()))),
-                "invalid key type list");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(ColumnSchemaDesc.builder()
-                                        .name("k")
-                                        .type("OBJECT")
-                                        .pythonType("t")
-                                        .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build()))
-                                        .build()))),
-                "invalid key type object");
-
-        assertThrows(SwValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                        ColumnSchemaDesc.builder().name("k").type("STRING").build()))),
-                "duplicate key");
-
+    public void testGetDiffAndUpdateEmpty() {
+        var schema = new TableSchema();
+        var diff = schema.getDiff(this.desc);
+        var expectedDiff = this.schema.toWal();
+        var listDiff = expectedDiff.getColumnsBuilder(2);
+        listDiff.setElementType(listDiff.getElementTypeBuilder().setColumnName(""));
+        var mapDiff = expectedDiff.getColumnsBuilder(3);
+        mapDiff.setKeyType(mapDiff.getKeyTypeBuilder().setColumnName(""))
+                .setValueType(mapDiff.getValueTypeBuilder().setColumnName(""));
+        assertThat(diff.build(), is(expectedDiff.setColumns(2, listDiff).setColumns(3, mapDiff).build()));
+        schema.update(this.schema.toWal().build());
+        assertThat(schema.toWal().build(), is(this.schema.toWal().build()));
     }
 
     @Test
-    public void testCopyConstructor() {
-        var newSchema = new TableSchema(this.schema);
-        assertThat("same", newSchema, equalTo(this.schema));
-        newSchema.merge(new TableSchemaDesc(
-                        "k",
-                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
-        assertThat("independent", newSchema, not(equalTo(this.schema)));
+    public void testGetDiffAndUpdateNoDiff() {
+        var diff = this.schema.getDiff(this.desc);
+        assertThat(diff, nullValue());
+        var wal = this.schema.toWal().build();
+        this.schema.update(new TableSchema().getDiff(this.desc).build());
+        assertThat(this.schema.toWal().build(), is(wal));
     }
 
     @Test
-    public void testGetColumnSchemaByName() {
-        assertThat("common",
-                this.schema.getColumnSchemaByName("k"),
-                is(new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0)));
-        assertThat("null", this.schema.getColumnSchemaByName("x"), nullValue());
+    public void testGetDiffAndUpdateColumnType() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
+                List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
+                        ColumnSchemaDesc.builder().name("list").type("STRING").build()))).build();
+        var newK = Wal.ColumnSchema.newBuilder()
+                .setColumnName("k")
+                .setColumnType("INT32")
+                .setColumnIndex(this.schema.getColumnSchemaByName("k").getIndex());
+        var newList = Wal.ColumnSchema.newBuilder()
+                .setColumnName("list")
+                .setColumnType("STRING")
+                .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex());
+        assertThat(diff, is(Wal.TableSchema.newBuilder()
+                .addColumns(newK)
+                .addColumns(newList)
+                .build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        walMap.put("k", newK);
+        walMap.put("list", newList);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
     }
 
     @Test
-    public void testGetColumnSchemas() {
-        var columnSchemas = this.schema.getColumnSchemas();
-        assertThat("equals", columnSchemas, containsInAnyOrder(
-                new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1)));
-        assertThrows(UnsupportedOperationException.class, columnSchemas::clear, "read only");
-    }
-
-    @Test
-    public void testMerge() {
-        assertThrows(NullPointerException.class, () -> this.schema.merge(null), "null");
-
-        assertThrows(SwValidationException.class,
-                () -> this.schema.merge(
-                        new TableSchemaDesc("a", List.of(ColumnSchemaDesc.builder().name("a").type("STRING").build()))),
-                "conflicting key");
-
-        assertThrows(SwValidationException.class,
-                () -> this.schema.merge(
-                        new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build()))),
-                "conflicting type 1");
-
-        assertThrows(SwValidationException.class,
-                () -> this.schema.merge(new TableSchemaDesc("k",
-                                List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                        ColumnSchemaDesc.builder().name("a").type("STRING").build()))),
-                "conflicting type 2");
-
-        var diff = this.schema.merge(new TableSchemaDesc("k", List.of(
-                        ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                        ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
-        assertThat("new column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2)));
-        assertThat("new column", diff,
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2)));
-
-        diff = this.schema.merge(
-                new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())));
-        assertThat("new unknown column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
-        assertThat("new unknown column",
-                diff,
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
-
-        diff = this.schema.merge(
-                new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("k").type("UNKNOWN").build())));
-        assertThat("merge unknown to existing", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
-        assertThat("merge unknown to existing", diff, empty());
-
-        diff = this.schema.merge(
-                new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build())));
-        assertThat("merge unknown to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("UNKNOWN").build(), 3)));
-        assertThat("merge unknown to unknown", diff, empty());
-
-        diff = this.schema.merge(
-                new TableSchemaDesc(null, List.of(ColumnSchemaDesc.builder().name("x").type("INT32").build())));
-        assertThat("merge other to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3)));
-        assertThat("merge other to unknown",
-                diff,
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3)));
-
-        var listColumnSchema = ColumnSchemaDesc.builder()
-                .name("l")
-                .type("LIST")
-                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+    public void testGetDiffAndUpdateNewColumn() {
+        var diff = this.schema.getDiff(
+                        new TableSchemaDesc("k",
+                                List.of(ColumnSchemaDesc.builder().name("b").type("INT16").build(),
+                                        ColumnSchemaDesc.builder()
+                                                .name("c")
+                                                .type("LIST")
+                                                .elementType(ColumnSchemaDesc.builder()
+                                                        .type("OBJECT")
+                                                        .pythonType("x")
+                                                        .attributes(List.of(
+                                                                ColumnSchemaDesc.builder()
+                                                                        .name("a")
+                                                                        .type("INT32")
+                                                                        .build(),
+                                                                ColumnSchemaDesc.builder()
+                                                                        .name("b")
+                                                                        .type("STRING")
+                                                                        .build()
+                                                        ))
+                                                        .build())
+                                                .build())))
                 .build();
-        this.schema.merge(new TableSchemaDesc(null, List.of(listColumnSchema)));
-        diff = this.schema.merge(
-                new TableSchemaDesc(null,
+        var newB = Wal.ColumnSchema.newBuilder()
+                .setColumnName("b")
+                .setColumnType("INT16")
+                .setColumnIndex(this.schema.getColumnSchemaList().size());
+        var newC = Wal.ColumnSchema.newBuilder()
+                .setColumnName("c")
+                .setColumnType("LIST")
+                .setElementType(Wal.ColumnSchema.newBuilder()
+                        .setColumnType("OBJECT")
+                        .setPythonType("x")
+                        .addAttributes(Wal.ColumnSchema.newBuilder()
+                                .setColumnName("a")
+                                .setColumnType("INT32")
+                                .build())
+                        .addAttributes(Wal.ColumnSchema.newBuilder()
+                                .setColumnName("b")
+                                .setColumnType("STRING")
+                                .build())
+                        .build())
+                .setColumnIndex(this.schema.getColumnSchemaList().size() + 1);
+        assertThat(diff, is(Wal.TableSchema.newBuilder()
+                .addColumns(newB)
+                .addColumns(newC)
+                .build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        this.schema.update(diff);
+        assertThat(this.schema.getColumnSchemaByName("b").toWal().build(), is(newB.build()));
+        newC.setElementType(newC.getElementTypeBuilder().setColumnName("element"));
+        assertThat(this.schema.getColumnSchemaByName("c").toWal().build(), is(newC.build()));
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+    }
+
+    @Test
+    public void testGetDiffAndUpdateListElement() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
                         List.of(ColumnSchemaDesc.builder()
-                                .name("l")
+                                .name("list")
                                 .type("LIST")
                                 .elementType(ColumnSchemaDesc.builder().type("INT32").build())
-                                .build())));
-        assertThat("merge list to list", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3),
-                        new ColumnSchema(listColumnSchema, 4)));
-        assertThat("merge list to list", diff, empty());
-
-        diff = this.schema.merge(new TableSchemaDesc(null,
-                        List.of(ColumnSchemaDesc.builder().name("y").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("z").type("BYTES").build())));
-        assertThat("merge multiple", this.schema.getColumnSchemas(),
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("k").type("STRING").build(), 0),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("a").type("INT32").build(), 1),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("b").type("FLOAT32").build(), 2),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("x").type("INT32").build(), 3),
-                        new ColumnSchema(listColumnSchema, 4),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("y").type("STRING").build(), 5),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("z").type("BYTES").build(), 6)));
-        assertThat("merge multiple",
-                diff,
-                containsInAnyOrder(
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("y").type("STRING").build(), 5),
-                        new ColumnSchema(ColumnSchemaDesc.builder().name("z").type("BYTES").build(), 6)));
+                                .build())))
+                .build();
+        var newList = Wal.ColumnSchema.newBuilder()
+                .setColumnName("list")
+                .setColumnType("LIST")
+                .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex())
+                .setElementType(Wal.ColumnSchema.newBuilder()
+                        .setColumnType("INT32")
+                        .build());
+        assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newList).build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        newList.setElementType(newList.getElementTypeBuilder().setColumnName("element"));
+        walMap.put("list", newList);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
     }
 
     @Test
-    public void testGetColumnTypeMapping() {
-        this.schema.merge(new TableSchemaDesc("k",
-                        List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build(),
-                                ColumnSchemaDesc.builder().name("b").type("FLOAT32").build())));
+    public void testGetDiffAndUpdateMapKey() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder()
+                                .name("map")
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().type("INT8").build())
+                                .valueType(ColumnSchemaDesc.builder().name("value").type("INT32").build())
+                                .build())))
+                .build();
+        var newMap = Wal.ColumnSchema.newBuilder()
+                .setColumnName("map")
+                .setColumnType("MAP")
+                .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
+                .setKeyType(Wal.ColumnSchema.newBuilder()
+                        .setColumnType("INT8")
+                        .build());
+        assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newMap).build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        newMap.setKeyType(newMap.getKeyTypeBuilder().setColumnName("key"));
+        newMap.setValueType(walMap.get("map").getValueType());
+        walMap.put("map", newMap);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+    }
 
-        assertThat("all",
-                this.schema.getColumnTypeMapping(),
-                is(Map.of("k", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32, "b", ColumnTypeScalar.FLOAT32)));
+    @Test
+    public void testGetDiffAndUpdateMapValue() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder()
+                                .name("map")
+                                .type("MAP")
+                                .keyType(ColumnSchemaDesc.builder().name("key").type("STRING").build())
+                                .valueType(ColumnSchemaDesc.builder().type("INT8").build())
+                                .build())))
+                .build();
+        var newMap = Wal.ColumnSchema.newBuilder()
+                .setColumnName("map")
+                .setColumnType("MAP")
+                .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
+                .setValueType(Wal.ColumnSchema.newBuilder()
+                        .setColumnType("INT8")
+                        .build());
+        assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newMap).build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        newMap.setKeyType(walMap.get("map").getKeyType());
+        newMap.setValueType(newMap.getValueTypeBuilder().setColumnName("value"));
+        walMap.put("map", newMap);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+    }
 
-        assertThat("single",
-                this.schema.getColumnTypeMapping(Map.of("k", "x")),
-                is(Map.of("x", ColumnTypeScalar.STRING)));
+    @Test
+    public void testGetDiffAndUpdateObjectPythonType() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder()
+                                .name("obj")
+                                .type("OBJECT")
+                                .pythonType("tt")
+                                .build())))
+                .build();
+        var newObj = Wal.ColumnSchema.newBuilder()
+                .setColumnName("obj")
+                .setColumnType("OBJECT")
+                .setPythonType("tt")
+                .setColumnIndex(this.schema.getColumnSchemaByName("obj").getIndex());
+        assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newObj).build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        newObj.addAllAttributes(walMap.get("obj").getAttributesList());
+        walMap.put("obj", newObj);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+    }
 
-        assertThat("multiple",
-                this.schema.getColumnTypeMapping(Map.of("k", "x", "a", "a")),
-                is(Map.of("x", ColumnTypeScalar.STRING, "a", ColumnTypeScalar.INT32)));
-
-        assertThat("empty",
-                this.schema.getColumnTypeMapping(Map.of()),
-                is(Map.of()));
-
-        assertThrows(NullPointerException.class,
-                () -> this.schema.getColumnTypeMapping(null),
-                "null");
-
-        assertThrows(SwValidationException.class,
-                () -> this.schema.getColumnTypeMapping(Map.of("x", "x")),
-                "extra column");
+    @Test
+    public void testGetDiffAndUpdateObjectAttributes() {
+        var diff = this.schema.getDiff(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder()
+                                .name("obj")
+                                .type("OBJECT")
+                                .pythonType("t")
+                                .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT64").build(),
+                                        ColumnSchemaDesc.builder().name("b").type("INT64").build(),
+                                        ColumnSchemaDesc.builder().name("c").type("INT32").build()))
+                                .build())))
+                .build();
+        var newObj = Wal.ColumnSchema.newBuilder()
+                .setColumnName("obj")
+                .setColumnType("OBJECT")
+                .setColumnIndex(this.schema.getColumnSchemaByName("obj").getIndex())
+                .addAttributes(Wal.ColumnSchema.newBuilder()
+                        .setColumnName("a")
+                        .setColumnType("INT64")
+                        .build())
+                .addAttributes(Wal.ColumnSchema.newBuilder()
+                        .setColumnName("c")
+                        .setColumnType("INT32")
+                        .build());
+        assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newObj).build()));
+        var walMap = this.schema.getColumnSchemaList().stream()
+                .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::toWal));
+        newObj.setPythonType("t");
+        newObj.addAttributes(1, walMap.get("obj").getAttributes(1));
+        walMap.put("obj", newObj);
+        this.schema.update(diff);
+        walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
     }
 }
+

@@ -18,6 +18,11 @@ package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.ParquetConfig.CompressionCodec;
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
+import ai.starwhale.mlops.datastore.impl.RecordEncoder;
+import ai.starwhale.mlops.datastore.type.BaseValue;
+import ai.starwhale.mlops.datastore.type.ListValue;
+import ai.starwhale.mlops.datastore.type.MapValue;
+import ai.starwhale.mlops.datastore.type.ObjectValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -167,7 +172,7 @@ public class DataStore {
     public RecordList query(DataStoreQueryRequest req) {
         var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {
-            return new RecordList(Collections.emptyMap(), Collections.emptyList(), null);
+            return new RecordList(Collections.emptyMap(), Collections.emptyList(), null, null);
         }
         table.lock();
         try {
@@ -206,19 +211,41 @@ public class DataStore {
                 --limitCount;
             }
             String lastKey;
+            String lastKeyType;
             if (results.isEmpty()) {
                 lastKey = null;
+                lastKeyType = null;
             } else {
-                lastKey = (String) schema.getKeyColumnType().encode(
-                        results.get(results.size() - 1).getKey(),
-                        req.isRawResult());
+                var last = results.get(results.size() - 1).getKey();
+                lastKey = (String) BaseValue.encode(
+                        last,
+                        req.isRawResult(),
+                        false);
+                lastKeyType = BaseValue.getColumnType(last).name();
             }
-            var columnTypeMap = schema.getColumnTypeMapping(columns);
+            Map<String, ColumnSchema> columnSchemaMap;
+            if (!req.isEncodeWithType()) {
+                columnSchemaMap = table.getSchema().getColumnSchemaList().stream()
+                        .filter(col -> columns.containsKey(col.getName()))
+                        .map(col -> {
+                            var ret = new ColumnSchema(col);
+                            ret.setName(columns.get(col.getName()));
+                            return ret;
+                        })
+                        .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
+            } else {
+                columnSchemaMap = null;
+            }
             var records = results.stream()
                     .filter(r -> !r.isDeleted())
-                    .map(r -> DataStore.encodeRecord(columnTypeMap, r.getValues(), req.isRawResult()))
+                    .map(r -> {
+                        if (columnSchemaMap != null) {
+                            checkRecord(columnSchemaMap, r.getValues());
+                        }
+                        return RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType());
+                    })
                     .collect(Collectors.toList());
-            return new RecordList(columnTypeMap, records, lastKey);
+            return new RecordList(columnSchemaMap, records, lastKey, lastKeyType);
         } finally {
             table.unlock();
         }
@@ -254,7 +281,7 @@ public class DataStore {
                 MemoryTable table;
                 TableSchema schema;
                 Map<String, String> columns;
-                Map<String, ColumnType> columnTypeMap;
+                Map<String, ColumnSchema> columnSchemaMap;
                 boolean keepNone;
             }
 
@@ -281,45 +308,57 @@ public class DataStore {
                             .collect(Collectors.toMap(Entry::getKey,
                                     entry -> info.getColumnPrefix() + entry.getValue()));
                 }
-                ret.columnTypeMap = ret.schema.getColumnTypeMapping(ret.columns);
+                ret.columnSchemaMap = ret.schema.getColumnSchemaList().stream()
+                        .filter(c -> ret.columns.containsKey(c.getName()))
+                        .map(c -> {
+                            var schema = new ColumnSchema(c);
+                            schema.setName(ret.columns.get(c.getName()));
+                            return schema;
+                        })
+                        .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
                 ret.keepNone = info.isKeepNone();
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
             if (tables.isEmpty()) {
-                return new RecordList(Map.of(), List.of(), null);
+                return new RecordList(Map.of(), List.of(), null, null);
             }
-            var columnTypeMap = new HashMap<String, ColumnType>();
-            for (var table : tables) {
-                if (table.schema.getKeyColumnType() != tables.get(0).schema.getKeyColumnType()) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format(
-                                    "conflicting key column type. {0}: key={1}, type={2}, {3}: key={4}, type={5}",
-                                    tables.get(0).tableName,
-                                    tables.get(0).schema.getKeyColumn(),
-                                    tables.get(0).schema.getKeyColumnType(),
-                                    table.tableName,
-                                    table.schema.getKeyColumn(),
-                                    table.schema.getKeyColumnType()));
-                }
-                for (var entry : table.columnTypeMap.entrySet()) {
-                    var columnName = entry.getKey();
-                    var columnType = entry.getValue();
-                    var old = columnTypeMap.putIfAbsent(columnName, columnType);
-                    if (old != null && old != columnType) {
-                        for (var t : tables) {
-                            if (t.columnTypeMap.get(columnName) != null) {
-                                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                                        MessageFormat.format(
-                                                "conflicting column type. {0}: column={1}, alias={2}, type={3}, "
-                                                        + "{4}: column={5}, alias={6}, type={7}",
-                                                t.tableName,
-                                                columnName,
-                                                t.columns.get(columnName),
-                                                t.columnTypeMap.get(columnName),
-                                                table.tableName,
-                                                columnName,
-                                                table.columns.get(columnName),
-                                                table.columnTypeMap.get(columnName)));
+            Map<String, ColumnSchema> columnSchemaMap;
+            if (req.isEncodeWithType()) {
+                columnSchemaMap = null;
+            } else {
+                columnSchemaMap = new HashMap<>();
+                for (var table : tables) {
+                    if (!table.schema.getKeyColumnSchema().isSameType(tables.get(0).schema.getKeyColumnSchema())) {
+                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                MessageFormat.format(
+                                        "conflicting key column type. {0}: key={1}, type={2}, {3}: key={4}, type={5}",
+                                        tables.get(0).tableName,
+                                        tables.get(0).schema.getKeyColumn(),
+                                        tables.get(0).schema.getKeyColumnSchema(),
+                                        table.tableName,
+                                        table.schema.getKeyColumn(),
+                                        table.schema.getKeyColumnSchema()));
+                    }
+                    for (var entry : table.columnSchemaMap.entrySet()) {
+                        var columnName = entry.getKey();
+                        var columnSchema = entry.getValue();
+                        var old = columnSchemaMap.putIfAbsent(columnName, columnSchema);
+                        if (old != null && !old.isSameType(columnSchema)) {
+                            for (var t : tables) {
+                                if (t.columnSchemaMap.get(columnName) != null) {
+                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                            MessageFormat.format(
+                                                    "conflicting column type. {0}: column={1}, alias={2}, type={3}, "
+                                                            + "{4}: column={5}, alias={6}, type={7}",
+                                                    t.tableName,
+                                                    columnName,
+                                                    t.columns.get(columnName),
+                                                    t.columnSchemaMap.get(columnName),
+                                                    table.tableName,
+                                                    columnName,
+                                                    table.columns.get(columnName),
+                                                    table.columnSchemaMap.get(columnName)));
+                                }
                             }
                         }
                     }
@@ -340,8 +379,10 @@ public class DataStore {
                 r.iterator = table.table.scan(table.timestamp,
                         table.columns,
                         req.getStart(),
+                        req.getStartType(),
                         req.isStartInclusive(),
                         req.getEnd(),
+                        req.getEndType(),
                         req.isEndInclusive(),
                         table.keepNone);
                 if (r.iterator.hasNext()) {
@@ -349,14 +390,12 @@ public class DataStore {
                     records.add(r);
                 }
             }
-            var keyColumnType = tables.get(0).schema.getKeyColumnType();
-            Object lastKey = null;
+            BaseValue lastKey = null;
             List<Map<String, Object>> ret = new ArrayList<>();
             while (!records.isEmpty() && ret.size() < limit) {
                 lastKey = Collections.min(records, (a, b) -> {
-                    @SuppressWarnings("rawtypes") var x = (Comparable) a.record.getKey();
-                    @SuppressWarnings("rawtypes") var y = (Comparable) b.record.getKey();
-                    //noinspection unchecked
+                    var x = a.record.getKey();
+                    var y = b.record.getKey();
                     return x.compareTo(y);
                 }).record.getKey();
                 Map<String, Object> record = null;
@@ -368,8 +407,13 @@ public class DataStore {
                             if (record == null) {
                                 record = new HashMap<>();
                             }
-                            record.putAll(DataStore.encodeRecord(r.meta.columnTypeMap, r.record.getValues(),
-                                    req.isRawResult()));
+                            if (columnSchemaMap != null && r.record.getValues() != null) {
+                                checkRecord(columnSchemaMap, r.record.getValues());
+                            }
+                            record.putAll(
+                                    RecordEncoder.encodeRecord(r.record.getValues(),
+                                            req.isRawResult(),
+                                            req.isEncodeWithType()));
                         }
                         if (r.iterator.hasNext()) {
                             r.record = r.iterator.next();
@@ -386,7 +430,10 @@ public class DataStore {
                 }
                 records.removeIf(r -> r.record == null);
             }
-            return new RecordList(columnTypeMap, ret, (String) keyColumnType.encode(lastKey, false));
+            return new RecordList(columnSchemaMap,
+                    ret,
+                    (String) BaseValue.encode(lastKey, false, false),
+                    BaseValue.getColumnType(lastKey).name());
         } finally {
             for (var table : tablesToLock) {
                 table.unlock();
@@ -432,9 +479,9 @@ public class DataStore {
                             this.storageAccessService,
                             this.snapshotRootPath + tableName + PATH_SEPARATOR,
                             this.parquetConfig);
-                    if (table.getSchema() != null || createIfNull) {
+                    if (table.getSchema().getKeyColumn() != null || createIfNull) {
                         this.tables.put(tableName, new SoftReference<>(table));
-                    } else if (table.getSchema() == null) {
+                    } else if (table.getSchema().getKeyColumn() == null) {
                         if (allowNull) {
                             return null;
                         } else {
@@ -457,13 +504,13 @@ public class DataStore {
 
     private Map<String, String> getColumnAliases(TableSchema schema, Map<String, String> columns) {
         if (columns == null || columns.isEmpty()) {
-            return schema.getColumnSchemas().stream()
+            return schema.getColumnSchemaList().stream()
                     .map(ColumnSchema::getName)
                     .collect(Collectors.toMap(Function.identity(), Function.identity()));
         } else {
             var ret = new HashMap<String, String>();
             var invalidColumns = new HashSet<>(columns.keySet());
-            for (var columnSchema : schema.getColumnSchemas()) {
+            for (var columnSchema : schema.getColumnSchemaList()) {
                 var columnName = columnSchema.getName();
                 var alias = columns.get(columnName);
                 if (alias != null) {
@@ -487,18 +534,6 @@ public class DataStore {
             }
             return ret;
         }
-    }
-
-    private static Map<String, Object> encodeRecord(Map<String, ColumnType> columnTypeMap,
-            Map<String, Object> values,
-            boolean rawResult) {
-        var ret = new HashMap<String, Object>();
-        for (var entry : values.entrySet()) {
-            var columnName = entry.getKey();
-            var columnValue = entry.getValue();
-            ret.put(columnName, columnTypeMap.get(columnName).encode(columnValue, rawResult));
-        }
-        return ret;
     }
 
     private boolean saveOneTable(long minNoUpdatePeriodMillis) throws IOException {
@@ -587,6 +622,48 @@ public class DataStore {
             } catch (InterruptedException e) {
                 log.error("interrupted", e);
             }
+        }
+    }
+
+    private static void checkRecord(Map<String, ColumnSchema> columnSchemaMap, Map<String, BaseValue> record) {
+        record.forEach((k, v) -> checkValue(columnSchemaMap.get(k), v));
+    }
+
+    private static void checkValue(ColumnSchema schema, BaseValue value) {
+        if (value == null) {
+            return;
+        }
+        if (value.getColumnType() != schema.getType()) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                    "mixed column type. try to query/scan with encodeWithType=true");
+        }
+        switch (value.getColumnType()) {
+            case LIST:
+            case TUPLE:
+                ((ListValue) value).forEach(e -> checkValue(schema.getElementSchema(), e));
+                break;
+            case MAP:
+                ((MapValue) value).forEach((k, v) -> {
+                    checkValue(schema.getKeySchema(), k);
+                    checkValue(schema.getValueSchema(), v);
+                });
+                break;
+            case OBJECT:
+                if (!((ObjectValue) value).getPythonType().equals(schema.getPythonType())) {
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                            "mixed column type. try to query/scan with encodeWithType=true");
+                }
+                ((ObjectValue) value).forEach((k, v) -> {
+                    var attrSchema = schema.getAttributesSchema().get(k);
+                    if (attrSchema == null) {
+                        throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                                "mixed column type. try to query/scan with encodeWithType=true");
+                    }
+                    checkValue(attrSchema, v);
+                });
+                break;
+            default:
+                break;
         }
     }
 }

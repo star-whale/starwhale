@@ -16,8 +16,9 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
-import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ParquetConfig;
+import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -28,16 +29,16 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
-public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Object>, SwParquetWriterBuilder> {
+public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, BaseValue>, SwParquetWriterBuilder> {
 
-    private final Map<String, ColumnType> schema;
+    private final Map<String, ColumnSchema> schema;
     private final String tableSchema;
     private final String metadata;
     private final Map<String, String> extraMeta = new HashMap<>();
 
     public SwParquetWriterBuilder(
             StorageAccessService storageAccessService,
-            Map<String, ColumnType> schema,
+            Map<String, ColumnSchema> schema,
             String tableSchema,
             String metadata,
             String path,
@@ -85,7 +86,7 @@ public class SwParquetWriterBuilder extends ParquetWriter.Builder<Map<String, Ob
     }
 
     @Override
-    protected WriteSupport<Map<String, Object>> getWriteSupport(Configuration configuration) {
+    protected WriteSupport<Map<String, BaseValue>> getWriteSupport(Configuration configuration) {
         return new SwWriteSupport(this.schema, this.extraMeta, this.tableSchema, this.metadata);
     }
 }

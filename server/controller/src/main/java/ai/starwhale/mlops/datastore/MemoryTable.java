@@ -41,8 +41,10 @@ public interface MemoryTable {
             long timestamp,
             Map<String, String> columns,
             String start,
+            String startType,
             boolean startInclusive,
             String end,
+            String endType,
             boolean endInclusive,
             boolean keepNone);
 

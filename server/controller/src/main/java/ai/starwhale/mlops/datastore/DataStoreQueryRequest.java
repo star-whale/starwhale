@@ -42,4 +42,5 @@ public class DataStoreQueryRequest {
     private boolean keepNone;
     private boolean rawResult;
     private boolean ignoreNonExistingTable;
+    private boolean encodeWithType;
 }

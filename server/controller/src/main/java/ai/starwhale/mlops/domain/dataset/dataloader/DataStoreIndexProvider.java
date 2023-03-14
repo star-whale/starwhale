@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 @Service
 @ConditionalOnProperty(value = "sw.dataset.range.provider", havingValue = "datastore", matchIfMissing = true)
 public class DataStoreIndexProvider implements DataIndexProvider {
+
     private Integer maxBatchSize = 1000;
 
     private static final String KeyColumn = "id";
@@ -51,20 +52,22 @@ public class DataStoreIndexProvider implements DataIndexProvider {
         boolean startInclusive = request.isStartInclusive();
         // TODO: cache for dataset version
         var keys = new LinkedList<String>();
-        for (;;) {
+        for (; ; ) {
             var records = dataStore.scan(DataStoreScanRequest.builder()
                     // start params must use the current cursor
                     .start(start)
+                    .startType("STRING")
                     .startInclusive(startInclusive)
                     .end(request.getEnd())
+                    .endType("STRING")
                     .endInclusive(request.isEndInclusive())
                     .keepNone(true)
                     .rawResult(false)
                     .tables(List.of(
                             DataStoreScanRequest.TableInfo.builder()
-                                .tableName(request.getTableName())
-                                .columns(Map.of(KeyColumn, KeyColumn))
-                                .build()
+                                    .tableName(request.getTableName())
+                                    .columns(Map.of(KeyColumn, KeyColumn))
+                                    .build()
                     ))
                     .limit(maxBatchSize)
                     .build()
@@ -74,9 +77,9 @@ public class DataStoreIndexProvider implements DataIndexProvider {
             } else {
                 keys.addAll(
                         records.getRecords()
-                            .stream()
-                            .map(r -> (String) r.get(KeyColumn))
-                            .collect(Collectors.toList())
+                                .stream()
+                                .map(r -> (String) r.get(KeyColumn))
+                                .collect(Collectors.toList())
                 );
                 if (records.getRecords().size() < maxBatchSize) {
                     break;

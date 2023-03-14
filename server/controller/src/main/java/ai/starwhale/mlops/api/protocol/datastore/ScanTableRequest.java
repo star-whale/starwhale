@@ -24,11 +24,14 @@ public class ScanTableRequest {
 
     private List<TableDesc> tables;
     private String start;
+    private String startType;
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
     private int limit = -1;
     private boolean keepNone;
     private boolean rawResult;
+    private boolean encodeWithType;
     private boolean ignoreNonExistingTable = true;
 }

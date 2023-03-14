@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.parquet;
 
+import ai.starwhale.mlops.datastore.type.BaseValue;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,8 +24,8 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 public class SwWriter {
     public static void writeWithBuilder(
-            SwParquetWriterBuilder builder, Iterator<Map<String, Object>> iterator) throws IOException {
-        ParquetWriter<Map<String, Object>> writer = null;
+            SwParquetWriterBuilder builder, Iterator<Map<String, BaseValue>> iterator) throws IOException {
+        ParquetWriter<Map<String, BaseValue>> writer = null;
         try {
             writer = builder.build();
             while (iterator.hasNext()) {

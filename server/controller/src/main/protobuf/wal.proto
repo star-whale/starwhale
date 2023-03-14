@@ -34,6 +34,7 @@ message Column {
     Column value = 2;
   }
   repeated MapEntry map_value = 11;
+  int32 type = 99;
 }
 
 message Record {

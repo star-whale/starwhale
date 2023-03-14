@@ -130,26 +130,26 @@ public class JobRepoTest {
 
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(
-                    Map.of(
-                        KeyColumn, "1q2w3e4r5t6y",
-                        LongIdColumn, "1",
-                        ProjectIdColumn, "0000000000000001",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000001",
-                        JobStatusColumn, "RUNNING"
-                    ),
-                    Map.of(
-                        KeyColumn, "1a2s3d4f5g6h",
-                        LongIdColumn, "2",
-                        ProjectIdColumn, "0000000000000002",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000002",
-                        JobStatusColumn, "RUNNING"
-                    )
-                ), null))
-                .thenReturn(new RecordList(Map.of(), List.of(), null));
+                        Map.of(
+                                KeyColumn, "1q2w3e4r5t6y",
+                                LongIdColumn, "1",
+                                ProjectIdColumn, "0000000000000001",
+                                ModelVersionIdColumn, "0000000000000001",
+                                ModelVersionColumn, "1z2x3c4v5b6n",
+                                RuntimeVersionIdColumn, "0000000000000001",
+                                JobStatusColumn, "RUNNING"
+                        ),
+                        Map.of(
+                                KeyColumn, "1a2s3d4f5g6h",
+                                LongIdColumn, "2",
+                                ProjectIdColumn, "0000000000000002",
+                                ModelVersionIdColumn, "0000000000000001",
+                                ModelVersionColumn, "1z2x3c4v5b6n",
+                                RuntimeVersionIdColumn, "0000000000000002",
+                                JobStatusColumn, "RUNNING"
+                        )
+                ), null, null))
+                .thenReturn(new RecordList(Map.of(), List.of(), null, null));
 
         List<JobFlattenEntity> jobEntities = jobRepo.listJobs(1L, null);
         Assertions.assertEquals(2, jobEntities.size());
@@ -167,26 +167,27 @@ public class JobRepoTest {
 
         Mockito.when(dataStore.query(any()))
                 .thenReturn(new RecordList(Map.of(), List.of(
-                    Map.of(
-                        KeyColumn, "1q2w3e4r5t6y",
-                        LongIdColumn, "1",
-                        ProjectIdColumn, "0000000000000001",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000001",
-                        JobStatusColumn, "RUNNING"
-                    ),
-                    Map.of(
-                        KeyColumn, "1a2s3d4f5g6h",
-                        LongIdColumn, "2",
-                        ProjectIdColumn, "0000000000000002",
-                        ModelVersionIdColumn, "0000000000000001",
-                        ModelVersionColumn, "1z2x3c4v5b6n",
-                        RuntimeVersionIdColumn, "0000000000000002",
-                        JobStatusColumn, "RUNNING"
-                    )
-                ), null))
-                .thenReturn(new RecordList(Map.of(), List.of(), null));;
+                        Map.of(
+                                KeyColumn, "1q2w3e4r5t6y",
+                                LongIdColumn, "1",
+                                ProjectIdColumn, "0000000000000001",
+                                ModelVersionIdColumn, "0000000000000001",
+                                ModelVersionColumn, "1z2x3c4v5b6n",
+                                RuntimeVersionIdColumn, "0000000000000001",
+                                JobStatusColumn, "RUNNING"
+                        ),
+                        Map.of(
+                                KeyColumn, "1a2s3d4f5g6h",
+                                LongIdColumn, "2",
+                                ProjectIdColumn, "0000000000000002",
+                                ModelVersionIdColumn, "0000000000000001",
+                                ModelVersionColumn, "1z2x3c4v5b6n",
+                                RuntimeVersionIdColumn, "0000000000000002",
+                                JobStatusColumn, "RUNNING"
+                        )
+                ), null, null))
+                .thenReturn(new RecordList(Map.of(), List.of(), null, null));
+        ;
 
         List<JobFlattenEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));
         Assertions.assertEquals(2, jobEntities.size());
