@@ -23,7 +23,7 @@ def get_project(project_id: str) -> SuccessResp:
 
 @router.get("/{project_id}/job/{job}")
 def get_job(project_id: str, job: str) -> SuccessResp:
-    return success({"id": 1, "uuid": job, "modelName": "mock-model"})
+    return success({"id": "1", "uuid": job, "modelName": "mock-model"})
 
 
 @router.get("/{project_id}/role")
