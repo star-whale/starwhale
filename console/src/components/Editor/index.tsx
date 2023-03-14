@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react'
-import EditorContextProvider from '@starwhale/core/context/EditorContextProvider'
+import React, { useMemo, useRef } from 'react'
+import EditorContextProvider, { StoreType } from '@starwhale/core/context/EditorContextProvider'
 import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { tablesOfEvaluation } from '@starwhale/core'
+import { tablesOfEvaluation, WidgetStoreState } from '@starwhale/core'
 import { useParams } from 'react-router-dom'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
@@ -14,16 +14,6 @@ registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
     return function EditorLoader(props: any) {
-        // const [registred, setRegistred] = React.useState(false)
-        // useEffect(() => {
-        //     // registerRemoteWidgets().then((module) => {
-        //     //     setRegistred(true)
-        //     // })
-        // }, [])
-        // if (!registred) {
-        //     return <BusyPlaceholder type='spinner' />
-        // log.debug('WidgetFactory', WidgetFactory.widgetMap)
-        // @FIXME
         const { projectId } = useParams<{ projectId: string }>()
         const { job } = useJob()
         // eslint-disable-next-line prefer-template
@@ -42,13 +32,14 @@ export function withEditorRegister(EditorApp: React.FC) {
 export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
     return function EditorContexted(props: any) {
         const state = useMemo(() => tranformState(rawState), [])
-        // @NOTICE must only init once
+        const store = useRef<StoreType>()
         const value = useMemo(() => {
-            // @ts-ignore
-            const store = createCustomStore(state)
+            if (!store.current) {
+                store.current = createCustomStore(state as WidgetStoreState)
+            }
             const eventBus = new EventBusSrv()
             return {
-                store,
+                store: store.current,
                 eventBus,
             }
         }, [state])

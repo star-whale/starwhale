@@ -122,19 +122,22 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 </div>
             )
 
-        // if (!inViewport) return <div ref={myRef as any} style={{ width: '100%', height: '100%' }} />
-
-        // if (tableName) console.log(id, tableName, columnInfo.isSuccess, info.isSuccess)
-
         return (
-            <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
+            <div
+                ref={myRef as any}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    // visibility: inViewport ? 'visible' : 'hidden'
+                }}
+            >
                 <WrappedWidgetRender
                     {...props}
-                    name={overrides.name}
+                    name={overrides?.name}
                     data={info?.data}
-                    optionConfig={overrides.optionConfig}
+                    optionConfig={overrides?.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
-                    fieldConfig={overrides.fieldConfig}
+                    fieldConfig={overrides?.fieldConfig}
                     onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
                     onLayoutOrderChange={handleLayoutOrderChange}
                     onLayoutChildrenChange={handleLayoutChildrenChange}
