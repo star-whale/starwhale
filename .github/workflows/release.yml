@@ -86,7 +86,7 @@ jobs:
           cp -R docs/versioned_sidebars docs/build/.archived-versions/
           cp -R docs/versioned_docs docs/build/.archived-versions/
           mkdir -p docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs
-          cp -R docs/i18n/zh/docusaurus-plugin-content-docs/i18n/zh/docusaurus-plugin-content-docs/version-* docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/
+          cp -R docs/i18n/zh/docusaurus-plugin-content-docs/version-* docs/build/.archived-versions/i18n/zh/docusaurus-plugin-content-docs/
 
       - name: Publish to Github Pages
         if: ${{ github.ref == 'refs/heads/main'}}
