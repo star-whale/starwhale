@@ -1,73 +1,211 @@
 module.exports = {
     mainSidebar: [
         {
-            "Quickstart": ["quickstart/standalone", "quickstart/on-premises"],
-            "Tutorials": [
-                "tutorials/pytorch",
-                "tutorials/mnist",
-                "tutorials/speech",
-                "tutorials/ag_news",
-                "tutorials/cifar10",
-                "tutorials/pfp",
-                "tutorials/nmt",
-                "tutorials/ucf101"
+            "Overview": [
+                "overview/getting_started",
+                "overview/concepts",
             ],
-            "Fundamentals": [
-                "fundamentals/concepts",
-                "fundamentals/arch"
+            "Starwhale Dataset": [
+                "dataset/getting_started",
+                "dataset/concepts",
+                {
+                    type: 'category',
+                    label: "Examples",
+                    collapsed: true,
+                    items: [
+                        "examples/mnist",
+                        "examples/speech",
+                        "examples/ag_news",
+                        "examples/cifar10",
+                        "examples/pfp",
+                        "examples/nmt",
+                        "examples/ucf101"
+                    ]
+                },
+                {
+                    type: 'category',
+                    label: "API",
+                    collapsed: true,
+                    items: [
+                        "dataset/api/cli",
+                        "dataset/api/data_type",
+                        "dataset/api/sdk",
+                    ]
+                },
             ],
-            "Guides": [
-                "guides/uri",
-                "guides/dataset",
-                "guides/runtime",
-                "guides/model",
-                "guides/evaluation",
+            "Starwhale Model": [
+                "model/getting_started",
+                "model/concepts",
                 {
                     type: 'category',
-                    label: "Installation",
+                    label: "Examples",
                     collapsed: true,
                     items: [
-                        "guides/install/standalone",
-                        "guides/install/helm-charts",
-                        "guides/install/docker",
+                        "examples/mnist",
+                        "examples/speech",
+                        "examples/ag_news",
+                        "examples/cifar10",
+                        "examples/pfp",
+                        "examples/nmt",
+                        "examples/ucf101"
                     ]
                 },
                 {
                     type: 'category',
-                    label: "Configurations",
+                    label: "API",
                     collapsed: true,
                     items: [
-                        "guides/config/standalone_config",
-                        "guides/config/swignore",
-                        "guides/config/server_admin",
+                        "model/api/cli",
+                        "model/api/sdk",
+                    ]
+                },
+            ],
+            "Starwhale Runtime": [
+                "runtime/getting_started",
+                "runtime/concepts",
+                {
+                    type: 'category',
+                    label: "Examples",
+                    collapsed: true,
+                    items: [
+                        "runtime/examples/pytorch",
                     ]
                 },
                 {
                     type: 'category',
-                    label: "Heterogeneous-devices",
+                    label: "API",
                     collapsed: true,
                     items: [
-                        "guides/heterogeneous/node-able",
-                        "guides/heterogeneous/virtual-node",
+                        "runtime/api/cli",
                     ]
                 },
-                "guides/faq",
+            ],
+            "Starwhale Evaluation": [
+                "evaluation/getting_started",
+                "evaluation/concepts",
+                {
+                    type: 'category',
+                    label: "Guides",
+                    collapsed: true,
+                    items: [
+                        {
+                            type: 'category',
+                            label: "Heterogeneous-devices",
+                            collapsed: true,
+                            items: [
+                                "evaluation/heterogeneous/node-able",
+                                "evaluation/heterogeneous/virtual-node",
+                            ]
+                        },
+                    ]
+                },
+                {
+                    type: 'category',
+                    label: "Examples",
+                    collapsed: true,
+                    items: [
+                        "examples/mnist",
+                        "examples/speech",
+                        "examples/ag_news",
+                        "examples/cifar10",
+                        "examples/pfp",
+                        "examples/nmt",
+                        "examples/ucf101"
+                    ]
+                },
+                {
+                    type: 'category',
+                    label: "API",
+                    collapsed: true,
+                    items: [
+                        "evaluation/api/cli",
+                        "evaluation/api/sdk",
+                    ]
+                },
+            ],
+            "Starwhale Instances": [
+                {
+                    type: 'category',
+                    label: "Starwhale Standalone",
+                    collapsed: true,
+                    items: [
+                        "instances/standalone/getting_started",
+                        "instances/standalone/concepts",
+                        "instances/standalone/install",
+                        {
+                            type: 'category',
+                            label: "Guides",
+                            collapsed: true,
+                            items: [
+                                "instances/standalone/guides/uri",
+                                "instances/standalone/guides/config",
+                                "instances/standalone/guides/swignore",
+                            ]
+                        },
+                        {
+                            type: 'category',
+                            label: "API",
+                            collapsed: true,
+                            items: [
+                                "instances/standalone/api/instance_cli",
+                                "instances/standalone/api/project_cli",
+                                "instances/standalone/api/utilities_cli",
+                            ]
+                        },
+                    ]
+                },
+                {
+                    type: 'category',
+                    label: "Starwhale Server",
+                    collapsed: true,
+                    items: [
+                        "instances/server/getting_started",
+                        "instances/server/concepts",
+                        {
+                            type: 'category',
+                            label: "Installation",
+                            collapsed: true,
+                            items: [
+                                "instances/server/install/docker",
+                                "instances/server/install/helm-charts",
+                            ]
+                        },
+                        {
+                            type: 'category',
+                            label: "Guides",
+                            collapsed: true,
+                            items: [
+                                "instances/server/guides/server_admin",
+                            ]
+                        },
+                    ]
+                },
+                {
+                    type: 'category',
+                    label: "Starwhale Cloud",
+                    collapsed: true,
+                    items: [
+                        "instances/cloud/getting_started",
+                        "instances/cloud/concepts",
+                    ]
+                },
             ],
             "Reference": {
                 "Command Line Interface": [
                     "reference/cli/basic",
-                    "reference/cli/instance",
-                    "reference/cli/project",
-                    "reference/cli/dataset",
-                    "reference/cli/model",
-                    "reference/cli/runtime",
-                    "reference/cli/eval",
-                    "reference/cli/utilities"],
+                    "instances/standalone/api/instance_cli",
+                    "instances/standalone/api/project_cli",
+                    "model/api/cli",
+                    "runtime/api/cli",
+                    "dataset/api/cli",
+                    "evaluation/api/cli",
+                    "instances/standalone/api/utilities_cli"],
                 "Python SDK": [
                     "reference/sdk/overview",
-                    "reference/sdk/data_type",
-                    "reference/sdk/dataset",
-                    "reference/sdk/evaluation",
+                    "dataset/api/sdk",
+                    "dataset/api/data_type",
+                    "model/api/sdk",
+                    "evaluation/api/sdk",
                     "reference/sdk/other",
                 ],
             },
