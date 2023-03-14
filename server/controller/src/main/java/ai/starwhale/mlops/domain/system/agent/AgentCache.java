@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 /**
  * release pain of agent reporting
@@ -53,7 +54,7 @@ public class AgentCache implements CommandLineRunner {
     }
 
     public List<Agent> agents() {
-        return agents.values().parallelStream().map(agent -> new AgentUnModifiable(agent)).collect(
+        return agents.values().parallelStream().map(AgentUnModifiable::new).collect(
                 Collectors.toList());
     }
 
@@ -69,29 +70,24 @@ public class AgentCache implements CommandLineRunner {
         agents.remove(agentSerialNumber);
     }
 
-    public Agent nodeReport(Node node) {
+    public void nodeReport(Node node) {
         log.debug("node reported {}", node.getSerialNumber());
-        Agent agentReported = agentConverter.fromNode(node);
-        Agent residentAgent = agents.get(node.getSerialNumber());
-        if (null == residentAgent) {
-            agents.put(node.getSerialNumber(), agentReported);
-            agentReported = save(agentReported);
-            return new AgentUnModifiable(agentReported);
-        } else {
-            residentAgent.setAgentVersion(agentReported.getAgentVersion());
-            residentAgent.setStatus(agentReported.getStatus());
-            residentAgent.setNodeInfo(agentReported.getNodeInfo());
-            residentAgent.setConnectTime(agentReported.getConnectTime());
-            return new AgentUnModifiable(residentAgent);
+        if (StringUtils.hasText(node.getSerialNumber())) {
+            Agent agentReported = agentConverter.fromNode(node);
+            Agent residentAgent = agents.get(node.getSerialNumber());
+            if (null == residentAgent) {
+                agents.put(node.getSerialNumber(), agentReported);
+                save(agentReported);
+            }
         }
     }
 
     @Scheduled(initialDelay = 10000, fixedDelay = 30000)
     public void flushDb() {
         List<AgentEntity> agentEntities = agents.values().stream()
-                .map(agent -> agentConverter.toEntity(agent))
+                .map(agentConverter::toEntity)
                 .collect(Collectors.toList());
-        if (null == agentEntities || agentEntities.isEmpty()) {
+        if (agentEntities.isEmpty()) {
             return;
         }
         BatchOperateHelper.doBatch(agentEntities,
