@@ -55,7 +55,7 @@ export function DataTable({
     compareable = false,
     queryinline = false,
     rows: allRows,
-    rowActions = [],
+    rowActions,
     rowHeight = 44,
     rowHighlightIndex: rowHighlightIndexControlled,
     selectedRowIds: $selectedRowIds = new Set(),
@@ -357,14 +357,18 @@ export function DataTable({
         },
         [rowHighlightIndex, handleRowHighlightIndexChange]
     )
-    // @ts-ignore
-    function handleColumnHeaderMouseEnter(columnIndex) {
-        setColumnHighlightIndex(columnIndex)
-        handleRowHighlightIndexChange(-1)
-    }
-    function handleColumnHeaderMouseLeave() {
+
+    const handleColumnHeaderMouseEnter = React.useCallback(
+        (columnIndex) => {
+            setColumnHighlightIndex(columnIndex)
+            handleRowHighlightIndexChange(-1)
+        },
+        [handleRowHighlightIndexChange]
+    )
+
+    const handleColumnHeaderMouseLeave = React.useCallback(() => {
         setColumnHighlightIndex(-1)
-    }
+    }, [])
 
     React.useEffect(() => {
         if (typeof rowHighlightIndexControlled === 'number') {
@@ -376,7 +380,7 @@ export function DataTable({
         return {
             // columnHighlightIndex,
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
-            rowHighlightIndex,
+            // rowHighlightIndex,
             isRowSelected,
             isQueryInline,
             isSelectable,
@@ -393,7 +397,7 @@ export function DataTable({
         isRowSelected,
         isSelectable,
         isQueryInline,
-        rowHighlightIndex,
+        // rowHighlightIndex,
         rows,
         columns,
         handleSelectOne,
@@ -440,7 +444,6 @@ export function DataTable({
                             onSort: handleSort,
                             resizableColumnWidths,
                             compareable,
-                            rowActions,
                             rowHeight,
                             rowHighlightIndex: -1,
                             rows,

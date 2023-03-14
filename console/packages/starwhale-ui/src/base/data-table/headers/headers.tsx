@@ -6,14 +6,19 @@ import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from '../locales'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useConfigQuery } from '../config-query'
+import { useWhatChanged } from '@simbathesailor/use-what-changed';
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
 export default function Headers({ width }: { width: number }) {
+    // @FIXME css as dep will cause rerender ?
     const [css, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
+
+
+    // useWhatChanged(Object.values(ctx), Object.keys(ctx).join(','))
 
     const $columns = React.useMemo(
         () =>
@@ -60,23 +65,9 @@ export default function Headers({ width }: { width: number }) {
                 <Tooltip
                     key={columnIndex}
                     placement={PLACEMENT.bottomLeft}
-                    // content={() => {
-                    //     return (
-                    //         <div>
-                    //             <p
-                    //                 className={css({
-                    //                     ...theme.typography.font100,
-                    //                     color: theme.colors.contentInversePrimary,
-                    //                 })}
-                    //             >
-                    //                 {locale.datatable.filterAppliedTo} {column.title}
-                    //             </p>
-                    //         </div>
-                    //     )
-                    // }}
                 >
                     <div
-                        className={css({
+                        style={{ width: ctx.widths[columnIndex],
                             ...theme.borders.border200,
                             backgroundColor: theme.colors.backgroundPrimary,
                             borderTop: 'none',
@@ -85,9 +76,7 @@ export default function Headers({ width }: { width: number }) {
                             borderLeft: 'none',
                             boxSizing: 'border-box',
                             display: 'flex',
-                            height: `${HEADER_ROW_HEIGHT}px`,
-                        })}
-                        style={{ width: ctx.widths[columnIndex] }}
+                            height: `${HEADER_ROW_HEIGHT}px`,}}
                     >
                         <Header
                             columnTitle={column.title}
@@ -124,7 +113,7 @@ export default function Headers({ width }: { width: number }) {
                 </Tooltip>
             )
         },
-        [store, ctx, setResizeIndex, resizeIndex, css, locale, theme]
+        [store, setResizeIndex, resizeIndex, locale, theme, ctx.columnHighlightIndex, ctx.columns, ctx.isSelectable, ctx.isSelectedAll, ctx.isSelectedIndeterminate, ctx.isQueryInline, ctx.measuredWidths, ctx.onMouseEnter, ctx.onMouseLeave, ctx.onResize, ctx.onSelectMany, ctx.onSelectNone, ctx.resizableColumnWidths, ctx.sortDirection, ctx.sortIndex, ctx.tableHeight, ctx.widths, renderConfigQueryInline]
     )
 
     const headersLeft = React.useMemo(() => {
