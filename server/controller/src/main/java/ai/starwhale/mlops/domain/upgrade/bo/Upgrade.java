@@ -33,9 +33,9 @@ public class Upgrade {
 
     private final String currentImage;
 
-    private STATUS status;
+    private Status status;
 
-    public enum STATUS {
+    public enum Status {
         UPGRADING, COMPLETE, CANCELLING, CANCELED
     }
 }

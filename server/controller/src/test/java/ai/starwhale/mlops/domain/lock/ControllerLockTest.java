@@ -25,7 +25,7 @@ public class ControllerLockTest {
     private ControllerLockImpl lock;
 
     @BeforeEach
-    public void setUIp() {
+    public void setUp() {
         lock = new ControllerLockImpl();
     }
 

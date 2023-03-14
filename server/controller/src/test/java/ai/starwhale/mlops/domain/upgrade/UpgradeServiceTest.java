@@ -64,14 +64,14 @@ public class UpgradeServiceTest {
 
         V1Container container = new V1Container();
         container.setImage("server:0.4.0");
-        V1PodSpec pSpec = new V1PodSpec();
-        pSpec.addContainersItem(container);
-        V1PodTemplateSpec tSpec = new V1PodTemplateSpec();
-        tSpec.setSpec(pSpec);
-        V1DeploymentSpec dSpec = new V1DeploymentSpec();
-        dSpec.setTemplate(tSpec);
+        V1PodSpec podSpec = new V1PodSpec();
+        podSpec.addContainersItem(container);
+        V1PodTemplateSpec templateSpec = new V1PodTemplateSpec();
+        templateSpec.setSpec(podSpec);
+        V1DeploymentSpec deploymentSpec = new V1DeploymentSpec();
+        deploymentSpec.setTemplate(templateSpec);
         V1Deployment deploy = new V1Deployment();
-        deploy.setSpec(dSpec);
+        deploy.setSpec(deploymentSpec);
         V1DeploymentList deployments = new V1DeploymentList();
         deployments.addItemsItem(deploy);
 

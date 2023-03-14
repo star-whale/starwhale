@@ -20,7 +20,7 @@ import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
-import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.STATUS;
+import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
 import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
 import ai.starwhale.mlops.domain.upgrade.step.UpgradeStepManager;
 import ai.starwhale.mlops.exception.SwProcessException;
@@ -89,7 +89,7 @@ public class UpgradeService {
                     image,
                     currentVersionNumber,
                     getCurrentImage(),
-                    STATUS.UPGRADING);
+                    Status.UPGRADING);
             doUpgrade(upgrade);
 
             return upgrade;
@@ -187,8 +187,8 @@ public class UpgradeService {
     private void doCancel(Upgrade upgrade) {
         log.info("The upgrade progress is cancelled.");
 
-        upgrade.setStatus(STATUS.CANCELLING);
+        upgrade.setStatus(Status.CANCELLING);
         upgradeAccess.setStatusToNormal();
-        upgrade.setStatus(STATUS.CANCELED);
+        upgrade.setStatus(Status.CANCELED);
     }
 }
