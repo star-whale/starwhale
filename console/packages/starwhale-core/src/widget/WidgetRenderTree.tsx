@@ -1,14 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
-
-// @FIXME move out
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { updatePanelSetting } from '@/domain/panel/services/panel'
-
-import { toaster } from 'baseui/toast'
-import _ from 'lodash'
-import produce from 'immer'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
@@ -17,7 +9,6 @@ import { WidgetProps, WidgetTreeNode } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
 import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
-import { PANEL_DYNAMIC_MATCHES, replacer } from './utils/replacer'
 import WidgetFormModal from '../form/WidgetFormModal'
 import WidgetPreviewModal from '../form/WidgetPreviewModal'
 import useRestoreState from './hooks/useRestoreState'
@@ -154,12 +145,11 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         ))
     }, [tree])
 
-
     return (
         <div>
             {Nodes}
             <WidgetFormModal
-                form={ form.current }
+                form={form.current}
                 id={editWidget?.payload?.id}
                 isShow={isPanelModalOpen}
                 setIsShow={setisPanelModalOpen}

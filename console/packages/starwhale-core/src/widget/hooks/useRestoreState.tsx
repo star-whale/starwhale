@@ -41,7 +41,7 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
     // use  api store
     useDeepEffect(() => {
         if (!initialState) return
-        const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !Object.hasOwn(dynamicVars, match.injectKey))
+        const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
         if (novalidVars) {
             // eslint-disable-next-line no-console
             console.error('missing vars', novalidVars)
