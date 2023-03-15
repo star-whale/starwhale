@@ -563,10 +563,112 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert isinstance(items, list)
         assert len(items) == 2
 
-    def test_get_item_features(self) -> None:
+    def test_features_delete(self) -> None:
+        ds = dataset("mnist", create=True)
+        cnt = 10
+        for i in range(0, cnt):
+            ds.append({"side_label": i, "inner_label": i})
+        ds.flush()
+
+        del ds[0].features.side_label
+        del ds[9].features.side_label
+
+        for row in ds[1:9]:
+            del row.features.inner_label
+
+        ds.commit()
+        ds.close()
+
+        load_ds = dataset(ds.uri)
+        assert load_ds[0].features.inner_label == 0
+        assert load_ds[9].features.inner_label == 9
+        assert "side_label" not in load_ds[0].features
+        with self.assertRaises(AttributeError):
+            _ = load_ds[9].features.side_label
+
+        for row in load_ds[1:9]:
+            assert row.features.side_label == row.index
+            assert "inner_label" not in row.features
+
+    def test_features_update(self) -> None:
+        ds = dataset("mnist", create=True)
+        cnt = 10
+        for i in range(0, cnt):
+            ds.append({"update_label": i, "remove_label": i})
+        ds.flush()
+
+        assert ds[0].features.update_label == 0
+        with self.assertRaisesRegex(AttributeError, "Not found attribute"):
+            assert ds[0].features.add_label == 0
+
+        assert not ds.readonly
+
+        for row in ds:
+            row.features.update_label += 10
+            row.features.add_label = 100 + int(row.index)
+            del row.features.remove_label
+
+            assert row._shadow_dataset is ds
+            assert row.features._starwhale_shadow_dataset is ds
+            assert row.features._starwhale_index == row.index
+
+        ds.commit()
+        ds.close()
+
+        load_ds = dataset(ds.uri)
+        for i in range(0, cnt):
+            assert load_ds[i].features.update_label == 10 + i
+            assert load_ds[i].features.add_label == 100 + i
+
+            assert not hasattr(load_ds[i].features, "remove_label")
+            assert "remove_label" not in load_ds[i].features
+
+    def test_mixed_features_update(self) -> None:
+        ds = dataset("mnist", create=True)
+        cnt = 10
+        for i in range(0, cnt):
+            ds.append({"update_label": i})
+        ds.flush()
+
+        for row in ds:
+            row.features[f"label-{row.index}"] = row.index
+
+        ds.commit()
+        ds.close()
+
+        load_ds = dataset(ds.uri)
+        for index, row in enumerate(load_ds):
+            assert set(row.features.keys()) == {"update_label", f"label-{index}"}
+            assert row.features[f"label-{index}"] == index
+
+    def test_features_update_for_readonly_dataset(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
-        features = ds[0].features  # type: ignore
+
+        assert ds.readonly
+
+        assert ds[0].features.label == 0
+        assert ds[0]._shadow_dataset is ds
+        assert ds[0].features._starwhale_shadow_dataset is ds
+        assert ds[0].features._starwhale_index == 0
+
+        readonly_exception_msg = "does not work in the readonly mode"
+
+        with self.assertRaisesRegex(RuntimeError, readonly_exception_msg):
+            ds[0].features.label = 1
+
+        with self.assertRaisesRegex(RuntimeError, readonly_exception_msg):
+            ds[0].features.new_label = 1
+
+        with self.assertRaisesRegex(RuntimeError, readonly_exception_msg):
+            del ds[0].features.label
+
+    def test_get_item_features(self) -> None:
+        ds = dataset("mnist", create=True)
+        ds.append({"label": 0})
+        ds.flush()
+
+        features = ds[0].features
         assert isinstance(features, dict)
         assert isinstance(features, DataRow._Features)
         assert features["label"] == features.label == 0
@@ -579,6 +681,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         del features.new_label
         with self.assertRaises(AttributeError):
             _ = features.new_label
+
+        features_dict = ds[0].features.copy()
+        assert isinstance(features_dict, dict)
+        assert not isinstance(features_dict, DataRow._Features)
+        assert hasattr(ds[0].features, "_starwhale_index")
+        assert hasattr(ds[0].features, "_starwhale_shadow_dataset")
+        assert not hasattr(features_dict, "_starwhale_index")
+        assert not hasattr(features_dict, "_starwhale_shadow_dataset")
 
     def test_tags(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -1029,6 +1139,7 @@ class TestPytorch(_DatasetSDKTestBase):
             ds.commit()
 
         def _custom_transform(data: t.Any) -> t.Any:
+            data = data.copy()
             txt = data["txt"].to_str()
             data["txt"] = f"custom-{txt}"
             return data
