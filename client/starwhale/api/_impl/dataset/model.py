@@ -1,27 +1,36 @@
 from __future__ import annotations
 
+import os
 import typing as t
+import platform
 import threading
 from http import HTTPStatus
 from types import TracebackType
+from pathlib import Path
 from functools import wraps
 from itertools import islice
-from contextlib import ExitStack
 
+import yaml
 from loguru import logger
 
-from starwhale.utils import gen_uniq_version
+from starwhale.utils import now_str, gen_uniq_version
 from starwhale.consts import (
+    FileDesc,
     HTTPMethod,
+    CREATED_AT_KEY,
+    SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
+    DEFAULT_MANIFEST_NAME,
 )
+from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
-from starwhale.utils.fs import move_dir, empty_dir
+from starwhale.utils.fs import copy_file, ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
+from starwhale.utils.error import NoSupportError
+from starwhale.utils.retry import http_retry
 from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
@@ -37,7 +46,7 @@ from starwhale.core.dataset.tabular import (
 )
 
 from .loader import DataRow, DataLoader, get_data_loader
-from .builder import RowWriter
+from .builder import MappingDatasetBuilder
 
 if t.TYPE_CHECKING:
     import tensorflow as tf
@@ -88,6 +97,7 @@ class Dataset:
     ) -> None:
         self.name = name
         self.project_uri = project_uri
+        self.__readonly = readonly
 
         _origin_uri = URI.capsulate_uri(
             self.project_uri.instance,
@@ -96,13 +106,15 @@ class Dataset:
             self.name,
             version or "latest",
         )
+        self._pending_commit_version = gen_uniq_version()
+
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
             if create:
                 raise RuntimeError(
                     f"dataset already existed, failed to create: {self.name}"
                 )
-            self.version = self._auto_complete_version(version)
+            self._loading_version = self._auto_complete_version(version)
         else:
             if readonly:
                 raise ValueError(
@@ -118,84 +130,52 @@ class Dataset:
                 raise NoSupportError(
                     f"no support to create a specified version dataset: {version}"
                 )
-            self.version = gen_uniq_version()
+            self._loading_version = self._pending_commit_version
 
         self.uri = URI.capsulate_uri(
             self.project_uri.instance,
             self.project_uri.project,
             URIType.DATASET,
             self.name,
-            self.version,
+            self._loading_version,
+        )
+        self.__core_dataset = CoreDataset.get_dataset(self.uri)
+
+        self._pending_commit_uri = URI.capsulate_uri(
+            self.project_uri.instance,
+            self.project_uri.project,
+            URIType.DATASET,
+            self.name,
+            self._pending_commit_version,
+        )
+        self.__pending_commit_core_dataset = CoreDataset.get_dataset(
+            self._pending_commit_uri
         )
 
-        self.__readonly = readonly
-        self.__core_dataset = CoreDataset.get_dataset(self.uri)
-        if create:
-            setattr(self.__core_dataset, "_version", self.version)
-
-        _summary = None
-        if origin_uri_exists:
-            if create:
-                # TODO: support build cloud dataset from the existed dataset
-                if self.project_uri.instance_type == InstanceType.CLOUD:
-                    raise NoSupportError(
-                        f"Can't build dataset from the existed cloud dataset uri:{_origin_uri}"
-                    )
-
-                self._append_from_version = version
-                self._create_by_append = True
-                self._fork_dataset()
-                _summary = CoreDataset.get_dataset(_origin_uri).summary()
-            else:
-                self._append_from_version = ""
-                self._create_by_append = False
-        else:
-            if create:
-                self._append_from_version = ""
-                self._create_by_append = False
-            else:
-                raise ExistedError(f"{self.uri} was not found fo load")
-
-        self._summary: t.Optional[DatasetSummary]
-        if _summary:
-            self._summary = _summary
-        else:
-            if origin_uri_exists:
-                self._summary = self.__core_dataset.summary()
-            else:
-                self._summary = DatasetSummary()
-
-        self._rows_cnt = self._summary.rows if self._summary else 0
         self._consumption: t.Optional[TabularDatasetSessionConsumption] = None
-        self._lock = threading.Lock()
+        self._loader_lock = threading.Lock()
         self.__data_loaders: t.Dict[str, DataLoader] = {}
-        self._writer_lock = threading.Lock()
-        self._row_writer: t.Optional[RowWriter] = None
+        self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
+        self._loader_num_workers = _DEFAULT_LOADER_WORKERS
+
+        self._builder_lock = threading.Lock()
+        self._dataset_builder: t.Optional[MappingDatasetBuilder] = None
+        self._commit_lock = threading.Lock()
+        self.__has_committed = False
+
         self._info_lock = threading.Lock()
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
 
-        self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
-        self._loader_num_workers = _DEFAULT_LOADER_WORKERS
-
-    def _fork_dataset(self) -> None:
-        # TODO: support cloud dataset prepare in the tmp dir
-        # TODO: lazy fork dataset
-        if not isinstance(self.__core_dataset, StandaloneDataset):
-            raise NoSupportError(
-                f"only support standalone dataset fork: {self.__core_dataset}"
-            )
-
-        def _when_exit() -> None:
-            self.__core_dataset.store.building = False
-
-        with ExitStack() as stack:
-            stack.callback(_when_exit)
-            self.__core_dataset.store.building = True
-            self.__core_dataset._prepare_snapshot()
-            self.__core_dataset._fork_swds(
-                self._create_by_append, self._append_from_version
-            )
+        self._workdir = Path(f"{SW_AUTO_DIRNAME}/dataset")
+        self._updated_rows_by_commit = 0
+        self._deleted_rows_by_commit = 0
+        if create:
+            self._total_rows = 0
+        else:
+            _summary = self.__core_dataset.summary()
+            # TODO: raise none summary exception for existed dataset
+            self._total_rows = 0 if _summary is None else _summary.rows
 
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
@@ -219,13 +199,13 @@ class Dataset:
             return store.id
 
     def __str__(self) -> str:
-        return f"Dataset: {self.name}-{self.version}"
+        return f"Dataset: {self.name}, stash version: {self._pending_commit_version}, loading version: {self._loading_version}"
 
     def __repr__(self) -> str:
-        return f"Dataset: uri-{self.uri}"
+        return f"Dataset: {self.uri}"
 
     def __len__(self) -> int:
-        return self._rows_cnt
+        return self._total_rows
 
     def __enter__(self: _DType) -> _DType:
         return self
@@ -252,14 +232,19 @@ class Dataset:
                 f"distributed consumption has already been created ({self._consumption})"
             )
 
-        with self._lock:
+        with self._loader_lock:
             self._consumption = get_dataset_consumption(
                 self.uri, session_id=session_id, batch_size=batch_size
             )
         return self
 
+    # TODO： remove this function after datastore supports timestamp
+    def _use_loading_version_for_loader(self) -> Dataset:
+        self._use_loading_version = True
+        return self
+
     def _clear_data_loader(self) -> None:
-        with self._lock:
+        with self._loader_lock:
             self.__data_loaders = {}
 
     def with_loader_config(
@@ -270,7 +255,7 @@ class Dataset:
                 f"loaders({list(self.__data_loaders)}) have already been initialized"
             )
 
-        with self._lock:
+        with self._loader_lock:
             if num_workers is not None:
                 self._loader_num_workers = num_workers
 
@@ -282,8 +267,14 @@ class Dataset:
     def _get_data_loader(
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
-        with self._lock:
-            key = f"consumption-{disable_consumption}"
+        with self._loader_lock:
+            # TODO: use datastore timestamp to load specified version data
+            if hasattr(self, "_use_loading_version"):
+                version = self._loading_version
+            else:
+                version = MappingDatasetBuilder._HOLDER_VERSION
+
+            key = f"consumption-{disable_consumption}-{version}"
 
             _loader = self.__data_loaders.get(key)
             if _loader is None or recreate:
@@ -292,8 +283,16 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
+                _uri = URI.capsulate_uri(
+                    self.project_uri.instance,
+                    self.project_uri.project,
+                    URIType.DATASET,
+                    self.name,
+                    version,
+                )
+
                 _loader = get_data_loader(
-                    self.uri,
+                    _uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
@@ -418,18 +417,19 @@ class Dataset:
             return self.__info
 
         with self._info_lock:
+            # TODO: use uniform dataset table to store info
             self._info_ds_wrapper = TabularDataset.from_uri(self.uri)._info_ds_wrapper
             self.__info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
 
         return self.__info
 
     @_check_readonly
-    def flush(self) -> None:
+    def flush(self, artifacts_flush: bool = False) -> None:
+        if self._dataset_builder:
+            self._dataset_builder.flush(artifacts_flush)
+
         loader = self._get_data_loader(disable_consumption=True)
         loader.tabular_dataset.flush()
-
-        if self._row_writer:
-            self._row_writer.flush()
 
     @_check_readonly
     def rehash(self) -> None:
@@ -447,7 +447,7 @@ class Dataset:
             raise RuntimeError(f"failed to recover dataset: {reason}")
 
     def summary(self) -> t.Optional[DatasetSummary]:
-        return self._summary
+        return self.__core_dataset.summary()
 
     def history(self) -> t.List[t.Dict]:
         return self.__core_dataset.history()
@@ -456,16 +456,14 @@ class Dataset:
         for _loader in self.__data_loaders.values():
             if not _loader:
                 continue  # pragma: no cover
-
             _loader.tabular_dataset.close()
 
-        if self._row_writer:
-            self._row_writer.close()
-
-        # TODO: flush raw data into disk
+        if self._dataset_builder:
+            self._dataset_builder.close()
 
     def diff(self, cmp: Dataset) -> t.Dict:
-        return self.__core_dataset.diff(cmp.uri)
+        # TODO: wait for datastore diff feature
+        raise NotImplementedError
 
     def manifest(self) -> t.Dict[str, t.Any]:
         return self.__core_dataset.info()
@@ -507,8 +505,6 @@ class Dataset:
         self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple, t.Dict]
     ) -> None:
         # TODO: tune the performance of getitem by cache
-        _row_writer = self._get_row_writer()
-
         if not isinstance(key, (int, str)):
             raise TypeError(f"key must be str or int type: {key}")
 
@@ -530,51 +526,27 @@ class Dataset:
             raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 
         # TODO: add gc/rehash for update swds-bin format artifact features
-        # TODO improve accuracy of _rows_cnt during building
-        self._rows_cnt += 1
-        _row_writer.update(row)
+        # TODO improve accuracy of _total_rows during building
+        self._total_rows += 1
 
-    def _get_row_writer(self) -> RowWriter:
-        if self._row_writer is not None:
-            return self._row_writer
+        _ds_builder = self._get_dataset_builder()
+        _ds_builder.put(row)
+        self._updated_rows_by_commit += 1
 
-        with self._writer_lock:
-            if self._row_writer is None:
-                if self._create_by_append and self._append_from_version:
-                    append_from_uri = URI.capsulate_uri(
-                        instance=self.project_uri.instance,
-                        project=self.project_uri.project,
-                        obj_type=URIType.DATASET,
-                        obj_name=self.name,
-                        obj_ver=self._append_from_version,
-                    )
-                    store = DatasetStorage(append_from_uri)
-                    if not store.snapshot_workdir.exists():
-                        raise NotFoundError(f"dataset uri: {append_from_uri}")
-                    append_from_version = store.id
-                else:
-                    append_from_uri = None
-                    append_from_version = ""
-
+    def _get_dataset_builder(self) -> MappingDatasetBuilder:
+        with self._builder_lock:
+            if self._dataset_builder is None:
                 # TODO: support alignment_bytes_size, volume_bytes_size arguments
-                self._row_writer = RowWriter(
+                self._dataset_builder = MappingDatasetBuilder(
+                    workdir=self._workdir / "builder",
                     dataset_name=self.name,
-                    dataset_version=self.version,
                     project_name=self.project_uri.project,
-                    workdir=self.__core_dataset.store.tmp_dir,
-                    append=self._create_by_append,
-                    append_from_version=append_from_version,
-                    append_from_uri=append_from_uri,
                     instance_name=self.project_uri.instance,
                 )
-        return self._row_writer
-
-    _init_row_writer = _get_row_writer
+            return self._dataset_builder
 
     @_check_readonly
     def __delitem__(self, key: _ItemType) -> None:
-        self._init_row_writer()  # hack for del item as the first operation
-
         items: t.List
         if isinstance(key, (str, int)):
             items = [self._getitem(key, skip_fetch_data=True)]
@@ -583,24 +555,24 @@ class Dataset:
         else:
             raise TypeError(f"key({key}) is not str, int or slice type")
 
-        # TODO: add gc/rehash for delete swds-bin format artifact features
         # TODO: raise not-found key error?
-        loader = self._get_data_loader(disable_consumption=True)
+        _ds_builder = self._get_dataset_builder()
         for item in items:
             if not item or not isinstance(item, DataRow):
                 continue  # pragma: no cover
-            loader.tabular_dataset.delete(item.index)
-            self._rows_cnt -= 1
+            _ds_builder.delete(item.index)
+            self._deleted_rows_by_commit += 1
+            self._total_rows -= 1
 
     @_check_readonly
     def append(self, item: t.Any) -> None:
         if isinstance(item, DataRow):
             self.__setitem__(item.index, item)
         elif isinstance(item, dict):
-            self.__setitem__(self._rows_cnt, item)
+            self.__setitem__(self._total_rows, item)
         elif isinstance(item, (list, tuple)):
             if len(item) == 1:
-                row = DataRow(self._rows_cnt, item[0])
+                row = DataRow(self._total_rows, item[0])
             elif len(item) == 2:
                 row = DataRow(item[0], item[1])
             else:
@@ -617,71 +589,168 @@ class Dataset:
         for item in items:
             self.append(item)
 
+    @property
+    def loading_version(self) -> str:
+        """Loaded dataset version.
+        When loading an existing dataset, the loading_version is the related dataset version.
+        When creating a non-existed dataset, the loading_version is equal to the pending_commit_version.
+
+        Returns:
+            A str version
+        """
+        return self._loading_version
+
+    @property
+    def pending_commit_version(self) -> str:
+        """Next commit version.
+        When you call the `commit` function, the pending_commit_version will be recorded in
+        the Standalone instance ,or Cloud instance.
+
+        Returns:
+            A str version
+        """
+        return self._pending_commit_version
+
     @_check_readonly
-    def _do_build_from_interactive_code(self) -> None:
-        if self._row_writer is None:
-            raise RuntimeError("row writer is none, no data was written")
+    def commit(self, tags: t.Optional[t.List[str]] = None, message: str = "") -> str:
+        """Commit into dataset
+        Commit will flush and generate a version of the dataset. At the same time, commit
+        operation will also generate auto-increment tag, such as v0, v1, v2. Only one commit is allowed.
 
-        if self.__info is not None and self._info_ds_wrapper is not None:
-            self.__info.save_to_datastore(self._info_ds_wrapper)
+        Arguments:
+            tags: (list(str), optional) Specify the tags for the version. Default is None.
+            message: (str, optional) Commit message. Default is empty str.
 
-        self.flush()
-        self._row_writer.close()
-        self._summary = self._row_writer.summary
+        Example:
+        ```python
+        from starwhale import dataset
+        with dataset("mnist") as ds:
+            ds.append({"label": 1})
+            ds.commit(message="init commit")
+        ```
 
-        # TODO: add len api for tabular_dataset to reduce overhead here
-        if self._row_writer._builder:
-            table_rows = [
-                row for row in self._row_writer._builder.tabular_dataset.scan()
-            ]
-            self._summary.rows = len(table_rows)
+        Return:
+            A str of dataset version.
+        """
+        # TODO: forbid commit many times
+        with self._commit_lock:
+            return self._commit(tags or [], message)
 
-        if isinstance(self.__core_dataset, StandaloneDataset):
-            local_ds = self.__core_dataset
-            local_uri = self.uri
-        else:
-            local_uri = URI.capsulate_uri(
-                instance=STANDALONE_INSTANCE,
-                project=self.uri.project,
-                obj_type=self.uri.object.typ,
-                obj_name=self.uri.object.name,
-                obj_ver=self.uri.object.version,
+    def _commit(self, tags: t.List[str], message: str) -> str:
+        def _save_info() -> None:
+            if self.__info is not None and self._info_ds_wrapper is not None:
+                self.__info.save_to_datastore(self._info_ds_wrapper)
+
+        def _dump_manifest() -> Path:
+            if self._dataset_builder is None:
+                raise RuntimeError("failed to commit, because dataset builder is None")
+
+            _signs = [str(m) for m in self._dataset_builder.signature_bins_meta]
+
+            _manifest = {
+                "build": {
+                    "os": platform.system(),
+                    "starwhale": STARWHALE_VERSION,
+                },
+                "version": self._pending_commit_version,
+                "related_datastore_timestamp": "",  # TODO: get timestamp from datastore
+                CREATED_AT_KEY: now_str(),
+                "append_signs": _signs,
+                "dataset_summary": {
+                    "rows": self._dataset_builder.calculate_rows_cnt(),  # maybe slow
+                    "updated_rows": self._updated_rows_by_commit,
+                    "deleted_rows": self._deleted_rows_by_commit,
+                },
+                "message": message,
+            }
+
+            self._updated_rows_by_commit = 0
+            self._deleted_rows_by_commit = 0
+
+            _m_path = self._workdir / DEFAULT_MANIFEST_NAME
+            ensure_file(
+                _m_path,
+                yaml.safe_dump(_manifest, default_flow_style=False),
+                parents=True,
             )
-            local_ds = StandaloneDataset(local_uri)
-            local_ds.store._tmp_dir = self.__core_dataset.store.tmp_dir
-            setattr(local_ds, "_version", self.version)
+            return _m_path
 
-        def _when_standalone_exit() -> None:
-            local_ds._make_auto_tags()
-            move_dir(local_ds.store.tmp_dir, local_ds.store.snapshot_workdir)
+        def _submit_standalone_version(manifest_path: Path) -> None:
+            pccd = self.__pending_commit_core_dataset
+            if not isinstance(pccd, StandaloneDataset):
+                raise RuntimeError(
+                    f"core dataset is not StandaloneDataset instance: {pccd}"
+                )
 
-        def _when_cloud_exit() -> None:
-            from starwhale.core.dataset.copy import DatasetCopy
+            _snapshot_dir = pccd.store.snapshot_workdir
+            ensure_dir(_snapshot_dir)
+            copy_file(
+                manifest_path,
+                pccd.store.snapshot_workdir / DEFAULT_MANIFEST_NAME,
+            )
+            pccd.tag.add_fast_tag()
 
-            dc = DatasetCopy(
-                str(local_uri), str(self.uri), URIType.DATASET
-            ).with_disable_datastore()
-            dc._do_upload_bundle_dir(workdir=local_ds.store.tmp_dir)
-            empty_dir(local_ds.store.tmp_dir)
+        @http_retry
+        def _submit_cloud_version(manifest_path: Path) -> None:
+            from starwhale.base.bundle_copy import _UploadPhase
 
-        def _when_exit() -> None:
-            local_ds.store.building = False
-            if isinstance(self.__core_dataset, StandaloneDataset):
-                _when_standalone_exit()
-            else:
-                _when_cloud_exit()
+            crm = CloudRequestMixed()
+            params = {
+                "swds": f"{self.name}:{self._pending_commit_version}",
+                "project": self.project_uri.project,
+                "force": "1",  # stash version is unique, use force=1 to make http retry happy
+            }
+            url_path = f"/project/{self.project_uri.project}/dataset/{self.name}/version/{self._pending_commit_version}/file"
+            r = crm.do_multipart_upload_file(
+                url_path=url_path,
+                file_path=manifest_path,
+                instance_uri=self.project_uri,
+                params={
+                    "phase": _UploadPhase.MANIFEST,
+                    "desc": FileDesc.MANIFEST.name,
+                    **params,
+                },
+                use_raise=True,
+            )
+            crm.do_http_request(
+                path=url_path,
+                method=HTTPMethod.POST,
+                instance_uri=self.project_uri,
+                data={
+                    "phase": _UploadPhase.END,
+                    "uploadId": r.json()["data"]["uploadId"],
+                    **params,
+                },
+                use_raise=True,
+                disable_default_content_type=True,
+            )
 
-        with ExitStack() as stack:
-            stack.callback(_when_exit)
-            local_ds.store.building = True
-            local_ds._manifest["dataset_summary"] = self._summary.asdict()
-            local_ds._calculate_signature()
-            local_ds._render_manifest()
-            local_ds._make_swds_meta_tar()
+        if self.__has_committed:
+            raise RuntimeError("Dataset has already committed")
 
-    @_check_readonly
-    def commit(self) -> None:
-        self._do_build_from_interactive_code()
+        self.flush(artifacts_flush=True)
+        _save_info()
+        manifest_path = _dump_manifest()
+        if self.project_uri.instance == STANDALONE_INSTANCE:
+            _submit_standalone_version(manifest_path)
+        else:
+            _submit_cloud_version(manifest_path)
+        os.unlink(manifest_path)
+
+        if tags:
+            self.__pending_commit_core_dataset.add_tags(tags)
+
+        self.__has_committed = True
+        return self._pending_commit_version
+
+    @property
+    def committed(self) -> bool:
+        """Check If the dataset is committed.
+
+        Returns:
+            True or False
+        """
+        return self.__has_committed
 
     def copy(
         self, dest_uri: str, force: bool = False, dest_local_project_uri: str = ""

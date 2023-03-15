@@ -246,6 +246,7 @@ class TestModelPipelineHandler(TestCase):
         )
 
         fname = "data_ubyte_0.swds_bin"
+        sign, _ = DatasetStorage.save_data_file(Path(self.swds_dir) / fname)
         m_scan.side_effect = [
             [{"id": 0, "value": 1}],
             [
@@ -253,7 +254,7 @@ class TestModelPipelineHandler(TestCase):
                     features={
                         "image": GrayscaleImage(
                             link=Link(
-                                fname,
+                                uri=sign,
                                 offset=32,
                                 size=784,
                                 _swds_bin_offset=0,
@@ -270,11 +271,7 @@ class TestModelPipelineHandler(TestCase):
         m_scan_id.return_value = [{"id": 0}]
 
         datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
-        data_dir = datastore_dir.data_dir
-        ensure_dir(data_dir)
-        shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
-        ensure_dir(datastore_dir.loc)
-        ensure_file(datastore_dir.manifest_path, "")
+        ensure_file(datastore_dir.manifest_path, "", parents=True)
 
         context = Context(
             workdir=Path(),

@@ -905,7 +905,7 @@ class Link(ASDictMixin, SwObject):
         key_compose = (
             Link(self.local_fs_uri) if self.local_fs_uri else self,
             self.offset or 0,
-            self.size + self.offset - 1 if self.size else sys.maxsize,
+            self.size + self.offset - 1 if self.size != -1 else sys.maxsize,
         )
         store = ObjectStore.get_store(self, self.owner)
         with store.backend._make_file(
@@ -953,6 +953,9 @@ class DatasetSummary(ASDictMixin):
         self.increased_rows = increased_rows
         self.unchanged_rows = rows - increased_rows
         self.data_byte_size = data_byte_size
+        # TODO: cleanup expired increased_rows, unchanged_rows, data_byte_size fields
+        self.updated_rows = kw.get("updated_rows", 0)
+        self.deleted_rows = kw.get("deleted_rows", 0)
 
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows})"

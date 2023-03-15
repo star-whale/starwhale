@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import os
-import time
 import queue
 import struct
 import typing as t
@@ -178,12 +177,16 @@ class RotatedBinWriter:
 
 
 class MappingDatasetBuilder:
+    _HOLDER_VERSION = "_current"
     _STASH_URI = "_starwhale_stash_uri"
 
     class _SignedBinMeta(t.NamedTuple):
         name: str
         algo: str
         size: int
+
+        def __str__(self) -> str:
+            return f"{self.name}:{self.algo}:{self.size}"
 
     def __init__(
         self,
@@ -205,7 +208,7 @@ class MappingDatasetBuilder:
         self._bin_volume_bytes_size = bin_volume_bytes_size
         self._tabular_dataset = TabularDataset(
             name=dataset_name,
-            version="_current",  # use a holder version value, all versions of one dataset use the unified table
+            version=self._HOLDER_VERSION,  # use a holder version value, all versions of one dataset use the unified table
             project=project_name,
             instance_name=instance_name,
         )
@@ -340,7 +343,10 @@ class MappingDatasetBuilder:
                 ):  # receive exception from ArtifactsBinSyncThread
                     raise row
                 else:
-                    self._handle_row_put(row)
+                    try:
+                        self._handle_row_put(row)
+                    finally:
+                        self._rows_put_queue.task_done()
         except Exception as e:
             self._rows_put_exception = e
             raise
@@ -355,7 +361,10 @@ class MappingDatasetBuilder:
                 if bin_path is None:
                     break
                 else:
-                    self._handle_bin_sync(bin_path)
+                    try:
+                        self._handle_bin_sync(bin_path)
+                    finally:
+                        self._abs_queue.task_done()
         except Exception as e:
             self._abs_exception = e
             self._rows_put_queue.put(e)
@@ -365,13 +374,11 @@ class MappingDatasetBuilder:
         self._tabular_dataset.delete(key)
 
     def flush(self, artifacts_flush: bool = False) -> None:
-        while not self._rows_put_queue.empty():
-            time.sleep(0.1)
+        self._rows_put_queue.join()
 
         if artifacts_flush:
             self._artifact_bin_writer._rotate()
-            while not self._abs_queue.empty():
-                time.sleep(0.1)
+            self._abs_queue.join()
 
         self._tabular_dataset.flush()
 
@@ -390,3 +397,7 @@ class MappingDatasetBuilder:
     @property
     def signature_bins_meta(self) -> t.List[MappingDatasetBuilder._SignedBinMeta]:
         return self._signed_bins_meta
+
+    def calculate_rows_cnt(self) -> int:
+        # TODO: tune performance by datastore
+        return len([row for row in self._tabular_dataset.scan()])

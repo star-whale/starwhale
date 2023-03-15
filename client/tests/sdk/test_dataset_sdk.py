@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import sys
 import typing as t
 from http import HTTPStatus
@@ -16,6 +17,7 @@ from PIL import Image as PILImage
 from requests_mock import Mocker
 
 from starwhale import dataset
+from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -39,6 +41,16 @@ from .. import ROOT_DIR, BaseTestCase
 
 
 class _DatasetSDKTestBase(BaseTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self._original_cwd = os.getcwd()
+        os.chdir(self.local_storage)
+
+    def tearDown(self) -> None:
+        if hasattr(self, "_original_cwd"):
+            os.chdir(self._original_cwd)
+        super().tearDown()
+
     def _init_simple_dataset(self) -> URI:
         with dataset("mnist", create=True) as ds:
             for i in range(0, 10):
@@ -76,19 +88,19 @@ class _DatasetSDKTestBase(BaseTestCase):
 class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
         ds = dataset("mnist", create=True)
-        assert ds.version != ""
+        assert ds.loading_version == ds.pending_commit_version != ""
         assert ds.project_uri.full_uri == "local/project/self/dataset/mnist"
         assert ds.uri.object.name == ds.name == "mnist"
         assert ds.uri.object.typ == URIType.DATASET
-        assert ds.uri.object.version == ds.version
+        assert ds.uri.object.version == ds.pending_commit_version
         assert ds.uri.project == "self"
         assert ds.uri.instance == "local"
 
         assert not ds.readonly
-        assert ds._append_from_version == ""
-        assert not ds._create_by_append
         assert len(ds) == 0
         assert bool(ds)
+        assert not ds.committed
+        ds.close()
 
     def test_append(self) -> None:
         size = 11
@@ -147,7 +159,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_setitem(self) -> None:
         ds = dataset("mnist", create=True)
         assert len(ds) == 0
-        assert ds._row_writer is None
+        assert ds._dataset_builder is None
 
         ds["index-2"] = DataRow(
             index="index-2", features={"data": Binary(), "label": 2}
@@ -157,10 +169,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         )
 
         assert len(ds) == 2
-        assert ds._row_writer is not None
-        assert ds._row_writer._kw["dataset_name"] == ds.name
-        assert ds._row_writer._kw["dataset_version"] == ds.version
-        assert not ds._row_writer._kw["append"]
+        assert ds._dataset_builder is not None
+        assert ds._dataset_builder.dataset_name == ds.name
 
         ds["index-4"] = "index-4", {"data": Binary(), "label": 4}
         ds["index-3"] = {"data": Binary(), "label": 3}
@@ -247,7 +257,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
             ds.flush()
 
-    @pytest.mark.skip(reason="wait for one dataset use one datastore table refactor")
     def test_del_item_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
@@ -277,20 +286,20 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             for i in range(0, 3):
                 ds.append(DataRow(i, {"data": Binary(), "label": i}))
 
-            ds.flush()
+            ds.flush(artifacts_flush=True)
             del ds[0]
             del ds[1]
             ds.commit()
 
         reopen_ds = dataset(ds.uri)
-        assert len(reopen_ds) == 1
         items = list(reopen_ds)
         assert len(items) == 1
         assert items[0].index == 2
+        assert len(reopen_ds) == 1
 
     def test_build_no_data(self) -> None:
         ds = dataset("mnist", create=True)
-        msg = "row writer is none, no data was written"
+        msg = "failed to commit, because dataset builder is None"
         with self.assertRaisesRegex(RuntimeError, msg):
             ds.commit()
 
@@ -308,12 +317,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
         ds.close()
 
-    @pytest.mark.skip(reason="wait for one dataset use one datastore table refactor")
     def test_create_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
 
-        assert ds.version == existed_ds_uri.object.version == ds.uri.object.version
+        assert (
+            ds.loading_version == existed_ds_uri.object.version == ds.uri.object.version
+        )
         assert ds.name == existed_ds_uri.object.name
         assert ds.project_uri.project == existed_ds_uri.project
         assert not ds.readonly
@@ -326,29 +336,22 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.append(DataRow(index=100, features={"data": Binary(b"100"), "label": 100}))
         # assert len(ds) == 11 TODO restore this case len(ds) after improving accuracy of _rows_cnt during building
         ds.append(DataRow(index=101, features={"data": Binary(b"101"), "label": 101}))
-        ds.commit()
+        version = ds.commit()
         ds.close()
 
-        load_ds = dataset(ds.uri)
+        load_ds = dataset(f"{ds.name}/version/{version}")
         assert load_ds[1].features["label"] == 101  # type: ignore
         assert {d.index for d in load_ds} == set(list(range(0, 10)) + [100, 101])
         assert len(load_ds) == 12
-        _summary = load_ds.summary()
-        assert _summary is not None
-        assert _summary.rows == 12
 
     def test_load_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
-        assert ds.version == ds.uri.object.version == existed_ds_uri.object.version
+        assert (
+            ds.loading_version == ds.uri.object.version == existed_ds_uri.object.version
+        )
         assert not ds.readonly
         assert ds.name == existed_ds_uri.object.name
-
-        _summary = ds.summary()
-        assert _summary is not None
-        assert _summary.rows == len(ds) == 10
-        assert ds._append_from_version == ""
-        assert not ds._create_by_append
 
         _d = ds[0]
         assert isinstance(_d, DataRow)
@@ -361,7 +364,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         name = existed_ds_uri.object.name
         ds = dataset(f"{name}/version/latest")
         assert ds.exists()
-        assert ds.version == existed_ds_uri.object.version
+        assert ds.loading_version == existed_ds_uri.object.version
 
     def test_load_with_short_version(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -369,7 +372,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         version = existed_ds_uri.object.version
         ds = dataset(f"{name}/version/{version[:7]}")
         assert ds.exists()
-        assert ds.version == existed_ds_uri.object.version
+        assert ds.loading_version == existed_ds_uri.object.version
 
     def test_iter(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -617,12 +620,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         ds = dataset("http://1.1.1.1/project/self/dataset/mnist/version/1234")
         assert ds.exists()
-        _summary = ds.summary()
-        assert _summary is not None
-        assert _summary.rows == 101
 
     @Mocker()
-    def test_cloud_build_from_icode(self, rm: Mocker) -> None:
+    def test_create_for_cloud(self, rm: Mocker) -> None:
         sw = SWCliConfigMixed()
         sw.update_instance(
             uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
@@ -654,15 +654,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
         assert version_req.call_count == 1
 
-        upload_file_req = rm.request(
+        file_request = rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}/file",
+            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.pending_commit_version}/file",
             json={"data": {"uploadId": "123"}},
         )
-
-        _store = ds._Dataset__core_dataset.store  # type: ignore
-        tmp_dir = _store.tmp_dir
-        snapshot_workdir = _store.snapshot_workdir
 
         cnt = 10
         for i in range(0, cnt):
@@ -673,20 +669,27 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             )
 
         ds.flush()
-        assert tmp_dir.exists()
-        assert len(list(tmp_dir.iterdir())) != 0
-        assert not snapshot_workdir.exists()
-        assert not upload_file_req.called
+
+        _dataset_builder_dir = ds._workdir / "builder"
+        _artifacts_bin_dir = _dataset_builder_dir / "artifact_bin_tmp"
+
+        assert _dataset_builder_dir.exists()
+        assert len(list(_artifacts_bin_dir.iterdir())) == 1
 
         ds.commit()
-        assert not tmp_dir.exists()
-        assert not snapshot_workdir.exists()
         assert project_req.called
-        assert upload_file_req.called
         assert update_table_req.called
+        assert file_request.call_count == 2
 
-        ds.close()
+        # TODO: when sdk supports to upload blobs into cloud, remove assertRasise
+        with self.assertRaisesRegex(
+            RuntimeError, "no support upload bin files into cloud instance directly"
+        ):
+            ds.close()
 
+    @pytest.mark.skip(
+        "enable this test when datastore wrapper supports timestamp version"
+    )
     def test_consumption(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -735,6 +738,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(RuntimeError, "have already been initialized"):
             ds.with_loader_config(num_workers=1)
 
+    @pytest.mark.skip(
+        "enable this test when datastore wrapper supports timestamp version"
+    )
     def test_consumption_recreate_exception(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -783,7 +789,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         m = ds.manifest()
         assert isinstance(m, dict)
         assert m["name"] == ds.name
-        assert m["version"] == ds.version
+        assert m["version"] == ds.loading_version
         assert m["tags"] == ["latest", "v0"]
         assert m["project"] == ds.project_uri.project
 
@@ -834,7 +840,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         list_info, _ = ds.list(ds.project_uri, fullname=True)
         assert isinstance(list_info, list)
         assert list_info[0]["name"] == ds.name
-        assert list_info[0]["version"] == ds.version
+        assert list_info[0]["version"] == ds.loading_version
         assert list_info[0]["tags"] == ["latest", "v0"]
 
         ds.remove()
@@ -849,7 +855,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.recover()
 
         list_info, _ = ds.list(ds.project_uri, fullname=True)
-        assert list_info[0]["version"] == ds.version
+        assert list_info[0]["version"] == ds.loading_version
 
     def test_history(self) -> None:
         # TODO: add more test cases after the dataset versioning refactor
@@ -859,7 +865,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         history = int_ds.history()
         assert len(history) == 1
         assert history[0]["name"] == int_ds.name
-        assert history[0]["version"] == int_ds.version
+        assert history[0]["version"] == int_ds.loading_version
 
     @pytest.mark.skip("enable this test when datastore supports diff")
     def test_diff(self) -> None:
@@ -878,6 +884,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         diff = int_ds.diff(str_ds)
         assert diff["diff_rows"]["updated"] == 10
 
+    @pytest.mark.skip(
+        "enable this test when dataset model uses one-one datastore table"
+    )
     def test_head(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -914,18 +923,134 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}",
+            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.loading_version}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
 
         rm.request(
             HTTPMethod.POST,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.version}/file",
+            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.loading_version}/file",
             json={"data": {"uploadId": "123"}},
         )
 
         ds.copy("cloud://test/project/self")
+
+    def test_commit_from_empty(self) -> None:
+        dataset_name = "mnist"
+        commit_msg = "test"
+        ds = dataset(dataset_name, create=True)
+        ds.append({"label": 1})
+        assert not ds.committed
+        version = ds.commit(message=commit_msg)
+        ds.close()
+
+        assert ds.committed
+        assert ds.pending_commit_version == version
+        assert ds.loading_version == version
+
+        manifest_path = (
+            Path(self.local_storage)
+            / "self"
+            / "dataset"
+            / dataset_name
+            / version[:2]
+            / f"{version}.swds"
+            / "_manifest.yaml"
+        )
+        manifest = load_yaml(manifest_path)
+        assert manifest["append_signs"] == []
+        assert "created_at" in manifest
+        assert "related_datastore_timestamp" in manifest
+        assert manifest["dataset_summary"] == {
+            "deleted_rows": 0,
+            "rows": 1,
+            "updated_rows": 1,
+        }
+        assert manifest["message"] == commit_msg
+        assert manifest["version"] == ds.loading_version
+
+    def test_commit_from_existed(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        ds.append(DataRow(index="100", features={"data": Binary(b"100"), "label": 100}))
+        version = ds.commit()
+        ds.close()
+
+        assert version == ds.pending_commit_version
+        assert existed_ds_uri.object.version == ds.loading_version
+        assert version != ds.loading_version
+
+        dataset_dir = Path(self.local_storage) / "self" / "dataset" / ds.name
+
+        v0 = existed_ds_uri.object.version
+        v1 = version
+        v0_path = dataset_dir / v0[:2] / f"{v0}.swds" / "_manifest.yaml"
+        v1_path = dataset_dir / v1[:2] / f"{v1}.swds" / "_manifest.yaml"
+        assert v0_path.exists()
+        assert v1_path.exists()
+        assert load_yaml(v0_path)["version"] == v0
+        assert load_yaml(v1_path)["version"] == v1
+        tag_manifest = load_yaml(dataset_dir / "_manifest.yaml")
+        assert tag_manifest["fast_tag_seq"] == 1
+        assert tag_manifest["tags"] == {"latest": v1, "v0": v0, "v1": v1}
+        assert tag_manifest["versions"] == {
+            v1: {"latest": True, "v1": True},
+            v0: {"v0": True},
+        }
+
+    def test_commit_with_tags(self) -> None:
+        ds = dataset("mnist", create=True)
+        ds.append({"label": 1})
+        ds.commit(tags=["test1", "test2"])
+        ds.close()
+
+        load_ds = dataset("mnist")
+        assert list(load_ds.tags) == ["latest", "test1", "test2", "v0"]
+
+    def test_commit_exception(self) -> None:
+        ds = dataset("mnist", create=True)
+        with self.assertRaisesRegex(
+            RuntimeError, "failed to commit, because dataset builder is None"
+        ):
+            ds.commit()
+
+        ds.append({"label": 1})
+        ds.commit()
+
+        with self.assertRaisesRegex(RuntimeError, "Dataset has already committed"):
+            ds.commit()
+
+        ds.close()
+
+    def test_no_commit(self) -> None:
+        with dataset("mnist", create=True):
+            ...
+
+        with self.assertRaisesRegex(RuntimeError, "for the non-existed dataset"):
+            dataset("mnist")
+
+        ds = dataset("mnist", create=True)
+        ds.append(("index-1", {"label": 1}))
+        v0 = ds.commit()
+        ds.close()
+
+        no_commit_ds = dataset("mnist")
+        no_commit_ds.append(("index-2", {"label": 2}))
+        no_commit_ds.close()
+
+        commit_ds = dataset("mnist")
+        commit_ds.append(("index-3", {"label": 3}))
+        v1 = commit_ds.commit()
+        commit_ds.close()
+
+        load_ds = dataset("mnist")
+        assert list(load_ds.tags) == ["latest", "v0", "v1"]
+        rows = {r.index for r in load_ds}
+        assert rows == {"index-1", "index-2", "index-3"}
+        history = load_ds.history()
+        assert len(history) == 2
+        assert {v0, v1} == {history[0]["version"], history[1]["version"]}
 
 
 class TestPytorch(_DatasetSDKTestBase):

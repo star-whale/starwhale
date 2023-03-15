@@ -206,8 +206,10 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: user custom config batch size, max_retries
         for uri_str in self.dataset_uris:
             _uri = URI(uri_str, expected_type=URIType.DATASET)
-            ds = Dataset.dataset(_uri)
-            ds.make_distributed_consumption(session_id=self.context.version)
+            ds = Dataset.dataset(_uri, readonly=True)
+            ds.make_distributed_consumption(
+                session_id=self.context.version
+            )._use_loading_version_for_loader()
             dataset_info = ds.info
             cnt = 0
             for rows in ds.batch_iter(self.ppl_batch_size):

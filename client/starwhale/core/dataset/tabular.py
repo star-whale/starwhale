@@ -38,7 +38,6 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
-from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
@@ -342,14 +341,9 @@ class TabularDataset:
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
     ) -> _TDType:
-        _version = uri.object.version
-        if uri.instance_type == InstanceType.STANDALONE:
-            _store = DatasetStorage(uri)
-            _version = _store.id
-
         return cls(
             uri.object.name,
-            _version,
+            uri.object.version,
             uri.project,
             start=start,
             end=end,
@@ -474,7 +468,7 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
 
         self.project = dataset_uri.project
         self.dataset_name = dataset_uri.object.name
-        self.dataset_version = DatasetStorage(dataset_uri).id
+        self.dataset_version = dataset_uri.object.version
 
         self.session_id = session_id
         if batch_size <= 0:
