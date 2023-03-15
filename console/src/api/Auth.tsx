@@ -7,15 +7,18 @@ import qs from 'qs'
 import { simulationJump } from '@/utils'
 import { getToken, setToken } from '@/api'
 import { useSearchParam } from 'react-use'
+import { FakeLocalToken } from '@/consts'
 
 type IAuthContext = {
     token: string | null
+    standaloneMode: boolean
     onLogin: (data: ILoginUserSchema) => Promise<string>
     onLogout: () => void
     triggerTokenRefresh: () => Promise<void>
 }
 export const AuthContext = React.createContext<IAuthContext>({
     token: null,
+    standaloneMode: false,
     onLogin: () => Promise.resolve(''),
     onLogout: () => {},
     triggerTokenRefresh: () => Promise.resolve(),
@@ -78,6 +81,7 @@ export const AuthProvider = ({ children }: any) => {
 
     const value = {
         token: currentToken,
+        standaloneMode: token === FakeLocalToken,
         onLogin: handleLogin,
         onLogout: handleLogout,
         triggerTokenRefresh: async () => {

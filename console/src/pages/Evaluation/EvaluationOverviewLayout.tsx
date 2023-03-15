@@ -10,6 +10,7 @@ import { JobActionType, JobStatusType } from '@/domain/job/schemas/job'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAuth } from '@/api/Auth'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -20,6 +21,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
+    const { standaloneMode } = useAuth()
 
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
@@ -43,8 +45,8 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 path: `/projects/${projectId}/evaluations/${jobId}`,
             },
         ]
-        return items
-    }, [projectId, jobId, t, job])
+        return standaloneMode ? [] : items
+    }, [projectId, jobId, t, job, standaloneMode])
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
@@ -62,8 +64,8 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 pattern: '/\\/tasks\\/?',
             },
         ]
-        return items
-    }, [projectId, jobId, t])
+        return standaloneMode ? [] : items
+    }, [projectId, jobId, t, standaloneMode])
 
     const handleAction = React.useCallback(
         async (jobIdArg, type: JobActionType) => {
