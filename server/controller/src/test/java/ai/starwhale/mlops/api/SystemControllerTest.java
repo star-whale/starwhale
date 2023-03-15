@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
-import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.SystemService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -102,8 +101,7 @@ public class SystemControllerTest {
         var resp = controller.getUpgradeProgress();
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                isA(UpgradeProgressVo.class)
+                notNullValue()
         ));
     }
 
