@@ -4,7 +4,6 @@ import typing as t
 import threading
 from http import HTTPStatus
 from types import TracebackType
-from pathlib import Path
 from functools import wraps
 from itertools import islice
 from contextlib import ExitStack
@@ -157,7 +156,6 @@ class Dataset:
         self.__data_loaders: t.Dict[str, DataLoader] = {}
         self._writer_lock = threading.Lock()
         self._row_writer: t.Optional[RowWriter] = None
-        self._enable_copy_src = False
         self._info_lock = threading.Lock()
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
@@ -594,21 +592,6 @@ class Dataset:
     def extend(self, items: t.Sequence[t.Any]) -> None:
         for item in items:
             self.append(item)
-
-    @_check_readonly
-    def build_with_copy_src(
-        self,
-        src_dir: t.Union[str, Path],
-        include_files: t.Optional[t.List[str]] = None,
-        exclude_files: t.Optional[t.List[str]] = None,
-    ) -> Dataset:
-        self._enable_copy_src = True
-        self._build_src_dir = Path(src_dir)
-        self._build_include_files = include_files or []
-        self._build_exclude_files = exclude_files or []
-        return self
-
-    commit_with_copy_src = build_with_copy_src
 
     @_check_readonly
     def _do_build_from_interactive_code(self) -> None:
