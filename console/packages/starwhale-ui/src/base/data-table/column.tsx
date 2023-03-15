@@ -11,6 +11,9 @@ import Button from '../../Button'
 import IconFont from '../../IconFont'
 import { themedUseStyletron } from '../../theme/styletron'
 
+const MIN_WIDTH = 100
+const MAX_WIDTH = 300
+
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     const RenderCell = React.forwardRef<
         HTMLDivElement,
@@ -83,11 +86,11 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         kind: options.kind,
         buildFilter: options.buildFilter || ((params) => (data) => true),
         textQueryFilter: options.textQueryFilter,
-        fillWidth: options.fillWidth === undefined ? true : options.fillWidth,
+        fillWidth: options.fillWidth === undefined ? false : options.fillWidth,
         filterable: Boolean(options.filterable) && Boolean(options.renderFilter) && Boolean(options.buildFilter),
         mapDataToValue: options.mapDataToValue,
-        maxWidth: options.maxWidth,
-        minWidth: options.minWidth,
+        maxWidth: options.maxWidth ?? MAX_WIDTH,
+        minWidth: options.minWidth ?? MIN_WIDTH,
         // @ts-ignore
         renderCell: RenderCell,
         renderFilter: options.renderFilter || (() => null),

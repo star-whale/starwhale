@@ -25,7 +25,7 @@ const useStyles = createUseStyles({
             '&:hover': {},
         },
         '& .table-columns-pinned': {
-            // backgroundColor: '#FFF',
+            backgroundColor: '#FFF',
         },
         '& .table-row--hovering': {
             backgroundColor: '#EBF1FF',

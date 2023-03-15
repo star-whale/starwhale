@@ -6,7 +6,7 @@ import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from '../locales'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useConfigQuery } from '../config-query'
-import { useWhatChanged } from '@simbathesailor/use-what-changed';
+import { useWhatChanged } from '@simbathesailor/use-what-changed'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
@@ -16,7 +16,6 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-
 
     // useWhatChanged(Object.values(ctx), Object.keys(ctx).join(','))
 
@@ -62,12 +61,10 @@ export default function Headers({ width }: { width: number }) {
             const isPin = !!column.pin
 
             return (
-                <Tooltip
-                    key={columnIndex}
-                    placement={PLACEMENT.bottomLeft}
-                >
+                <Tooltip key={columnIndex} placement={PLACEMENT.bottomLeft}>
                     <div
-                        style={{ width: ctx.widths[columnIndex],
+                        style={{
+                            width: ctx.widths[columnIndex],
                             ...theme.borders.border200,
                             backgroundColor: theme.colors.backgroundPrimary,
                             borderTop: 'none',
@@ -76,7 +73,8 @@ export default function Headers({ width }: { width: number }) {
                             borderLeft: 'none',
                             boxSizing: 'border-box',
                             display: 'flex',
-                            height: `${HEADER_ROW_HEIGHT}px`,}}
+                            height: `${HEADER_ROW_HEIGHT}px`,
+                        }}
                     >
                         <Header
                             columnTitle={column.title}
@@ -103,7 +101,7 @@ export default function Headers({ width }: { width: number }) {
                             resizableColumnWidths={ctx.resizableColumnWidths}
                             compareable={ctx.compareable}
                             resizeIndex={resizeIndex}
-                            resizeMinWidth={ctx.measuredWidths[columnIndex]}
+                            resizeMinWidth={ctx.measuredWidths.get(column.key)}
                             resizeMaxWidth={column.maxWidth || Infinity}
                             sortIndex={ctx.sortIndex}
                             sortDirection={ctx.sortDirection}
@@ -113,7 +111,31 @@ export default function Headers({ width }: { width: number }) {
                 </Tooltip>
             )
         },
-        [store, setResizeIndex, resizeIndex, locale, theme, ctx.columnHighlightIndex, ctx.columns, ctx.isSelectable, ctx.isSelectedAll, ctx.isSelectedIndeterminate, ctx.isQueryInline, ctx.measuredWidths, ctx.onMouseEnter, ctx.onMouseLeave, ctx.onResize, ctx.onSelectMany, ctx.onSelectNone, ctx.resizableColumnWidths, ctx.sortDirection, ctx.sortIndex, ctx.tableHeight, ctx.widths, renderConfigQueryInline]
+        [
+            store,
+            setResizeIndex,
+            resizeIndex,
+            locale,
+            theme,
+            ctx.columnHighlightIndex,
+            ctx.columns,
+            ctx.isSelectable,
+            ctx.isSelectedAll,
+            ctx.isSelectedIndeterminate,
+            ctx.isQueryInline,
+            ctx.measuredWidths,
+            ctx.onMouseEnter,
+            ctx.onMouseLeave,
+            ctx.onResize,
+            ctx.onSelectMany,
+            ctx.onSelectNone,
+            ctx.resizableColumnWidths,
+            ctx.sortDirection,
+            ctx.sortIndex,
+            ctx.tableHeight,
+            ctx.widths,
+            renderConfigQueryInline,
+        ]
     )
 
     const headersLeft = React.useMemo(() => {

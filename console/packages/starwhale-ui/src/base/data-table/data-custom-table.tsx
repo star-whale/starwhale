@@ -88,16 +88,17 @@ export function DataTable({
 
     // We use state for our ref, to allow hooks to  update when the ref changes.
     const [gridRef, setGridRef] = React.useState<VariableSizeGrid<any> | null>(null)
-    const [measuredWidths, setMeasuredWidths] = React.useState(columns.map(() => 0))
-    const [resizeDeltas, setResizeDeltas] = React.useState(columns.map(() => 0))
-    React.useEffect(() => {
-        setMeasuredWidths((prev) => {
-            return columns.map((v, index) => prev[index] || 0)
-        })
-        setResizeDeltas((prev) => {
-            return columns.map((v, index) => prev[index] || 0)
-        })
-    }, [columns])
+    const [measuredWidths, setMeasuredWidths] = React.useState(new Map())
+    const [resizeDeltas, setResizeDeltas] = React.useState(new Map())
+
+    // React.useEffect(() => {
+    //     setMeasuredWidths((prev) => {
+    //         return columns.map((v) => prev.get(v.key) || 60)
+    //     })
+    //     setResizeDeltas((prev) => {
+    //         return columns.map((v, index) => prev.get(v.key) || 0)
+    //     })
+    // }, [columns])
 
     const resetAfterColumnIndex = React.useCallback(
         (columnIndex) => {
@@ -109,6 +110,7 @@ export function DataTable({
     )
     const handleWidthsChange = React.useCallback(
         (nextWidths) => {
+            console.log('handleWidthsChange', nextWidths)
             setMeasuredWidths(nextWidths)
             resetAfterColumnIndex(0)
         },
@@ -116,16 +118,16 @@ export function DataTable({
     )
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
+            const column = columns[columnIndex]
             setResizeDeltas((prev) => {
-                // eslint-disable-next-line no-param-reassign
-                prev[columnIndex] = Math.max(prev[columnIndex] + delta, 0)
-                return [...prev]
+                const v = prev.has(column.key) ? prev.get(column.key) : 0
+                prev.set(column.key, Math.max(v + delta, 0))
+                return new Map(prev)
             })
             resetAfterColumnIndex(columnIndex)
         },
         [setResizeDeltas, resetAfterColumnIndex]
     )
-
     const [scrollLeft, setScrollLeft] = React.useState(0)
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
@@ -236,7 +238,14 @@ export function DataTable({
 
     const [browserScrollbarWidth, setBrowserScrollbarWidth] = React.useState(0)
     const normalizedWidths = React.useMemo(() => {
-        const resizedWidths = measuredWidths.map((w, i) => Math.floor(w) + Math.floor(resizeDeltas[i]))
+        const resizedWidths = columns.map((c, i) => {
+            const w = (measuredWidths.get(c.key) ?? c.minWidth) + (resizeDeltas.get(c.key) ?? 0)
+            if (c.maxWidth && w > c.maxWidth) {
+                return c.maxWidth
+            }
+            return w
+        })
+
         if (gridRef) {
             const gridProps = gridRef.props
 
@@ -253,7 +262,7 @@ export function DataTable({
             const scrollbarWidth = isContentTallerThanContainer ? browserScrollbarWidth : 0
 
             const remainder = gridProps.width - sum(resizedWidths) - scrollbarWidth
-            const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : true)).length
+            const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : false)).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
             if (padding > 0) {
@@ -267,6 +276,7 @@ export function DataTable({
                     }
                 }
                 result.push(gridProps.width - sum(result) - scrollbarWidth - 2)
+
                 resetAfterColumnIndex(0)
                 return result
             }
@@ -407,7 +417,7 @@ export function DataTable({
         normalizedWidths,
     ])
 
-    console.log(rowHighlightIndex)
+    // console.log(rowHighlightIndex, resizeDeltas)
 
     const InnerElement = React.useMemo(() => {
         // @ts-ignore
@@ -446,6 +456,8 @@ export function DataTable({
         })
     }, [gridRef, rowHighlightIndex])
 
+    const [itemIndexs, setItemIndexs] = React.useState({})
+
     const handleItemsRendered = React.useCallback(
         _.throttle(
             ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
@@ -456,30 +468,45 @@ export function DataTable({
                     overscanRowStartIndex,
                     overscanRowStopIndex
                 )
+                setItemIndexs({
+                    overscanColumnStartIndex,
+                    overscanColumnStopIndex,
+                    overscanRowStartIndex,
+                    overscanRowStopIndex,
+                })
             },
             200
         ),
         []
     )
 
-    useIfChanged({
-        columns,
-        rows,
-        isQueryInline,
-        isSelectable,
-        handleWidthsChange,
-        gridRef,
-    })
+    const $columnsShowed = React.useMemo(() => {
+        return columns.filter(
+            (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
+        )
+    }, [columns, itemIndexs])
+
+    const $isLayoutReady = React.useMemo(
+        () => $columnsShowed.filter((c) => !measuredWidths.has(c.key)).length === 0,
+        [$columnsShowed, measuredWidths]
+    )
+
+    // useIfChanged({
+    //     columns,
+    //     rows,
+    //     isQueryInline,
+    //     isSelectable,
+    //     handleWidthsChange,
+    // })
 
     return (
         <>
             <MeasureColumnWidths
-                columns={columns}
+                columns={$columnsShowed}
                 rows={rows}
                 isSelectable={isSelectable}
                 isQueryInline={isQueryInline}
                 onWidthsChange={handleWidthsChange}
-                gridRef={gridRef}
             />
             <MeasureScrollbarWidth onWidthChange={(w) => setBrowserScrollbarWidth(w)} />
             {/* don't assign with to auto sizer */}

@@ -19,7 +19,7 @@ export type HeaderContextT = {
     isQueryInline: boolean
     isSelectedAll: boolean
     isSelectedIndeterminate: boolean
-    measuredWidths: number[]
+    measuredWidths: Map<any, any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
@@ -53,7 +53,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     isSelectedAll: false,
     isQueryInline: false,
     isSelectedIndeterminate: false,
-    measuredWidths: [],
+    measuredWidths: new Map(),
     onMouseEnter: () => {},
     onMouseLeave: () => {},
     onResize: () => {},
@@ -243,7 +243,7 @@ function Header(props: HeaderProps) {
                             'cursor': 'ew-resize',
                             'position': 'absolute',
                             'height': '100%',
-                            'width': '2px',
+                            'width': '3px',
                             ':hover': {
                                 backgroundColor: theme.brandTableHeaderResizer,
                             },
