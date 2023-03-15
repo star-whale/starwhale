@@ -12,9 +12,10 @@ import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { toaster } from 'baseui/toast'
-import { ButtonLink, TextLink } from '@/components/Link'
+import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
+import Button from '@starwhale/ui/Button'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -62,16 +63,16 @@ export default function DatasetVersionListCard() {
                                 <>
                                     {i ? (
                                         <WithCurrentAuth id='dataset.version.revert'>
-                                            <ButtonLink
+                                            <Button
+                                                kind='tertiary'
                                                 key={datasetVersion.id}
-                                                onClick={() => {
-                                                    handleAction(datasetVersion.id)
-                                                }}
+                                                onClick={() => handleAction(datasetVersion.id)}
                                             >
                                                 {t('Revert')}
-                                            </ButtonLink>
+                                            </Button>
                                         </WithCurrentAuth>
                                     ) : null}
+                                    &nbsp;&nbsp;
                                     <CopyToClipboard
                                         content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
                                     />
