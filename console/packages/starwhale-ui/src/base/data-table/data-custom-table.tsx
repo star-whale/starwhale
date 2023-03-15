@@ -10,7 +10,12 @@ import Headers from './headers/headers'
 import InnerTableElement from './inner-table-element'
 import CellPlacementMemo from './cells/cell-placement'
 import { DataTablePropsT } from './types'
+import { useIfChanged } from '../../../../starwhale-core/src/utils/useWhatChanged'
+import { useEvent } from '@starwhale/core'
+import { useWhatChanged } from '@simbathesailor/use-what-changed'
+import _ from 'lodash'
 
+const STYLE = { overflow: 'auto' }
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 function MeasureScrollbarWidth(props: { onWidthChange: (width: number) => void }) {
     const [css] = themedUseStyletron()
@@ -348,15 +353,12 @@ export function DataTable({
         [setRowHighlightIndex, onRowHighlightChange, gridRef, rows]
     )
 
-    const handleRowMouseEnter = React.useCallback(
-        (nextIndex) => {
-            setColumnHighlightIndex(-1)
-            if (nextIndex !== rowHighlightIndex) {
-                handleRowHighlightIndexChange(nextIndex)
-            }
-        },
-        [rowHighlightIndex, handleRowHighlightIndexChange]
-    )
+    const handleRowMouseEnter = useEvent((nextIndex) => {
+        // setColumnHighlightIndex(-1)
+        if (nextIndex !== rowHighlightIndex) {
+            handleRowHighlightIndexChange(nextIndex)
+        }
+    })
 
     const handleColumnHeaderMouseEnter = React.useCallback(
         (columnIndex) => {
@@ -394,16 +396,80 @@ export function DataTable({
     }, [
         handleRowMouseEnter,
         // columnHighlightIndex,
+        // rowHighlightIndex,
         isRowSelected,
         isSelectable,
         isQueryInline,
-        // rowHighlightIndex,
         rows,
         columns,
         handleSelectOne,
         textQuery,
         normalizedWidths,
     ])
+
+    console.log(rowHighlightIndex)
+
+    const InnerElement = React.useMemo(() => {
+        // @ts-ignore
+        return (props, ref) => <InnerTableElement {...props} gridRef={gridRef} data={itemData} />
+    }, [gridRef, itemData])
+
+    const columnWidth = React.useCallback((index) => normalizedWidths[index], [normalizedWidths])
+
+    // useIfChanged({
+    //     setGridRef,
+    //     InnerElement,
+    //     columnWidth,
+    //     length: columns.length,
+    //     itemData,
+    //     handleScroll,
+    //     rowLength: rows.length,
+    //     rowHeightAtIndex,
+    // })
+
+    const $background = React.useMemo(() => {
+        if (!gridRef) return []
+        const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
+        return new Array(rowStopIndex - rowStartIndex + 1).fill(0).map((_, rowIndex) => {
+            return (
+                <div
+                    className='table-row-background'
+                    key={rowIndex}
+                    style={{
+                        ...gridRef._getItemStyle(rowIndex, 0),
+                        width: '100%',
+                        marginBottom: gridRef._getItemStyle(rowIndex, 0).height * -1,
+                        backgroundColor: rowHighlightIndex === rowIndex + rowStartIndex ? '#F7F8FA' : 'transparent',
+                    }}
+                />
+            )
+        })
+    }, [gridRef, rowHighlightIndex])
+
+    const handleItemsRendered = React.useCallback(
+        _.throttle(
+            ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
+                console.log(
+                    'handleItemsRendered',
+                    overscanColumnStartIndex,
+                    overscanColumnStopIndex,
+                    overscanRowStartIndex,
+                    overscanRowStopIndex
+                )
+            },
+            200
+        ),
+        []
+    )
+
+    useIfChanged({
+        columns,
+        rows,
+        isQueryInline,
+        isSelectable,
+        handleWidthsChange,
+        gridRef,
+    })
 
     return (
         <>
@@ -413,6 +479,7 @@ export function DataTable({
                 isSelectable={isSelectable}
                 isQueryInline={isQueryInline}
                 onWidthsChange={handleWidthsChange}
+                gridRef={gridRef}
             />
             <MeasureScrollbarWidth onWidthChange={(w) => setBrowserScrollbarWidth(w)} />
             {/* don't assign with to auto sizer */}
@@ -456,24 +523,34 @@ export function DataTable({
                         }}
                     >
                         <Headers width={width} />
+                        {/* <div
+                            style={{
+                                width: `${width}px`,
+                                position: 'absolute',
+                                top: HEADER_ROW_HEIGHT,
+                                height: height - HEADER_ROW_HEIGHT,
+                                marginBottom: (height - HEADER_ROW_HEIGHT) * -1,
+                            }}
+                        >
+                            {$background}
+                        </div> */}
                         <VariableSizeGrid
                             className='table-columns'
                             ref={setGridRef as any}
                             overscanRowCount={0}
                             overscanColumnCount={0}
-                            innerElementType={(props, ref) => (
-                                <InnerTableElement {...props} gridRef={gridRef} data={itemData} />
-                            )}
+                            innerElementType={InnerElement}
                             height={height - HEADER_ROW_HEIGHT}
-                            columnWidth={(index) => normalizedWidths[index]}
+                            columnWidth={columnWidth}
                             columnCount={columns.length}
                             width={width}
                             itemData={itemData}
                             onScroll={handleScroll}
                             rowCount={rows.length}
                             rowHeight={rowHeightAtIndex}
-                            style={{ overflow: 'auto' }}
+                            style={STYLE}
                             direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
+                            onItemsRendered={handleItemsRendered}
                         >
                             {CellPlacementMemo as any}
                         </VariableSizeGrid>

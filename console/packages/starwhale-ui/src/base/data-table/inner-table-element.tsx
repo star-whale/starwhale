@@ -5,6 +5,9 @@ import { HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
+import { useIfChanged } from '@starwhale/core/utils'
+import { filter } from 'rxjs/operators'
+import _ from 'lodash'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -27,13 +30,16 @@ const EMPTY = 2
 
 // @ts-ignore
 const sum = (ns) => ns.reduce((s, n) => s + n, 0)
+type InnerTableElementProps = {
+    children: React.ReactNode | null
+    style: React.CSSProperties
+    data: any
+    gridRef: VariableSizeGrid<any>
+}
 
 // replaces the content of the virtualized window with contents. in this case,
 // we are prepending a table header row before the table rows (children to the fn).
-const InnerTableElement = React.forwardRef<
-    { children: React.ReactNode | null; style: React.CSSProperties; data: any; gridRef: VariableSizeGrid<any> },
-    HTMLDivElement
->((props, ref) => {
+const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProps>((props, ref) => {
     const [css] = themedUseStyletron()
     const ctx = React.useContext(HeaderContext)
     let viewState = RENDERING
@@ -46,14 +52,14 @@ const InnerTableElement = React.forwardRef<
         () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
         [ctx.columns, ctx.widths]
     )
-    // @ts-ignore
     const { data, gridRef } = props
+
     const $columns = React.useMemo(
         () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
         [data.columns]
     )
 
-    const $children = React.useMemo(() => {
+    const $childrenPinned = React.useMemo(() => {
         const cells: React.ReactNode[] = []
         if (!gridRef) return []
 
@@ -76,9 +82,23 @@ const InnerTableElement = React.forwardRef<
         return cells
     }, [$columns, gridRef, data])
 
+    const $children = React.useMemo(() => {
+        return props.children
+    }, [props.children])
+
     if (!ctx.widths.filter(Boolean).length) {
         return null
     }
+
+    // useIfChanged({
+    //     $childrenPinned,
+    //     $columns,
+    //     pinnedWidth,
+    //     gridRef,
+    //     data,
+    //     children: props.children,
+    //     $children,
+    // })
 
     return (
         <>
@@ -98,7 +118,7 @@ const InnerTableElement = React.forwardRef<
                     })
                 )}
             >
-                {$children.length > 0 && (
+                {$childrenPinned.length > 0 && (
                     <div
                         className='table-columns-pinned'
                         // @ts-ignore
@@ -109,7 +129,7 @@ const InnerTableElement = React.forwardRef<
                             overflow: 'hidden',
                         }}
                     >
-                        {viewState === RENDERING && $children}
+                        {viewState === RENDERING && $childrenPinned}
                     </div>
                 )}
             </div>
@@ -126,7 +146,7 @@ const InnerTableElement = React.forwardRef<
             >
                 {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
-                {viewState === RENDERING && props.children}
+                {viewState === RENDERING && $children}
             </div>
         </>
     )

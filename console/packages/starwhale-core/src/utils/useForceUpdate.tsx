@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
-export default function useForceUpdate() {
+export function useForceUpdate() {
     const [, setValue] = useState(0)
     return () => setValue((prevState) => prevState + 1)
 }
+
+export default useForceUpdate
