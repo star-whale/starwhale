@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
+import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.List;
@@ -129,20 +130,29 @@ public class UpgradeStepTest {
 
     @Test
     public void testBackupDatabase() {
-        Upgrade upgrade = new Upgrade("pid", "0.2", "server:0.2", "0.1", "server:0.1", Status.UPGRADING);
+        Upgrade upgrade = new Upgrade("pid",
+                new Version("0.2", "server:0.2"),
+                new Version("0.1", "server:0.1"),
+                Status.UPGRADING);
         backupDatabase.doStep(upgrade);
     }
 
     @Test
     public void testUpdateK8sImage() {
-        Upgrade upgrade = new Upgrade("pid", "0.2", "server:0.2", "0.1", "server:0.1", Status.UPGRADING);
+        Upgrade upgrade = new Upgrade("pid",
+                new Version("0.2", "server:0.2"),
+                new Version("0.1", "server:0.1"),
+                Status.UPGRADING);
         updateK8sImage.doStep(upgrade);
         Assertions.assertTrue(updateK8sImage.isComplete());
     }
 
     @Test
     public void testStepTask() {
-        Upgrade upgrade = new Upgrade("pid", "0.2", "server:0.2", "0.1", "server:0.1", Status.UPGRADING);
+        Upgrade upgrade = new Upgrade("pid",
+                new Version("0.2", "server:0.2"),
+                new Version("0.1", "server:0.1"),
+                Status.UPGRADING);
         StepTask stepTask = new StepTask(upgrade, steps);
         stepTask.setFuture(future);
         for (int i = 0; i < steps.size(); i++) {
@@ -154,7 +164,10 @@ public class UpgradeStepTest {
 
     @Test
     public void testManager() {
-        Upgrade upgrade = new Upgrade("pid", "0.2", "server:0.2", "0.1", "server:0.1", Status.UPGRADING);
+        Upgrade upgrade = new Upgrade("pid",
+                new Version("0.2", "server:0.2"),
+                new Version("0.1", "server:0.1"),
+                Status.UPGRADING);
         manager.runSteps(upgrade);
         Assertions.assertTrue(deployed.get());
         Assertions.assertTrue(completed.get());
