@@ -437,37 +437,43 @@ export function DataTable({
     //     rowHeightAtIndex,
     // })
 
-    const $background = React.useMemo(() => {
-        if (!gridRef) return []
-        const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
-        return new Array(rowStopIndex - rowStartIndex + 1).fill(0).map((_, rowIndex) => {
-            return (
-                <div
-                    className='table-row-background'
-                    key={rowIndex}
-                    style={{
-                        ...gridRef._getItemStyle(rowIndex, 0),
-                        width: '100%',
-                        marginBottom: gridRef._getItemStyle(rowIndex, 0).height * -1,
-                        backgroundColor: rowHighlightIndex === rowIndex + rowStartIndex ? '#F7F8FA' : 'transparent',
-                    }}
-                />
-            )
-        })
-    }, [gridRef, rowHighlightIndex])
+    // const $background = React.useMemo(() => {
+    //     if (!gridRef) return []
+    //     //
+    //     const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
+    //     return new Array(rowStopIndex - rowStartIndex + 1).fill(0).map((_, rowIndex) => {
+    //         return (
+    //             <div
+    //                 className='table-row-background'
+    //                 key={rowIndex}
+    //                 style={{
+    //                     ...gridRef._getItemStyle(rowIndex, 0),
+    //                     width: '100%',
+    //                     marginBottom: gridRef._getItemStyle(rowIndex, 0).height * -1,
+    //                     backgroundColor: rowHighlightIndex === rowIndex + rowStartIndex ? '#F7F8FA' : 'transparent',
+    //                 }}
+    //             />
+    //         )
+    //     })
+    // }, [gridRef, rowHighlightIndex])
 
-    const [itemIndexs, setItemIndexs] = React.useState({})
+    const [itemIndexs, setItemIndexs] = React.useState({
+        overscanColumnStartIndex: 0,
+        overscanColumnStopIndex: 0,
+        overscanRowStartIndex: 0,
+        overscanRowStopIndex: 0,
+    })
 
     const handleItemsRendered = React.useCallback(
         _.throttle(
             ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
-                console.log(
-                    'handleItemsRendered',
-                    overscanColumnStartIndex,
-                    overscanColumnStopIndex,
-                    overscanRowStartIndex,
-                    overscanRowStopIndex
-                )
+                // console.log(
+                //     'handleItemsRendered',
+                //     overscanColumnStartIndex,
+                //     overscanColumnStopIndex,
+                //     overscanRowStartIndex,
+                //     overscanRowStopIndex
+                // )
                 setItemIndexs({
                     overscanColumnStartIndex,
                     overscanColumnStopIndex,
@@ -486,10 +492,10 @@ export function DataTable({
         )
     }, [columns, itemIndexs])
 
-    const $isLayoutReady = React.useMemo(
-        () => $columnsShowed.filter((c) => !measuredWidths.has(c.key)).length === 0,
-        [$columnsShowed, measuredWidths]
-    )
+    // const $isLayoutReady = React.useMemo(
+    //     () => $columnsShowed.filter((c) => !measuredWidths.has(c.key)).length === 0,
+    //     [$columnsShowed, measuredWidths]
+    // )
 
     // useIfChanged({
     //     columns,
