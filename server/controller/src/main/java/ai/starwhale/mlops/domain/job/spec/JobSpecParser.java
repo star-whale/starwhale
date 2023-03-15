@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.domain.job.spec;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +32,10 @@ import org.springframework.util.CollectionUtils;
 public class JobSpecParser {
 
     public static final String DEFAULT_JOB_NAME = "default";
-    private final YAMLMapper yamlMapper;
-
-    public JobSpecParser(YAMLMapper yamlMapper) {
-        this.yamlMapper = yamlMapper;
-    }
 
     public List<StepSpec> parseStepFromYaml(String yamlContent) throws JsonProcessingException {
         try {
-            return yamlMapper.readValue(yamlContent, new TypeReference<>() {
+            return Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
             log.info("yaml in map format, {}", yamlContent);
@@ -49,7 +44,7 @@ public class JobSpecParser {
     }
 
     public List<StepSpec> parseStepFromYaml(String yamlContent, String jobName) throws JsonProcessingException {
-        Map<String, List<StepSpec>> map = yamlMapper.readValue(yamlContent, new TypeReference<>() {
+        Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
         });
         List<StepSpec> specList = map.get(jobName);
         if (CollectionUtils.isEmpty(specList)) {

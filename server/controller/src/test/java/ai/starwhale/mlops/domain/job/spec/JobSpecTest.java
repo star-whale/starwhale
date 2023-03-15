@@ -119,7 +119,7 @@ public class JobSpecTest {
 
     @BeforeEach
     public void setUp() {
-        jobSpecParser = new JobSpecParser(new YAMLMapper());
+        jobSpecParser = new JobSpecParser();
     }
 
     @Test

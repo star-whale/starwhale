@@ -77,7 +77,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,8 +113,6 @@ public class ModelServiceTest {
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
     private TrashService trashService;
-
-    private YAMLMapper yamlMapper;
 
     @SneakyThrows
     @BeforeEach
@@ -159,7 +156,6 @@ public class ModelServiceTest {
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
-        yamlMapper = new YAMLMapper();
 
         service = new ModelService(
                 modelMapper,
@@ -175,8 +171,7 @@ public class ModelServiceTest {
                 userService,
                 projectService,
                 jobHolder,
-                trashService,
-                yamlMapper);
+                trashService);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {

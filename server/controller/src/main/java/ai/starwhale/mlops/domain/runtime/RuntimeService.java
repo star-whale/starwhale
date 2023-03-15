@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -74,7 +75,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
@@ -94,7 +94,6 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -120,7 +119,6 @@ public class RuntimeService {
     private final IdConverter idConvertor;
     private final HotJobHolder jobHolder;
     private final VersionAliasConverter versionAliasConvertor;
-    private final ObjectMapper yamlMapper;
     private final TrashService trashService;
     @Setter
     private BundleManager bundleManager;
@@ -134,7 +132,7 @@ public class RuntimeService {
 
     public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
                           StorageService storageService, ProjectService projectService,
-                          @Qualifier("yamlMapper") ObjectMapper yamlMapper, RuntimeConverter runtimeConvertor,
+                          RuntimeConverter runtimeConvertor,
                           RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
                           StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
                           HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
@@ -146,7 +144,6 @@ public class RuntimeService {
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
         this.projectService = projectService;
-        this.yamlMapper = yamlMapper;
         this.runtimeConvertor = runtimeConvertor;
         this.versionConvertor = versionConvertor;
         this.runtimeDao = runtimeDao;
@@ -429,7 +426,7 @@ public class RuntimeService {
                 runtimeManifest = new String(
                         Objects.requireNonNull(
                                 TarFileUtil.getContentFromTarFile(inputStream, "", "_manifest.yaml")));
-                runtimeManifestObj = yamlMapper.readValue(runtimeManifest,
+                runtimeManifestObj = Constants.yamlMapper.readValue(runtimeManifest,
                         RuntimeManifest.class);
             } catch (IOException e) {
                 log.error("upload runtime failed {}", uploadRequest.getRuntime(), e);

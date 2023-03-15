@@ -76,6 +76,22 @@ sw:
 ---
 #Development
 spring:
+  boot:
+    admin:
+      context-path: admin
+      instance-auth:
+        default-user-name: ${spring.security.user.name}
+        default-password: ${spring.security.user.password}
+      client:
+        url: http://localhost:${server.port}/${spring.boot.admin.context-path}
+        username: ${spring.security.user.name}
+        password: ${spring.security.user.password}
+        instance:
+          metadata:
+            user:
+              name: ${spring.security.user.name}
+              password: ${spring.security.user.password}
+          name: StarWhale-Server
   config:
     activate:
       on-profile: dev
@@ -104,6 +120,12 @@ server:
   shutdown: graceful
 logging:
   level:
-    root: info
-    ai.starwhale.mlops: debug
-    org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:DEBUG}
+    root: ${SW_ROOT_LOG_LEVEL:warn}
+    ai.starwhale.mlops: ${SW_BIZ_LOG_LEVEL:warn}
+    org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:info}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics}

@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ public class JobParserTest {
                 + "    limit: 1\n"
                 + "  step_name: cmp\n"
                 + "  task_num: 1";
-        JobSpecParser jobSpecParser = new JobSpecParser(new YAMLMapper());
+        JobSpecParser jobSpecParser = new JobSpecParser();
         List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 2);
         Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);

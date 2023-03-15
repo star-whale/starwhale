@@ -34,8 +34,6 @@ import ai.starwhale.mlops.domain.panel.po.PanelPluginEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,14 +54,12 @@ public class PluginServiceTest {
         storageAccessService = mock(StorageAccessService.class);
         var storagePathCoordinator = new StoragePathCoordinator("/root");
         panelPluginMapper = mock(PanelPluginMapper.class);
-        var yamlMapper = new ObjectMapper(new YAMLFactory());
         var idConvertor = new IdConverter();
         var panelPluginConvertor = new PanelPluginConverter(idConvertor);
         var locations = new String[]{"file:/opt/starwhale.static"};
         service = new PluginService(
                 storageAccessService,
                 storagePathCoordinator,
-                yamlMapper,
                 panelPluginMapper,
                 panelPluginConvertor,
                 idConvertor,

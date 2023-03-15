@@ -81,8 +81,6 @@ import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -119,7 +117,6 @@ public class RuntimeServiceTest {
     private StorageAccessService storageAccessService;
     private UserService userService;
     private HotJobHolder jobHolder;
-    private ObjectMapper yamlMapper;
     private TrashService trashService;
     private K8sClient k8sClient;
     private K8sJobTemplate k8sJobTemplate;
@@ -169,8 +166,6 @@ public class RuntimeServiceTest {
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
 
-        yamlMapper = new ObjectMapper(new YAMLFactory());
-
         trashService = mock(TrashService.class);
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
@@ -181,7 +176,6 @@ public class RuntimeServiceTest {
                 runtimeVersionMapper,
                 storageService,
                 projectService,
-                yamlMapper,
                 runtimeConvertor,
                 versionConvertor,
                 runtimeDao,
