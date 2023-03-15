@@ -134,9 +134,8 @@ class SWDSBinWriter:
 
     def write_row(self, row: TabularDatasetRow) -> None:
         with self._lock:
-            artifacts = row.artifacts()
             artifacts_with_bin = False
-            for v in artifacts:
+            for v in row.artifacts:
                 if not v.link and isinstance(v.fp, (str, Path)):
                     # convert user local file path to Starwhale link
                     v.link = Link(v.fp, with_local_fs_data=True)
@@ -182,8 +181,7 @@ class SWDSBinWriter:
 
     def _update_link(self, old_path: Path, new_path: str) -> None:
         for row in self._to_update_rows:
-            artifacts = row.artifacts()
-            for at in artifacts:
+            for at in row.artifacts:
                 if at.link and str(at.link.uri) == str(old_path):
                     at.link.uri = new_path
             self.tabular_dataset.put(row)
@@ -414,8 +412,8 @@ class BuildExecutor(BaseBuildExecutor):
                 bw.write_row(
                     TabularDatasetRow(
                         id=idx,
-                        data_origin=DataOriginType.NEW,
-                        data=row_data,
+                        origin=DataOriginType.NEW,
+                        features=row_data,
                         _append_seq_id=append_seq_id,
                     )
                 )

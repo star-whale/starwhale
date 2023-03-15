@@ -143,7 +143,7 @@ class DataLoader:
                     ):
                         _links = []
                         for row in rows:
-                            for at in row.artifacts():
+                            for at in row.artifacts:
                                 at.owner = self.dataset_uri
                                 if at.link:
                                     _links.append(at.link)
@@ -173,12 +173,12 @@ class DataLoader:
     def _unpack_row(
         self, row: TabularDatasetRow, skip_fetch_data: bool = False
     ) -> DataRow:
-        for at in row.artifacts():
+        for at in row.artifacts:
             at.owner = self.dataset_uri
             if skip_fetch_data:
                 continue
             at.fetch_data()
-        return DataRow(index=row.id, features=row.data)
+        return DataRow(index=row.id, features=row.features)
 
     def _unpack_row_with_queue(
         self,

@@ -324,7 +324,7 @@ class TestDatasetCopy(BaseTestCase):
                 {"type": "INT64", "name": "height"},
             ],
             "pythonType": "starwhale.core.dataset.type.BoundingBox",
-            "name": "data/bbox",
+            "name": "features/bbox",
         } in content["tableSchemaDesc"]["columnSchemaList"]
 
         assert {
@@ -378,7 +378,7 @@ class TestDatasetCopy(BaseTestCase):
                 },
             ],
             "pythonType": "starwhale.core.dataset.type.JsonDict",
-            "name": "data/seg",
+            "name": "features/seg",
         } in content["tableSchemaDesc"]["columnSchemaList"]
         assert len(content["records"]) > 0
 
@@ -423,7 +423,7 @@ class TestDatasetCopy(BaseTestCase):
                     "columnTypes": [
                         {"type": "STRING", "name": "id"},
                         {
-                            "name": "data/text",
+                            "name": "features/text",
                             "type": "OBJECT",
                             "pythonType": "starwhale.core.dataset.type.Text",
                             "attributes": [
@@ -440,11 +440,11 @@ class TestDatasetCopy(BaseTestCase):
                                 },
                             ],
                         },
-                        {"type": "STRING", "name": "data_origin"},
+                        {"type": "STRING", "name": "origin"},
                         {"type": "INT64", "name": "_append_seq_id"},
                         {
                             "type": "OBJECT",
-                            "name": "data/bbox",
+                            "name": "features/bbox",
                             "attributes": [
                                 {"type": "STRING", "name": "_type"},
                                 {"type": "INT64", "name": "x"},
@@ -458,7 +458,7 @@ class TestDatasetCopy(BaseTestCase):
                     "records": [
                         {
                             "id": "idx-0",
-                            "data/text": {
+                            "features/text": {
                                 "_BaseArtifact__cache_bytes": "",
                                 "link": {
                                     "offset": "0000000000000080",
@@ -466,13 +466,13 @@ class TestDatasetCopy(BaseTestCase):
                                     "uri": "111",
                                 },
                             },
-                            "data/bbox": {
+                            "features/bbox": {
                                 "x": "0000000000000002",
                                 "y": "0000000000000002",
                                 "width": "0000000000000003",
                                 "height": "0000000000000004",
                             },
-                            "data_origin": "+",
+                            "origin": "+",
                         }
                     ],
                 }
@@ -520,8 +520,8 @@ class TestDatasetCopy(BaseTestCase):
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
-        assert meta_list[0].data["text"].link.uri == "111"
-        bbox = meta_list[0].data["bbox"]
+        assert meta_list[0].features["text"].link.uri == "111"
+        bbox = meta_list[0].features["bbox"]
         assert isinstance(bbox, BoundingBox)
         assert bbox.x == 2 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
@@ -594,9 +594,9 @@ class TestDatasetBuildExecutor(BaseTestCase):
             summary = e.make_swds()
             scan = e.tabular_dataset.scan()
             for row in scan:
-                assert isinstance(row.data.get("original_data"), Binary)
-                assert not row.data.get("original_data").fp
-                assert row.data.get("original_data").link.uri
+                assert isinstance(row.features.get("original_data"), Binary)
+                assert not row.features.get("original_data").fp
+                assert row.features.get("original_data").link.uri
 
         assert summary.rows == 10
 
@@ -685,13 +685,13 @@ class TestDatasetBuildExecutor(BaseTestCase):
         tdb = TabularDataset(name=name, version=version, project=project)
         meta_list = list(tdb.scan("idx-0", "idx-1"))
         assert len(meta_list) > 0
-        data = meta_list[0].data
-        assert isinstance(data["link"], DataStoreRawLink)
-        assert isinstance(data["coco"], COCOObjectAnnotation)
-        assert data["coco"].bbox == [0, 0, 1, 10]
-        assert isinstance(data["list_bbox"][0], BoundingBox)
-        assert isinstance(data["mask"], Image)
-        assert isinstance(data["mask"].link, Link)
+        features = meta_list[0].features
+        assert isinstance(features["link"], DataStoreRawLink)
+        assert isinstance(features["coco"], COCOObjectAnnotation)
+        assert features["coco"].bbox == [0, 0, 1, 10]
+        assert isinstance(features["list_bbox"][0], BoundingBox)
+        assert isinstance(features["mask"], Image)
+        assert isinstance(features["mask"].link, Link)
 
     def test_swds_bin_id_workflow(self) -> None:
         with MNISTBuildWithIDExecutor(
@@ -773,12 +773,12 @@ class TestDatasetBuildExecutor(BaseTestCase):
         tdb = TabularDataset(name="mnist", version="112233", project="self")
         meta = list(tdb.scan(start=0, end=1))[0]
         assert meta.id == 0
-        assert meta.data["data"].link.extra_info["bin_offset"] == 0
-        assert meta.data["data"].link.offset == 32
-        assert meta.data["data"].link.extra_info["bin_size"] == 864
-        assert meta.data["data"].link.uri in data_files_sign
-        assert meta.data["data"].type == ArtifactType.Image
-        assert meta.data["data"].mime_type == MIMEType.GRAYSCALE
+        assert meta.features["data"].link.extra_info["bin_offset"] == 0
+        assert meta.features["data"].link.offset == 32
+        assert meta.features["data"].link.extra_info["bin_size"] == 864
+        assert meta.features["data"].link.uri in data_files_sign
+        assert meta.features["data"].type == ArtifactType.Image
+        assert meta.features["data"].mime_type == MIMEType.GRAYSCALE
 
         assert list(tdb.info) == ["int", "dict", "list", "list_dict"]
         assert tdb.info["list_dict"] == [{"a": 1}, {"b": 2}]
@@ -1469,7 +1469,7 @@ class TestTabularDataset(TestCase):
         rows = [
             TabularDatasetRow(
                 id="path/1",
-                data={
+                features={
                     "bin": Binary(link=Link("abcdef")),
                     "a": 1,
                     "b": {"c": 1},
@@ -1478,7 +1478,7 @@ class TestTabularDataset(TestCase):
             ).asdict(),
             TabularDatasetRow(
                 id="path/2",
-                data={
+                features={
                     "l": Link("abcefg"),
                     "a": 2,
                     "b": {"c": 2},
@@ -1487,7 +1487,7 @@ class TestTabularDataset(TestCase):
             ).asdict(),
             TabularDatasetRow(
                 id="path/3",
-                data={
+                features={
                     "l": Link("abcefg"),
                     "a": 2,
                     "b": {"c": 2},
@@ -1496,7 +1496,7 @@ class TestTabularDataset(TestCase):
             ).asdict(),
         ]
 
-        m_scan.side_effect = [rows, rows, [{"id": 0, "data/value": 1}]]
+        m_scan.side_effect = [rows, rows, [{"id": 0, "features/value": 1}]]
         with TabularDataset.from_uri(
             URI("mnist/version/123456", expected_type=URIType.DATASET)
         ) as td:
@@ -1517,11 +1517,11 @@ class TestTabularDataset(TestCase):
 
     def test_row(self) -> None:
         s_row = TabularDatasetRow(
-            id=0, data={"l": Image(link=Link("abcdef"), shape=[1, 2, 3]), "a": 1}
+            id=0, features={"l": Image(link=Link("abcdef"), shape=[1, 2, 3]), "a": 1}
         )
         u_row = TabularDatasetRow(
             id="path/1",
-            data={
+            features={
                 "l": Image(link=Link("abcdef"), shape=[1, 2, 3]),
                 "a": 1,
                 "b": {"c": 1},
@@ -1529,34 +1529,34 @@ class TestTabularDataset(TestCase):
         )
         l_row = TabularDatasetRow(
             id="path/1",
-            data={"l": Image(link=Link("s3://a/b/c"), shape=[1, 2, 3]), "a": 1},
+            features={"l": Image(link=Link("s3://a/b/c"), shape=[1, 2, 3]), "a": 1},
         )
         s2_row = TabularDatasetRow(
-            id=0, data={"l": Image(link=Link("abcdef"), shape=[1, 2, 3]), "a": 1}
+            id=0, features={"l": Image(link=Link("abcdef"), shape=[1, 2, 3]), "a": 1}
         )
 
         assert s_row == s2_row
         assert s_row != u_row
         assert s_row.asdict() == {
             "id": 0,
-            "data/l": Image(link=Link("abcdef"), shape=[1, 2, 3]),
-            "data/a": 1,
-            "data_origin": "+",
+            "features/l": Image(link=Link("abcdef"), shape=[1, 2, 3]),
+            "features/a": 1,
+            "origin": "+",
         }
 
         u_row_dict = u_row.asdict()
-        assert u_row_dict["data/a"] == 1
-        assert u_row_dict["data/b"] == JsonDict({"c": 1})
+        assert u_row_dict["features/a"] == 1
+        assert u_row_dict["features/b"] == JsonDict({"c": 1})
         assert l_row.asdict()["id"] == "path/1"
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id="", data=Link(""))
+            TabularDatasetRow(id="", features=Link(""))
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id=1.1, data={"l": Link("")})  # type: ignore
+            TabularDatasetRow(id=1.1, features={"l": Link("")})  # type: ignore
 
         with self.assertRaises(FieldTypeOrValueError):
-            TabularDatasetRow(id="1", data=[])  # type: ignore
+            TabularDatasetRow(id="1", features=[])  # type: ignore
 
         for r in (s_row, u_row, l_row):
             copy_r = TabularDatasetRow.from_datastore(**r.asdict())

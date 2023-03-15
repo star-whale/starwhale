@@ -87,7 +87,7 @@ class TestDataLoader(TestCase):
         fname = "data"
         m_scan.return_value = [
             TabularDatasetRow(
-                data={
+                features={
                     "image": GrayscaleImage(
                         link=Link(
                             fname,
@@ -99,7 +99,7 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
                 id="path/0",
             )
         ]
@@ -210,7 +210,7 @@ class TestDataLoader(TestCase):
 
             m_scan.return_value = [
                 TabularDatasetRow(
-                    data={
+                    features={
                         "image": GrayscaleImage(
                             link=Link(
                                 f"s3://127.0.0.1:9000/starwhale/project/2/dataset/11/{version}",
@@ -220,11 +220,11 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 0,
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                     id=0,
                 ),
                 TabularDatasetRow(
-                    data={
+                    features={
                         "image": GrayscaleImage(
                             link=Link(
                                 f"s3://127.0.0.1:19000/starwhale/project/2/dataset/11/{version}",
@@ -234,11 +234,11 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                     id=1,
                 ),
                 TabularDatasetRow(
-                    data={
+                    features={
                         "image": GrayscaleImage(
                             link=Link(
                                 f"s3://127.0.0.1/starwhale/project/2/dataset/11/{version}",
@@ -248,11 +248,11 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                     id=2,
                 ),
                 TabularDatasetRow(
-                    data={
+                    features={
                         "image": GrayscaleImage(
                             link=Link(
                                 f"s3://username:password@127.0.0.1:29000/starwhale/project/2/dataset/11/{version}",
@@ -262,7 +262,7 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                     id=3,
                 ),
             ]
@@ -354,7 +354,7 @@ class TestDataLoader(TestCase):
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
             TabularDatasetRow(
-                data={
+                features={
                     "image": GrayscaleImage(
                         link=Link(
                             fname,
@@ -366,7 +366,7 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
                 id=0,
             )
         ]
@@ -431,7 +431,7 @@ class TestDataLoader(TestCase):
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
             TabularDatasetRow(
-                data={
+                features={
                     "image": GrayscaleImage(
                         link=Link(
                             fname,
@@ -443,11 +443,11 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
                 id=0,
             ),
             TabularDatasetRow(
-                data={
+                features={
                     "image": GrayscaleImage(
                         link=Link(
                             fname,
@@ -459,7 +459,7 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 1,
                 },
-                data_origin=DataOriginType.NEW,
+                origin=DataOriginType.NEW,
                 id=1,
             ),
         ]
@@ -524,7 +524,7 @@ class TestDataLoader(TestCase):
             [
                 TabularDatasetRow(
                     id="a",
-                    data={
+                    features={
                         "image": Image(
                             link=Link(
                                 "l11",
@@ -544,11 +544,11 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="b",
-                    data={
+                    features={
                         "image": Image(
                             link=Link(
                                 "l12",
@@ -568,13 +568,13 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                 ),
             ],
             [
                 TabularDatasetRow(
                     id="c",
-                    data={
+                    features={
                         "image": Image(
                             link=Link(
                                 "l13",
@@ -594,11 +594,11 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="d",
-                    data={
+                    features={
                         "image": Image(
                             link=Link(
                                 "l14",
@@ -618,7 +618,7 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    data_origin=DataOriginType.NEW,
+                    origin=DataOriginType.NEW,
                 ),
             ],
         ]
@@ -700,7 +700,7 @@ class TestDataLoader(TestCase):
         m_scan.return_value = [
             TabularDatasetRow(
                 id=i,
-                data={
+                features={
                     "l": Link(
                         fname,
                         offset=32,
@@ -764,7 +764,7 @@ class TestDataLoader(TestCase):
         m_scan.return_value = [
             TabularDatasetRow(
                 id=0,
-                data={
+                features={
                     "l": Image(
                         link=Link(
                             "not-found",
