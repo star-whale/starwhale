@@ -1,3 +1,4 @@
+// @ts-nocehck
 import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
 import HeaderCell from './headers/header-cell'
@@ -73,7 +74,6 @@ type MeasureColumnWidthsPropsT = {
     isQueryInline: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
-    gridRef: VariableSizeGrid<any>
 }
 
 const MAX_SAMPLE_SIZE = 20
