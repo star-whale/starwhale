@@ -8,7 +8,7 @@ from starwhale import dataset
 ds_name = "celeba-align/version/latest"
 ds = dataset(ds_name)
 row = ds["000019.jpg"]
-data = row.data
+data = row.features
 with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
     draw.point(data["landmark"]["left_eye"].to_list(), fill="green")

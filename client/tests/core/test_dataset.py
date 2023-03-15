@@ -346,9 +346,9 @@ class StandaloneDatasetTestCase(TestCase):
         results = ds.head(1, show_raw_data=True)
         assert results[0]["id"] == 0
         assert results[0]["index"] == "label-0"
-        assert results[0]["data"]["label"] == 0
-        assert results[0]["data"]["img"].mime_type == MIMEType.GRAYSCALE
-        assert len(results[0]["data"]["img"].to_bytes()) == 784
+        assert results[0]["features"]["label"] == 0
+        assert results[0]["features"]["img"].mime_type == MIMEType.GRAYSCALE
+        assert len(results[0]["features"]["img"].to_bytes()) == 784
         assert len(results) == 1
 
         results = ds.head(5, show_raw_data=True)

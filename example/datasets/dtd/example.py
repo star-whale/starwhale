@@ -8,7 +8,7 @@ from starwhale import dataset
 ds_name = "dtd/version/latest"
 ds = dataset(ds_name)
 row = ds["banded/banded_0063.jpg"]
-data = row.data
+data = row.features
 with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img:
     draw = ImageDraw.Draw(img)
     i = 0

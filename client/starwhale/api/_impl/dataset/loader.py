@@ -29,23 +29,23 @@ class DataRow:
     def __init__(
         self,
         index: t.Union[str, int],
-        data: t.Dict,
+        features: t.Dict,
     ) -> None:
         self.index = index
-        self.data = data
+        self.features = features
         self._do_validate()
 
     def __str__(self) -> str:
         return f"{self.index}"
 
     def __repr__(self) -> str:
-        return f"index:{self.index}, data:{self.data}"
+        return f"index:{self.index}, features:{self.features}"
 
     def __iter__(self) -> t.Iterator:
-        return iter((self.index, self.data))
+        return iter((self.index, self.features))
 
     def __getitem__(self, i: int) -> t.Any:
-        return (self.index, self.data)[i]
+        return (self.index, self.features)[i]
 
     def __len__(self) -> int:
         return len(self.__dict__)
@@ -54,14 +54,14 @@ class DataRow:
         if not isinstance(self.index, (str, int)):
             raise TypeError(f"index({self.index}) is not int or str type")
 
-        if not isinstance(self.data, dict):
-            raise TypeError(f"content({self.data}) is not dict type")
+        if not isinstance(self.features, dict):
+            raise TypeError(f"content({self.features}) is not dict type")
 
     def __lt__(self, obj: DataRow) -> bool:
         return str(self.index) < str(obj.index)
 
     def __eq__(self, obj: t.Any) -> bool:
-        return bool(self.index == obj.index and self.data == obj.data)
+        return bool(self.index == obj.index and self.features == obj.features)
 
 
 _TMetaQItem = t.Optional[t.Union[TabularDatasetRow, Exception]]
@@ -178,7 +178,7 @@ class DataLoader:
             if skip_fetch_data:
                 continue
             at.fetch_data()
-        return DataRow(index=row.id, data=row.data)
+        return DataRow(index=row.id, features=row.data)
 
     def _unpack_row_with_queue(
         self,

@@ -539,16 +539,16 @@ class Dataset:
             value.index = key
             row = value
         elif isinstance(value, dict):
-            row = DataRow(index=key, data=value)
+            row = DataRow(index=key, features=value)
         elif isinstance(value, (tuple, list)):
             if len(value) == 1:
-                data = value[0]
+                features = value[0]
             elif len(value) == 2:
-                _, data = value
+                _, features = value
             else:
                 raise ValueError(f"{value} cannot unpack")
 
-            row = DataRow(index=key, data=data)
+            row = DataRow(index=key, features=features)
         else:
             raise TypeError(f"value only supports tuple, dict or DataRow type: {value}")
 

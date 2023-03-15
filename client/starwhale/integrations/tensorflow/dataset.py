@@ -98,17 +98,17 @@ def to_tf_dataset(dataset: Dataset, drop_index: bool = True) -> tf.data.Dataset:
     def _generator() -> t.Generator:
         for row in dataset:
             if drop_index:
-                yield _transform(row.data)
+                yield _transform(row.features)
             else:
-                yield _transform(row.index), _transform(row.data)
+                yield _transform(row.index), _transform(row.features)
 
     def _make_signature() -> t.Any:
         row = dataset.fetch_one()
         signature = []
         if not drop_index:
             signature.append(_inspect_spec(row.index))
-            return _inspect_spec(row.index), _inspect_spec(row.data)
-        return _inspect_spec(row.data)
+            return _inspect_spec(row.index), _inspect_spec(row.features)
+        return _inspect_spec(row.features)
 
     return tf.data.Dataset.from_generator(
         _generator, output_signature=_make_signature()

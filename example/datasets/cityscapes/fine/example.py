@@ -21,7 +21,7 @@ fig, ax = plt.subplots(
 ds_name = "cityscapes_fine/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-data = row.data
+data = row.features
 img_bytes = data["image"].to_bytes()
 with PILImage.open(io.BytesIO(img_bytes)) as img, PILImage.open(
     io.BytesIO(data["color_mask"].to_bytes(ds_name))

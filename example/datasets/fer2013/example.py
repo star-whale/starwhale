@@ -12,7 +12,7 @@ def show_image(image) -> None:
 ds_name = "fer2013/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-data = row.data
+data = row.features
 show_image(
     np.frombuffer(data["image"].to_bytes(), dtype=np.uint8).reshape(data["image"].shape)
 )
