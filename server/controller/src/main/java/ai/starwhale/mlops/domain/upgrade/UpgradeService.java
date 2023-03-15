@@ -98,6 +98,7 @@ public class UpgradeService {
             upgradeAccess.setStatusToUpgrading(progressId);
 
             Upgrade upgrade = Upgrade.builder()
+                    .progressId(progressId)
                     .current(new Version(currentVersionNumber, getCurrentImage()))
                     .to(version)
                     .status(Status.UPGRADING)
