@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.SystemService;
@@ -64,11 +65,8 @@ public class SystemController implements SystemApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SystemVersionVo>> getLatestVersion() {
-        SystemVersionVo version = SystemVersionVo.builder()
-                .version("mvp")
-                .id("")
-                .build();
+    public ResponseEntity<ResponseMessage<LatestVersionVo>> getLatestVersion() {
+        LatestVersionVo version = systemService.getLatestVersion();
         return ResponseEntity.ok(Code.success.asResponse(version));
     }
 

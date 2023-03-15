@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.lock.ControllerLockImpl;
 import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
+import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import ai.starwhale.mlops.domain.upgrade.step.UpgradeStepManager;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.web.client.RestTemplate;
 
 public class UpgradeServiceTest {
 
@@ -50,7 +52,11 @@ public class UpgradeServiceTest {
     private JobService jobService;
     private K8sClient k8sClient;
     private UpgradeStepManager upgradeStepManager;
+
+    private RestTemplate restTemplate;
     private String currentVersionNumber;
+
+    private String latestVersionApiUrl;
 
 
     @BeforeEach
@@ -78,10 +84,12 @@ public class UpgradeServiceTest {
         Mockito.when(k8sClient.listDeployment(anyString()))
                 .thenReturn(deployments);
         upgradeStepManager = mock(UpgradeStepManager.class);
+        restTemplate = mock(RestTemplate.class);
         currentVersionNumber = "0.4.0";
+        latestVersionApiUrl = "";
 
         upgradeService = new UpgradeService(upgradeAccess, controllerLock, jobService, k8sClient, upgradeStepManager,
-                currentVersionNumber);
+                restTemplate, currentVersionNumber, latestVersionApiUrl);
     }
 
     @Test
@@ -90,7 +98,7 @@ public class UpgradeServiceTest {
         Assertions.assertEquals(0, log.size());
 
         assertThrows(SwValidationException.class, () -> {
-            upgradeService.upgrade("0.3.5", "server:0.3.5");
+            upgradeService.upgrade(new Version("0.3.5", "server:0.3.5"));
         });
         Assertions.assertFalse(controllerLock.isLocked(ControllerLock.TYPE_WRITE_REQUEST));
 
@@ -98,7 +106,7 @@ public class UpgradeServiceTest {
                 .thenReturn(List.of(new V1Pod()));
 
         assertThrows(SwValidationException.class, () -> {
-            upgradeService.upgrade("0.4.1", "server:0.4.1");
+            upgradeService.upgrade(new Version("0.4.1", "server:0.4.1"));
         });
         Assertions.assertFalse(controllerLock.isLocked(ControllerLock.TYPE_WRITE_REQUEST));
 
@@ -108,14 +116,14 @@ public class UpgradeServiceTest {
                 .thenReturn(List.of(new Job()));
 
         assertThrows(SwValidationException.class, () -> {
-            upgradeService.upgrade("0.4.1", "server:0.4.1");
+            upgradeService.upgrade(new Version("0.4.1", "server:0.4.1"));
         });
         Assertions.assertFalse(controllerLock.isLocked(ControllerLock.TYPE_WRITE_REQUEST));
 
         Mockito.when(jobService.listHotJobs())
                 .thenReturn(List.of());
 
-        upgradeService.upgrade("0.4.1", "server:0.4.1");
+        upgradeService.upgrade(new Version("0.4.1", "server:0.4.1"));
         Assertions.assertTrue(controllerLock.isLocked(ControllerLock.TYPE_WRITE_REQUEST));
 
         log = upgradeService.getUpgradeLog();

@@ -17,23 +17,14 @@
 package ai.starwhale.mlops.domain.upgrade.bo;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
 @AllArgsConstructor
-public class Upgrade {
+public class Version {
 
-    private String progressId;
+    private String number;
 
-    private Version to;
+    private String image;
 
-    private Version current;
-
-    private Status status;
-
-    public enum Status {
-        UPGRADING, COMPLETE, CANCELLING, CANCELED
-    }
 }

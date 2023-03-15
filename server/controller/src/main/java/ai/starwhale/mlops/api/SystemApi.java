@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -68,7 +69,7 @@ public interface SystemApi {
     @GetMapping(
             value = "/system/version/latest",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ResponseMessage<SystemVersionVo>> getLatestVersion();
+    ResponseEntity<ResponseMessage<LatestVersionVo>> getLatestVersion();
 
     @Operation(
             summary = "Get the current upgrade progress",

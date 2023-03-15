@@ -52,7 +52,7 @@ public class UpdateK8sImage extends UpgradeStepBase {
                 Map.of(
                         "op", "replace",
                         "path", "/spec/template/spec/containers/0/image",
-                        "value", Objects.requireNonNull(upgrade.getImage())
+                        "value", Objects.requireNonNull(upgrade.getTo().getImage())
                 )
         ));
         try {

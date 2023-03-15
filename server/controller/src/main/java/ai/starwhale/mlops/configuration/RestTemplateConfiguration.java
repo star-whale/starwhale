@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.upgrade.bo;
+package ai.starwhale.mlops.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
-@Data
-@Builder
-@AllArgsConstructor
-public class Upgrade {
+@Configuration
+public class RestTemplateConfiguration {
 
-    private String progressId;
-
-    private Version to;
-
-    private Version current;
-
-    private Status status;
-
-    public enum Status {
-        UPGRADING, COMPLETE, CANCELLING, CANCELED
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
+
 }

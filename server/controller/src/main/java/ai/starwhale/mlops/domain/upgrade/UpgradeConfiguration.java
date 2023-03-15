@@ -23,7 +23,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @Configuration
 public class UpgradeConfiguration {
 
-
     @Bean
     public ThreadPoolTaskScheduler getThreadPoolTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();

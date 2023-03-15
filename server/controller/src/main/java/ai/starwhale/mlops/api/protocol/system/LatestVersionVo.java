@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.upgrade.bo;
+package ai.starwhale.mlops.api.protocol.system;
 
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@AllArgsConstructor
-public class Upgrade {
+@Schema(description = "Latest verion", title = "Version")
+@Validated
+public class LatestVersionVo {
 
-    private String progressId;
+    private String version;
 
-    private Version to;
-
-    private Version current;
-
-    private Status status;
-
-    public enum Status {
-        UPGRADING, COMPLETE, CANCELLING, CANCELED
-    }
+    private String image;
 }

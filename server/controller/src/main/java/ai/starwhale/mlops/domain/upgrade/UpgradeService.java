@@ -22,6 +22,7 @@ import ai.starwhale.mlops.domain.lock.ControllerLock;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
 import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
+import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import ai.starwhale.mlops.domain.upgrade.step.UpgradeStepManager;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -36,11 +37,15 @@ import io.kubernetes.client.openapi.models.V1DeploymentSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
@@ -52,7 +57,11 @@ public class UpgradeService {
     private final JobService jobService;
     private final K8sClient k8sClient;
     private final UpgradeStepManager upgradeStepManager;
+
+    private final RestTemplate restTemplate;
     private final String currentVersionNumber;
+
+    private final String latestVersionApiUrl;
     private static final String LOCK_OPERATOR = "upgrade";
     private final AtomicReference<Upgrade> upgradeAtomicReference;
 
@@ -62,34 +71,38 @@ public class UpgradeService {
             JobService jobService,
             K8sClient k8sClient,
             UpgradeStepManager upgradeStepManager,
-            @Value("${sw.version}") String starwhaleVersion) {
+            RestTemplate restTemplate,
+            @Value("${sw.version}") String starwhaleVersion,
+            @Value("${sw.public-api.latest-version}") String latestVersionApiUrl) {
         this.upgradeAccess = upgradeAccess;
         this.controllerLock = controllerLock;
         this.jobService = jobService;
         this.k8sClient = k8sClient;
         this.currentVersionNumber = StrUtil.subBefore(starwhaleVersion, ":", false);
+        this.latestVersionApiUrl = latestVersionApiUrl;
         this.upgradeAtomicReference = new AtomicReference<>();
         this.upgradeStepManager = upgradeStepManager;
+        this.restTemplate = restTemplate;
     }
 
-    public Upgrade upgrade(String version, String image) {
+    public Upgrade upgrade(Version version) {
         // 0. lock controller writing request
         controllerLock.lock(ControllerLock.TYPE_WRITE_REQUEST, LOCK_OPERATOR);
 
         try {
             // 1. Check whether upgrade is allowed
-            checkIsUpgradeAllowed(version);
+            checkIsUpgradeAllowed(version.getNumber());
 
             // 2. Set server status to upgrading
             String progressId = buildUuid();
             upgradeAccess.setStatusToUpgrading(progressId);
 
-            Upgrade upgrade = new Upgrade(progressId,
-                    version,
-                    image,
-                    currentVersionNumber,
-                    getCurrentImage(),
-                    Status.UPGRADING);
+            Upgrade upgrade = Upgrade.builder()
+                    .current(new Version(currentVersionNumber, getCurrentImage()))
+                    .to(version)
+                    .status(Status.UPGRADING)
+                    .build();
+
             doUpgrade(upgrade);
 
             return upgrade;
@@ -117,6 +130,14 @@ public class UpgradeService {
         // 1. unlock requests
         controllerLock.unlock(ControllerLock.TYPE_WRITE_REQUEST, LOCK_OPERATOR);
 
+    }
+
+    public Version getLatestVersion() {
+        ResponseEntity<Version> forEntity = restTemplate.getForEntity("", Version.class, Map.of());
+        if (forEntity.getStatusCode() != HttpStatus.OK) {
+            throw new SwProcessException(ErrorType.NETWORK, "Get latest version error");
+        }
+        return forEntity.getBody();
     }
 
     private String getCurrentImage() {
