@@ -19,7 +19,8 @@ const useBrowserEffect =
  * - Properties or state accessed within the callback will always be "current"
  */
 export function useEvent<TCallback extends AnyFunction>(callback: TCallback): TCallback {
-    // Keep track of the latest callback:
+    // Keep track of the latest callback:\
+    // eslint-disable-next-line
     const latestRef = React.useRef<TCallback>(useEvent_shouldNotBeInvokedBeforeMount as any)
     useBrowserEffect(() => {
         latestRef.current = callback
@@ -29,7 +30,9 @@ export function useEvent<TCallback extends AnyFunction>(callback: TCallback): TC
     // using useRef instead of useCallback avoids creating and empty array on every render
     const stableRef = React.useRef<TCallback>(null as any)
     if (!stableRef.current) {
+        // eslint-disable-next-line func-names
         stableRef.current = function (this: any) {
+            // eslint-disable-next-line prefer-rest-params
             return latestRef.current.apply(this, arguments as any)
         } as TCallback
     }
@@ -41,6 +44,7 @@ export function useEvent<TCallback extends AnyFunction>(callback: TCallback): TC
  * Render methods should be pure, especially when concurrency is used,
  * so we will throw this error if the callback is called while rendering.
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function useEvent_shouldNotBeInvokedBeforeMount() {
     throw new Error(
         'INVALID_USEEVENT_INVOCATION: the callback from useEvent cannot be invoked before the component has mounted.'

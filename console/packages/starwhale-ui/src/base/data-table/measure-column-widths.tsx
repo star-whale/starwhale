@@ -4,6 +4,7 @@ import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
 import { VariableSizeGrid } from 'react-window'
 import { useWhatChanged } from '@starwhale/core'
+import _ from 'lodash'
 
 const IS_BROWSER = true
 const emptyFunction = () => {}
@@ -106,7 +107,6 @@ export default function MeasureColumnWidths({
     isSelectable,
     isQueryInline,
     onWidthsChange,
-    gridRef,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
@@ -118,43 +118,40 @@ export default function MeasureColumnWidths({
         return generateSampleIndices(0, rows.length - 1, sampleSize)
     }, [rows])
 
+    const debounceWideChange = React.useMemo(() => _.debounce(onWidthsChange, 200), [onWidthsChange])
+
     const handleDimensionsChange = React.useCallback(
-        (columnIndex, dimensions) => {
+        (column, dimensions) => {
+            const columnIndex = column.key
             const nextWidth = Math.min(
-                Math.max(columns[columnIndex].minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
-                columns[columnIndex].maxWidth || Infinity
+                Math.max(column.minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
+                column.maxWidth || Infinity
             )
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
-            // console.log(columnIndex, nextWidth, prevWidth, dimensions.width, columns)
+            // if (Math.abs(nextWidth - prevWidth > 5)) {
+            //     console.log(columnIndex, nextWidth - prevWidth, widthMap.get(columnIndex))
+            // }
 
-            if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 2) {
+            //1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
+            if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 5) {
                 widthMap.set(columnIndex, nextWidth)
 
-                if (columnIndex < columns.length) {
-                    setWidthMap(widthMap)
-                    onWidthsChange(Array.from(widthMap.values()))
-                }
+                const widths = columns.map((column, i) => widthMap.get(column.key)).filter(Boolean)
 
                 // 1.Refresh at 100% of done
-                // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
-                // console.log('update', widthMap.size, columns.length, widthMap)
-                // if (widthMap.size > columns.length) {
-                //     const newMap = Array.from(widthMap).slice(0, columns.length)
-                //     console.log('new map', new Map(newMap))
-                //     setWidthMap(new Map(newMap))
-                //     onWidthsChange(Array.from(newMap.values()))
-                // } else if (widthMap.size === columns.length) {
-                //     setWidthMap(widthMap)
-                //     onWidthsChange(Array.from(widthMap.values()))
-                // }
+                if (widths.length === columns.length) {
+                    console.log('handleDimensionsChange')
+                    setWidthMap(widthMap)
+                    debounceWideChange(new Map(widthMap))
+                }
             }
         },
-        [columns, onWidthsChange, widthMap]
+        [columns, debounceWideChange, widthMap]
     )
 
     const $columns = React.useMemo(() => {
-        if (!gridRef) return null
+        // if (!gridRef) return null
 
         // const [overscanColumnStartIndex, overscanColumnStopIndex] = gridRef._getHorizontalRangeToRender()
 
@@ -172,15 +169,13 @@ export default function MeasureColumnWidths({
                     rows={rows}
                     isSelectable={isSelectable && i === 0}
                     isQueryInline={isQueryInline && i === 0}
-                    onLayout={handleDimensionsChange}
+                    onLayout={(columnIndex, dimensions) => handleDimensionsChange(column, dimensions)}
                     columnIndex={i}
                     sampleIndexes={sampleIndexes}
                 />
             )
         })
-    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes, gridRef])
-
-    console.log($columns?.length, widthMap)
+    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes])
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props

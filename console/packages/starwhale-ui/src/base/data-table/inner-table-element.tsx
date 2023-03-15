@@ -34,7 +34,6 @@ type InnerTableElementProps = {
     children: React.ReactNode | null
     style: React.CSSProperties
     data: any
-    gridRef: VariableSizeGrid<any>
 }
 
 // replaces the content of the virtualized window with contents. in this case,
@@ -52,35 +51,14 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
         [ctx.columns, ctx.widths]
     )
-    const { data, gridRef } = props
-
-    const $columns = React.useMemo(
-        () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
-        [data.columns]
-    )
 
     const $childrenPinned = React.useMemo(() => {
-        const cells: React.ReactNode[] = []
-        if (!gridRef) return []
-
-        const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
-
-        $columns.forEach((_: any, columnIndex: number) => {
-            for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
-                cells.push(
-                    <CellPlacement
-                        key={`${rowIndex}-${columnIndex}`}
-                        columnIndex={columnIndex}
-                        rowIndex={rowIndex}
-                        data={data}
-                        style={gridRef._getItemStyle(rowIndex, columnIndex)}
-                    />
-                )
-            }
+        // @ts-ignore
+        return Array.from(props.children ?? []).filter((child: any) => {
+            const isPin = child.props.data.columns[child.props.columnIndex].pin === 'LEFT'
+            return isPin
         })
-
-        return cells
-    }, [$columns, gridRef, data])
+    }, [props.children])
 
     const $children = React.useMemo(() => {
         return props.children
@@ -118,7 +96,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                     })
                 )}
             >
-                {$childrenPinned.length > 0 && (
+                {viewState === RENDERING && $childrenPinned.length > 0 && (
                     <div
                         className='table-columns-pinned'
                         // @ts-ignore
@@ -129,7 +107,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                             overflow: 'hidden',
                         }}
                     >
-                        {viewState === RENDERING && $childrenPinned}
+                        {$childrenPinned}
                     </div>
                 )}
             </div>
