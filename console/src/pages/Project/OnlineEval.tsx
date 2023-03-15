@@ -152,7 +152,7 @@ export default function OnlineEval() {
             fetch(
                 `${api}?${qs.stringify({
                     Authorization: getToken(),
-                    partName: '.starwhale/svc.json',
+                    partName: 'svc.json',
                     signature: '',
                 })}`
             )
