@@ -563,6 +563,23 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert isinstance(items, list)
         assert len(items) == 2
 
+    def test_get_item_features(self) -> None:
+        existed_ds_uri = self._init_simple_dataset()
+        ds = dataset(existed_ds_uri)
+        features = ds[0].features  # type: ignore
+        assert isinstance(features, dict)
+        assert isinstance(features, DataRow._Features)
+        assert features["label"] == features.label == 0
+        with self.assertRaises(AttributeError):
+            _ = features.not_found
+
+        features.new_label = 2
+        assert features["new_label"] == 2
+
+        del features.new_label
+        with self.assertRaises(AttributeError):
+            _ = features.new_label
+
     def test_tags(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)

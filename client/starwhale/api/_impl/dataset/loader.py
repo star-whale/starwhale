@@ -26,14 +26,34 @@ _DEFAULT_LOADER_CACHE_SIZE = 20
 
 @total_ordering
 class DataRow:
+    class _Features(dict):
+        def __setattr__(self, name: str, value: t.Any) -> None:
+            self[name] = value
+
+        def __getattr__(self, name: str) -> t.Any:
+            if name in self:
+                return self[name]
+            else:
+                raise AttributeError(f"No found attribute: {name}")
+
+        def __delattr__(self, name: str) -> None:
+            if name in self:
+                del self[name]
+            else:
+                raise AttributeError(f"No found attribute: {name}")
+
     def __init__(
         self,
         index: t.Union[str, int],
         features: t.Dict,
     ) -> None:
+        if not isinstance(index, (str, int)):
+            raise TypeError(f"index({index}) is not int or str type")
         self.index = index
-        self.features = features
-        self._do_validate()
+
+        if not isinstance(features, dict):
+            raise TypeError(f"features({features}) is not dict type")
+        self.features: t.Dict = DataRow._Features(features)
 
     def __str__(self) -> str:
         return f"{self.index}"
@@ -49,13 +69,6 @@ class DataRow:
 
     def __len__(self) -> int:
         return len(self.__dict__)
-
-    def _do_validate(self) -> None:
-        if not isinstance(self.index, (str, int)):
-            raise TypeError(f"index({self.index}) is not int or str type")
-
-        if not isinstance(self.features, dict):
-            raise TypeError(f"content({self.features}) is not dict type")
 
     def __lt__(self, obj: DataRow) -> bool:
         return str(self.index) < str(obj.index)

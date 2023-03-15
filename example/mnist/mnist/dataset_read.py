@@ -14,7 +14,5 @@ def show_image(image: typing.Any) -> None:
 ds_name = "mnist/version/latest"
 ds = dataset(ds_name)
 row = ds.fetch_one()
-data = row.features["img"]
-label = row.features["label"]
-show_image(np.frombuffer(data.to_bytes(), dtype=np.uint8).reshape(data.shape))  # type: ignore
-print(label)
+show_image(np.frombuffer(row.features.img.to_bytes(), dtype=np.uint8).reshape(row.features.img.shape))  # type: ignore
+print(row.features.label)  # type: ignore
