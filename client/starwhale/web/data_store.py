@@ -35,7 +35,9 @@ def list_tables(request: ListTablesRequest) -> SuccessResp:
     root = str(SWCliConfigMixed().datastore_dir)
     path = os.path.join(root, request.prefix)
     files = glob.glob(f"{path}**", recursive=True)
-    files = [os.path.split(f)[0][len(root) :] for f in files if os.path.isfile(f)]
+    files = [
+        os.path.split(f)[0][len(root) :].lstrip("/") for f in files if os.path.isfile(f)
+    ]
     return success({"tables": files})
 
 

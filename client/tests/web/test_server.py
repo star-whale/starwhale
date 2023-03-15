@@ -60,7 +60,7 @@ def test_datastore_list_tables(root: MagicMock, tmpdir: Path):
 
     resp = client.post("/api/v1/datastore/listTables", content='{"prefix": ""}')
     assert resp.status_code == 200
-    assert set(resp.json()["data"]["tables"]) == {"/a", "/b/c"}
+    assert set(resp.json()["data"]["tables"]) == {"a", "b/c"}
 
 
 @patch("starwhale.api._impl.data_store.LocalDataStore.scan_tables")
