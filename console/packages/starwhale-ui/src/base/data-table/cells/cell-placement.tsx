@@ -2,6 +2,8 @@ import React from 'react'
 import cn from 'classnames'
 import type { ColumnT, RowT } from '../types'
 import { themedUseStyletron } from '../../../theme/styletron'
+import { useIfChanged } from '@starwhale/core'
+import _ from 'lodash'
 
 export type CellPlacementPropsT = {
     columnIndex: number
@@ -49,7 +51,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
         [isSelectable, onSelectOne, columnIndex, row]
     )
 
-    // console.log('CellPlacement', columnIndex, rowIndex, value)
     return (
         <div
             data-column-index={columnIndex}
@@ -82,12 +83,13 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 })
             )}
             style={style}
-            onMouseEnter={() => onRowMouseEnter(rowIndex)}
-            onMouseLeave={() => onRowMouseEnter(-1)}
+            onMouseEnter={_.throttle(() => onRowMouseEnter(rowIndex), 200)}
+            onMouseLeave={_.throttle(() => onRowMouseEnter(-1), 200)}
         >
             <Cell
                 value={value}
                 data={rowData}
+                pin={column.pin}
                 onSelect={onSelect}
                 onAsyncChange={async (v: any) => {
                     const cellData = data?.columns[columnIndex]

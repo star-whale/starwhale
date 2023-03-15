@@ -1,8 +1,9 @@
-// @ts-nocheck
 import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
 import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
+import { VariableSizeGrid } from 'react-window'
+import { useWhatChanged } from '@starwhale/core'
 
 const IS_BROWSER = true
 const emptyFunction = () => {}
@@ -71,9 +72,10 @@ type MeasureColumnWidthsPropsT = {
     isQueryInline: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
+    gridRef: VariableSizeGrid<any>
 }
 
-const MAX_SAMPLE_SIZE = 50
+const MAX_SAMPLE_SIZE = 20
 
 function generateSampleIndices(inputMin, inputMax, maxSamples) {
     const indices = []
@@ -104,6 +106,7 @@ export default function MeasureColumnWidths({
     isSelectable,
     isQueryInline,
     onWidthsChange,
+    gridRef,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
@@ -151,7 +154,17 @@ export default function MeasureColumnWidths({
     )
 
     const $columns = React.useMemo(() => {
+        if (!gridRef) return null
+
+        // const [overscanColumnStartIndex, overscanColumnStopIndex] = gridRef._getHorizontalRangeToRender()
+
+        // console.log('----', overscanColumnStartIndex, overscanColumnStopIndex)
+
         return columns.map((column, i) => {
+            // if (!column.pin && i > overscanColumnStartIndex && i < overscanColumnStopIndex) {
+            //     return null
+            // }
+
             return (
                 <MeasureColumn
                     key={`${column.title}-${String(i)}`}
@@ -165,7 +178,9 @@ export default function MeasureColumnWidths({
                 />
             )
         })
-    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes])
+    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes, gridRef])
+
+    console.log($columns?.length, widthMap)
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props
