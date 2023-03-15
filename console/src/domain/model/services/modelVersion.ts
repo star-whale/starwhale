@@ -81,3 +81,28 @@ export async function revertModelVersion(
     })
     return resp.data
 }
+
+export async function fetchModelVersionFile(
+    projectId: string,
+    modelId: string | undefined,
+    modelVersionId: string | undefined,
+    token: string,
+    path: string
+): Promise<any> {
+    if (!modelId || !modelVersionId) {
+        return Promise.resolve(undefined)
+    }
+    const { data } = await axios.get(`/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/file`, {
+        params: { Authorization: token, partName: path },
+    })
+    return data
+}
+
+export async function fetchModelVersionPanelSetting(
+    projectId: string,
+    modelId: string | undefined,
+    modelVersionId: string | undefined,
+    token: string
+) {
+    return fetchModelVersionFile(projectId, modelId, modelVersionId, token, 'panel.json')
+}

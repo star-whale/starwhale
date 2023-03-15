@@ -37,14 +37,13 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
 
 export function WidgetRenderTree({ initialState, onStateChange }: any) {
     const { store, eventBus, dynamicVars } = useEditorContext()
-    const { storeKey: key, projectId } = dynamicVars
     const api = store()
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
-    const [isPanelModalOpen, setisPanelModalOpen] = React.useState(false)
+    const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
     const [viewWidget, setViewWidget] = useState<PanelPreviewEvent>()
-    const [isPanelPreviewModalOpen, setisPanelPreviewModalOpen] = React.useState(false)
+    const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
     const form = useRef(new WidgetFormModel().initPanelSchema())
 
     const { toSave } = useRestoreState(store, initialState, dynamicVars)
@@ -93,7 +92,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         subscription.add(
             eventBus.getStream(PanelAddEvent).subscribe({
                 next: (evt) => {
-                    setisPanelModalOpen(true)
+                    setIsPanelModalOpen(true)
                     setEditWidget(evt)
                 },
             })
@@ -101,7 +100,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         subscription.add(
             eventBus.getStream(PanelEditEvent).subscribe({
                 next: (evt) => {
-                    setisPanelModalOpen(true)
+                    setIsPanelModalOpen(true)
                     setEditWidget(evt)
                 },
             })
@@ -114,7 +113,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         subscription.add(
             eventBus.getStream(PanelPreviewEvent).subscribe({
                 next: (evt) => {
-                    setisPanelPreviewModalOpen(true)
+                    setIsPanelPreviewModalOpen(true)
                     setViewWidget(evt)
                 },
             })
@@ -137,7 +136,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
             subscription.unsubscribe()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId, store, key, eventBus])
+    }, [store, eventBus])
 
     const Nodes = useMemo(() => {
         return tree.map((node: WidgetTreeNode, i: number) => (
@@ -152,18 +151,18 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
                 form={form.current}
                 id={editWidget?.payload?.id}
                 isShow={isPanelModalOpen}
-                setIsShow={setisPanelModalOpen}
+                setIsShow={setIsPanelModalOpen}
                 store={store}
                 handleFormSubmit={({ formData }: any) => {
                     // @ts-ignore
                     actions[editWidget?.type]?.(formData)
-                    setisPanelModalOpen(false)
+                    setIsPanelModalOpen(false)
                 }}
             />
             <WidgetPreviewModal
                 id={viewWidget?.payload?.id}
                 isShow={isPanelPreviewModalOpen}
-                setIsShow={setisPanelPreviewModalOpen}
+                setIsShow={setIsPanelPreviewModalOpen}
                 store={store}
             />
         </div>

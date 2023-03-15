@@ -56,14 +56,9 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
             if (isOrigin) data = tranformState(data)
 
             Object.keys(data?.widgets).forEach((id) => {
-                _.set(data.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars))
+                const origin = replacer(PANEL_DYNAMIC_MATCHES).toOrigin(data.widgets[id], dynamicVars)
+                _.set(data.widgets, id, origin)
             })
-
-            if (store.getState().time >= data?.time) {
-                // eslint-disable-next-line no-console
-                console.error('time is not valid', store.getState().time, data?.time)
-                return
-            }
 
             store.setState(data)
         } catch (e) {

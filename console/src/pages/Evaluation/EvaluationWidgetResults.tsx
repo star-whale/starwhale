@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import Card from '@/components/Card'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { showTableName, tableNameOfSummary } from '@starwhale/core/datastore/utils'
@@ -8,11 +8,12 @@ import { Panel, StatelessAccordion } from 'baseui/accordion'
 import { QueryTableRequest } from '@starwhale/core/datastore'
 import { FullTablesEditor } from '@/components/Editor/FullTablesEditor'
 import { useParams } from 'react-router-dom'
-import { Button, IconFont } from '@starwhale/ui'
-import { useFetchPanelSetting } from '@/domain/panel/hooks/useSettings'
+import { Button, IconFont, Select } from '@starwhale/ui'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { updatePanelSetting } from '@/domain/panel/services/panel'
+import { fetchPanelSetting, updatePanelSetting } from '@/domain/panel/services/panel'
 import { toaster } from 'baseui/toast'
+import { fetchModelVersionPanelSetting } from '@model/services/modelVersion'
+import { getToken } from '@/api'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -189,11 +190,17 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
     )
 }
 
+interface Layout {
+    name: string
+    content: string | object
+}
+
 function EvaluationWidgetResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const { job } = useJob()
     const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : ''
-    const settingInfo = useFetchPanelSetting(projectId, storeKey)
+    const [currentLayout, setCurrentLayout] = React.useState<Layout | undefined>(undefined)
+    const [layouts, setLayouts] = React.useState<Layout[]>([])
     const onStateChange = async (data: any) => {
         await updatePanelSetting(projectId, storeKey, data)
         toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
@@ -205,6 +212,31 @@ function EvaluationWidgetResults() {
 
         return [...names]
     }, [projectId])
+
+    const updateLayout = useCallback((layout: Layout) => {
+        setLayouts((prevState) => {
+            const others = prevState.filter((i) => i.name !== layout.name)
+            others.push(layout)
+            return others
+        })
+    }, [])
+
+    useEffect(() => {
+        fetchModelVersionPanelSetting(projectId, job?.modelName, job?.modelVersion, getToken()).then((data) => {
+            updateLayout({ name: 'model-builtin', content: data })
+        })
+    }, [projectId, job, updateLayout])
+
+    useEffect(() => {
+        if (!storeKey) {
+            return
+        }
+        fetchPanelSetting(projectId, storeKey).then((data) => {
+            const layout = { name: 'custom', content: data }
+            setCurrentLayout(layout)
+            updateLayout(layout)
+        })
+    }, [projectId, job, storeKey, updateLayout])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
@@ -233,7 +265,27 @@ function EvaluationWidgetResults() {
                     return <EvaluationViewer table={name} key={name} filter={filter} />
                 })}
             </div>
-            <FullTablesEditor initialState={settingInfo.data} onStateChange={onStateChange} />
+            <div style={{ height: '50px', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex' }}>
+                    <Select
+                        overrides={{
+                            ControlContainer: {
+                                style: {
+                                    width: '200px',
+                                },
+                            },
+                        }}
+                        clearable={false}
+                        options={layouts.map((layout) => ({ id: layout.name, label: layout.name }))}
+                        value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
+                        onChange={({ value }) => {
+                            const layout = layouts.find((l) => l.name === value[0].id)
+                            if (layout) setCurrentLayout(layout)
+                        }}
+                    />
+                </div>
+            </div>
+            <FullTablesEditor initialState={currentLayout?.content} onStateChange={onStateChange} />
         </div>
     )
 }
