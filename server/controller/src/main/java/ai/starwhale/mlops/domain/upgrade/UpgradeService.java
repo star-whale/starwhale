@@ -133,7 +133,7 @@ public class UpgradeService {
     }
 
     public Version getLatestVersion() {
-        ResponseEntity<Version> forEntity = restTemplate.getForEntity("", Version.class, Map.of());
+        ResponseEntity<Version> forEntity = restTemplate.getForEntity(latestVersionApiUrl, Version.class, Map.of());
         if (forEntity.getStatusCode() != HttpStatus.OK) {
             throw new SwProcessException(ErrorType.NETWORK, "Get latest version error");
         }

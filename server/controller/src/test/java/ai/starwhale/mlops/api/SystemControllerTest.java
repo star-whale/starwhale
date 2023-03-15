@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
 import ai.starwhale.mlops.domain.system.SystemService;
@@ -88,11 +89,13 @@ public class SystemControllerTest {
 
     @Test
     public void testGetLatestVersion() {
+        given(systemService.getLatestVersion())
+                .willReturn(LatestVersionVo.builder().build());
         var resp = controller.getLatestVersion();
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
-                isA(SystemVersionVo.class)
+                isA(LatestVersionVo.class)
         ));
     }
 
