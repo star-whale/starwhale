@@ -18,6 +18,7 @@ import Button from '../../Button'
 import classNames from 'classnames'
 import { themedUseStyletron } from '../../theme/styletron'
 import useCurrentView from './view/useCurrentView'
+import { BusyPlaceholder } from '@starwhale/ui'
 
 export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
@@ -240,35 +241,34 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}
                     >
                         {/* @ts-ignore */}
-                        {$columns.length > 0 && (
-                            <DataTable
-                                useStore={props.useStore}
-                                columns={$columns}
-                                selectable={selectable}
-                                compareable={compareable}
-                                queryinline={queryinline}
-                                rawColumns={props.columns}
-                                emptyMessage={props.emptyMessage}
-                                filters={$filtersEnabled}
-                                loading={props.loading}
-                                loadingMessage={props.loadingMessage}
-                                onIncludedRowsChange={onIncludedRowsChange}
-                                onRowHighlightChange={onRowHighlightChange}
-                                onSelectMany={onSelectMany}
-                                onSelectNone={onSelectNone}
-                                onSelectOne={onSelectOne}
-                                resizableColumnWidths={resizableColumnWidths}
-                                rowHighlightIndex={rowHighlightIndex}
-                                rows={props.rows}
-                                rowActions={props.rowActions}
-                                rowHeight={props.rowHeight}
-                                selectedRowIds={$rowSelectedIds}
-                                sortDirection={$sortDirection}
-                                sortIndex={$sortIndex}
-                                textQuery={textQuery}
-                                controlRef={props.controlRef}
-                            />
-                        )}
+                        <DataTable
+                            useStore={props.useStore}
+                            columns={$columns}
+                            selectable={selectable}
+                            compareable={compareable}
+                            queryinline={queryinline}
+                            rawColumns={props.columns}
+                            emptyMessage={props.emptyMessage}
+                            filters={$filtersEnabled}
+                            loading={props.loading}
+                            loadingMessage={props.loadingMessage}
+                            onIncludedRowsChange={onIncludedRowsChange}
+                            onRowHighlightChange={onRowHighlightChange}
+                            onSelectMany={onSelectMany}
+                            onSelectNone={onSelectNone}
+                            onSelectOne={onSelectOne}
+                            resizableColumnWidths={resizableColumnWidths}
+                            rowHighlightIndex={rowHighlightIndex}
+                            rows={props.rows}
+                            rowActions={props.rowActions}
+                            rowHeight={props.rowHeight}
+                            selectedRowIds={$rowSelectedIds}
+                            sortDirection={$sortDirection}
+                            sortIndex={$sortIndex}
+                            textQuery={textQuery}
+                            controlRef={props.controlRef}
+                        />
+                        {$columns.length === 0 && props.emptyMessage}
                     </div>
                 </>
             )}

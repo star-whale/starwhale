@@ -12,6 +12,7 @@ import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, Se
 import WidgetFormModal from '../form/WidgetFormModal'
 import WidgetPreviewModal from '../form/WidgetPreviewModal'
 import useRestoreState from './hooks/useRestoreState'
+import shallow from 'zustand/shallow'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -35,10 +36,16 @@ export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props
     )
 })
 
+const selector = (s: any) => ({
+    onLayoutChildrenChange: s.onLayoutChildrenChange,
+    onWidgetChange: s.onWidgetChange,
+    onWidgetDelete: s.onWidgetDelete,
+})
+
 export function WidgetRenderTree({ initialState, onStateChange }: any) {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const { storeKey: key, projectId } = dynamicVars
-    const api = store()
+    const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)

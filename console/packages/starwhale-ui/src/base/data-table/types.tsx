@@ -3,7 +3,7 @@
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import * as React from 'react'
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
-import { IStore } from './store'
+import { IStore, ITableState } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -130,15 +130,15 @@ export type ConfigT = {
 
 export type StatefulDataTablePropsT = {
     columns: ColumnT[]
-    rawColumns: ColumnT[]
-    emptyMessage?: string | React.Component<any>
+    rawColumns?: ColumnT[]
+    emptyMessage?: React.ReactNode
     filterable?: boolean
     initialFilters?: any[]
     initialSelectedRowIds?: Set<number | string>
     initialSortIndex?: number
     initialSortDirection?: SortDirectionsT
     loading?: boolean
-    loadingMessage?: string | React.Component<any>
+    loadingMessage?: React.ReactNode
     onFilterSet?: (v: any[]) => void
     onFilterAdd?: (v: string, { description }: any) => any
     onFilterRemove?: (v: string) => any
@@ -160,13 +160,14 @@ export type StatefulDataTablePropsT = {
     queryinline?: boolean
     controlRef?: ControlRefT
     useStore: IStore
+    store?: ITableState
 }
 
 export type DataTablePropsT = {
-    emptyMessage?: string | React.Component<any>
+    emptyMessage?: React.ReactNode
     filters?: any[]
     loading?: boolean
-    loadingMessage?: string | React.Component<any>
+    loadingMessage?: React.ReactNode
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
     onSelectMany?: (rows: RowT[]) => void

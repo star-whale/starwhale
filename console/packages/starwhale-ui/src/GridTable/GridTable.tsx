@@ -66,6 +66,7 @@ function GridTable({
     queryinline = false,
     onSave,
     onChange = () => {},
+    emptyMessage,
     storeRef,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -124,25 +125,21 @@ function GridTable({
                     columns={columns}
                     rows={$rows}
                     onSave={onSave}
-                    // @ts-ignore
-                    loadingMessage={() =>
-                        (
-                            <Skeleton
-                                overrides={{
-                                    Root: {
-                                        style: {
-                                            paddingTop: '10px',
-                                        },
+                    loadingMessage={() => (
+                        <Skeleton
+                            overrides={{
+                                Root: {
+                                    style: {
+                                        paddingTop: '10px',
                                     },
-                                }}
-                                rows={10}
-                                width='100%'
-                                animation
-                            />
-                        ) as any
-                    }
-                    // @ts-ignore
-                    emptyMessage={() => (<BusyPlaceholder type='notfound' />) as any}
+                                },
+                            }}
+                            rows={10}
+                            width='100%'
+                            animation
+                        />
+                    )}
+                    emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                 />
             </div>
             <Pagination {...paginationProps} />

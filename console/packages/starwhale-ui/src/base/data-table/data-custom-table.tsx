@@ -203,8 +203,8 @@ export function DataTable({
         Array.from(filters || new Set(), (f) => f)
             .filter((v: any) => !v.disable)
             .forEach((filter: any) => {
-                const columnIndex = rawColumns.findIndex((c) => c.key === filter.key)
-                const column = rawColumns[columnIndex]
+                const columnIndex = rawColumns?.findIndex((c) => c.key === filter.key) ?? -1
+                const column = rawColumns?.[columnIndex]
 
                 if (!column) {
                     return
