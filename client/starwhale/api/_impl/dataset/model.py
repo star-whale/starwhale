@@ -446,14 +446,19 @@ class Dataset:
     def manifest(self) -> t.Dict[str, t.Any]:
         return self.__loading_core_dataset.info()
 
-    def head(self, n: int = 3, show_raw_data: bool = False) -> t.List[t.Dict]:
+    def head(self, n: int = 5, skip_fetch_data: bool = False) -> t.List[DataRow]:
         # TODO: render artifact in JupyterNotebook
-        return self.__loading_core_dataset.head(n, show_raw_data)
+        ret = []
+        loader = self._get_data_loader(disable_consumption=True)
+        for idx, td_row in enumerate(loader._iter_meta()):
+            if idx >= n:
+                break
+            data_row = loader._unpack_row(td_row, skip_fetch_data=skip_fetch_data)
+            ret.append(data_row)
+        return ret
 
     def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
-        loader = self._get_data_loader(disable_consumption=True)
-        row = next(loader.tabular_dataset.scan())
-        return loader._unpack_row(row, skip_fetch_data, shadow_dataset=self)
+        return self.head(1, skip_fetch_data)[0]
 
     def to_pytorch(
         self,

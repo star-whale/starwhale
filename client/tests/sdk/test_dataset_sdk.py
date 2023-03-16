@@ -884,32 +884,33 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         diff = int_ds.diff(str_ds)
         assert diff["diff_rows"]["updated"] == 10
 
-    @pytest.mark.skip(
-        "enable this test when dataset model uses one-one datastore table"
-    )
     def test_head(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
-        ds = dataset(existed_ds_uri)
+        ds = dataset(existed_ds_uri, readonly=True)
 
         head = ds.head(n=0)
         assert len(head) == 0
 
+        head = ds.head(n=4, skip_fetch_data=True)
+        assert len(head) == 4
+        assert not head[0].features.data._BaseArtifact__cache_bytes
+        assert not head[1].features.data._BaseArtifact__cache_bytes
+
         head = ds.head(n=1)
         assert len(head) == 1
-        assert head[0]["index"] == "0"
-        assert "raw" not in head[0]["features"]
+        assert head[0].index == "0"
+        assert "raw" not in head[0].features
 
         head = ds.head(n=2)
         assert len(head) == 2
-        assert head[0]["index"] == "0"
-        assert head[1]["index"] == "1"
-        assert not head[0]["features"]["data"]._BaseArtifact__cache_bytes
-        assert not head[1]["features"]["data"]._BaseArtifact__cache_bytes
+        assert head[0].index == "0"
+        assert head[1].index == "1"
+        assert head[0].features.data._BaseArtifact__cache_bytes == b"data-0"
+        assert head[1].features.data._BaseArtifact__cache_bytes == b"data-1"
 
-        head = ds.head(n=2, show_raw_data=True)
-        assert len(head) == 2
-        assert head[0]["features"]["data"].to_bytes() == b"data-0"
-        assert head[1]["features"]["data"].to_bytes() == b"data-1"
+        head = ds.head(1000)
+        assert len(head) != 1000
+        assert len(head) == len(ds)
 
     @Mocker()
     def test_copy(self, rm: Mocker) -> None:
