@@ -963,8 +963,9 @@ class TestPytorch(_DatasetSDKTestBase):
         assert len(items) == 5
         first_item = items[0]
         assert isinstance(first_item, dict)
-        assert len(first_item["data"]) == 2
-        assert len(first_item["label"]) == 2
+        assert len(first_item["data"]) == len(
+            tdata.default_collate([b"data-0", b"data-1"])
+        )
 
         assert isinstance(first_item["label"], torch.Tensor)
         assert list(first_item["label"].size()) == [2]
@@ -1044,8 +1045,9 @@ class TestPytorch(_DatasetSDKTestBase):
         assert list(item["map"]["key"].size()) == [2]
         assert len(item["str"]) == 2
         assert item["str"][0].startswith("str-")
-        assert len(item["bytes"]) == 2
-        assert item["bytes"][0].startswith(b"bytes-")
+        assert len(item["bytes"]) == len(
+            tdata.default_collate([b"bytes-0", b"bytes-1"])
+        )
 
     def test_image_transform(self) -> None:
         ds = dataset("mnist", create=True)
