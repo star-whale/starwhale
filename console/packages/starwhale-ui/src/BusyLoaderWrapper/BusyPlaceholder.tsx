@@ -2,6 +2,7 @@ import React from 'react'
 // eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner, SIZE } from 'baseui/spinner'
 import IconFont from '../IconFont'
+import { LabelMedium } from 'baseui/typography'
 
 interface IBusyPlaceholderProps {
     type?: 'spinner' | 'loading' | 'notfound' | 'empty' | 'center'
@@ -20,8 +21,20 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
         case 'notfound':
             children = (
                 <>
-                    <div style={{ alignSelf: 'center', fontSize: '50px' }}>
+                    <div
+                        style={{
+                            alignSelf: 'center',
+                            fontSize: '50px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            gap: '10px',
+                        }}
+                    >
                         <IconFont type='searchEmpty' size={50} />
+                        <LabelMedium $style={{ color: 'rgba(2,16,43,0.20)' }}>{rawChildren}</LabelMedium>
                     </div>
                 </>
             )
@@ -29,8 +42,20 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
         case 'empty':
             children = (
                 <>
-                    <div style={{ alignSelf: 'center', fontSize: '50px' }}>
+                    <div
+                        style={{
+                            alignSelf: 'center',
+                            fontSize: '50px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            gap: '10px',
+                        }}
+                    >
                         <IconFont type='empty' size={50} />
+                        <LabelMedium $style={{ color: 'rgba(2,16,43,0.20)' }}>{rawChildren}</LabelMedium>
                     </div>
                 </>
             )

@@ -1,6 +1,5 @@
-import create, { StateCreator } from 'zustand'
-// persist
-import { devtools, subscribeWithSelector } from 'zustand/middleware'
+import create, { StateCreator, StoreApi, UseBoundStore } from 'zustand'
+import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
@@ -30,6 +29,7 @@ export interface IViewState {
 export interface ICurrentViewState {
     currentView: ConfigT
     onCurrentViewSaved: () => void
+    onCurrentViewIdChange: (viewId?: string) => void
     onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
     onCurrentViewQueriesChange: (queries: QueryT[]) => void
@@ -57,22 +57,16 @@ export type IStateCreator<T> = StateCreator<
 >
 
 const rawInitialState: Partial<ITableState> = {
-    isInit: false,
     key: 'table',
     views: [],
     defaultView: {},
-    currentView: {},
-    // viewEditing: {},
-    // viewModelShow: false,
+    currentView: { id: 'all' },
     rowSelectedIds: [],
 }
 
 const rawIfChangedInitialState: Partial<ITableState> = {
     key: 'table',
     views: [],
-    defaultView: {},
-    currentView: {},
-    rowSelectedIds: [],
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -167,6 +161,20 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
     return {
         currentView: rawCurrentView,
         onCurrentViewSaved: () => update({ updated: false }),
+        onCurrentViewIdChange: (viewId) => {
+            if (viewId === 'all') {
+                set({ currentView: rawCurrentView })
+                return
+            }
+            let view = get().views.find((view) => view.id === viewId)
+            if (!view) {
+                view = get().views.find((view) => view.def)
+            }
+            if (!view) {
+                view = rawCurrentView
+            }
+            set({ currentView: view })
+        },
         onCurrentViewFiltersChange: (filters) => update({ filters }),
         onCurrentViewQueriesChange: (queries) => update({ queries }),
         onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
@@ -210,9 +218,8 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
     isInit: false,
     key: 'table',
     initStore: (obj?: Record<string, any>) =>
-        !get().isInit &&
         set({
-            ..._.pick(obj, Object.keys(rawInitialState)),
+            ...(obj ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
             isInit: true,
         }),
     setRawConfigs: (obj: Record<string, any>) =>
@@ -282,26 +289,43 @@ const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
         }),
 })
 
-export function createCustomStore(key: string, initState: Partial<ITableState> = {}) {
+export function createCustomStore(key: string, initState: Partial<ITableState> = {}, isPersist = false) {
     let initialized = null
     if (initialized) return initialized
     const name = `table/${key}`
     const useStore = create<ITableState>()(
         subscribeWithSelector(
             devtools(
-                // persist(
-                (...a) => ({
-                    ...createTableStateInitSlice(...a),
-                    ...createViewSlice(...a),
-                    ...createCurrentViewSlice(...a),
-                    ...createViewInteractiveSlice(...a),
-                    ...createRowSlice(...a),
-                    ...createCompareSlice(...a),
-                    ...initState,
-                    key: name,
-                }),
-                //     { name }
-                // ),
+                isPersist
+                    ? persist(
+                          (...a) => ({
+                              //   @ts-ignore
+                              ...createTableStateInitSlice(...a),
+                              //   @ts-ignore
+                              ...createViewSlice(...a),
+                              //   @ts-ignore
+                              ...createCurrentViewSlice(...a),
+                              //   @ts-ignore
+                              ...createViewInteractiveSlice(...a),
+                              //   @ts-ignore
+                              ...createRowSlice(...a),
+                              //   @ts-ignore
+                              ...createCompareSlice(...a),
+                              ...initState,
+                              key: name,
+                          }),
+                          { name }
+                      )
+                    : (...a) => ({
+                          ...createTableStateInitSlice(...a),
+                          ...createViewSlice(...a),
+                          ...createCurrentViewSlice(...a),
+                          ...createViewInteractiveSlice(...a),
+                          ...createRowSlice(...a),
+                          ...createCompareSlice(...a),
+                          ...initState,
+                          key: name,
+                      }),
                 { name }
             )
         )
@@ -317,7 +341,7 @@ export type IStore = ReturnType<typeof createCustomStore>
 
 export default createCustomStore
 
-export const useEvaluationStore = createCustomStore('evaluations')
+export const useEvaluationStore = createCustomStore('evaluations', {}, true)
 export const useEvaluationCompareStore = createCustomStore('compare', {
     compare: {
         comparePinnedKey: '',

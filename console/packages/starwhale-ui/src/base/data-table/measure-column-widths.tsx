@@ -3,17 +3,16 @@ import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
 import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
-import { VariableSizeGrid } from 'react-window'
-import { useWhatChanged } from '@starwhale/core'
 import _ from 'lodash'
 
 const IS_BROWSER = true
 const emptyFunction = () => {}
 
+// @ts-ignore
 function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout, isQueryInline }) {
     const [css] = useStyletron()
 
-    const ref = useRef()
+    const ref = useRef<HTMLDivElement | null>(null)
 
     React.useEffect(() => {
         if (IS_BROWSER) {
@@ -33,6 +32,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 paddingRight: '20px',
             })}
         >
+            {/* @ts-ignore */}
             <HeaderCell
                 index={columnIndex}
                 isHovered
@@ -49,7 +49,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 title={column.title}
                 isSelectable={isSelectable}
             />
-            {sampleIndexes.map((rowIndex, i) => {
+            {sampleIndexes.map((rowIndex: number, i: number) => {
                 const Cell = column.renderCell
                 return (
                     <Cell
@@ -78,11 +78,13 @@ type MeasureColumnWidthsPropsT = {
 
 const MAX_SAMPLE_SIZE = 20
 
+// @ts-ignore
 function generateSampleIndices(inputMin, inputMax, maxSamples) {
     const indices = []
     const queue = [[inputMin, inputMax]]
 
     while (queue.length > 0) {
+        // @ts-ignore
         const [min, max] = queue.shift()
         if (indices.length < maxSamples) {
             const pivot = Math.floor((min + max) / 2)
@@ -129,10 +131,6 @@ export default function MeasureColumnWidths({
             )
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
-            // if (Math.abs(nextWidth - prevWidth > 5)) {
-            //     console.log(columnIndex, nextWidth - prevWidth, widthMap.get(columnIndex))
-            // }
-
             //1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
             if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 5) {
                 widthMap.set(columnIndex, nextWidth)
@@ -150,17 +148,7 @@ export default function MeasureColumnWidths({
     )
 
     const $columns = React.useMemo(() => {
-        // if (!gridRef) return null
-
-        // const [overscanColumnStartIndex, overscanColumnStopIndex] = gridRef._getHorizontalRangeToRender()
-
-        // console.log('----', overscanColumnStartIndex, overscanColumnStopIndex)
-
         return columns.map((column, i) => {
-            // if (!column.pin && i > overscanColumnStartIndex && i < overscanColumnStopIndex) {
-            //     return null
-            // }
-
             return (
                 <MeasureColumn
                     key={`${column.title}-${String(i)}`}
@@ -168,6 +156,7 @@ export default function MeasureColumnWidths({
                     rows={rows}
                     isSelectable={isSelectable && i === 0}
                     isQueryInline={isQueryInline && i === 0}
+                    // @ts-ignore
                     onLayout={(columnIndex, dimensions) => handleDimensionsChange(column, dimensions)}
                     columnIndex={i}
                     sampleIndexes={sampleIndexes}
