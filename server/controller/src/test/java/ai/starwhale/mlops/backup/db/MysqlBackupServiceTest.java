@@ -35,7 +35,7 @@ public class MysqlBackupServiceTest extends MySqlContainerHolder {
 
     @Test
     public void testBackupAndRestore() throws SQLException, ClassNotFoundException {
-        assertThat("",
+        assertThat("extract db",
                 MysqlBackupService.extractDatabaseFromUrl(mySqlDB.getJdbcUrl()), is("arbitrary_dbname"));
 
         BiPredicate<Statement, Integer> count = (statement, integer) -> {
