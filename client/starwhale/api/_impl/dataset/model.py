@@ -4,7 +4,6 @@ import typing as t
 import threading
 from http import HTTPStatus
 from types import TracebackType
-from pathlib import Path
 from functools import wraps
 from itertools import islice
 from contextlib import ExitStack
@@ -23,7 +22,7 @@ from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
-from starwhale.core.dataset.type import DatasetConfig, DatasetSummary
+from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
@@ -38,7 +37,7 @@ from starwhale.core.dataset.tabular import (
 )
 
 from .loader import DataRow, DataLoader, get_data_loader
-from .builder import RowWriter, BaseBuildExecutor
+from .builder import RowWriter
 
 if t.TYPE_CHECKING:
     import tensorflow as tf
@@ -46,7 +45,6 @@ if t.TYPE_CHECKING:
 
 _DType = t.TypeVar("_DType", bound="Dataset")
 _ItemType = t.Union[str, int, slice]
-_HandlerType = t.Optional[t.Union[t.Callable, BaseBuildExecutor]]
 _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
 
 _DEFAULT_LOADER_WORKERS = 2
@@ -156,12 +154,8 @@ class Dataset:
         self._consumption: t.Optional[TabularDatasetSessionConsumption] = None
         self._lock = threading.Lock()
         self.__data_loaders: t.Dict[str, DataLoader] = {}
-        self.__build_handler: _HandlerType = None
-        self._trigger_handler_build = False
-        self._trigger_icode_build = False
         self._writer_lock = threading.Lock()
         self._row_writer: t.Optional[RowWriter] = None
-        self._enable_copy_src = False
         self._info_lock = threading.Lock()
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
@@ -378,43 +372,6 @@ class Dataset:
 
         return _wrapper
 
-    def _forbid_handler_build(func: t.Callable):  # type: ignore
-        @wraps(func)
-        def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            self: Dataset = args[0]
-            if self._trigger_handler_build:
-                raise NoSupportError(
-                    "no support build from handler and from cache code at the same time, build from handler has already been activated"
-                )
-            return func(*args, **kwargs)
-
-        return _wrapper
-
-    def _forbid_icode_build(func: t.Callable):  # type: ignore
-        @wraps(func)
-        def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            self: Dataset = args[0]
-            if self._trigger_icode_build:
-                raise NoSupportError(
-                    "no support build from handler and from cache code at the same time, build from interactive code has already been activated"
-                )
-            return func(*args, **kwargs)
-
-        return _wrapper
-
-    @property
-    def build_handler(self) -> _HandlerType:
-        return self.__build_handler
-
-    @build_handler.setter
-    def build_handler(self, handler: _HandlerType) -> None:
-        if self._trigger_icode_build:
-            raise RuntimeError(
-                "dataset append by interactive code has already been called"
-            )
-        self._trigger_handler_build = True
-        self.__build_handler = handler
-
     @property
     def tags(self) -> _Tags:
         return _Tags(self.__core_dataset)
@@ -531,12 +488,10 @@ class Dataset:
         return to_tf_dataset(dataset=self, drop_index=drop_index)
 
     @_check_readonly
-    @_forbid_handler_build
     def __setitem__(
         self, key: t.Union[str, int], value: t.Union[DataRow, t.Tuple, t.Dict]
     ) -> None:
         # TODO: tune the performance of getitem by cache
-        self._trigger_icode_build = True
         _row_writer = self._get_row_writer()
 
         if not isinstance(key, (int, str)):
@@ -602,9 +557,7 @@ class Dataset:
     _init_row_writer = _get_row_writer
 
     @_check_readonly
-    @_forbid_handler_build
     def __delitem__(self, key: _ItemType) -> None:
-        self._trigger_icode_build = True
         self._init_row_writer()  # hack for del item as the first operation
 
         items: t.List
@@ -625,7 +578,6 @@ class Dataset:
             self._rows_cnt -= 1
 
     @_check_readonly
-    @_forbid_handler_build
     def append(self, item: t.Any) -> None:
         if isinstance(item, DataRow):
             self.__setitem__(item.index, item)
@@ -646,28 +598,11 @@ class Dataset:
             raise TypeError(f"value({item}) is not DataRow, list or tuple type")
 
     @_check_readonly
-    @_forbid_handler_build
     def extend(self, items: t.Sequence[t.Any]) -> None:
         for item in items:
             self.append(item)
 
     @_check_readonly
-    def build_with_copy_src(
-        self,
-        src_dir: t.Union[str, Path],
-        include_files: t.Optional[t.List[str]] = None,
-        exclude_files: t.Optional[t.List[str]] = None,
-    ) -> Dataset:
-        self._enable_copy_src = True
-        self._build_src_dir = Path(src_dir)
-        self._build_include_files = include_files or []
-        self._build_exclude_files = exclude_files or []
-        return self
-
-    commit_with_copy_src = build_with_copy_src
-
-    @_check_readonly
-    @_forbid_handler_build
     def _do_build_from_interactive_code(self) -> None:
         if self._row_writer is None:
             raise RuntimeError("row writer is none, no data was written")
@@ -730,48 +665,8 @@ class Dataset:
             local_ds._make_swds_meta_tar()
 
     @_check_readonly
-    @_forbid_icode_build
-    def _do_build_from_handler(self) -> None:
-        # TODO: support build dataset for cloud uri directly
-        if self.project_uri.instance_type == InstanceType.CLOUD:
-            raise NoSupportError("no support to build cloud dataset directly")
-
-        if self.__info is not None and self._info_ds_wrapper is not None:
-            self.__info.save_to_datastore(self._info_ds_wrapper)
-
-        self._trigger_icode_build = True
-        config = DatasetConfig(
-            name=self.name,
-            handler=self.build_handler,
-            project_uri=self.project_uri.full_uri,
-            append=self._create_by_append,
-            append_from=self._append_from_version,
-        )
-
-        kw: t.Dict[str, t.Any] = {"disable_copy_src": not self._enable_copy_src}
-        if self._enable_copy_src:
-            config.pkg_data = self._build_include_files
-            config.exclude_pkg_data = self._build_exclude_files
-            kw["workdir"] = self._build_src_dir
-
-        # TODO: support DatasetAttr config for SDK
-        config.do_validate()
-        kw["config"] = config
-        # TODO: support build tmpdir, follow the swcli dataset build command behavior
-        self.__core_dataset.buildImpl(**kw)
-        _summary = self.__core_dataset.summary()
-        self._rows_cnt = _summary.rows if _summary else 0
-
-    @_check_readonly
-    def build(self) -> None:
-        if self._trigger_icode_build:
-            self._do_build_from_interactive_code()
-        elif self._trigger_handler_build and self.build_handler:
-            self._do_build_from_handler()
-        else:
-            raise RuntimeError("no data to build dataset")
-
-    commit = build
+    def commit(self) -> None:
+        self._do_build_from_interactive_code()
 
     def copy(
         self, dest_uri: str, force: bool = False, dest_local_project_uri: str = ""
@@ -801,7 +696,6 @@ class Dataset:
     def dataset(
         uri: t.Union[str, URI],
         create: bool = False,
-        create_from_handler: t.Optional[_HandlerType] = None,
     ) -> Dataset:
         if isinstance(uri, str):
             _uri = URI(uri, expected_type=URIType.DATASET)
@@ -816,10 +710,7 @@ class Dataset:
             name=_uri.object.name,
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
-            create=create or bool(create_from_handler),
+            create=create,
         )
-
-        if create_from_handler:
-            ds.build_handler = create_from_handler
 
         return ds

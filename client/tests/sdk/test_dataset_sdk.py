@@ -5,7 +5,6 @@ import sys
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
@@ -19,7 +18,6 @@ from requests_mock import Mocker
 from starwhale import dataset
 from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
@@ -297,131 +295,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_build_no_data(self) -> None:
         ds = dataset("mnist", create=True)
-        msg = "no data to build dataset"
+        msg = "row writer is none, no data was written"
         with self.assertRaisesRegex(RuntimeError, msg):
-            ds.build()
+            ds.commit()
 
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri, create=True)
         with self.assertRaisesRegex(RuntimeError, msg):
-            ds.build()
-
-    def test_build_from_handler_empty(self) -> None:
-        def _handler() -> t.Generator:
-            for i in range(0, 100):
-                yield i, {"data": Binary(), "label": i}
-
-        ds = dataset("mnist", create=True)
-        ds.build_handler = _handler
-        ds.commit()
-        ds.close()
-
-        reopen_ds = dataset(ds.uri)
-        items = list(reopen_ds)
-        assert len(items) == len(reopen_ds) == 100
-        assert "label" in items[-1].features
-        assert isinstance(items[-1].index, int)
-
-    def test_build_from_handler_existed(self) -> None:
-        def _handler() -> t.Generator:
-            for i in range(0, 100):
-                yield f"label-{i}", {
-                    "data": Binary(bytes(f"data-{i}", "utf-8")),
-                    "label": i,
-                }
-
-        existed_ds_uri = self._init_simple_dataset_with_str_id()
-        with dataset(existed_ds_uri, create_from_handler=_handler) as ds:
-            assert ds._create_by_append
             ds.commit()
-
-        reopen_ds = dataset(ds.uri)
-        assert len(reopen_ds) == 110
-        summary = reopen_ds.summary()
-        assert isinstance(summary, DatasetSummary)
-        assert summary.rows == 110
-        assert summary.increased_rows == 100
-        items = list(reopen_ds)
-        assert len(items) == 110
-        assert isinstance(items[-1].index, str)
-        assert items[-1].index.startswith("label-")
-
-    def test_build_from_handler_with_copy_src(self) -> None:
-        def _handler() -> t.Generator:
-            for i in range(0, 100):
-                yield DataRow(f"label-{i}", {"data": Binary(), "label": i})
-
-        workdir = Path(self.local_storage) / ".data"
-        ensure_dir(workdir)
-        ensure_file(workdir / "t.py", content="")
-
-        ds = dataset("mnist", create_from_handler=_handler)
-        ds.build_with_copy_src(workdir)
-        ds.commit()
-        ds.close()
-
-        reopen_ds = dataset(ds.uri)
-        assert reopen_ds.exists()
-
-        _uri = reopen_ds.uri
-        dataset_dir = (
-            Path(self.local_storage)
-            / _uri.project
-            / "dataset"
-            / reopen_ds.name
-            / reopen_ds.version[:2]
-            / f"{reopen_ds.version}.swds"
-            / "src"
-        )
-        assert dataset_dir.exists()
-        assert (dataset_dir / "t.py").exists()
-
-    def test_forbid_handler(self) -> None:
-        ds = dataset("mnist", create=True)
-        for i in range(0, 3):
-            ds.append(DataRow(i, {"data": Binary(), "label": i}))
-
-        assert ds._trigger_icode_build
-        assert not ds._trigger_handler_build
-
-        with self.assertRaisesRegex(
-            RuntimeError, "dataset append by interactive code has already been called"
-        ):
-            ds.build_handler = MagicMock()
-
-    def test_forbid_icode(self) -> None:
-        ds = dataset("mnist", create=True)
-        ds.build_handler = MagicMock()
-        assert ds._trigger_handler_build
-        assert not ds._trigger_icode_build
-
-        msg = "no support build from handler and from cache code at the same time"
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds.append(DataRow(1, {"data": Binary(), "label": 1}))
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds.extend([DataRow(1, {"data": Binary(), "label": 1})])
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds[1] = DataRow(1, {"data": Binary(), "label": 1})
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            del ds[1]
-
-        ds = dataset("mnist", create_from_handler=MagicMock())
-        assert ds._trigger_handler_build
-        assert not ds._trigger_icode_build
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds.append(DataRow(1, {"data": Binary(), "label": 1}))
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds.extend([DataRow(1, {"data": Binary(), "label": 1})])
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            ds[1] = DataRow(1, {"data": Binary(), "label": 1})
-
-        with self.assertRaisesRegex(NoSupportError, msg):
-            del ds[1]
 
     def test_close(self) -> None:
         ds = dataset("mnist", create=True)
@@ -816,29 +697,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert update_table_req.called
 
         ds.close()
-
-    @Mocker()
-    def test_cloud_build_no_support(self, rm: Mocker) -> None:
-        with self.assertRaisesRegex(
-            NoSupportError, "no support to build cloud dataset directly"
-        ):
-            ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
-            ds.build_handler = MagicMock()
-            ds.commit()
-
-        rm.request(
-            HTTPMethod.HEAD,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234",
-            json={"message": "existed"},
-            status_code=HTTPStatus.OK,
-        )
-
-        with self.assertRaisesRegex(
-            NoSupportError, "Can't build dataset from the existed cloud dataset uri"
-        ):
-            dataset(
-                "http://1.1.1.1/project/self/dataset/mnist/version/1234", create=True
-            )
 
     def test_consumption(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
