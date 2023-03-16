@@ -6,7 +6,7 @@ import produce from 'immer'
 import _ from 'lodash'
 import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
-import { WidgetConfig, WidgetStoreState } from '../types'
+import { WidgetConfig, WidgetStoreState, WidgetTreeNode } from '../types'
 
 function arrayOverride(objValue: any, srcValue: any) {
     if (_.isArray(objValue)) {
@@ -99,9 +99,20 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                                 //
                                 if (payload.type === 'delete') {
                                     const darr = curr.slice()
-                                    darr.splice(currentIndex, 1)
+                                    const d = darr.splice(currentIndex, 1)
                                     _.set(state, sourcePaths, darr)
-                                    delete state.widgets[payload.id]
+                                    const deepDelete = (node: WidgetTreeNode) => {
+                                        if (!node) {
+                                            return
+                                        }
+                                        if (node.id) {
+                                            delete state.widgets[node.id]
+                                        }
+                                        if (node.children) {
+                                            node.children.forEach((i) => deepDelete(i))
+                                        }
+                                    }
+                                    deepDelete(d[0])
                                     return
                                 }
                                 //
