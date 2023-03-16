@@ -86,7 +86,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         kind: options.kind,
         buildFilter: options.buildFilter || ((params) => (data) => true),
         textQueryFilter: options.textQueryFilter,
-        fillWidth: options.fillWidth === undefined ? false : options.fillWidth,
+        fillWidth: options.fillWidth === undefined ? true : options.fillWidth,
         filterable: Boolean(options.filterable) && Boolean(options.renderFilter) && Boolean(options.buildFilter),
         mapDataToValue: options.mapDataToValue,
         maxWidth: options.maxWidth ?? MAX_WIDTH,

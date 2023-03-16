@@ -68,15 +68,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return null
     }
 
-    // useIfChanged({
-    //     $childrenPinned,
-    //     $columns,
-    //     pinnedWidth,
-    //     gridRef,
-    //     data,
-    //     children: props.children,
-    //     $children,
-    // })
+    // useIfChanged(ctx)
 
     return (
         <>
