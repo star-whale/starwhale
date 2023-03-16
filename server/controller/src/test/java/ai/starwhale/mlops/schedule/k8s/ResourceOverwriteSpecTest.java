@@ -27,13 +27,24 @@ public class ResourceOverwriteSpecTest {
     @Test
     public void testRuntimeResource() {
         ResourceOverwriteSpec resourceOverwriteSpec = new ResourceOverwriteSpec(
-                List.of(new RuntimeResource("cpu", 1.99f, 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f, 1.99f)));
+                List.of(new RuntimeResource("cpu", 1.99f, 1.99f), new RuntimeResource("nvidia.com/gpu", 1.99f, 2.99f)));
+        Assertions.assertEquals(new Quantity("2"),
+                resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
+        Assertions.assertEquals(new Quantity("3"),
+                resourceOverwriteSpec.getResourceSelector().getLimits().get("nvidia.com/gpu"));
+        Assertions.assertEquals(new Quantity("1.99"),
+                resourceOverwriteSpec.getResourceSelector().getRequests().get("cpu"));
+
+        // test no-k8s resource without limit
+        resourceOverwriteSpec = new ResourceOverwriteSpec(
+                List.of(new RuntimeResource("cpu", 1.99f, null), new RuntimeResource("nvidia.com/gpu", 2.f, null)));
         Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("nvidia.com/gpu"));
         Assertions.assertEquals(new Quantity("2"),
                 resourceOverwriteSpec.getResourceSelector().getLimits().get("nvidia.com/gpu"));
         Assertions.assertEquals(new Quantity("1.99"),
                 resourceOverwriteSpec.getResourceSelector().getRequests().get("cpu"));
+        Assertions.assertNull(resourceOverwriteSpec.getResourceSelector().getLimits().get("cpu"));
     }
 
 }
