@@ -77,6 +77,7 @@ export default function EvaluationListCard() {
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
+                    fillWidth: false,
                     mapDataToValue: (item: any) => item['sys/id'],
                     // @ts-ignore
                     renderCell: (props: any) => {
@@ -98,6 +99,7 @@ export default function EvaluationListCard() {
                     title: t('Elapsed Time'),
                     sortable: true,
                     filterType: 'number',
+                    fillWidth: false,
                     sortFn: (a: any, b: any) => {
                         const aNum = Number(a)
                         const bNum = Number(b)
@@ -117,11 +119,15 @@ export default function EvaluationListCard() {
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
+                    fillWidth: false,
                     mapDataToValue: (data: any) =>
                         column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
                 })
 
-            return column
+            return {
+                ...column,
+                fillWidth: false,
+            }
         })
     }, [t, $columns, projectId])
     const $compareRows = React.useMemo(() => {

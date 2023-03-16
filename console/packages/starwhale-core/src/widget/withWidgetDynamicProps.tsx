@@ -26,7 +26,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const api = store()
         const widgetIdSelector = React.useMemo(() => getWidget(id) ?? {}, [id])
         const overrides = store(widgetIdSelector)
-        const [loaded, setLoaded] = useState(false)
         const myRef = useRef<HTMLElement>()
 
         const handleLayoutOrderChange = useCallback(
@@ -83,13 +82,27 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const inViewport = useIsInViewport(myRef as any)
         const { columnInfo, recordInfo: info, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
 
+        const inViewLoadRef = useRef(false)
+        const tableNameRef = useRef('')
+
+        // if in viewport, refetch data
+        // if panel table changed, refetch data
         useEffect(() => {
-            if (tableName && inViewport && !loaded) {
+            if (!tableName || !inViewport) return
+
+            if (tableNameRef.current !== tableName) {
                 columnInfo.refetch()
-                setLoaded(true)
+                tableNameRef.current = tableName
+                return
             }
+
+            if (inViewLoadRef.current) return
+            columnInfo.refetch()
+
+            inViewLoadRef.current = true
+            tableNameRef.current = tableName
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [tableName, inViewport, loaded])
+        }, [tableName, inViewport])
 
         useEffect(() => {
             // @FIXME better use scoped eventBus

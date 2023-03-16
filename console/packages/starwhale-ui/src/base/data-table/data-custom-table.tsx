@@ -91,6 +91,28 @@ export function DataTable({
     const [measuredWidths, setMeasuredWidths] = React.useState(new Map())
     const [resizeDeltas, setResizeDeltas] = React.useState(new Map())
 
+    const [itemIndexs, setItemIndexs] = React.useState({
+        overscanColumnStartIndex: 0,
+        overscanColumnStopIndex: 0,
+        overscanRowStartIndex: 0,
+        overscanRowStopIndex: 0,
+    })
+
+    const handleItemsRendered = React.useCallback(
+        _.throttle(
+            ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
+                setItemIndexs({
+                    overscanColumnStartIndex,
+                    overscanColumnStopIndex,
+                    overscanRowStartIndex,
+                    overscanRowStopIndex,
+                })
+            },
+            200
+        ),
+        []
+    )
+
     // React.useEffect(() => {
     //     setMeasuredWidths((prev) => {
     //         return columns.map((v) => prev.get(v.key) || 60)
@@ -100,8 +122,10 @@ export function DataTable({
     //     })
     // }, [columns])
 
+    const [scrollLeft, setScrollLeft] = React.useState(0)
     const resetAfterColumnIndex = React.useCallback(
         (columnIndex) => {
+            // console.log(gridRef, columnIndex)
             if (gridRef) {
                 gridRef.resetAfterColumnIndex?.(columnIndex, true)
             }
@@ -110,11 +134,10 @@ export function DataTable({
     )
     const handleWidthsChange = React.useCallback(
         (nextWidths) => {
-            console.log('handleWidthsChange', nextWidths)
-            setMeasuredWidths(nextWidths)
-            resetAfterColumnIndex(0)
+            setMeasuredWidths(new Map(nextWidths))
+            resetAfterColumnIndex(itemIndexs.overscanColumnStartIndex)
         },
-        [setMeasuredWidths, resetAfterColumnIndex]
+        [setMeasuredWidths, resetAfterColumnIndex, itemIndexs]
     )
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
@@ -128,7 +151,6 @@ export function DataTable({
         },
         [setResizeDeltas, resetAfterColumnIndex]
     )
-    const [scrollLeft, setScrollLeft] = React.useState(0)
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
     React.useLayoutEffect(() => {
@@ -261,8 +283,8 @@ export function DataTable({
 
             const scrollbarWidth = isContentTallerThanContainer ? browserScrollbarWidth : 0
 
-            const remainder = gridProps.width - sum(resizedWidths) - scrollbarWidth
-            const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : false)).length
+            const remainder = Math.max(gridProps.width - sum(resizedWidths) - scrollbarWidth, 0)
+            const filledColumnsLen = columns.filter((c) => c.fillWidth).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
             if (padding > 0) {
@@ -419,23 +441,17 @@ export function DataTable({
 
     // console.log(rowHighlightIndex, resizeDeltas)
 
+    const columnWidth = React.useCallback(
+        (index) => {
+            return normalizedWidths[index]
+        },
+        [normalizedWidths]
+    )
+
     const InnerElement = React.useMemo(() => {
         // @ts-ignore
-        return (props, ref) => <InnerTableElement {...props} gridRef={gridRef} data={itemData} />
-    }, [gridRef, itemData])
-
-    const columnWidth = React.useCallback((index) => normalizedWidths[index], [normalizedWidths])
-
-    // useIfChanged({
-    //     setGridRef,
-    //     InnerElement,
-    //     columnWidth,
-    //     length: columns.length,
-    //     itemData,
-    //     handleScroll,
-    //     rowLength: rows.length,
-    //     rowHeightAtIndex,
-    // })
+        return (props, ref) => <InnerTableElement {...props} data={itemData} />
+    }, [itemData])
 
     // const $background = React.useMemo(() => {
     //     if (!gridRef) return []
@@ -457,45 +473,11 @@ export function DataTable({
     //     })
     // }, [gridRef, rowHighlightIndex])
 
-    const [itemIndexs, setItemIndexs] = React.useState({
-        overscanColumnStartIndex: 0,
-        overscanColumnStopIndex: 0,
-        overscanRowStartIndex: 0,
-        overscanRowStopIndex: 0,
-    })
-
-    const handleItemsRendered = React.useCallback(
-        _.throttle(
-            ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
-                // console.log(
-                //     'handleItemsRendered',
-                //     overscanColumnStartIndex,
-                //     overscanColumnStopIndex,
-                //     overscanRowStartIndex,
-                //     overscanRowStopIndex
-                // )
-                setItemIndexs({
-                    overscanColumnStartIndex,
-                    overscanColumnStopIndex,
-                    overscanRowStartIndex,
-                    overscanRowStopIndex,
-                })
-            },
-            200
-        ),
-        []
-    )
-
     const $columnsShowed = React.useMemo(() => {
         return columns.filter(
             (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
         )
     }, [columns, itemIndexs])
-
-    // const $isLayoutReady = React.useMemo(
-    //     () => $columnsShowed.filter((c) => !measuredWidths.has(c.key)).length === 0,
-    //     [$columnsShowed, measuredWidths]
-    // )
 
     // useIfChanged({
     //     columns,
@@ -503,6 +485,29 @@ export function DataTable({
     //     isQueryInline,
     //     isSelectable,
     //     handleWidthsChange,
+    //     normalizedWidths,
+    // })
+
+    // useIfChanged({
+    //     setGridRef,
+    //     InnerElement,
+    //     columnWidth,
+    //     length: columns.length,
+    //     itemData,
+    //     handleScroll,
+    //     rowLength: rows.length,
+    //     rowHeightAtIndex,
+    //     handleRowMouseEnter,
+    //     // columnHighlightIndex,
+    //     // rowHighlightIndex,
+    //     isRowSelected,
+    //     isSelectable,
+    //     isQueryInline,
+    //     rows,
+    //     columns,
+    //     handleSelectOne,
+    //     textQuery,
+    //     normalizedWidths,
     // })
 
     return (

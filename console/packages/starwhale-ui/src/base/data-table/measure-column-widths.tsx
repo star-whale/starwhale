@@ -72,7 +72,7 @@ type MeasureColumnWidthsPropsT = {
     // if selectable, measure the first column with checkbox included
     isSelectable: boolean
     isQueryInline: boolean
-    onWidthsChange: (nums: number[]) => void
+    onWidthsChange: (nums: Map<any, any>) => void
     rows: RowT[]
 }
 
@@ -141,9 +141,8 @@ export default function MeasureColumnWidths({
 
                 // 1.Refresh at 100% of done
                 if (widths.length === columns.length) {
-                    console.log('handleDimensionsChange')
                     setWidthMap(widthMap)
-                    debounceWideChange(new Map(widthMap))
+                    debounceWideChange(widthMap)
                 }
             }
         },
