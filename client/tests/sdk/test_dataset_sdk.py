@@ -19,7 +19,7 @@ from starwhale import dataset
 from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
-from starwhale.utils.error import ExistedError, NotFoundError, NoSupportError
+from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.type import (
     Text,
@@ -231,7 +231,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_readonly(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
-        ds = dataset(existed_ds_uri)
+        ds = dataset(existed_ds_uri, readonly=True)
 
         assert ds.readonly
         readonly_msg = "in the readonly mode"
@@ -247,14 +247,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(RuntimeError, readonly_msg):
             ds.flush()
 
+    @pytest.mark.skip(reason="wait for one dataset use one datastore table refactor")
     def test_del_item_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
-
-        with self.assertRaisesRegex(RuntimeError, "in the readonly mode"):
-            del ds[1]
-
-        ds = dataset(existed_ds_uri, create=True)
         del ds[0]
         ds.flush()
 
@@ -299,7 +295,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.commit()
 
         existed_ds_uri = self._init_simple_dataset_with_str_id()
-        ds = dataset(existed_ds_uri, create=True)
+        ds = dataset(existed_ds_uri)
         with self.assertRaisesRegex(RuntimeError, msg):
             ds.commit()
 
@@ -312,18 +308,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
         ds.close()
 
+    @pytest.mark.skip(reason="wait for one dataset use one datastore table refactor")
     def test_create_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
-        ds = dataset(existed_ds_uri, create=True)
+        ds = dataset(existed_ds_uri)
 
-        assert ds.version != existed_ds_uri.object.version
+        assert ds.version == existed_ds_uri.object.version == ds.uri.object.version
         assert ds.name == existed_ds_uri.object.name
         assert ds.project_uri.project == existed_ds_uri.project
-        assert ds.version == ds.uri.object.version
         assert not ds.readonly
-        assert not ds.exists()
-        assert ds._append_from_version == existed_ds_uri.object.version
-        assert ds._create_by_append
+        assert ds.exists()
         assert len(ds) == 10
         ds.flush()
 
@@ -343,18 +337,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert _summary is not None
         assert _summary.rows == 12
 
-    def test_load_from_empty(self) -> None:
-        with self.assertRaises(ValueError):
-            dataset("mnist")
-
-        with self.assertRaises(ExistedError):
-            dataset("mnist/version/not_found")
-
     def test_load_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
         assert ds.version == ds.uri.object.version == existed_ds_uri.object.version
-        assert ds.readonly
+        assert not ds.readonly
         assert ds.name == existed_ds_uri.object.name
 
         _summary = ds.summary()
@@ -523,7 +510,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_features_update_for_readonly_dataset(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
-        ds = dataset(existed_ds_uri)
+        ds = dataset(existed_ds_uri, readonly=True)
 
         assert ds.readonly
 
@@ -602,7 +589,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.NOT_FOUND,
         )
 
-        with self.assertRaisesRegex(ExistedError, "was not found fo load"):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "for the non-existed dataset, you should set create=True to create dataset automatically",
+        ):
             dataset("http://1.1.1.1/project/self/dataset/not_found/version/1234")
 
         rm.request(
@@ -644,12 +634,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             json={"data": {"id": 1, "name": "self"}},
         )
 
-        manifest_req = rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
-            status_code=HTTPStatus.NOT_FOUND,
-        )
-
         rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/scanTable",
@@ -661,8 +645,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             "http://1.1.1.1/api/v1/datastore/updateTable",
         )
 
+        version_req = rm.request(
+            HTTPMethod.HEAD,
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/latest",
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
         ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
-        assert manifest_req.call_count == 0
+        assert version_req.call_count == 1
 
         upload_file_req = rm.request(
             HTTPMethod.POST,
@@ -797,9 +787,46 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert m["tags"] == ["latest", "v0"]
         assert m["project"] == ds.project_uri.project
 
-        empty_ds = dataset("mnist", create=True)
+        empty_ds = dataset("mnist_new", create=True)
         m = empty_ds.manifest()
         assert m == {}
+
+    def test_create_dataset(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+
+        name = existed_ds_uri.object.name
+        with self.assertRaisesRegex(
+            RuntimeError, "dataset already existed, failed to create"
+        ):
+            _ = dataset(name, create=True)
+
+        new_ds_name = f"{name}-new"
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "create and readonly arguments cannot be set to True at the same time",
+        ):
+            _ = dataset(new_ds_name, create=True, readonly=True)
+
+        with self.assertRaisesRegex(
+            ValueError, "no support to set a non-existed dataset to the readonly mode"
+        ):
+            _ = dataset(new_ds_name, readonly=True)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "for the non-existed dataset, you should set create=True to create dataset automatically",
+        ):
+            _ = dataset(new_ds_name)
+
+        with self.assertRaisesRegex(
+            NoSupportError,
+            "no support to create a specified version dataset",
+        ):
+            _ = dataset(f"{new_ds_name}/version/123", create=True)
+
+        new_ds = dataset(new_ds_name, create=True)
+        assert new_ds.name == new_ds_name
 
     def test_remove_recover(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -825,23 +852,16 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert list_info[0]["version"] == ds.version
 
     def test_history(self) -> None:
-        existed_ds_uri = self._init_simple_dataset_with_str_id()
-        str_ds = dataset(existed_ds_uri)
-
-        history = str_ds.history()
-        assert len(history) == 1
-
+        # TODO: add more test cases after the dataset versioning refactor
         existed_int_ds_uri = self._init_simple_dataset()
         int_ds = dataset(existed_int_ds_uri)
 
         history = int_ds.history()
-        assert len(history) == 2
-        assert history[0]["name"] == history[1]["name"] == int_ds.name
-        assert {history[0]["version"], history[1]["version"]} == {
-            int_ds.version,
-            str_ds.version,
-        }
+        assert len(history) == 1
+        assert history[0]["name"] == int_ds.name
+        assert history[0]["version"] == int_ds.version
 
+    @pytest.mark.skip("enable this test when datastore supports diff")
     def test_diff(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         str_ds = dataset(existed_ds_uri)

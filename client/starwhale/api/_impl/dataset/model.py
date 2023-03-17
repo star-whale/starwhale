@@ -84,6 +84,7 @@ class Dataset:
         version: str,
         project_uri: URI,
         create: bool = False,
+        readonly: bool = False,
     ) -> None:
         self.name = name
         self.project_uri = project_uri
@@ -93,16 +94,31 @@ class Dataset:
             self.project_uri.project,
             URIType.DATASET,
             self.name,
-            version,
+            version or "latest",
         )
-
-        if create:
-            self.version = gen_uniq_version()
-        else:
+        origin_uri_exists = self._check_uri_exists(_origin_uri)
+        if origin_uri_exists:
+            if create:
+                raise RuntimeError(
+                    f"dataset already existed, failed to create: {self.name}"
+                )
             self.version = self._auto_complete_version(version)
+        else:
+            if readonly:
+                raise ValueError(
+                    f"no support to set a non-existed dataset to the readonly mode: {self.name}"
+                )
 
-        if not self.version:
-            raise ValueError("version field is empty")
+            if not create:
+                raise RuntimeError(
+                    "for the non-existed dataset, you should set create=True to create dataset automatically"
+                )
+
+            if version != "":
+                raise NoSupportError(
+                    f"no support to create a specified version dataset: {version}"
+                )
+            self.version = gen_uniq_version()
 
         self.uri = URI.capsulate_uri(
             self.project_uri.instance,
@@ -112,13 +128,12 @@ class Dataset:
             self.version,
         )
 
-        self.__readonly = not create
+        self.__readonly = readonly
         self.__core_dataset = CoreDataset.get_dataset(self.uri)
         if create:
             setattr(self.__core_dataset, "_version", self.version)
 
         _summary = None
-        origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
             if create:
                 # TODO: support build cloud dataset from the existed dataset
@@ -696,7 +711,43 @@ class Dataset:
     def dataset(
         uri: t.Union[str, URI],
         create: bool = False,
+        readonly: bool = False,
     ) -> Dataset:
+        """Create or load a dataset from standalone instance or cloud instance.
+
+        Arguments:
+            uri: (str, URI, required) The dataset uri.
+            create: (bool, optional) Create a new dataset automatically.If create is False, the dataset must exist.
+                Default is False.
+            readonly: (bool, optional) For an existing dataset, you can specify the readonly=True argument to ensure
+                the dataset is in readonly mode. Default is False.
+
+        Returns:
+            A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import dataset, Image
+
+        # create a new dataset named mnist, and add a row into the dataset
+        ds = dataset("mnist", create=True)
+        ds.append({"img": Image(), "label": 1})
+        ds.commit()
+        ds.close()
+
+        # load a cloud instance dataset in readonly mode
+        ds = dataset("cloud://remote-instance/project/starwhale/dataset/mnist", readonly=True)
+        labels = [row.features.label in ds]
+        ds.close()
+
+        # load a read/write dataset with a specified version
+        ds = dataset("mnist/version/mrrdczdbmzsw")
+        ds[0].features.label = 1
+        ds.commit()
+        ds.close()
+        ```
+
+        """
         if isinstance(uri, str):
             _uri = URI(uri, expected_type=URIType.DATASET)
         elif isinstance(uri, URI) and uri.object.typ == URIType.DATASET:
@@ -706,11 +757,17 @@ class Dataset:
                 f"uri({uri}) argument type is not expected, dataset uri or str is ok"
             )
 
+        if create and readonly:
+            raise ValueError(
+                "create and readonly arguments cannot be set to True at the same time"
+            )
+
         ds = Dataset(
             name=_uri.object.name,
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
             create=create,
+            readonly=readonly,
         )
 
         return ds
