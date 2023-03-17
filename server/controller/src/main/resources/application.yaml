@@ -78,7 +78,7 @@ sw:
 spring:
   boot:
     admin:
-      context-path: admin
+      context-path: monitor
       instance-auth:
         default-user-name: ${spring.security.user.name}
         default-password: ${spring.security.user.password}

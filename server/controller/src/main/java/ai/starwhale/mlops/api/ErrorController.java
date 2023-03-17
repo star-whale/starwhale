@@ -24,7 +24,7 @@ public class ErrorController implements org.springframework.boot.web.servlet.err
 
     @RequestMapping(value = {"error"})
     public String getIndex() {
-        return "index"; //返回index页面
+        return "sw-index";
     }
 
 }
