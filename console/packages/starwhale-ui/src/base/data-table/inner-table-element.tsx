@@ -5,8 +5,6 @@ import { HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
-import { useIfChanged } from '@starwhale/core/utils'
-import { filter } from 'rxjs/operators'
 import _ from 'lodash'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
@@ -19,7 +17,7 @@ function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React
                 marginLeft: theme.sizing.scale500,
             })}
         >
-            {typeof props.children === 'function' ? props.children() : String(props.children)}
+            {typeof props.children === 'function' ? props.children() : props.children}
         </div>
     )
 }
@@ -34,6 +32,7 @@ type InnerTableElementProps = {
     children: React.ReactNode | null
     style: React.CSSProperties
     data: any
+    gridRef: VariableSizeGrid
 }
 
 // replaces the content of the virtualized window with contents. in this case,
@@ -47,18 +46,47 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     } else if (ctx.rows.length === 0) {
         viewState = EMPTY
     }
+    const { data, gridRef } = props
+
+    const $columns = React.useMemo(
+        () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
+        [data.columns]
+    )
+
     const pinnedWidth = React.useMemo(
         () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
         [ctx.columns, ctx.widths]
     )
 
+    // notice: must generate by calculate not from children, cause pin column or row will not render when scrolling
     const $childrenPinned = React.useMemo(() => {
+        const cells: React.ReactNode[] = []
+        if (!gridRef) return cells
+        const list = React.Children.toArray(props.children)
+        if (list.length === 0) return cells
+
         // @ts-ignore
-        return Array.from(props.children ?? []).filter((child: any) => {
-            const isPin = child.props.data.columns[child.props.columnIndex].pin === 'LEFT'
-            return isPin
+        const rowStartIndex = list[0]?.props?.['rowIndex']
+        // @ts-ignore
+        const rowStopIndex = list[list.length - 1]?.props?.['rowIndex']
+
+        $columns.forEach((_: any, columnIndex: number) => {
+            for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
+                cells.push(
+                    <CellPlacement
+                        key={`${rowIndex}-${columnIndex}`}
+                        columnIndex={columnIndex}
+                        rowIndex={rowIndex}
+                        data={data}
+                        // @ts-ignore
+                        style={gridRef._getItemStyle(rowIndex, columnIndex)}
+                    />
+                )
+            }
         })
-    }, [props.children])
+
+        return cells
+    }, [$columns, data, props.children])
 
     const $children = React.useMemo(() => {
         return props.children

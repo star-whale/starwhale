@@ -268,7 +268,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             textQuery={textQuery}
                             controlRef={props.controlRef}
                         />
-                        {$columns.length === 0 && props.emptyMessage}
+                        {$columns.length === 0 && props.emptyColumnMessage}
                     </div>
                 </>
             )}

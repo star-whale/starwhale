@@ -251,7 +251,7 @@ export default function EvaluationListCard() {
                             data={evaluationsInfo.data?.records ?? []}
                             onSave={doSave as any}
                             onChange={doChange}
-                            emptyMessage={
+                            emptyColumnMessage={
                                 <BusyPlaceholder type='notfound'>
                                     Create a new evaluation or Config to add columns
                                 </BusyPlaceholder>

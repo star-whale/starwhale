@@ -96,16 +96,33 @@ export function DataTable({
         overscanColumnStopIndex: 0,
         overscanRowStartIndex: 0,
         overscanRowStopIndex: 0,
+        visibleColumnStartIndex: 0,
+        visibleColumnStopIndex: 0,
+        visibleRowStartIndex: 0,
+        visibleRowStopIndex: 0,
     })
 
     const handleItemsRendered = React.useCallback(
         _.throttle(
-            ({ overscanColumnStartIndex, overscanColumnStopIndex, overscanRowStartIndex, overscanRowStopIndex }) => {
+            ({
+                overscanColumnStartIndex,
+                overscanColumnStopIndex,
+                overscanRowStartIndex,
+                overscanRowStopIndex,
+                visibleColumnStartIndex,
+                visibleColumnStopIndex,
+                visibleRowStartIndex,
+                visibleRowStopIndex,
+            }) => {
                 setItemIndexs({
                     overscanColumnStartIndex,
                     overscanColumnStopIndex,
                     overscanRowStartIndex,
                     overscanRowStopIndex,
+                    visibleColumnStartIndex,
+                    visibleColumnStopIndex,
+                    visibleRowStartIndex,
+                    visibleRowStopIndex,
                 })
             },
             200
@@ -450,8 +467,8 @@ export function DataTable({
 
     const InnerElement = React.useMemo(() => {
         // @ts-ignore
-        return (props, ref) => <InnerTableElement {...props} data={itemData} />
-    }, [itemData])
+        return (props, ref) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
+    }, [itemData, gridRef])
 
     // const $background = React.useMemo(() => {
     //     if (!gridRef) return []
@@ -478,15 +495,6 @@ export function DataTable({
             (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
         )
     }, [columns, itemIndexs])
-
-    // useIfChanged({
-    //     columns,
-    //     rows,
-    //     isQueryInline,
-    //     isSelectable,
-    //     handleWidthsChange,
-    //     normalizedWidths,
-    // })
 
     // useIfChanged({
     //     setGridRef,

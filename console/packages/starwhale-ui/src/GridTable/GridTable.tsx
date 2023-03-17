@@ -67,6 +67,7 @@ function GridTable({
     onSave,
     onChange = () => {},
     emptyMessage,
+    emptyColumnMessage,
     storeRef,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -140,6 +141,7 @@ function GridTable({
                         />
                     )}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
+                    emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
                 />
             </div>
             <Pagination {...paginationProps} />

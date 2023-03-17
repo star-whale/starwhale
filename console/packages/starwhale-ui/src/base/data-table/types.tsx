@@ -132,6 +132,7 @@ export type StatefulDataTablePropsT = {
     columns: ColumnT[]
     rawColumns?: ColumnT[]
     emptyMessage?: React.ReactNode
+    emptyColumnMessage?: React.ReactNode
     filterable?: boolean
     initialFilters?: any[]
     initialSelectedRowIds?: Set<number | string>
@@ -165,6 +166,7 @@ export type StatefulDataTablePropsT = {
 
 export type DataTablePropsT = {
     emptyMessage?: React.ReactNode
+    emptyColumnMessage?: React.ReactNode
     filters?: any[]
     loading?: boolean
     loadingMessage?: React.ReactNode
