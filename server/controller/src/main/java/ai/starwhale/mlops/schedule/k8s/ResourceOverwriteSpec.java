@@ -19,10 +19,10 @@ package ai.starwhale.mlops.schedule.k8s;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +44,8 @@ public class ResourceOverwriteSpec {
 
     static final String RESOURCE_GPU = "nvidia.com/gpu";
 
+    public static Set<String> K8S_BUILTIN_RESOURCES = Set.of(RESOURCE_CPU, RESOURCE_MEMORY);
+
     public static Set<String> SUPPORTED_DEVICES = Set.of(RESOURCE_CPU, RESOURCE_GPU, RESOURCE_MEMORY);
 
     private Float normalizeNonK8sResources(Float amount) {
@@ -51,20 +53,27 @@ public class ResourceOverwriteSpec {
     }
 
     public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
-        Map<String, Quantity> resourceRequestMap = runtimeResources.stream()
-                .filter(runtimeResource -> runtimeResource.getRequest() != null)
-                .collect(Collectors.toMap(
-                    RuntimeResource::getType,
-                    runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getRequest())
-                ));
-        this.resourceSelector = new V1ResourceRequirements().requests(resourceRequestMap);
-        Map<String, Quantity> resourceLimitMap = runtimeResources.stream()
-                .filter(runtimeResource -> runtimeResource.getLimit() != null)
-                .collect(Collectors.toMap(
-                    RuntimeResource::getType,
-                    runtimeResource -> convertToQuantity(runtimeResource.getType(), runtimeResource.getLimit())
-                ));
-        resourceSelector.limits(resourceLimitMap);
+        Map<String, Quantity> resourceRequestMap = new HashMap<>();
+        Map<String, Quantity> resourceLimitMap = new HashMap<>();
+
+        runtimeResources.forEach(resource -> {
+            var resourceType = resource.getType();
+            var request = resource.getRequest();
+            var limit = resource.getLimit();
+            if (request != null) {
+                resourceRequestMap.put(resourceType, convertToQuantity(resourceType, request));
+            }
+            if (limit != null) {
+                resourceLimitMap.put(resourceType, convertToQuantity(resourceType, limit));
+            } else if (request != null && !k8sResource(resourceType)) {
+                // use request as limit for non-k8s resources if limit is not specified
+                resourceLimitMap.put(resourceType, convertToQuantity(resourceType, request));
+            }
+        });
+
+        this.resourceSelector = new V1ResourceRequirements()
+                .requests(resourceRequestMap)
+                .limits(resourceLimitMap);
     }
 
     private Quantity convertToQuantity(String type, Float num) {
@@ -74,7 +83,7 @@ public class ResourceOverwriteSpec {
     }
 
     boolean k8sResource(String resource) {
-        return RESOURCE_CPU.equals(resource) || RESOURCE_MEMORY.equals(resource);
+        return K8S_BUILTIN_RESOURCES.contains(resource);
     }
 
 }
