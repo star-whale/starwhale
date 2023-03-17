@@ -39,7 +39,7 @@ function Button(
             },
             StartEnhancer: {
                 style: {
-                    marginRight: icon ? '0' : '5px',
+                    marginRight: !children ? '0' : '5px',
                 },
             },
         },

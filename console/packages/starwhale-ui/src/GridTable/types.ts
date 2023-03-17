@@ -23,6 +23,8 @@ export interface ITableProps {
     data: any[]
     columns: any[]
     storeRef?: React.MutableRefObject<ITableState | undefined>
+    emptyMessage?: React.ReactNode
+    emptyColumnMessage?: React.ReactNode
 }
 
 export interface IPaginationProps {

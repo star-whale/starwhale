@@ -10,7 +10,12 @@ import Headers from './headers/headers'
 import InnerTableElement from './inner-table-element'
 import CellPlacementMemo from './cells/cell-placement'
 import { DataTablePropsT } from './types'
+import { useIfChanged } from '../../../../starwhale-core/src/utils/useWhatChanged'
+import { useEvent } from '@starwhale/core'
+import { useWhatChanged } from '@simbathesailor/use-what-changed'
+import _ from 'lodash'
 
+const STYLE = { overflow: 'auto' }
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 function MeasureScrollbarWidth(props: { onWidthChange: (width: number) => void }) {
     const [css] = themedUseStyletron()
@@ -55,7 +60,7 @@ export function DataTable({
     compareable = false,
     queryinline = false,
     rows: allRows,
-    rowActions = [],
+    rowActions,
     rowHeight = 44,
     rowHighlightIndex: rowHighlightIndexControlled,
     selectedRowIds: $selectedRowIds = new Set(),
@@ -83,19 +88,61 @@ export function DataTable({
 
     // We use state for our ref, to allow hooks to  update when the ref changes.
     const [gridRef, setGridRef] = React.useState<VariableSizeGrid<any> | null>(null)
-    const [measuredWidths, setMeasuredWidths] = React.useState(columns.map(() => 0))
-    const [resizeDeltas, setResizeDeltas] = React.useState(columns.map(() => 0))
-    React.useEffect(() => {
-        setMeasuredWidths((prev) => {
-            return columns.map((v, index) => prev[index] || 0)
-        })
-        setResizeDeltas((prev) => {
-            return columns.map((v, index) => prev[index] || 0)
-        })
-    }, [columns])
+    const [measuredWidths, setMeasuredWidths] = React.useState(new Map())
+    const [resizeDeltas, setResizeDeltas] = React.useState(new Map())
 
+    const [itemIndexs, setItemIndexs] = React.useState({
+        overscanColumnStartIndex: 0,
+        overscanColumnStopIndex: 0,
+        overscanRowStartIndex: 0,
+        overscanRowStopIndex: 0,
+        visibleColumnStartIndex: 0,
+        visibleColumnStopIndex: 0,
+        visibleRowStartIndex: 0,
+        visibleRowStopIndex: 0,
+    })
+
+    const handleItemsRendered = React.useCallback(
+        _.throttle(
+            ({
+                overscanColumnStartIndex,
+                overscanColumnStopIndex,
+                overscanRowStartIndex,
+                overscanRowStopIndex,
+                visibleColumnStartIndex,
+                visibleColumnStopIndex,
+                visibleRowStartIndex,
+                visibleRowStopIndex,
+            }) => {
+                setItemIndexs({
+                    overscanColumnStartIndex,
+                    overscanColumnStopIndex,
+                    overscanRowStartIndex,
+                    overscanRowStopIndex,
+                    visibleColumnStartIndex,
+                    visibleColumnStopIndex,
+                    visibleRowStartIndex,
+                    visibleRowStopIndex,
+                })
+            },
+            200
+        ),
+        []
+    )
+
+    // React.useEffect(() => {
+    //     setMeasuredWidths((prev) => {
+    //         return columns.map((v) => prev.get(v.key) || 60)
+    //     })
+    //     setResizeDeltas((prev) => {
+    //         return columns.map((v, index) => prev.get(v.key) || 0)
+    //     })
+    // }, [columns])
+
+    const [scrollLeft, setScrollLeft] = React.useState(0)
     const resetAfterColumnIndex = React.useCallback(
         (columnIndex) => {
+            // console.log(gridRef, columnIndex)
             if (gridRef) {
                 gridRef.resetAfterColumnIndex?.(columnIndex, true)
             }
@@ -104,24 +151,23 @@ export function DataTable({
     )
     const handleWidthsChange = React.useCallback(
         (nextWidths) => {
-            setMeasuredWidths(nextWidths)
-            resetAfterColumnIndex(0)
+            setMeasuredWidths(new Map(nextWidths))
+            resetAfterColumnIndex(itemIndexs.overscanColumnStartIndex)
         },
-        [setMeasuredWidths, resetAfterColumnIndex]
+        [setMeasuredWidths, resetAfterColumnIndex, itemIndexs]
     )
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
+            const column = columns[columnIndex]
             setResizeDeltas((prev) => {
-                // eslint-disable-next-line no-param-reassign
-                prev[columnIndex] = Math.max(prev[columnIndex] + delta, 0)
-                return [...prev]
+                const v = prev.has(column.key) ? prev.get(column.key) : 0
+                prev.set(column.key, Math.max(v + delta, 0))
+                return new Map(prev)
             })
             resetAfterColumnIndex(columnIndex)
         },
         [setResizeDeltas, resetAfterColumnIndex]
     )
-
-    const [scrollLeft, setScrollLeft] = React.useState(0)
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
     React.useLayoutEffect(() => {
@@ -174,8 +220,8 @@ export function DataTable({
         Array.from(filters || new Set(), (f) => f)
             .filter((v: any) => !v.disable)
             .forEach((filter: any) => {
-                const columnIndex = rawColumns.findIndex((c) => c.key === filter.key)
-                const column = rawColumns[columnIndex]
+                const columnIndex = rawColumns?.findIndex((c) => c.key === filter.key) ?? -1
+                const column = rawColumns?.[columnIndex]
 
                 if (!column) {
                     return
@@ -231,7 +277,14 @@ export function DataTable({
 
     const [browserScrollbarWidth, setBrowserScrollbarWidth] = React.useState(0)
     const normalizedWidths = React.useMemo(() => {
-        const resizedWidths = measuredWidths.map((w, i) => Math.floor(w) + Math.floor(resizeDeltas[i]))
+        const resizedWidths = columns.map((c, i) => {
+            const w = (measuredWidths.get(c.key) ?? c.minWidth) + (resizeDeltas.get(c.key) ?? 0)
+            if (c.maxWidth && w > c.maxWidth) {
+                return c.maxWidth
+            }
+            return w
+        })
+
         if (gridRef) {
             const gridProps = gridRef.props
 
@@ -247,8 +300,8 @@ export function DataTable({
 
             const scrollbarWidth = isContentTallerThanContainer ? browserScrollbarWidth : 0
 
-            const remainder = gridProps.width - sum(resizedWidths) - scrollbarWidth
-            const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : true)).length
+            const remainder = Math.max(gridProps.width - sum(resizedWidths) - scrollbarWidth, 0)
+            const filledColumnsLen = columns.filter((c) => c.fillWidth).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
             if (padding > 0) {
@@ -262,6 +315,7 @@ export function DataTable({
                     }
                 }
                 result.push(gridProps.width - sum(result) - scrollbarWidth - 2)
+
                 resetAfterColumnIndex(0)
                 return result
             }
@@ -348,23 +402,24 @@ export function DataTable({
         [setRowHighlightIndex, onRowHighlightChange, gridRef, rows]
     )
 
-    const handleRowMouseEnter = React.useCallback(
-        (nextIndex) => {
-            setColumnHighlightIndex(-1)
-            if (nextIndex !== rowHighlightIndex) {
-                handleRowHighlightIndexChange(nextIndex)
-            }
+    const handleRowMouseEnter = useEvent((nextIndex) => {
+        // setColumnHighlightIndex(-1)
+        if (nextIndex !== rowHighlightIndex) {
+            handleRowHighlightIndexChange(nextIndex)
+        }
+    })
+
+    const handleColumnHeaderMouseEnter = React.useCallback(
+        (columnIndex) => {
+            setColumnHighlightIndex(columnIndex)
+            handleRowHighlightIndexChange(-1)
         },
-        [rowHighlightIndex, handleRowHighlightIndexChange]
+        [handleRowHighlightIndexChange]
     )
-    // @ts-ignore
-    function handleColumnHeaderMouseEnter(columnIndex) {
-        setColumnHighlightIndex(columnIndex)
-        handleRowHighlightIndexChange(-1)
-    }
-    function handleColumnHeaderMouseLeave() {
+
+    const handleColumnHeaderMouseLeave = React.useCallback(() => {
         setColumnHighlightIndex(-1)
-    }
+    }, [])
 
     React.useEffect(() => {
         if (typeof rowHighlightIndexControlled === 'number') {
@@ -376,7 +431,7 @@ export function DataTable({
         return {
             // columnHighlightIndex,
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
-            rowHighlightIndex,
+            // rowHighlightIndex,
             isRowSelected,
             isQueryInline,
             isSelectable,
@@ -390,10 +445,10 @@ export function DataTable({
     }, [
         handleRowMouseEnter,
         // columnHighlightIndex,
+        // rowHighlightIndex,
         isRowSelected,
         isSelectable,
         isQueryInline,
-        rowHighlightIndex,
         rows,
         columns,
         handleSelectOne,
@@ -401,10 +456,72 @@ export function DataTable({
         normalizedWidths,
     ])
 
+    // console.log(rowHighlightIndex, resizeDeltas)
+
+    const columnWidth = React.useCallback(
+        (index) => {
+            return normalizedWidths[index]
+        },
+        [normalizedWidths]
+    )
+
+    const InnerElement = React.useMemo(() => {
+        // @ts-ignore
+        return (props, ref) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
+    }, [itemData, gridRef])
+
+    // const $background = React.useMemo(() => {
+    //     if (!gridRef) return []
+    //     //
+    //     const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
+    //     return new Array(rowStopIndex - rowStartIndex + 1).fill(0).map((_, rowIndex) => {
+    //         return (
+    //             <div
+    //                 className='table-row-background'
+    //                 key={rowIndex}
+    //                 style={{
+    //                     ...gridRef._getItemStyle(rowIndex, 0),
+    //                     width: '100%',
+    //                     marginBottom: gridRef._getItemStyle(rowIndex, 0).height * -1,
+    //                     backgroundColor: rowHighlightIndex === rowIndex + rowStartIndex ? '#F7F8FA' : 'transparent',
+    //                 }}
+    //             />
+    //         )
+    //     })
+    // }, [gridRef, rowHighlightIndex])
+
+    const $columnsShowed = React.useMemo(() => {
+        return columns.filter(
+            (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
+        )
+    }, [columns, itemIndexs])
+
+    // useIfChanged({
+    //     setGridRef,
+    //     InnerElement,
+    //     columnWidth,
+    //     length: columns.length,
+    //     itemData,
+    //     handleScroll,
+    //     rowLength: rows.length,
+    //     rowHeightAtIndex,
+    //     handleRowMouseEnter,
+    //     // columnHighlightIndex,
+    //     // rowHighlightIndex,
+    //     isRowSelected,
+    //     isSelectable,
+    //     isQueryInline,
+    //     rows,
+    //     columns,
+    //     handleSelectOne,
+    //     textQuery,
+    //     normalizedWidths,
+    // })
+
     return (
         <>
             <MeasureColumnWidths
-                columns={columns}
+                columns={$columnsShowed}
                 rows={rows}
                 isSelectable={isSelectable}
                 isQueryInline={isQueryInline}
@@ -440,7 +557,6 @@ export function DataTable({
                             onSort: handleSort,
                             resizableColumnWidths,
                             compareable,
-                            rowActions,
                             rowHeight,
                             rowHighlightIndex: -1,
                             rows,
@@ -453,24 +569,34 @@ export function DataTable({
                         }}
                     >
                         <Headers width={width} />
+                        {/* <div
+                            style={{
+                                width: `${width}px`,
+                                position: 'absolute',
+                                top: HEADER_ROW_HEIGHT,
+                                height: height - HEADER_ROW_HEIGHT,
+                                marginBottom: (height - HEADER_ROW_HEIGHT) * -1,
+                            }}
+                        >
+                            {$background}
+                        </div> */}
                         <VariableSizeGrid
                             className='table-columns'
                             ref={setGridRef as any}
                             overscanRowCount={0}
                             overscanColumnCount={0}
-                            innerElementType={(props, ref) => (
-                                <InnerTableElement {...props} gridRef={gridRef} data={itemData} />
-                            )}
+                            innerElementType={InnerElement}
                             height={height - HEADER_ROW_HEIGHT}
-                            columnWidth={(index) => normalizedWidths[index]}
+                            columnWidth={columnWidth}
                             columnCount={columns.length}
                             width={width}
                             itemData={itemData}
                             onScroll={handleScroll}
                             rowCount={rows.length}
                             rowHeight={rowHeightAtIndex}
-                            style={{ overflow: 'auto' }}
+                            style={STYLE}
                             direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
+                            onItemsRendered={handleItemsRendered}
                         >
                             {CellPlacementMemo as any}
                         </VariableSizeGrid>

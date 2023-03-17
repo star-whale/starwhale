@@ -26,7 +26,7 @@ const ALLRUNS = 'all'
 function ConfigViews(props: PropsT) {
     const [t] = useTranslation()
 
-    const { store, useStore } = props
+    const { store } = props
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(store.currentView?.id ?? '')
 
@@ -85,23 +85,8 @@ function ConfigViews(props: PropsT) {
                 }}
                 onChange={(params) => {
                     const id = params.option?.id as string
-                    if (id === ALLRUNS) {
-                        useStore.setState({
-                            currentView: {
-                                filters: [],
-                                ids: props.columns.map((v) => v.key),
-                                pinnedIds: [],
-                                selectedIds: [],
-                                sortBy: '',
-                                id: ALLRUNS,
-                            },
-                        })
-                        return
-                    }
-
                     setSelectId(id)
-                    const view = store.views.find((v) => v.id === id)
-                    useStore.setState({ currentView: view as ConfigT })
+                    store.onCurrentViewIdChange(id)
                 }}
                 value={selectId ? [{ id: selectId }] : []}
             />

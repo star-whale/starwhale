@@ -14,7 +14,7 @@ function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
         const { pinnedIds = [], ids = [] }: ConfigT = view
 
         // NOTICE: used full columns when
-        if (!view.id || (view.id === 'all' && ids.length === 0)) {
+        if (!view.id || (view.id === 'all' && !view.updated)) {
             return Array.from(new Set([...pinnedIds, ...columnIds]))
         }
         return ids

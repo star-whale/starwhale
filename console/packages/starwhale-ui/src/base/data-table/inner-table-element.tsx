@@ -5,6 +5,7 @@ import { HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
+import _ from 'lodash'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -16,7 +17,7 @@ function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React
                 marginLeft: theme.sizing.scale500,
             })}
         >
-            {typeof props.children === 'function' ? props.children() : String(props.children)}
+            {typeof props.children === 'function' ? props.children() : props.children}
         </div>
     )
 }
@@ -27,13 +28,16 @@ const EMPTY = 2
 
 // @ts-ignore
 const sum = (ns) => ns.reduce((s, n) => s + n, 0)
+type InnerTableElementProps = {
+    children: React.ReactNode | null
+    style: React.CSSProperties
+    data: any
+    gridRef: VariableSizeGrid
+}
 
 // replaces the content of the virtualized window with contents. in this case,
 // we are prepending a table header row before the table rows (children to the fn).
-const InnerTableElement = React.forwardRef<
-    { children: React.ReactNode | null; style: React.CSSProperties; data: any; gridRef: VariableSizeGrid<any> },
-    HTMLDivElement
->((props, ref) => {
+const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProps>((props, ref) => {
     const [css] = themedUseStyletron()
     const ctx = React.useContext(HeaderContext)
     let viewState = RENDERING
@@ -42,22 +46,29 @@ const InnerTableElement = React.forwardRef<
     } else if (ctx.rows.length === 0) {
         viewState = EMPTY
     }
-    const pinnedWidth = React.useMemo(
-        () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
-        [ctx.columns, ctx.widths]
-    )
-    // @ts-ignore
     const { data, gridRef } = props
+
     const $columns = React.useMemo(
         () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
         [data.columns]
     )
 
-    const $children = React.useMemo(() => {
-        const cells: React.ReactNode[] = []
-        if (!gridRef) return []
+    const pinnedWidth = React.useMemo(
+        () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
+        [ctx.columns, ctx.widths]
+    )
 
-        const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
+    // notice: must generate by calculate not from children, cause pin column or row will not render when scrolling
+    const $childrenPinned = React.useMemo(() => {
+        const cells: React.ReactNode[] = []
+        if (!gridRef) return cells
+        const list = React.Children.toArray(props.children)
+        if (list.length === 0) return cells
+
+        // @ts-ignore
+        const rowStartIndex = list[0]?.props?.['rowIndex']
+        // @ts-ignore
+        const rowStopIndex = list[list.length - 1]?.props?.['rowIndex']
 
         $columns.forEach((_: any, columnIndex: number) => {
             for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
@@ -67,6 +78,7 @@ const InnerTableElement = React.forwardRef<
                         columnIndex={columnIndex}
                         rowIndex={rowIndex}
                         data={data}
+                        // @ts-ignore
                         style={gridRef._getItemStyle(rowIndex, columnIndex)}
                     />
                 )
@@ -74,11 +86,17 @@ const InnerTableElement = React.forwardRef<
         })
 
         return cells
-    }, [$columns, gridRef, data])
+    }, [$columns, data, props.children])
+
+    const $children = React.useMemo(() => {
+        return props.children
+    }, [props.children])
 
     if (!ctx.widths.filter(Boolean).length) {
         return null
     }
+
+    // useIfChanged(ctx)
 
     return (
         <>
@@ -98,7 +116,7 @@ const InnerTableElement = React.forwardRef<
                     })
                 )}
             >
-                {$children.length > 0 && (
+                {viewState === RENDERING && $childrenPinned.length > 0 && (
                     <div
                         className='table-columns-pinned'
                         // @ts-ignore
@@ -109,7 +127,7 @@ const InnerTableElement = React.forwardRef<
                             overflow: 'hidden',
                         }}
                     >
-                        {viewState === RENDERING && $children}
+                        {$childrenPinned}
                     </div>
                 )}
             </div>
@@ -126,7 +144,7 @@ const InnerTableElement = React.forwardRef<
             >
                 {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
-                {viewState === RENDERING && props.children}
+                {viewState === RENDERING && $children}
             </div>
         </>
     )

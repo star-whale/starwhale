@@ -115,6 +115,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     borderRight: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                     borderLeft: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
                     borderTop: props.isFocus ? `1px dashed ${theme.brandPrimary}` : undefined,
+                    maxWidth: '100%',
                 })
             )}
             title={props.title}
@@ -141,8 +142,17 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     />
                 </span>
             )}
-            {props.title}
-
+            <span
+                className={css({
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    display: 'block',
+                    flex: 1,
+                })}
+            >
+                {props.title}
+            </span>
             {props.compareable && ((props.isHovered && props.index !== 0) || props.isFocus) && (
                 <Button
                     onClick={() => {
@@ -168,7 +178,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     width: '100%',
                     display: 'flex',
                     alignItems: 'flex-end',
-                    flex: 1,
+                    flex: 0,
                 })}
             >
                 {(props.isHovered || props.sortDirection) && props.sortable && (

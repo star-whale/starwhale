@@ -77,14 +77,14 @@ function useConfigQuery(store: IStore, { columns, queryable }: { columns: Column
 
     const onChange = React.useCallback((items) => api.onCurrentViewQueriesChange(items), [api])
 
-    const renderConfigQuery = () => {
+    const renderConfigQuery = React.useCallback(() => {
         if (!queryable) return null
         return <ConfigQuery columns={columns} value={value} onChange={onChange} />
-    }
+    }, [queryable, columns, value, onChange])
 
-    const renderConfigQueryInline = ({ width }: { width: number }) => {
+    const renderConfigQueryInline = React.useCallback(({ width }: { width: number }) => {
         return <ConfigQueryInline columns={columns} value={value} onChange={onChange} width={width} />
-    }
+    }, [columns, value, onChange])
 
     return {
         renderConfigQuery,

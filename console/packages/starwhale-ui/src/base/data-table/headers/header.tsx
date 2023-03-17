@@ -3,6 +3,7 @@ import HeaderCell from './header-cell'
 import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from '../types'
 import { IStore } from '../store'
 import { themedUseStyletron } from '../../../theme/styletron'
+import _ from 'lodash'
 
 export const HEADER_ROW_HEIGHT = 44
 
@@ -18,7 +19,7 @@ export type HeaderContextT = {
     isQueryInline: boolean
     isSelectedAll: boolean
     isSelectedIndeterminate: boolean
-    measuredWidths: number[]
+    measuredWidths: Map<any, any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
@@ -52,7 +53,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     isSelectedAll: false,
     isQueryInline: false,
     isSelectedIndeterminate: false,
-    measuredWidths: [],
+    measuredWidths: new Map(),
     onMouseEnter: () => {},
     onMouseLeave: () => {},
     onResize: () => {},
@@ -121,7 +122,6 @@ function Header(props: HeaderProps) {
     function getPositionX(el) {
         const rect = el.getBoundingClientRect()
         return rect.left + window.scrollX
-        return 0
     }
 
     React.useLayoutEffect(() => {
@@ -159,13 +159,16 @@ function Header(props: HeaderProps) {
             setEndResizePos(0)
         }
 
+        const mousemove = _.throttle(handleMouseMove, 200)
+        const mouseup = _.throttle(handleMouseUp, 200)
+
         if (isResizingThisColumn) {
-            document.addEventListener('mousemove', handleMouseMove)
-            document.addEventListener('mouseup', handleMouseUp)
+            document.addEventListener('mousemove', mousemove)
+            document.addEventListener('mouseup', mouseup)
         }
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove)
-            document.removeEventListener('mouseup', handleMouseUp)
+            document.removeEventListener('mousemove', mousemove)
+            document.removeEventListener('mouseup', mouseup)
         }
     }, [
         props,
@@ -240,7 +243,7 @@ function Header(props: HeaderProps) {
                             'cursor': 'ew-resize',
                             'position': 'absolute',
                             'height': '100%',
-                            'width': '2px',
+                            'width': '3px',
                             ':hover': {
                                 backgroundColor: theme.brandTableHeaderResizer,
                             },

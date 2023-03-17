@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Subscription } from 'rxjs'
 import { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
-import { WidgetRendererType } from '../types'
+import { WidgetRendererType, WidgetStoreState } from '../types'
 import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
+import shallow from 'zustand/shallow'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -18,15 +19,19 @@ function getParentPath(paths: any[]) {
 function getChildrenPath(paths: any[]) {
     return [...paths, 'children']
 }
+const selector = (s: WidgetStoreState) => ({
+    onLayoutChildrenChange: s.onLayoutChildrenChange,
+    onLayoutOrderChange: s.onLayoutOrderChange,
+    onConfigChange: s.onConfigChange,
+})
 
 export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRendererType) {
     function WrapedPropsWidget(props: any) {
         const { id, path } = props
         const { store, eventBus } = useEditorContext()
-        const api = store()
+        const api = store(selector, shallow)
         const widgetIdSelector = React.useMemo(() => getWidget(id) ?? {}, [id])
         const overrides = store(widgetIdSelector)
-        const [loaded, setLoaded] = useState(false)
         const myRef = useRef<HTMLElement>()
 
         const handleLayoutOrderChange = useCallback(
@@ -83,13 +88,27 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const inViewport = useIsInViewport(myRef as any)
         const { columnInfo, recordInfo: info, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
 
+        const inViewLoadRef = useRef(false)
+        const tableNameRef = useRef('')
+
+        // if in viewport, refetch data
+        // if panel table changed, refetch data
         useEffect(() => {
-            if (tableName && inViewport && !loaded) {
+            if (!tableName || !inViewport) return
+
+            if (tableNameRef.current !== tableName) {
                 columnInfo.refetch()
-                setLoaded(true)
+                tableNameRef.current = tableName
+                return
             }
+
+            if (inViewLoadRef.current) return
+            columnInfo.refetch()
+
+            inViewLoadRef.current = true
+            tableNameRef.current = tableName
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [tableName, inViewport, loaded])
+        }, [tableName, inViewport])
 
         useEffect(() => {
             // @FIXME better use scoped eventBus

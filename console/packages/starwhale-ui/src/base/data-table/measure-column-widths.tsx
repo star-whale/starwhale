@@ -1,16 +1,18 @@
-// @ts-nocheck
+// @ts-nocehck
 import React, { useRef } from 'react'
 import { useStyletron } from 'baseui'
 import HeaderCell from './headers/header-cell'
 import type { ColumnT, RowT } from './types'
+import _ from 'lodash'
 
 const IS_BROWSER = true
 const emptyFunction = () => {}
 
+// @ts-ignore
 function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout, isQueryInline }) {
     const [css] = useStyletron()
 
-    const ref = useRef()
+    const ref = useRef<HTMLDivElement | null>(null)
 
     React.useEffect(() => {
         if (IS_BROWSER) {
@@ -30,6 +32,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 paddingRight: '20px',
             })}
         >
+            {/* @ts-ignore */}
             <HeaderCell
                 index={columnIndex}
                 isHovered
@@ -46,7 +49,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 title={column.title}
                 isSelectable={isSelectable}
             />
-            {sampleIndexes.map((rowIndex, i) => {
+            {sampleIndexes.map((rowIndex: number, i: number) => {
                 const Cell = column.renderCell
                 return (
                     <Cell
@@ -69,17 +72,19 @@ type MeasureColumnWidthsPropsT = {
     // if selectable, measure the first column with checkbox included
     isSelectable: boolean
     isQueryInline: boolean
-    onWidthsChange: (nums: number[]) => void
+    onWidthsChange: (nums: Map<any, any>) => void
     rows: RowT[]
 }
 
-const MAX_SAMPLE_SIZE = 50
+const MAX_SAMPLE_SIZE = 20
 
+// @ts-ignore
 function generateSampleIndices(inputMin, inputMax, maxSamples) {
     const indices = []
     const queue = [[inputMin, inputMax]]
 
     while (queue.length > 0) {
+        // @ts-ignore
         const [min, max] = queue.shift()
         if (indices.length < maxSamples) {
             const pivot = Math.floor((min + max) / 2)
@@ -115,39 +120,31 @@ export default function MeasureColumnWidths({
         return generateSampleIndices(0, rows.length - 1, sampleSize)
     }, [rows])
 
+    const debounceWideChange = React.useMemo(() => _.debounce(onWidthsChange, 200), [onWidthsChange])
+
     const handleDimensionsChange = React.useCallback(
-        (columnIndex, dimensions) => {
+        (column, dimensions) => {
+            const columnIndex = column.key
             const nextWidth = Math.min(
-                Math.max(columns[columnIndex].minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
-                columns[columnIndex].maxWidth || Infinity
+                Math.max(column.minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
+                column.maxWidth || Infinity
             )
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
-            // console.log(columnIndex, nextWidth, prevWidth, dimensions.width, columns)
-
-            if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 2) {
+            //1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
+            if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 5) {
                 widthMap.set(columnIndex, nextWidth)
 
-                if (columnIndex < columns.length) {
-                    setWidthMap(widthMap)
-                    onWidthsChange(Array.from(widthMap.values()))
-                }
+                const widths = columns.map((column, i) => widthMap.get(column.key)).filter(Boolean)
 
                 // 1.Refresh at 100% of done
-                // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
-                // console.log('update', widthMap.size, columns.length, widthMap)
-                // if (widthMap.size > columns.length) {
-                //     const newMap = Array.from(widthMap).slice(0, columns.length)
-                //     console.log('new map', new Map(newMap))
-                //     setWidthMap(new Map(newMap))
-                //     onWidthsChange(Array.from(newMap.values()))
-                // } else if (widthMap.size === columns.length) {
-                //     setWidthMap(widthMap)
-                //     onWidthsChange(Array.from(widthMap.values()))
-                // }
+                if (widths.length === columns.length) {
+                    setWidthMap(widthMap)
+                    debounceWideChange(widthMap)
+                }
             }
         },
-        [columns, onWidthsChange, widthMap]
+        [columns, debounceWideChange, widthMap]
     )
 
     const $columns = React.useMemo(() => {
@@ -159,7 +156,8 @@ export default function MeasureColumnWidths({
                     rows={rows}
                     isSelectable={isSelectable && i === 0}
                     isQueryInline={isQueryInline && i === 0}
-                    onLayout={handleDimensionsChange}
+                    // @ts-ignore
+                    onLayout={(columnIndex, dimensions) => handleDimensionsChange(column, dimensions)}
                     columnIndex={i}
                     sampleIndexes={sampleIndexes}
                 />

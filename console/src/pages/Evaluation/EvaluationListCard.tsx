@@ -6,7 +6,7 @@ import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { useHistory, useParams } from 'react-router-dom'
+import { useHistory, useParams, Prompt } from 'react-router-dom'
 import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
@@ -21,6 +21,7 @@ import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
 import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
 import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
+import { useLocalStorage } from 'react-use'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -60,6 +61,8 @@ export default function EvaluationListCard() {
     const { columnInfo, recordInfo: evaluationsInfo } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
+    const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
+    const [changed, setChanged] = useState(false)
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
             await createJob(projectId, data)
@@ -77,6 +80,7 @@ export default function EvaluationListCard() {
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
+                    fillWidth: false,
                     mapDataToValue: (item: any) => item['sys/id'],
                     // @ts-ignore
                     renderCell: (props: any) => {
@@ -98,6 +102,7 @@ export default function EvaluationListCard() {
                     title: t('Elapsed Time'),
                     sortable: true,
                     filterType: 'number',
+                    fillWidth: false,
                     sortFn: (a: any, b: any) => {
                         const aNum = Number(a)
                         const bNum = Number(b)
@@ -117,11 +122,15 @@ export default function EvaluationListCard() {
                     columnType: column.columnType,
                     key: column.key,
                     title: column.key,
+                    fillWidth: false,
                     mapDataToValue: (data: any) =>
                         column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
                 })
 
-            return column
+            return {
+                ...column,
+                fillWidth: false,
+            }
         })
     }, [t, $columns, projectId])
     const $compareRows = React.useMemo(() => {
@@ -130,6 +139,21 @@ export default function EvaluationListCard() {
     const $ready = React.useMemo(() => {
         return columnInfo.isSuccess && evaluationViewConfig.isSuccess
     }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
+
+    React.useEffect(() => {
+        const unloadCallback = (event: any) => {
+            if (!changed) return ''
+            event.preventDefault()
+            // eslint-disable-next-line no-param-reassign
+            event.returnValue = 'Some browsers display this to the user'
+            return ''
+        }
+
+        window.addEventListener('beforeunload', unloadCallback)
+        return () => {
+            window.removeEventListener('beforeunload', unloadCallback)
+        }
+    }, [changed])
 
     const doSave = async () => {
         await setEvaluationViewConfig(projectId, {
@@ -142,20 +166,31 @@ export default function EvaluationListCard() {
 
     const doChange = async (state: ITableState, prevState: ITableState) => {
         if (!$ready) return
+        setChanged(state.currentView.updated ?? false)
+        setViewId(state.currentView.id)
 
-        // console.log('save to api ?', store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))
-        if (!_.isEqual(store.getRawIfChangedConfigs(state), store.getRawIfChangedConfigs(prevState))) {
-            // console.log('saved', store.getRawConfigs().currentView)
+        if (!_.isEqual(state.views, prevState.views)) {
+            // auto save views
+            // eslint-disable-next-line no-console
+            console.log('saved views', state.views, prevState.views)
             await setEvaluationViewConfig(projectId, {
                 name: 'evaluation',
-                content: JSON.stringify(store.getRawConfigs(), null),
+                content: JSON.stringify(
+                    {
+                        ...store.getRawConfigs(),
+                        views: state.views,
+                    },
+                    null
+                ),
             })
         }
     }
 
     // NOTICE: use isinit to make sure view config is loading into store
+    const initRef = React.useRef(false)
     React.useEffect(() => {
-        if (store.isInit || !evaluationViewConfig.isSuccess) return
+        if (!evaluationViewConfig.isSuccess) return
+        if (initRef.current) return
 
         let $rawConfig
         try {
@@ -163,12 +198,15 @@ export default function EvaluationListCard() {
         } catch (e) {
             // console.log(e)
         }
-        // console.log('init')
+        // eslint-disable-next-line no-console
+        console.log('init store')
         store.initStore($rawConfig)
+        store.onCurrentViewIdChange(viewId)
 
+        initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [store.isInit, evaluationViewConfig.isSuccess])
+    }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
 
     React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
@@ -198,6 +236,7 @@ export default function EvaluationListCard() {
                 </WithCurrentAuth>
             }
         >
+            <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
             <GridResizer
                 left={() => {
                     return (
@@ -212,6 +251,11 @@ export default function EvaluationListCard() {
                             data={evaluationsInfo.data?.records ?? []}
                             onSave={doSave as any}
                             onChange={doChange}
+                            emptyColumnMessage={
+                                <BusyPlaceholder type='notfound'>
+                                    Create a new evaluation or Config to add columns
+                                </BusyPlaceholder>
+                            }
                         />
                     )
                 }}
