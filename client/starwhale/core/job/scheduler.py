@@ -1,21 +1,17 @@
 import time
 import typing as t
 from pathlib import Path
+from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from loguru import logger
 
+from starwhale.consts import RunStatus
 from starwhale.core.job.dag import DAG
-from starwhale.api._impl.job import Context
-from starwhale.core.job.model import (
-    Step,
-    STATUS,
-    Generator,
-    StepResult,
-    TaskResult,
-    StepExecutor,
-    TaskExecutor,
-    MultiThreadProcessor,
-)
+from starwhale.core.job.step import Step
+
+from .step import StepResult, StepExecutor
+from .task import TaskResult, TaskExecutor
+from .context import Context
 
 
 class Scheduler:
@@ -23,20 +19,29 @@ class Scheduler:
         self,
         project: str,
         version: str,
-        module: str,
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
     ) -> None:
-        self._steps: t.Dict[str, Step] = {s.step_name: s for s in steps}
-        self.dag: DAG = Generator.generate_dag_from_steps(steps)
+        self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
+        self.dag: DAG = Step.generate_dag(steps)
         self.project = project
         self.dataset_uris = dataset_uris
-        self.module = module
         self.workdir = workdir
         self.version = version
 
-    def schedule(self) -> t.List[StepResult]:
+    def run(
+        self, step_name: str = "", task_num: int = 0, task_index: t.Optional[int] = None
+    ) -> t.List[StepResult]:
+        if not step_name:
+            return self._schedule_all()
+
+        if task_index is None or task_index < 0:
+            return [self._schedule_one_step(step_name=step_name, task_num=task_num)]
+        else:
+            return [self._schedule_one_task(step_name=step_name, task_index=task_index)]
+
+    def _schedule_all(self) -> t.List[StepResult]:
         _results: t.List[StepResult] = []
         # record all vertex's in degree
         indegree_dict = {}
@@ -49,100 +54,84 @@ class Scheduler:
         while prepared_vertices:
             vertices_to_run = prepared_vertices - vertices_running
 
-            processor = MultiThreadProcessor(
-                "",
-                len(vertices_to_run),
-                list(
-                    StepExecutor(
-                        self._steps[v],
-                        project=self.project,
-                        dataset_uris=self.dataset_uris,
-                        module=self.module,
-                        workdir=self.workdir,
-                        version=self.version,
-                    )
-                    for v in vertices_to_run
-                ),
-            )
+            tasks = [
+                StepExecutor(
+                    self._steps[v],
+                    project=self.project,
+                    dataset_uris=self.dataset_uris,
+                    workdir=self.workdir,
+                    version=self.version,
+                )
+                for v in vertices_to_run
+            ]
+            with ThreadPoolExecutor(max_workers=len(vertices_to_run)) as pool:
+                future_tasks = [pool.submit(t.execute) for t in tasks]
+                step_results = [t.result() for t in as_completed(future_tasks)]
 
             vertices_running |= set(vertices_to_run)
-            # execute and get results
-            step_results: t.List[StepResult] = processor.execute()
             _results += step_results
-            vertices_finished = [result.step_name for result in step_results]
+            vertices_finished = [result.name for result in step_results]
             vertices_running -= set(vertices_finished)
             prepared_vertices -= set(vertices_finished)
 
             # update dag
             for result in step_results:
-                for v_to in self.dag.successors(result.step_name):
+                for v_to in self.dag.successors(result.name):
                     indegree_dict[v_to] -= 1
                     if indegree_dict[v_to] == 0:
                         prepared_vertices.add(v_to)
 
             if not all(
                 [
-                    all(tr.status == STATUS.SUCCESS for tr in sr.task_results)
+                    all(tr.status == RunStatus.SUCCESS for tr in sr.task_results)
                     for sr in step_results
                 ]
             ):
                 break
         return _results
 
-    def schedule_single_step(self, step_name: str, task_num: int = 0) -> StepResult:
-        _step = self._steps[step_name]
-        if not _step:
-            raise RuntimeError(f"step:{step_name} not found")
-        _step_executor = StepExecutor(
-            _step,
+    def _schedule_one_step(self, step_name: str, task_num: int = 0) -> StepResult:
+        step = self._steps[step_name]
+        start_time = time.time()
+        result = StepExecutor(
+            step=step,
             project=self.project,
             dataset_uris=self.dataset_uris,
-            module=self.module,
             workdir=self.workdir,
             version=self.version,
             task_num=task_num,
-        )
-        start_time = time.time()
-        _result = _step_executor.execute()
+        ).execute()
 
         logger.info(
-            f"step:{step_name} {_step.status}, result:{_result}, run time:{time.time() - start_time}"
+            f"step:{step_name}, result:{result}, run time:{time.time() - start_time}"
         )
-        return _result
+        return result
 
-    def schedule_single_task(
-        self, step_name: str, task_index: int, task_num: int = 0
-    ) -> StepResult:
+    def _schedule_one_task(self, step_name: str, task_index: int) -> StepResult:
         _step = self._steps[step_name]
-        if not _step:
-            raise RuntimeError(f"step:{step_name} not found")
-
-        total = task_num or _step.task_num
-        if task_index >= total:
+        if task_index >= _step.task_num:
             raise RuntimeError(
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"
             )
+
         _task = TaskExecutor(
             index=task_index,
             context=Context(
                 project=self.project,
                 version=self.version,
-                step=_step.step_name,
-                total=total,
+                step=_step.name,
+                total=_step.task_num,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,
             ),
-            status=STATUS.INIT,
-            module=self.module,
-            func=_step.step_name,
-            cls_name=_step.cls_name,
+            step=_step,
             workdir=self.workdir,
         )
         start_time = time.time()
         task_result: TaskResult = _task.execute()
 
         logger.info(
-            f"step:{step_name} {_step.status}, task result:{task_result}, run time:{time.time() - start_time}"
+            f"step:{step_name}, task result:{task_result}, run time:{time.time() - start_time}"
         )
-        return StepResult(step_name=step_name, task_results=[task_result])
+        return StepResult(name=step_name, task_results=[task_result])

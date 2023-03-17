@@ -145,7 +145,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     ```python
     import typing as t
     import torch
-    from starwhale import Image, PipelineHandler, PPLResultIterator, multi_classification
+    from starwhale import Image, PipelineHandler, multi_classification
 
     class MNISTInference(PipelineHandler):
             def __init__(self) -> None:
@@ -166,7 +166,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
                 all_labels=[i for i in range(0, 10)],
             )
             def cmp(
-                self, ppl_result: PPLResultIterator
+                self, ppl_result
             ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
                 result, label, pr = [], [], []
                 for _data in ppl_result:

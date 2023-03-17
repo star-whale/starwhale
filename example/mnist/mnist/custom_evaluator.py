@@ -1,6 +1,7 @@
 import typing as t
 from pathlib import Path
 
+import dill
 import numpy as np
 import torch
 import gradio
@@ -15,9 +16,8 @@ from starwhale import (
     Context,
     dataset,
     URIType,
+    evaluation,
     pass_context,
-    PPLResultStorage,
-    PPLResultIterator,
     multi_classification,
 )
 from starwhale.api.service import api
@@ -33,11 +33,10 @@ class CustomPipelineHandler:
         self.model = self._load_model(self.device)
         self.batch_size = 5
 
-    @step(concurrency=2, task_num=2)
+    @step(concurrency=2, task_num=2, name="ppl")
     @pass_context
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
-        ppl_result_storage = PPLResultStorage(context)
 
         for uri_str in context.dataset_uris:
             _uri = URI(uri_str, expected_type=URIType.DATASET)
@@ -49,22 +48,26 @@ class CustomPipelineHandler:
                         [r[1] for r in rows]
                     )
                     for (
-                        (_idx, _data, _annotations),
+                        (_idx, _data),
                         pred_value,
                         probability_matrix,
                     ) in zip(rows, pred_values, probability_matrixs):
                         _unique_id = f"{_uri.object}_{_idx}"
-                        ppl_result_storage.save(
-                            data_id=_unique_id,
-                            result=pred_value,
-                            probability_matrix=probability_matrix,
-                            annotations=_annotations,
+
+                        evaluation.log(
+                            category="results",
+                            id=_unique_id,
+                            metrics=dict(
+                                pred_value=dill.dumps(pred_value),
+                                probability_matrix=dill.dumps(probability_matrix),
+                                label=_data["label"],
+                            ),
                         )
                 except Exception:
                     logger.error(f"[{[r[0] for r in rows]}] data handle -> failed")
                     raise
 
-    @step(needs=["run_ppl"])
+    @step(needs=["ppl"], name="cmp")
     @multi_classification(
         confusion_matrix_normalize="all",
         show_hamming_loss=True,
@@ -72,17 +75,12 @@ class CustomPipelineHandler:
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
-    @pass_context
-    def run_cmp(
-        self, context: Context
-    ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
-        print(f"start to run cmp@{context.version}...")
-        result_loader = PPLResultIterator(context)
+    def run_cmp(self) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
         result, label, pr = [], [], []
-        for data in result_loader:
-            result.append(data["result"])
-            label.append(data["annotations"]["label"])
-            pr.append(data["probability_matrix"])
+        for data in evaluation.iter("results"):
+            result.append(dill.loads(data["pred_value"]))
+            label.append(data["label"])
+            pr.append(dill.loads(data["probability_matrix"]))
         return label, result, pr
 
     def _load_model(self, device: torch.device) -> Net:
@@ -94,11 +92,13 @@ class CustomPipelineHandler:
         print("load mnist model, start to inference...")
         return model
 
-    def _pre(self, data: t.List[Image]) -> t.Any:
+    def _pre(self, data_items: t.List[t.Dict]) -> t.Any:
         images = []
-        for i in data:
-            _tensor = torch.tensor(bytearray(i.to_bytes()), dtype=torch.uint8).reshape(
-                i.shape[0], i.shape[1]  # type: ignore
+        for data in data_items:
+            _tensor = torch.tensor(
+                bytearray(data["img"].to_bytes()), dtype=torch.uint8
+            ).reshape(
+                data["img"].shape[0], data["img"].shape[1]  # type: ignore
             )
             _image_array = PILImage.fromarray(_tensor.numpy())
             _image = transforms.Compose(
@@ -109,12 +109,12 @@ class CustomPipelineHandler:
         return torch.stack(images).to(self.device)
 
     def ppl(
-        self, data: Image, **kw: t.Any
+        self, data: t.Dict, **kw: t.Any
     ) -> t.Tuple[t.List[int], t.List[t.List[float]]]:
         return self.batch_ppl([data])
 
     def batch_ppl(
-        self, images: t.List[Image], **kw: t.Any
+        self, images: t.List[t.Dict], **kw: t.Any
     ) -> t.Tuple[t.List[int], t.List[t.List[float]]]:
         data_tensor = self._pre(images)
         output = self.model(data_tensor)
@@ -133,5 +133,5 @@ class CustomPipelineHandler:
     def upload_bin_file(self, file: t.Any) -> t.Any:
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))
-        _, prob = self.ppl(data)
+        _, prob = self.ppl({"img": data})
         return {i: p for i, p in enumerate(prob[0])}

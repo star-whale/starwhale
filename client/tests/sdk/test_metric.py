@@ -5,17 +5,18 @@ from unittest.mock import patch, MagicMock
 import pytest
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.api._impl.job import Context, context_holder
 from starwhale.api._impl.metric import multi_classification
+from starwhale.core.job.context import Context
 
 
 class TestMultiClassificationMetric(TestCase):
     def setUp(self) -> None:
-        context_holder.context = Context(
+        context = Context(
             workdir=Path("/home/starwhale"),
             version="12345",
             project="self",
         )
+        Context.set_runtime_context(context)
 
     @pytest.mark.filterwarnings(
         "ignore::sklearn.metrics._classification.UndefinedMetricWarning"
@@ -82,7 +83,7 @@ class TestMultiClassificationMetric(TestCase):
         assert metric_call["kind"] == rt["kind"]
         assert "macro avg/f1-score" in metric_call
 
-        log_calls = set([args[0][0] for args in log_mock.call_args_list])
+        log_calls = set([args[1]["table_name"] for args in log_mock.call_args_list])
         assert "labels" in log_calls
         assert "confusion_matrix/binarylabel" in log_calls
         assert "roc_auc/9" in log_calls
@@ -97,9 +98,9 @@ class TestMultiClassificationMetric(TestCase):
 
         roc_1_calls = set(
             [
-                f"{args[0][0]},{args[1]['id']}"
+                f"{args[1]['table_name']},{args[1]['id']}"
                 for args in log_mock.call_args_list
-                if args[0][0] == "roc_auc/1"
+                if args[1]["table_name"] == "roc_auc/1"
             ]
         )
         assert len(roc_1_calls) > 1

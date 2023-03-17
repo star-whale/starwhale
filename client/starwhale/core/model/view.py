@@ -129,7 +129,7 @@ class ModelTermView(BaseTermView):
         version: str = "",
         yaml_name: str = DefaultYAMLName.MODEL,
         step: str = "",
-        task_index: int = 0,
+        task_index: t.Optional[int] = None,
         task_num: int = 0,
         runtime_uri: str = "",
         use_docker: bool = False,

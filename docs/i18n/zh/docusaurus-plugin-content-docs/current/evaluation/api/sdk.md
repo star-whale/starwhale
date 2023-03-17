@@ -7,6 +7,7 @@ title: 模型评测
 提供默认的模型评测过程定义，需要用户实现 `ppl` 和 `cmp` 函数。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
 
 ```python
+from typing import Any, Iterator
 from abc import ABCMeta, abstractmethod
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -21,15 +22,15 @@ class PipelineHandler(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def cmp(self, ppl_result: PPLResultIterator) -> Any
+    def cmp(self, ppl_result: Iterator) -> Any
         raise NotImplementedError
 ```
 
-`PipelineHandler` 类实例化时可以定义两个参数：当`ignore_annotations`为False时，PPLResultIterator中会携带数据集所对应的 annotations信息，保证index上与推理结果是一一对应的；当 `ignore_error`为True是，会忽略ppl过程中的错误，可以解决比较大的数据集样本中，有个别数据错误导致ppl失败，进而导致无法完成评测的问题。
+`PipelineHandler` 类实例化时可以定义两个参数：当`ignore_annotations`为False时，自动记录数据中会携带数据集所对应的 annotations信息，保证index上与推理结果是一一对应的；当 `ignore_error`为True是，会忽略ppl过程中的错误，可以解决比较大的数据集样本中，有个别数据错误导致ppl失败，进而导致无法完成评测的问题。
 
 `ppl` 函数用来进行推理，输入参数为 data和kw。data表示数据集中某个样本，kw为一个字典，目前包含 `annotations` 和 `index`。每条数据集样本都会调用`ppl`函数，输出为模型推理值，会自动被记录和存储，可以在cmp函数中通过 `ppl_result` 参数获取。
 
-`cmp` 函数一般用来进行推理结果的汇总，并产生最终的评测报告数据，只会调用一次。`cmp` 函数的参数为 `ppl_result` ，该值是 `PPLResultIterator` 类型，可以被迭代。迭代出来的对象为一个字典，包含 `result`, `annotations` 和 `data_id` 三个元素。`result` 为 `ppl` 返回的元素，由于使用了 pickle做序列化-反序列化，data["result"] 变量直接能获取ppl函数return的值；`annotations` 为构建数据集时写入的，此阶段的result["annotations"]为一个dict类型。`data_id` 表示数据集对应的index。
+`cmp` 函数一般用来进行推理结果的汇总，并产生最终的评测报告数据，只会调用一次。`cmp` 函数的参数为 `ppl_result` ，可以被迭代。迭代出来的对象为一个字典，包含 `result`, `annotations` 和 `data_id` 三个元素。`result` 为 `ppl` 返回的元素，由于使用了 pickle做序列化-反序列化，data["result"] 变量直接能获取ppl函数return的值；`annotations` 为构建数据集时写入的，此阶段的result["annotations"]为一个dict类型。`data_id` 表示数据集对应的index。
 
 另外，在PipelineHandler及其子类中可以访问 `self.context` 获取 `starwhale.Context` 类型的上下文信息。
 
@@ -101,54 +102,7 @@ Context(
 |dataset_uris|dataset uri字符串的列表|
 |workdir|model.yaml所在目录|
 
-## 3. starwhale.PPLResultStorage
-
-`ppl`函数中使用，能够保存 `ppl` 结果、数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
-
-| 函数   | 说明                                                                                                              |
-|------|-----------------------------------------------------------------------------------------------------------------|
-| save | data_id: t.Union[int, str] 数据唯一索引值<br/> result: t.Any 专指ppl过程的评测结果值<br/> **kwargs: t.Any 其他待存储的信息，如annotations等 |
-
-使用例子如下：
-
-```python
-from starwhale import pass_context, Context, PPLResultStorage
-
-@pass_context
-def func(context: Context) -> None:
-    ppl_result_storage = PPLResultStorage(context)
-    for _idx, _data, _annotations in _dataloader:
-        pred_value = eval_process(_data, ...)
-        ppl_result_storage.save(
-            data_id=_idx,
-            result=pred_value,
-            ...
-            annotations=_annotations,
-        )
-```
-
-## 4. starwhale.PPLResultIterator
-
-`cmp`函数中使用，是一个可迭代的对象，能够输出 `ppl` 结果、数据集index和对应的数据集annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
-
-```python
-from starwhale import PipelineHandler, PPLResultIterator
-
-class Example(PipelineHandler):
-    def cmp(
-        self, ppl_result: PPLResultIterator
-    ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
-        result, label, pr = [], [], []
-        for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
-            result.extend(_data["result"][0])
-            pr.extend(_data["result"][1])
-            print(_data["data_id"])
-        return label, result, pr
-
-```
-
-## 5. starwhale.multi_classification
+## 3. starwhale.multi_classification
 
 修饰器，适用于多分类问题，用来简化cmp结果的进一步计算和结果存储，能更好的呈现评测结果。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/metric.py)。
 
@@ -161,7 +115,7 @@ class Example(PipelineHandler):
     show_roc_auc=True,
     all_labels=[i for i in range(0, 10)],
 )
-def cmp(ppl_result: PPLResultIterator) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
+def cmp(ppl_result) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
     label, result, probability_matrix = [], [], []
     return label, result, probability_matrix
 
@@ -172,7 +126,7 @@ def cmp(ppl_result: PPLResultIterator) -> t.Tuple[t.List[int], t.List[int], t.Li
     show_roc_auc=False,
     all_labels=[i for i in range(0, 10)],
 )
-def cmp(ppl_result: PPLResultIterator) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
+def cmp(ppl_result) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
     label, result = [], [], []
     return label, result
 ```
@@ -187,7 +141,7 @@ def cmp(ppl_result: PPLResultIterator) -> t.Tuple[t.List[int], t.List[int], t.Li
 
 `multi_classification` 修饰器使用sklearn lib对多分类问题进行结果分析，输出confusion matrix, roc, auc等值，并且会写入到 starwhale的 DataStore 中。使用的时候需要对所修饰的函数返回值有一定要求，返回(label, result, probability_matrix) 或 (label, result)。
 
-## 6. starwhale.step
+## 4. starwhale.step
 
 修饰器，可以指定DAG的依赖关系和Task数量、资源等配置，实现用户自定义评测过程。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/job.py)。使用 `step` 可以完全不依赖于 `PipelineHandler` 预定义的基本模型评测过程，可以自行定义多阶段和每个阶段的依赖、资源和任务并发数等。
 
@@ -241,11 +195,11 @@ def func():
 @step(resources={"cpu": {"request": 0.1, "limit": 0.2}, "gpu": {"request": 1, "limit": 1}, "memory": {"request": 100, "limit": 200}})
 ```
 
-## 7. starwhale.api.service.Service
+## 5. starwhale.api.service.Service
 
 用于 model serve 的基础类, 最常用的用法是
 
-7.1. 使用 decorator 添加 handler
+5.1. 使用 decorator 添加 handler
 
 ```python
 from starwhale.api.service import api
@@ -282,7 +236,7 @@ def handler(data):
 ]
 ```
 
-7.2. 使用基类函数添加 handler
+5.2. 使用基类函数添加 handler
 
 如果 model 是继承自 `PipelineHandler`, 也可以不实例化 `Service`, 调用基类的 `add_api` 方法手动添加 handler, 例如
 
@@ -299,11 +253,11 @@ class MyDefaultClass(PipelineHandler):
     def handler_foo(self, data: t.Any) -> t.Any:
         return
 
-    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
+    def cmp(self, ppl_result) -> t.Any:
         pass
 ```
 
-7.3. 自定义 Service
+5.3. 自定义 Service
 
 如果希望自定义 web service 的实现, 可以继承 `Service` 并重写 `serve` 函数即可
 
@@ -324,7 +278,7 @@ def handler(data):
 - 使用 `PipelineHandler.add_api` 函数添加的 handler 和 `api` 以及实例化的 `Service.api` decorator 添加的 handler 可以同时生效
 - 如果使用自定义的 `Service`, 需要在 model 中实例化自定义的 Service 类
 
-7.4. 自定义 Request 和 Response
+5.4. 自定义 Request 和 Response
 
 Request 和 Response 分别是用于接收用户请求和返回给用户结果的处理类, 可以简单的理解成是 `handler` 的前处理和后处理逻辑
 

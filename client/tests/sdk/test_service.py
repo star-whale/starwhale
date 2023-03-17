@@ -4,8 +4,7 @@ from pathlib import Path
 
 from starwhale.core.model.model import StandaloneModel
 
-from .. import ROOT_DIR
-from .test_base import BaseTestCase
+from .. import ROOT_DIR, BaseTestCase
 
 
 class ServiceTestCase(BaseTestCase):

@@ -1,303 +1,62 @@
-import os
-import time
 import random
-import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from tests import ROOT_DIR
-from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
-from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Parser, Context, do_resource_transform
-from starwhale.core.job.model import (
-    Step,
-    STATUS,
-    Generator,
-    StepResult,
-    TaskResult,
-    TaskExecutor,
-    MultiThreadProcessor,
-)
+from starwhale.consts import RunStatus
+from starwhale.core.job.step import Step, StepResult
+from starwhale.core.job.task import TaskResult
 from starwhale.core.job.scheduler import Scheduler
-
-_job_data_dir = f"{ROOT_DIR}/data/job"
 
 
 class JobTestCase(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_generate_default_job_yaml(self):
-        Parser.clear_config()
-        # create a temporary directory
-        root = "home/starwhale/job"
-        ensure_dir(root)
-        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
-
-        Parser.generate_job_yaml(DEFAULT_EVALUATION_PIPELINE, Path(root), Path(_f))
-
-        """
-        default:
-        - concurrency: 1
-          job_name: default
-          needs: []
-          resources: {}
-          step_name: ppl
-          task_num: 1
-        - concurrency: 1
-          job_name: default
-          needs:
-          - ppl
-          resources: {}
-          step_name: cmp
-          task_num: 1
-        """
-        jobs = Generator.generate_job_from_yaml(_f)
-        _steps = jobs["default"]
-        self.assertEqual("default" in jobs, True)
-        self.assertEqual(len(_steps), 2)
-        self.assertEqual(_steps[0].step_name, "ppl")
-        self.assertEqual(_steps[1].step_name, "cmp")
-
-    def test_generate_job_yaml_with_error(self):
-        Parser.clear_config()
-        # create a temporary directory
-        root = "home/starwhale/job"
-        ensure_dir(root)
-        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
-
-        with self.assertRaises(expected_exception=RuntimeError):
-            Parser.generate_job_yaml(
-                "job_steps_with_error", Path(_job_data_dir), Path(_f)
-            )
-
-    def test_resource_valid(self):
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform({"ppu": 1})  # illegal resource name
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {"cpu": {"res": 1, "limit": 2}}
-            )  # illegal attribute name
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {"cpu": {"request": "u", "limit": 2}}
-            )  # don't support str
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {
-                    "cpu": 0.1,
-                    "memory": 2,
-                    "nvidia.com/gpu": 2.1,  # gpu don't support float
-                }
-            )
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {
-                    "cpu": {
-                        "request": 0.1,
-                        "limit": 0.2,
-                    },
-                    "memory": 2,
-                    "nvidia.com/gpu": {  # gpu don't support float
-                        "request": 0.1,
-                        "limit": 0.2,
-                    },
-                }
-            )
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {  # value must be number or dict
-                    "cpu": "0.1",
-                    "memory": "100",
-                    "nvidia.com/gpu": "1",
-                }
-            )
-        with self.assertRaises(expected_exception=RuntimeError):
-            do_resource_transform(
-                {
-                    "cpu": 0.1,
-                    "memory": -100,  # only supports non-negative numbers
-                    "nvidia.com/gpu": 1,
-                }
-            )
-
-        self.assertEqual(
-            do_resource_transform(
-                {
-                    "cpu": 0.1,
-                    "memory": 100,
-                    "nvidia.com/gpu": 1,
-                }
-            ),
-            [
-                {
-                    "type": "cpu",
-                    "request": 0.1,
-                    "limit": 0.1,
-                },
-                {
-                    "type": "memory",
-                    "request": 100,
-                    "limit": 100,
-                },
-                {
-                    "type": "nvidia.com/gpu",
-                    "request": 1,
-                    "limit": 1,
-                },
-            ],
-        )
-        self.assertEqual(
-            do_resource_transform(
-                {
-                    "cpu": {
-                        "request": 0.1,
-                        "limit": 0.2,
-                    },
-                    "memory": {
-                        "request": 100.1,
-                        "limit": 100.2,
-                    },
-                    "nvidia.com/gpu": {
-                        "request": 1,
-                        "limit": 2,
-                    },
-                }
-            ),
-            [
-                {
-                    "type": "cpu",
-                    "request": 0.1,
-                    "limit": 0.2,
-                },
-                {
-                    "type": "memory",
-                    "request": 100.1,
-                    "limit": 100.2,
-                },
-                {
-                    "type": "nvidia.com/gpu",
-                    "request": 1,
-                    "limit": 2,
-                },
-            ],
-        )
-
-    def test_generate_custom_job_yaml(self):
-        Parser.clear_config()
-        # create a temporary directory
-        root = "home/starwhale/job"
-        ensure_dir(root)
-        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
-
-        Parser.generate_job_yaml("job_steps_with_cls", Path(_job_data_dir), Path(_f))
-
-        """
-        default:
-        - concurrency: 1
-          job_name: default
-          needs: []
-          resources:
-            cpu:
-              request: 1
-              limit: 1
-          step_name: custom_ppl
-          task_num: 1
-        - concurrency: 1
-          job_name: default
-          needs:
-          - custom_ppl
-          resources:
-            cpu:
-              request: 1
-              limit: 2
-          step_name: custom_cmp
-          task_num: 1
-        """
-        jobs = Generator.generate_job_from_yaml(_f)
-        _steps = jobs["default"]
-        self.assertEqual("default" in jobs, True)
-        self.assertEqual(len(_steps), 2)
-        self.assertEqual(_steps[0].step_name, "custom_ppl")
-        self.assertEqual(_steps[0].cls_name, "CustomPipeline")
-        self.assertEqual(_steps[1].step_name, "custom_cmp")
-        self.assertEqual(
-            _steps[0].resources[0], {"type": "cpu", "limit": 1, "request": 1}
-        )
-        self.assertEqual(
-            _steps[1].resources[0], {"type": "cpu", "limit": 2, "request": 1}
-        )
-
-    def test_job_check(self):
-        self.assertEqual(
-            Parser.check(
-                {
-                    "default": [
-                        {"step_name": "ppl", "needs": [""]},
-                        {"step_name": "cmp", "needs": ["ppl2"]},
-                    ]
-                }
-            ),
-            False,
-        )
-
-        self.assertEqual(
-            Parser.check(
-                {
-                    "default": [
-                        {"step_name": "ppl", "needs": [""]},
-                        {"step_name": "cmp", "needs": ["ppl"]},
-                    ]
-                }
-            ),
-            True,
-        )
-
     def test_dag_generator(self):
         # with cycle error
         with self.assertRaises(RuntimeError):
-            Generator.generate_dag_from_steps(
+            Step.generate_dag(
                 [
                     Step(
                         job_name="default",
-                        step_name="ppl-1",
+                        name="ppl-1",
                         resources=[],
                         needs=["cmp"],
                     ),
                     Step(
                         job_name="default",
-                        step_name="ppl-2",
+                        name="ppl-2",
                         resources=[],
                         needs=["ppl-1"],
                     ),
                     Step(
                         job_name="default",
-                        step_name="cmp",
+                        name="cmp",
                         resources=[],
                         needs=["ppl-2"],
                     ),
                 ]
             )
-        # generate successfully
-        _dag = Generator.generate_dag_from_steps(
+
+        _dag = Step.generate_dag(
             [
                 Step(
                     job_name="default",
-                    step_name="ppl-1",
+                    name="ppl-1",
                     resources=[],
                     needs=[],
                 ),
                 Step(
                     job_name="default",
-                    step_name="ppl-2",
+                    name="ppl-2",
                     resources=[],
                     needs=["ppl-1"],
                 ),
                 Step(
                     job_name="default",
-                    step_name="cmp",
+                    name="cmp",
                     resources=[],
                     needs=["ppl-2"],
                 ),
@@ -309,91 +68,26 @@ class JobTestCase(TestCase):
         assert _dag.in_degree("ppl-2") == 1
         assert _dag.in_degree("cmp") == 1
 
-    @patch("starwhale.core.job.model.load_cls")
-    @patch("starwhale.core.job.model.get_func_from_module")
-    @patch("starwhale.core.job.model.get_func_from_object")
-    def test_task_executor_with_class(
-        self,
-        m_get_from_object: MagicMock,
-        m_get_from_module: MagicMock,
-        m_load_cls: MagicMock,
-    ):
-        _task_executor = TaskExecutor(
-            index=0,
-            context=Context(workdir=Path()),
-            status=STATUS.START,
-            func="custom_ppl",
-            cls_name="CustomPipeline",
-            module="job_steps_with_cls",
-            workdir=Path(_job_data_dir),
-        )
-        _result = _task_executor.execute()
-        assert _result.status == STATUS.SUCCESS
-        m_get_from_object.assert_called_once()
-        m_load_cls.assert_called_once()
-        m_get_from_module.assert_not_called()
-
-    @patch("starwhale.core.job.model.load_cls")
-    @patch("starwhale.core.job.model.get_func_from_module")
-    @patch("starwhale.core.job.model.get_func_from_object")
-    def test_task_executor_without_class(
-        self,
-        m_get_from_object: MagicMock,
-        m_get_from_module: MagicMock,
-        m_load_cls: MagicMock,
-    ):
-        _task_executor = TaskExecutor(
-            index=0,
-            context=Context(workdir=Path()),
-            status=STATUS.START,
-            func="custom_ppl",
-            module="job_steps_without_cls",
-            workdir=Path(_job_data_dir),
-        )
-        _result = _task_executor.execute()
-        assert _result.status == STATUS.SUCCESS
-        m_get_from_object.assert_not_called()
-        m_load_cls.assert_not_called()
-        m_get_from_module.assert_called_once()
-
-    def test_multithread_processor(self):
-        class SimpleExecutor:
-            def __init__(self):
-                self.exec_time = 0.0
-
-            def execute(self) -> t.Any:
-                _start = time.time()
-                time.sleep(1)
-                self.exec_time = time.time() - _start
-                return "success"
-
-        _s1 = SimpleExecutor()
-        _s2 = SimpleExecutor()
-        _m = MultiThreadProcessor("test", 2, [_s1, _s2])
-        _results = _m.execute()
-        self.assertEqual(all(_r == "success" for _r in _results), True)
-
     def test_step_result(self):
-        _task_results = list(TaskResult(i, STATUS.SUCCESS) for i in range(3))
+        _task_results = list(TaskResult(i, RunStatus.SUCCESS) for i in range(3))
         _step_result = StepResult("ppl-test", _task_results)
-        self.assertEqual(_step_result.status, STATUS.SUCCESS)
+        self.assertEqual(_step_result.status, RunStatus.SUCCESS)
 
-        _task_results.append(TaskResult(6, STATUS.FAILED))
+        _task_results.append(TaskResult(6, RunStatus.FAILED))
         _step_result = StepResult("ppl-test2", _task_results)
-        self.assertEqual(_step_result.status, STATUS.FAILED)
+        self.assertEqual(_step_result.status, RunStatus.FAILED)
 
     def test_scheduler_cycle_exception(self):
         with self.assertRaises(RuntimeError):
             Scheduler(
                 project="self",
                 version="fdsie8rwe",
-                module="test",
                 workdir=Path(),
                 dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
                 steps=[
                     Step(
                         job_name="default",
-                        step_name="ppl",
+                        name="ppl",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
                         task_num=2,
@@ -402,7 +96,7 @@ class JobTestCase(TestCase):
                     ),
                     Step(
                         job_name="default",
-                        step_name="cmp",
+                        name="cmp",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
                         task_num=2,
@@ -411,22 +105,21 @@ class JobTestCase(TestCase):
                 ],
             )
 
-    @patch("starwhale.core.job.model.TaskExecutor.execute")
+    @patch("starwhale.core.job.task.TaskExecutor.execute")
     def test_scheduler(self, m_task_execute: MagicMock):
         m_task_execute.return_value = TaskResult(
-            task_id=random.randint(0, 10), status=STATUS.SUCCESS
+            id=random.randint(0, 10), status=RunStatus.SUCCESS
         )
 
         _scheduler = Scheduler(
             project="self",
             version="fdsie8rwe",
-            module="test",
             workdir=Path(),
             dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
             steps=[
                 Step(
                     job_name="default",
-                    step_name="ppl",
+                    name="ppl",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
                     task_num=2,
@@ -434,7 +127,7 @@ class JobTestCase(TestCase):
                 ),
                 Step(
                     job_name="default",
-                    step_name="cmp",
+                    name="cmp",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
                     task_num=1,
@@ -442,19 +135,20 @@ class JobTestCase(TestCase):
                 ),
             ],
         )
-        _results = _scheduler.schedule()
-        # total task num is 3
+        _results = _scheduler._schedule_all()
         assert m_task_execute.call_count == 3
-        self.assertEqual(all([_rt.status == STATUS.SUCCESS for _rt in _results]), True)
+        self.assertEqual(
+            all([_rt.status == RunStatus.SUCCESS for _rt in _results]), True
+        )
 
-        _single_result = _scheduler.schedule_single_task("ppl", 0)
+        m_task_execute.reset_mock()
+        _single_result = _scheduler._schedule_one_task("ppl", 0)
 
-        # total task num is 3 + 1 = 4
-        assert m_task_execute.call_count == 4
-        self.assertEqual(_single_result.status, STATUS.SUCCESS)
+        assert m_task_execute.call_count == 1
+        self.assertEqual(_single_result.status, RunStatus.SUCCESS)
 
-        _single_result = _scheduler.schedule_single_step("ppl")
+        m_task_execute.reset_mock()
+        _single_result = _scheduler._schedule_one_step("ppl")
 
-        # total task num is 3 + 1 + 2 = 6
-        assert m_task_execute.call_count == 6
-        self.assertEqual(_single_result.status, STATUS.SUCCESS)
+        assert m_task_execute.call_count == 2
+        self.assertEqual(_single_result.status, RunStatus.SUCCESS)

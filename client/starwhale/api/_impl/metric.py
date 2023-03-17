@@ -14,9 +14,8 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
+from starwhale.api import evaluation
 from starwhale.utils.dict import flatten as flatten_dict
-from starwhale.api._impl.job import context_holder
-from starwhale.api._impl.wrapper import Evaluation
 
 
 @unique
@@ -36,8 +35,6 @@ def multi_classification(
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Dict[str, t.Any]:
             y_pr: t.Any = None
 
-            context = context_holder.context
-            evaluation = Evaluation(eval_id=context.version, project=context.project)
             _rt = func(*args, **kwargs)
             if show_roc_auc:
                 y_true, y_pred, y_pr = _rt
@@ -63,7 +60,8 @@ def multi_classification(
 
             _record_summary = flatten_dict(_r["summary"], extract_sequence=True)
             _record_summary["kind"] = _r["kind"]
-            evaluation.log_metrics(_record_summary)
+
+            evaluation.log_summary(_record_summary)
 
             _r["labels"] = {}
             mcm = multilabel_confusion_matrix(
@@ -87,7 +85,7 @@ def multi_classification(
                 )
 
                 _r["labels"][_label] = _report
-                evaluation.log("labels", id=_label, **_report)
+                evaluation.log("labels", id=_label, metrics=_report)
 
             # TODO: tune performance, use intermediated result
             cm = confusion_matrix(
@@ -100,7 +98,7 @@ def multi_classification(
                 evaluation.log(
                     "confusion_matrix/binarylabel",
                     id=_idx,
-                    **{str(_id): _v for _id, _v in enumerate(_pa)},
+                    metrics={str(_id): _v for _id, _v in enumerate(_pa)},
                 )
 
             if show_roc_auc and all_labels is not None and y_true and y_pr:
@@ -115,12 +113,16 @@ def multi_classification(
                         evaluation.log(
                             f"roc_auc/{_label}",
                             id=_id,
-                            fpr=_fpr,
-                            tpr=_tpr,
-                            threshold=_threshold,
+                            metrics=dict(
+                                tpr=_tpr,
+                                fpr=_fpr,
+                                threshold=_threshold,
+                            ),
                         )
 
-                        evaluation.log("labels", id=str(_label), auc=_ra_value["auc"])
+                        evaluation.log(
+                            "labels", id=str(_label), metrics=dict(auc=_ra_value["auc"])
+                        )
             return _r
 
         return _wrapper

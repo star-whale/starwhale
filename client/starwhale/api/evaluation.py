@@ -1,4 +1,14 @@
-from ._impl.wrapper import Evaluation
-from ._impl.evaluation import PipelineHandler, PPLResultStorage, PPLResultIterator
+from ._impl.evaluation import predict, evaluate, PipelineHandler, EvaluationLogStore
 
-__all__ = ["Evaluation", "PipelineHandler", "PPLResultStorage", "PPLResultIterator"]
+log = EvaluationLogStore.log
+log_summary = EvaluationLogStore.log_summary
+iter = EvaluationLogStore.iter
+
+__all__ = [
+    "PipelineHandler",
+    "predict",
+    "evaluate",
+    "log",
+    "log_summary",
+    "iter",
+]

@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import cv2
+import dill
 import numpy as np
 import torch
 from loguru import logger
@@ -15,9 +16,8 @@ from starwhale import (
     Context,
     dataset,
     URIType,
+    evaluation,
     pass_context,
-    PPLResultStorage,
-    PPLResultIterator,
     multi_classification,
 )
 
@@ -118,8 +118,6 @@ class UCF101CustomPipelineHandler:
     @pass_context
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
-        ppl_result_storage = PPLResultStorage(context)
-
         for ds_uri in context.dataset_uris:
             _uri = URI(ds_uri, expected_type=URIType.DATASET)
             ds = dataset(_uri)
@@ -131,11 +129,14 @@ class UCF101CustomPipelineHandler:
                 ):
                     _unique_id = f"{_uri.object}_{_idx}"
                     try:
-                        ppl_result_storage.save(
-                            data_id=_unique_id,
-                            result=pred_value,
-                            probability_matrix=probability_matrix,
-                            annotations=_annotations,
+                        evaluation.log(
+                            category="results",
+                            id=_unique_id,
+                            metrics=dict(
+                                pred_value=dill.dumps(pred_value),
+                                probability_matrix=dill.dumps(probability_matrix),
+                                annotations=_annotations,
+                            ),
                         )
                     except Exception:
                         logger.error(f"[{_unique_id}] data handle -> failed")
@@ -162,15 +163,10 @@ class UCF101CustomPipelineHandler:
         show_cohen_kappa_score=True,
         show_roc_auc=True,
     )
-    @pass_context
-    def run_cmp(
-        self, context: Context
-    ) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
-        print(f"start to run cmp@{context.version}...")
-        result_loader = PPLResultIterator(context)
+    def run_cmp(self) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
         result, label, pr = [], [], []
-        for data in result_loader:
-            result.append(data["result"])
+        for data in evaluation.iter("results"):
+            result.append(dill.loads(data["pred_value"]))
             label.append(data["annotations"]["label"])
-            pr.append(data["probability_matrix"])
+            pr.append(dill.loads(data["probability_matrix"]))
         return label, result, pr
