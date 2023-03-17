@@ -109,6 +109,10 @@ spring:
   mvc:
     view:
       suffix: .html
+  security:
+    user:
+      name: starwhaleAdmin
+      password: starwhale123
 
 mybatis:
   configuration:

@@ -42,7 +42,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Slf4j
-@Order(2)
+@Order(1)
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(
         securedEnabled = true,
@@ -98,7 +98,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(WebSecurity web) {
         web.ignoring()
-                .regexMatchers(String.format("^(?!%s/).*", controllerProperties.getApiPrefix()))
+                .regexMatchers(String.format("^(?!(%s|%s)/).*", controllerProperties.getApiPrefix(), "/monitor"))
                 .antMatchers(controllerProperties.getWhiteList().toArray(new String[0]));
     }
 
