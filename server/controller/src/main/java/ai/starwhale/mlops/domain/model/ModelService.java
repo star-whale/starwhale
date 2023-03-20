@@ -600,11 +600,12 @@ public class ModelService {
             }
 
         } catch (JsonProcessingException e) {
-            throw new SwValidationException(ValidSubject.MODEL, "parse manifest error:" + e.getMessage());
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "can not parse manifest", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         if (fileDesc == null) {
-            throw new SwValidationException(ValidSubject.MODEL,
+            throw new SwNotFoundException(ResourceType.BUNDLE,
                     String.format("can't find file:%s(path:%s) from model package", name, path));
         }
         String filePath;

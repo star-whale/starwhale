@@ -586,7 +586,7 @@ public class ModelServiceTest {
         var manifestInputStream = new LengthAbleInputStream(is, manifestContent.getBytes().length);
         manifestInputStream.mark(0);
         given(storageAccessService.get(any())).willReturn(manifestInputStream);
-        assertThrows(SwValidationException.class,
+        assertThrows(SwNotFoundException.class,
                 () -> service.pull(
                         null, "empty1.pt", "src/model/empty1.pt", "", "1", "m1", "v1",
                         responseForManifest));
