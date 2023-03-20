@@ -78,10 +78,14 @@ sw:
 spring:
   boot:
     admin:
-      context-path: admin
+      context-path: monitor
       instance-auth:
         default-user-name: ${spring.security.user.name}
         default-password: ${spring.security.user.password}
+      server:
+        enabled: ${SW_ADMIN_ENABLED:true}
+      discovery:
+        enabled: ${SW_ADMIN_ENABLED:true}
       client:
         url: http://localhost:${server.port}/${spring.boot.admin.context-path}
         username: ${spring.security.user.name}
@@ -92,6 +96,7 @@ spring:
               name: ${spring.security.user.name}
               password: ${spring.security.user.password}
           name: StarWhale-Server
+        enabled: ${SW_ADMIN_ENABLED:true}
   config:
     activate:
       on-profile: dev
@@ -109,6 +114,10 @@ spring:
   mvc:
     view:
       suffix: .html
+  security:
+    user:
+      name: starwhaleAdmin
+      password: starwhale123
 
 mybatis:
   configuration:
