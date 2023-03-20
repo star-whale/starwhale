@@ -26,7 +26,6 @@ import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -34,7 +33,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.util.StringUtils;
 
 
@@ -103,14 +101,7 @@ public class AdminSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and()
             .httpBasic()
                 .and()
-            .csrf()
-                .ignoringRequestMatchers(
-                    new AntPathRequestMatcher(this.adminServer.getContextPath()
-                        + "/instances", HttpMethod.POST.toString()),
-                    new AntPathRequestMatcher(this.adminServer.getContextPath()
-                        + "/instances/*", HttpMethod.DELETE.toString()),
-                    new AntPathRequestMatcher(this.adminServer.getContextPath() + "/actuator/**"))
-                .and()
+            .csrf().disable()
             .rememberMe()
                 .key(UUID.randomUUID().toString())
                 .tokenValiditySeconds(1209600);
