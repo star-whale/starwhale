@@ -56,18 +56,22 @@ public class MysqlBackupService {
     }
 
     public static String extractDatabaseFromUrl(String url) {
+        if (!hasDatabase(url)) {
+            throw new RuntimeException("Invalid JDBC URL supplied: " + url);
+        }
+        return url.substring(url.lastIndexOf("/") + 1, url.indexOf("?"));
+    }
+
+    public static boolean hasDatabase(String url) {
         if (url == null || url.isEmpty()) {
-            throw new RuntimeException("Null or Empty JDBC URL supplied: " + url);
+            return false;
         }
-
-        String urlWithoutParams;
-        if (url.contains("?")) {
-            urlWithoutParams = url.substring(0, url.indexOf("?"));
-        } else {
-            urlWithoutParams = url;
+        int index = url.indexOf("://");
+        if (index == -1) {
+            return false;
         }
-
-        return urlWithoutParams.substring(urlWithoutParams.lastIndexOf("/") + 1);
+        index = url.indexOf("/", index + 3);
+        return index != -1;
     }
 
     private static TablesResponse getAllTablesAndViews(Statement statement, String database) throws SQLException {
