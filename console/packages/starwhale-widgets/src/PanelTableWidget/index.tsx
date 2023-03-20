@@ -18,15 +18,12 @@ export const CONFIG: WidgetConfig = {
 function PanelTableWidget(props: WidgetRendererProps<any, any>) {
     const { optionConfig, data = {}, id, onOptionChange } = props
     const { columnTypes = [], records = [] } = data
-    const [state, setState] = React.useState<ITableState | null>(null)
     const storeRef = React.useRef<ITableState | null>(null)
 
     React.useEffect(() => {
-        if (state?.isInit || !storeRef.current) return
-        // console.log('--paneltable--', storeRef.current, optionConfig)
+        if (storeRef.current?.isInit || !storeRef.current) return
         storeRef.current.initStore(optionConfig as ITableState)
-        setState(optionConfig as ITableState)
-    }, [optionConfig, storeRef, state])
+    }, [optionConfig, storeRef])
 
     const onChange = React.useCallback(
         (newState: ITableState) => {
