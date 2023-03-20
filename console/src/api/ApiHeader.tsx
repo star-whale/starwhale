@@ -71,6 +71,11 @@ export default function ApiHeader() {
                     return Promise.reject(error)
                 }
 
+                // allow non-exist model file in the eval result page
+                if (error.response?.status === 404 && winLocation.pathname.endsWith('results')) {
+                    return Promise.reject(error)
+                }
+
                 // use user/current as default token auth, it will be triggered multi times, so silent here
                 const withSilentRoute = error.response?.config.url.includes('/user/current')
                 if (withSilentRoute) return Promise.reject(error)

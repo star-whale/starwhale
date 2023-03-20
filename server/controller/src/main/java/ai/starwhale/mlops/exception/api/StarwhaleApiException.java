@@ -31,7 +31,7 @@ public class StarwhaleApiException extends RuntimeException {
     }
 
     /**
-     * every exception should has a code to be exposed to user. the code shall be unique among all StarwhaleExceptions
+     * every exception should have a code to be exposed to user. the code shall be unique among all StarwhaleExceptions
      *
      * @return user oriented error code
      */
@@ -49,7 +49,7 @@ public class StarwhaleApiException extends RuntimeException {
     }
 
     /**
-     * every api exception should has a HttpStatus to be exposed to user.
+     * every api exception should have a HttpStatus to be exposed to user.
      *
      * @return user oriented error code
      */
