@@ -155,10 +155,5 @@ export function tryParseSimplified(content: any): WidgetStoreState | undefined {
         tree: [root],
         widgets,
         defaults: {},
-        onConfigChange: () => {},
-        onLayoutOrderChange: () => {},
-        onLayoutChildrenChange: () => {},
-        onWidgetChange: () => {},
-        onWidgetDelete: () => {},
     }
 }
