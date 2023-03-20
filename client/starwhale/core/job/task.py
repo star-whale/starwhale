@@ -96,9 +96,8 @@ class TaskExecutor:
         )
 
         handler_func_name = self._get_internal_func_name(func_name)
-        getattr(
-            cls_(*self.step.extra_args, **self.step.extra_kwargs), handler_func_name
-        )()
+        with cls_(*self.step.extra_args, **self.step.extra_kwargs) as instance:
+            getattr(instance, handler_func_name)()
 
     def _do_execute(self) -> None:
         from starwhale.api._impl.evaluation import PipelineHandler
@@ -125,13 +124,23 @@ class TaskExecutor:
             else:
                 func_name = self.step.func_name
 
-            func = getattr(cls_(), func_name)
-            if getattr(func, DecoratorInjectAttr.Evaluate, False):
-                self._run_in_pipeline_handler_cls(func, "cmp")
-            elif getattr(func, DecoratorInjectAttr.Predict, False):
-                self._run_in_pipeline_handler_cls(func, "ppl")
+            if hasattr(cls_, "__enter__") and hasattr(cls_, "__exit__"):
+                with cls_() as instance:
+                    func = getattr(instance, func_name)
+                    if getattr(func, DecoratorInjectAttr.Evaluate, False):
+                        self._run_in_pipeline_handler_cls(func, "cmp")
+                    elif getattr(func, DecoratorInjectAttr.Predict, False):
+                        self._run_in_pipeline_handler_cls(func, "ppl")
+                    else:
+                        func()
             else:
-                func()
+                func = getattr(cls_(), func_name)
+                if getattr(func, DecoratorInjectAttr.Evaluate, False):
+                    self._run_in_pipeline_handler_cls(func, "cmp")
+                elif getattr(func, DecoratorInjectAttr.Predict, False):
+                    self._run_in_pipeline_handler_cls(func, "ppl")
+                else:
+                    func()
 
     def execute(self) -> TaskResult:
         logger.info(f"start to execute task with context({self.context}) ...")
