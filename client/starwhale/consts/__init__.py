@@ -17,9 +17,16 @@ ENV_SW_LOCAL_STORAGE = "SW_LOCAL_STORAGE"
 
 DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
+
+# evaluation related constants
 DEFAULT_EVALUATION_JOB_NAME = "default"
-DEFAULT_EVALUATION_JOBS_FNAME = "eval_jobs.yaml"
-DEFAULT_EVALUATION_SVC_META_FNAME = "svc.json"
+DEFAULT_EVALUATION_JOBS_FILE_NAME = "eval_jobs.yaml"
+EVALUATION_SVC_META_FILE_NAME = "svc.json"
+# auto generated evaluation panel layout file name from yaml or local console
+EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME = "eval_panel_layout.json"
+# user defined evaluation panel layout file name
+EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME = "eval_panel_layout.yaml"
+
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_CONFIG_VERSION = "2.0"
 DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL = 10 * 1024  # 10KB

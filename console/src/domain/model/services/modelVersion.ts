@@ -104,5 +104,5 @@ export async function fetchModelVersionPanelSetting(
     modelVersionId: string | undefined,
     token: string
 ) {
-    return fetchModelVersionFile(projectId, modelId, modelVersionId, token, 'panel.json')
+    return fetchModelVersionFile(projectId, modelId, modelVersionId, token, 'eval_panel_layout.json')
 }

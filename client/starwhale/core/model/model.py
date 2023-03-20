@@ -31,9 +31,11 @@ from starwhale.consts import (
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
-    DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
-    DEFAULT_EVALUATION_SVC_META_FNAME,
+    EVALUATION_SVC_META_FILE_NAME,
+    DEFAULT_EVALUATION_JOBS_FILE_NAME,
+    EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
+    EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
 )
 from starwhale.base.tag import StandaloneTag
@@ -223,7 +225,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
         # render spec
         svc = self._get_service(ppl, workdir, hijack=Hijack(True, rc_dir))
-        file = self.store.hidden_sw_dir / DEFAULT_EVALUATION_SVC_META_FNAME
+        file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
         ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
 
         if len(svc.example_resources) == 0:
@@ -239,6 +241,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         ensure_dir(dst)
         for f in svc.example_resources:
             shutil.copy2(f, dst)
+
+    def _render_eval_layout(self, workdir: Path) -> None:
+        # render eval layout
+        eval_layout = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME
+        if eval_layout.exists():
+            content = load_yaml(eval_layout)
+            dst = self.store.hidden_sw_dir / EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME
+            ensure_file(dst, json.dumps(content), parents=True)
 
     @staticmethod
     def _get_service(
@@ -319,11 +329,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
         ensure_dir(_run_dir)
 
-        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
+            yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
             generate_jobs_yaml(
                 run_handler=_model_config.run.handler,
                 workdir=workdir,
@@ -442,7 +452,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest = self._get_bundle_info()
         _store = self.store
         _om = {}
-        yaml_path = _store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FNAME
+        yaml_path = _store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
         if _store.snapshot_workdir.exists():
             if yaml_path.exists():
                 _om = load_yaml(yaml_path)
@@ -560,7 +570,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     workdir=workdir,
                     yaml_path=self.store.src_dir
                     / SW_AUTO_DIRNAME
-                    / DEFAULT_EVALUATION_JOBS_FNAME,
+                    / DEFAULT_EVALUATION_JOBS_FILE_NAME,
                 ),
             ),
             (
@@ -568,6 +578,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 10,
                 "generate model serving",
                 dict(ppl=_model_config.run.handler, workdir=workdir),
+            ),
+            (
+                self._render_eval_layout,
+                1,
+                "render eval layout",
+                dict(workdir=workdir),
             ),
             (
                 self._make_meta_tar,
