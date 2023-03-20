@@ -4,7 +4,6 @@ from collections import defaultdict
 
 import numpy as np
 import torch
-import torch._six
 import pycocotools.mask as mask_util
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -249,7 +248,7 @@ def loadRes(self, resFile):
 
     # print('Loading and preparing results...')
     # tic = time.time()
-    if isinstance(resFile, torch._six.string_classes):
+    if isinstance(resFile, (str, bytes)):
         anns = json.load(open(resFile))
     elif type(resFile) == np.ndarray:
         anns = self.loadNumpyAnnotations(resFile)
