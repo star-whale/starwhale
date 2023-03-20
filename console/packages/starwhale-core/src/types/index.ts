@@ -17,11 +17,11 @@ export type WidgetStoreState = {
     tree: WidgetTreeNode[]
     widgets: Record<string, any>
     defaults: Record<string, any>
-    onConfigChange: any
-    onLayoutOrderChange: any
-    onLayoutChildrenChange: any
-    onWidgetChange: any
-    onWidgetDelete: any
+    onConfigChange?: any
+    onLayoutOrderChange?: any
+    onLayoutChildrenChange?: any
+    onWidgetChange?: any
+    onWidgetDelete?: any
 }
 
 // -----------the config of options/field---------------

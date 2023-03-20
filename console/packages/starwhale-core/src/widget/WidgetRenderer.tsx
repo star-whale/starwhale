@@ -31,7 +31,7 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     }
 
     if (!widget) {
-        return <div>Loading widget...</div>
+        return <div>Loading widget {type}...</div>
     }
 
     if (!widget.renderer) {

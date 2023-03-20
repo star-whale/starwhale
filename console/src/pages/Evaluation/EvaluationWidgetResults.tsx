@@ -14,6 +14,7 @@ import { fetchPanelSetting, updatePanelSetting } from '@/domain/panel/services/p
 import { toaster } from 'baseui/toast'
 import { fetchModelVersionPanelSetting } from '@model/services/modelVersion'
 import { getToken } from '@/api'
+import { tryParseSimplified } from '@/domain/panel/utils'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -223,7 +224,9 @@ function EvaluationWidgetResults() {
 
     useEffect(() => {
         fetchModelVersionPanelSetting(projectId, job?.modelName, job?.modelVersion, getToken()).then((data) => {
-            updateLayout({ name: 'model-builtin', content: data })
+            if (!data) return
+            const layout = tryParseSimplified(data) ?? data
+            updateLayout({ name: 'model-builtin', content: layout })
         })
     }, [projectId, job, updateLayout])
 
@@ -232,7 +235,9 @@ function EvaluationWidgetResults() {
             return
         }
         fetchPanelSetting(projectId, storeKey).then((data) => {
-            const layout = { name: 'custom', content: data }
+            // try simplified version for standalone usage
+            const parsed = tryParseSimplified(JSON.parse(data)) ?? data
+            const layout = { name: 'custom', content: parsed }
             setCurrentLayout(layout)
             updateLayout(layout)
         })
