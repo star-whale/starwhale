@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.configuration.security;
 
 import de.codecentric.boot.admin.server.config.AdminServerProperties;
+import de.codecentric.boot.admin.server.config.SpringBootAdminServerEnabledCondition;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -39,6 +41,7 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Configuration
 @Order(0)
+@Conditional(SpringBootAdminServerEnabledCondition.class)
 public class AdminSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private AdminServerProperties adminServer;
