@@ -59,7 +59,8 @@ public class SwProcessException extends StarwhaleException {
         NETWORK("003", "NETWORK"),
         SYSTEM("004", "SYSTEM"),
         INFRA("005", "INFRA"),
-        DATASTORE("006", "DATASTORE");
+        DATASTORE("006", "DATASTORE"),
+        K8S("007", "Kubernetes");
         final String code;
         final String tipSubject;
 

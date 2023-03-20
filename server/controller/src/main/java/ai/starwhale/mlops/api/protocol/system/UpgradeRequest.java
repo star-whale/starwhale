@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.api.protocol.system;
 
-import ai.starwhale.mlops.common.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import lombok.AllArgsConstructor;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.validation.annotation.Validated;
 
-@EqualsAndHashCode(callSuper = false)
 @Data
-@SuperBuilder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+@Validated
+public class UpgradeRequest implements Serializable {
 
-    private Long id;
+    @NotNull
+    @JsonProperty("version")
+    private String version;
 
-    private String userName;
-
-    private String userPwd;
-
-    private String userPwdSalt;
-
-    private Integer userEnabled;
+    @NotNull
+    @JsonProperty("image")
+    private String image;
 
 }
