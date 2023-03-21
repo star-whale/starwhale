@@ -135,7 +135,7 @@ public class DataStore {
         }
     }
 
-    public void update(String tableName,
+    public String update(String tableName,
             TableSchemaDesc schema,
             List<Map<String, Object>> records) {
         if (schema != null && schema.getColumnSchemaList() != null) {
@@ -152,8 +152,9 @@ public class DataStore {
         //noinspection ConstantConditions
         table.lock();
         try {
-            table.update(schema, records);
+            var revision = table.update(schema, records);
             this.dirtyTables.put(table, "");
+            return revision;
         } finally {
             table.unlock();
         }
