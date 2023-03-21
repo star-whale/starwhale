@@ -104,7 +104,7 @@ spring:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
     # timezone setting: https://jira.mariadb.org/browse/CONJ-433
-    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
+    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/${SW_METADATA_STORAGE_DB:starwhale}?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true&serverTimezone=UTC&useLegacyDatetimeCode=false&sessionVariables=time_zone='%2B00:00'
     username: ${SW_METADATA_STORAGE_USER:starwhale}
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
   flyway:

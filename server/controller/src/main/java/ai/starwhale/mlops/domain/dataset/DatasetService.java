@@ -300,19 +300,19 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(Long datasetId, String uri, Long offset,
+    public byte[] dataOf(String project, String datasetName, String uri, Long offset,
             Long size) {
-        return dsFileGetter.dataOf(datasetId, uri, offset, size);
+        return dsFileGetter.dataOf(projectService.findProject(project).getId(), datasetName, uri, offset, size);
     }
 
-    public String signLink(Long id, String uri, Long expTimeMillis) {
-        return dsFileGetter.linkOf(id, uri, expTimeMillis);
+    public String signLink(String project, String datasetName, String uri, Long expTimeMillis) {
+        return dsFileGetter.linkOf(projectService.findProject(project).getId(), datasetName, uri, expTimeMillis);
     }
 
-    public Map<String, String> signLinks(Long id, Set<String> uris, Long expTimeMillis) {
+    public Map<String, String> signLinks(String project, String datasetName, Set<String> uris, Long expTimeMillis) {
         return uris.stream().collect(Collectors.toMap(u -> u, u -> {
             try {
-                return signLink(id, u, expTimeMillis);
+                return signLink(project, datasetName, u, expTimeMillis);
             } catch (Exception e) {
                 return "";
             }

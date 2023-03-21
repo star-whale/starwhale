@@ -27,7 +27,6 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
-import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
@@ -48,18 +47,17 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +75,6 @@ public class DatasetUploader {
      * prefix + / + fileName
      */
     static final String FORMATTER_STORAGE_PATH = "%s/%s";
-    static final String INDEX_FILE_NAME = "_meta.jsonl";
     static final Pattern PATTERN_SIGNATURE = Pattern.compile("\\d+:blake2b:(.*)");
     static final String DATASET_MANIFEST = "_manifest.yaml";
     final HotDatasetHolder hotDatasetHolder;
@@ -89,7 +86,6 @@ public class DatasetUploader {
     final HotJobHolder jobHolder;
     final ProjectService projectService;
     final DataStoreTableNameHelper dataStoreTableNameHelper;
-    final IndexWriter indexWriter;
     final DatasetDao datasetDao;
     final IdConverter idConvertor;
     final VersionAliasConverter versionAliasConvertor;
@@ -99,7 +95,6 @@ public class DatasetUploader {
             StorageAccessService storageAccessService, UserService userService,
             HotJobHolder jobHolder,
             ProjectService projectService, DataStoreTableNameHelper dataStoreTableNameHelper,
-            IndexWriter indexWriter,
             DatasetDao datasetDao, IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
         this.hotDatasetHolder = hotDatasetHolder;
         this.datasetMapper = datasetMapper;
@@ -110,7 +105,6 @@ public class DatasetUploader {
         this.jobHolder = jobHolder;
         this.projectService = projectService;
         this.dataStoreTableNameHelper = dataStoreTableNameHelper;
-        this.indexWriter = indexWriter;
         this.datasetDao = datasetDao;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
@@ -120,42 +114,15 @@ public class DatasetUploader {
         final DatasetVersionWithMeta swDatasetVersionEntityWithMeta = getDatasetVersion(uploadId);
         datasetVersionMapper.delete(swDatasetVersionEntityWithMeta.getDatasetVersion().getId());
         hotDatasetHolder.cancel(uploadId);
-        clearDatasetStorageData(swDatasetVersionEntityWithMeta.getDatasetVersion());
-
     }
 
-    private void clearDatasetStorageData(DatasetVersion datasetVersion) {
-        final String storagePath = datasetVersion.getStoragePath();
-        try {
-            Stream<String> files = storageAccessService.list(storagePath);
-            files.parallel().forEach(file -> {
-                try {
-                    storageAccessService.delete(file);
-                } catch (IOException e) {
-                    log.error("clear file failed {}", file, e);
-                }
-            });
-        } catch (IOException e) {
-            log.error("delete storage objects failed for {}", datasetVersion.getVersionName(), e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public void uploadBody(Long uploadId, MultipartFile file, String uri) {
+    public void uploadHashedBlob(Long uploadId, MultipartFile file, String blobHash) {
         final DatasetVersionWithMeta swDatasetVersionWithMeta = getDatasetVersion(uploadId);
         String filename = file.getOriginalFilename();
         try (InputStream inputStream = file.getInputStream()) {
-            if (INDEX_FILE_NAME.equals(filename)) {
-                try (InputStream anotherInputStream = file.getInputStream()) {
-                    indexWriter.writeToStore(swDatasetVersionWithMeta.getDatasetVersion().getIndexTable(),
-                            anotherInputStream);
-                }
-            }
-            final String storagePath = String.format(FORMATTER_STORAGE_PATH,
-                    swDatasetVersionWithMeta.getDatasetVersion().getStoragePath(),
-                    StringUtils.hasText(uri) ? uri : filename);
-            storageAccessService.put(storagePath, inputStream, file.getSize());
+            HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService,
+                    swDatasetVersionWithMeta.getDatasetVersion().getStoragePath());
+            hashNamedObjectStore.put(StringUtils.hasText(blobHash) ? blobHash : filename, inputStream);
         } catch (IOException e) {
             log.error("read dataset failed {}", filename, e);
             throw new StarwhaleApiException(new SwProcessException(ErrorType.NETWORK),
@@ -164,24 +131,17 @@ public class DatasetUploader {
 
     }
 
-    private void uploadDatasetFileToStorage(String filename, byte[] fileBytes,
-            DatasetVersionEntity datasetVersionEntity) {
-        final String storagePath = String.format(FORMATTER_STORAGE_PATH, datasetVersionEntity.getStoragePath(),
-                filename);
-        try {
-            storageAccessService.put(storagePath, fileBytes);
+    public String uploadHashedBlob(String projectName, String datasetName, MultipartFile file, String blobHash) {
+        Long projectId = projectService.findProject(projectName).getId();
+        String datasetBlobPath = storagePathCoordinator.allocateDatasetPath(projectId, datasetName);
+        HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService, datasetBlobPath);
+        String filename = file.getOriginalFilename();
+        try (InputStream inputStream = file.getInputStream()) {
+            return hashNamedObjectStore.put(StringUtils.hasText(blobHash) ? blobHash : filename, inputStream);
         } catch (IOException e) {
-            log.error("upload dataset to failed {}", filename, e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("write dataset blob file failed {}", filename, e);
+            throw new SwProcessException(ErrorType.NETWORK, "write dataset blob file failed", e);
         }
-    }
-
-    private boolean fileUploaded(DatasetVersionWithMeta datasetVersionWithMeta, String filename,
-            String digest) {
-        Map<String, String> uploadedFileBlake2bs = datasetVersionWithMeta.getVersionMeta()
-                .getUploadedFileBlake2bs();
-        return digest.equals(uploadedFileBlake2bs.get(filename));
     }
 
     DatasetVersionWithMeta getDatasetVersion(Long uploadId) {
@@ -191,21 +151,6 @@ public class DatasetUploader {
                         () -> new StarwhaleApiException(
                                 new SwValidationException(ValidSubject.DATASET, "uploadId invalid"),
                                 HttpStatus.BAD_REQUEST));
-    }
-
-    void uploadManifest(DatasetVersionEntity datasetVersionEntity, String fileName, byte[] bytes) {
-        uploadDatasetFileToStorage(fileName, bytes, datasetVersionEntity);
-    }
-
-    void reUploadManifest(DatasetVersionEntity datasetVersionEntity, String fileName, byte[] bytes) {
-        final String storagePath = String.format(FORMATTER_STORAGE_PATH, datasetVersionEntity.getStoragePath(),
-                fileName);
-        try {
-            storageAccessService.delete(storagePath);
-        } catch (IOException e) {
-            log.warn("dataset delete to failed {}", fileName, e);
-        }
-        uploadManifest(datasetVersionEntity, fileName, bytes);
     }
 
     @Transactional
@@ -245,9 +190,8 @@ public class DatasetUploader {
                     datasetDao,
                     datasetDao
             ), datasetDao).revertVersionTo(datasetEntity.getId(), datasetVersionEntity.getId());
-            uploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
         } else {
-            // dataset version create dup
+            // dataset already created
             if (datasetVersionEntity.getStatus().equals(DatasetVersion.STATUS_AVAILABLE)) {
                 if (uploadRequest.force()) {
                     Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
@@ -264,18 +208,12 @@ public class DatasetUploader {
                     }
                 } else {
                     throw new SwValidationException(ValidSubject.DATASET,
-                            " same dataset version can't be uploaded twice");
+                            " same dataset version can't be uploaded twice without force option");
                 }
-
-            }
-            if (!yamlContent.equals(datasetVersionEntity.getVersionMeta())) {
+            } else {
+                // dataset is being created
                 datasetVersionEntity.setVersionMeta(yamlContent);
-                // if manifest(signature) change, all files should be re-uploaded
-                datasetVersionEntity.setFilesUploaded("");
-                clearDatasetStorageData(DatasetVersion.fromEntity(datasetEntity, datasetVersionEntity));
-                datasetVersionMapper.updateFilesUploaded(datasetVersionEntity.getId(),
-                        datasetVersionEntity.getFilesUploaded());
-                reUploadManifest(datasetVersionEntity, fileName, yamlContent.getBytes(StandardCharsets.UTF_8));
+                datasetVersionMapper.update(datasetVersionEntity);
             }
         }
 
@@ -287,8 +225,7 @@ public class DatasetUploader {
     private DatasetVersionEntity from(Long projectId, DatasetEntity datasetEntity, Manifest manifest) {
         return DatasetVersionEntity.builder().datasetId(datasetEntity.getId())
                 .ownerId(getOwner())
-                .storagePath(storagePathCoordinator.allocateDatasetPath(projectId, datasetEntity.getDatasetName(),
-                        manifest.getVersion()))
+                .storagePath(storagePathCoordinator.allocateDatasetPath(projectId, datasetEntity.getDatasetName()))
                 .versionMeta(manifest.getRawYaml())
                 .versionName(manifest.getVersion())
                 .size(manifest.getDatasetSummary().getRows())
@@ -324,7 +261,11 @@ public class DatasetUploader {
         hotDatasetHolder.end(uploadId);
     }
 
-    public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
+
+    /**
+     * legacy dataset file pull interface. Use
+     */
+    public void pull(String project, String name, String version, String blobHash, HttpServletResponse httpResponse) {
         BundleManager bundleManager = new BundleManager(idConvertor, versionAliasConvertor,
                 projectService, datasetDao, datasetDao);
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(project, name, version));
@@ -332,23 +273,28 @@ public class DatasetUploader {
         if (null == datasetVersionEntity) {
             throw new SwValidationException(ValidSubject.DATASET, "dataset version doesn't exists");
         }
-        if (!StringUtils.hasText(partName)) {
-            partName = DATASET_MANIFEST;
-        }
-        try (InputStream inputStream = storageAccessService.get(
-                datasetVersionEntity.getStoragePath() + "/" + partName.trim());
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            long length = inputStream.transferTo(outputStream);
-            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + fileNameFromUri(partName) + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
-            outputStream.flush();
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);
-        }
-    }
+        if (!StringUtils.hasText(blobHash) || DATASET_MANIFEST.equalsIgnoreCase(blobHash)) {
+            try (ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+                String versionMeta = datasetVersionEntity.getVersionMeta();
+                outputStream.write(versionMeta.getBytes(StandardCharsets.UTF_8));
+                httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + DATASET_MANIFEST + "\"");
+                httpResponse.addHeader("Content-Length", String.valueOf(versionMeta.length()));
+                outputStream.flush();
+            } catch (IOException e) {
+                throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);
+            }
 
-    String fileNameFromUri(String uri) {
-        String[] split = uri.split("/");
-        return split[split.length - 1];
+        } else {
+            try (InputStream inputStream = new HashNamedObjectStore(storageAccessService,
+                    datasetVersionEntity.getStoragePath()).get(blobHash.trim());
+                    ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+                long length = inputStream.transferTo(outputStream);
+                httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");
+                httpResponse.addHeader("Content-Length", String.valueOf(length));
+                outputStream.flush();
+            } catch (IOException e) {
+                throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);
+            }
+        }
     }
 }

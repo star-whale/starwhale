@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -43,10 +43,13 @@ public class DsFileGetter {
     final StorageAccessParser storageAccessParser;
     final DatasetVersionMapper datasetVersionMapper;
 
+    final StoragePathCoordinator storagePathCoordinator;
+
     public DsFileGetter(StorageAccessParser storageAccessParser,
-            DatasetVersionMapper datasetVersionMapper) {
+            DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator) {
         this.storageAccessParser = storageAccessParser;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.storagePathCoordinator = storagePathCoordinator;
     }
 
     @NotNull
@@ -68,7 +71,7 @@ public class DsFileGetter {
         return sizeLong > 0 && offsetLong >= 0;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, Long offset,
+    public byte[] dataOf(Long projectId, String datasetName, String uri, Long offset,
             Long size) {
         StorageUri storageUri = getStorageUri(uri);
         if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
@@ -84,7 +87,7 @@ public class DsFileGetter {
         }
         StorageAccessService storageAccessService =
                 storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
-        String path = checkPath(datasetId, storageUri);
+        String path = findPath(projectId, datasetName, storageUri);
         try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
                 offset, size) : storageAccessService.get(path)) {
             return inputStream.readAllBytes();
@@ -95,13 +98,13 @@ public class DsFileGetter {
         }
     }
 
-    public String linkOf(Long datasetId, String uri, Long expTimeMillis) {
+    public String linkOf(Long projectId, String datasetName, String uri, Long expTimeMillis) {
         StorageUri storageUri = getStorageUri(uri);
         if (null != storageUri.getSchema() && SCHEME_HTTP.contains(storageUri.getSchema())) {
             return uri;
         }
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);
-        String path = checkPath(datasetId, storageUri);
+        String path = findPath(projectId, datasetName, storageUri);
         try {
             return storageAccessService.signedUrl(path, expTimeMillis);
         } catch (IOException e) {
@@ -109,13 +112,13 @@ public class DsFileGetter {
         }
     }
 
-    private String checkPath(Long datasetId, StorageUri uri) {
+    private String findPath(Long projectId, String datasetName, StorageUri uri) {
         String path = uri.getPathAfterBucket();
         if (StringUtils.hasText(uri.getSchema())) {
             return path;
         }
-        DatasetVersionEntity versionById = datasetVersionMapper.find(datasetId);
-        return StringUtils.trimTrailingCharacter(versionById.getStoragePath(), '/') + "/"
+        String datasetPath = storagePathCoordinator.allocateDatasetPath(projectId, datasetName);
+        return StringUtils.trimTrailingCharacter(datasetPath, '/') + "/"
                 + StringUtils.trimLeadingCharacter(path, '/');
     }
 }

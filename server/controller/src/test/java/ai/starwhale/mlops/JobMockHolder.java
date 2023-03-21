@@ -42,7 +42,7 @@ public class JobMockHolder {
 
         String jobuuid = UUID.randomUUID().toString();
         String jobDir = storagePathCoordinator.allocateResultMetricsPath(jobuuid);
-        String datasetPath = storagePathCoordinator.allocateDatasetPath(1L, "swds1", "versionswds1");
+        String datasetPath = storagePathCoordinator.allocateDatasetVersionPath(1L, "swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
                 .id(atomicLong.incrementAndGet())

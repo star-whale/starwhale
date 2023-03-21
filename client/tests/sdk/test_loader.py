@@ -376,7 +376,7 @@ class TestDataLoader(TestCase):
 
         signed_url = "http://minio/signed/path/file"
         rm.post(
-            "http://127.0.0.1:1234/api/v1/project/self/dataset/mnist/version/1122334455667788/sign-links",
+            "http://127.0.0.1:1234/api/v1/project/self/dataset/mnist/blob/sign-links",
             json={"data": {fname: signed_url}},
         )
         rm.get(
@@ -637,7 +637,7 @@ class TestDataLoader(TestCase):
         raw_content = b"abcdefg"
         req_get_file = rm.register_uri(HTTPMethod.GET, "/get-file", content=raw_content)
         rm.post(
-            "http://localhost/api/v1/project/x/dataset/mnist/version/1122/sign-links",
+            "http://localhost/api/v1/project/x/dataset/mnist/blob/sign-links",
             json={"data": _uri_dict},
         )
         rm.get(

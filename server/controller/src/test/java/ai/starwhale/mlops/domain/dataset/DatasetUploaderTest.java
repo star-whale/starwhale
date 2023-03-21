@@ -32,7 +32,6 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
-import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
@@ -71,8 +70,6 @@ public class DatasetUploaderTest {
 
     final DataStoreTableNameHelper dataStoreTableNameHelper = new DataStoreTableNameHelper();
 
-    final IndexWriter indexWriter = mock(IndexWriter.class);
-
     @Test
     public void testDatasetUploader() throws IOException {
         DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter();
@@ -103,7 +100,7 @@ public class DatasetUploaderTest {
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService,
-                hotJobHolder, projectService, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
+                hotJobHolder, projectService, dataStoreTableNameHelper, datasetDao, idConvertor,
                 versionAliasConvertor);
 
         DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
@@ -112,7 +109,7 @@ public class DatasetUploaderTest {
         uploadRequest.setUploadId(dsVersionId);
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
-        datasetUploader.uploadBody(
+        datasetUploader.uploadHashedBlob(
                 dsVersionId,
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
                 "abc/index.jsonl");

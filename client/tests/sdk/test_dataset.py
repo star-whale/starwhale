@@ -1079,7 +1079,7 @@ class TestDatasetType(TestCase):
 
         rm.request(
             HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/version/latest/sign-links?expTimeMillis=60000",
+            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/blob/sign-links?expTimeMillis=60000",
             json={
                 "data": {
                     "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"
