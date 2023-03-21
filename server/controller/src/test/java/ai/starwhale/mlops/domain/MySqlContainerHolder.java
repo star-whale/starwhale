@@ -21,7 +21,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class MySqlContainerHolder {
+public abstract class MySqlContainerHolder {
 
     public static MySQLContainer<?> mySqlDB;
 
@@ -29,6 +29,14 @@ public class MySqlContainerHolder {
         mySqlDB = new MySQLContainer<>(
                 DockerImageName.parse("docker.io/bitnami/mysql:8.0.29-debian-10-r2").asCompatibleSubstituteFor("mysql"))
                 .withDatabaseName("arbitrary_dbname")
+                .withUrlParam("useUnicode", "true")
+                .withUrlParam("characterEncoding", "UTF-8")
+                .withUrlParam("createDatabaseIfNotExist", "true")
+                //.withUrlParam("allowMultiQueries", "true")
+                .withUrlParam("useJDBCCompliantTimezoneShift", "true")
+                .withUrlParam("serverTimezone", "UTC")
+                .withUrlParam("useLegacyDatetimeCode", "false")
+                .withUrlParam("sessionVariables", "time_zone='%2B00:00'")
                 .withUsername("arbitrary_username")
                 .withPassword("arbitrary_pwd");
 
