@@ -28,13 +28,15 @@ import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
-import ai.starwhale.mlops.datastore.ColumnTypeScalar;
+import ai.starwhale.mlops.datastore.ColumnSchema;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.exporter.RecordsExporter;
+import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -44,6 +46,7 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
@@ -58,6 +61,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.api-prefix}")
 @Slf4j
 public class DataStoreController implements DataStoreApi {
+
+    private static final Pattern COLUMN_NAME_PATTERN = Pattern.compile("^[\\p{Alnum}-_/: ]*$");
 
     @Resource
     @Setter
@@ -79,9 +84,13 @@ public class DataStoreController implements DataStoreApi {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "table name should not be null");
             }
+            if (request.getTableSchemaDesc() == null) {
+                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
+                        "table schema should not be null");
+            }
             List<Map<String, Object>> records;
             if (request.getRecords() == null) {
-                records = null;
+                records = List.of();
             } else {
                 records = request.getRecords()
                         .stream()
@@ -101,7 +110,7 @@ public class DataStoreController implements DataStoreApi {
             var revision = this.dataStore.update(request.getTableName(), request.getTableSchemaDesc(), records);
             return ResponseEntity.ok(Code.success.asResponse(revision));
         } catch (SwValidationException e) {
-            throw new SwValidationException(e, "request=" + request);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         }
     }
 
@@ -115,14 +124,15 @@ public class DataStoreController implements DataStoreApi {
     public ResponseEntity<ResponseMessage<RecordListVo>> queryTable(QueryTableRequest request) {
         try {
             RecordList recordList = queryRecordList(request);
-            return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeMap().entrySet().stream()
-                            .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
-                            .collect(Collectors.toList()))
-                    .records(recordList.getRecords())
-                    .build()));
+            var vo = RecordListVo.builder().records(recordList.getRecords());
+            if (!request.isEncodeWithType()) {
+                vo.columnTypes(recordList.getColumnSchemaMap().values().stream()
+                        .map(ColumnSchema::toColumnSchemaDesc)
+                        .collect(Collectors.toList()));
+            }
+            return ResponseEntity.ok(Code.success.asResponse(vo.build()));
         } catch (SwValidationException e) {
-            throw new SwValidationException(e, "request=" + request);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         }
     }
 
@@ -153,23 +163,28 @@ public class DataStoreController implements DataStoreApi {
                             })
                             .collect(Collectors.toList()))
                     .start(request.getStart())
-                    .end(request.getEnd())
+                    .startType(request.getStartType())
                     .startInclusive(request.isStartInclusive())
+                    .end(request.getEnd())
+                    .endType(request.getEndType())
                     .endInclusive(request.isEndInclusive())
                     .limit(request.getLimit())
                     .keepNone(request.isKeepNone())
                     .rawResult(request.isRawResult())
+                    .encodeWithType(request.isEncodeWithType())
                     .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                     .build());
-            return ResponseEntity.ok(Code.success.asResponse(RecordListVo.builder()
-                    .columnTypes(recordList.getColumnTypeMap().entrySet().stream()
-                            .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
-                            .collect(Collectors.toList()))
+            var vo = RecordListVo.builder()
                     .records(recordList.getRecords())
-                    .lastKey(recordList.getLastKey())
-                    .build()));
+                    .lastKey(recordList.getLastKey());
+            if (!request.isEncodeWithType()) {
+                vo.columnTypes(recordList.getColumnSchemaMap().values().stream()
+                        .map(ColumnSchema::toColumnSchemaDesc)
+                        .collect(Collectors.toList()));
+            }
+            return ResponseEntity.ok(Code.success.asResponse(vo.build()));
         } catch (SwValidationException e) {
-            throw new SwValidationException(e, "request=" + request);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         }
     }
 
@@ -185,7 +200,7 @@ public class DataStoreController implements DataStoreApi {
             outputStream.write(bytes);
             outputStream.flush();
         } catch (SwValidationException e) {
-            throw new SwValidationException(e, "request=" + request);
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
         } catch (IOException e) {
             log.error("writing response failed", e);
             throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
@@ -206,6 +221,7 @@ public class DataStoreController implements DataStoreApi {
                 .limit(request.getLimit())
                 .keepNone(request.isKeepNone())
                 .rawResult(request.isRawResult())
+                .encodeWithType(request.isEncodeWithType())
                 .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
                 .build());
     }
@@ -242,7 +258,7 @@ public class DataStoreController implements DataStoreApi {
             case OR:
                 if (input.getOperands().size() < 2) {
                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        "'AND'/'OR' should have 2 operands at least. " + input);
+                            "'AND'/'OR' should have 2 operands at least. " + input);
                 }
                 break;
             case EQUAL:
@@ -316,22 +332,22 @@ public class DataStoreController implements DataStoreApi {
             return new TableQueryFilter.Column(operand.getColumnName());
         }
         if (operand.getBoolValue() != null) {
-            return new TableQueryFilter.Constant(ColumnTypeScalar.BOOL, operand.getBoolValue());
+            return new TableQueryFilter.Constant(ColumnType.BOOL, operand.getBoolValue());
         }
         if (operand.getIntValue() != null) {
-            return new TableQueryFilter.Constant(ColumnTypeScalar.INT64, operand.getIntValue());
+            return new TableQueryFilter.Constant(ColumnType.INT64, operand.getIntValue());
         }
         if (operand.getFloatValue() != null) {
-            return new TableQueryFilter.Constant(ColumnTypeScalar.FLOAT64, operand.getFloatValue());
+            return new TableQueryFilter.Constant(ColumnType.FLOAT64, operand.getFloatValue());
         }
         if (operand.getStringValue() != null) {
-            return new TableQueryFilter.Constant(ColumnTypeScalar.STRING, operand.getStringValue());
+            return new TableQueryFilter.Constant(ColumnType.STRING, operand.getStringValue());
         }
         if (operand.getBytesValue() != null) {
-            return new TableQueryFilter.Constant(ColumnTypeScalar.BYTES,
-                    ColumnTypeScalar.BYTES.decode(operand.getBytesValue()));
+            return new TableQueryFilter.Constant(ColumnType.BYTES,
+                    RecordDecoder.decodeScalar(ColumnType.BYTES, operand.getBytesValue()));
         }
-        return new TableQueryFilter.Constant(ColumnTypeScalar.UNKNOWN, null);
+        return new TableQueryFilter.Constant(null, null);
     }
 
     private static Map<String, String> convertColumns(List<ColumnDesc> columns) {

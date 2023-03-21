@@ -14,23 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+package ai.starwhale.mlops.datastore.type;
 
-import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-public class RecordList {
-
-    private Map<String, ColumnSchema> columnSchemaMap;
-    private List<Map<String, Object>> records;
-    private String lastKey;
-    private String lastKeyType;
+public interface FloatValue extends ScalarValue {
+    double doubleValue();
 }

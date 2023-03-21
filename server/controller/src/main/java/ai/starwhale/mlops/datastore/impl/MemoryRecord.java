@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
+import ai.starwhale.mlops.datastore.type.BaseValue;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +27,6 @@ public class MemoryRecord {
 
     private long timestamp;
     private boolean deleted;
-    private Map<String, Object> values;
+    private Map<String, BaseValue> values;
 
 }

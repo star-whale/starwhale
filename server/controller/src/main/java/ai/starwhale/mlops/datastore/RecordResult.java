@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.datastore.type.BaseValue;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,7 +25,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class RecordResult {
 
-    private Object key;
+    private BaseValue key;
     private boolean deleted;
-    private Map<String, Object> values;
+    private Map<String, BaseValue> values;
 }

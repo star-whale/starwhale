@@ -38,15 +38,9 @@ public class SwValidationException extends StarwhaleException {
     }
 
     public SwValidationException(ValidSubject validSubject, String tip, Throwable cause) {
-        super(PREFIX_TIP + validSubject.tipSubject + "\n" + tip, cause);
+        super(PREFIX_TIP + validSubject.tipSubject + "\n" + cause.getMessage() + "\n" + tip, cause);
         this.code = PREFIX_CODE + validSubject.tipSubject;
-        this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
-    }
-
-    public SwValidationException(SwValidationException e, String tip) {
-        super(e.getTip() + "\n" + tip, e.getCause());
-        this.code = e.getCode();
-        this.tip = e.getTip() + "\n" + tip;
+        this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + cause.getMessage() + "\n" + tip;
     }
 
     @Override

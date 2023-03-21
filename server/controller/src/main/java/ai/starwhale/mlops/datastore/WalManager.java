@@ -339,60 +339,6 @@ public class WalManager extends Thread {
         }
     }
 
-    public static TableSchemaDesc parseTableSchema(Wal.TableSchema tableSchema) {
-        var ret = new TableSchemaDesc();
-        var keyColumn = tableSchema.getKeyColumn();
-        if (!keyColumn.isEmpty()) {
-            ret.setKeyColumn(keyColumn);
-        }
-        var columnList = new ArrayList<>(tableSchema.getColumnsList());
-        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
-        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
-        for (var col : columnList) {
-            var colDesc = WalManager.parseColumnSchema(col);
-            columnSchemaList.add(colDesc);
-        }
-        ret.setColumnSchemaList(columnSchemaList);
-        return ret;
-    }
-
-    public static ColumnSchemaDesc parseColumnSchema(Wal.ColumnSchema columnSchema) {
-        var ret = ColumnSchemaDesc.builder()
-                .name(columnSchema.getColumnName())
-                .type(columnSchema.getColumnType());
-        if (!columnSchema.getPythonType().isEmpty()) {
-            ret.pythonType(columnSchema.getPythonType());
-        }
-        if (columnSchema.hasElementType()) {
-            ret.elementType(WalManager.parseColumnSchema(columnSchema.getElementType()));
-        }
-        if (columnSchema.hasKeyType()) {
-            ret.keyType(WalManager.parseColumnSchema(columnSchema.getKeyType()));
-        }
-        if (columnSchema.hasValueType()) {
-            ret.valueType(WalManager.parseColumnSchema(columnSchema.getValueType()));
-        }
-        if (columnSchema.getAttributesCount() > 0) {
-            ret.attributes(columnSchema.getAttributesList().stream()
-                    .map(WalManager::parseColumnSchema)
-                    .collect(Collectors.toList()));
-        }
-        return ret.build();
-    }
-
-    public static Wal.TableSchema.Builder convertTableSchema(TableSchema schema) {
-        var builder = Wal.TableSchema.newBuilder();
-        builder.setKeyColumn(schema.getKeyColumn());
-        for (var col : schema.getColumnSchemas()) {
-            builder.addColumns(WalManager.convertColumnSchema(col));
-        }
-        return builder;
-    }
-
-    public static Wal.ColumnSchema.Builder convertColumnSchema(ColumnSchema schema) {
-        return schema.getType().newWalColumnSchema(schema.getIndex(), schema.getName());
-    }
-
     private enum PopulationStatus {
         TERMINATED,
         BUFFER_FULL,

@@ -18,14 +18,12 @@ package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SwValidationException;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -39,68 +37,62 @@ import lombok.extern.slf4j.Slf4j;
 public class TableSchema {
 
     @Getter
-    private final String keyColumn;
+    private String keyColumn;
+
+    private final Map<String, Integer> columnSchemaIndex = new HashMap<>();
+
     @Getter
-    private final ColumnType keyColumnType;
-    private final Map<String, ColumnSchema> columnSchemaMap;
-    private final Map<Integer, ColumnSchema> columnSchemaIndexMap;
-    private int maxColumnIndex;
+    private final List<ColumnSchema> columnSchemaList = new ArrayList<>();
 
-    public TableSchema(@NonNull TableSchemaDesc schema) {
-        this.keyColumn = schema.getKeyColumn();
-        if (this.keyColumn == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "key column should not be null");
-        }
-        this.columnSchemaMap = new HashMap<>();
-        if (schema.getColumnSchemaList() == null || schema.getColumnSchemaList().isEmpty()) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "columnSchemaList should not be empty");
-        }
-        for (var col : schema.getColumnSchemaList()) {
-            var colSchema = new ColumnSchema(col, this.maxColumnIndex++);
-            if (this.columnSchemaMap.putIfAbsent(col.getName(), colSchema) != null) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        "duplicate column name " + col.getName());
-            }
-        }
-        this.columnSchemaIndexMap = this.columnSchemaMap.values().stream()
-                .collect(Collectors.toMap(ColumnSchema::getIndex, Function.identity()));
-        var keyColumnSchema = this.columnSchemaMap.get(keyColumn);
-        if (keyColumnSchema == null) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "key column " + keyColumn + " not found in column schemas");
-        }
-        this.keyColumnType = keyColumnSchema.getType();
-        if (!(this.keyColumnType instanceof ColumnTypeScalar)) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "key column " + keyColumn + " should be of scalar type");
-        }
-        if (this.keyColumnType == ColumnTypeScalar.UNKNOWN) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    "key column " + keyColumn + " should not be of type UNKNOWN");
-        }
+    public TableSchema() {
     }
-
 
     public TableSchema(@NonNull TableSchema schema) {
         this.keyColumn = schema.keyColumn;
-        this.keyColumnType = schema.keyColumnType;
-        this.columnSchemaMap = new HashMap<>(schema.columnSchemaMap);
-        this.columnSchemaIndexMap = new HashMap<>(schema.columnSchemaIndexMap);
-        this.maxColumnIndex = schema.maxColumnIndex;
+        for (var col : schema.columnSchemaList) {
+            this.columnSchemaIndex.put(col.getName(), col.getIndex());
+            this.columnSchemaList.add(new ColumnSchema(col));
+        }
     }
 
+    public TableSchema(@NonNull TableSchemaDesc schema) {
+        this.keyColumn = schema.getKeyColumn();
+        if (schema.getColumnSchemaList() != null) {
+            for (var col : schema.getColumnSchemaList()) {
+                var index = this.columnSchemaList.size();
+                this.columnSchemaIndex.put(col.getName(), index);
+                this.columnSchemaList.add(new ColumnSchema(col, index));
+            }
+        }
+    }
 
     public TableSchema(@NonNull Wal.TableSchema schema) {
         this.keyColumn = schema.getKeyColumn();
-        this.columnSchemaMap = schema.getColumnsList().stream()
-                .map(ColumnSchema::new)
-                .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
-        this.columnSchemaIndexMap = this.columnSchemaMap.values().stream()
-                .collect(Collectors.toMap(ColumnSchema::getIndex, Function.identity()));
-        this.keyColumnType = this.columnSchemaMap.get(keyColumn).getType();
-        this.maxColumnIndex = this.columnSchemaIndexMap.keySet().stream().mapToInt(v -> v).max().orElse(-1) + 1;
+        for (var col : schema.getColumnsList()) {
+            this.columnSchemaIndex.put(col.getColumnName(), col.getColumnIndex());
+            while (col.getColumnIndex() >= this.columnSchemaList.size()) {
+                this.columnSchemaList.add(null);
+            }
+            this.columnSchemaList.set(col.getColumnIndex(), new ColumnSchema(col));
+        }
+    }
+
+    public ColumnSchema getKeyColumnSchema() {
+        return this.columnSchemaList.get(this.columnSchemaIndex.get(this.keyColumn));
+    }
+
+    public TableSchemaDesc toTableSchemaDesc() {
+        return new TableSchemaDesc(this.keyColumn,
+                this.columnSchemaList.stream().map(ColumnSchema::toColumnSchemaDesc).collect(Collectors.toList()));
+    }
+
+    public Wal.TableSchema.Builder toWal() {
+        var builder = Wal.TableSchema.newBuilder();
+        builder.setKeyColumn(this.keyColumn);
+        for (var col : this.columnSchemaList) {
+            builder.addColumns(col.toWal());
+        }
+        return builder;
     }
 
     public static TableSchema fromJsonString(String schemaStr) {
@@ -115,72 +107,69 @@ public class TableSchema {
 
     public String toJsonString() {
         try {
-            return JsonFormat.printer().print(WalManager.convertTableSchema(this));
+            return JsonFormat.printer().print(this.toWal());
         } catch (InvalidProtocolBufferException e) {
             throw new SwProcessException(ErrorType.DATASTORE, "failed to print proto", e);
         }
     }
 
+    public Wal.TableSchema.Builder getDiff(@NonNull TableSchemaDesc schema) {
+        Wal.TableSchema.Builder ret = null;
+        if (this.keyColumn == null) {
+            if (schema.getKeyColumn() == null) {
+                throw new IllegalArgumentException("no key column");
+            }
+            ret = Wal.TableSchema.newBuilder().setKeyColumn(schema.getKeyColumn());
+        }
+        var nextIndex = this.columnSchemaList.size();
+        for (var col : schema.getColumnSchemaList()) {
+            var index = this.columnSchemaIndex.get(col.getName());
+            ColumnSchema columnSchema;
+            if (index == null) {
+                index = nextIndex++;
+                columnSchema = new ColumnSchema(col.getName(), index);
+            } else {
+                columnSchema = this.columnSchemaList.get(index);
+            }
+            var wal = columnSchema.getDiff(col);
+            if (wal != null) {
+                if (ret == null) {
+                    ret = Wal.TableSchema.newBuilder();
+                }
+                ret.addColumns(wal.setColumnName(col.getName()).setColumnIndex(index));
+            }
+        }
+        return ret;
+    }
+
+    public void update(@NonNull Wal.TableSchema schema) {
+        if (this.keyColumn == null) {
+            this.keyColumn = schema.getKeyColumn();
+        }
+        for (var col : schema.getColumnsList()) {
+            var index = col.getColumnIndex();
+            while (index >= this.columnSchemaList.size()) {
+                this.columnSchemaList.add(null);
+            }
+            ColumnSchema columnSchema = this.columnSchemaList.get(index);
+            if (columnSchema == null) {
+                columnSchema = new ColumnSchema(col.getColumnName(), index);
+                this.columnSchemaIndex.put(col.getColumnName(), index);
+                this.columnSchemaList.set(index, columnSchema);
+            }
+            columnSchema.update(col);
+        }
+    }
+
     public ColumnSchema getColumnSchemaByName(@NonNull String name) {
-        return this.columnSchemaMap.get(name);
+        var index = this.columnSchemaIndex.get(name);
+        if (index == null) {
+            return null;
+        }
+        return this.getColumnSchemaByIndex(index);
     }
 
     public ColumnSchema getColumnSchemaByIndex(int index) {
-        return this.columnSchemaIndexMap.get(index);
-    }
-
-    public List<ColumnSchema> getColumnSchemas() {
-        return List.copyOf(this.columnSchemaMap.values());
-    }
-
-    public List<ColumnSchema> merge(@NonNull TableSchemaDesc schema) {
-        if (schema.getKeyColumn() != null && !this.keyColumn.equals(schema.getKeyColumn())) {
-            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                    MessageFormat.format(
-                            "can not merge two schemas with different key columns, expected {0}, actual {1}",
-                            this.keyColumn,
-                            schema.getKeyColumn()));
-        }
-        var columnSchemaMap = new HashMap<String, ColumnSchema>();
-        var columnIndex = this.maxColumnIndex;
-        for (var col : schema.getColumnSchemaList()) {
-            var current = this.columnSchemaMap.get(col.getName());
-            var colSchema = new ColumnSchema(col, current == null ? columnIndex++ : current.getIndex());
-            if (current == null) {
-                columnSchemaMap.put(col.getName(), colSchema);
-            } else if (!current.getType().equals(colSchema.getType())) {
-                if (current.getType() == ColumnTypeScalar.UNKNOWN) {
-                    columnSchemaMap.put(col.getName(), colSchema);
-                } else if (colSchema.getType() != ColumnTypeScalar.UNKNOWN) {
-                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format("conflicting type for column {0}, expected {1}, actual {2}",
-                                    col.getName(), current.getType(), col.getType()));
-                }
-            }
-        }
-        this.columnSchemaMap.putAll(columnSchemaMap);
-        for (var col : columnSchemaMap.values()) {
-            this.columnSchemaIndexMap.put(col.getIndex(), col);
-        }
-        this.maxColumnIndex = columnIndex;
-        return List.copyOf(columnSchemaMap.values());
-    }
-
-    public Map<String, ColumnType> getColumnTypeMapping() {
-        return this.columnSchemaMap.values().stream().collect(Collectors.toMap(
-                ColumnSchema::getName, ColumnSchema::getType));
-    }
-
-    public Map<String, ColumnType> getColumnTypeMapping(@NonNull Map<String, String> columnAliases) {
-        var ret = new HashMap<String, ColumnType>();
-        for (var entry : columnAliases.entrySet()) {
-            var columnSchema = this.columnSchemaMap.get(entry.getKey());
-            if (columnSchema == null) {
-                throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                        "column name " + entry.getKey() + " not found");
-            }
-            ret.put(entry.getValue(), columnSchema.getType());
-        }
-        return ret;
+        return this.columnSchemaList.get(index);
     }
 }

@@ -16,24 +16,23 @@
 
 package ai.starwhale.mlops.domain.dataset.index.datastore;
 
-import ai.starwhale.mlops.api.DataStoreController;
-import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
-import ai.starwhale.mlops.api.protocol.datastore.RecordValueDesc;
-import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
-import ai.starwhale.mlops.datastore.ColumnTypeScalar;
+import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.datastore.type.BaseValue;
+import ai.starwhale.mlops.datastore.type.Float64Value;
+import ai.starwhale.mlops.datastore.type.Int64Value;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,11 +46,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class IndexWriter {
 
-    final DataStoreController dataStore;
+    final DataStore dataStore;
 
     final ObjectMapper objectMapper;
 
-    public IndexWriter(DataStoreController dataStore,
+    public IndexWriter(DataStore dataStore,
             ObjectMapper objectMapper) {
         this.dataStore = dataStore;
         this.objectMapper = objectMapper;
@@ -59,22 +58,36 @@ public class IndexWriter {
 
     public void writeToStore(String tableName, InputStream jsonLine) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(jsonLine))) {
-            List<RecordDesc> records = new LinkedList<>();
+            var schemaMap = new HashMap<String, ColumnType>();
+            List<Map<String, Object>> records = new ArrayList<>();
             String strLine;
-            Map<String, ColumnType> tableSchemaMap = null;
             while ((strLine = br.readLine()) != null) {
-                if (null == tableSchemaMap) {
-                    tableSchemaMap = inferenceTableSchema(strLine);
-                }
-                Map<String, Object> indexItem = objectMapper.readValue(strLine, Map.class);
-                records.add(toRecordDesc(indexItem, tableSchemaMap));
+                var indexItem = new HashMap<String, Object>();
+                var valueMap = objectMapper.readValue(strLine,
+                        new TypeReference<Map<String, Object>>() {
+                        });
+                valueMap.forEach((k, v) -> {
+                    BaseValue value;
+                    if (v instanceof Long || v instanceof Integer || v instanceof Byte) {
+                        value = new Int64Value(((Number) v).longValue());
+                    } else if (v instanceof Float || v instanceof Double) {
+                        value = new Float64Value(((Number) v).doubleValue());
+                    } else {
+                        value = BaseValue.valueOf(v);
+                    }
+                    schemaMap.put(k, BaseValue.getColumnType(value));
+                    indexItem.put(k, BaseValue.encode(value, false, false));
+                });
+                records.add(indexItem);
             }
-            UpdateTableRequest request = new UpdateTableRequest();
-            request.setTableName(tableName);
-
-            request.setTableSchemaDesc(toSchema(tableSchemaMap));
-            request.setRecords(records);
-            dataStore.updateTable(request);
+            dataStore.update(tableName,
+                    new TableSchemaDesc("id",
+                            schemaMap.entrySet().stream().map(entry -> ColumnSchemaDesc.builder()
+                                            .name(entry.getKey())
+                                            .type(entry.getValue().name())
+                                            .build())
+                                    .collect(Collectors.toList())),
+                    records);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK, "error while reading _meta.jsonl", e);
         } finally {
@@ -84,44 +97,5 @@ public class IndexWriter {
                 log.error("error closing inputstream for _meta.jsonl");
             }
         }
-
-
     }
-
-    private TableSchemaDesc toSchema(Map<String, ColumnType> tableSchemaMap) {
-        List<ColumnSchemaDesc> columnSchemaDescs = tableSchemaMap.entrySet().stream()
-                .map(entry -> entry.getValue().toColumnSchemaDesc(entry.getKey()))
-                .collect(Collectors.toList());
-        return new TableSchemaDesc("id", columnSchemaDescs);
-    }
-
-    private RecordDesc toRecordDesc(Map<String, Object> indexItem, Map<String, ColumnType> tableSchemaMap) {
-        List<RecordValueDesc> values =
-                indexItem.entrySet().stream().map(entry -> {
-                    String k = entry.getKey();
-                    Object v = entry.getValue();
-                    return new RecordValueDesc(k, tableSchemaMap.get(k).encode(v, false));
-                }).collect(Collectors.toList());
-        return new RecordDesc(values);
-    }
-
-    private Map<String, ColumnType> inferenceTableSchema(String strLine) throws JsonProcessingException {
-        Map<String, Object> row = objectMapper.readValue(strLine, Map.class);
-        Map<String, ColumnType> ret = new HashMap<>();
-        row.entrySet().forEach(entry -> {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (value instanceof Long || value instanceof Integer || value instanceof Byte) {
-                ret.put(key, ColumnTypeScalar.INT64);
-            } else if (value instanceof String) {
-                ret.put(key, ColumnTypeScalar.STRING);
-            } else if (value instanceof Float || value instanceof Double) {
-                ret.put(key, ColumnTypeScalar.FLOAT64);
-            } else {
-                ret.put(key, ColumnTypeScalar.UNKNOWN);
-            }
-        });
-        return ret;
-    }
-
 }

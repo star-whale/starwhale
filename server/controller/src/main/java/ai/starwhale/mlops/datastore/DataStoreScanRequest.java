@@ -45,13 +45,16 @@ public class DataStoreScanRequest {
     private List<TableInfo> tables;
     private long timestamp;
     private String start;
+    private String startType;
     @Builder.Default
     private boolean startInclusive = true;
     private String end;
+    private String endType;
     private boolean endInclusive;
     @Builder.Default
     private int limit = -1;
     private boolean keepNone;
     private boolean rawResult;
     private boolean ignoreNonExistingTable;
+    private boolean encodeWithType;
 }

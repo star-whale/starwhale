@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Answer;
 
 public class ReadRangeTest {
+
     private static DataLoader dataLoader;
     private static DataStoreIndexProvider dataRangeProvider;
     private static DataStore dataStore;
@@ -74,56 +75,62 @@ public class ReadRangeTest {
                 .build();
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
-                    .start("0000-000")
-                    .startInclusive(true)
-                    .end("0000-008")
-                    .endInclusive(true)
-                    .keepNone(true)
-                    .rawResult(false)
-                    .tables(List.of(
-                        DataStoreScanRequest.TableInfo.builder()
-                            .tableName("test-table-name")
-                            .columns(Map.of("id", "id"))
-                            .build()
-                    ))
-                    .limit(9)
-                    .build()
+                        .start("0000-000")
+                        .startType("STRING")
+                        .startInclusive(true)
+                        .end("0000-008")
+                        .endType("STRING")
+                        .endInclusive(true)
+                        .keepNone(true)
+                        .rawResult(false)
+                        .tables(List.of(
+                                DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("test-table-name")
+                                        .columns(Map.of("id", "id"))
+                                        .build()
+                        ))
+                        .limit(9)
+                        .build()
         )).willReturn(new RecordList(
                 Map.of(),
                 List.of(Map.of("id", "0000-000"),
-                    Map.of("id", "0000-001"),
-                    Map.of("id", "0000-002"),
-                    Map.of("id", "0000-003"),
-                    Map.of("id", "0000-004"),
-                    Map.of("id", "0000-005"),
-                    Map.of("id", "0000-006"),
-                    Map.of("id", "0000-007"),
-                    Map.of("id", "0000-008")
+                        Map.of("id", "0000-001"),
+                        Map.of("id", "0000-002"),
+                        Map.of("id", "0000-003"),
+                        Map.of("id", "0000-004"),
+                        Map.of("id", "0000-005"),
+                        Map.of("id", "0000-006"),
+                        Map.of("id", "0000-007"),
+                        Map.of("id", "0000-008")
                 ),
-                "0000-008"
+                "0000-008",
+                "STRING"
         ));
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
-                    .start("0000-008")
-                    .startInclusive(false)
-                    .end("0000-008")
-                    .endInclusive(true)
-                    .keepNone(true)
-                    .rawResult(false)
-                    .tables(List.of(
-                        DataStoreScanRequest.TableInfo.builder()
-                            .tableName("test-table-name")
-                            .columns(Map.of("id", "id"))
-                            .build()
-                    ))
-                    .limit(9)
-                    .build()
+                        .start("0000-008")
+                        .startType("STRING")
+                        .startInclusive(false)
+                        .end("0000-008")
+                        .endType("STRING")
+                        .endInclusive(true)
+                        .keepNone(true)
+                        .rawResult(false)
+                        .tables(List.of(
+                                DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("test-table-name")
+                                        .columns(Map.of("id", "id"))
+                                        .build()
+                        ))
+                        .limit(9)
+                        .build()
         )).willReturn(new RecordList(
                 Map.of(), List.of(
-                        Map.of("id", "0000-009"),
-                        Map.of("id", "0000-010"),
-                        Map.of("id", "0000-011")
-                    ), "0000-010"
+                Map.of("id", "0000-009"),
+                Map.of("id", "0000-010"),
+                Map.of("id", "0000-011")
+        ), "0000-010",
+                "STRING"
         ));
 
         var dataRanges = dataRangeProvider.returnDataIndex(request);
@@ -139,8 +146,8 @@ public class ReadRangeTest {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-            Arguments.of(true, 2),
-            Arguments.of(false, 0)
+                Arguments.of(true, 2),
+                Arguments.of(false, 0)
         );
     }
 
@@ -154,19 +161,19 @@ public class ReadRangeTest {
         var tableName = "test-table-name";
         var consumerId = "1";
         var request = DataReadRequest.builder()
-                    .sessionId(sessionId)
-                    .consumerId(consumerId)
-                    .tableName(tableName)
-                    .datasetName(datasetName)
-                    .datasetVersion(datasetVersion)
-                    .isSerial(isSerial)
-                    .processedData(List.of())
-                    .batchSize(2)
-                    .start("0000-000")
-                    .startInclusive(true)
-                    .end("0000-008")
-                    .endInclusive(true)
-                    .build();
+                .sessionId(sessionId)
+                .consumerId(consumerId)
+                .tableName(tableName)
+                .datasetName(datasetName)
+                .datasetVersion(datasetVersion)
+                .isSerial(isSerial)
+                .processedData(List.of())
+                .batchSize(2)
+                .start("0000-000")
+                .startInclusive(true)
+                .end("0000-008")
+                .endInclusive(true)
+                .build();
 
         // case 1: generate
         given(sessionDao.selectOne(sessionId, datasetName, datasetVersion))
@@ -178,29 +185,31 @@ public class ReadRangeTest {
         });
         given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()
-                    .id(1L)
-                    .sessionId(sid)
-                    .start("0000-000").startInclusive(true)
-                    .end("0000-001").endInclusive(true)
-                    .size(2)
-                    .build());
+                        .id(1L)
+                        .sessionId(sid)
+                        .start("0000-000").startInclusive(true)
+                        .end("0000-001").endInclusive(true)
+                        .size(2)
+                        .build());
 
         given(dataStore.scan(
                 DataStoreScanRequest.builder()
-                    .start("0000-000")
-                    .startInclusive(true)
-                    .end("0000-008")
-                    .endInclusive(true)
-                    .keepNone(true)
-                    .rawResult(false)
-                    .tables(List.of(
-                        DataStoreScanRequest.TableInfo.builder()
-                            .tableName("test-table-name")
-                            .columns(Map.of("id", "id"))
-                            .build()
-                    ))
-                    .limit(1000)
-                    .build()
+                        .start("0000-000")
+                        .startType("STRING")
+                        .startInclusive(true)
+                        .end("0000-008")
+                        .endType("STRING")
+                        .endInclusive(true)
+                        .keepNone(true)
+                        .rawResult(false)
+                        .tables(List.of(
+                                DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("test-table-name")
+                                        .columns(Map.of("id", "id"))
+                                        .build()
+                        ))
+                        .limit(1000)
+                        .build()
         )).willReturn(new RecordList(
                 Map.of(),
                 List.of(Map.of("id", "0000-000"),
@@ -213,13 +222,14 @@ public class ReadRangeTest {
                         Map.of("id", "0000-007"),
                         Map.of("id", "0000-008")
                 ),
-                "0000-008"
+                "0000-008",
+                "STRING"
         ));
 
         var dataRange = dataLoader.next(request);
 
         assertThat("get data range", dataRange,
-                    is(DataReadLog.builder()
+                is(DataReadLog.builder()
                         .id(1L)
                         .sessionId(sid)
                         .consumerId(consumerId) // update consumer id
@@ -228,7 +238,7 @@ public class ReadRangeTest {
                         .size(2)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()
-                    ));
+                ));
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(1)).updateToAssigned(any());
         verify(dataReadLogDao, times(0))
@@ -237,7 +247,7 @@ public class ReadRangeTest {
 
         // case 2
         request.setProcessedData(List.of(
-                    DataIndexDesc.builder().start("0000-000").end("0000-001").build()
+                DataIndexDesc.builder().start("0000-000").end("0000-001").build()
         ));
         var session = Session.builder()
                 .id(sid)
@@ -255,32 +265,32 @@ public class ReadRangeTest {
                 .willReturn(session);
         given(dataReadLogDao.selectTop1UnAssignedData(sid))
                 .willReturn(DataReadLog.builder()
-                    .id(2L)
-                    .sessionId(sid)
-                    .start("0000-002").startInclusive(true)
-                    .end("0000-003").endInclusive(true)
-                    .size(2)
-                    .assignedNum(0)
-                    .build());
+                        .id(2L)
+                        .sessionId(sid)
+                        .start("0000-002").startInclusive(true)
+                        .end("0000-003").endInclusive(true)
+                        .size(2)
+                        .assignedNum(0)
+                        .build());
 
         dataRange = dataLoader.next(request);
 
         assertThat("get data range", dataRange,
                 is(DataReadLog.builder()
-                    .id(2L)
-                    .sessionId(sid)
-                    .consumerId(consumerId)
-                    .start("0000-002").startInclusive(true)
-                    .end("0000-003").endInclusive(true)
-                    .size(2)
-                    .status(Status.DataStatus.UNPROCESSED)
-                    .build()));
+                        .id(2L)
+                        .sessionId(sid)
+                        .consumerId(consumerId)
+                        .start("0000-002").startInclusive(true)
+                        .end("0000-003").endInclusive(true)
+                        .size(2)
+                        .status(Status.DataStatus.UNPROCESSED)
+                        .build()));
 
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
         verify(dataReadLogDao, times(executeCount)).updateUnProcessedToUnAssigned(any(), any());
         verify(dataReadLogDao, times(1))
-                .updateToProcessed(sid,  consumerId, "0000-000", "0000-001");
+                .updateToProcessed(sid, consumerId, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());
     }
 }

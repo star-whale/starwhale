@@ -16,27 +16,27 @@
 
 package ai.starwhale.mlops.domain.dataset.datastore;
 
-import ai.starwhale.mlops.api.DataStoreController;
-import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
-import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
-import ai.starwhale.mlops.datastore.ColumnTypeScalar;
+import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.ResponseEntity;
+import org.mockito.ArgumentCaptor;
 
 public class IndexWriterTest {
 
     @Test
     public void testLegacySchema() {
-        MockedDataStore dataStore = new MockedDataStore();
+        var dataStore = mock(DataStore.class);
         IndexWriter indexWriter = new IndexWriter(dataStore, new ObjectMapper());
         String meta = "{\"id\":2,\"score\":2.0,\"data_uri\":\"3db33b\",\"data_format\":\"swds_bin\","
                 + "\"data_offset\":8128,\"data_size\":4064,\"data_origin\":\"+\","
@@ -55,45 +55,31 @@ public class IndexWriterTest {
                 + "\"object_store_type\":\"local\",\"data_mime_type\":\"x/undefined\","
                 + "\"label\":\"\\u0001\",\"auth_name\":\"\"}";
         indexWriter.writeToStore("table-x", new ByteArrayInputStream(meta.getBytes()));
-        UpdateTableRequest request = dataStore.getRequest();
-        List<RecordDesc> records = request.getRecords();
-        Assertions.assertEquals(4, records.size());
-        TableSchemaDesc tableSchemaDesc = request.getTableSchemaDesc();
-        Assertions.assertEquals("id", tableSchemaDesc.getKeyColumn());
-        List<ColumnSchemaDesc> columnSchemaList = tableSchemaDesc.getColumnSchemaList();
+        var tableSchemaDesc = ArgumentCaptor.forClass(TableSchemaDesc.class);
+        var records = ArgumentCaptor.forClass(List.class);
+        verify(dataStore).update(eq("table-x"), tableSchemaDesc.capture(), records.capture());
+        Assertions.assertEquals(4, records.getValue().size());
+        Assertions.assertEquals("id", tableSchemaDesc.getValue().getKeyColumn());
+        List<ColumnSchemaDesc> columnSchemaList = tableSchemaDesc.getValue().getColumnSchemaList();
         columnSchemaList.forEach(columnSchemaDesc -> {
             if ("id".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_offset".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_size".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.INT64.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.INT64.toString(), columnSchemaDesc.getType());
             }
             if ("data_format".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.STRING.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.STRING.toString(), columnSchemaDesc.getType());
             }
             if ("object_store_type".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.STRING.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.STRING.toString(), columnSchemaDesc.getType());
             }
             if ("score".equals(columnSchemaDesc.getName())) {
-                Assertions.assertEquals(ColumnTypeScalar.FLOAT64.toString(), columnSchemaDesc.getType());
+                Assertions.assertEquals(ColumnType.FLOAT64.toString(), columnSchemaDesc.getType());
             }
         });
-        Assertions.assertEquals("table-x", request.getTableName());
     }
-
-    public static class MockedDataStore extends DataStoreController {
-
-        @Getter
-        UpdateTableRequest request;
-
-        @Override
-        public ResponseEntity<ResponseMessage<String>> updateTable(UpdateTableRequest request) {
-            this.request = request;
-            return null;
-        }
-    }
-
 }

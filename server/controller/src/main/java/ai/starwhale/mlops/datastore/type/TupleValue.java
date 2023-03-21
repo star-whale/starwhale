@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+package ai.starwhale.mlops.datastore.type;
 
+import ai.starwhale.mlops.datastore.ColumnType;
 import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 
 @Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-public class RecordList {
+public class TupleValue extends ListValue {
 
-    private Map<String, ColumnSchema> columnSchemaMap;
-    private List<Map<String, Object>> records;
-    private String lastKey;
-    private String lastKeyType;
+    @Override
+    public ColumnType getColumnType() {
+        return ColumnType.TUPLE;
+    }
+
+    public static TupleValue valueOf(List<Object> values) {
+        var ret = new TupleValue();
+        values.forEach(v -> ret.add(BaseValue.valueOf(v)));
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        return "TUPLE" + super.toString().substring(4);
+    }
 }

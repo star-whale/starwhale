@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.datastore;
+package ai.starwhale.mlops.datastore.type;
 
-import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import java.util.HashMap;
 
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-public class RecordList {
+public interface ScalarValue extends BaseValue {
 
-    private Map<String, ColumnSchema> columnSchemaMap;
-    private List<Map<String, Object>> records;
-    private String lastKey;
-    private String lastKeyType;
+    Object encode(boolean rawResult);
+
+    default Object encode(boolean rawResult, boolean encodeWithType) {
+        var encodedValue = this.encode(rawResult);
+        if (encodeWithType) {
+            var ret = new HashMap<String, Object>();
+            ret.put("type", this.getColumnType().name());
+            ret.put("value", encodedValue);
+            return ret;
+        } else {
+            return encodedValue;
+        }
+    }
 }

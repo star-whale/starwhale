@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -142,6 +143,9 @@ public class DataStoreControllerTest {
         this.controller.updateTable(new UpdateTableRequest() {
             {
                 setTableName("t1");
+                setTableSchemaDesc(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("a").type("INT32").build())));
                 setRecords(List.of(new RecordDesc() {
                     {
                         setValues(List.of(new RecordValueDesc() {
@@ -185,6 +189,9 @@ public class DataStoreControllerTest {
         this.controller.updateTable(new UpdateTableRequest() {
             {
                 setTableName("t1");
+                setTableSchemaDesc(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("a").type("INT32").build())));
                 setRecords(List.of(new RecordDesc() {
                     {
                         setValues(List.of(new RecordValueDesc() {
@@ -216,7 +223,30 @@ public class DataStoreControllerTest {
                 }));
             }
         });
-        var resp = this.controller.scanTable(new ScanTableRequest() {
+        this.controller.updateTable(new UpdateTableRequest() {
+            {
+                setTableName("t1");
+                setTableSchemaDesc(new TableSchemaDesc("k",
+                        List.of(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("a").type("STRING").build())));
+                setRecords(List.of(new RecordDesc() {
+                    {
+                        setValues(List.of(new RecordValueDesc() {
+                            {
+                                setKey("k");
+                                setValue("00000000");
+                            }
+                        }, new RecordValueDesc() {
+                            {
+                                setKey("a");
+                                setValue("1");
+                            }
+                        }));
+                    }
+                }));
+            }
+        });
+        var req = new ScanTableRequest() {
             {
                 setTables(List.of(new TableDesc() {
                     {
@@ -234,15 +264,20 @@ public class DataStoreControllerTest {
                     }
                 }));
             }
-        });
+        };
+        assertThrows(SwValidationException.class, () -> this.controller.scanTable(req));
+        req.setEncodeWithType(true);
+        var resp = this.controller.scanTable(req);
         assertThat("t1", resp.getStatusCode().is2xxSuccessful(), is(true));
         assertThat("t1",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                containsInAnyOrder(ColumnSchemaDesc.builder().name("k").type("INT32").build(),
-                        ColumnSchemaDesc.builder().name("b").type("INT32").build()));
+                nullValue());
         assertThat("t1",
                 Objects.requireNonNull(resp.getBody()).getData().getRecords(),
-                is(List.of(Map.of("k", "00000001", "b", "00000002"))));
+                is(List.of(Map.of("k", Map.of("type", "INT32", "value", "00000000"),
+                                "b", Map.of("type", "STRING", "value", "1")),
+                        Map.of("k", Map.of("type", "INT32", "value", "00000001"),
+                                "b", Map.of("type", "INT32", "value", "00000002")))));
         resp = this.controller.scanTable(new ScanTableRequest() {
             {
                 setTables(List.of(new TableDesc() {
@@ -658,6 +693,22 @@ public class DataStoreControllerTest {
                             put("x", null);
                         }
                     })));
+
+            this.req.setEncodeWithType(true);
+            resp = DataStoreControllerTest.this.controller.queryTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    nullValue());
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(Map.of("k", Map.of("type", "INT32", "value", "1"),
+                            "b", Map.of("type", "INT32", "value", "4"),
+                            "x", new HashMap<>() {
+                                {
+                                    put("value", null);
+                                }
+                            }))));
         }
 
         @Test
@@ -855,17 +906,9 @@ public class DataStoreControllerTest {
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.queryTable(this.req),
                     "");
-            this.req.getFilter().setOperands(List.of(dummyFilter, dummyFilter, dummyFilter));
-            assertThrows(SwValidationException.class,
-                    () -> DataStoreControllerTest.this.controller.queryTable(this.req),
-                    "");
 
             this.req.getFilter().setOperator(TableQueryFilter.Operator.OR.toString());
             this.req.getFilter().setOperands(List.of(dummyFilter));
-            assertThrows(SwValidationException.class,
-                    () -> DataStoreControllerTest.this.controller.queryTable(this.req),
-                    "");
-            this.req.getFilter().setOperands(List.of(dummyFilter, dummyFilter, dummyFilter));
             assertThrows(SwValidationException.class,
                     () -> DataStoreControllerTest.this.controller.queryTable(this.req),
                     "");
@@ -985,22 +1028,6 @@ public class DataStoreControllerTest {
                     "");
         }
 
-        @Test
-        public void testIncomparableOperands() {
-            this.req.getFilter().setOperator("EQUAL");
-            this.req.getFilter().setOperands(List.of(new TableQueryOperandDesc() {
-                {
-                    setColumnName("a");
-                }
-            }, new TableQueryOperandDesc() {
-                {
-                    setStringValue("00000001");
-                }
-            }));
-            assertThrows(SwValidationException.class,
-                    () -> DataStoreControllerTest.this.controller.queryTable(this.req),
-                    "");
-        }
     }
 
     @Nested
@@ -1335,7 +1362,7 @@ public class DataStoreControllerTest {
         controller.setDataStore(dataStore);
         byte[] content = "hello".getBytes();
         when(exporter.asBytes(any())).thenReturn(content);
-        when(dataStore.query(any())).thenReturn(new RecordList(null, null, null));
+        when(dataStore.query(any())).thenReturn(new RecordList(null, null, null, null));
         HttpServletResponse response = mock(HttpServletResponse.class);
         ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);

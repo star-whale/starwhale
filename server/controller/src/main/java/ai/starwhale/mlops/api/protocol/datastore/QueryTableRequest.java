@@ -32,5 +32,6 @@ public class QueryTableRequest {
     private int limit = -1;
     private boolean keepNone;
     private boolean rawResult;
+    private boolean encodeWithType;
     private boolean ignoreNonExistingTable = true;
 }
