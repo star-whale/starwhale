@@ -253,7 +253,7 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public void update(TableSchemaDesc schema, List<Map<String, Object>> records) {
+    public String update(TableSchemaDesc schema, List<Map<String, Object>> records) {
         var timestamp = System.currentTimeMillis();
         var logEntryBuilder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
@@ -312,6 +312,8 @@ public class MemoryTableImpl implements MemoryTable {
         if (decodedRecords != null) {
             this.insertRecords(timestamp, decodedRecords);
         }
+
+        return Long.toString(timestamp);
     }
 
     private void insertRecords(long timestamp, List<Map<String, Object>> records) {

@@ -98,8 +98,8 @@ public class DataStoreController implements DataStoreApi {
                         })
                         .collect(Collectors.toList());
             }
-            this.dataStore.update(request.getTableName(), request.getTableSchemaDesc(), records);
-            return ResponseEntity.ok(Code.success.asResponse("success"));
+            var revision = this.dataStore.update(request.getTableName(), request.getTableSchemaDesc(), records);
+            return ResponseEntity.ok(Code.success.asResponse(revision));
         } catch (SwValidationException e) {
             throw new SwValidationException(e, "request=" + request);
         }
