@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+import yaml
 from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -19,10 +20,12 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_EVALUATION_JOBS_FNAME,
+    DEFAULT_EVALUATION_JOBS_FILE_NAME,
+    EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
+    EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
@@ -104,7 +107,7 @@ class StandaloneModelTestCase(TestCase):
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
         assert (
-            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FNAME
+            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
         ).exists()
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
@@ -409,10 +412,14 @@ class CloudModelTest(TestCase):
 
 @patch("starwhale.core.model.model.generate_jobs_yaml")
 @patch("starwhale.core.model.model.StandaloneModel._get_service")
+@patch("starwhale.utils.config.load_swcli_config")
 def test_build_with_custom_config_file(
-    m_get_service: MagicMock, m_generate_yaml: MagicMock, tmp_path: pathlib.Path
+    m_sw_config: MagicMock,
+    m_get_service: MagicMock,
+    m_generate_yaml: MagicMock,
+    tmp_path: pathlib.Path,
 ):
-    sw_config._config = {
+    m_sw_config.return_value = {
         "storage": {
             "root": tmp_path.absolute(),
         },
@@ -464,3 +471,68 @@ def test_build_with_custom_config_file(
     assert (bundle_path / "src").exists()
     assert (bundle_path / "src" / DefaultYAMLName.MODEL).exists()
     assert (bundle_path / "src" / ".starwhale" / "examples" / "example.png").exists()
+
+
+@patch("starwhale.core.model.model.generate_jobs_yaml")
+@patch("starwhale.utils.config.load_swcli_config")
+def test_render_eval_layout(m_sw_config: MagicMock, m_g: MagicMock, tmp_path: Path):
+    m_sw_config.return_value = {
+        "storage": {
+            "root": tmp_path.absolute(),
+        },
+        "instances": {
+            "local": {
+                "current_project": "self",
+                "type": "standalone",
+                "uri": "local",
+            }
+        },
+        "current_instance": "local",
+    }
+    name = "bar"
+    model_uri = URI(name, expected_type=URIType.MODEL)
+    sm = StandaloneModel(model_uri)
+
+    workdir = tmp_path / name
+    model_config = {
+        "name": name,
+        "run": {
+            "handler": "baz:main",
+        },
+    }
+    ensure_file(workdir / "model.yaml", yaml.dump(model_config), parents=True)
+    ensure_file(workdir / "baz.py", "def main(): pass", parents=True)
+
+    # test with no layout
+    # no error should be raised
+    sm.build(workdir=workdir)
+
+    build_version = sm.uri.object.version
+    bundle_path = (
+        tmp_path
+        / "self"
+        / URIType.MODEL
+        / name
+        / build_version[:VERSION_PREFIX_CNT]
+        / f"{build_version}{BundleType.MODEL}"
+    )
+    empty_dir(bundle_path)
+
+    # test with json layout
+    d = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME
+    ensure_file(d, '{"foo": "bar"}', parents=True)
+    sm.build(workdir=workdir)
+
+    layout = (
+        bundle_path / "src" / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME
+    )
+    assert layout.exists()
+    assert layout.read_text() == '{"foo": "bar"}'
+    empty_dir(bundle_path)
+
+    # test with yaml layout
+    d = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME
+    ensure_file(d, "bar: baz", parents=True)
+    sm.build(workdir=workdir)
+    assert layout.exists()
+    assert layout.read_text() == '{"bar": "baz"}'
