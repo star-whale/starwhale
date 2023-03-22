@@ -1,13 +1,35 @@
 module.exports = {
     mainSidebar: [
+        "what-is-starwhale",
         {
-            "Overview": [
-                "overview/getting_started",
-                "overview/concepts",
-            ],
+            type: "category",
+            label: "Getting Started",
+            link: {
+                type: "doc",
+                id: "getting-started/index"
+            },
+            items: [
+                "getting-started/standalone",
+                "getting-started/server",
+                "getting-started/cloud"
+            ]
+        },
+        {
+            type: "category",
+            label: "Concepts",
+            link: {
+                type: "doc",
+                id: "concepts/index"
+            },
+            items: [
+                "concepts/names",
+                "concepts/project",
+                "concepts/roles-permissions",
+                "concepts/versioning"
+            ]
+        },
+        {
             "Starwhale Dataset": [
-                "dataset/getting_started",
-                "dataset/concepts",
                 {
                     type: 'category',
                     label: "Examples",
@@ -189,26 +211,56 @@ module.exports = {
                         "instances/cloud/concepts",
                     ]
                 },
-            ],
-            "Reference": {
-                "Command Line Interface": [
-                    "reference/cli/basic",
-                    "instances/standalone/api/instance_cli",
-                    "instances/standalone/api/project_cli",
-                    "model/api/cli",
-                    "runtime/api/cli",
-                    "dataset/api/cli",
-                    "evaluation/api/cli",
-                    "instances/standalone/api/utilities_cli"],
-                "Python SDK": [
-                    "reference/sdk/overview",
-                    "dataset/api/sdk",
-                    "dataset/api/data_type",
-                    "model/api/sdk",
-                    "evaluation/api/sdk",
-                    "reference/sdk/other",
-                ],
+            ]
+        },
+        {
+            type: "category",
+            label: "Starwhale Client",
+            link: {
+                type: "doc",
+                id: "swcli/index"
             },
+            items: [
+                "swcli/installation",
+                "swcli/uri"
+            ]
+        },
+        {
+            "Reference": [
+                {
+                    type: "category",
+                    label: "Command Line Interface",
+                    link: {
+                        type: "doc",
+                        id: "reference/swcli/index"
+                    },
+                    items: [
+                        "instances/standalone/api/instance_cli",
+                        "instances/standalone/api/project_cli",
+                        "model/api/cli",
+                        "runtime/api/cli",
+                        "dataset/api/cli",
+                        "evaluation/api/cli",
+                        "instances/standalone/api/utilities_cli"
+                    ]
+                },
+                {
+                    type: "category",
+                    label: "Python SDK",
+                    link: {
+                        type: "doc",
+                        id: "reference/sdk/overview"
+                    },
+                    items: [
+                        "reference/sdk/overview",
+                        "dataset/api/sdk",
+                        "dataset/api/data_type",
+                        "model/api/sdk",
+                        "evaluation/api/sdk",
+                        "reference/sdk/other",
+                    ]
+                }
+            ],
             "Community": [
                 "community/contribute",
             ]

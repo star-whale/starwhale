@@ -16,7 +16,7 @@
     "lint": "eslint --cache \"**/*.js\" && stylelint \"**/*.css\"",
     "prettier": "prettier --config .prettierrc --write \"**/*.{js,md}\"",
     "prettier:diff": "prettier --config .prettierrc --list-different \"**/*.{js,md}\"",
-	"lint-docs": "markdownlint docs i18n/zh  && markdownlint --disable=MD041 ../README.md"
+    "lint-docs": "markdownlint docs i18n/zh  && markdownlint --disable=MD041 ../README.md"
   },
   "dependencies": {
     "@antv/x6": "^1.32.2",

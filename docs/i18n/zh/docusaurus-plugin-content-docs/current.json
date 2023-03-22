@@ -1,4 +1,10 @@
 {
+    "sidebar.mainSidebar.category.Getting Started": {
+        "message": "入门指南"
+    },
+    "sidebar.mainSidebar.category.Concepts": {
+        "message": "基本概念"
+    },
     "sidebar.mainSidebar.category.Reference": {
         "message": "参考指南"
     },
