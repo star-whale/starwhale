@@ -402,7 +402,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         return idx, row
 
 
-class BuildExecutor(BaseBuildExecutor):
+class IterableDatasetBuilder(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
         increased_rows = 0
         with self.bin_writer as bw:
@@ -428,6 +428,9 @@ class BuildExecutor(BaseBuildExecutor):
             data_byte_size=self.bin_writer.total_bin_size,
         )
         return self._merge_forked_summary(summary)
+
+
+BuildExecutor = IterableDatasetBuilder
 
 
 def create_generic_cls(
