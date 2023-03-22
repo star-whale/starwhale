@@ -217,17 +217,14 @@ class SWDSBinWriter:
             path, remove_src=remove_src
         )
 
-        _server_prefix_cnt = 2  # TODO remove this after copy refactor is done
-        _shot_sign = _sign_name[: _server_prefix_cnt]
-        _dest_path = self.data_output_dir / _shot_sign
+        _dest_path = self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
         _obj_path = _obj_path.resolve().absolute()
 
         if _dest_path.exists():
             _dest_path.unlink()
 
         _dest_path.symlink_to(_obj_path)
-        #  TODO coupled implementation with server, recover to _sign_name after copy refactor is done
-        return f"{_shot_sign}/{_sign_name}"
+        return _sign_name
 
     def close(self) -> None:
         with self._lock:
