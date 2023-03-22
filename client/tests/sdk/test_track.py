@@ -452,7 +452,7 @@ class TestHandler(BaseTestCase):
         assert isinstance(h._table_writers["metrics/user"], TableWriter)
 
         h.flush()
-        parquet_path = workdir / "metrics" / "user" / "base-0.parquet"
+        parquet_path = workdir / "metrics" / "user.swds.json"
         assert parquet_path.exists()
         assert parquet_path.is_file()
 
@@ -508,7 +508,7 @@ class TestHandler(BaseTestCase):
 
         h.flush()
 
-        parquet_path = workdir / "artifacts" / "user" / "base-0.parquet"
+        parquet_path = workdir / "artifacts" / "user.swds.json"
         assert parquet_path.exists()
         assert parquet_path.is_file()
 
@@ -559,8 +559,8 @@ class TestHandler(BaseTestCase):
         assert "metrics/_system" in h._table_writers
         assert "artifacts/user" in h._table_writers
 
-        assert (workdir / "metrics" / "user" / "base-0.parquet").exists()
-        assert (workdir / "metrics" / "_system" / "base-0.parquet").exists()
+        assert (workdir / "metrics" / "user.swds.json").exists()
+        assert (workdir / "metrics" / "_system.swds.json").exists()
         assert (workdir / "artifacts" / "_files").exists()
         assert len(list((workdir / "artifacts" / "_files").iterdir())) != 0
         assert (workdir / "params" / "user.json").exists()
