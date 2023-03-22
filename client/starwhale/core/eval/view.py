@@ -22,6 +22,7 @@ from starwhale.base.type import URIType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
 from starwhale.core.eval.model import EvaluationJob
 from starwhale.api._impl.metric import MetricKind
+from starwhale.base.uricomponents.instance import Instance
 
 
 class JobTermView(BaseTermView):
@@ -126,12 +127,23 @@ class JobTermView(BaseTermView):
             console.print(":tea: not found info")
             return
 
-        manifest = _rt.get("manifest")
+        manifest = _rt.get("manifest", {})
         if web:
-            if not manifest or not manifest.get("version"):
-                console.print(":tea: not found eval id")
-                sys.exit(1)
-            ver = manifest.get("version")
+            from starwhale.web.server import Server
+
+            ver = manifest.get("id")
+
+            # if id is numeric, it's a remote eval
+            if ver and ver.isnumeric():
+                svr = Server.proxy(Instance())
+            else:
+                # local eval
+                if not manifest.get("version"):
+                    console.print(":tea: eval id not found")
+                    sys.exit(1)
+                ver = manifest.get("version")
+                svr = Server.default()
+
             # TODO support changing host and port
             host = "127.0.0.1"
             port = 8000
@@ -139,9 +151,7 @@ class JobTermView(BaseTermView):
             console.print(f":tea: open {url} in browser")
             import uvicorn
 
-            from starwhale.web.server import Server
-
-            uvicorn.run(Server.default(), host=host, port=port, log_level="error")
+            uvicorn.run(svr, host=host, port=port, log_level="error")
             return
 
         if manifest:
