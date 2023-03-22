@@ -17,7 +17,7 @@ export default function ApiHeader() {
     const lastErrMsgRef = useRef<Record<string, number>>({})
     const lastLocationPathRef = useRef(location.pathname)
     const [t] = useTranslation()
-    const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(\d*)\/?/)?.[1], [location])
+    const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(.+?)\/.*/)?.[1], [location])
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
     const { role: projectRole } = useFetchProjectRole(projectId as string)
