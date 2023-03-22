@@ -160,7 +160,7 @@ public class JobRepoTest {
 
     @Test
     public void testFindByStatusIn() {
-        Mockito.when(projectService.listProjects(null, null, null))
+        Mockito.when(projectService.listProjects())
                 .thenReturn(List.of(Project.builder().id(1L).name("test-project").build()));
         Mockito.when(modelService.findModelVersion(anyLong()))
                 .thenReturn(ModelVersion.builder().id(1L).name("1z2x3c4v5b6n").build());
@@ -200,7 +200,7 @@ public class JobRepoTest {
     public void testUpdateProperty() {
         var jobId = 123456L;
         var uuid = "1q2w3e4r5t6y";
-        Mockito.when(projectService.listProjects(null, null, null))
+        Mockito.when(projectService.listProjects())
                 .thenReturn(List.of(Project.builder().id(1L).name("test-project").build()));
         var job = JobEntity.builder()
                 .id(jobId)

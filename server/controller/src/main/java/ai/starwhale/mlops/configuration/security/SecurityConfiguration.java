@@ -84,6 +84,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Resource
     private ContentCachingFilter contentCachingFilter;
 
+    @Resource
+    private VisitedFilter visitedFilter;
+
     public SecurityConfiguration() {
         super();
         // Inherit security context ,so async function calls can effect
@@ -138,6 +141,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         JwtLoginFilter.class)
                 .addFilterBefore(projectDetectionFilter, JwtTokenFilter.class)
                 .addFilterBefore(contentCachingFilter, ProjectDetectionFilter.class)
+                .addFilterAfter(visitedFilter, JwtTokenFilter.class)
         ;
     }
 

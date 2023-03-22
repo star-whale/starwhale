@@ -34,7 +34,6 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -84,9 +83,9 @@ public class ProjectServiceTest {
                 .willReturn(project1);
         given(projectMapper.findExistingByNameAndOwnerName(same("exist_project"), any()))
                 .willReturn(project2);
-        given(projectMapper.list(anyString(), any(), any()))
+        given(projectMapper.listOfUser(anyString(), any(), any()))
                 .willReturn(List.of(project1, project2));
-        given(projectMapper.list(same("p1"), any(), any()))
+        given(projectMapper.listOfUser(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
 
         projectDao = mock(ProjectDao.class);
@@ -152,7 +151,6 @@ public class ProjectServiceTest {
     @Test
     public void testListProject() {
         var res = service.listProject("",
-                PageParams.builder().build(),
                 OrderParams.builder().build(),
                 User.builder().build());
         assertThat(res, allOf(

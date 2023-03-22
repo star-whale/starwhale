@@ -24,7 +24,6 @@ import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -65,17 +64,12 @@ public class ProjectController implements ProjectApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVo>>> listProject(String projectName,
-            Integer pageNum, Integer pageSize, String sort, Integer order) {
+            Integer pageNum, Integer pageSize, String sort) {
         User user = userService.currentUserDetail();
         PageInfo<ProjectVo> projects = projectService.listProject(
                 projectName,
-                PageParams.builder()
-                        .pageNum(pageNum)
-                        .pageSize(pageSize)
-                        .build(),
                 OrderParams.builder()
                         .sort(sort)
-                        .order(order)
                         .build(),
                 user);
 
