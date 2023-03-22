@@ -7,7 +7,7 @@ import threading
 from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
-from functools import wraps
+from functools import wraps, partial
 from itertools import islice
 
 import yaml
@@ -99,15 +99,16 @@ class Dataset:
         self.project_uri = project_uri
         self.__readonly = readonly
 
-        _origin_uri = URI.capsulate_uri(
-            self.project_uri.instance,
-            self.project_uri.project,
-            URIType.DATASET,
-            self.name,
-            version or "latest",
+        self._make_capsulated_uri = partial(
+            URI.capsulate_uri,
+            instance=self.project_uri.instance,
+            project=self.project_uri.project,
+            obj_type=URIType.DATASET,
+            obj_name=self.name,
         )
         self._pending_commit_version = gen_uniq_version()
 
+        _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
             if create:
@@ -132,21 +133,11 @@ class Dataset:
                 )
             self._loading_version = self._pending_commit_version
 
-        self.uri = URI.capsulate_uri(
-            self.project_uri.instance,
-            self.project_uri.project,
-            URIType.DATASET,
-            self.name,
-            self._loading_version,
-        )
-        self.__core_dataset = CoreDataset.get_dataset(self.uri)
+        self._loading_uri = self._make_capsulated_uri(obj_ver=self._loading_version)
+        self.__loading_core_dataset = CoreDataset.get_dataset(self._loading_uri)
 
-        self._pending_commit_uri = URI.capsulate_uri(
-            self.project_uri.instance,
-            self.project_uri.project,
-            URIType.DATASET,
-            self.name,
-            self._pending_commit_version,
+        self._pending_commit_uri = self._make_capsulated_uri(
+            obj_ver=self._pending_commit_version
         )
         self.__pending_commit_core_dataset = CoreDataset.get_dataset(
             self._pending_commit_uri
@@ -173,7 +164,7 @@ class Dataset:
         if create:
             self._total_rows = 0
         else:
-            _summary = self.__core_dataset.summary()
+            _summary = self.__loading_core_dataset.summary()
             # TODO: raise none summary exception for existed dataset
             self._total_rows = 0 if _summary is None else _summary.rows
 
@@ -182,16 +173,11 @@ class Dataset:
         if not version:
             return version
 
+        # TODO: auto complete for cloud instance
         if self.project_uri.instance_type == InstanceType.CLOUD:
             return version
 
-        _uri = URI.capsulate_uri(
-            instance=self.project_uri.instance,
-            project=self.project_uri.project,
-            obj_type=URIType.DATASET,
-            obj_name=self.name,
-            obj_ver=version,
-        )
+        _uri = self._make_capsulated_uri(obj_ver=version)
         store = DatasetStorage(_uri)
         if not store.snapshot_workdir.exists():
             return version
@@ -202,7 +188,7 @@ class Dataset:
         return f"Dataset: {self.name}, stash version: {self._pending_commit_version}, loading version: {self._loading_version}"
 
     def __repr__(self) -> str:
-        return f"Dataset: {self.uri}"
+        return f"Dataset: {self.name}, loading uri: {self._loading_uri}, pending commit uri: {self._pending_commit_uri}"
 
     def __len__(self) -> int:
         return self._total_rows
@@ -283,16 +269,8 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
-                _uri = URI.capsulate_uri(
-                    self.project_uri.instance,
-                    self.project_uri.project,
-                    URIType.DATASET,
-                    self.name,
-                    version,
-                )
-
                 _loader = get_data_loader(
-                    _uri,
+                    self._make_capsulated_uri(obj_ver=version),
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
@@ -388,7 +366,7 @@ class Dataset:
 
     @property
     def tags(self) -> _Tags:
-        return _Tags(self.__core_dataset)
+        return _Tags(self.__loading_core_dataset)
 
     @staticmethod
     def _check_uri_exists(uri: t.Optional[URI]) -> bool:
@@ -437,20 +415,20 @@ class Dataset:
         raise NotImplementedError
 
     def remove(self, force: bool = False) -> None:
-        ok, reason = self.__core_dataset.remove(force)
+        ok, reason = self.__loading_core_dataset.remove(force)
         if not ok:
             raise RuntimeError(f"failed to remove dataset: {reason}")
 
     def recover(self, force: bool = False) -> None:
-        ok, reason = self.__core_dataset.recover(force)
+        ok, reason = self.__loading_core_dataset.recover(force)
         if not ok:
             raise RuntimeError(f"failed to recover dataset: {reason}")
 
     def summary(self) -> t.Optional[DatasetSummary]:
-        return self.__core_dataset.summary()
+        return self.__loading_core_dataset.summary()
 
     def history(self) -> t.List[t.Dict]:
-        return self.__core_dataset.history()
+        return self.__loading_core_dataset.history()
 
     def close(self) -> None:
         for _loader in self.__data_loaders.values():
@@ -466,11 +444,11 @@ class Dataset:
         raise NotImplementedError
 
     def manifest(self) -> t.Dict[str, t.Any]:
-        return self.__core_dataset.info()
+        return self.__loading_core_dataset.info()
 
     def head(self, n: int = 3, show_raw_data: bool = False) -> t.List[t.Dict]:
         # TODO: render artifact in JupyterNotebook
-        return self.__core_dataset.head(n, show_raw_data)
+        return self.__loading_core_dataset.head(n, show_raw_data)
 
     def fetch_one(self, skip_fetch_data: bool = False) -> DataRow:
         loader = self._get_data_loader(disable_consumption=True)
@@ -610,6 +588,45 @@ class Dataset:
             A str version
         """
         return self._pending_commit_version
+
+    @property
+    def committed_version(self) -> str:
+        """Committed version.
+
+        After the commit function is called, the committed_version will come out, it is equal to the pending_commit_version.
+
+        Returns:
+            A str version
+        """
+        if self.__has_committed:
+            return self._pending_commit_version
+        else:
+            raise RuntimeError("version has not been committed yet")
+
+    @property
+    def uri(self) -> URI:
+        """Dataset URI
+
+        Before committing, the uri is for the loading_version.
+        After committing, the uri is for the committed_version.
+
+        Returns:
+            A URI object.
+        """
+        if self.__has_committed:
+            return self._pending_commit_uri
+        else:
+            return self._loading_uri
+
+    @property
+    def changed(self) -> bool:
+        """For the non-readonly dataset, when the users update/delete/add records(rows) or features(columns),
+        changed property will change from False to True.
+
+        Returns:
+            True or False
+        """
+        return self._updated_rows_by_commit != 0 or self._deleted_rows_by_commit != 0
 
     @_check_readonly
     def commit(self, tags: t.Optional[t.List[str]] = None, message: str = "") -> str:
