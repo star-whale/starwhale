@@ -86,8 +86,12 @@ public interface ProjectMapper {
             @NotNull @Param("ownerId") Long ownerId);
 
     @SelectProvider(value = ProjectProvider.class, method = "listSql")
-    List<ProjectEntity> list(@Param("projectName") String projectName,
+    List<ProjectEntity> listOfUser(@Param("projectName") String projectName,
             @Param("userId") Long userId,
+            @Param("order") String order);
+
+    @SelectProvider(value = ProjectProvider.class, method = "listAllSql")
+    List<ProjectEntity> listAll(@Param("projectName") String projectName,
             @Param("order") String order);
 
     @SelectProvider(value = ProjectProvider.class, method = "listRemovedSql")
@@ -153,6 +157,26 @@ public interface ProjectMapper {
                                 + " OR"
                                 + " (id in (select project_id from user_role_rel where user_id = #{userId})))");
                     }
+                    if (StrUtil.isNotEmpty(projectName)) {
+                        WHERE("project_name like concat(#{projectName}, '%')");
+                    }
+                    if (StrUtil.isNotEmpty(order)) {
+                        ORDER_BY(order);
+                    } else {
+                        ORDER_BY("id desc");
+                    }
+                }
+            }.toString();
+        }
+
+        public String listAllSql(
+                @Param("projectName") String projectName,
+                @Param("order") String order) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS);
+                    FROM("project_info");
+                    WHERE("is_deleted = 0");
                     if (StrUtil.isNotEmpty(projectName)) {
                         WHERE("project_name like concat(#{projectName}, '%')");
                     }

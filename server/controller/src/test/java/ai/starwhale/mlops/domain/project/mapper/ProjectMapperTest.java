@@ -97,18 +97,18 @@ public class ProjectMapperTest extends MySqlContainerHolder {
     public void testListProjects() {
         projectMemberMapper.insert(
                 ProjectMemberEntity.builder().projectId(project2.getId()).roleId(1L).userId(user.getId()).build());
-        List<ProjectEntity> projectEntities = projectMapper.list("p", user.getId(),
+        List<ProjectEntity> projectEntities = projectMapper.listOfUser("p", user.getId(),
                 new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(2, projectEntities.size());
         projectEntities.forEach(pj -> validProject(pj.getId().equals(project.getId()) ? project : project2, user, pj));
 
-        projectEntities = projectMapper.list("p",
+        projectEntities = projectMapper.listOfUser("p",
                 user.getId() + 23L,
                 new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project, user, projectEntities.get(0));
 
-        projectEntities = projectMapper.list("px",
+        projectEntities = projectMapper.listOfUser("px",
                 user.getId(),
                 new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(1, projectEntities.size());
