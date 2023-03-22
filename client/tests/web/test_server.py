@@ -1,11 +1,15 @@
 import os
+import sys
+from asyncio import Future
 from pathlib import Path
 from unittest.mock import patch, MagicMock, PropertyMock
 
+import httpx
 from fastapi.testclient import TestClient
 
 from starwhale.utils.fs import ensure_file
 from starwhale.web.server import Server
+from starwhale.base.uricomponents.instance import Instance
 
 
 def test_static_faked_response():
@@ -115,3 +119,42 @@ def test_datastore_query_summary(mock_get_metrics: MagicMock):
     assert resp.json()["data"]["columnTypes"] == [{"name": "a", "type": "INT64"}]
     assert resp.json()["data"]["records"] == [{"a": "1"}]
     mock_get_metrics.assert_called_once()
+
+
+@patch("starwhale.utils.config.load_swcli_config")
+@patch("httpx.AsyncClient.build_request")
+@patch("httpx.AsyncClient.send")
+def test_proxy(m_send: MagicMock, m_ac: MagicMock, m_sw_config: MagicMock):
+    m_sw_config.return_value = {
+        "instances": {
+            "foo": {
+                "current_project": "sw",
+                "type": "cloud",
+                "uri": "https://example.com",
+                "sw_token": "token",
+            }
+        },
+    }
+
+    resp = httpx.Response(200, json={"data": "ok"})
+
+    if sys.version_info >= (3, 8):
+        m_send.return_value = resp
+    else:
+        f = Future()
+        f.set_result(resp)
+        m_send.return_value = f
+
+    svr = Server.proxy(Instance(instance_alias="foo"))
+    client = TestClient(svr)
+
+    # test proxy api
+    resp = client.post("/api/v1/datastore/queryTable", json={"tableName": "a/b/c"})
+    assert m_send.call_count == 1
+    assert resp.status_code == 200
+    assert resp.json()["data"] == "ok"
+
+    # test panel api
+    client.get("/api/v1/panel/setting/1/2")
+    # m_send not call again
+    assert m_send.call_count == 1
