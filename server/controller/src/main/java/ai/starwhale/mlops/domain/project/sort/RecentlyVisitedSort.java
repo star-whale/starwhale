@@ -38,9 +38,9 @@ public class RecentlyVisitedSort implements Sort {
     }
 
     @Override
-    public List<ProjectEntity> list(String projectName, User user, boolean bShowAll) {
+    public List<ProjectEntity> list(String projectName, User user, boolean showAll) {
         final Map<Long, ProjectEntity> projects = new LinkedHashMap<>();
-        originList(projectName, user, bShowAll).forEach(pro -> projects.put(pro.getId(), pro));
+        originList(projectName, user, showAll).forEach(pro -> projects.put(pro.getId(), pro));
 
         final List<ProjectEntity> sortedList = new ArrayList<>();
         projectVisitedMapper.listVisitedProjects(user.getId())
@@ -54,9 +54,9 @@ public class RecentlyVisitedSort implements Sort {
         return sortedList;
     }
 
-    private List<ProjectEntity> originList(String projectName, User user, boolean bShowAll) {
+    private List<ProjectEntity> originList(String projectName, User user, boolean showAll) {
         String orderBy = "id desc";
-        if (bShowAll) {
+        if (showAll) {
             return projectMapper.listAll(projectName, orderBy);
         } else {
             return projectMapper.listOfUser(projectName, user.getId(), orderBy);

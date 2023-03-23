@@ -22,5 +22,5 @@ import java.util.List;
 
 public interface Sort {
 
-    List<ProjectEntity> list(String projectName, User user, boolean bShowAll);
+    List<ProjectEntity> list(String projectName, User user, boolean showAll);
 }

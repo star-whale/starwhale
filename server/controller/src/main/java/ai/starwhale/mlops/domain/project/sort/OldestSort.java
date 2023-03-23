@@ -32,9 +32,9 @@ public class OldestSort implements Sort {
     }
 
     @Override
-    public List<ProjectEntity> list(String projectName, User user, boolean bShowAll) {
+    public List<ProjectEntity> list(String projectName, User user, boolean showAll) {
         String orderBy = "id asc";
-        if (bShowAll) {
+        if (showAll) {
             return projectMapper.listAll(projectName, orderBy);
         } else {
             return projectMapper.listOfUser(projectName, user.getId(), orderBy);
