@@ -44,6 +44,7 @@ public class DatasetVersionEntity extends BaseEntity implements BundleVersionEnt
     private String storagePath;
     private Long size;
     private String indexTable;
+    private Integer shared;
 
     private Integer status = DatasetVersion.STATUS_UN_AVAILABLE;
 

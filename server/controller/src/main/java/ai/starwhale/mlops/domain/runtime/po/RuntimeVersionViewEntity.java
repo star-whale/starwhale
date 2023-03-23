@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.runtime.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.base.HasId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,32 +29,22 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEntity {
+public class RuntimeVersionViewEntity extends BaseEntity implements HasId {
+
 
     private Long id;
 
-    private Long versionOrder;
-
     private Long runtimeId;
 
-    private Long ownerId;
+    private Long versionOrder;
+
+    private String userName;
+
+    private String projectName;
+
+    private String runtimeName;
 
     private String versionName;
 
-    private String versionTag;
-
-    private String versionMeta;
-
-    private String storagePath;
-
-    private String image;
-
-    private String builtImage;
-
     private Integer shared;
-
-    @Override
-    public String getName() {
-        return versionName;
-    }
 }

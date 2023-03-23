@@ -24,6 +24,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
@@ -152,7 +154,7 @@ public interface RuntimeApi {
             @PathVariable("runtimeUrl") String runtimeUrl,
             @RequestParam(value = "versionUrl", required = false) String versionUrl);
 
-    @Operation(summary = "Set tag of the model version")
+    @Operation(summary = "Set tag of the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(
             value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}",
@@ -166,6 +168,28 @@ public interface RuntimeApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeVersionUrl") String runtimeVersionUrl,
             @Valid @RequestBody RuntimeTagRequest tagRequest);
+
+
+    @Operation(summary = "Share or unshare the runtime version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("runtimeUrl") String runtimeUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("runtimeVersionUrl") String runtimeVersionUrl,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "1 - shared, 0 - unshared",
+                    schema = @Schema())
+            @RequestParam(value = "shared") Integer shared
+    );
 
     @Operation(summary = "Manage tag of the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -225,6 +249,15 @@ public interface RuntimeApi {
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
+    @Operation(summary = "List runtime tree including global runtimes")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/runtime-tree",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl);
 
     @Operation(summary = "Create a new runtime version",
             description = "Create a new version of the runtime. "

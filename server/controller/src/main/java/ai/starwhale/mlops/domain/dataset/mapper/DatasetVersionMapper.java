@@ -36,13 +36,15 @@ public interface DatasetVersionMapper {
 
     String COLUMNS = "id, version_order, dataset_id, owner_id,"
             + " version_name, version_tag, version_meta, files_uploaded, storage_path,"
-            + " status, created_time, modified_time, size, index_table";
+            + " status, created_time, modified_time, size, index_table, shared";
 
     @SelectProvider(value = DatasetVersionProvider.class, method = "listSql")
     List<DatasetVersionEntity> list(@Param("datasetId") Long datasetId,
             @Param("namePrefix") String namePrefix,
             @Param("tag") String tag);
 
+    @Select("select " + COLUMNS + " from dataset_version where shared = 1")
+    List<DatasetVersionEntity> listShared();
 
     @Select("select " + COLUMNS + " from dataset_version where id = #{id}")
     DatasetVersionEntity find(@Param("id") Long id);
@@ -91,6 +93,9 @@ public interface DatasetVersionMapper {
 
     @Update("update dataset_version set version_tag = #{tag} where id = #{id}")
     int updateTag(@Param("id") Long id, @Param("tag") String tag);
+
+    @Update("update dataset_version set shared = #{shared} where id = #{id}")
+    int updateShared(@Param("id") Long id, @Param("shared") Integer shared);
 
     //int updateFilesUploaded(@Param("version") DatasetVersionEntity version);
     @Update("update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}")

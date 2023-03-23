@@ -208,6 +208,17 @@ public class DatasetService {
         }
     }
 
+    public void shareDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
+            Integer shared) {
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
+                .create(projectUrl, datasetUrl, versionUrl));
+        if (Objects.equals(shared, 0) || Objects.equals(shared, 1)) {
+            datasetVersionMapper.updateShared(versionId, shared);
+        } else {
+            throw new SwValidationException(ValidSubject.RUNTIME, "Invalid shared value: " + shared);
+        }
+    }
+
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
             TagAction tagAction) {
 

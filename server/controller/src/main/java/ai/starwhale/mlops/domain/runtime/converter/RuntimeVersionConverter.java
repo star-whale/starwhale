@@ -37,13 +37,19 @@ public class RuntimeVersionConverter {
 
     public RuntimeVersionVo convert(RuntimeVersionEntity entity)
             throws ConvertException {
+        return convert(entity, null);
+    }
+
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest)
+            throws ConvertException {
         return RuntimeVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getVersionName())
-                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
                 .image(entity.getImage())
+                .shared(entity.getShared())
                 .createdTime(entity.getCreatedTime().getTime())
                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                 .build();

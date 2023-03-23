@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.common;
 
+import ai.starwhale.mlops.domain.bundle.base.HasId;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +33,14 @@ public class VersionAliasConverter implements Converter<Long, String> {
             throw new ConvertException("Version alias covert error: order is null");
         }
         return "v" + order;
+    }
+
+    public String convert(Long order, HasId latest, HasId entity) {
+        if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
+            return VersionAliasConverter.LATEST;
+        } else {
+            return convert(order);
+        }
     }
 
     @Override
