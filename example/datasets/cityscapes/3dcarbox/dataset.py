@@ -33,7 +33,7 @@ def request_link_json(anno_link):
 
 
 def build_ds():
-    ds = dataset("cityscapes_3dcarbox", create=True)
+    ds = dataset("cityscapes_3dcarbox")
     tree = request_link_json(f"{PATH_ROOT}/{ANNO_PATH}/tree.json")
     for d in tree:
         if d["type"] != "directory":

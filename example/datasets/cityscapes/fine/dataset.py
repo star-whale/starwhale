@@ -33,7 +33,7 @@ def mask_image(_name, dir_name):
 
 
 def build_ds():
-    ds = dataset("cityscapes_fine", create=True)
+    ds = dataset("cityscapes_fine")
     tree = request_link_json(f"{PATH_ROOT}/{ANNO_PATH}/tree.json")
     items = {}
     for d in tree:

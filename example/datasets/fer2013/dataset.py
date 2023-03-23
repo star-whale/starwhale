@@ -14,7 +14,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("fer2013", create=True)
+    ds = dataset("fer2013")
     lines = request_link_text(DATA_PATH).splitlines()
     for line in lines:
         tokens = line.split(",")

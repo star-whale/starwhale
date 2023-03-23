@@ -27,7 +27,7 @@ def mask_image(_name, dir_name):
 
 
 def build_ds():
-    ds = dataset("cityscapes_disparity", create=True)
+    ds = dataset("cityscapes_disparity")
     ds.info["baseline"] = 22
     ds.info["homepage"] = "https://www.cityscapes-dataset.com"
     tree = request_link_json(f"{PATH_ROOT}/{ANNO_PATH}/tree.json")

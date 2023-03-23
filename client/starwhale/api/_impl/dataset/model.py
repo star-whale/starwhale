@@ -92,12 +92,12 @@ class Dataset:
         name: str,
         version: str,
         project_uri: URI,
-        create: bool = False,
         readonly: bool = False,
     ) -> None:
         self.name = name
         self.project_uri = project_uri
         self.__readonly = readonly
+        self._pending_commit_version = gen_uniq_version()
 
         self._make_capsulated_uri = partial(
             URI.capsulate_uri,
@@ -106,15 +106,10 @@ class Dataset:
             obj_type=URIType.DATASET,
             obj_name=self.name,
         )
-        self._pending_commit_version = gen_uniq_version()
 
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
-            if create:
-                raise RuntimeError(
-                    f"dataset already existed, failed to create: {self.name}"
-                )
             self._loading_version = self._auto_complete_version(version)
         else:
             if readonly:
@@ -122,15 +117,11 @@ class Dataset:
                     f"no support to set a non-existed dataset to the readonly mode: {self.name}"
                 )
 
-            if not create:
-                raise RuntimeError(
-                    "for the non-existed dataset, you should set create=True to create dataset automatically"
-                )
-
             if version != "":
                 raise NoSupportError(
                     f"no support to create a specified version dataset: {version}"
                 )
+
             self._loading_version = self._pending_commit_version
 
         self._loading_uri = self._make_capsulated_uri(obj_ver=self._loading_version)
@@ -161,12 +152,12 @@ class Dataset:
         self._workdir = Path(f"{SW_AUTO_DIRNAME}/dataset")
         self._updated_rows_by_commit = 0
         self._deleted_rows_by_commit = 0
-        if create:
-            self._total_rows = 0
-        else:
+        if origin_uri_exists:
             _summary = self.__loading_core_dataset.summary()
             # TODO: raise none summary exception for existed dataset
             self._total_rows = 0 if _summary is None else _summary.rows
+        else:
+            self._total_rows = 0
 
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
@@ -796,15 +787,15 @@ class Dataset:
     @staticmethod
     def dataset(
         uri: t.Union[str, URI],
-        create: bool = False,
         readonly: bool = False,
     ) -> Dataset:
         """Create or load a dataset from standalone instance or cloud instance.
 
+        For a non-existed dataset, when you try to load it, you will get an Exception; when you try to append records and commit,
+        the dataset will be created automatically.
+
         Arguments:
             uri: (str, URI, required) The dataset uri.
-            create: (bool, optional) Create a new dataset automatically.If create is False, the dataset must exist.
-                Default is False.
             readonly: (bool, optional) For an existing dataset, you can specify the readonly=True argument to ensure
                 the dataset is in readonly mode. Default is False.
 
@@ -816,7 +807,8 @@ class Dataset:
         from starwhale import dataset, Image
 
         # create a new dataset named mnist, and add a row into the dataset
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
+        ds.exists()  # return False, "mnist" dataset is not existing.
         ds.append({"img": Image(), "label": 1})
         ds.commit()
         ds.close()
@@ -843,16 +835,10 @@ class Dataset:
                 f"uri({uri}) argument type is not expected, dataset uri or str is ok"
             )
 
-        if create and readonly:
-            raise ValueError(
-                "create and readonly arguments cannot be set to True at the same time"
-            )
-
         ds = Dataset(
             name=_uri.object.name,
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
-            create=create,
             readonly=readonly,
         )
 

@@ -14,7 +14,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("dtd", create=True)
+    ds = dataset("dtd")
     lines = request_link_text(f"{PATH_ROOT}/{LABEL_PATH}").splitlines()
     for line in lines:
         tokens = line.split()

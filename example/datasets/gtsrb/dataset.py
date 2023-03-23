@@ -12,7 +12,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("gtsrb", create=True)
+    ds = dataset("gtsrb")
     for i in range(40):
         dir = str(i).zfill(5)
         lines = request_link_text(f"{PATH_ROOT}/{dir}/GT-{dir}.csv").splitlines()

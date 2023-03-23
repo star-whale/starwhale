@@ -14,7 +14,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("wider_face", create=True)
+    ds = dataset("wider_face")
     lines = request_link_text(f"{PATH_ROOT}/{INDEX_PATH}").splitlines()
     current_img = ""
     image_annos = []

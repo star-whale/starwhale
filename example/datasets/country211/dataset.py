@@ -15,7 +15,7 @@ def request_link_text(anno_link):
 
 
 def build_ds(split: str = "test"):
-    ds = dataset("country211", create=True)
+    ds = dataset("country211")
     tree = json.loads(request_link_text(f"{PATH_ROOT}/tree.json"))
     for dir in tree:
         if DATA_PATH not in dir.get("name", ""):

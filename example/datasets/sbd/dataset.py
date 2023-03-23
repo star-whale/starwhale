@@ -20,7 +20,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("sbd", create=True)
+    ds = dataset("sbd")
     items = request_link_text(f"{PATH_ROOT}/{TRAIN_INDEX}").splitlines()
     for item in items:
         with requests.get(f"{PATH_ROOT}/{CLS_PATH}/{item}.mat", timeout=10) as rsp:

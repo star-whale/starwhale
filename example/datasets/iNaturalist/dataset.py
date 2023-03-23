@@ -20,7 +20,7 @@ def request_link_json(anno_link):
 
 
 def build_ds():
-    ds = dataset("iNaturalist-val", create=True)
+    ds = dataset("iNaturalist-val")
     index = request_link_json(f"{PATH_ROOT}/{INDEX_PATH}")
     img_dict = array_to_dict(index["images"])
     cat_dict = array_to_dict(index["categories"])

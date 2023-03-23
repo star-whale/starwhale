@@ -61,7 +61,7 @@ def flo_to_binary(flow_bytes: bytes):
 
 
 def build_ds():
-    ds = dataset("sintel", create=True)
+    ds = dataset("sintel")
     json = request_link_json(f"{PATH_ROOT}/tree.json")
     for folder in json:
         if folder.get("name") != PATH_FLOW:

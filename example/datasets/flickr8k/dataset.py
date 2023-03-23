@@ -74,7 +74,7 @@ class FlickrParser(HTMLParser):
 
 
 def build_ds():
-    ds = dataset("flickr8k", create=True)
+    ds = dataset("flickr8k")
     idx_parser = IndexParser()
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [
