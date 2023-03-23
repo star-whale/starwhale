@@ -17,6 +17,8 @@ for line in $resps; do
   fi
 done
 
+export auth_header=$(echo ${auth_header%$'\r'})
+
 curl -X 'POST' \
   "$CONTROLLER_URL/api/v1/system/setting" \
   -H 'accept: application/json' \
