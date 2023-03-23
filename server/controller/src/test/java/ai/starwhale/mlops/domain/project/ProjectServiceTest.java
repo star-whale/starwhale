@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.matches;
@@ -40,6 +41,7 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.sort.Sort;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -50,6 +52,8 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.context.ApplicationContext;
 
 public class ProjectServiceTest {
 
@@ -106,7 +110,8 @@ public class ProjectServiceTest {
                 .idTableKey(1L)
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
-        given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
+        given(userService.getProjectRolesOfUser(any(), any()))
+                .willReturn(Collections.emptyList());
         given(userService.findRole(same(1L)))
                 .willReturn(Role.builder().id(1L)
                         .roleName(Role.NAME_OWNER)
@@ -150,6 +155,17 @@ public class ProjectServiceTest {
 
     @Test
     public void testListProject() {
+        ApplicationContext context = mock(ApplicationContext.class);
+        service.setApplicationContext(context);
+        Sort sort = mock(Sort.class);
+        Mockito.when(context.getBean(any(), same(Sort.class)))
+                .thenReturn(sort);
+        Mockito.when(sort.list(anyString(), any(), anyBoolean()))
+                .thenReturn(List.of(
+                        ProjectEntity.builder().id(1L).build(),
+                        ProjectEntity.builder().id(2L).build()
+                ));
+
         var res = service.listProject("",
                 OrderParams.builder().build(),
                 User.builder().build());
