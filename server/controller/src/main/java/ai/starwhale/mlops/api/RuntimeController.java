@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -36,6 +37,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -69,6 +71,12 @@ public class RuntimeController implements RuntimeApi {
                         .pageSize(pageSize)
                         .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<RuntimeViewVo>>> listRuntimeTree(String projectUrl) {
+        List<RuntimeViewVo> runtimeViewVos = runtimeService.listRuntimeVersionView(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(runtimeViewVos));
     }
 
     @Override
@@ -134,6 +142,13 @@ public class RuntimeController implements RuntimeApi {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Modify runtime failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(String projectUrl, String runtimeUrl,
+            String runtimeVersionUrl, Integer shared) {
+        runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

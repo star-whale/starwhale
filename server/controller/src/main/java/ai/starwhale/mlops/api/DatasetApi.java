@@ -305,6 +305,27 @@ public interface DatasetApi {
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 
 
+    @Operation(summary = "Share or unshare the dataset version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareDatasetVersion(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("datasetUrl") String datasetUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl") String versionUrl,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "1 - shared, 0 - unshared",
+                    schema = @Schema())
+            @RequestParam(value = "shared") Integer shared
+    );
+
     @Operation(
             summary = "Manage tag of the dataset version",
             description = "add|remove|set tags"

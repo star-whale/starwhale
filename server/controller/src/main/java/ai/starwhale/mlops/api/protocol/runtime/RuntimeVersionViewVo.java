@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset;
+package ai.starwhale.mlops.api.protocol.runtime;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -27,30 +25,16 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Builder
 @Validated
-@Schema(description = "Dataset version object", title = "DatasetVersion")
-public class DatasetVersionVo implements Serializable {
+@Schema(description = "Runtime Version View object", title = "Runtime")
+public class RuntimeVersionViewVo {
 
-    @JsonProperty("id")
     private String id;
 
-    @JsonProperty("name")
-    private String name;
+    private String versionName;
 
-    @JsonProperty("tag")
-    private String tag;
-
-    @JsonProperty("alias")
     private String alias;
 
-    @JsonProperty("meta")
-    private Object meta;
-
-    @JsonProperty("createdTime")
-    private Long createdTime;
-
-    @JsonProperty("owner")
-    private UserVo owner;
-
-    @JsonProperty("shared")
     private Integer shared;
+
+    private Long createdTime;
 }
