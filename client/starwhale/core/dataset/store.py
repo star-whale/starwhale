@@ -437,7 +437,7 @@ class StorageBackend(metaclass=ABCMeta):
 
     @abstractmethod
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[Link, int, int]
+        self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
         raise NotImplementedError
 
@@ -470,13 +470,13 @@ class S3StorageBackend(StorageBackend):
             )
 
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[Link, int, int]
+        self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
         # TODO: merge connections for s3
         _key, _start, _end = key_compose
         return S3BufferedFileLike(
             s3=self.s3,
-            bucket=bucket,
+            bucket=kw["bucket"],
             key=_key.uri,
             start=_start,
             end=_end,
@@ -488,21 +488,25 @@ class LocalFSStorageBackend(StorageBackend):
         super().__init__(kind=SWDSBackendType.LocalFS)
 
     def _make_file(
-        self, bucket: str, key_compose: t.Tuple[Link, int, int]
+        self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
         _key_l, _start, _end = key_compose
         _key = _key_l.uri
-        bucket_path = (
-            Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
-        )
         # TODO: tune reopen file performance, merge files
-        data_path = bucket_path / _key[: DatasetStorage.short_sign_cnt]
+        data_path = DatasetStorage._get_object_store_path(_key)
+        # TODO: remove dataset data_dir
         if not data_path.exists():
-            data_path = bucket_path / _key
+            bucket = kw["bucket"]
+            bucket_path = (
+                Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
+            )
+            data_path = bucket_path / _key[: DatasetStorage.short_sign_cnt]
+            if not data_path.exists():
+                data_path = bucket_path / _key
 
         with data_path.open("rb") as f:
             f.seek(_start)
-            return io.BytesIO(f.read(_end - _start + 1))
+            return io.BytesIO(f.read(_end - _start + 1))  # type: ignore
 
 
 class SignedUrlBackend(StorageBackend, CloudRequestMixed):
@@ -512,7 +516,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
 
     @http_retry
     def _make_file(
-        self, key_compose: t.Tuple[Link, int, int], **kwargs: t.Any
+        self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
         return HttpBufferedFileLike(
@@ -543,7 +547,7 @@ class HttpBackend(StorageBackend, CloudRequestMixed):
 
     @http_retry
     def _make_file(
-        self, key_compose: t.Tuple[Link, int, int], **kwargs: t.Any
+        self, key_compose: t.Tuple[Link, int, int], **kw: t.Any
     ) -> FileLikeObj:
         _key, _start, _end = key_compose
         return HttpBufferedFileLike(
