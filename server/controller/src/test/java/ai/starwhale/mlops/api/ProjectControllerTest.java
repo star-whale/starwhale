@@ -124,7 +124,7 @@ public class ProjectControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData().getList(), allOf(
                 notNullValue(),
-                is(iterableWithSize(1)),
+                is(iterableWithSize(3)),
                 is(hasItem(hasProperty("id", is("3"))))
         ));
 
