@@ -1,4 +1,5 @@
 ---
+slug: /
 title: 什么是Starwhale
 ---
 
