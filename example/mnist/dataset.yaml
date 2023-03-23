@@ -1,11 +1,7 @@
 name: mnist
 
-handler: mnist.dataset:DatasetProcessExecutor
-#handler: mnist.dataset:RawDatasetProcessExecutor
+handler: mnist.dataset:iter_mnist_item
 #handler: mnist.dataset:LinkRawDatasetProcessExecutor
-
-#handler: mnist.dataset:iter_swds_bin_item
-#handler: mnist.dataset:iter_user_raw_item
 
 desc: MNIST data and label test dataset
 

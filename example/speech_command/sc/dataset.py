@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from starwhale import Link, Audio, MIMEType, S3LinkAuth, BuildExecutor
+from starwhale import Link, Audio, MIMEType, S3LinkAuth
 
 dataset_dir = (
     Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
@@ -10,8 +10,8 @@ validation_ds_paths = [dataset_dir / "validation_list.txt"]
 testing_ds_paths = [dataset_dir / "testing_list.txt"]
 
 
-class SWDSBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple, None, None]:
+class SWDSBuildExecutor:
+    def __iter__(self) -> t.Generator[t.Tuple, None, None]:
         for path in validation_ds_paths:
             with path.open() as f:
                 for item in f.readlines():
@@ -33,13 +33,13 @@ class SWDSBuildExecutor(BuildExecutor):
                     }
 
 
-class LinkRawDatasetBuildExecutor(BuildExecutor):
+class LinkRawDatasetBuildExecutor:
 
     _auth = S3LinkAuth(name="speech", access_key="minioadmin", secret="minioadmin")
     _addr = "10.131.0.1:9000"
     _bucket = "users"
 
-    def iter_item(self) -> t.Generator[t.Tuple, None, None]:
+    def __iter__(self) -> t.Generator[t.Tuple, None, None]:
         import boto3
         from botocore.client import Config
 

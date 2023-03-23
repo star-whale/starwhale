@@ -1,6 +1,6 @@
 name: ucf101
 
-handler: ucf101.dataset:UCFDatasetBuildExecutor
+handler: ucf101.dataset:iter_ucf_item
 
 desc: ucf101 data and label test dataset
 

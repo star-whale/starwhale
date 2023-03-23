@@ -107,6 +107,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_append(self) -> None:
         size = 11
         ds = dataset("mnist")
+        assert ds._tmpdir is None
         assert len(ds) == 0
         ds.append(DataRow(index=0, features={"data": Binary(b""), "label": 1}))
         assert len(ds) == 1
@@ -123,7 +124,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.append((1, 1, 1, 1, 1))
 
         ds.commit()
+
+        assert ds._tmpdir and ds._tmpdir.exists()
         ds.close()
+
+        assert not ds.tmpdir.exists()
 
         load_ds = dataset(ds.uri)
         assert load_ds.exists()
@@ -684,7 +689,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         ds.flush()
 
-        _dataset_builder_dir = ds._workdir / "builder"
+        _dataset_builder_dir = ds._tmpdir / "builder"
         _artifacts_bin_dir = _dataset_builder_dir / "artifact_bin_tmp"
 
         assert _dataset_builder_dir.exists()

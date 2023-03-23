@@ -15,7 +15,6 @@ import numpy
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import (
-    LATEST_TAG,
     SHORT_VERSION_CNT,
     VERSION_PREFIX_CNT,
     DEFAULT_STARWHALE_API_VERSION,
@@ -999,8 +998,6 @@ class DatasetConfig(ASDictMixin):
         attr: t.Dict[str, t.Any] = {},
         project_uri: str = "",
         runtime_uri: str = "",
-        append: bool = False,
-        append_from: str = LATEST_TAG,
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -1012,8 +1009,6 @@ class DatasetConfig(ASDictMixin):
         self.exclude_pkg_data = exclude_pkg_data
         self.project_uri = project_uri
         self.runtime_uri = runtime_uri
-        self.append = append
-        self.append_from = append_from
 
         self.kw = kw
 

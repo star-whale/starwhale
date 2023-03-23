@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PIL import Image as PILImage
 
-from starwhale import Image, MIMEType, BuildExecutor
+from starwhale import Image, MIMEType
 
 ROOT_DIR = Path(__file__).parent.parent / "data" / "cifar-10-batches-py"
 TRAIN_DATASET_PATHS = [ROOT_DIR / f"data_batch_{i}" for i in range(1, 6)]
@@ -20,7 +20,7 @@ def parse_meta() -> t.Dict[str, t.Any]:
 dataset_meta = parse_meta()
 
 
-def _iter_item(paths: t.List[Path]) -> t.Generator[t.Tuple[t.Any, t.Dict], None, None]:
+def _iter_item(paths: t.List[Path]) -> t.Generator:
     for path in paths:
         with path.open("rb") as f:
             content = pickle.load(f, encoding="bytes")
@@ -42,11 +42,9 @@ def _iter_item(paths: t.List[Path]) -> t.Generator[t.Tuple[t.Any, t.Dict], None,
                 }
 
 
-class CIFAR10TrainBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        return _iter_item(TRAIN_DATASET_PATHS)
+def iter_cifar10_train_item() -> t.Generator:
+    return _iter_item(TRAIN_DATASET_PATHS)
 
 
-class CIFAR10TestBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        return _iter_item(TEST_DATASET_PATHS)
+def iter_cifar10_test_item() -> t.Generator:
+    return _iter_item(TEST_DATASET_PATHS)

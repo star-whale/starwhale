@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import platform
+import tempfile
 import threading
 from http import HTTPStatus
 from types import TracebackType
@@ -18,7 +19,7 @@ from starwhale.consts import (
     FileDesc,
     HTTPMethod,
     CREATED_AT_KEY,
-    SW_AUTO_DIRNAME,
+    SW_TMP_DIR_NAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
@@ -26,11 +27,12 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
-from starwhale.utils.fs import copy_file, ensure_dir, ensure_file
+from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
@@ -149,7 +151,8 @@ class Dataset:
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
 
-        self._workdir = Path(f"{SW_AUTO_DIRNAME}/dataset")
+        self._tmpdir: t.Optional[Path] = None
+
         self._updated_rows_by_commit = 0
         self._deleted_rows_by_commit = 0
         if origin_uri_exists:
@@ -430,6 +433,19 @@ class Dataset:
         if self._dataset_builder:
             self._dataset_builder.close()
 
+        if self._tmpdir is not None:
+            empty_dir(self._tmpdir)
+
+    @property
+    def tmpdir(self) -> Path:
+        if self._tmpdir is None:
+            _base_dir = SWCliConfigMixed().rootdir / SW_TMP_DIR_NAME
+            ensure_dir(_base_dir)
+            self._tmpdir = Path(
+                tempfile.mkdtemp(prefix=f"dataset-{self.name}-", dir=_base_dir)
+            )
+        return self._tmpdir
+
     def diff(self, cmp: Dataset) -> t.Dict:
         # TODO: wait for datastore diff feature
         raise NotImplementedError
@@ -512,7 +528,7 @@ class Dataset:
             if self._dataset_builder is None:
                 # TODO: support alignment_bytes_size, volume_bytes_size arguments
                 self._dataset_builder = MappingDatasetBuilder(
-                    workdir=self._workdir / "builder",
+                    workdir=self.tmpdir / "builder",
                     dataset_name=self.name,
                     project_name=self.project_uri.project,
                     instance_name=self.project_uri.instance,
@@ -680,7 +696,7 @@ class Dataset:
             self._updated_rows_by_commit = 0
             self._deleted_rows_by_commit = 0
 
-            _m_path = self._workdir / DEFAULT_MANIFEST_NAME
+            _m_path = self.tmpdir / DEFAULT_MANIFEST_NAME
             ensure_file(
                 _m_path,
                 yaml.safe_dump(_manifest, default_flow_style=False),
