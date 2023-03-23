@@ -108,8 +108,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build
-          # when https://github.com/star-whale/starwhale/pull/1862 pr is merged, we could delete the keep_files flag.
-          keep_files: true
           user_name: github-actions[bot]
           cname: doc.starwhale.ai
           user_email: "github-actions[bot]@users.noreply.github.com"
