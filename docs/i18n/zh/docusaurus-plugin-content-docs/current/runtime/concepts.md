@@ -2,15 +2,15 @@
 title: 核心概念
 ---
 
-## 1. 设计概述
+## 设计概述
 
-### 1.1 Starwhale Runtime 定位
+### Starwhale Runtime 定位
 
 `Starwhale Runtime` 是一个完备的、易用的、面向异构设备、开箱即用的ML/DL领域环境管理工具，能与 `Starwhale Dataset` 、`Starwhale Model` 和 `Starwhale Evaluation` 等无缝集成，是Starwhale MLOps工具链的重要组成部分。
 
 `Starwhale Runtime` 希望能够最大程度的降低用户关于conda、venv和docker等操作困扰，让数据工程师和算法工程师等不需要过多的关于运行环境方面的工程知识储备，使用swcli和编写少量runtime.yaml，就能实现有版本追踪、可复现、可分享、不同Instance上一致的运行环境。`Starwhale Runtime` 短期并不是要创建一个全新的Python包管理器或Docker二次封装的命令行工具，而是使用若干开源工具，针对MLOps场景，结合Starwhale其他组件，提供一个更简洁、更好用的Runtime Workflow。
 
-### 1.2 核心功能
+### 核心功能
 
 - **YAML定义**：通过runtime.yaml描述最终Starwhale Runtime的期望。
 - **丰富的Python环境依赖描述方式**：Python版本、conda或venv模式选择、pip依赖、Conda依赖、Wheels包、脚本文件、requirements.txt和conda.yaml文件。
@@ -20,17 +20,17 @@ title: 核心概念
 - **制品存储**：Standalone Instance能存储本地构建或分发的swrt文件，Cloud Instance使用对象存储提供集中式的swrt制品存储。
 - **Starwhale无缝集成**：`Starwhale Dataset` 构建，`Starwhale Model` 构建和 `Starwhale Evaluation` 运行时，可以直接在命令行中使用 `--runtime` 参数，就能直接使用某个构建好的 `Starwhale Runtime` 运行本次任务。
 
-### 1.3 关键元素
+### 关键元素
 
 - `runtime.yaml` 配置文件：描述 `Starwhale Runtime` 是如何被定义的，是构建 `Starwhale Runtime` 的起点。runtime.yaml 可以是用户从头编写的，也可以是通过 `swcli runtime quickstart` 命令生成的。
 - `swrt` 包文件：`swcli runtime build` 命令执行后生成的runtime打包文件，目前为tar格式。`swrt` 包文件包含一个_manifest.yaml文件，一个 `runtime.yaml` 文件，一组 `requirements.txt`（包含零个或多个）和用户想打包到 `Starwhale Runtime` 的其他文件，包括 native libs, bin files, wheel files 或 python scripts等。`swrt` 在Standalone Instance环境生成后，可以通过 `swcli dataset copy` 命令进行分发。swrt 是Starwhale Runtime的简写。
 - `swcli runtime` 命令行：一组runtime相关的命令，包括构建、分发和管理等功能。具体命令行说明，请参考 [CLI Reference](api/cli.md)。
 
-## 2. 最佳实践
+## 最佳实践
 
 `Starwhale Runtime` 的构建是独立进行的，不需要 `Starwhale Model` 和 `Starwhale Dataset` 等前置依赖。通常情况下，在一个小团队中精心制作好一个或少数几个 `Starwhale Runtime` 并不断迭代更新版本，就能满足整组在运行环境方面的需求。
 
-### 2.1 命令行分组
+### 命令行分组
 
 `Starwhale Runtime` 命令行从使用阶段的角度上，可以划分如下：
 
@@ -54,17 +54,17 @@ title: 核心概念
   - `swcli dataset remove`
   - `swcli dataset recover`
 
-### 2.2 核心流程
+### 核心流程
 
 `Starwhale Runtime` 使用的核心流程如下图：
 
 ![runtime-workflow](../img/runtime-workflow.jpg)
 
-## 3. runtime.yaml 说明
+## runtime.yaml 说明
 
 runtime.yaml 对于 `Starwhale Runtime` 至关重要，一切的构建都是从runtime.yaml开始的。
 
-### 3.1 YAML字段描述
+### YAML字段描述
 
 |字段|描述|是否必要|类型|默认值|
 |---|---|-------|---|-----|
@@ -111,9 +111,9 @@ runtime.yaml 对于 `Starwhale Runtime` 至关重要，一切的构建都是从r
 
 更全面的CUDNN和CUDNN库的版本信息，请参考Github上的[代码链接](https://github.com/star-whale/starwhale/blob/main/docker/cuda/render.py)。
 
-### 3.2 使用示例
+### 使用示例
 
-#### 3.2.1 最简示例
+#### 最简示例
 
 ```yaml
 name: helloworld
@@ -127,7 +127,7 @@ helloworld的runtime.yaml中只有一行关于name的配置，构建runtime时�
 - 选用ubuntu:20.04作为基础镜像的OS版本。
 - 使用 `swcli runtime lock`命令或 `swcli runtime build`时自动lock出来的 requirements-sw-lock.txt（存放在.starwhale/lock目录中）中描述的依赖作为Python依赖。
 
-#### 3.2.2 Pytorch Runtime的示例
+#### Pytorch Runtime的示例
 
 ```yaml
 api_version: 1.1
@@ -171,7 +171,7 @@ name: pytorch
 
 pytorch runtime例子描述了一个比较复杂的runtime.yaml编写方式，设计pip，wheel，files和requirements.txt四种依赖的描述。
 
-#### 3.2.3 dependencies 示例
+#### dependencies 示例
 
 仅使用 requirements.txt 格式描述依赖，一般通过 pip freeze，手工编写或其他工具产生该文件。 支持.txt或.in文件后缀。
 
@@ -216,7 +216,7 @@ dependencies:
         src: scripts/prepare.sh  # 相对runtime.yaml所在目录（workdir）的相对路径，支持文件或目录，若目录则会递归拷贝，required
 ```
 
-## 4. Starwhale Runtime 与 Docker 的关系
+## Starwhale Runtime 与 Docker 的关系
 
 - Starwhale Runtime 并不是Docker Image的上层封装，Docker只是Starwhale Runtime在服务器场景下的一种运行载体。可以理解为Starwhale Runtime是一种抽象，Docker Image是在某些场景下的一种实现方式。
 - Starwhale Runtime 未来会在嵌入式设备上提供其他的运行载体，但用户仍采用统一的Runtime描述方式。

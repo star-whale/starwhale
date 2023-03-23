@@ -6,7 +6,7 @@ Standalone Instance 是安装在用户的笔记本或开发服务器上，以Lin
 
 `~/.config/starwhale/config.yaml` 文件权限为 0o600，由于里面存有密钥信息，不建议用户修改该文件权限。
 
-## 1. config.yaml 说明
+## config.yaml 说明
 
 典型的config.yaml文件内容如下，表示当前默认默认Instance为local，管理4个Instance，其中cloud-cn/cloud-k8s/pre-k8s三个为Cloud Instance，local为Standalone Instance。Standalone本地存储的根目录为 `/home/liutianwei/.starwhale` ：
 
@@ -60,13 +60,13 @@ version: '2.0'
 |storage.root|Standalone Instance本地存储的根目录。通常情况下，当home目录空间不足，手工把数据文件移动到其他位置时，可以修改该字段|String|`~/.starwhale`|是|
 |version|config.yaml的版本，目前仅支持2.0|String|2.0|是|
 
-你可以通过`swci config edit`来修改配置
+您可以通过`swci config edit`来修改配置
 
 ```shell
 swcli config edit
 ```
 
-## 2. Standalone Instance的文件存储结构
+## Standalone Instance的文件存储结构
 
 ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户数据，包括Project、Runtime、Model、Dataset、Evaluation等用户直接感知的数据，也包括ObjectStore、DataStore等Starwhale后台实现的存储。具体说明如下：
 
@@ -95,9 +95,9 @@ ${storage.root} 目录中存储了Starwhale Standalone Instance所有的用户�
 |  |   |   +-- runtime  --> swrt解压后的目录，若进行runtime restore操作，生成的venv或conda隔离环境，也会存放在该目录中
 ```
 
-## 3. link_auths
+## link_auths
 
-有时候你可能需要用到`starwhale.Link`来存储一些信息。理论上，`Link`里面的URI可以是任意的合法URI（星鲸目前只支持S3协议族和HTTP），比如`s3://10.131.0.1:9000/users/path`。然而，有些`Link`是需要鉴权才能访问的。`link_auths`就是用来存放这些鉴权信息的。
+有时候您可能需要用到`starwhale.Link`来存储一些信息。理论上，`Link`里面的URI可以是任意的合法URI（星鲸目前只支持S3协议族和HTTP），比如`s3://10.131.0.1:9000/users/path`。然而，有些`Link`是需要鉴权才能访问的。`link_auths`就是用来存放这些鉴权信息的。
 
 ```yaml
 link_auths:
@@ -111,4 +111,4 @@ link_auths:
     sk: starwhale
 ```
 
-`link_auths` 里面的每一条都会自动匹配你的URI。 目前`S3`类型的鉴权信息通过`bucket` 和 `endpoint`来匹配URI。
+`link_auths` 里面的每一条都会自动匹配您的URI。 目前`S3`类型的鉴权信息通过`bucket` 和 `endpoint`来匹配URI。

@@ -2,7 +2,7 @@
 title: 模型评测命令
 ---
 
-## 1. 基本信息
+## 基本信息
 
 ```bash
 swcli [GLOBAL OPTIONS] eval [OPTIONS] COMMAND [ARGS]...
@@ -26,7 +26,7 @@ eval命令包含如下子命令：
 |cancel||✅|✅|
 |resume||✅|✅|
 
-## 2. 评测模型
+## 评测模型
 
 ```bash
 swcli eval run [OPTIONS]
@@ -51,7 +51,7 @@ swcli eval run [OPTIONS]
 |`--gencmd`||❌|Boolean|False|当选用设置 `--use-docker` 参数后，只输出docker run的命令，不真正运行。该参数只能在Standalone Instance中使用。|
 |`--use-docker`||❌|Boolean|False|选用docker为载体的Runtime来运行模型评测过程，该参数只能在Standalone Instance中使用。|
 
-## 3. 对比模型评测结果
+## 对比模型评测结果
 
 ```bash
 swcli eval compare BASE_JOB [JOB]...
@@ -61,7 +61,7 @@ swcli eval compare BASE_JOB [JOB]...
 
 ![eval-compare.png](../../img/eval-compare.png)
 
-## 4. 查看模型评测结果
+## 查看模型评测结果
 
 ```bash
 swcli eval info [OPTIONS] JOB
@@ -74,7 +74,7 @@ swcli eval info [OPTIONS] JOB
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 5. 展示模型评测列表
+## 展示模型评测列表
 
 ```bash
 swcli eval list [OPTIONS]
@@ -90,7 +90,7 @@ swcli eval list [OPTIONS]
 |`--page`||❌|Integer|1|Cloud Instance中分页显示中page序号。|
 |`--size`||❌|Integer|20|Cloud Instance中分页显示中每页数量。|
 
-## 6. 删除模型评测结果
+## 删除模型评测结果
 
 ```bash
 swcli eval remove [OPTIONS] JOB
@@ -102,7 +102,7 @@ swcli eval remove [OPTIONS] JOB
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 7. 恢复软删除的模型评测结果
+## 恢复软删除的模型评测结果
 
 ```bash
 swcli eval recover [OPTIONS] JOB
@@ -114,7 +114,7 @@ swcli eval recover [OPTIONS] JOB
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 8. 暂停模型评测任务的运行
+## 暂停模型评测任务的运行
 
 ```bash
 swcli eval pause [OPTIONS] JOB
@@ -126,7 +126,7 @@ swcli eval pause [OPTIONS] JOB
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制暂停|
 
-## 9. 取消模型评测任务的运行
+## 取消模型评测任务的运行
 
 ```bash
 swcli eval cancel [OPTIONS] JOB
@@ -138,7 +138,7 @@ swcli eval cancel [OPTIONS] JOB
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制取消|
 
-## 10. 恢复模型评测任务的运行
+## 恢复模型评测任务的运行
 
 ```bash
 swcli eval resume [OPTIONS] JOB

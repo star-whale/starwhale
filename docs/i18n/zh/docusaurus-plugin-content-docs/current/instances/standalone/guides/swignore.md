@@ -2,7 +2,7 @@
 title: .swignore文件
 ---
 
-## 1. 用途
+## 用途
 
 `.swignore` 文件与 `.gitignore`, `.dockerignore` 等文件类似，都是用来定义忽略某些文件或文件夹。`.swignore` 文件主要应用在Starwhale的构建过程中：
 
@@ -11,7 +11,7 @@ title: .swignore文件
 
 Starwhale Runtime 构建暂不支持 `.swignore` 文件。
 
-## 2. 示例
+## 示例
 
 mnist的 `.swignore` 文件示例如下：
 

@@ -64,7 +64,7 @@ storageSetting:
 
 ```
 
-### 1. Overwrite the image registry of a runtime
+### Overwrite the image registry of a runtime
 
 Tasks dispatched by the server are based on docker images. Pulling these images could be slow if your internet is not working well.
 We offer a convenience to overwrite the registry of a runtime: Put the YAML below to system setting, the registry of images is overwritten to the one you specified at runtime.
@@ -76,11 +76,11 @@ dockerSetting:
 
 The priority of the system setting is the highest. Fine-grained setting is not provided yet.
 
-### 2. The `resourcePoolSetting`
+### The `resourcePoolSetting`
 
 The `resourcePoolSetting` allows you to manage your cluster in a group manner. It is currently implemented by K8S `nodeSelector`, you could label your machines in K8S cluster and make them a `resourcePool` in Starwhale.
 
-### 3. The `storageSetting`
+### The `storageSetting`
 
 The `storageSetting` allows you to manage the storages the server could access.
 
@@ -94,7 +94,7 @@ storageSetting:
         endpoint: http://s3.region.amazonaws.com # optional
         region: region of the service # required when endpoint is empty
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
-        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+        hugeFilePartSize: 5242880 # MB part size for multiple part upload
   - type: minio
     tokens:
       - bucket: starwhale # required
@@ -103,7 +103,7 @@ storageSetting:
         endpoint: http://10.131.0.1:9000 # required
         region: local # optional
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
-        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+        hugeFilePartSize: 5242880 # MB part size for multiple part upload
   - type: aliyun
     tokens:
       - bucket: starwhale # required
@@ -112,7 +112,7 @@ storageSetting:
         endpoint: http://10.131.0.2:9000 # required
         region: local # optional
         hugeFileThreshold: 10485760 #  bigger than 10MB will use multiple part upload
-        hugeFilePartSize: 5242880 #  5MB part size for multiple part upload
+        hugeFilePartSize: 5242880 # MB part size for multiple part upload
 
 ```
 

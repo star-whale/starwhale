@@ -2,7 +2,7 @@
 title: 模型评测
 ---
 
-## 1. starwhale.PipelineHandler
+## starwhale.PipelineHandler
 
 提供默认的模型评测过程定义，需要用户实现 `ppl` 和 `cmp` 函数。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/model.py)。
 
@@ -67,7 +67,7 @@ class Example(PipelineHandler):
         ...
 ```
 
-## 2. starwhale.Context
+## starwhale.Context
 
 执行模型评测过程中传入的上下文信息，包括Project、Task ID等。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/job.py)。Context的内容是自动注入的，用户通过 `@pass_context` 使用context，或在 继承 `PipelineHandler` 类内使用，目前Context可以获得如下值：
 
@@ -102,7 +102,7 @@ Context(
 |dataset_uris|dataset uri字符串的列表|
 |workdir|model.yaml所在目录|
 
-## 3. starwhale.multi_classification
+## starwhale.multi_classification
 
 修饰器，适用于多分类问题，用来简化cmp结果的进一步计算和结果存储，能更好的呈现评测结果。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/metric.py)。
 
@@ -141,7 +141,7 @@ def cmp(ppl_result) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
 
 `multi_classification` 修饰器使用sklearn lib对多分类问题进行结果分析，输出confusion matrix, roc, auc等值，并且会写入到 starwhale的 DataStore 中。使用的时候需要对所修饰的函数返回值有一定要求，返回(label, result, probability_matrix) 或 (label, result)。
 
-## 4. starwhale.step
+## starwhale.step
 
 修饰器，可以指定DAG的依赖关系和Task数量、资源等配置，实现用户自定义评测过程。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/job.py)。使用 `step` 可以完全不依赖于 `PipelineHandler` 预定义的基本模型评测过程，可以自行定义多阶段和每个阶段的依赖、资源和任务并发数等。
 
@@ -195,7 +195,7 @@ def func():
 @step(resources={"cpu": {"request": 0.1, "limit": 0.2}, "gpu": {"request": 1, "limit": 1}, "memory": {"request": 100, "limit": 200}})
 ```
 
-## 5. starwhale.api.service.Service
+## starwhale.api.service.Service
 
 用于 model serve 的基础类, 最常用的用法是
 

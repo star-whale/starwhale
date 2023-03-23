@@ -2,7 +2,7 @@
 title: 入门指南
 ---
 
-首先，您需要安装[Starwhale命令行工具(SWCLI)](../swcli)，可以通过运行以下命令来完成command
+首先，您需要安装[Starwhale Client（SWCLI）](../swcli)，可以通过运行以下命令来完成command
 
 ```bash
 python3 -m pip install starwhale

@@ -2,7 +2,7 @@
 title: 数据集构建和加载
 ---
 
-## 1. starwhale.SWDSBinBuildExecutor
+## starwhale.SWDSBinBuildExecutor
 
 提供swds-bin格式的数据集构建类，需要用户实现 `iter_item` 函数，返回一个可迭代的对象，包含data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/builder.py#L138)。
 
@@ -49,7 +49,7 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
                 ), {"label": _label}
 ```
 
-## 2. starwhale.UserRawBuildExecutor
+## starwhale.UserRawBuildExecutor
 
 提供remote-link和user-raw格式的数据集构建类，需要用户实现 `iter_item` 函数，返回一个可迭代的对象，包含data和annotations，其中data需要是一个 `starwhale.Link` 类型。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/builder.py#L307)。
 
@@ -128,11 +128,11 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
             yield data, annotations
 ```
 
-## 3. starwhale.BuildExecutor
+## starwhale.BuildExecutor
 
 `SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
 
-## 4. starwhale.get_data_loader
+## starwhale.get_data_loader
 
 获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/loader.py)。该函数返回的loader有两种:一种是表示swds-bin格式的 `SWDSBinDataLoader`, 另一种是表示remote-link或user-raw格式的 `UserRawDataLoader`。两种loader类型目前都能处理在LocalFS和S3协议的对象存储上数据。
 

@@ -8,7 +8,7 @@ title: Starwhale Resources URI定义
 
 ![concepts-org.jpg](../../../img/concepts-org.jpg)
 
-## 1. Instance URI
+## Instance URI
 
 Instance URI 可以指向某一个Starwhale的部署实例，格式如下：
 
@@ -29,7 +29,7 @@ swcli model copy mnist/version/latest cloud://pre-k8s/project/1
 swcli runtime copy pytorch/version/v1.0 http://localhost:8081/project/myproject
 ```
 
-## 2. Project URI
+## Project URI
 
 Project URI格式为：`[<Instance URI>/project/]<project name>`。如果Instance URI字段没有指定，则使用 `swcli instance select` 设置的默认Instance。
 
@@ -38,7 +38,7 @@ swcli project select self   # select self project in the current instance
 swcli project info local/project/self  # inspect self project info in the local instance
 ```
 
-## 3. Model/Dataset/Runtime URI
+## Model/Dataset/Runtime URI
 
 - Model URI格式： `[<Project URI>/model/]<model name>[/version/<version id|tag>]`
 - Dataset URI格式： `[<Project URI>/dataset/]<dataset name>[/version/<version id|tag>]`
@@ -53,7 +53,7 @@ swcli model info mnist  # inspect mnist model info
 swcli eval run --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest
 ```
 
-## 4. Evaluation URI
+## Evaluation URI
 
 Evaluation URI的格式为: `[<Project URI>/evaluation/]<job id>`。如果Project URI没有指定，则使用 `swcli project select` 设置的默认Project。`swcli` 支持不少于5位字符的job id简写表达，但目前 `swcli eval recover` 命令只能使用完整的job id进行资源软删除恢复。
 
@@ -62,7 +62,7 @@ swcli eval info mezdayjzge3w   # Inspect mezdayjzge3w version in default instanc
 swcli eval info local/project/self/job/mezday # Inspect the local instance, self project, with short job version:mezday
 ```
 
-## 5. 命名规范约定
+## 命名规范约定
 
 Project名称，Model名称，Dataset名称，Runtime名称和所有资源Tag有如下的命名规范约定：
 
@@ -71,7 +71,7 @@ Project名称，Model名称，Dataset名称，Runtime名称和所有资源Tag有
 - 名称首字母只能是字母（`A-Z a-z`）和下划线（`_`）。
 - 名称长度最长不超过80个字符。
 
-### 5.1 名称唯一性要求
+### 名称唯一性要求
 
 - **资源名称在其所有者的作用域中需要保证唯一性**，比如Project名称在所对应的Instance中唯一，Model名称在其所属的Project中保持唯一，不能在Project "apple"中出现两个Model都叫"Alice"。
 - 两个不同类型的资源可以重名，比如Project和Model名称都叫"Alice"。

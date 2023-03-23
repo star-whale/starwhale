@@ -2,7 +2,7 @@
 title: 数据集命令
 ---
 
-## 1. 基本信息
+## 基本信息
 
 ```bash
 swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
@@ -28,7 +28,7 @@ dataset包含如下子命令：
 |tag||✅|❌|
 |head||✅|✅|
 
-## 2. 构建数据集
+## 构建数据集
 
 ```bash
 swcli dataset build [OPTIONS] WORKDIR
@@ -56,7 +56,7 @@ swcli dataset build [OPTIONS] WORKDIR
 |`--volume-size`|`-vs`|❌|String|64MB|swds-bin格式的数据集每个data文件的大小。当写数字时，单位bytes；也可以是数字+单位格式，如64M, 1GB等|
 |`--data-mime-type`|`-dmt`|❌|String|x/undefined|全局默认的数据MIME类型，候选值为 `starwhale.MIMEType` [枚举值](data_type.md)|
 
-## 3. 分发数据集
+## 分发数据集
 
 ```bash
 swcli dataset copy [OPTIONS] SRC DEST
@@ -73,7 +73,7 @@ Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的dataset，指定该参数后执行copy命令就会强制覆盖。|
 |`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝数据集时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
-## 4. 对比数据集
+## 对比数据集
 
 ```bash
 swcli dataset diff [OPTIONS] BASE_URI COMPARE_URI
@@ -89,7 +89,7 @@ swcli dataset diff [OPTIONS] BASE_URI COMPARE_URI
 
 ![dataset-diff.png](../../img/dataset-diff.png)
 
-## 5. 查看数据集摘要信息
+## 查看数据集摘要信息
 
 ```bash
 swcli dataset summary DATASET
@@ -97,7 +97,7 @@ swcli dataset summary DATASET
 
 `dataset summary` 命令输出数据集具体版本的摘要信息，包括数据集行数、尺寸和数据形态等信息。`DATASET` 参数为Dataset URI，需包含version。
 
-## 6. 查看数据集历史版本
+## 查看数据集历史版本
 
 ```bash
 swcli dataset history [OPTIONS] DATASET
@@ -109,7 +109,7 @@ swcli dataset history [OPTIONS] DATASET
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 7. 查看数据集详细信息
+## 查看数据集详细信息
 
 ```bash
 swcli dataset info [OPTIONS] DATASET
@@ -123,7 +123,7 @@ swcli dataset info [OPTIONS] DATASET
 
 ![dataset-info.gif](../../img/dataset-info.gif)
 
-## 8. 展示数据集列表
+## 展示数据集列表
 
 ```bash
 swcli dataset list [OPTIONS]
@@ -148,7 +148,7 @@ swcli dataset list [OPTIONS]
 
 `dataset list` 的alias命令为 `dataset ls`。
 
-## 9. 删除数据集
+## 删除数据集
 
 ```bash
 swcli dataset remove [OPTIONS] DATASET
@@ -163,7 +163,7 @@ URI，当没有指定版本时，会对整个数据集所有版本进行删除�
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 10. 恢复软删除的数据集
+## 恢复软删除的数据集
 
 ```bash
 swcli dataset recover [OPTIONS] DATASET
@@ -177,7 +177,7 @@ swcli dataset recover [OPTIONS] DATASET
 
 ![dataset-recover.png](../../img/dataset-recover.png)
 
-## 11. 标记数据集
+## 标记数据集
 
 ```bash
 swcli dataset tag [OPTIONS] DATASET [TAGS]...
@@ -194,7 +194,7 @@ swcli dataset tag [OPTIONS] DATASET [TAGS]...
 
 ![dataset-tags.png](../../img/dataset-tags.png)
 
-## 12. 显示数据集前几条数据信息
+## 显示数据集前几条数据信息
 
 ```bash
 swcli dataset head [OPTIONS] DATASET

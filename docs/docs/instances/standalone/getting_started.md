@@ -6,7 +6,7 @@ title: Getting Started
 
 ![Core Workflow](../../img/standalone-core-workflow.gif)
 
-## 1. Installing Starwhale
+## Installing Starwhale
 
 Starwhale has three types of instances: Standalone, On-Premises, and Cloud Hosted. Starting with the standalone mode is ideal for quickly understanding and mastering Starwhale.
 You install Starwhale Standalone by running:
@@ -25,7 +25,7 @@ Starwhale standalone requires Python 3.7~3.11. Currently, Starwhale only support
 
 At the installation stage, we strongly recommend you follow the [doc](install.md).
 
-## 2. Downloading Examples
+## Downloading Examples
 
 Download Starwhale examples by cloning Starwhale via:
 
@@ -36,7 +36,7 @@ cd starwhale
 
 To save time in the example downloading, we skip git-lfs and other commits info. We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale` directory.
 
-## 3. Building Runtime
+## Building Runtime
 
 Runtime example code are in the `example/runtime/pytorch` directory.
 
@@ -73,7 +73,7 @@ Runtime example code are in the `example/runtime/pytorch` directory.
   swcli runtime restore pytorch/version/latest
   ```
 
-## 4. Building Model
+## Building Model
 
 Model example code are in the `example/mnist` directory.
 
@@ -100,7 +100,7 @@ Model example code are in the `example/mnist` directory.
   swcli model info mnist/version/latest
   ```
 
-## 5. Building Dataset
+## Building Dataset
 
 Dataset example code are in the `example/mnist` directory.
 
@@ -133,7 +133,7 @@ Dataset example code are in the `example/mnist` directory.
   swcli dataset head mnist/version/latest
   ```
 
-## 6. Running an Evaluation Job
+## Running an Evaluation Job
 
 - Create an evaluation job
 

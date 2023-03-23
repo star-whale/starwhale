@@ -20,4 +20,4 @@ To create/update a dataset, see [Create/update a Starwhale dataset](creation) fo
 
 Starwhale datasets are versioned. This feature helps you to keep track of all modifications of a dataset. And you can always run your model evaluation by specifying a specific dataset version, regardless of any future changes to the dataset. In this way, model evaluations in Starwhale are stable and comparatable. For more information about versioning in Starwhale, see [Resource versioning in Starwhale](../common/versioning).
 
-The Starwhale Command Line Interface (SWCLI) provides dataset related commands. For more information, see [SWCLI reference guide](../references/swcli/dataset).
+The Starwhale Client (SWCLI) provides dataset related commands. For more information, see [SWCLI reference guide](../references/swcli/dataset).

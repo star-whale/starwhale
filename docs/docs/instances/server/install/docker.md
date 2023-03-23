@@ -2,16 +2,16 @@
 title: Deploy Starwhale Server with Docker
 ---
 
-## 1. Prerequisites
+## Prerequisites
 
 * Docker or Podman environment
 * Pod of Starwhale job can access the port exposed by Starwhale controller
 * Object Store
 * MySQL database
 
-## 2. Configurations
+## Configurations
 
-### 2.1. environments
+### . environments
 
 Most of the configuration of Controller can be controlled by environment variables. Here is a list of available
 environment variables.
@@ -37,7 +37,7 @@ environment variables.
 
 More environment variables in [application.yaml](https://github.com/star-whale/starwhale/blob/main/server/controller/src/main/resources/application.yaml).
 
-### 2.2. Kubeconfig
+### . Kubeconfig
 
 For a brief description of Kubeconfig, please refer to the [official documentation](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/).
 

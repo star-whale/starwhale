@@ -11,9 +11,9 @@ title: Speech Commands 数据集的多分类任务模型评测
 - 如何使用TorchAudio完成音频数据的多分类任务。
 - 如何使用已经构建好的Starwhale Runtime作为Python运行环境。
 
-## 1.前置条件
+## 前置条件
 
-### 1.1 基础环境
+### 基础环境
 
 - Python版本: 3.7 ~ 3.10。
 - OS环境: Linux或macOS(仅运行Standalone)。
@@ -21,7 +21,7 @@ title: Speech Commands 数据集的多分类任务模型评测
 - [可选]Starwhale Controller 完成安装，且版本不早于0.3.0，如果只希望在Standalone Instance中进行评测，可以忽略该步骤。
 - Runtime: [Pytorch Runtime Example](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)
 
-### 1.2 Starwhale Runtime激活
+### Starwhale Runtime激活
 
 本例可以使用Starwhale提供的[Pytorch Runtime例子](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)作为Starwhale Runtime，不需要额外编写Runtime配置。模型训练和评测都可以使用该Runtime。
 
@@ -44,7 +44,7 @@ swcli runtime restore pytorch/version/latest
 swcli runtime activate --uri pytorch/version/latest
 ```
 
-### 1.3 数据准备与模型训练
+### 数据准备与模型训练
 
 数据准备和模型训练非常容易，只需要两步就能完成操作：下载代码、开始训练。
 
@@ -62,7 +62,7 @@ make train
 
 ![train.png](../img/examples/sc_train.png)
 
-## 2.Starwhale的模型评测过程
+## Starwhale的模型评测过程
 
 ### 步骤1：构建Starwhale Dataset
 
@@ -132,11 +132,11 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 
 然后，可以在终端中执行`swcli ui prod`命令，可以拉起浏览器并进入prod instance的web页面中，接着进入相关project，创建评测任务即可。
 
-## 3.深入理解Speech Commands例子
+## 深入理解Speech Commands例子
 
 此部分从代码和配置层面详细介绍Speech Commands Dataset是如何进行Starwhale模型评测的，如果只是希望简单复现评测，可以跳过此章节。
 
-### 3.1 代码结构说明
+### 代码结构说明
 
 ```console
 |-- .gitignore              # 目前会ignore models和data目录。
@@ -157,7 +157,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 
 `sc/dataset.py`、`sc/evaluator.py`、`dataset.yaml` 和 `model.yaml` 这四个文件是关键代码和配置。
 
-### 3.2 Dataset的构建
+### Dataset的构建
 
 在Starwhale体系中，要进行模型评测，第一步就需要准备评测的数据集。Starwhale提供一种快速构建、使用简单、可分发、有版本控制的数据集机制，用户只需要定义`dataset.yaml`和编写少量代码，就能完成数据集的构建。目前Starwhale Dataset构建三要素：`dataset.yaml` 、`dataset.py` 和 `swcli dataset build` 命令。
 
@@ -285,7 +285,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
   - 当原始数据文件已经存在第三方存储上，可以使用Starwhale remote-link格式的dataset，能够避免重复拷贝数据，尤其适合数量量比较大或已经有某种存储格式的数据集的场景。remote-link的dataset构建类需要继承 `UserRawBuildExecutor` 类。
   - 本例子中使用boto3库从Minio上遍历相关Prefix路径，迭代返回`Link`类型的数据。需要注意的时，由于访问Remote的Minio数据，需要携带连接密钥信息，Starwhale为保证安全性，需要连接密钥信息，管理员需要在server的system setting中配置必要的秘钥信息。
 
-### 3.3 模型评测代码
+### 模型评测代码
 
 Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自定义评测阶段。
     - ppl 阶段：Starwhale Dataset的数据一般会经过前处理、模型推理和后处理，得到可以做统一合并比较的数据。
@@ -350,7 +350,7 @@ Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自�
   - cmp函数的输入参数为`ppl_result`，可以被迭代使用。每个迭代出来的元素是一个dict类型，目前包含 `annotations` , `result` 和 `data_id` 三个元素。`result` 为某条dataset数据的ppl推理结果。
   - 本例是一个multi classification问题，可以直接用 `starwhale.multi_classification` 修饰器，能自动对cmp结果进行进一步分析，并将结果存储在Starwhale的DataStore中，方便后续的可视化展示。由于设置 `show_roc_auc=True` 参数，cmp函数需要返回三个元素：label列表，result列表和probability_matrix列表。需要注意的是，即使是multi classification问题，也不需要强制用 `starwhale.multi_classification` 修饰器，用户完全可以按照自己的需求定制化cmp过程。
 
-## 4.参考资料
+## 参考资料
 
 - [Speech command classification with TorchAudio](https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html)
 - [Speech Commands数据集](https://arxiv.org/abs/1804.03209)

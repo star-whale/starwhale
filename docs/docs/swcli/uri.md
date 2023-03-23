@@ -8,7 +8,7 @@ title: Starwhale Resources URI
 
 ![concepts-org.jpg](../img/concepts-org.jpg)
 
-## 1. Instance URI
+## Instance URI
 
 Instance URI can be either:
 
@@ -31,7 +31,7 @@ swcli model copy mnist/version/latest swcloud/project/<your account name>/demo
 swcli runtime copy pytorch/version/v1 http://localhost:8081/project/<your account name>/demo
 ```
 
-## 2. Project URI
+## Project URI
 
 Project URI is in the format `[<Instance URI>/project/]<project name>`. If the instance URI is not specified, use the current instance instead.
 
@@ -42,7 +42,7 @@ swcli project select self   # select self project in the current instance
 swcli project info local/project/self  # inspect self project info in the local instance
 ```
 
-## 3. Model/Dataset/Runtime URI
+## Model/Dataset/Runtime URI
 
 - Model URI: `[<Project URI>/model/]<model name>[/version/<version id|tag>]`.
 - Dataset URI: `[<Project URI>/dataset/]<dataset name>[/version/<version id|tag>]`.
@@ -60,7 +60,7 @@ swcli model info mnist  # inspect mnist model info
 swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # use version tag
 ```
 
-## 4. Evaluation URI
+## Evaluation URI
 
 - format: `[<Project URI>/eval/]<evaluation id>`.
 - If the project URI is not specified, the default project will be used.

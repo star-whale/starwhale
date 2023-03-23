@@ -2,7 +2,7 @@
 title: 模型包命令
 ---
 
-## 1. 基本信息
+## 基本信息
 
 ```bash
 swcli [GLOBAL OPTIONS] model [OPTIONS] COMMAND [ARGS]...
@@ -27,7 +27,7 @@ model包含如下子命令：
 |tag||✅|❌|
 |diff||✅|✅|
 
-## 2. 构建模型包
+## 构建模型包
 
 ```bash
 swcli model build [OPTIONS] WORKDIR
@@ -45,7 +45,7 @@ swcli model build [OPTIONS] WORKDIR
 |`--model-yaml`|`-f`|❌|String|${workdir}/model.yaml|model yaml文件的路径。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示模型包构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在build运行时才会使用Runtime，不会污染当前shell环境。|
 
-## 3. 分发模型包
+## 分发模型包
 
 ```bash
 swcli model copy [OPTIONS] SRC DEST
@@ -60,7 +60,7 @@ swcli model copy [OPTIONS] SRC DEST
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的模型包，指定该参数后执行copy命令就会强制覆盖。|
 |`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝模型包时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
-## 4. 评测模型
+## 评测模型
 
 ```bash
 swcli model eval [OPTIONS] TARGET
@@ -81,11 +81,11 @@ swcli model eval [OPTIONS] TARGET
 |`--dataset`||✅||String||Dataset URI，该参数也可以通过 `SW_DATASET_URI` 环境变量来设置。|
 |`--gencmd`||❌|Boolean|False|当选用设置 `--use-docker` 参数后，只输出docker run的命令，不真正运行。该参数只能在Standalone Instance中使用。|
 |`--use-docker`||❌|Boolean|False|选用docker为载体来运行模型评测过程，该参数只能在Standalone Instance中使用。|
-|`--image`||❌|Boolean|False|当选用设置 `--use-docker` 参数后, 该参数生效。此image必须支持swcli命令，你可以先使用`--gencmd`查看具体生成的docker命令。如果`--runtime`被同时指定了，`swcli`会调用runtime的baseimage,本参数不再生效|
+|`--image`||❌|Boolean|False|当选用设置 `--use-docker` 参数后, 该参数生效。此image必须支持swcli命令，您可以先使用`--gencmd`查看具体生成的docker命令。如果`--runtime`被同时指定了，`swcli`会调用runtime的baseimage,本参数不再生效|
 
 ![model-eval.gif](../../img/model-eval.gif)
 
-## 5. 查看模型包历史版本
+## 查看模型包历史版本
 
 ```bash
 swcli model history [OPTIONS] MODEL
@@ -97,7 +97,7 @@ swcli model history [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 6. 查看模型包详细信息
+## 查看模型包详细信息
 
 ```bash
 swcli model info [OPTIONS] MODEL
@@ -109,7 +109,7 @@ swcli model info [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 7. 展示模型包列表
+## 展示模型包列表
 
 ```bash
 swcli model list [OPTIONS]
@@ -132,7 +132,7 @@ swcli model list [OPTIONS]
 |`owner`| Key-Value | 拥有者名称  |--filter owner=starwhale|
 |`latest`|Flag| Cloud Instance: 仅展示最新版本 <br/> Standalone Instance: 仅展示带有latest标签的版本 |--filter latest|
 
-## 8. 删除模型包
+## 删除模型包
 
 ```bash
 swcli model remove [OPTIONS] MODEL
@@ -147,7 +147,7 @@ URI，当没有指定版本时，会对整个模型包所有版本进行删除�
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 9. 恢复软删除的模型包
+## 恢复软删除的模型包
 
 ```bash
 swcli model recover [OPTIONS] MODEL
@@ -159,7 +159,7 @@ swcli model recover [OPTIONS] MODEL
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 10. 标记模型包
+## 标记模型包
 
 ```bash
 swcli model tag [OPTIONS] MODEL [TAGS]...
@@ -174,7 +174,7 @@ swcli model tag [OPTIONS] MODEL [TAGS]...
 |`--remove`|`-r`|❌|Boolean|False|删除标签|
 |`--quiet`|`-q`|❌|Boolean|False|忽略标签操作中的错误，例如删除不存在的标签，添加不合法的标签等|
 
-## 11. 对比模型包差异
+## 对比模型包差异
 
 ```bash
 swcli model diff [OPTIONS] BASE_URI COMPARE_URI

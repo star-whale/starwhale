@@ -6,7 +6,7 @@ Installing SWCLI in your system's global Python environment may cause a python d
 
 Here are some installation tips that can help you get a cleaner, unambiguous, no dependency conflicts `swcli` python environment.
 
-# 1. Prerequisites
+## Prerequisites
 
 * Python 3.7+
 * Linux or macOS
@@ -29,9 +29,9 @@ SWCLI works on macOS. If you run into issues with the default system Python3 on 
 brew install python3
 ```
 
-# 2. Install SWCLI
+## Install SWCLI
 
-## Install with venv
+### Install with venv
 
 ```bash
 python3 -m venv ~/.cache/venv/starwhale
@@ -44,7 +44,7 @@ sudo rm -rf /usr/local/bin/swcli
 sudo ln -s `which swcli` /usr/local/bin/
 ```
 
-## Install with conda
+### Install with conda
 
 ```bash
 conda create --name starwhale --yes  python=3.9
@@ -59,7 +59,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 👏 Now, you can use `swcli` in the global environment.
 
-# 3. Update SWCLI
+## Update SWCLI
 
 ```bash
 #for venv
@@ -69,7 +69,7 @@ python3 -m pip install --upgrade starwhale
 conda run -n starwhale python3 -m pip install --upgrade starwhale
 ```
 
-# 4. Uninstall SWCLI
+## Uninstall SWCLI
 
 ```bash
 python3 -m pip remove starwhale

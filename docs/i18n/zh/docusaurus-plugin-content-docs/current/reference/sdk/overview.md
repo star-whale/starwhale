@@ -4,7 +4,7 @@ title: 基本信息
 
 Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集、调用模型评测、追踪和展示评测结果等。Python SDK多数场景下与YAML和CLI配合使用，完成模型评测等核心任务。
 
-## 1. 类
+## 类
 
 - `class PipelineHandler`: 提供默认的模型评测过程定义，需要用户实现 `ppl` 和 `cmp` 函数。
 - `class Context`: 执行模型评测过程中传入的上下文信息，包括Project、Task ID等。
@@ -13,13 +13,13 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 - `class BuildExecutor`: `SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
 - `class URI`: starwhale uri的类定义，可以将字符串转化成URI对象。
 
-## 2. 函数
+## 函数
 
 - `multi_classification`: 修饰器，适用于多分类问题，用来简化cmp结果的进一步计算和结果存储，能更好的呈现评测结果。
 - `step`: 修饰器，可以指定DAG的依赖关系和Task数量、资源等配置，实现用户自定义评测过程。
 - `get_data_loader`: 获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。
 
-## 3. 数据类型
+## 数据类型
 
 - `COCOObjectAnnotation`: 提供COCO类型的定义。
 - `GrayscaleImage`: 灰度图类型，比如MNIST中数字手写体图片，是 `Image` 类型的一个特例。
@@ -36,7 +36,7 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 - `MIMEType`: 描述Starwhale支持的多媒体类型，用在 `Image`、`Video` 等类型的mime_type 属性上，能更好的进行Dataset Viewer。
 - `LinkType`: 描述Starwhale支持的remote-link类型，目前支持 `LocalFS` 和 `S3` 两种类型。
 
-## 4. 其他
+## 其他
 
 - `__version__`: Starwhale SDK和Cli版本，是字符串常量。
 - `URIType`: 描述 `starwhale.URI` 类型。
