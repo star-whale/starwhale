@@ -27,7 +27,7 @@ export default function BaseSubLayout({
         <BaseLayout
             extra={extra}
             breadcrumbItems={breadcrumbItems}
-            sidebar={sidebar ?? standaloneMode ? undefined : ProjectSidebar}
+            sidebar={standaloneMode ? undefined : sidebar ?? ProjectSidebar}
         >
             {header}
             {navItems ? (
