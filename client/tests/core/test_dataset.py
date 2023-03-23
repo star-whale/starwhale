@@ -103,9 +103,7 @@ class StandaloneDatasetTestCase(TestCase):
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
-        config = DatasetConfig(
-            name="mnist", handler="dataset:build", append=True, append_from="112233"
-        )
+        config = DatasetConfig(name="mnist", handler="dataset:build")
         yaml_path = Path(workdir) / DefaultYAMLName.DATASET
         ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
 

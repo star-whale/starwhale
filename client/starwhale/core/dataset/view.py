@@ -182,10 +182,9 @@ class DatasetTermView(BaseTermView):
         cls,
         src_uri: str,
         dest_uri: str,
-        force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        Dataset.copy(src_uri, dest_uri, force, dest_local_project_uri)
+        Dataset.copy(src_uri, dest_uri, dest_local_project_uri)
         console.print(":clap: copy done")
 
     @BaseTermView._header

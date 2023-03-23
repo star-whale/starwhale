@@ -31,7 +31,6 @@ from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
@@ -719,7 +718,6 @@ class Dataset:
             )
             pccd.tag.add_fast_tag()
 
-        @http_retry
         def _submit_cloud_version(manifest_path: Path) -> None:
             from starwhale.base.bundle_copy import _UploadPhase
 
@@ -781,13 +779,10 @@ class Dataset:
         """
         return self.__has_committed
 
-    def copy(
-        self, dest_uri: str, force: bool = False, dest_local_project_uri: str = ""
-    ) -> None:
+    def copy(self, dest_uri: str, dest_local_project_uri: str = "") -> None:
         CoreDataset.copy(
             str(self.uri),
             dest_uri,
-            force=force,
             dest_local_project_uri=dest_local_project_uri,
         )
 

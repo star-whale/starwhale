@@ -92,14 +92,12 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         cls,
         src_uri: str,
         dest_uri: str,
-        force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
         dc = DatasetCopy(
             src_uri,
             dest_uri,
             URIType.DATASET,
-            force,
             dest_local_project_uri=dest_local_project_uri,
         )
         dc.do()

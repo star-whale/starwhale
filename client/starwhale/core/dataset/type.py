@@ -834,7 +834,7 @@ class Link(ASDictMixin, SwObject):
     ) -> None:
         self._type = "link"
         self.owner = owner.raw if (owner and isinstance(owner, URI)) else owner
-        self.uri = (str(uri)).strip()
+        self.uri = str(uri).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
         if offset < 0:

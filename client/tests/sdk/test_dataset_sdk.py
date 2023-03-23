@@ -630,7 +630,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
         )
 
-        project_req = rm.request(
+        rm.request(
             HTTPMethod.GET,
             "http://1.1.1.1/api/v1/project/self",
             json={"data": {"id": 1, "name": "self"}},
@@ -696,7 +696,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(list(_artifacts_bin_dir.iterdir())) == 1
 
         ds.commit()
-        assert project_req.called
         assert update_table_req.called
         assert file_request.call_count == 2
 
@@ -923,18 +922,43 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.loading_version}",
-            json={"message": "existed"},
-            status_code=HTTPStatus.OK,
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
+            json={"message": "not found"},
+            status_code=HTTPStatus.NOT_FOUND,
         )
 
         rm.request(
             HTTPMethod.POST,
+            "http://1.1.1.1/api/v1/datastore/updateTable",
+        )
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self",
+            json={"data": {"id": 1, "name": "project"}},
+        )
+
+        rm.register_uri(
+            HTTPMethod.HEAD,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+        upload_blob_req = rm.register_uri(
+            HTTPMethod.POST,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            json={"data": "server_return_uri"},
+        )
+
+        make_version_req = rm.request(
+            HTTPMethod.POST,
             f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.loading_version}/file",
-            json={"data": {"uploadId": "123"}},
+            json={"data": {"uploadId": 1}},
         )
 
         ds.copy("cloud://test/project/self")
+        assert make_version_req.call_count == 2
+        assert upload_blob_req.call_count == 1
 
     def test_commit_from_empty(self) -> None:
         dataset_name = "mnist"

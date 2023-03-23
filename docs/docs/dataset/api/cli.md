@@ -191,12 +191,6 @@ swcli dataset copy [OPTIONS] SRC DEST
 - `SRC` uses `Dataset URI`, which can locate one existing dataset version in the standalone or cloud instance.
 - `DEST` uses `Project URI`, which implies the storage project in the destination instance. If the `DEST` project has already stored the same name and version dataset, you can set the `--force` argument to force update.
 - Today, this command supports copy datasets from standalone to cloud and from cloud to standalone. `standalone -> standalone` or `cloud -> cloud` is not supported.
-- Options:
-
-    |Option|Alias Option|Required|Type|Default|Description|
-    |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to copy dataset|
-
 - Example: copy a dataset from the local standalone instance to a remote cloud instance(upload)
 
     ```bash

@@ -217,6 +217,7 @@ class TabularDataset:
 
         self.project = project
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
+        self.instance_name = instance_name
         self._ds_wrapper = DatastoreWrapperDataset(
             self.table_name,
             project,
