@@ -203,6 +203,8 @@ public class DatasetUploader {
                         throw new SwValidationException(ValidSubject.DATASET,
                                 " dataset version is being hired by running job, force push is not allowed now");
                     } else {
+                        datasetVersionEntity.setVersionMeta(yamlContent);
+                        datasetVersionMapper.update(datasetVersionEntity);
                         datasetVersionMapper.updateStatus(datasetVersionEntity.getId(),
                                 DatasetVersion.STATUS_UN_AVAILABLE);
                     }

@@ -16,9 +16,12 @@
 
 package ai.starwhale.mlops.objectstore;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.Assertions;
@@ -30,10 +33,12 @@ public class TestHashNamedObjectStore {
     @Test
     public void testSave() throws IOException {
         StorageAccessService mock = mock(StorageAccessService.class);
+        when(mock.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null));
         HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(mock, "/abc");
-        String relativePath = hashNamedObjectStore.put("abc123fdasd", mock(InputStream.class));
+        String blobHash = "abc123fdasd";
+        String relativePath = hashNamedObjectStore.put(blobHash, mock(InputStream.class));
         Assertions.assertEquals("ab/abc123fdasd", relativePath);
-        Assertions.assertEquals("/abc/ab/abc123fdasd", hashNamedObjectStore.absolutePath(relativePath));
+        Assertions.assertEquals("/abc/ab/abc123fdasd", hashNamedObjectStore.absolutePath(blobHash));
     }
 
 }

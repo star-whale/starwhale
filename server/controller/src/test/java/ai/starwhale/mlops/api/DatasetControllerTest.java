@@ -46,7 +46,6 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -256,19 +255,11 @@ public class DatasetControllerTest {
                         str.append(b);
                     }
                 });
-        given(datasetService.query(anyString(), anyString(), anyString()))
-                .willReturn(DatasetVersion.builder().id(1L).build());
-        given(datasetService.dataOf(same(1L), any(), any(), any()))
+        given(datasetService.dataOf(any(), any(), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
-        controller.pullLinkContent("p1", "d1", "v1", "", 1L, 1L, response);
+        controller.pullBlob("p1", "d1", "v1", 1L, 1L, response);
         assertThat(str.toString(), is("100"));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "d1", "", "", 1L, 1L, response));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "", "v1", "", 1L, 1L, response));
     }
 
     @Test
@@ -344,12 +335,10 @@ public class DatasetControllerTest {
     public void testSignLinks() {
         String pj = "pj";
         String ds = "ds";
-        String v = "v";
         String uri = "uri";
-        when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersion.builder().id(1L).build());
         String signUrl = "sign-url";
-        when(datasetService.signLinks(1L, Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
+        when(datasetService.signLinks(pj, "ds", Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
         Assertions.assertEquals(Map.of(uri, signUrl),
-                controller.signLinks(pj, ds, v, Set.of(uri), 100L).getBody().getData());
+                controller.signBlobLinks(pj, ds, Set.of(uri), 100L).getBody().getData());
     }
 }
