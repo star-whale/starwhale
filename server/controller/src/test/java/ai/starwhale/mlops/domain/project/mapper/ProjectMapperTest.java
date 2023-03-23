@@ -114,7 +114,7 @@ public class ProjectMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(1, projectEntities.size());
         validProject(project2, user, projectEntities.get(0));
 
-        projectEntities = projectMapper.listAll("px",
+        projectEntities = projectMapper.listAll(null,
                 new Order("id", Direction.ASC).toString());
         Assertions.assertEquals(2, projectEntities.size());
     }
