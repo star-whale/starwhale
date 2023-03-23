@@ -31,7 +31,7 @@ version: '2.0'
 
 ```
 
-### 1. link_auths
+### link_auths
 
 You could put `starwhale.Link` to your assets while the URI in the `Link` could be whatever(only s3 like or http is implemented) you need, such as `s3://10.131.0.1:9000/users/path`. However, `Link`s may need to be authed, you could config the auth info in `link_auths`
 

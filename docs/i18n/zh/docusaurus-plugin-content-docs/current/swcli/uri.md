@@ -3,12 +3,12 @@ title: Starwhale资源URI
 ---
 
 :::tip
-**资源URI在Starwhale命令行工具中被广泛使用。URI可以引用本地实例中的资源或远程实例中的任何其他资源。 这样Starwhale命令行工具就可以轻松操作任何资源。**
+**资源URI在Starwhale Client中被广泛使用。URI可以引用本地实例中的资源或远程实例中的任何其他资源。 这样Starwhale Client就可以轻松操作任何资源。**
 :::
 
 ![concepts-org.jpg](../img/concepts-org.jpg)
 
-## 1. 实例URI
+## 实例URI
 
 实例URI可以是以下形式之一:
 
@@ -31,7 +31,7 @@ swcli model copy mnist/version/latest swcloud/project/<your account name>/demo
 swcli runtime copy pytorch/version/v1 http://localhost:8081/project/<your account name>/demo
 ```
 
-## 2. 项目URI
+## 项目URI
 
 项目URI的格式为“[<实例URI>/project/]&lt;project name>”。 如果未指定实例URI，则使用当前实例。
 
@@ -42,7 +42,7 @@ swcli project select self   # 选择当前实例中的self项目
 swcli project info local/project/self  # 查看本地实例中的self项目信息
 ```
 
-## 3. 模型/数据集/运行时URI
+## 模型/数据集/运行时URI
 
 - 模型URI: `[<项目URI>/model/]<model name>[/version/<version id|tag>]`.
 - 数据集URI: `[<项目URI>/dataset/]<dataset name>[/version/<version id|tag>]`.
@@ -60,7 +60,7 @@ swcli model info mnist  # 检查mnist模型信息
 swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # 使用版本标签
 ```
 
-## 4. 评估URI
+## 评估URI
 
 - 格式: `[<项目URI>/eval/]<evaluation id>`.
 - 如果未指定项目URI，将使用默认项目。

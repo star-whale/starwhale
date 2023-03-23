@@ -2,7 +2,7 @@
 title: Runtime命令
 ---
 
-## 1. 基本信息
+## 基本信息
 
 ```bash
 swcli runtime [OPTIONS] COMMAND [ARGS]...
@@ -31,7 +31,7 @@ runtime包含如下子命令：
 |restore||✅|❌|
 |tag||✅|❌|
 
-## 2. 激活Runtime
+## 激活Runtime
 
 ```bash
 swcli runtime activate [OPTIONS]
@@ -49,7 +49,7 @@ swcli runtime activate [OPTIONS]
 |`--uri`|`-u`|❌|String||Standalone Instance下Runtime URI|
 |`--path`|`-p`|❌|String||venv或conda目录路径|
 
-## 3. 构建Runtime
+## 构建Runtime
 
 ```bash
 swcli runtime build [OPTIONS] WORKDIR
@@ -95,7 +95,7 @@ swcli runtime build [OPTIONS] WORKDIR
 |`--env-use-shell`|`-es`|❌|Boolean|False|使用当前Shell中Python环境|
 |`--no-cache`|`-nc`|❌|Boolean|False|对于自动生成的Python隔离依赖环境，构建runtime时不使用已经安装过的Python Packages，相当于清除.starwhale/venv或.starwhale/conda目录后再安装依赖然后构建环境|
 
-## 4. 分发Runtime
+## 分发Runtime
 
 ```bash
 swcli runtime copy [OPTIONS] SRC DEST
@@ -110,7 +110,7 @@ swcli runtime copy [OPTIONS] SRC DEST
 |`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的Runtime，指定该参数后执行copy命令就会强制覆盖。|
 |`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝Runtime时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
-## 5. 制作Runtime的Docker Image
+## 制作Runtime的Docker Image
 
 ```bash
 swcli runtime dockerize [OPTIONS] URI
@@ -131,7 +131,7 @@ swcli runtime dockerize [OPTIONS] URI
 
 ![runtime-dockerize.png](../../img/runtime-dockerize.png)
 
-## 6. 解压Runtime包文件
+## 解压Runtime包文件
 
 ```bash
 swcli runtime extract [OPTIONS] RUNTIME
@@ -144,7 +144,7 @@ swcli runtime extract [OPTIONS] RUNTIME
 |`--force`|`-f`|❌|Boolean|False|若曾经在target-dir目录中extract过，设定该参数后，会强制在target-dir目录覆盖旧的内容|
 |`--target-dir`||❌|String|Runtime URI对应的snapshot_workdir目录|解压Runtime后存储相关内容的目录|
 
-## 7. 查看Runtime历史版本
+## 查看Runtime历史版本
 
 ```bash
 swcli runtime history [OPTIONS] RUNTIME
@@ -156,7 +156,7 @@ swcli runtime history [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 8. 查看Runtime详细信息
+## 查看Runtime详细信息
 
 ```bash
 swcli runtime info [OPTIONS] RUNTIME
@@ -168,7 +168,7 @@ swcli runtime info [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--fullname`||❌|Boolean|False|显示完整的版本信息，默认只显示版本号的前12位。|
 
-## 9. 展示Runtime列表
+## 展示Runtime列表
 
 ```bash
 swcli runtime list [OPTIONS]
@@ -191,7 +191,7 @@ swcli runtime list [OPTIONS]
 |`owner`| Key-Value|拥有者名称|--filter owner=starwhale|
 |`latest`|Flag|Cloud Instance: 仅展示最新版本 <br/> Standalone Instance: 仅展示带有latest标签的版本|--filter latest|
 
-## 10. 锁定Python依赖信息
+## 锁定Python依赖信息
 
 ```bash
 swcli runtime lock [OPTIONS] [TARGET_DIR]
@@ -242,11 +242,11 @@ prefix: /path-to-conda-env-dir
 
 ![runtime-lock.gif](../../img/runtime-lock.gif)
 
-## 11. 快速创建全新的Runtime
+## 快速创建全新的Runtime
 
 目前**runtime quickstart只能在standalone instance下执行**。
 
-### 11.1 在终端中交互式产生新的Runtime
+### 在终端中交互式产生新的Runtime
 
 ```bash
 swcli runtime quickstart shell [OPTIONS] WORKDIR
@@ -264,7 +264,7 @@ swcli runtime quickstart shell [OPTIONS] WORKDIR
 
 ![runtime-quickstart.gif](../../img/quickstart-shell.gif)
 
-### 11.2 以某个已经存在的Runtime为基础创建新的Runtime
+### 以某个已经存在的Runtime为基础创建新的Runtime
 
 ```bash
 swcli runtime quickstart uri [OPTIONS] URI WORKDIR
@@ -278,7 +278,7 @@ swcli runtime quickstart uri [OPTIONS] URI WORKDIR
 |`--name`|`-n`|❌|String|父目录名称|runtime的名称|
 |`--restore`||❌|Boolean|False|是否重建Runtime的Python依赖，包括创建venv或conda环境，并下载安装runtime.yaml的依赖|
 
-## 12. 删除Runtime
+## 删除Runtime
 
 ```bash
 swcli runtime remove [OPTIONS] RUNTIME
@@ -290,7 +290,7 @@ swcli runtime remove [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制删除，不可恢复|
 
-## 13. 恢复软删除的Runtime
+## 恢复软删除的Runtime
 
 ```bash
 swcli runtime recover [OPTIONS] RUNTIME
@@ -302,7 +302,7 @@ swcli runtime recover [OPTIONS] RUNTIME
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
 
-## 14. 重建Runtime
+## 重建Runtime
 
 ```bash
 swcli runtime restore [OPTIONS] TARGET
@@ -312,7 +312,7 @@ swcli runtime restore [OPTIONS] TARGET
 
 `TARGET` 参数有两种形式，一种是表示某个 runtime uri的snapshot_workdir， 另一种是某个Standalone Instance下的Runtime URI。
 
-## 15. 标记Runtime
+## 标记Runtime
 
 ```bash
 swcli runtime tag [OPTIONS] RUNTIME [TAGS]...

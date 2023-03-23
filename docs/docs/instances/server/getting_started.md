@@ -6,7 +6,7 @@ title: Getting Started
 It is recommended to read [standalone quickstart](../standalone/getting_started.md) first.
 :::
 
-## 1. Installing On-Premises
+## Installing On-Premises
 
 Starwhale provides two ways to install an On-Premises instance in your private cluster:
 
@@ -20,12 +20,12 @@ Starwhale provides two ways to install an On-Premises instance in your private c
 In this tutorial, minikube is used instead of the standard Kubernetes cluster
 :::
 
-### 1.1 Prerequisites
+### Prerequisites
 
 - [Minikube](https://minikube.sigs.k8s.io/docs/start/) 1.25+
 - [Helm](https://helm.sh/docs/intro/install/) 3.2.0+
 
-### 1.2 Start Minikube
+### Start Minikube
 
 ```bash
 minikube start
@@ -39,7 +39,7 @@ minikube start --image-mirror-country=cn --kubernetes-version=1.25.3
 
 If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
 
-### 1.3 Installing Starwhale
+### Installing Starwhale
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -116,7 +116,7 @@ kubectl port-forward --namespace starwhale svc/controller 8082:8082
 
 When the controller's pod is restarted, the port-forward command needs to be re-executed.
 
-## 2. Upload the artifacts to the cloud instance
+## Upload the artifacts to the cloud instance
 
 Before starting this tutorial, the following three artifacts should already exist on your machine：
 
@@ -126,7 +126,7 @@ Before starting this tutorial, the following three artifacts should already exis
 
 The above three artifacts are what we built in the [standalone tutorial](../standalone/getting_started.md).
 
-### 2.1 Login Cloud Instance
+### Login Cloud Instance
 
 First, log in to the server:
 
@@ -134,7 +134,7 @@ First, log in to the server:
 swcli instance login --username starwhale --password abcd1234 --alias dev http://localhost:8082
 ```
 
-### 2.2 Release artifacts
+### Release artifacts
 
 Start copying the model, dataset, and runtime that we constructed earlier:
 
@@ -144,15 +144,15 @@ swcli dataset copy mnist/version/latest dev/project/starwhale
 swcli runtime copy pytorch/version/latest dev/project/starwhale
 ```
 
-## 3. Use the web UI to run an evaluation
+## Use the web UI to run an evaluation
 
-### 3.1 Viewing Cloud Instance
+### Viewing Cloud Instance
 
 Ok, let's use the username(starwhale) and password(abcd1234) to open the server [web UI](http://localhost:8082/).
 
 ![console-artifacts.gif](../../img/console-artifacts.gif)
 
-### 3.2 Create an evaluation job
+### Create an evaluation job
 
 ![console-create-job.gif](../../img/console-create-job.gif)
 

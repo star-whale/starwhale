@@ -9,11 +9,11 @@ title: CIFAR10数据集的简单图形识别模型评测
 - 如何使用Image类型构建swds数据集。
 - 如果使用 `starwhale.multi_classification` 修饰器来简化多分类问题cmp部分的编写。
 
-## 1.前置条件
+## 前置条件
 
 阅读本文前，建议先阅读[Pytorch Runtime构建](../runtime/examples/pytorch.md), [Speech Commands数据集的多分类任务模型评测](speech.md)。
 
-### 1.1 基础环境
+### 基础环境
 
 - Python版本: 3.7 ~ 3.10。
 - OS环境: Linux或macOS(仅运行Standalone)。
@@ -21,7 +21,7 @@ title: CIFAR10数据集的简单图形识别模型评测
 - [可选]Starwhale Controller 完成安装，且版本不早于0.3.0，如果只希望在Standalone Instance中进行评测，可以忽略该步骤。
 - Runtime: [Pytorch Runtime Example](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)
 
-### 1.2 Starwhale Runtime激活
+### Starwhale Runtime激活
 
 本例可以使用Starwhale提供的[Pytorch Runtime例子](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)作为Starwhale Runtime，不需要额外编写Runtime配置。模型训练和评测都可以使用该Runtime。
 
@@ -44,7 +44,7 @@ swcli runtime restore pytorch/version/latest
 swcli runtime activate --uri pytorch/version/latest
 ```
 
-### 1.3 数据准备与模型训练
+### 数据准备与模型训练
 
 数据准备和模型训练非常容易，只需要两步就能完成操作：下载代码、开始训练。
 
@@ -60,7 +60,7 @@ make train
 - 命令执行结束后，可以到`data`目录查看原始数据，`models`目录查看已经构建好的模型。
 - 可以在train.py中对训练过程的一些参数进行调整，比如epoch值等。
 
-## 2.Starwhale的模型评测过程
+## Starwhale的模型评测过程
 
 ### 步骤1：构建Starwhale Dataset
 
@@ -148,7 +148,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 
 然后，可以在终端中执行`swcli ui prod`命令，可以拉起浏览器并进入prod instance的web页面中，接着进入相关project，创建评测任务即可。
 
-## 3.参考资料
+## 参考资料
 
 - [Training a classifier](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
 - [cifar10 数据集](https://www.cs.toronto.edu/~kriz/cifar.html)

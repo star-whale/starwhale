@@ -1,5 +1,5 @@
 ---
-title: Starwhale命令行工具(SWCLI)用户指南
+title: Starwhale Client（SWCLI）用户指南
 ---
 
 SWCLI是一个命令行工具，可让您与Starwhale实例进行交互。您可以使用SWCLI完成Starwhale中几乎所有的任务。

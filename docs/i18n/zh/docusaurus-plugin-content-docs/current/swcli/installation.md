@@ -6,7 +6,7 @@ title: SWCLI安装指南
 
 这里有一些安装技巧，可以帮助您获得一个更干净、明确、没有依赖冲突的`swcli`python环境。
 
-# 1.先决条件
+## 先决条件
 
 * Python3.7+
 * Linux或macOS
@@ -17,7 +17,7 @@ title: SWCLI安装指南
 ```bash
 sudo apt-get install python3 python3-venv python3-pip
 
-#如果你想安装多个python版本
+#如果您想安装多个python版本
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv
@@ -29,9 +29,9 @@ SWCLI可以用在macOS上。如果您在macOS上遇到默认系统Python3的问�
 brew install python3
 ```
 
-# 2. 安装SWCLI
+## 安装SWCLI
 
-## 使用venv安装
+### 使用venv安装
 
 ```bash
 python3 -m venv ~/.cache/venv/starwhale
@@ -44,7 +44,7 @@ sudo rm -rf /usr/local/bin/swcli
 sudo ln -s `which swcli` /usr/local/bin/
 ```
 
-## 使用conda安装
+### 使用conda安装
 
 ```bash
 conda create --name starwhale --yes  python=3.9
@@ -59,7 +59,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 👏 现在，您可以在全局环境中使用`swcli`了。
 
-# 3. 更新 SWCLI
+## 更新 SWCLI
 
 ```bash
 #适用于venv环境
@@ -69,7 +69,7 @@ python3 -m pip install --upgrade starwhale
 conda run -n starwhale python3 -m pip install --upgrade starwhale
 ```
 
-# 4. 卸载SWCLI
+## 卸载SWCLI
 
 ```bash
 python3 -m pip remove starwhale

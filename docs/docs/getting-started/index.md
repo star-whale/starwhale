@@ -2,7 +2,7 @@
 title: Getting started
 ---
 
-First, you need to install the [Starwhale Command Line Interface (SWCLI)](../swcli), which can be done by running the following command
+First, you need to install the [Starwhale Client (SWCLI)](../swcli), which can be done by running the following command
 
 ```bash
 python3 -m pip install starwhale

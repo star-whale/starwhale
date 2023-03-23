@@ -2,11 +2,11 @@
 title: 使用Helm安装Cloud Instance
 ---
 
-## 1. Helm Charts
+## Helm Charts
 
 使用Helm Charts可以非常容易的将Starwhale Cloud Instance在Kubernetes集群中进行安装，包括Starwhale Controller和第三方基础依赖（mysql/minio等）。
 
-## 2. 核心命令
+## 核心命令
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -14,12 +14,12 @@ helm repo update
 helm upgrade --install starwhale starwhale/starwhale -n starwhale --create-namespace
 ```
 
-## 3. 前置条件
+## 前置条件
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
 
-## 4. 安装Chart
+## 安装Chart
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -47,7 +47,7 @@ helm upgrade --install starwhale starwhale/starwhale -n starwhale --create-names
 
 可以通过 `--version` 参数指定版本，默认会安装最新发布的Charts
 
-## 5. 卸载Chart
+## 卸载Chart
 
 ```bash
 helm delete starwhale
@@ -55,7 +55,7 @@ helm delete starwhale
 
 `helm delete` 命令不支持删除Kubernetes的namespace，需要执行 `kubectl delete namespace starwhale` 命令进行删除。
 
-## 6. 更新Chart
+## 更新Chart
 
 ```bash
 helm repo update starwhale
@@ -63,16 +63,16 @@ helm repo update starwhale
 
 `update` 命令从远端的Starwhale Chart仓库中更新本地的charts文件。更详细的版本信息可以参考[ArtifactHub](https://artifacthub.io/packages/helm/starwhale/starwhale)。
 
-## 7. 配置参数说明
+## 配置参数说明
 
-### 7.1 基本参数
+### 基本参数
 
 |字段|描述|默认值|
 |---|---|-----|
 | `image.registry` | 镜像Registry, Starwhale镜像会发布在 docker.io, ghcr.io和docker-registry.starwhale.cn上，中国大陆网络推荐使用docker-registry.starwhale.cn镜像源 | `ghcr.io`|
 | `image.org`      | 镜像的org名字： [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io)、[star-whale](https://github.com/orgs/star-whale)(ghcr.io和docker-registry.starwhale.cn) 或者其他在私有registry上定义的镜像org名字 | `star-whale`  |
 
-### 7.2 Starwhale controller参数
+### Starwhale controller参数
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -84,7 +84,7 @@ helm repo update starwhale
 | `controller.containerPort`| Starwhale console web port | `8082` |
 | `controller.storageType`| Controller文件存储的类型，目前支持s3、aliyun、minio、fs四种 | `minio` |
 
-### 7.3 基础设施参数
+### 基础设施参数
 
 Starwhale 提供MySQL和minio的Charts，由于是单例模式，故只能在开发调试场景中使用。如果是生产环境，需要通过externalMySQL和externalOSS参数配置外部的高可用基础设施。
 
@@ -113,7 +113,7 @@ Starwhale 提供MySQL和minio的Charts，由于是单例模式，故只能在开
 | `externalOSS.region`| 外部对象存储的region | `local` |
 | `externalOSS.defaultBuckets` | 系统管理员创建一个给Starwhale独立使用的bucket | `starwhale` |
 
-### 7.4 开发模式
+### 开发模式
 
 |字段|描述|默认值|
 |---|---|-----|
@@ -130,7 +130,7 @@ helm install starwhale . -n starwhale --create-namespace \
     --set devMode.createPV.rootPath=/path/to/pv-storage
 ```
 
-### 7.5 ServiceAccount
+### ServiceAccount
 
 为了 Starwhale Controller 能够在 K8s 集群上正常运行，我们需要给 Controller 配置 ServiceAccount，并且分配足够的权限，目前需要的权限列表如下（以RBAC为例）
 

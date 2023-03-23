@@ -2,23 +2,23 @@
 title: 使用 Docker 部署 Starwhale Controller
 ---
 
-## 1. 使用场景
+## 使用场景
 
 本章节主要介绍如何使用 docker 独立部署 Starwhale 的 Controller， 独立部署 Controller 一般适用于如下场景
 
 * 不具备将 Starwhale Controller 部署到 K8s 集群中的条件 (比如无法给Controller创建SVC)
 * 不想将 Controller 部署到 K8s
 
-## 2. 依赖
+## 依赖
 
 * docker 运行环境 （podman等类似）
 * K8s上的 Pod 能够访问到 docker 暴露的端口
 * 第三方的对象存储，目前支持 MinIO，aws s3，阿里云对象存储
 * MySQL 数据库
 
-## 3. 配置
+## 配置
 
-### 3.1. 环境变量
+### . 环境变量
 
 Controller 的大部分配置都可以通过环境变量来控制， 下面是可用的环境变量列表
 
@@ -43,7 +43,7 @@ Controller 的大部分配置都可以通过环境变量来控制， 下面是�
 
 更多环境变量可参考 [application.yaml](https://github.com/star-whale/starwhale/blob/main/server/controller/src/main/resources/application.yaml)
 
-### 3.2. K8s 鉴权文件
+### . K8s 鉴权文件
 
 Kubeconfig 的简要说明可参考[官方文档](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
 

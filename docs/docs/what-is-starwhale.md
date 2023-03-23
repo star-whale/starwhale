@@ -3,7 +3,7 @@ slug: /
 title: What is Starwhale
 ---
 
-# Overview
+## Overview
 
 Starwhale is an MLOps platform that make your model creation, evaluation and publication much eaiser. It aims to create a handy tool for data scientists and machine learning engineers.
 
@@ -16,14 +16,14 @@ Starwhale helps you
 
 Starwhale is designed to be an open platform. You can create your own plugins to meet your requirements.
 
-# Deployment options
+## Deployment options
 
-Each deployment of Starwhale is called an instance. All instances can be managed by the Starwhale Command Line Interface (SWCLI).
+Each deployment of Starwhale is called an instance. All instances can be managed by the Starwhale Client (SWCLI).
 
 You can start using Starwhale with one of the following instance types:
 
-* **Starwhale Standalone** - Rather than a running service, Starwhale Standalone is actually a repository that resides in your local file system. It is created and managed by the Starwhale Command Line Interface (SWCLI). You only need to install SWCLI to use it. Currently, each user on a single machine can have only ONE Starwhale Standalone instance. We recommend you use the Starwhale Standalone to build and test your datasets, runtime, and models before pushing them to Starwhale Server/Cloud instances.
-* **Starwhale Server** - Starwhale Server is a service deployed on your local server. Besides text-only results from the Starwhale Command Line Interface (SWCLI), Starwhale Server provides Web UI for you to manage your datasets and models, evaluate your models in your local Kubernetes cluster, and review the evaluation results.
+* **Starwhale Standalone** - Rather than a running service, Starwhale Standalone is actually a repository that resides in your local file system. It is created and managed by the Starwhale Client (SWCLI). You only need to install SWCLI to use it. Currently, each user on a single machine can have only ONE Starwhale Standalone instance. We recommend you use the Starwhale Standalone to build and test your datasets, runtime, and models before pushing them to Starwhale Server/Cloud instances.
+* **Starwhale Server** - Starwhale Server is a service deployed on your local server. Besides text-only results from the Starwhale Client (SWCLI), Starwhale Server provides Web UI for you to manage your datasets and models, evaluate your models in your local Kubernetes cluster, and review the evaluation results.
 * **Starwhale Cloud** - Starwhale Cloud is a managed service hosted on public clouds. By registering an account on <https://cloud.starwhale.ai> or <https://cloud.starwhale.cn>, you are ready to use Starwhale without needing to install, operate, and maintain your own instances. Starwhale Cloud also provides public resources for you to download, like datasets, runtimes, and models. Check the "starwhale/public" project on Starwhale Cloud for more details.
 
 When choosing which instance type to use, consider the following:

@@ -11,7 +11,7 @@ title: 可以作为K8s节点的设备
 * [kube-proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
 * [container runtime](https://kubernetes.io/docs/setup/production-environment/container-runtimes)
 
-这类设备接入之后，通常需要定制 runtime 镜像来运行 Starwhale 的 [Job](/zh/docs/overview/concepts#7-job-step-and-task)
+这类设备接入之后，通常需要定制 runtime 镜像来运行 Starwhale 的 [Job](/zh/docs/overview/concepts# -job-step-and-task)
 
 ## 典型设备
 

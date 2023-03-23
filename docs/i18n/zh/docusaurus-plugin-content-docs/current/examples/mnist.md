@@ -10,11 +10,11 @@ title: MNIST 数字手写体识别模型评测
 - 如何制作Link类型的数据集。
 - 如何使用 `starwhale.multi_classification` 自动处理多分类问题。
 
-## 1.前置条件
+## 前置条件
 
 阅读本文前，建议先阅读[Pytorch Runtime构建](../runtime/examples/pytorch.md)。
 
-### 1.1 基础环境
+### 基础环境
 
 - Python版本: 3.7 ~ 3.10。
 - OS环境: Linux或macOS(仅运行Standalone)。
@@ -22,7 +22,7 @@ title: MNIST 数字手写体识别模型评测
 - [可选]Starwhale Controller 完成安装，且版本不早于0.3.0，如果只希望在Standalone Instance中进行评测，可以忽略该步骤。
 - Runtime: [Pytorch Runtime Example](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)
 
-### 1.2 Starwhale Runtime激活
+### Starwhale Runtime激活
 
 本例可以使用Starwhale提供的[Pytorch Runtime例子](https://github.com/star-whale/starwhale/tree/main/example/runtime/pytorch)作为Starwhale Runtime，不需要额外编写Runtime配置。模型训练和评测都可以使用该Runtime。
 
@@ -45,7 +45,7 @@ swcli runtime restore pytorch/version/latest
 swcli runtime activate --uri pytorch/version/latest
 ```
 
-### 1.3 数据准备与模型训练
+### 数据准备与模型训练
 
 数据准备和模型训练非常容易，只需要两步就能完成操作：下载代码、开始训练。
 
@@ -61,7 +61,7 @@ make train
 - 命令执行结束后，可以到`data`目录查看原始数据，`models`目录查看已经构建好的模型。
 - 可以在train.py中对训练过程的一些参数进行调整，比如epoch值等。
 
-## 2.Starwhale的模型评测过程
+## Starwhale的模型评测过程
 
 ### 步骤1：构建Starwhale Dataset
 
@@ -119,11 +119,11 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 
 然后，可以在终端中执行`swcli ui prod`命令，可以拉起浏览器并进入prod instance的web页面中，接着进入相关project，创建评测任务即可。
 
-## 3. 深入理解MNIST例子
+## 深入理解MNIST例子
 
 此部分从代码和配置层面，详细介绍如何对MNIST进行Starwhale模型评测，如果只是希望简单复现评测，可以跳过此章节。
 
-### 3.1 代码结构说明
+### 代码结构说明
 
 ```bash
 |-- .swignore                 # .swignore文件，可以在model/dataset 构建时排除默写目录或文件
@@ -147,7 +147,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
 
 `mnist/dataset.py`、`mnist/evaluator.py`、`dataset.yaml` 和 `model.yaml` 这四个文件是关键代码和配置。
 
-### 3.2 swds-bin格式的数据集构建
+### swds-bin格式的数据集构建
 
 ```python
 from starwhale import GrayscaleImage, SWDSBinBuildExecutor
@@ -180,7 +180,7 @@ dataset.yaml中handler指向 `mnist.dataset:DatasetProcessExecutor`，执行 `sw
 
 ![mnist-viewer.gif](../img/examples/mnist-viewer.gif)
 
-### 3.3 user-raw格式的数据集构建
+### user-raw格式的数据集构建
 
 ```python
 from starwhale import Link, S3LinkAuth, GrayscaleImage, UserRawBuildExecutor
@@ -215,7 +215,7 @@ class RawDatasetProcessExecutor(UserRawBuildExecutor):
 
 当用户构建数据集的类继承 `starwhale.UserRawBuildExecutor` 后，可以制作user-raw格式的数据集。此种格式，不会改变原始数据格式，只是在外部增加索引关系，数据类型用Link来表示，Link中的data_type类型为 `GrayscaleImage`，Cloud Instance的Web Dataset Viewer支持这种格式的可视化。当使用 `swcli dataset extract` 命令解压这种格式的数据集后，能看到原始的数据。
 
-### 3.4 remote-link格式的数据集构建
+### remote-link格式的数据集构建
 
 ```python
 from starwhale import Link, S3LinkAuth, GrayscaleImage, UserRawBuildExecutor
@@ -252,7 +252,7 @@ class LinkRawDatasetProcessExecutor(UserRawBuildExecutor):
 
 需要注意的是，由于访问Remote的Minio数据，需要连接密钥信息，管理员需要在server的system setting中配置必要的秘钥信息。
 
-## 4.参考资料
+## 参考资料
 
 - [Digit recognition model with MNIST dataset](https://github.com/pytorch/serve/tree/master/examples/image_classifier/mnist)
 - [MNIST Dataset](http://yann.lecun.com/exdb/mnist/)

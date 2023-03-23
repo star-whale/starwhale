@@ -2,14 +2,14 @@
 title: Deploy Starwhale Server with Helm Charts
 ---
 
-## 1. Helm Charts
+## Helm Charts
 
 Starwhale is an MLOps platform. Starwhale Helm Charts help you deploy the whole platform in Kubernetes easily.
 
 - Easy to deploy, upgrade and maintain Starwhale controller and agent services.
 - Easy to deploy 3rd dependencies, such as minio and MySQL.
 
-## 2. TL; DR
+## TL; DR
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -17,12 +17,12 @@ helm repo update
 helm upgrade --install starwhale starwhale/starwhale -n starwhale --create-namespace
 ```
 
-## 3. Prerequisites
+## Prerequisites
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
 
-## 4. Installing the Chart
+## Installing the Chart
 
 To install the chart with the release name starwhale:
 
@@ -52,7 +52,7 @@ We have offered a variety of installation modes in advance.
 
 If you want to install the specified version, you can use `--version` argument. By default, the latest release version will be installed.
 
-## 5. Uninstalling the Chart
+## Uninstalling the Chart
 
 To remove the starwhale deployment:
 
@@ -62,7 +62,7 @@ helm delete starwhale
 
 `helm delete` command will not delete the namespace, you can run `kubectl delete namespace starwhale` to cleanup the namespace.
 
-## 6. Upgrading the Chart
+## Upgrading the Chart
 
 To upgrade new chart version:
 
@@ -72,16 +72,16 @@ helm repo update starwhale
 
 The `update` command will update the information of available charts locally from the Starwhale chart repository. You can get more version information from [ArtifactHub](https://artifacthub.io/packages/helm/starwhale/starwhale).
 
-## 7. Parameters
+## Parameters
 
-### 7.1 Common parameters
+### Common parameters
 
 | Name| Description | Default Value |
 |-----|-------------|---------------|
 | `image.registry` | image registry, you can find Starwhale docker images in docker.io, ghcr.io and docker-registry.starwhale.cn.|`ghcr.io`|
 | `image.org`      | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io and docker-registry.starwhale.cn) or some custom org name in other registry.| `star-whale`|
 
-### 7.2 Starwhale controller parameters
+### Starwhale controller parameters
 
 | Name | Description | Default Value |
 |------|-------------|---------------|
@@ -93,7 +93,7 @@ The `update` command will update the information of available charts locally fro
 | `controller.containerPort`| Starwhale console web port | `8082` |
 | `controller.storageType` | Starwhale supports `s3`, `minio`, `aliyun` and `fs` as the main file storage. | `minio` |
 
-### 7.3 Infra parameters
+### Infra parameters
 
 Starwhale provides MySQL and minio infra charts, but the charts only support standalone mode for controller experiential, debugging and development, for example, minikube all-in-one scenario. In production, you should use external high available infra by the `externalMySQL` and `externalOSS` parameters.
 
@@ -122,7 +122,7 @@ External Infra for production scenario:
 | `externalOSS.defaultBuckets` | The System Admin should create a bucket for Starwhale in the external OSS service. | `starwhale` |
 | `externalOSS.region` | bucket's region for the external OSS service | `local` |
 
-### 7.4 dev mode
+### dev mode
 
 | Name                        | Description                                              | Default Value    |
 |-----------------------------|----------------------------------------------------------|------------------|
@@ -141,7 +141,7 @@ helm install starwhale . -n starwhale --create-namespace \
     --set devMode.createPV.rootPath=/path/to/pv-storage
 ```
 
-### 7.5 ServiceAccount
+### ServiceAccount
 
 Starwhale Controller can only work properly with ServiceAccount with sufficient permissions. The list of permissions required is as follows (take RBAC as an example):
 

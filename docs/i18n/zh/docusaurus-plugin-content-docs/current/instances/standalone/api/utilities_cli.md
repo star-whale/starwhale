@@ -2,7 +2,7 @@
 title: 全局管理命令
 ---
 
-## 1. 终端UI
+## 终端UI
 
 ```bash
 swcli board
@@ -18,7 +18,7 @@ swcli board
 
 ![board.gif](../../../img/board.gif)
 
-## 2. 垃圾回收
+## 垃圾回收
 
 ```bash
 swcli gc [OPTIONS]
@@ -33,7 +33,7 @@ swcli gc [OPTIONS]
 
 ![gc.gif](../../../img/gc.gif)
 
-## 3. 快速打开UI界面
+## 快速打开UI界面
 
 ```bash
 swcli ui [INSTANCE]
@@ -43,7 +43,7 @@ swcli ui [INSTANCE]
 
 ![open-ui.gif](../../../img/open-ui.gif)
 
-## 4. 命令提示补全
+## 命令提示补全
 
 ```bash
 swcli completion show [[bash|zsh|fish]]
@@ -73,7 +73,7 @@ eval (env _SWCLI_COMPLETE=fish_source swcli)
 
 ![completion.gif](../../../img/completion.gif)
 
-## 5. 环境检查
+## 环境检查
 
 ```bash
 swcli check

@@ -2,7 +2,7 @@
 title: Instance命令
 ---
 
-## 1. 基本信息
+## 基本信息
 
 ```bash
 swcli instance [OPTIONS] COMMAND [ARGS]
@@ -26,7 +26,7 @@ instance包含如下子命令：
 |list|ls|✅|✅|
 |info||✅|✅|
 
-## 2. 登陆Instance
+## 登陆Instance
 
 ```bash
 swcli instance login [OPTIONS] [INSTANCE]
@@ -46,7 +46,7 @@ swcli instance login [OPTIONS] [INSTANCE]
 |`--token`||❌|String||登陆Token，可以在Cloud Instance的Web页面中获取|
 |`--alias`||✅||String||instance别名|
 
-## 3. 登出Instance
+## 登出Instance
 
 ```bash
 swcli instance logout [INSTANCE]
@@ -54,7 +54,7 @@ swcli instance logout [INSTANCE]
 
 `instance logout` 命令用来退出已登录的Instance。`INSTANCE` 参数是Instance URI。当 `INSTANCE` 参数不指定时，会退出默认选定的Instance。需要注意的时，Standalone Instance无需登出。
 
-## 4. 查看Instance详细信息
+## 查看Instance详细信息
 
 ```bash
 swcli instance info [INSTANCE]
@@ -64,7 +64,7 @@ swcli instance info [INSTANCE]
 
 ![instance-info.png](../../../img/instance-info.png)
 
-## 5. 展示Instance列表
+## 展示Instance列表
 
 ```bash
 swcli instance list
@@ -74,7 +74,7 @@ swcli instance list
 
 ![instance-list.png](../../../img/instance-list.png)
 
-## 6. 选择默认Instance
+## 选择默认Instance
 
 ```bash
 swcli instance select INSTANCE

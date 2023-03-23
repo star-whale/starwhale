@@ -2,21 +2,21 @@
 title: Starwhale Server入门指南
 ---
 
-# 1. 安装Starwhale Server
+## 安装Starwhale Server
 
 安装Starwhale Server，参见[安装指南]
 
-# 2. 创建你的第一个项目
+## 创建您的第一个项目
 
-## 2.1 登录服务器
+### 登录服务器
 
 打开浏览器并在地址栏中输入服务器的 URL。 使用默认用户名（starwhale）和密码（abcd1234）登录。
 
 ![console-artifacts.gif](../img/console-artifacts.gif)
 
-## 2.2 创建一个新项目
+### 创建一个新项目
 
-# 3. 在本地机器上构建数据集、模型和运行时
+## 在本地机器上构建数据集、模型和运行时
 
 按照[Starwhale Standalone入门指南](standalone)中的步骤1到步骤4在本地机器上创建：
 
@@ -24,7 +24,7 @@ title: Starwhale Server入门指南
 - 一个名为mnist的Starwhale数据集
 - 一个名为pytorch的Starwhale运行时
 
-# 4. 将数据集、模型和运行时复制到Starwhale Server
+## 将数据集、模型和运行时复制到Starwhale Server
 
 ```bash
 swcli instance login --username <your username> --password <your password> --alias server <Your Server URL>
@@ -33,7 +33,7 @@ swcli dataset copy mnist/version/latest server/project/demo
 swcli runtime copy pytorch/version/latest server/project/demo
 ```
 
-# 3. 使用Web UI运行模型评估
+## 使用Web UI运行模型评估
 
 使用浏览器打开“demo”项目并创建一个新的评估。
 

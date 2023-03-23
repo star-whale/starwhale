@@ -2,7 +2,7 @@
 title: Contribute to Starwhale
 ---
 
-## 1. Getting Involved/Contributing
+## Getting Involved/Contributing
 
 We welcome and encourage all contributions to Starwhale, including and not limited to:
 
@@ -24,7 +24,7 @@ You can get involved, get updates and contact Starwhale developers in the follow
 - [Twitter](https://twitter.com/starwhaleai)
 - Email: *developer@starwhale.ai*
 
-## 2. Starwhale Resources
+## Starwhale Resources
 
 - [Homepage](http://starwhale.ai)
 - [Starwhale Cloud](https://cloud.starwhale.cn)
@@ -34,7 +34,7 @@ You can get involved, get updates and contact Starwhale developers in the follow
 - Docker Image：[Docker Hub](https://hub.docker.com/u/starwhaleai)，[ghcr.io](https://github.com/orgs/star-whale/packages)
 - [Helm Charts](https://artifacthub.io/packages/helm/starwhale/starwhale)
 
-## 3. Code Structure
+## Code Structure
 
 - [client](https://github.com/star-whale/starwhale/tree/main/client): swcli and Python SDK with Pure Python3, which includes all Standalone Instance features.
   - [api](https://github.com/star-whale/starwhale/tree/main/client/starwhale/api): Python SDK.
@@ -49,7 +49,7 @@ You can get involved, get updates and contact Starwhale developers in the follow
 - [example](https://github.com/star-whale/starwhale/tree/main/example)：Example code.
 - [scripts](https://github.com/star-whale/starwhale/tree/main/scripts)：Bash and Python scripts for E2E testing and software releases, etc.
 
-## 4. Fork and clone the repository
+## Fork and clone the repository
 
 You will need to fork the code of Starwhale repository and clone it to your local machine.
 
@@ -66,18 +66,18 @@ You will need to fork the code of Starwhale repository and clone it to your loca
   git clone https://github.com/${your username}/starwhale.git
   ```
 
-## 5. Development environment for Standalone Instance
+## Development environment for Standalone Instance
 
 Standalone Instance is written in Python3. When you want to modify swcli and sdk, you need to build the development environment.
 
-### 5.1 Prerequisites
+### Standalone development environment prerequisites
 
 - OS: Linux or macOS.
 - Python: 3.7~3.10.
 - Docker: >=19.03(optional).
 - Python isolated env tools：Python venv, virtualenv or conda, etc.
 
-### 5.2 Building from source code
+### Building from source code
 
 Based on the previous step, clone to the local directory: starwhale, and enter the client subdirectory:
 
@@ -109,11 +109,11 @@ swcli, version 0.0.0.dev0
 /home/username/anaconda3/envs/starwhale-dev/bin/swcli
 ```
 
-### 5.3 Modifying the code
+### Modifying the code
 
 When you modify the code, you need not to install python package(run `make install-sw` command) again. [.editorconfig](https://github.com/star-whale/starwhale/blob/main/.editorconfig) will be imported into the most IDE and code editors which helps maintain consistent coding styles for multiple developers.
 
-### 5.4 Lint and Test
+### Lint and Test
 
 Run unit test, E2E test, mypy lint, flake lint and isort check in the `starwhale` directory.
 
@@ -121,13 +121,13 @@ Run unit test, E2E test, mypy lint, flake lint and isort check in the `starwhale
 make client-all-check
 ```
 
-## 6. Development environment for Cloud Instance
+## Development environment for Cloud Instance
 
 Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
 
-### 6.1 Development environment for Console
+### Development environment for Console
 
-### 6.2 Development environment for Server
+### Development environment for Server
 
 - Language: Java
 - Build tool: Maven
@@ -138,7 +138,7 @@ Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
   - Testcontainers used for providing lightweight, throwaway instances of common databases, Selenium web browsers that can run in a Docker container.
 - Check style tool：use maven-checkstyle-plugin
 
-#### 6.2.1 Prerequisites
+#### Server development environment prerequisites
 
 - OS: Linux, macOS or Windows
 - Docker: >=19.03
@@ -148,18 +148,18 @@ Cloud Instance is written in Java(backend) and React+TypeScript(frontend).
 - Minio
 - Kubernetes cluster/Minikube(If you don't have a k8s cluster, you can use Minikube as an alternative for development and debugging)
 
-#### 6.2.2 Modify the code and add unit tests
+#### Modify the code and add unit tests
 
 Now you can enter the corresponding module to modify and adjust the code on the server side. The main business code directory is src/main/java, and the unit test directory is src/test/java.
 
-#### 6.2.3 Execute code check and run unit tests
+#### Execute code check and run unit tests
 
 ```bash
 cd starwhale/server
 mvn clean test
 ```
 
-#### 6.2.4 Deploy the server at local machine
+#### Deploy the server at local machine
 
 - Dependent services that need to be deployed
   - Minikube（Optional. Minikube can be used when there is no k8s cluster, there is the installation doc: [Minikube](https://minikube.sigs.k8s.io/docs/start/)）

@@ -2,9 +2,9 @@
 title: Getting started with Starwhale Standalone
 ---
 
-When the [Starwhale Command Line Interface (SWCLI)](../swcli) is installed, you are ready to use Starwhale Standalone.
+When the [Starwhale Client (SWCLI)](../swcli) is installed, you are ready to use Starwhale Standalone.
 
-# 1. Downloading Examples
+## Downloading Examples
 
 Download Starwhale examples by cloning the Starwhale project via:
 
@@ -17,7 +17,7 @@ We will use MNIST with PyTorch to start your Starwhale journey. The following st
 
 ![Core Workflow](../img/standalone-core-workflow.gif)
 
-# 2. Building a Pytorch Runtime
+## Building a Pytorch Runtime
 
 Runtime example codes are in the `example/runtime/pytorch` directory.
 
@@ -34,7 +34,7 @@ Runtime example codes are in the `example/runtime/pytorch` directory.
   swcli runtime info pytorch/version/latest
   ```
 
-# 3. Building a Model
+## Building a Model
 
 Model example codes are in the `example/mnist` directory.
 
@@ -61,7 +61,7 @@ Model example codes are in the `example/mnist` directory.
   swcli model info mnist/version/latest
   ```
 
-# 4. Building a Dataset
+## Building a Dataset
 
 Dataset example codes are in the `example/mnist` directory.
 
@@ -88,7 +88,7 @@ Dataset example codes are in the `example/mnist` directory.
   swcli dataset info mnist/version/latest
   ```
 
-# 5. Running an Evaluation Job
+## Running an Evaluation Job
 
 - Create an evaluation job
 

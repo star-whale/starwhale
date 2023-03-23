@@ -2,13 +2,13 @@
 title: Standalone Instance的安装建议
 ---
 
-我们使用swcli命令行工具完成所有的Standalone Instance上的操作，由于swcli是由纯Python3编写，可以在自己的笔记本或开发机上，使用pip命令完成安装。本文会提供一些安装建议，帮助你获得一个干净的、无依赖冲突的swcli python环境。
+我们使用swcli命令行工具完成所有的Standalone Instance上的操作，由于swcli是由纯Python3编写，可以在自己的笔记本或开发机上，使用pip命令完成安装。本文会提供一些安装建议，帮助您获得一个干净的、无依赖冲突的swcli python环境。
 
 :::caution 安装建议
 非常不建议将Starwhale安装在系统的全局Python环境中，可能会导致Python的依赖冲突问题。使用venv或conda创建一个隔离的Python环境，并在其中安装Starwhale，是Python推荐的做法。
 :::
 
-## 1. 前置条件
+## 前置条件
 
 - Python 3.7+
 - Linux or macOS
@@ -31,7 +31,7 @@ Starwhale 可以在macOS下工作，包括arm(M1 Chip)和x86(Intel Chip)两种�
 brew install python3
 ```
 
-## 2. venv环境中安装Starwhale
+## venv环境中安装Starwhale
 
 venv环境即可以使用Python3自带的venv，也可以virtualenv工具。
 
@@ -46,7 +46,7 @@ sudo rm -rf /usr/local/bin/swcli
 sudo ln -s `which swcli` /usr/local/bin/
 ```
 
-## 3. conda环境中安装Starwhale
+## conda环境中安装Starwhale
 
 ```bash
 conda create --name starwhale --yes  python=3.9
@@ -63,7 +63,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 需要注意的是，在Linux/macOS中，不使用venv/conda隔离环境，而是使用全局Python，有时会将Starwhale包安装到 ~/.local 下，需要将 ~/.local/bin 添加到PATH中，才能使用 swcli 命令行。
 
-## 4. Starwhale升级
+## Starwhale升级
 
 ```bash
 #for venv
@@ -73,7 +73,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 conda run -n starwhale python3 -m pip install --upgrade starwhale
 ```
 
-## 5. Starwhale卸载
+## Starwhale卸载
 
 ```bash
 python3 -m pip remove starwhale

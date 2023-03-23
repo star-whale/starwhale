@@ -2,9 +2,9 @@
 title: Starwhale Standalone入门指南
 ---
 
-当[Starwhale命令行工具(SWCLI)](../swcli)安装完成后，您就可以使用Starwhale Standalone了。
+当[Starwhale Client（SWCLI）](../swcli)安装完成后，您就可以使用Starwhale Standalone了。
 
-# 1. 下载例子
+## 下载例子
 
 通过以下方式克隆Starwhale项目来下载Starwhale示例：
 
@@ -16,9 +16,7 @@ cd starwhale
 我们将使用 MNIST 和 PyTorch 来开始您的 Starwhale 之旅。 以下步骤均在 starwhale 目录下进行。
 ![核心工作流程](../img/standalone-core-workflow.gif)
 
-# 2. Building a Pytorch Runtime
-
-# 2. 构建 Pytorch 运行时
+## 构建 Pytorch 运行时
 
 运行时示例代码位于example/runtime/pytorch目录中。
 
@@ -35,7 +33,7 @@ cd starwhale
   swcli runtime info pytorch/version/latest
   ```
 
-# 3. 建立模型
+## 建立模型
 
 模型示例代码位于 example/mnist 目录中。
 
@@ -62,7 +60,7 @@ cd starwhale
   swcli model info mnist/version/latest
   ```
 
-# 4. 构建数据集
+## 构建数据集
 
 数据集示例代码位于example/mnist目录中。
 
@@ -89,7 +87,7 @@ cd starwhale
   swcli dataset info mnist/version/latest
   ```
 
-# 5. 运行评估作业
+## 运行评估作业
 
 - 创建评估工作
 

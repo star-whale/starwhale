@@ -2,9 +2,9 @@
 title: 核心概念
 ---
 
-## 1. 设计概述
+## 设计概述
 
-### 1.1 Starwhale Dataset 定位
+### Starwhale Dataset 定位
 
 `Starwhale Dataset` 包含数据构建、数据加载和数据可视化三个核心阶段，是一款面向ML/DL领域的数据管理工具。`Starwhale Dataset` 能直接使用 `Starwhale Runtime` 构建的环境，能被 `Starwhale Model` 和 `Starwhale Evaluation` 无缝集成，是Starwhale MLOps工具链的重要组成部分。
 
@@ -16,7 +16,7 @@ title: 核心概念
 
 ![mlops-users](../img/mlops-users.png)
 
-### 1.2 核心功能
+### 核心功能
 
 - **高效加载**：数据集原始文件存储在OSS或NAS等外部存储上，使用时按需加载，不需要数据落盘。
 - **简单构建**：通过编写简单的Python代码（非必须），少量的dataset.yaml（非必须）后，执行swcli dataset build 命令就能完成数据集的构建。
@@ -26,7 +26,7 @@ title: 核心概念
 - **制品存储**：Standalone Instance能存储本地构建或分发的swds系列文件，Cloud Instance使用对象存储提供集中式的swds制品存储。
 - **Starwhale无缝集成**：`Starwhale Dataset` 能使用 `Starwhale Runtime` 构建的运行环境构建数据集。`Starwhale Evaluation` 和 `Starwhale Model` 直接通过 `--dataset` 参数指定数据集，就能完成自动数据加载，便于进行推理、模型评测等环境。
 
-### 1.3 关键元素
+### 关键元素
 
 - `swds` 虚拟包文件：swds 与swmp和swrt不一样，不是一个打包的单一文件，而是一个虚拟的概念，具体指的是一个目录，是Starwhale Dataset某个版本包含的数据集相关的文件，包括 _manifest.yaml, dataset.yaml, 数据集构建的Python脚本和数据文件的链接等。可以通过 `swcli dataset info` 命令查看swds所在目录。swds 是Starwhale Dataset的简写。
 ![swds-tree.png](../img/swds-tree.png)
@@ -35,13 +35,13 @@ title: 核心概念
 - Dataset Python SDK：包括数据构建、数据加载和若干预定义的数据类型，具体说明参考[Python SDK](api/sdk.md)。
 - 数据集构建的Python脚本：使用Starwhale Python SDK编写的用来构建数据集的一系列脚本。
 
-## 2. 最佳实践
+## 最佳实践
 
 `Starwhale Dataset` 的构建是独立进行的，如果编写构建脚本时需要引入第三方库，那么使用 `Starwhale Runtime` 可以简化Python的依赖管理，能保证数据集的构建可复现。Starwhale平台会尽可能多的内建开源数据集，让用户copy下来数据集后能立即使用。
 
 `Starwhale Dataset` 构建的时候会自动将Python文件进行打包，可以设置 `.swignore` [文件](../instances/standalone/guides/swignore.md) 排除某些文件。
 
-### 2.1 命令行分组
+### 命令行分组
 
 `Starwhale Dataset` 命令行从使用阶段的角度上，可以划分如下：
 
@@ -60,17 +60,17 @@ title: 核心概念
   - `swcli dataset remove`
   - `swcli dataset recover`
 
-### 2.2 核心流程
+### 核心流程
 
 `Starwhale Dataset` 使用的核心流程如下图：
 
 ![dataset-workflow.jpg](../img/dataset-workflow.jpg)
 
-## 3. dataset.yaml 说明
+## dataset.yaml 说明
 
 `Starwhale Dataset` 构建的时候使用dataset.yaml，若省略dataset.yaml，则可以在 `swcli dataset build` 命令行参数中描述相关配置。可以认为dataset.yaml是build命令行的配置文件化表述。
 
-### 3.1 YAML 字段描述
+### YAML 字段描述
 
 |字段|描述|是否必要|类型|默认值|
 |---|---|-------|---|-----|
@@ -91,9 +91,9 @@ title: 核心概念
 
 当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。Starwhale SDK会根据函数返回值判断首个元素为 `Starwhale.Link` 类型时，构建remote-link或user-raw格式的数据集，否则构建user-raw格式的数据集。不支持混合格式的数据集。
 
-### 3.2 使用示例
+### 使用示例
 
-#### 3.3 最简示例
+#### 最简示例
 
 ```yaml
 name: helloworld
@@ -102,7 +102,7 @@ handler: dataset:ExampleProcessExecutor
 
 helloworld的数据集，使用dataset.yaml目录中dataset.py文件中的 `ExampleProcessExecutor` 类进行数据构建。
 
-#### 3.4 MNIST数据集构建示例
+#### MNIST数据集构建示例
 
 ```yaml
 name: mnist
@@ -116,7 +116,7 @@ attr:
   data_mime_type: "x/grayscale"
 ```
 
-#### 3.5 handler为generator function的例子
+#### handler为generator function的例子
 
 dataset.yaml 内容：
 
@@ -135,7 +135,7 @@ def iter_item():
 
 本例中，handler为一个generator function，Starwhale SDK根据首个yield出来的元素为非`Starwhale.Link`类型，等同于继承 `starwhale.SWDSBinBuildExecutor` 类。
 
-## 4. Starwhale Dataset Viewer
+## Starwhale Dataset Viewer
 
 目前Cloud Instance中Web UI可以对数据集进行可视化展示，目前只有使用Python SDK的[DataType](api/data_type.md) 才能被前端正确的解释，映射关系如下：
 
@@ -146,7 +146,7 @@ def iter_item():
 - Binary和Bytes：暂不支持展示。
 - Link：上述几种多媒体类型都支持指定link作为存储路径。
 
-## 5. Starwhale Dataset 数据格式
+## Starwhale Dataset 数据格式
 
 `SWDS`以dict作为每个数据条目的格式，但是对key和value有一些简单的限制[L]：
 
@@ -173,9 +173,9 @@ def iter_item():
 }
 ```
 
-### 5.1 文件类数据的处理方式
+### 文件类数据的处理方式
 
-Starwhale Dataset对文件类型的数据进行了特殊处理，用户如果你不关心Starwhale的实现方式，可以忽略本小节。
+Starwhale Dataset对文件类型的数据进行了特殊处理，如果您不关心Starwhale的实现方式，可以忽略本小节。
 
 根据实际使用场景，Starwhale Dataset 对基类为`starwhale.BaseArtifact`的文件类数据有三种处理方式：
 

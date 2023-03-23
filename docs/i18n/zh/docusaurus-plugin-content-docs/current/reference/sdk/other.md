@@ -2,7 +2,7 @@
 title: 其他SDK
 ---
 
-## 1. starwhale.\__version__
+## starwhale.\__version__
 
 Starwhale SDK和Cli版本，是字符串常量。
 
@@ -12,7 +12,7 @@ Starwhale SDK和Cli版本，是字符串常量。
 0.3.0rc10
 ```
 
-## 2. starwhale.URI
+## starwhale.URI
 
 starwhale uri的类定义，可以将字符串转化成URI对象。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/base/uri.py)。
 
@@ -37,7 +37,7 @@ URI(
 
 上面例子中，uri的原始字符串都是 `mnist/version/latest`，这是一个有歧义的URI，但当指定了 `expected_type` 参数后，可以明确指定为预期的URI。
 
-## 3. starwhale.URIType
+## starwhale.URIType
 
 描述 `starwhale.URI` 类型，Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/base/type.py)。
 

@@ -8,7 +8,7 @@ title: Starwhale Resources URI
 
 ![concepts-org.jpg](../../../img/concepts-org.jpg)
 
-## 1. Instance URI
+## Instance URI
 
 Instance URI can be either:
 
@@ -31,7 +31,7 @@ swcli model copy mnist/version/latest cloud://pre-k8s/project/1
 swcli runtime copy pytorch/version/v1.0 http://localhost:8081/project/myproject
 ```
 
-## 2. Project URI
+## Project URI
 
 Project URI is in the format `[<Instance URI>/project/]<project name>`. If the instance URI is not specified, use the default instance instead.
 
@@ -42,7 +42,7 @@ swcli project select self   # select self project in the current instance
 swcli project info local/project/self  # inspect self project info in the local instance
 ```
 
-## 3. Model/Dataset/Runtime URI
+## Model/Dataset/Runtime URI
 
 - Model URI: `[<Project URI>/model/]<model name>[/version/<version id|tag>]`.
 - Dataset URI: `[<Project URI>/dataset/]<dataset name>[/version/<version id|tag>]`.
@@ -60,7 +60,7 @@ swcli model info mnist  # inspect mnist model info
 swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest
 ```
 
-## 4. Evaluation URI
+## Evaluation URI
 
 - format: `[<Project URI>/evaluation/]<job id>`.
 - If the project URI is not specified, use the default project.
@@ -72,7 +72,7 @@ swcli eval info mezdayjzge3w   # Inspect mezdayjzge3w version in default instanc
 swcli eval info local/project/self/job/mezday # Inspect the local instance, self project, with short job version:mezday
 ```
 
-## 5. Names Limitation
+## Names Limitation
 
 Names mean project names, model names, dataset names, runtime names, and tag names.
 
@@ -81,7 +81,7 @@ Names mean project names, model names, dataset names, runtime names, and tag nam
 - A name should always start with a letter or the `_` character.
 - The maximum length of a name is 80.
 
-### 5.1 Names uniqueness requirement
+### Names uniqueness requirement
 
 The resource name should be a unique string within its owner. For example, the project name should be unique in the owner instance, and the model name should be unique in the owner project.
 

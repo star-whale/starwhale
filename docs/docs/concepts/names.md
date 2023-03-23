@@ -4,14 +4,14 @@ title: Names in Starwhale
 
 Names mean project names, model names, dataset names, runtime names, and tag names.
 
-# 1. Names Limitation
+## Names Limitation
 
 - Names are case-insensitive.
 - A name MUST only consist of letters `A-Z a-z`, digits `0-9`, the hyphen character `-`, the dot character `.`, and the underscore character `_`.
 - A name should always start with a letter or the `_` character.
 - The maximum length of a name is 80.
 
-# 2. Names uniqueness requirement
+## Names uniqueness requirement
 
 The resource name should be a unique string within its owner. For example, the project name should be unique in the owner instance, and the model name should be unique in the owner project.
 

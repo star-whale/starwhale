@@ -6,9 +6,9 @@ title: 快速入门
 
 ![Core Workflow](../../img/standalone-core-workflow.gif)
 
-## 1. 安装Starwhale CLI
+## 安装Starwhale CLI
 
-Starwhale 有三种类型的Instances：Standalone-单机、On-Premises-私有化集群、Cloud Hosted-SaaS托管服务。Standalone是最简单的模式，可以从Standalone开启你的Starwhale MLOps之旅。Starwhale Standalone 是用Python3编写的，可以通过pip命令安装：
+Starwhale 有三种类型的Instances：Standalone-单机、On-Premises-私有化集群、Cloud Hosted-SaaS托管服务。Standalone是最简单的模式，可以从Standalone开启您的Starwhale MLOps之旅。Starwhale Standalone 是用Python3编写的，可以通过pip命令安装：
 
 ```bash
 python3 -m pip install starwhale
@@ -25,7 +25,7 @@ python3 -m pip install starwhale
 
 推荐阅读[Standalone 安装建议](install.md)。
 
-## 2. 下载示例程序
+## 下载示例程序
 
 ```bash
 GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/star-whale/starwhale.git --depth 1
@@ -34,7 +34,7 @@ cd starwhale
 
 为了节省例子的下载时间，我们执行git clone命令时，忽略了git-lfs，并只保留最近一次的commit信息。我们选用ML/DL领域的HelloWorld程序-MNIST来介绍如何从零开始构建数据集、模型包和运行环境，并最终完成模型评测。接下来的操作都在 `starwhale` 目录中进行。
 
-## 3. 构建Starwhale Runtime运行环境
+## 构建Starwhale Runtime运行环境
 
 Runtime的示例程序在 `example/runtime/pytorch` 目录中。
 
@@ -72,7 +72,7 @@ Runtime的示例程序在 `example/runtime/pytorch` 目录中。
   swcli runtime restore pytorch/version/latest
   ```
 
-## 4. 构建Starwhale Model模型包
+## 构建Starwhale Model模型包
 
 Model的示例程序在 `example/mnist` 目录中。
 
@@ -99,7 +99,7 @@ Model的示例程序在 `example/mnist` 目录中。
   swcli model info mnist/version/latest
   ```
 
-## 5. 构建Starwhale Dataset数据集
+## 构建Starwhale Dataset数据集
 
 Dataset的示例程序在 `example/mnist` 目录中。
 
@@ -132,7 +132,7 @@ Dataset的示例程序在 `example/mnist` 目录中。
   swcli dataset head mnist/version/latest
   ```
 
-## 6. 运行模型评测任务
+## 运行模型评测任务
 
 - 运行模型评测任务：
 

@@ -11,7 +11,7 @@ DO NOT install Starwhale in your system's global Python environment. It will cau
 
 We recommend you build an independent virutalenv or conda environment to install Starwhale.
 
-## 1. Prerequisites
+## Prerequisites
 
 - Python 3.7+
 - Linux or macOS
@@ -34,7 +34,7 @@ Starwhale works on macOS. If you run into issues with the default system Python3
 brew install python3
 ```
 
-## 2. Install Starwhale with venv
+## Install Starwhale with venv
 
 ```bash
 python3 -m venv ~/.cache/venv/starwhale
@@ -47,7 +47,7 @@ sudo rm -rf /usr/local/bin/swcli
 sudo ln -s `which swcli` /usr/local/bin/
 ```
 
-## 3. Install Starwhale with conda
+## Install Starwhale with conda
 
 ```bash
 conda create --name starwhale --yes  python=3.9
@@ -62,7 +62,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 👏 Now, you can use `swcli` in the global environment.
 
-## 4. Upgrade Starwhale
+## Upgrade Starwhale
 
 ```bash
 #for venv
@@ -72,7 +72,7 @@ sudo ln -s `which swcli` /usr/local/bin/
 conda run -n starwhale python3 -m pip install --upgrade starwhale
 ```
 
-## 5. Remove Starwhale
+## Remove Starwhale
 
 ```bash
 python3 -m pip remove starwhale
