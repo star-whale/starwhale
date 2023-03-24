@@ -940,14 +940,20 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         dataset_name = "mnist"
         commit_msg = "test"
         ds = dataset(dataset_name, create=True)
+        assert not ds.changed
         ds.append({"label": 1})
+        assert ds.changed
         assert not ds.committed
+        with self.assertRaisesRegex(RuntimeError, "version has not been committed yet"):
+            ds.committed_version
+
         version = ds.commit(message=commit_msg)
         ds.close()
 
         assert ds.committed
         assert ds.pending_commit_version == version
         assert ds.loading_version == version
+        assert ds.committed_version == version
 
         manifest_path = (
             Path(self.local_storage)
@@ -974,7 +980,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
         ds.append(DataRow(index="100", features={"data": Binary(b"100"), "label": 100}))
+        assert ds.uri.object.version == existed_ds_uri.object.version
         version = ds.commit()
+        assert version != existed_ds_uri.object.version
+        assert ds.uri.object.version == version
         ds.close()
 
         assert version == ds.pending_commit_version
