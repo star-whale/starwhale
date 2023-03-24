@@ -1,3 +1,5 @@
+from unittest.mock import patch, MagicMock, PropertyMock
+
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME
@@ -17,7 +19,16 @@ class StandaloneTagTestCase(TestCase):
             NoSupportError, StandaloneTag, URI("http://1.1.1.1:8.8.8.8/project/self")
         )
 
-    def test_tag_workflow(self) -> None:
+    @patch(
+        "starwhale.utils.config.SWCliConfigMixed._current_instance_obj",
+        new_callable=PropertyMock,
+    )
+    def test_tag_workflow(self, mock_ins: MagicMock) -> None:
+        mock_ins.return_value = {
+            "type": "standalone",
+            "uri": "local",
+            "current_project": "foo",
+        }
         sw = SWCliConfigMixed()
 
         st = StandaloneTag(
@@ -30,7 +41,7 @@ class StandaloneTagTestCase(TestCase):
         assert st._manifest_path.name == DEFAULT_MANIFEST_NAME
         assert (
             st._manifest_path
-            == sw.rootdir / "self" / "model" / "mnist" / DEFAULT_MANIFEST_NAME
+            == sw.rootdir / "foo" / "model" / "mnist" / DEFAULT_MANIFEST_NAME
         )
 
         _manifest = st._get_manifest()
@@ -74,7 +85,12 @@ class StandaloneTagTestCase(TestCase):
         assert _manifest["versions"]["me3dmn3gg4ytanrtmftdgyjzpbrgimi"]["me3"]
         assert _manifest["versions"]["gnstmntggi4tinrtmftdgyjzo5wwy2y"]["test"]
 
-    def test_auto_fast_tag(self) -> None:
+    @patch(
+        "starwhale.utils.config.SWCliConfigMixed._current_instance_obj",
+        new_callable=PropertyMock,
+    )
+    def test_auto_fast_tag(self, mock_ins: MagicMock) -> None:
+        mock_ins.return_value = {"type": "standalone", "uri": "local"}
         version = "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
         st = StandaloneTag(
             URI(
