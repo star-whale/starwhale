@@ -109,7 +109,7 @@ class MaskRCnn(PipelineHandler):
             for _idx, _label in enumerate(detector_metrics_map):
                 report[_iou][_label] = _stats[_idx]
 
-        self.evaluation.log_metrics(report)
+        self.evaluation_store.log_metrics(report)
 
     def _load_model(self, device):
         net = pretrained_model(

@@ -171,7 +171,7 @@ swcli model info ${version}
 
 上面的`build`命令在`starwhale/example/PennFudanPed`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。
 
-PennFudanPed例子是多目标检测问题，无法使用 `starwhale.multi_classification` 修饰器，Starwhale SDK中也没有提供合适的修饰器自动处理cmp结果。本例中，我们使用 `self.evaluation.log_metrics` 函数，将report的结果存储到Starwhale Datastore中，这样在Standalone Instance 和 Cloud Instance中都能看到相关结果。用户可以使用 `evaluation` SDK上报各种评测结果数据。
+PennFudanPed例子是多目标检测问题，无法使用 `starwhale.multi_classification` 修饰器，Starwhale SDK中也没有提供合适的修饰器自动处理cmp结果。本例中，我们使用 `self.evaluation_store.log_metrics` 函数，将report的结果存储到Starwhale Datastore中，这样在Standalone Instance 和 Cloud Instance中都能看到相关结果。用户可以使用 `evaluation` SDK上报各种评测结果数据。
 
 cmp中核心代码：
 
@@ -214,7 +214,7 @@ def cmp(self, ppl_result):
         for _idx, _label in enumerate(detector_metrics_map):
             report[_iou][_label] = _stats[_idx]
 
-    self.evaluation.log_metrics(report)
+    self.evaluation_store.log_metrics(report)
 ```
 
 在Standalone Instance中呈现评测结果：
