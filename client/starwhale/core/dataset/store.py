@@ -523,7 +523,7 @@ class SignedUrlBackend(StorageBackend, CloudRequestMixed):
 
     def sign_uri(self, uri: str) -> str:
         r = self.do_http_request(
-            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/blob/sign-links",
+            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/uri/sign-links",
             method=HTTPMethod.POST,
             instance_uri=self.dataset_uri,
             params={

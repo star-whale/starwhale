@@ -226,7 +226,7 @@ public interface DatasetApi {
             DatasetUploadRequest uploadRequest);
 
     /**
-     * legacy blob content download api, use {@link #signBlobLinks} or {@link #pullBlob} instead
+     * legacy blob content download api, use {@link #signLinks} or {@link #pullUriContent} instead
      */
     @Operation(summary = "Pull Dataset files",
             description = "Pull Dataset files part by part. ")
@@ -260,14 +260,28 @@ public interface DatasetApi {
             @Parameter(description = "file content") @RequestPart(value = "file", required = true)
             MultipartFile dsFile);
 
+    @Operation(summary = "Test if a hashed blob exists in this dataset",
+            description = "404 if not exists; 200 if exists")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}",
+            method = RequestMethod.HEAD,
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<?> headHashedBlob(
+            @PathVariable(name = "projectName") String projectName,
+            @PathVariable(name = "datasetName") String datasetName,
+            @PathVariable(name = "hash") String hash);
+
+
     @Operation(summary = "Pull Dataset uri file contents",
             description = "Pull Dataset uri file contents ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-            value = "/project/{projectName}/dataset/{datasetName}/blob",
+            value = "/project/{projectName}/dataset/{datasetName}/uri",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void pullBlob(
+    void pullUriContent(
             @PathVariable(name = "projectName") String projectName,
             @PathVariable(name = "datasetName") String datasetName,
             @Parameter(name = "uri", required = true) String uri,
@@ -281,10 +295,10 @@ public interface DatasetApi {
             description = "Sign SWDS uris to get a batch of temporarily accessible links")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-            value = "/project/{projectName}/dataset/{datasetName}/blob/sign-links",
+            value = "/project/{projectName}/dataset/{datasetName}/uri/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<Map>> signBlobLinks(@PathVariable(name = "projectName") String projectName,
+    ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectName,
             @PathVariable(name = "datasetName") String datasetName,
             @RequestBody Set<String> uris,
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")

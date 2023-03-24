@@ -34,12 +34,15 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
+import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -69,11 +72,14 @@ public class DatasetController implements DatasetApi {
     private final DatasetService datasetService;
     private final IdConverter idConvertor;
     private final DatasetUploader datasetUploader;
+    private final HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory;
 
-    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader) {
+    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader,
+            HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory) {
         this.datasetService = datasetService;
         this.idConvertor = idConvertor;
         this.datasetUploader = datasetUploader;
+        this.hashNamedDatasetObjectStoreFactory = hashNamedDatasetObjectStoreFactory;
     }
 
     @Override
@@ -209,8 +215,8 @@ public class DatasetController implements DatasetApi {
     }
 
     /**
-     * legacy blob content download api, use {@link #signBlobLinks(String, String, Set, Long)} or
-     * {@link #pullBlob(String, String, String, Long, Long, HttpServletResponse)} instead
+     * legacy blob content download api, use {@link #signLinks(String, String, Set, Long)} or
+     * {@link #pullUriContent(String, String, String, Long, Long, HttpServletResponse)} instead
      */
     @Deprecated
     @Override
@@ -231,8 +237,24 @@ public class DatasetController implements DatasetApi {
                 Code.success.asResponse(datasetUploader.uploadHashedBlob(projectUrl, datasetName, dsFile, hash)));
     }
 
+    public ResponseEntity<?> headHashedBlob(String project, String datasetName, String hash) {
+        HashNamedObjectStore hashNamedObjectStore = hashNamedDatasetObjectStoreFactory.of(project, datasetName);
+        StorageObjectInfo storageObjectInfo = null;
+        try {
+            storageObjectInfo = hashNamedObjectStore.head(hash);
+        } catch (IOException e) {
+            log.error("access to main object storage failed", e);
+            throw new SwProcessException(ErrorType.STORAGE, "access to main object storage failed", e);
+        }
+        if (storageObjectInfo.isExists()) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @Override
-    public void pullBlob(String project, String datasetName, String uri, Long offset, Long size,
+    public void pullUriContent(String project, String datasetName, String uri, Long offset, Long size,
             HttpServletResponse httpResponse) {
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
@@ -244,7 +266,7 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<Map>> signBlobLinks(String project, String datasetName, Set<String> uris,
+    public ResponseEntity<ResponseMessage<Map>> signLinks(String project, String datasetName, Set<String> uris,
             Long expTimeMillis) {
         return ResponseEntity.ok(Code.success.asResponse(
                 datasetService.signLinks(project, datasetName, uris, expTimeMillis)));

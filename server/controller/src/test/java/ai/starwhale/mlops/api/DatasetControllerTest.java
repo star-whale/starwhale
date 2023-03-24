@@ -47,8 +47,12 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.List;
@@ -75,12 +79,16 @@ public class DatasetControllerTest {
 
     private DatasetUploader datasetUploader;
 
+    private HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory;
+
     @BeforeEach
     public void setUp() {
         datasetService = mock(DatasetService.class);
         datasetUploader = mock(DatasetUploader.class);
+        hashNamedDatasetObjectStoreFactory = mock(HashNamedDatasetObjectStoreFactory.class);
 
-        controller = new DatasetController(datasetService, new IdConverter(), datasetUploader);
+        controller = new DatasetController(datasetService, new IdConverter(), datasetUploader,
+                hashNamedDatasetObjectStoreFactory);
     }
 
     @Test
@@ -258,7 +266,7 @@ public class DatasetControllerTest {
         given(datasetService.dataOf(any(), any(), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
-        controller.pullBlob("p1", "d1", "v1", 1L, 1L, response);
+        controller.pullUriContent("p1", "d1", "v1", 1L, 1L, response);
         assertThat(str.toString(), is("100"));
     }
 
@@ -339,6 +347,20 @@ public class DatasetControllerTest {
         String signUrl = "sign-url";
         when(datasetService.signLinks(pj, "ds", Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
         Assertions.assertEquals(Map.of(uri, signUrl),
-                controller.signBlobLinks(pj, ds, Set.of(uri), 100L).getBody().getData());
+                controller.signLinks(pj, ds, Set.of(uri), 100L).getBody().getData());
+    }
+
+    @Test
+    public void testHeadHashedBlob() throws IOException {
+        HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
+        when(hashNamedDatasetObjectStoreFactory.of("p", "d")).thenReturn(hashNamedObjectStore);
+        when(hashNamedObjectStore.head("h1")).thenReturn(new StorageObjectInfo(true, null, null));
+        when(hashNamedObjectStore.head("h2")).thenReturn(new StorageObjectInfo(false, null, null));
+        when(hashNamedObjectStore.head("h3")).thenThrow(IOException.class);
+        Assertions.assertTrue(controller.headHashedBlob("p", "d", "h1").getStatusCode().is2xxSuccessful());
+        Assertions.assertTrue(controller.headHashedBlob("p", "d", "h2").getStatusCode().is4xxClientError());
+        Assertions.assertThrows(SwProcessException.class,
+                () -> controller.headHashedBlob("p", "d", "h3").getStatusCode().is4xxClientError());
+
     }
 }

@@ -48,6 +48,10 @@ public class HashNamedObjectStore {
         return storageAccessService.get(absolutePath(blobHash));
     }
 
+    public StorageObjectInfo head(String blobHash) throws IOException {
+        return storageAccessService.head(absolutePath(blobHash));
+    }
+
     public String relativePath(String blobHash) {
         if (null == blobHash || blobHash.length() < 3) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "file blobHash should have at least 3 chars");
