@@ -179,17 +179,23 @@ module.exports = {
                 {
                     type: 'category',
                     label: "Starwhale Server",
+                    link: {
+                        type: "doc",
+                        id: "instances/server/index"
+                    },
                     collapsed: true,
                     items: [
-                        "instances/server/getting_started",
-                        "instances/server/concepts",
                         {
                             type: 'category',
                             label: "Installation",
+                            link: {
+                                type: "doc",
+                                id: "instances/server/installation/index"
+                            },
                             collapsed: true,
                             items: [
-                                "instances/server/install/docker",
-                                "instances/server/install/helm-charts",
+                                "instances/server/installation/docker",
+                                "instances/server/installation/helm-charts",
                             ]
                         },
                         {
