@@ -11,7 +11,7 @@ INDEX_FILE = "digitStruct.mat"
 
 
 def build_ds():
-    ds = dataset("svhn", create=True)
+    ds = dataset("svhn")
     with requests.get(f"{PATH_ROOT}/{INDEX_FILE}", timeout=10) as rsp:
         f = h5py.File(io.BytesIO(rsp.content), "r")
         bboxs = f.get("digitStruct/bbox")

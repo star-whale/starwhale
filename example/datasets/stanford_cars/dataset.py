@@ -12,7 +12,7 @@ MAT_FILE = "cars_annos.mat"
 
 
 def build_ds():
-    ds = dataset("stanford_cars", create=True)
+    ds = dataset("stanford_cars")
     with requests.get(f"{PATH_ROOT}/{MAT_FILE}", timeout=10) as rsp:
         mat = scipy.io.loadmat(io.BytesIO(rsp.content))
         for anno in mat["annotations"][0]:

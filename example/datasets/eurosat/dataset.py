@@ -14,7 +14,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("eurosat", create=True)
+    ds = dataset("eurosat")
     tree = json.loads(request_link_text(f"{PATH_ROOT}/tree.json"))
     for dir in tree:
         if "directory" != dir.get("type", ""):

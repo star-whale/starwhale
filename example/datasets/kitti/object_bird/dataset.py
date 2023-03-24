@@ -8,7 +8,7 @@ velodyne_formatter = "/velodyne/{num}.bin"
 
 
 def build_ds():
-    ds = dataset("kitti-object-birds", create=True)
+    ds = dataset("kitti-object-birds")
     for i in range(7481):
         num = str(i).zfill(6)
         ds.append(

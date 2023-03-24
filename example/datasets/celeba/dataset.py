@@ -16,7 +16,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("celeba-align", create=True)
+    ds = dataset("celeba-align")
     identities = request_link_text(f"{PATH_ROOT}/{IDENTITY_PATH}").splitlines()
     attrs = request_link_text(f"{PATH_ROOT}/{ATTR_PATH}").splitlines()
     landmarks = request_link_text(f"{PATH_ROOT}/{LANDMARK_PATH}").splitlines()

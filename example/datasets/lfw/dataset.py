@@ -13,7 +13,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("lfw", create=True)
+    ds = dataset("lfw")
     lines = request_link_text(INDEX_PATH).splitlines()
     for line in lines[1:]:
         name, pic = line.split()

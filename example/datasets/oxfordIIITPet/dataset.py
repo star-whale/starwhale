@@ -28,7 +28,7 @@ def request_link_text(anno_link):
 
 
 def build_ds():
-    ds = dataset("oxfordIIITPet", create=True)
+    ds = dataset("oxfordIIITPet")
     lines = request_link_text(f"{PATH_ROOT}/{INDEX_PATH}").splitlines()
     for line in lines[6:]:
         f_name, class_id, species, breed_id = line.split()

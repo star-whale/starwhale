@@ -23,7 +23,7 @@ def to_sw_line(_array):
 
 
 def do_iter_item():
-    ds = dataset("culane", create=True)
+    ds = dataset("culane")
     tree = json.loads(request_link_text(f"{PATH_ROOT}/{DATA_PATH}/tree.json"))
     for dir in tree["children"]:
         dir_name_: str = dir["name"]

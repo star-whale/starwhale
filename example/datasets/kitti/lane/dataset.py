@@ -12,7 +12,7 @@ def request_link_json(anno_link):
 
 
 def build_ds():
-    ds = dataset("kitti-lane", create=True)
+    ds = dataset("kitti-lane")
     index_json = request_link_json(f"{PATH_ROOT}/tree.json")
     for item in index_json:
         if "training" != item.get("name"):

@@ -52,7 +52,7 @@ class _DatasetSDKTestBase(BaseTestCase):
         super().tearDown()
 
     def _init_simple_dataset(self) -> URI:
-        with dataset("mnist", create=True) as ds:
+        with dataset("mnist") as ds:
             for i in range(0, 10):
                 ds.append(
                     DataRow(
@@ -64,7 +64,7 @@ class _DatasetSDKTestBase(BaseTestCase):
         return ds.uri
 
     def _init_simple_dataset_with_str_id(self) -> URI:
-        with dataset("mnist", create=True) as ds:
+        with dataset("mnist") as ds:
             for i in range(0, 10):
                 ds.append(
                     DataRow(
@@ -87,7 +87,8 @@ class _DatasetSDKTestBase(BaseTestCase):
 
 class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
+        assert not ds.exists()
         assert ds.loading_version == ds.pending_commit_version != ""
         assert ds.project_uri.full_uri == "local/project/self/dataset/mnist"
         assert ds.uri.object.name == ds.name == "mnist"
@@ -104,7 +105,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_append(self) -> None:
         size = 11
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         assert len(ds) == 0
         ds.append(DataRow(index=0, features={"data": Binary(b""), "label": 1}))
         assert len(ds) == 1
@@ -124,12 +125,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
 
         load_ds = dataset(ds.uri)
+        assert load_ds.exists()
         assert len(load_ds) == size + 1
         ids = {d.index for d in load_ds}
         assert ids == {i for i in range(0, len(load_ds))}
 
     def test_extend(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         assert len(ds) == 0
         size = 10
         ds.extend(
@@ -157,7 +159,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert load_ds[9].index == 9  # type: ignore
 
     def test_setitem(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         assert len(ds) == 0
         assert ds._dataset_builder is None
 
@@ -191,7 +193,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert set(index_names) == {"index-1", "index-2", "index-3", "index-4"}
 
     def test_setitem_exceptions(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         with self.assertRaises(TypeError):
             ds[1:3] = ((1, Binary(), {}), (2, Binary(), {}))
 
@@ -199,7 +201,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds[DataRow(1, Binary())] = DataRow(1, Binary())  # type: ignore
 
     def test_parallel_setitem(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
 
         size = 100
 
@@ -220,7 +222,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert 0 <= int(items[0].index) <= 99
 
     def test_setitem_same_key(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.append(DataRow(1, {"data": Binary(b""), "label": "1-1"}))
         assert len(ds) == 1
 
@@ -276,13 +278,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert set(items) == {1, 2, 3, 4, 5}
 
     def test_del_not_found(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         del ds[0]
         del ds["1"]
         del ds["not-found"]
 
     def test_del_item_from_empty(self) -> None:
-        with dataset("mnist", create=True) as ds:
+        with dataset("mnist") as ds:
             for i in range(0, 3):
                 ds.append(DataRow(i, {"data": Binary(), "label": i}))
 
@@ -298,7 +300,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(reopen_ds) == 1
 
     def test_build_no_data(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         msg = "failed to commit, because dataset builder is None"
         with self.assertRaisesRegex(RuntimeError, msg):
             ds.commit()
@@ -309,7 +311,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             ds.commit()
 
     def test_close(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.close()
 
         existed_ds_uri = self._init_simple_dataset()
@@ -434,7 +436,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(items) == 2
 
     def test_features_delete(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         cnt = 10
         for i in range(0, cnt):
             ds.append({"side_label": i, "inner_label": i})
@@ -461,7 +463,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert "inner_label" not in row.features
 
     def test_features_update(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         cnt = 10
         for i in range(0, cnt):
             ds.append({"update_label": i, "remove_label": i})
@@ -494,7 +496,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert "remove_label" not in load_ds[i].features
 
     def test_mixed_features_update(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         cnt = 10
         for i in range(0, cnt):
             ds.append({"update_label": i})
@@ -534,7 +536,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             del ds[0].features.label
 
     def test_get_item_features(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.append({"label": 0})
         ds.flush()
 
@@ -592,12 +594,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.NOT_FOUND,
         )
 
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "for the non-existed dataset, you should set create=True to create dataset automatically",
-        ):
-            dataset("http://1.1.1.1/project/self/dataset/not_found/version/1234")
-
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/1234",
@@ -651,7 +647,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.NOT_FOUND,
         )
 
-        ds = dataset("http://1.1.1.1/project/self/dataset/mnist", create=True)
+        ds = dataset("http://1.1.1.1/project/self/dataset/mnist")
         assert version_req.call_count == 1
 
         file_request = rm.request(
@@ -766,7 +762,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert list(ds.info) == []
 
     def test_info_update(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.append(DataRow(1, {"data": Binary(b"123"), "label": 1}))
 
         assert list(ds.info) == []
@@ -793,7 +789,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert m["tags"] == ["latest", "v0"]
         assert m["project"] == ds.project_uri.project
 
-        empty_ds = dataset("mnist_new", create=True)
+        empty_ds = dataset("mnist_new")
         m = empty_ds.manifest()
         assert m == {}
 
@@ -801,18 +797,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         existed_ds_uri = self._init_simple_dataset_with_str_id()
 
         name = existed_ds_uri.object.name
-        with self.assertRaisesRegex(
-            RuntimeError, "dataset already existed, failed to create"
-        ):
-            _ = dataset(name, create=True)
-
         new_ds_name = f"{name}-new"
-
-        with self.assertRaisesRegex(
-            ValueError,
-            "create and readonly arguments cannot be set to True at the same time",
-        ):
-            _ = dataset(new_ds_name, create=True, readonly=True)
 
         with self.assertRaisesRegex(
             ValueError, "no support to set a non-existed dataset to the readonly mode"
@@ -820,18 +805,12 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             _ = dataset(new_ds_name, readonly=True)
 
         with self.assertRaisesRegex(
-            RuntimeError,
-            "for the non-existed dataset, you should set create=True to create dataset automatically",
-        ):
-            _ = dataset(new_ds_name)
-
-        with self.assertRaisesRegex(
             NoSupportError,
             "no support to create a specified version dataset",
         ):
-            _ = dataset(f"{new_ds_name}/version/123", create=True)
+            _ = dataset(f"{new_ds_name}/version/123")
 
-        new_ds = dataset(new_ds_name, create=True)
+        new_ds = dataset(new_ds_name)
         assert new_ds.name == new_ds_name
 
     def test_remove_recover(self) -> None:
@@ -940,7 +919,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_commit_from_empty(self) -> None:
         dataset_name = "mnist"
         commit_msg = "test"
-        ds = dataset(dataset_name, create=True)
+        ds = dataset(dataset_name)
         assert not ds.changed
         ds.append({"label": 1})
         assert ds.changed
@@ -1010,7 +989,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         }
 
     def test_commit_with_tags(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.append({"label": 1})
         ds.commit(tags=["test1", "test2"])
         ds.close()
@@ -1019,7 +998,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert list(load_ds.tags) == ["latest", "test1", "test2", "v0"]
 
     def test_commit_exception(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         with self.assertRaisesRegex(
             RuntimeError, "failed to commit, because dataset builder is None"
         ):
@@ -1034,13 +1013,15 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.close()
 
     def test_no_commit(self) -> None:
-        with dataset("mnist", create=True):
+        with dataset("mnist"):
             ...
 
-        with self.assertRaisesRegex(RuntimeError, "for the non-existed dataset"):
-            dataset("mnist")
+        with self.assertRaisesRegex(
+            ValueError, "no support to set a non-existed dataset to the readonly mode"
+        ):
+            dataset("mnist", readonly=True)
 
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         ds.append(("index-1", {"label": 1}))
         v0 = ds.commit()
         ds.close()
@@ -1145,7 +1126,7 @@ class TestPytorch(_DatasetSDKTestBase):
         assert len(item[0]) == 5
 
     def test_use_custom_transform(self) -> None:
-        with dataset("mnist", create=True) as ds:
+        with dataset("mnist") as ds:
             for i in range(0, 10):
                 ds.append({"txt": Text(f"data-{i}"), "label": i})
 
@@ -1165,7 +1146,7 @@ class TestPytorch(_DatasetSDKTestBase):
         assert item["txt"][0] in ("custom-data-0", "custom-data-1")
 
     def test_complex_transform(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         for i in range(0, 10):
             data = {
                 "text": Text(f"data-{i}"),
@@ -1204,7 +1185,7 @@ class TestPytorch(_DatasetSDKTestBase):
         )
 
     def test_image_transform(self) -> None:
-        ds = dataset("mnist", create=True)
+        ds = dataset("mnist")
         for i in range(1, 10):
             _img = self._create_real_image((i, i, i))
             ds.append({"img": Image(_img), "label": i})
@@ -1218,7 +1199,7 @@ class TestPytorch(_DatasetSDKTestBase):
         assert list(item["img"].size()) == [2, 2, 2, 3]
 
     def test_audio_transform(self) -> None:
-        with dataset("mnist", create=True) as ds:
+        with dataset("mnist") as ds:
             _audio = self._create_real_audio()
             ds.append({"audio": Audio(_audio), "label": 1})
             ds.commit()
