@@ -160,9 +160,10 @@ public class UpgradeService {
     private void checkIsUpgradeAllowed(String newVersion) {
         // Check whether upgrade is allowed:
         // 0. new version is later than current version
-        if (StrUtil.compareVersion(newVersion, currentVersionNumber) <= 0) {
-            //throw new SwValidationException(ValidSubject.UPGRADE,
-            //"New version must be later than the current version");
+        if (!Objects.equals("ignored", newVersion)
+                && StrUtil.compareVersion(newVersion, currentVersionNumber) <= 0) {
+            throw new SwValidationException(ValidSubject.UPGRADE,
+                    "New version must be later than the current version");
         }
         // 1. all Pods are ready (No upgrade process is running)
         try {

@@ -12,7 +12,7 @@ IMAGE="$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERS
 
 HEADER_AUTH=$(curl -s -D - http://$HOST_URL/api/v1/login -d 'userName='${SW_USER}'&userPwd='${SW_PWD} | grep Authorization:)
 
-RESULT=$(curl -s -D - http://$HOST_URL/api/v1/system/version/upgrade -H "Content-Type: application/json" -H "${HEADER_AUTH}" -d '{"version": "'"${SERVER_RELEASE_VERSION}"'", "image": "'"${IMAGE}"'"}')
+RESULT=$(curl -s -D - http://$HOST_URL/api/v1/system/version/upgrade -H "Content-Type: application/json" -H "${HEADER_AUTH}" -d '{"version": "ignored", "image": "'"${IMAGE}"'"}')
 
 echo "$RESULT" | grep HTTP
 
