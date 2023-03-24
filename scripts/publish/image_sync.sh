@@ -58,26 +58,26 @@ do
   fi
 done
 last_version_file="$work_dir/last_version"
-function remove_image() {
-    if [[ -n "$last_version" ]]; then
-        sudo docker image rm $1
-    fi
+
+function copy_image() {
+  $regctl_file image copy "$source_registry/$1" "$target_registry/$2"
 }
+
 if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
 else
-  $regctl_file image copy "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:"$release_version"
-  $regctl_file image copy "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:latest
-  $regctl_file image copy "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
-  $regctl_file image copy "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:latest
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:$release_version"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:$release_version"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:latest"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:latest"
 
   for suf in "${starwhale_image_suffix[@]}"
     do
-      $regctl_file image copy  "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
-      $regctl_file image copy  "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
-      $regctl_file image copy  "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:latest"$suf"
-      $regctl_file image copy  "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:latest"$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:$release_version$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:$release_version$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:latest$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:latest$suf"
     done
 
   echo "$release_version" > "$last_version_file"
