@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.objectstore;
+package ai.starwhale.mlops.domain.storage;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -36,9 +36,8 @@ public class TestHashNamedObjectStore {
         when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null));
         HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService, "/abc");
         String blobHash = "abc123fdasd";
-        String relativePath = hashNamedObjectStore.put(blobHash, mock(InputStream.class));
-        Assertions.assertEquals("ab/abc123fdasd", relativePath);
-        Assertions.assertEquals("/abc/ab/abc123fdasd", hashNamedObjectStore.absolutePath(blobHash));
+        String path = hashNamedObjectStore.put(blobHash, mock(InputStream.class));
+        Assertions.assertEquals("/abc/ab/abc123fdasd", path);
     }
 
     @Test
@@ -47,8 +46,8 @@ public class TestHashNamedObjectStore {
         HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService, "/abc");
         when(storageAccessService.head("/abc/h1/h121")).thenReturn(new StorageObjectInfo(false, null, null));
         when(storageAccessService.head("/abc/h2/h211")).thenReturn(new StorageObjectInfo(true, null, null));
-        Assertions.assertFalse(hashNamedObjectStore.head("h121").isExists());
-        Assertions.assertTrue(hashNamedObjectStore.head("h211").isExists());
+        Assertions.assertNull(hashNamedObjectStore.head("h121"));
+        Assertions.assertNotNull(hashNamedObjectStore.head("h211"));
     }
 
 }

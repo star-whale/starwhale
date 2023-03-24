@@ -49,10 +49,9 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.List;
@@ -354,8 +353,8 @@ public class DatasetControllerTest {
     public void testHeadHashedBlob() throws IOException {
         HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
         when(hashNamedDatasetObjectStoreFactory.of("p", "d")).thenReturn(hashNamedObjectStore);
-        when(hashNamedObjectStore.head("h1")).thenReturn(new StorageObjectInfo(true, null, null));
-        when(hashNamedObjectStore.head("h2")).thenReturn(new StorageObjectInfo(false, null, null));
+        when(hashNamedObjectStore.head("h1")).thenReturn("a");
+        when(hashNamedObjectStore.head("h2")).thenReturn(null);
         when(hashNamedObjectStore.head("h3")).thenThrow(IOException.class);
         Assertions.assertTrue(controller.headHashedBlob("p", "d", "h1").getStatusCode().is2xxSuccessful());
         Assertions.assertTrue(controller.headHashedBlob("p", "d", "h2").getStatusCode().is4xxClientError());

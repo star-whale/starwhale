@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.domain.dataset.objectstore;
 
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import org.springframework.stereotype.Component;
 

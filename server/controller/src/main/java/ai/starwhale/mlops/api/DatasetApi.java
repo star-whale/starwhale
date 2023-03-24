@@ -266,7 +266,7 @@ public interface DatasetApi {
     @RequestMapping(
             value = "/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}",
             method = RequestMethod.HEAD,
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headHashedBlob(
             @PathVariable(name = "projectName") String projectName,

@@ -36,13 +36,12 @@ import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -239,15 +238,15 @@ public class DatasetController implements DatasetApi {
 
     public ResponseEntity<?> headHashedBlob(String project, String datasetName, String hash) {
         HashNamedObjectStore hashNamedObjectStore = hashNamedDatasetObjectStoreFactory.of(project, datasetName);
-        StorageObjectInfo storageObjectInfo = null;
+        String path = null;
         try {
-            storageObjectInfo = hashNamedObjectStore.head(hash);
+            path = hashNamedObjectStore.head(hash);
         } catch (IOException e) {
             log.error("access to main object storage failed", e);
             throw new SwProcessException(ErrorType.STORAGE, "access to main object storage failed", e);
         }
-        if (storageObjectInfo.isExists()) {
-            return ResponseEntity.ok().build();
+        if (null != path) {
+            return ResponseEntity.ok().header("X-SW-LOCAL-STORAGE-URI", path).build();
         } else {
             return ResponseEntity.notFound().build();
         }

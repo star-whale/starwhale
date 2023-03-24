@@ -55,12 +55,12 @@ import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -88,7 +88,7 @@ public class DatasetServiceTest {
     private ProjectService projectService;
     private DatasetDao datasetDao;
     private UserService userService;
-    private DsFileGetter dsFileGetter;
+    private UriAccessor uriAccessor;
     private DataLoader dataLoader;
     private TrashService trashService;
     @Setter
@@ -134,7 +134,7 @@ public class DatasetServiceTest {
                 .willReturn(2L);
         datasetDao = mock(DatasetDao.class);
 
-        dsFileGetter = mock(DsFileGetter.class);
+        uriAccessor = mock(UriAccessor.class);
 
         dataLoader = mock(DataLoader.class);
 
@@ -151,7 +151,7 @@ public class DatasetServiceTest {
                 new IdConverter(),
                 new VersionAliasConverter(),
                 userService,
-                dsFileGetter,
+                uriAccessor,
                 dataLoader,
                 trashService
         );
@@ -367,7 +367,7 @@ public class DatasetServiceTest {
 
     @Test
     public void testDataOf() {
-        given(dsFileGetter.dataOf(same(1L), anyString(), anyString(), any(), any()))
+        given(uriAccessor.dataOf(same(1L), anyString(), anyString(), any(), any()))
                 .willReturn(new byte[1]);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
@@ -377,7 +377,7 @@ public class DatasetServiceTest {
 
     @Test
     public void testLinkOf() {
-        given(dsFileGetter.linkOf(same(1L), anyString(), anyString(), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), anyString(), anyLong()))
                 .willReturn("link");
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
@@ -386,12 +386,12 @@ public class DatasetServiceTest {
 
     @Test
     public void testLinksOf() {
-        given(dsFileGetter.linkOf(same(1L), anyString(), eq("a"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("a"), anyLong()))
                 .willReturn("link1");
 
-        given(dsFileGetter.linkOf(same(1L), anyString(), eq("b"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("b"), anyLong()))
                 .willReturn("link2");
-        given(dsFileGetter.linkOf(same(1L), anyString(), eq("x"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("x"), anyLong()))
                 .willThrow(SwValidationException.class);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());

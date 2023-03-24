@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.objectstore;
+package ai.starwhale.mlops.domain.storage;
 
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -36,23 +36,28 @@ public class HashNamedObjectStore {
     }
 
     public String put(String blobHash, InputStream file) throws IOException {
-        String absolutePath = absolutePath(blobHash);
-        StorageObjectInfo storageObjectInfo = storageAccessService.head(absolutePath);
+        String path = absolutePath(blobHash);
+        StorageObjectInfo storageObjectInfo = storageAccessService.head(path);
         if (!storageObjectInfo.isExists()) {
-            storageAccessService.put(absolutePath, file);
+            storageAccessService.put(path, file);
         }
-        return relativePath(blobHash);
+        return path;
     }
 
     public InputStream get(String blobHash) throws IOException {
         return storageAccessService.get(absolutePath(blobHash));
     }
 
-    public StorageObjectInfo head(String blobHash) throws IOException {
-        return storageAccessService.head(absolutePath(blobHash));
+    public String head(String blobHash) throws IOException {
+        String path = absolutePath(blobHash);
+        StorageObjectInfo head = storageAccessService.head(path);
+        if (head.isExists()) {
+            return path;
+        }
+        return null;
     }
 
-    public String relativePath(String blobHash) {
+    private String relativePath(String blobHash) {
         if (null == blobHash || blobHash.length() < 3) {
             throw new SwValidationException(ValidSubject.OBJECT_STORE, "file blobHash should have at least 3 chars");
         }

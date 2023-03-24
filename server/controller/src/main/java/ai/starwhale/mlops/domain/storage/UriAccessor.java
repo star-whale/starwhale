@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.objectstore;
+package ai.starwhale.mlops.domain.storage;
 
-import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.dataset.objectstore.StorageAccessParser;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -37,19 +36,13 @@ import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
-public class DsFileGetter {
+public class UriAccessor {
 
     static final Set<String> SCHEME_HTTP = Set.of("http", "https");
     final StorageAccessParser storageAccessParser;
-    final DatasetVersionMapper datasetVersionMapper;
 
-    final StoragePathCoordinator storagePathCoordinator;
-
-    public DsFileGetter(StorageAccessParser storageAccessParser,
-            DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator) {
+    public UriAccessor(StorageAccessParser storageAccessParser) {
         this.storageAccessParser = storageAccessParser;
-        this.datasetVersionMapper = datasetVersionMapper;
-        this.storagePathCoordinator = storagePathCoordinator;
     }
 
     @NotNull
@@ -71,6 +64,7 @@ public class DsFileGetter {
         return sizeLong > 0 && offsetLong >= 0;
     }
 
+    //TODO(ryd) remove unused params
     public byte[] dataOf(Long projectId, String datasetName, String uri, Long offset,
             Long size) {
         StorageUri storageUri = getStorageUri(uri);
@@ -87,9 +81,9 @@ public class DsFileGetter {
         }
         StorageAccessService storageAccessService =
                 storageAccessParser.getStorageAccessServiceFromUri(getStorageUri(uri));
-        String path = findPath(projectId, datasetName, storageUri);
-        try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(path,
-                offset, size) : storageAccessService.get(path)) {
+        try (InputStream inputStream = validParam(size, offset) ? storageAccessService.get(
+                storageUri.getPathAfterBucket(),
+                offset, size) : storageAccessService.get(storageUri.getPathAfterBucket())) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
@@ -104,21 +98,11 @@ public class DsFileGetter {
             return uri;
         }
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromUri(storageUri);
-        String path = findPath(projectId, datasetName, storageUri);
         try {
-            return storageAccessService.signedUrl(path, expTimeMillis);
+            return storageAccessService.signedUrl(storageUri.getPathAfterBucket(), expTimeMillis);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "error while accessing storage", e);
         }
     }
 
-    private String findPath(Long projectId, String datasetName, StorageUri uri) {
-        String path = uri.getPathAfterBucket();
-        if (StringUtils.hasText(uri.getSchema())) {
-            return path;
-        }
-        String datasetPath = storagePathCoordinator.allocateDatasetPath(projectId, datasetName);
-        return StringUtils.trimTrailingCharacter(datasetPath, '/') + "/"
-                + StringUtils.trimLeadingCharacter(path, '/');
-    }
 }

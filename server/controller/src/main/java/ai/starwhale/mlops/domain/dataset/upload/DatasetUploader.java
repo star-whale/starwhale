@@ -38,6 +38,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -47,7 +48,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.objectstore.HashNamedObjectStore;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -56,7 +56,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -74,8 +73,6 @@ public class DatasetUploader {
     /**
      * prefix + / + fileName
      */
-    static final String FORMATTER_STORAGE_PATH = "%s/%s";
-    static final Pattern PATTERN_SIGNATURE = Pattern.compile("\\d+:blake2b:(.*)");
     static final String DATASET_MANIFEST = "_manifest.yaml";
     final HotDatasetHolder hotDatasetHolder;
     final DatasetMapper datasetMapper;
@@ -231,8 +228,7 @@ public class DatasetUploader {
                 .versionMeta(manifest.getRawYaml())
                 .versionName(manifest.getVersion())
                 .size(manifest.getDatasetSummary().getRows())
-                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectId, datasetEntity.getDatasetName(),
-                        manifest.getVersion()))
+                .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectId, datasetEntity.getDatasetName()))
                 .filesUploaded(DatasetVersionWithMetaConverter.EMPTY_YAML)
                 .build();
     }
