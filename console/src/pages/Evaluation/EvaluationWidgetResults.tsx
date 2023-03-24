@@ -15,6 +15,7 @@ import { toaster } from 'baseui/toast'
 import { fetchModelVersionPanelSetting } from '@model/services/modelVersion'
 import { getToken } from '@/api'
 import { tryParseSimplified } from '@/domain/panel/utils'
+import { useProject } from '@project/hooks/useProject'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -197,7 +198,9 @@ interface Layout {
 }
 
 function EvaluationWidgetResults() {
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const { jobId, projectId: projectFromUri } = useParams<{ jobId: string; projectId: string }>()
+    const { project } = useProject()
+    const projectId = project?.id ?? projectFromUri
     const { job } = useJob()
     const storeKey = job?.modelName ? ['evaluation-model', job?.modelName].join('-') : ''
     const [currentLayout, setCurrentLayout] = React.useState<Layout | undefined>(undefined)

@@ -6,15 +6,16 @@ import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { tablesOfEvaluation, WidgetStoreState } from '@starwhale/core'
-import { useParams } from 'react-router-dom'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
+import { useProject } from '@project/hooks/useProject'
 
 registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
     return function EditorLoader(props: any) {
-        const { projectId } = useParams<{ projectId: string }>()
+        const { project } = useProject()
+        const projectId = project?.id
         const { job } = useJob()
         // eslint-disable-next-line prefer-template
         const prefix = projectId && job?.uuid ? tablesOfEvaluation(projectId, job?.uuid) + '/' : undefined

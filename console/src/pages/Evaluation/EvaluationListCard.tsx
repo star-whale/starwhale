@@ -22,12 +22,15 @@ import { toaster } from 'baseui/toast'
 import EvaluationListCompare from './EvaluationListCompare'
 import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
+import { useProject } from '@project/hooks/useProject'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
-    const { projectId } = useParams<{ projectId: string }>()
+    const { projectId: projectFromUri } = useParams<{ projectId: string }>()
+    const { project } = useProject()
+    const projectId = project?.id || projectFromUri
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
