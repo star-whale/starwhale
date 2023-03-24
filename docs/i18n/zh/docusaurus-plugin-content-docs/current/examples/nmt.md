@@ -91,7 +91,7 @@ swcli model info ${version}
 
 上面的`build`命令在`starwhale/example/nmt`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
 
-nmt例子并不是多分类问题，无法使用 `starwhale.multi_classification` 修饰器，Starwhale SDK中也没有提供合适的修饰器自动处理cmp结果。本例中，我们使用 `self.evaluation.log_metrics` 函数，将report的结果存储到Starwhale Datastore中，这样在Standalone Instance 和 Cloud Instance中都能看到相关结果。用户可以使用 `evaluation` SDK上报各种评测结果数据。
+nmt例子并不是多分类问题，无法使用 `starwhale.multi_classification` 修饰器，Starwhale SDK中也没有提供合适的修饰器自动处理cmp结果。本例中，我们使用 `self.evaluation_store.log_metrics` 函数，将report的结果存储到Starwhale Datastore中，这样在Standalone Instance 和 Cloud Instance中都能看到相关结果。用户可以使用 `evaluation` SDK上报各种评测结果数据。
 
 cmp中核心代码：
 
@@ -105,7 +105,7 @@ def cmp(self, _data_loader):
     bleu = calculate_bleu(result, [label])
     print(f"bleu: {bleu}")
     report = {"bleu_score": bleu}
-    self.evaluation.log_metrics(report)
+    self.evaluation_store.log_metrics(report)
 ```
 
 在Standalone Instance中呈现评测结果：

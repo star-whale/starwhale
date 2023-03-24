@@ -68,7 +68,7 @@ class NMTPipeline(PipelineHandler):
         bleu = calculate_bleu(result, [label])
         print(f"bleu: {bleu}")
         report = {"bleu_score": bleu}
-        self.evaluation.log_metrics(report)
+        self.evaluation_store.log_metrics(report)
 
     def _load_vocab(self):
         # hack for torch load
