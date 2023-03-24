@@ -22,7 +22,7 @@ import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import java.util.List;
@@ -47,7 +47,7 @@ public class UpdateK8sImage extends UpgradeStepBase {
     @Override
     protected void doStep(Upgrade upgrade) {
         log.info("Update image" + upgrade.getTo());
-        JSONArray patchJson = new JSONArray(List.of(
+        String patchJson = JSONUtil.toJsonStr(List.of(
                 Map.of(
                         "op", "replace",
                         "path", "/spec/template/spec/containers/0/image",
@@ -57,7 +57,7 @@ public class UpdateK8sImage extends UpgradeStepBase {
         try {
             k8sClient.patchDeployment(
                     "controller",
-                    new V1Patch(patchJson.toString()),
+                    new V1Patch(patchJson),
                     V1Patch.PATCH_FORMAT_JSON_PATCH);
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.K8S, "Update image error.", e);
