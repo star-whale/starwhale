@@ -24,12 +24,18 @@ if [[ -z ${GH_TOKEN} ]]; then
   exit 1
 fi
 
-
 export source_registry=${source_registry:="ghcr.io"}
 export source_repo_name=${source_repo_name:="star-whale"}
 export target_registry=${target_registry:="homepage-bj.intra.starwhale.ai:5000"}
 target_repo_name1=star-whale
 target_repo_name2=starwhaleai
+
+regctl_file="$work_dir/regctl"
+if ! test -f "$regctl_file"; then
+    curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 >$regctl_file
+    chmod 755 $regctl_file
+    $regctl_file registry set --tls=disabled $target_registry
+fi
 
 declare -i page=1
 declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
@@ -52,42 +58,26 @@ do
   fi
 done
 last_version_file="$work_dir/last_version"
-function remove_image() {
-    if [[ -n "$last_version" ]]; then
-        sudo docker image rm $1
-    fi
+
+function copy_image() {
+  $regctl_file image copy "$source_registry/$1" "$target_registry/$2"
 }
+
 if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
 else
-  sudo docker pull "$source_registry"/"$source_repo_name"/server:"$release_version"
-  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:"$release_version"
-  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:"$release_version"
-  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name1"/server:latest
-  sudo docker tag "$source_registry"/"$source_repo_name"/server:"$release_version" "$target_registry"/"$target_repo_name2"/server:latest
-  sudo docker push "$target_registry"/"$target_repo_name1"/server:"$release_version"
-  sudo docker push "$target_registry"/"$target_repo_name2"/server:"$release_version"
-  sudo docker push "$target_registry"/"$target_repo_name1"/server:latest
-  sudo docker push "$target_registry"/"$target_repo_name2"/server:latest
-  remove_image "$source_registry"/"$source_repo_name"/server:"$last_version"
-  remove_image "$target_registry"/"$target_repo_name1"/server:"$last_version"
-  remove_image "$target_registry"/"$target_repo_name2"/server:"$last_version"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:$release_version"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:$release_version"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:latest"
+  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:latest"
 
   for suf in "${starwhale_image_suffix[@]}"
     do
-      sudo docker pull "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf"
-      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
-      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
-      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name1"/starwhale:latest"$suf"
-      sudo docker tag "$source_registry"/"$source_repo_name"/starwhale:"$release_version""$suf" "$target_registry"/"$target_repo_name2"/starwhale:latest"$suf"
-      sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:"$release_version""$suf"
-      sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:"$release_version""$suf"
-      sudo docker push "$target_registry"/"$target_repo_name1"/starwhale:latest"$suf"
-      sudo docker push "$target_registry"/"$target_repo_name2"/starwhale:latest"$suf"
-      remove_image "$target_registry"/"$target_repo_name1"/starwhale:"$last_version""$suf"
-      remove_image "$target_registry"/"$target_repo_name2"/starwhale:"$last_version""$suf"
-      remove_image "$source_registry"/"$source_repo_name"/starwhale:"$last_version""$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:$release_version$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:$release_version$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:latest$suf"
+      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:latest$suf"
     done
 
   echo "$release_version" > "$last_version_file"
