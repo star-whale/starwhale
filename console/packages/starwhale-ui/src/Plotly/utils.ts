@@ -129,8 +129,6 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
         layout = {
             ...Layout.auto,
             title,
-            width: nums * 30,
-            height: nums * 30,
         }
     }
 
