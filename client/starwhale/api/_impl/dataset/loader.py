@@ -246,11 +246,10 @@ class DataLoader:
         skip_fetch_data: bool = False,
         shadow_dataset: t.Optional[Dataset] = None,
     ) -> DataRow:
-        for at in row.artifacts:
-            at.owner = self.dataset_uri
-            if skip_fetch_data:
-                continue
-            at.fetch_data()
+        for artifact in row.artifacts:
+            artifact.owner = self.dataset_uri
+            if not skip_fetch_data:
+                artifact.fetch_data()
         return DataRow(
             index=row.id, features=row.features, shadow_dataset=shadow_dataset
         )
