@@ -740,16 +740,29 @@ def _update_schema(key_column: str, record: Dict[str, Any]) -> TableSchema:
 
 
 class InnerRecord:
-    def __init__(self, key: Any, record: Optional[Record] = None) -> None:
-        self.key = key
+    def __init__(self, key_column: str, record: Optional[Record] = None) -> None:
+        self.key = ""
+        self.key_column = key_column
         self.records: OrderedDict[int, Record] = OrderedDict()
         self.ordered = True
         if record is not None:
             self.append(record)
 
     def append(self, record: Record) -> str:
-        self.ordered = False
+        if not self.key:
+            self.key = record[self.key_column]
         seq = self._get_seq_num()
+        if len(self.records) > 0:
+            last = self.get_record()
+            # get diff of the last and record
+            # let the record only contains the diff or None
+            diff = {
+                k: v for k, v in record.items() if v is None or last.get(k, None) != v
+            }
+            if not diff:
+                return str(seq)
+            record = Record(diff)
+        self.ordered = False
         self.records[seq] = record
         return str(seq)
 
@@ -774,12 +787,13 @@ class InnerRecord:
                     if "-" in ret:
                         ret = dict()
                     ret.update(record)
+        ret.update({self.key_column: self.key})
         return ret
 
     def dumps(self) -> Dict[str, Any]:
         self._reorder()
         return {
-            "key": self.key,
+            "key": self.key_column,
             "records": {seq: record.dumps() for seq, record in self.records.items()},
         }
 
@@ -790,6 +804,9 @@ class InnerRecord:
         ret.records = OrderedDict(
             {int(seq): Record.loads(record) for seq, record in data["records"].items()}
         )
+        first = ret.records[next(iter(ret.records))]
+
+        ret.key = first[data["key"]]
         return ret
 
     @staticmethod
@@ -901,7 +918,7 @@ class MemoryTable:
                     end is None or _end_check(k, end)
                 ):
                     records.append(v)
-        records.sort(key=lambda x: cast(str, x.key))
+        records.sort(key=lambda x: x.key)
         for ir in records:
             r = ir.get_record(revision)
             if columns is None:
@@ -919,7 +936,7 @@ class MemoryTable:
         self.dirty = True
         with self.lock:
             key = record.get(self.key_column.name)
-            r = self.records.setdefault(key, InnerRecord(key))
+            r = self.records.setdefault(key, InnerRecord(self.key_column.name))
             return r.append(Record(record))
 
     def delete(self, keys: List[Any]) -> str | None:
