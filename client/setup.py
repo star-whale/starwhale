@@ -72,7 +72,7 @@ setup(
     url="https://github.com/star-whale/starwhale",
     license="Apache License 2.0",
     packages=find_packages(exclude=["ez_setup", "tests*"]),
-    package_data={"": ["core/runtime/template/Dockerfile.tmpl"]},
+    package_data={"": ["core/runtime/template/Dockerfile.tmpl", "web/ui/**"]},
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
