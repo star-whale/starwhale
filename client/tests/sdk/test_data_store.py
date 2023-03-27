@@ -3,221 +3,59 @@ import json
 import time
 import unittest
 import concurrent.futures
-from typing import Dict, List
 from unittest.mock import Mock, patch
 
 import numpy as np
-import pyarrow as pa  # type: ignore
 import requests
 from requests_mock import Mocker
 
-from starwhale import Text
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
-from starwhale.api._impl.data_store import (
-    SwType,
-    TableEmptyException,
-    TableWriterException,
-)
+from starwhale.api._impl.data_store import INT64, ColumnSchema, TableWriterException
 
 from .. import BaseTestCase
 
 
 class TestBasicFunctions(BaseTestCase):
     def test_get_table_path(self) -> None:
-        self.assertEqual(os.path.join("a", "b"), data_store._get_table_path("a", "b"))
         self.assertEqual(
-            os.path.join("a", "b", "c"), data_store._get_table_path("a", "b/c")
+            os.path.join("a", "b.sw-datastore.json"),
+            data_store._get_table_path("a", "b"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c", "d"), data_store._get_table_path("a", "b/c/d")
+            os.path.join("a", "b", "c.sw-datastore.json"),
+            data_store._get_table_path("a", "b/c"),
+        )
+        self.assertEqual(
+            os.path.join("a", "b", "c", "d.sw-datastore.json"),
+            data_store._get_table_path("a", "b/c/d"),
         )
 
-    def test_parse_parquet_name(self) -> None:
+    def test_parse_data_table_name(self) -> None:
         self.assertEqual(
             ("", 0),
-            data_store._parse_parquet_name("base-123.txt"),
+            data_store._parse_data_table_name("base-123.txt"),
             "invalid extension",
         )
         self.assertEqual(
             ("", 0),
-            data_store._parse_parquet_name("base_1.parquet"),
+            data_store._parse_data_table_name("base_1.sw-datastore.json"),
             "invalid prefix",
         )
         self.assertEqual(
             ("", 0),
-            data_store._parse_parquet_name("base-i.parquet"),
+            data_store._parse_data_table_name("base-i.sw-datastore.json"),
             "invalid index",
         )
         self.assertEqual(
-            ("base", 123), data_store._parse_parquet_name("base-123.parquet"), "base"
+            ("base", 123),
+            data_store._parse_data_table_name("base-123.sw-datastore.json"),
+            "base",
         )
         self.assertEqual(
-            ("patch", 123), data_store._parse_parquet_name("patch-123.parquet"), "patch"
-        )
-
-    def test_write_and_scan(self) -> None:
-        path = os.path.join(self.datastore_root, "base-0.parquet")
-        data_store._write_parquet_file(
-            path,
-            pa.Table.from_pydict(
-                {
-                    "a": [0, 1, 2],
-                    "b": ["x", "y", "z"],
-                    "c": [10, 11, 12],
-                    "-": [None, True, None],
-                    "~c": [False, False, True],
-                },
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "a",
-                            [
-                                data_store.ColumnSchema("a", data_store.INT64),
-                                data_store.ColumnSchema("b", data_store.STRING),
-                                data_store.ColumnSchema("c", data_store.INT64),
-                                data_store.ColumnSchema("-", data_store.BOOL),
-                                data_store.ColumnSchema("~c", data_store.BOOL),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "a": 0, "b": "x", "c": 10},
-                {"*": 1, "a": 1, "b": "y", "c": 11, "-": True},
-                {"*": 2, "a": 2, "b": "z"},
-            ],
-            list(data_store._scan_parquet_file(path)),
-            "scan all",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "i": "x", "j": 10},
-                {"*": 1, "i": "y", "j": 11, "-": True},
-                {"*": 2, "i": "z"},
-            ],
-            list(data_store._scan_parquet_file(path, columns={"b": "i", "c": "j"})),
-            "some columns",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "i": "x", "j": 10},
-                {"*": 1, "i": "y", "j": 11, "-": True},
-                {"*": 2, "i": "z"},
-            ],
-            list(
-                data_store._scan_parquet_file(
-                    path, columns={"b": "i", "c": "j", "x": "x"}
-                )
-            ),
-            "extra column",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "i": "x", "j": 10},
-                {"*": 1, "i": "y", "j": 11, "-": True},
-                {"*": 2, "i": "z"},
-            ],
-            list(
-                data_store._scan_parquet_file(
-                    path, columns={"b": "i", "c": "j", "-": "x"}
-                )
-            ),
-            "'-' column",
-        )
-        self.assertEqual(
-            [{"*": 1, "i": "y", "j": 11, "-": True}, {"*": 2, "i": "z"}],
-            list(
-                data_store._scan_parquet_file(
-                    path, columns={"b": "i", "c": "j"}, start=1
-                )
-            ),
-            "with start",
-        )
-        self.assertEqual(
-            [{"*": 0, "i": "x", "j": 10}],
-            list(
-                data_store._scan_parquet_file(path, columns={"b": "i", "c": "j"}, end=1)
-            ),
-            "with end",
-        )
-        self.assertEqual(
-            [{"*": 1, "i": "y", "j": 11, "-": True}],
-            list(
-                data_store._scan_parquet_file(
-                    path, columns={"b": "i", "c": "j"}, start=1, end=2
-                )
-            ),
-            "with start and end",
-        )
-
-        self.assertEqual(
-            [{"*": 1, "-": True, "i": "y", "j": 11}, {"*": 2, "i": "z"}],
-            list(
-                data_store._scan_parquet_file(
-                    path,
-                    columns={"b": "i", "c": "j"},
-                    start=1,
-                    end=2,
-                    end_inclusive=True,
-                )
-            ),
-            "with start and end, with end inclusive",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "a": 0, "b": "x", "c": 10},
-                {"*": 1, "a": 1, "b": "y", "c": 11, "-": True},
-                {"*": 2, "a": 2, "b": "z", "c": None},
-            ],
-            list(data_store._scan_parquet_file(path, keep_none=True)),
-            "keep none",
-        )
-
-    def test_only_one_end_inclusive(self) -> None:
-        path = os.path.join(self.datastore_root, "base-10.parquet")
-        data_store._write_parquet_file(
-            path,
-            pa.Table.from_pydict(
-                {
-                    "a": [0],
-                    "b": ["x"],
-                    "c": [10],
-                    "-": [None],
-                    "~c": [False],
-                },
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "a",
-                            [
-                                data_store.ColumnSchema("a", data_store.INT64),
-                                data_store.ColumnSchema("b", data_store.STRING),
-                                data_store.ColumnSchema("c", data_store.INT64),
-                                data_store.ColumnSchema("-", data_store.BOOL),
-                                data_store.ColumnSchema("~c", data_store.BOOL),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        self.assertEqual(
-            1,
-            len(
-                list(
-                    data_store._scan_parquet_file(
-                        path,
-                        start=0,
-                        end=0,
-                        end_inclusive=True,
-                    )
-                )
-            ),
-            "end inclusive and end is max",
+            ("patch", 123),
+            data_store._parse_data_table_name("patch-123.sw-datastore.json"),
+            "patch",
         )
 
     def test_merge_scan(self) -> None:
@@ -406,230 +244,6 @@ class TestBasicFunctions(BaseTestCase):
                 )
             ),
             "mixed",
-        )
-
-    def test_get_table_files(self) -> None:
-        data: Dict[str, List[str]] = {
-            "0": [],
-            "1": ["base-1.parquet"],
-            "2": ["base-0.parquet", "patch-1.parquet", "patch-3.parquet"],
-            "3": [
-                "base-0.parquet",
-                "patch-1.parquet",
-                "base-1.parquet",
-                "patch-2.parquet",
-            ],
-        }
-        for dir, files in data.items():
-            dir = os.path.join(self.datastore_root, dir)
-            os.makedirs(dir)
-            for file in files:
-                file = os.path.join(dir, file)
-                with open(file, "w"):
-                    pass
-        self.assertEqual(
-            [],
-            data_store._get_table_files(os.path.join(self.datastore_root, "0")),
-            "empty",
-        )
-        self.assertEqual(
-            [os.path.join(self.datastore_root, "1", "base-1.parquet")],
-            data_store._get_table_files(os.path.join(self.datastore_root, "1")),
-            "base only",
-        )
-        self.assertEqual(
-            [
-                os.path.join(self.datastore_root, "2", f)
-                for f in ("base-0.parquet", "patch-1.parquet", "patch-3.parquet")
-            ],
-            data_store._get_table_files(os.path.join(self.datastore_root, "2")),
-            "base and patches",
-        )
-        self.assertEqual(
-            [
-                os.path.join(self.datastore_root, "3", f)
-                for f in ("base-1.parquet", "patch-2.parquet")
-            ],
-            data_store._get_table_files(os.path.join(self.datastore_root, "3")),
-            "multiple bases",
-        )
-
-    def test_scan_table(self) -> None:
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "base-0.parquet"),
-            pa.Table.from_pydict(
-                {"a": [0, 1, 2], "t": [7, 7, 7]},
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "a",
-                            [
-                                data_store.ColumnSchema("a", data_store.INT64),
-                                data_store.ColumnSchema("t", data_store.INT64),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "patch-1.parquet"),
-            pa.Table.from_pydict(
-                {
-                    "a": [0, 1, 2],
-                    "b": ["x", "y", "z"],
-                    "c": [10, 11, 12],
-                    "d": [None, True, None],
-                },
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "a",
-                            [
-                                data_store.ColumnSchema("a", data_store.INT64),
-                                data_store.ColumnSchema("b", data_store.STRING),
-                                data_store.ColumnSchema("c", data_store.INT64),
-                                data_store.ColumnSchema("d", data_store.BOOL),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "base-1.parquet"),
-            pa.Table.from_pydict(
-                {"k": [1, 3, 4, 5], "a": ["1", "3", "4", "5"]},
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "k",
-                            [
-                                data_store.ColumnSchema("k", data_store.INT64),
-                                data_store.ColumnSchema("a", data_store.STRING),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "patch-2.parquet"),
-            pa.Table.from_pydict(
-                {"k": [0, 2, 3, 5], "a": ["0", "2", "3.3", "5.5"]},
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "k",
-                            [
-                                data_store.ColumnSchema("k", data_store.INT64),
-                                data_store.ColumnSchema("a", data_store.STRING),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "patch-3.parquet"),
-            pa.Table.from_pydict(
-                {"k": [2, 4], "-": [True, True]},
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "k",
-                            [
-                                data_store.ColumnSchema("k", data_store.INT64),
-                                data_store.ColumnSchema("-", data_store.BOOL),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        data_store._write_parquet_file(
-            os.path.join(self.datastore_root, "patch-4.parquet"),
-            pa.Table.from_pydict(
-                {
-                    "k": [0, 1, 2, 3],
-                    "a": [None, None, None, "3"],
-                    "b": ["0", "1", "2", "3"],
-                    "~b": [False, False, False, True],
-                },
-                metadata={
-                    "schema": str(
-                        data_store.TableSchema(
-                            "k",
-                            [
-                                data_store.ColumnSchema("k", data_store.INT64),
-                                data_store.ColumnSchema("a", data_store.STRING),
-                                data_store.ColumnSchema("b", data_store.STRING),
-                                data_store.ColumnSchema("~b", data_store.BOOL),
-                            ],
-                        )
-                    )
-                },
-            ),
-        )
-        self.assertEqual(
-            [],
-            list(data_store._scan_table(os.path.join(self.datastore_root, "no"))),
-            "empty",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "k": 0, "a": "0", "b": "0"},
-                {"*": 1, "k": 1, "a": "1", "b": "1"},
-                {"*": 2, "k": 2, "b": "2"},
-                {"*": 3, "k": 3, "a": "3"},
-                {"*": 5, "k": 5, "a": "5.5"},
-            ],
-            list(data_store._scan_table(self.datastore_root)),
-            "scan all",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "i": "0", "j": "0"},
-                {"*": 1, "i": "1", "j": "1"},
-                {"*": 2, "j": "2"},
-                {"*": 3, "i": "3"},
-                {"*": 5, "i": "5.5"},
-            ],
-            list(data_store._scan_table(self.datastore_root, {"a": "i", "b": "j"})),
-            "some columns",
-        )
-        self.assertEqual(
-            [{"*": 2, "j": "2"}, {"*": 3, "i": "3"}],
-            list(
-                data_store._scan_table(
-                    self.datastore_root, {"a": "i", "b": "j"}, start=2, end=5
-                )
-            ),
-            "with start and end",
-        )
-        self.assertEqual(
-            [{"*": 2, "j": "2"}, {"*": 3, "i": "3"}],
-            list(
-                data_store._scan_table(
-                    self.datastore_root,
-                    {"a": "i", "b": "j"},
-                    start=2,
-                    end=3,
-                    end_inclusive=True,
-                )
-            ),
-            "with start and end(inclusive)",
-        )
-        self.assertEqual(
-            [
-                {"*": 0, "k": 0, "a": "0", "b": "0"},
-                {"*": 1, "k": 1, "a": "1", "b": "1"},
-                {"*": 2, "k": 2, "b": "2"},
-                {"*": 3, "k": 3, "a": "3", "b": None},
-                {"*": 5, "k": 5, "a": "5.5"},
-            ],
-            list(data_store._scan_table(self.datastore_root, keep_none=True)),
-            "keep none",
         )
 
     def test_get_type(self) -> None:
@@ -948,7 +562,7 @@ class TestBasicFunctions(BaseTestCase):
             data_store.TableSchema(
                 "a", [data_store.ColumnSchema("a", data_store.INT64)]
             ),
-            data_store._update_schema(data_store.TableSchema("a", []), {"a": 1}),
+            data_store._update_schema("a", {"a": 1}),
             "new field 1",
         )
         self.assertEqual(
@@ -960,77 +574,23 @@ class TestBasicFunctions(BaseTestCase):
                 ],
             ),
             data_store._update_schema(
-                data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.INT64)]
-                ),
-                {"b": ""},
+                "a",
+                {"a": 1, "b": ""},
             ),
             "new field 2",
         )
-        with self.assertRaises(RuntimeError, msg="conflict"):
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "a",
-                    [
-                        data_store.ColumnSchema("a", data_store.INT64),
-                        data_store.ColumnSchema("b", data_store.STRING),
-                    ],
-                ),
-                {"b": 0},
-            )
         self.assertEqual(
             data_store.TableSchema(
                 "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
             ),
-            data_store._update_schema(data_store.TableSchema("a", []), {"a": None}),
+            data_store._update_schema("a", {"a": None}),
             "none 1",
-        )
-        self.assertEqual(
-            data_store.TableSchema(
-                "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
-            ),
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
-                ),
-                {"a": None},
-            ),
-            "none 2",
-        )
-        self.assertEqual(
-            data_store.TableSchema(
-                "a", [data_store.ColumnSchema("a", data_store.INT64)]
-            ),
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
-                ),
-                {"a": 0},
-            ),
-            "none 3",
-        )
-        self.assertEqual(
-            data_store.TableSchema(
-                "a", [data_store.ColumnSchema("a", data_store.INT64)]
-            ),
-            data_store._update_schema(
-                data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.INT64)]
-                ),
-                {"a": None},
-            ),
-            "none 4",
         )
 
 
 class TestMemoryTable(BaseTestCase):
     def test_mixed(self) -> None:
-        table = data_store.MemoryTable(
-            "test",
-            data_store.TableSchema(
-                "k", [data_store.ColumnSchema("k", data_store.INT64)]
-            ),
-        )
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
         table.insert({"k": 0, "a": "0"})
         table.insert({"k": 1, "a": "1"})
         table.insert({"k": 2, "a": "2"})
@@ -1048,6 +608,7 @@ class TestMemoryTable(BaseTestCase):
             list(table.scan()),
             "scan all",
         )
+
         self.assertEqual(
             [
                 {"*": 0, "k": 0, "a": "0"},
@@ -1076,54 +637,87 @@ class TestMemoryTable(BaseTestCase):
             "some columns",
         )
 
-    def test_write_with_object(self) -> None:
-        table = data_store.MemoryTable(
-            "test",
-            data_store.TableSchema(
-                "k", [data_store.ColumnSchema("k", data_store.INT64)]
-            ),
-        )
-        table.insert({"k": 0, "data/text": Text("my_text")})
+    def test_revision(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table.insert({"k": 0, "a": "0"})
+        rev = table.insert({"k": 0, "a": "1"})
         self.assertEqual(
-            [{"k": 0, "data/text": Text("my_text"), "*": 0}],
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan(revision=rev)),
+            "revision 1",
+        )
+        table.delete([0])
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan(revision=rev)),
+            "revision 1 after deletion",
+        )
+        table.delete([1])
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan(revision=rev)),
+            "revision 1 after deleting non-existing row",
+        )
+
+        rev2 = table.insert({"k": 0, "a": "2"})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan(revision=rev)),
+            "revision 1 after inserting new row",
+        )
+
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "2"}],
             list(table.scan()),
-            "get",
+            "latest 1",
+        )
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "2"}],
+            list(table.scan(revision=rev2)),
+            "latest 1 with rev",
         )
 
-        column_schemas = []
-        for col in table.get_schema().columns.values():
-            d = SwType.encode_schema(col.type)
-            d["name"] = col.name
-            column_schemas.append(d)
-
-        # TODO wait to resolve UNKNOWN type
+    def test_mutable_schema(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table.insert({"k": 0, "a": "0"})
         self.assertEqual(
-            column_schemas,
-            [
-                {"type": "INT64", "name": "k"},
-                {
-                    "type": "OBJECT",
-                    "attributes": [
-                        {"type": "STRING", "name": "_content"},
-                        {"type": "BYTES", "name": "fp"},
-                        {"type": "BYTES", "name": "_BaseArtifact__cache_bytes"},
-                        {"type": "STRING", "name": "_type"},
-                        {"type": "STRING", "name": "display_name"},
-                        {"type": "STRING", "name": "_mime_type"},
-                        {
-                            "type": "TUPLE",
-                            "elementType": {"type": "UNKNOWN"},
-                            "name": "shape",
-                        },
-                        {"type": "STRING", "name": "_dtype_name"},
-                        {"type": "STRING", "name": "encoding"},
-                        {"type": "UNKNOWN", "name": "link"},
-                        {"type": "UNKNOWN", "name": "owner"},
-                    ],
-                    "pythonType": "starwhale.core.dataset.type.Text",
-                    "name": "data/text",
-                },
-            ],
+            [{"*": 0, "k": 0, "a": "0"}],
+            list(table.scan()),
+            "insert string get string",
+        )
+
+        table.insert({"k": 0, "a": 1})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": 1}],
+            list(table.scan()),
+            "insert int get int",
+        )
+
+        table.delete([0])
+        self.assertEqual(
+            [{"*": 0, "-": True, "k": 0}],
+            list(table.scan()),
+            "delete all",
+        )
+
+        rev = table.insert({"k": 0, "a": "2", "b": 1, "c": 2.0})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "2", "b": 1, "c": 2.0}],
+            list(table.scan()),
+            "insert multiple types",
+        )
+
+        table.insert({"k": 0, "a": 3, "b": 2.1, "c": None, "d": None})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": 3, "b": 2.1, "c": None, "d": None}],
+            list(table.scan(keep_none=True)),
+            "change multiple types",
+        )
+
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "2", "b": 1, "c": 2.0}],
+            list(table.scan(revision=rev)),
+            "get changes by revision",
         )
 
 
@@ -2358,7 +1952,7 @@ class TestRemoteDataStore(unittest.TestCase):
             {
                 "data": {
                     "columnTypes": [{"name": "a", "type": "INT32"}],
-                    "records": [{"a": f"{i+1000:x}"} for i in range(1000)],
+                    "records": [{"a": f"{i + 1000:x}"} for i in range(1000)],
                     "lastKey": f"{1999:x}",
                 }
             },
@@ -2448,19 +2042,13 @@ class TestTableWriter(BaseTestCase):
         super().tearDown()
 
     def test_writer(self):
-        _writer = data_store.TableWriter("p/test_flush", "id")
-        _writer.insert({"id": 0, "result": "data"})
-        with self.assertRaises(TableEmptyException):
-            list(_writer.data_store.scan_tables([data_store.TableDesc("p/test_flush")]))
-        _writer.close()
-
         _writer2 = data_store.TableWriter("p/test_flush2", "id")
         _writer2.insert({"id": 0, "result": "data"})
         _writer2.flush()
         self.assertEqual(
             len(
                 list(
-                    _writer.data_store.scan_tables(
+                    _writer2.data_store.scan_tables(
                         [data_store.TableDesc("p/test_flush2")]
                     )
                 )
@@ -2482,7 +2070,7 @@ class TestTableWriter(BaseTestCase):
             self.assertEqual(
                 len(
                     list(
-                        _writer.data_store.scan_tables(
+                        _writer3.data_store.scan_tables(
                             [data_store.TableDesc("p/test_flush3")]
                         )
                     )
@@ -2510,15 +2098,15 @@ class TestTableWriter(BaseTestCase):
                 "y": data_store.Link("http://test.com/1.jpg", "1", "image/jpeg"),
             }
         )
-        with self.assertRaises(RuntimeError, msg="conflicting type"):
-            self.writer.insert({"k": 4, "a": 0})
+        # change type
+        self.writer.insert({"k": 4, "a": 0})
         self.writer.close()
         self.assertEqual(
             [
                 {"k": 0, "a": None},
                 {"k": 2, "a": "22"},
                 {"k": 3, "b": "3"},
-                {"k": 4, "a/b": 0, "a/c": 1},
+                {"k": 4, "a": 0, "a/b": 0, "a/c": 1},
                 {
                     "k": 5,
                     "x": data_store.Link("http://test.com/1.jpg"),
