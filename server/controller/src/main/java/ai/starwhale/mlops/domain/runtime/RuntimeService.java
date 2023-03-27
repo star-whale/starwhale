@@ -323,10 +323,13 @@ public class RuntimeService {
     public void shareRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, Integer shared) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, runtimeUrl, runtimeVersionUrl));
-        if (Objects.equals(shared, 0) || Objects.equals(shared, 1)) {
-            runtimeVersionMapper.updateShared(versionId, shared);
-        } else {
-            throw new SwValidationException(ValidSubject.RUNTIME, "Invalid shared value: " + shared);
+        switch (shared) {
+            case 0:
+            case 1:
+                runtimeVersionMapper.updateShared(versionId, shared);
+                break;
+            default:
+                throw new SwValidationException(ValidSubject.RUNTIME, "Invalid shared value: " + shared);
         }
     }
 

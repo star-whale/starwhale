@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,6 +58,7 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -109,7 +111,7 @@ public class DatasetServiceTest {
                             .build();
                 });
         versionConvertor = mock(DatasetVersionVoConverter.class);
-        given(versionConvertor.convert(any(DatasetVersionEntity.class)))
+        given(versionConvertor.convert(any(DatasetVersionEntity.class), any()))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
                     return DatasetVersionVo.builder()
@@ -397,6 +399,60 @@ public class DatasetServiceTest {
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
         Assertions.assertEquals(Map.of("a", "link1", "b", "link2", "x", ""),
                 service.signLinks("", "", Set.of("a", "b", "x"), 1L));
+    }
+
+    @Test
+    public void testShareDatasetVersion() {
+        service.shareDatasetVersion("1", "d1", "v1", 1);
+        service.shareDatasetVersion("1", "d1", "v1", 0);
+        assertThrows(SwValidationException.class, () ->
+                service.shareDatasetVersion("1", "d1", "v1", 2));
+    }
+
+    @Test
+    public void testListDatasetVersionView() {
+        given(datasetVersionMapper.findByLatest(same(1L)))
+                .willReturn(DatasetVersionEntity.builder().id(5L).build());
+        given(datasetVersionMapper.findByLatest(same(3L)))
+                .willReturn(DatasetVersionEntity.builder().id(2L).build());
+        given(datasetVersionMapper.listDatasetVersionViewByProject(same(1L)))
+                .willReturn(List.of(
+                        DatasetVersionViewEntity.builder().id(5L).datasetId(1L).versionOrder(4L).projectName("sw")
+                                .userName("sw").shared(0).datasetName("ds1").build(),
+                        DatasetVersionViewEntity.builder().id(4L).datasetId(1L).versionOrder(2L).projectName("sw")
+                                .userName("sw").shared(0).datasetName("ds1").build(),
+                        DatasetVersionViewEntity.builder().id(3L).datasetId(1L).versionOrder(3L).projectName("sw")
+                                .userName("sw").shared(0).datasetName("ds1").build(),
+                        DatasetVersionViewEntity.builder().id(2L).datasetId(3L).versionOrder(2L).projectName("sw")
+                                .userName("sw").shared(0).datasetName("ds3").build(),
+                        DatasetVersionViewEntity.builder().id(1L).datasetId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(0).datasetName("ds3").build()
+                ));
+
+        given(datasetVersionMapper.listDatasetVersionViewByShared(same(1L)))
+                .willReturn(List.of(
+                        DatasetVersionViewEntity.builder().id(8L).datasetId(2L).versionOrder(3L).projectName("sw2")
+                                .userName("sw2").shared(1).datasetName("ds2").build(),
+                        DatasetVersionViewEntity.builder().id(7L).datasetId(2L).versionOrder(2L).projectName("sw2")
+                                .userName("sw2").shared(1).datasetName("ds2").build(),
+                        DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
+                                .userName("sw2").shared(1).datasetName("ds4").build()
+                ));
+
+        var res = service.listDatasetVersionView("1");
+        assertEquals(4, res.size());
+        assertEquals("ds1", res.get(0).getDatasetName());
+        assertEquals("ds3", res.get(1).getDatasetName());
+        assertEquals("ds2", res.get(2).getDatasetName());
+        assertEquals("ds4", res.get(3).getDatasetName());
+        assertEquals(3, res.get(0).getVersions().size());
+        assertEquals(2, res.get(1).getVersions().size());
+        assertEquals(2, res.get(2).getVersions().size());
+        assertEquals(1, res.get(3).getVersions().size());
+        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
+        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }
 
 }

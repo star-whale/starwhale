@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -68,6 +69,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -229,24 +231,24 @@ public class RuntimeServiceTest {
                     switch (url.getVersionUrl()) {
                         case "v1":
                             return RuntimeVersionEntity.builder()
-                                .id(1L)
-                                .versionName("n1")
-                                .storagePath("path1")
-                                .image("origin-image1")
-                                .build();
+                                    .id(1L)
+                                    .versionName("n1")
+                                    .storagePath("path1")
+                                    .image("origin-image1")
+                                    .build();
                         case "v2":
                             return RuntimeVersionEntity.builder()
-                                .id(2L)
-                                .versionName("n2")
-                                .storagePath("path2")
-                                .image("origin-image2")
-                                .build();
+                                    .id(2L)
+                                    .versionName("n2")
+                                    .storagePath("path2")
+                                    .image("origin-image2")
+                                    .build();
                         case "v3":
                             return RuntimeVersionEntity.builder()
-                                .id(3L)
-                                .versionName("n3")
-                                .storagePath("path3")
-                                .build();
+                                    .id(3L)
+                                    .versionName("n3")
+                                    .storagePath("path3")
+                                    .build();
                         default:
                             throw new BundleException("");
                     }
@@ -432,6 +434,14 @@ public class RuntimeServiceTest {
     }
 
     @Test
+    public void testShareRuntimeVersion() {
+        service.shareRuntimeVersion("1", "r1", "v1", 1);
+        service.shareRuntimeVersion("1", "r1", "v1", 0);
+        assertThrows(SwValidationException.class, () ->
+                service.shareRuntimeVersion("1", "r1", "v1", 2));
+    }
+
+    @Test
     public void testListRuntimeVersionHistory() {
         given(runtimeVersionMapper.list(anyLong(), anyString(), anyString()))
                 .willReturn(List.of(RuntimeVersionEntity.builder().id(1L).build()));
@@ -559,7 +569,7 @@ public class RuntimeServiceTest {
 
         var job = new V1Job()
                 .metadata(new V1ObjectMeta().name("n1").labels(
-                    Map.of(K8sJobTemplate.JOB_TYPE_LABEL, K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER)))
+                        Map.of(K8sJobTemplate.JOB_TYPE_LABEL, K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER)))
                 .spec(new V1JobSpec().template(new V1PodTemplateSpec().spec(new V1PodSpec()
                         .initContainers(List.of(new V1Container().name("prepare-runtime")))
                         .containers(List.of(new V1Container().name("image-builder"))))));
@@ -572,4 +582,49 @@ public class RuntimeServiceTest {
         verify(k8sClient, times(1)).deployJob(any());
     }
 
+    @Test
+    public void testListRuntimeVersionView() {
+        given(runtimeVersionMapper.findByLatest(same(1L)))
+                .willReturn(RuntimeVersionEntity.builder().id(5L).build());
+        given(runtimeVersionMapper.findByLatest(same(3L)))
+                .willReturn(RuntimeVersionEntity.builder().id(2L).build());
+        given(runtimeVersionMapper.listRuntimeVersionViewByProject(same(1L)))
+                .willReturn(List.of(
+                        RuntimeVersionViewEntity.builder().id(5L).runtimeId(1L).versionOrder(4L).projectName("sw")
+                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                        RuntimeVersionViewEntity.builder().id(4L).runtimeId(1L).versionOrder(2L).projectName("sw")
+                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                        RuntimeVersionViewEntity.builder().id(3L).runtimeId(1L).versionOrder(3L).projectName("sw")
+                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                        RuntimeVersionViewEntity.builder().id(2L).runtimeId(3L).versionOrder(2L).projectName("sw")
+                                .userName("sw").shared(0).runtimeName("rt3").build(),
+                        RuntimeVersionViewEntity.builder().id(1L).runtimeId(3L).versionOrder(1L).projectName("sw")
+                                .userName("sw").shared(0).runtimeName("rt3").build()
+                ));
+
+        given(runtimeVersionMapper.listRuntimeVersionViewByShared(same(1L)))
+                .willReturn(List.of(
+                        RuntimeVersionViewEntity.builder().id(8L).runtimeId(2L).versionOrder(3L).projectName("sw2")
+                                .userName("sw2").shared(1).runtimeName("rt2").build(),
+                        RuntimeVersionViewEntity.builder().id(7L).runtimeId(2L).versionOrder(2L).projectName("sw2")
+                                .userName("sw2").shared(1).runtimeName("rt2").build(),
+                        RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
+                                .userName("sw2").shared(1).runtimeName("rt4").build()
+                ));
+
+        var res = service.listRuntimeVersionView("1");
+        assertEquals(4, res.size());
+        assertEquals("rt1", res.get(0).getRuntimeName());
+        assertEquals("rt3", res.get(1).getRuntimeName());
+        assertEquals("rt2", res.get(2).getRuntimeName());
+        assertEquals("rt4", res.get(3).getRuntimeName());
+        assertEquals(3, res.get(0).getVersions().size());
+        assertEquals(2, res.get(1).getVersions().size());
+        assertEquals(2, res.get(2).getVersions().size());
+        assertEquals(1, res.get(3).getVersions().size());
+        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
+        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+    }
 }

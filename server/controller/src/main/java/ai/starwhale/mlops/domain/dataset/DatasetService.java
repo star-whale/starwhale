@@ -255,10 +255,13 @@ public class DatasetService {
             Integer shared) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, datasetUrl, versionUrl));
-        if (Objects.equals(shared, 0) || Objects.equals(shared, 1)) {
-            datasetVersionMapper.updateShared(versionId, shared);
-        } else {
-            throw new SwValidationException(ValidSubject.DATASET, "Invalid shared value: " + shared);
+        switch (shared) {
+            case 0:
+            case 1:
+                datasetVersionMapper.updateShared(versionId, shared);
+                break;
+            default:
+                throw new SwValidationException(ValidSubject.DATASET, "Invalid shared value: " + shared);
         }
     }
 
