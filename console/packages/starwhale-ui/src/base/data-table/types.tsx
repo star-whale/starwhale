@@ -113,8 +113,8 @@ export type QueryT = {
 
 export type ConfigT = {
     updated?: boolean
+    updateColumn?: boolean
     version?: number
-    updatedTime?: number
     id?: string
     def?: boolean
     isShow?: boolean

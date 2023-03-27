@@ -16,6 +16,7 @@ import { fetchModelVersionPanelSetting } from '@model/services/modelVersion'
 import { getToken } from '@/api'
 import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
+import JobStatus from '@/domain/job/components/JobStatus'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -109,7 +110,7 @@ function Summary({ fetch }: any) {
                             fontSize: '14px',
                             gridTemplateColumns: 'minmax(160px, max-content) 1fr',
                             display: 'grid',
-                            maxHeight: expanded ? undefined : '248px',
+                            height: expanded ? '0px' : '248px',
                             overflow: 'auto',
                         }}
                     >
@@ -121,6 +122,9 @@ function Summary({ fetch }: any) {
                                 })
                                 .filter((label) => typeof record[label] !== 'object')
                                 .map((label) => {
+                                    let value: React.ReactNode = record[label]
+                                    if (label === 'sys/job_status') value = <JobStatus status={record[label] as any} />
+
                                     return (
                                         <React.Fragment key={label}>
                                             <div
@@ -135,9 +139,11 @@ function Summary({ fetch }: any) {
                                                 style={{
                                                     borderBottom: '1px solid #EEF1F6',
                                                     paddingLeft: '20px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                 }}
                                             >
-                                                {record[label]}
+                                                {value}
                                             </div>
                                         </React.Fragment>
                                     )

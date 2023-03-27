@@ -111,7 +111,7 @@ function getChart(chart: IChart | IPanel): Chart | undefined {
 
 export function tryParseSimplified(content: any): WidgetStoreState | undefined {
     const data = content as ILayouts
-    if (!('layouts' in data)) {
+    if (!data || !('layouts' in data)) {
         return undefined
     }
     const widgets: Record<string, any> = {}
