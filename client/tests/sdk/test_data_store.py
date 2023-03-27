@@ -19,14 +19,15 @@ from .. import BaseTestCase
 class TestBasicFunctions(BaseTestCase):
     def test_get_table_path(self) -> None:
         self.assertEqual(
-            os.path.join("a", "b.swds.json"), data_store._get_table_path("a", "b")
+            os.path.join("a", "b.sw-datastore.json"),
+            data_store._get_table_path("a", "b"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c.swds.json"),
+            os.path.join("a", "b", "c.sw-datastore.json"),
             data_store._get_table_path("a", "b/c"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c", "d.swds.json"),
+            os.path.join("a", "b", "c", "d.sw-datastore.json"),
             data_store._get_table_path("a", "b/c/d"),
         )
 
@@ -38,22 +39,22 @@ class TestBasicFunctions(BaseTestCase):
         )
         self.assertEqual(
             ("", 0),
-            data_store._parse_data_table_name("base_1.swds.json"),
+            data_store._parse_data_table_name("base_1.sw-datastore.json"),
             "invalid prefix",
         )
         self.assertEqual(
             ("", 0),
-            data_store._parse_data_table_name("base-i.swds.json"),
+            data_store._parse_data_table_name("base-i.sw-datastore.json"),
             "invalid index",
         )
         self.assertEqual(
             ("base", 123),
-            data_store._parse_data_table_name("base-123.swds.json"),
+            data_store._parse_data_table_name("base-123.sw-datastore.json"),
             "base",
         )
         self.assertEqual(
             ("patch", 123),
-            data_store._parse_data_table_name("patch-123.swds.json"),
+            data_store._parse_data_table_name("patch-123.sw-datastore.json"),
             "patch",
         )
 

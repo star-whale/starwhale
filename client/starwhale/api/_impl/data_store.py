@@ -51,7 +51,7 @@ try:
 except ImportError:
     has_fcntl = False
 
-datastore_table_file_ext = ".swds.json"
+datastore_table_file_ext = ".sw-datastore.json"
 
 
 def _check_move(src: str, dest: str) -> bool:

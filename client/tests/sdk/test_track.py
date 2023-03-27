@@ -452,9 +452,9 @@ class TestHandler(BaseTestCase):
         assert isinstance(h._table_writers["metrics/user"], TableWriter)
 
         h.flush()
-        parquet_path = workdir / "metrics" / "user.swds.json"
-        assert parquet_path.exists()
-        assert parquet_path.is_file()
+        datastore_file_path = workdir / "metrics" / "user.sw-datastore.json"
+        assert datastore_file_path.exists()
+        assert datastore_file_path.is_file()
 
         records = list(h._data_store.scan_tables([TableDesc("metrics/user")]))
         assert len(records) == 2
@@ -508,9 +508,9 @@ class TestHandler(BaseTestCase):
 
         h.flush()
 
-        parquet_path = workdir / "artifacts" / "user.swds.json"
-        assert parquet_path.exists()
-        assert parquet_path.is_file()
+        datastore_file_path = workdir / "artifacts" / "user.sw-datastore.json"
+        assert datastore_file_path.exists()
+        assert datastore_file_path.is_file()
 
         files_dir = workdir / "artifacts" / "_files"
         assert files_dir.exists()
@@ -559,8 +559,8 @@ class TestHandler(BaseTestCase):
         assert "metrics/_system" in h._table_writers
         assert "artifacts/user" in h._table_writers
 
-        assert (workdir / "metrics" / "user.swds.json").exists()
-        assert (workdir / "metrics" / "_system.swds.json").exists()
+        assert (workdir / "metrics" / "user.sw-datastore.json").exists()
+        assert (workdir / "metrics" / "_system.sw-datastore.json").exists()
         assert (workdir / "artifacts" / "_files").exists()
         assert len(list((workdir / "artifacts" / "_files").iterdir())) != 0
         assert (workdir / "params" / "user.json").exists()
