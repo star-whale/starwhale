@@ -51,9 +51,9 @@ class StandaloneDatasetTestCase(TestCase):
         sw_config._config = {}
 
     @patch("starwhale.api._impl.dataset.model.Dataset.commit")
-    @patch("starwhale.api._impl.dataset.model.Dataset.append")
+    @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
     def test_function_handler_make_swds(
-        self, m_append: MagicMock, m_commit: MagicMock
+        self, m_setitem: MagicMock, m_commit: MagicMock
     ) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
@@ -65,7 +65,7 @@ class StandaloneDatasetTestCase(TestCase):
             sd.build(config=swds_config)
 
         assert not m_commit.called
-        assert not m_append.called
+        assert not m_setitem.called
 
         def _iter_swds_bin_item() -> t.Generator:
             yield {"bytes": b"", "link": Link("")}
@@ -74,7 +74,7 @@ class StandaloneDatasetTestCase(TestCase):
         sd.build(config=swds_config)
 
         assert m_commit.call_count == 1
-        assert m_append.call_count == 1
+        assert m_setitem.call_count == 1
 
     @patch("starwhale.core.dataset.cli.import_object")
     def test_build_only_cli(self, m_import: MagicMock) -> None:

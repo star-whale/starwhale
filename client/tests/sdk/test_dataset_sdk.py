@@ -702,9 +702,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         # TODO: when sdk supports to upload blobs into cloud, remove assertRasise
         ds.close()
 
-    @pytest.mark.skip(
-        "enable this test when datastore wrapper supports timestamp version"
-    )
     def test_consumption(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -753,9 +750,6 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(RuntimeError, "have already been initialized"):
             ds.with_loader_config(num_workers=1)
 
-    @pytest.mark.skip(
-        "enable this test when datastore wrapper supports timestamp version"
-    )
     def test_consumption_recreate_exception(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
@@ -930,6 +924,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/updateTable",
+            json={"data": "datastore-revision"},
         )
 
         rm.request(
@@ -1080,7 +1075,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         commit_ds.close()
 
         load_ds = dataset("mnist")
-        assert list(load_ds.tags) == ["latest", "v0", "v1"]
+        assert list(load_ds.tags) == ["latest", "v1"]
         rows = {r.index for r in load_ds}
         assert rows == {"index-1", "index-2", "index-3"}
         history = load_ds.history()

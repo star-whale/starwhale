@@ -26,6 +26,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
 from starwhale.core.dataset.copy import DatasetCopy
+from starwhale.api._impl.dataset.loader import DataRow
 
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
@@ -281,8 +282,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
-        # TODO: support `--append`, `--update` and `--overwrite` for dataset build from iterable handler
-
         with SDKDataset.dataset(self.uri) as sds:
             console.print(
                 f":new: pending commit version: {sds.pending_commit_version[:SHORT_VERSION_CNT]}"
@@ -306,10 +305,20 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         console.print(
             f":ghost: iterate records from python iterable handler: {_handler_name}"
         )
-        for item in dataset_config.handler():
-            sds.append(item)
+        total = 0
+        for index, item in enumerate(dataset_config.handler()):
+            # TODO: support `--append`, `--update` and `--overwrite` for dataset build from iterable handler.
+            # current build only supports `--update` feature.
+            if isinstance(item, DataRow):
+                key = item.index
+            elif isinstance(item, (tuple, list)) and len(item) == 2:
+                key = item[0]
+            else:
+                key = index  # auto-incr index
+            sds[key] = item
+            total += 1
 
-        console.print(f":butterfly: append {len(sds)} records into {self.name} dataset")
+        console.print(f":butterfly: update {total} records into {self.name} dataset")
 
 
 class CloudDataset(CloudBundleModelMixin, Dataset):

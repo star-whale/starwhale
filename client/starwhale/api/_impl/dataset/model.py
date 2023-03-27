@@ -111,7 +111,9 @@ class Dataset:
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
-            self._loading_version = self._auto_complete_version(version)
+            self._loading_version = self._auto_complete_version(
+                _origin_uri.object.version
+            )
         else:
             if readonly:
                 raise ValueError(
@@ -217,11 +219,6 @@ class Dataset:
             )
         return self
 
-    # TODO： remove this function after datastore supports timestamp
-    def _use_loading_version_for_loader(self) -> Dataset:
-        self._use_loading_version = True
-        return self
-
     def _clear_data_loader(self) -> None:
         with self._loader_lock:
             self.__data_loaders = {}
@@ -247,14 +244,7 @@ class Dataset:
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
         with self._loader_lock:
-            # TODO: use datastore timestamp to load specified version data
-            if hasattr(self, "_use_loading_version"):
-                version = self._loading_version
-            else:
-                version = MappingDatasetBuilder._HOLDER_VERSION
-
-            key = f"consumption-{disable_consumption}-{version}"
-
+            key = f"consumption-{disable_consumption}-{self.uri.object.version}"
             _loader = self.__data_loaders.get(key)
             if _loader is None or recreate:
                 if disable_consumption:
@@ -263,7 +253,7 @@ class Dataset:
                     consumption = self._consumption
 
                 _loader = get_data_loader(
-                    self._make_capsulated_uri(obj_ver=version),
+                    self.uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
@@ -398,9 +388,6 @@ class Dataset:
     def flush(self, artifacts_flush: bool = False) -> None:
         if self._dataset_builder:
             self._dataset_builder.flush(artifacts_flush)
-
-        loader = self._get_data_loader(disable_consumption=True)
-        loader.tabular_dataset.flush()
 
     @_check_readonly
     def rehash(self) -> None:
