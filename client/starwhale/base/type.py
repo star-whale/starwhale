@@ -90,12 +90,6 @@ class ObjectStoreType(Enum):
 
 
 @unique
-class DataOriginType(Enum):
-    NEW = "+"
-    INHERIT = "~"
-
-
-@unique
 class DependencyType(Enum):
     PIP_PKG = "pip_pkg"
     PIP_REQ_FILE = "pip_req_file"

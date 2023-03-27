@@ -342,7 +342,6 @@ class TestDatasetCopy(BaseTestCase):
                                 },
                             ],
                         },
-                        {"type": "STRING", "name": "origin"},
                         {"type": "INT64", "name": "_append_seq_id"},
                         {
                             "type": "OBJECT",
@@ -374,7 +373,6 @@ class TestDatasetCopy(BaseTestCase):
                                 "width": "0000000000000003",
                                 "height": "0000000000000004",
                             },
-                            "origin": "+",
                         }
                     ],
                 }
@@ -1155,7 +1153,6 @@ class TestTabularDataset(TestCase):
             "id": 0,
             "features/l": Image(link=Link("abcdef"), shape=[1, 2, 3]),
             "features/a": 1,
-            "origin": "+",
         }
 
         u_row_dict = u_row.asdict()

@@ -13,7 +13,7 @@ from starwhale.utils import config
 from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import URIType, DataOriginType
+from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Link, Image, DatasetSummary, GrayscaleImage
@@ -99,7 +99,6 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                origin=DataOriginType.NEW,
                 id="path/0",
             )
         ]
@@ -220,7 +219,6 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 0,
                     },
-                    origin=DataOriginType.NEW,
                     id=0,
                 ),
                 TabularDatasetRow(
@@ -234,7 +232,6 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    origin=DataOriginType.NEW,
                     id=1,
                 ),
                 TabularDatasetRow(
@@ -248,7 +245,6 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    origin=DataOriginType.NEW,
                     id=2,
                 ),
                 TabularDatasetRow(
@@ -262,7 +258,6 @@ class TestDataLoader(TestCase):
                         ),
                         "label": 1,
                     },
-                    origin=DataOriginType.NEW,
                     id=3,
                 ),
             ]
@@ -366,7 +361,6 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                origin=DataOriginType.NEW,
                 id=0,
             )
         ]
@@ -443,7 +437,6 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 0,
                 },
-                origin=DataOriginType.NEW,
                 id=0,
             ),
             TabularDatasetRow(
@@ -459,7 +452,6 @@ class TestDataLoader(TestCase):
                     ),
                     "label": 1,
                 },
-                origin=DataOriginType.NEW,
                 id=1,
             ),
         ]
@@ -544,7 +536,6 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="b",
@@ -568,7 +559,6 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    origin=DataOriginType.NEW,
                 ),
             ],
             [
@@ -594,7 +584,6 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    origin=DataOriginType.NEW,
                 ),
                 TabularDatasetRow(
                     id="d",
@@ -618,7 +607,6 @@ class TestDataLoader(TestCase):
                             )
                         ),
                     },
-                    origin=DataOriginType.NEW,
                 ),
             ],
         ]

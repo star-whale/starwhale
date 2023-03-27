@@ -14,7 +14,7 @@ from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, RunSubDirType, DataOriginType
+from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.job.context import Context
@@ -263,7 +263,6 @@ class TestModelPipelineHandler(TestCase):
                         ),
                         "label": label_data,
                     },
-                    origin=DataOriginType.NEW,
                     id=0,
                 ).asdict(),
             ],

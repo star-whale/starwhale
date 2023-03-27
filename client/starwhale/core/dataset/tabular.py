@@ -18,13 +18,7 @@ from typing_extensions import Protocol
 from starwhale.utils import validate_obj_name
 from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
-from starwhale.base.type import (
-    URIType,
-    InstanceType,
-    DataFormatType,
-    DataOriginType,
-    ObjectStoreType,
-)
+from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
@@ -102,12 +96,10 @@ class TabularDatasetRow(ASDictMixin):
     def __init__(
         self,
         id: t.Union[str, int],
-        origin: DataOriginType = DataOriginType.NEW,
         features: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.origin = origin
         self.features = features or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
@@ -118,7 +110,6 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        origin: str = DataOriginType.NEW.value,
         **kw: t.Any,
     ) -> TabularDatasetRow:
         _content = {}
@@ -132,7 +123,6 @@ class TabularDatasetRow(ASDictMixin):
 
         return cls(
             id=id,
-            origin=DataOriginType(origin),
             features=_content,
             **_extra_kw,
         )
@@ -140,9 +130,6 @@ class TabularDatasetRow(ASDictMixin):
     def __eq__(self, o: object) -> bool:
         s = deepcopy(self.__dict__)
         o = deepcopy(o.__dict__)
-
-        s.pop("origin", None)
-        o.pop("origin", None)
         return s == o
 
     def _do_validate(self) -> None:
@@ -154,9 +141,6 @@ class TabularDatasetRow(ASDictMixin):
 
         if not isinstance(self.features, dict) or not self.features:
             raise FieldTypeOrValueError("no data field")
-
-        if not isinstance(self.origin, DataOriginType):
-            raise NoSupportError(f"data origin: {self.origin}")
 
     def __str__(self) -> str:
         return f"row-{self.id}"
@@ -192,7 +176,6 @@ _TDType = t.TypeVar("_TDType", bound="TabularDataset")
 class TabularDataset:
     _map_types = {
         "data_format": DataFormatType,
-        "origin": DataOriginType,
         "object_store_type": ObjectStoreType,
     }
 
