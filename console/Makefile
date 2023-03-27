@@ -14,7 +14,9 @@ ci-lint:
 	yarn typecheck
 
 rebuild-gradio:
-	rm -rf gradio && git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio gradio	
+	rm -rf gradio && git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio gradio	&& \
+	export NODE_OPTIONS="--max_old_space_size=4096" && \
+	export NODE_OPTIONS="--max-old-space-size=4096" && \
 	cd gradio/ui && \
 		pnpm i && \
 		pnpm build && \
