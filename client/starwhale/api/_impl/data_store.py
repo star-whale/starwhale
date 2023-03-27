@@ -1367,6 +1367,7 @@ class TableWriter(threading.Thread):
             with self._cond:
                 if len(self._records) == 0 and len(self._updating_records) == 0:
                     break
+            time.sleep(0.1)
 
     def run(self) -> None:
         while True:
@@ -1379,8 +1380,23 @@ class TableWriter(threading.Thread):
                 self._records = []
 
             try:
+                to_submit: List[Dict[str, Any]] = []
+                last_schema = None
                 for schema, records in self._updating_records:
-                    self.data_store.update_table(self.table_name, schema, records)
+                    # group the records with the same schema
+                    if last_schema is None:
+                        last_schema = schema
+                    elif last_schema != schema:
+                        self.data_store.update_table(
+                            self.table_name, last_schema, to_submit
+                        )
+                        to_submit = []
+                        last_schema = schema
+                    to_submit.extend(records)
+                if len(to_submit) > 0 and last_schema is not None:
+                    self.data_store.update_table(
+                        self.table_name, last_schema, to_submit
+                    )
             except Exception as e:
                 logger.exception(e)
                 self._queue_run_exceptions.append(e)
