@@ -1,5 +1,6 @@
 import io
 import os
+import re
 import copy
 import json
 import math
@@ -2130,17 +2131,25 @@ class TestMappingDatasetBuilder(BaseTestCase):
             project_name=self.project_name,
         ).close()
 
-    @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
     @Mocker()
     def test_put_for_cloud(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1"
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/self",
+            f"{instance_uri}/api/v1/project/{self.project_name}",
             json={"data": {"id": 1, "name": "project"}},
         )
         update_req = rm.request(
             HTTPMethod.POST, f"{instance_uri}/api/v1/datastore/updateTable"
+        )
+
+        server_return_uri = "__server-uri-path__"
+        upload_req = rm.register_uri(
+            HTTPMethod.POST,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{self.project_name}/dataset/{self.dataset_name}/hashedBlob/",
+            ),
+            json={"data": server_return_uri},
         )
 
         os.environ[SWEnv.instance_token] = "1234"
@@ -2164,11 +2173,16 @@ class TestMappingDatasetBuilder(BaseTestCase):
         mdb.put(DataRow(index=1, features={"bin": Binary(b"abc")}))
         mdb.flush()
 
-        with self.assertRaisesRegex(
-            threading.ThreadError,
-            "no support upload bin files into cloud instance directly",
-        ):
-            mdb.put(DataRow(index=1, features={"label": 1}))
-            mdb.close()
+        mdb.put(DataRow(index=1, features={"label": 1}))
+        mdb.close()
 
         assert update_req.called
+        assert upload_req.call_count == 1
+
+        assert mdb._signed_bins_meta[0].name == server_return_uri
+        assert any(
+            [
+                server_return_uri in history.text
+                for history in update_req.request_history
+            ]
+        )
