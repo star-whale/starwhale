@@ -14,13 +14,13 @@ def iter_ucf_item() -> t.Generator:
             for line in f.readlines():
                 _, label, video_sub_path = line.split()
 
-                data_path = dataset_dir / video_sub_path
-                data = Video(
-                    data_path,
-                    display_name=video_sub_path,
-                    shape=(1,),
-                    mime_type=MIMEType.AVI,
-                )
+                    data_path = dataset_dir / video_sub_path
+                    data = Video(
+                        data_path,
+                        display_name=video_sub_path,
+                        shape=(1,),
+                        mime_type=MIMEType.WEBM,
+                    )
 
                 yield f"{label}_{video_sub_path}", {
                     "video": data,
