@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
@@ -351,5 +352,25 @@ public class DatasetControllerTest {
         when(datasetService.signLinks(1L, Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
         Assertions.assertEquals(Map.of(uri, signUrl),
                 controller.signLinks(pj, ds, v, Set.of(uri), 100L).getBody().getData());
+    }
+
+    @Test
+    public void testListRuntimeTree() {
+        given(datasetService.listDatasetVersionView(anyString()))
+                .willReturn(List.of(DatasetViewVo.builder().build()));
+
+        var resp = controller.listDatasetTree("1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(1))
+        ));
+    }
+
+    @Test
+    public void testShareRuntimeVersion() {
+        var resp = controller.shareDatasetVersion("1", "1", "1", 1);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }
