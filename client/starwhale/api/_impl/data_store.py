@@ -770,22 +770,22 @@ class InnerRecord:
         if record is not None:
             self.append(record)
 
-    def append(self, record: Record) -> int:
+    def append(self, record: Record) -> str:
         self.ordered = False
         seq = self._get_seq_num()
         self.records[seq] = record
-        return seq
+        return str(seq)
 
     def _reorder(self) -> None:
         if not self.ordered:
             self.records = OrderedDict(sorted(self.records.items()))
             self.ordered = True
 
-    def get_record(self, revision: Optional[int] = None) -> Dict[str, Any]:
+    def get_record(self, revision: Optional[str] = None) -> Dict[str, Any]:
         self._reorder()
         ret: Dict[str, Any] = dict()
         for seq, record in self.records.items():
-            if revision is None or seq <= revision:
+            if revision is None or seq <= int(revision):
                 if "-" in record and record["-"]:
                     ret = record.data
                 else:
@@ -829,7 +829,7 @@ class MemoryTable:
         end: Optional[Any] = None,
         keep_none: bool = False,
         end_inclusive: bool = False,
-        revision: Optional[int] = None,
+        revision: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
 
@@ -854,26 +854,26 @@ class MemoryTable:
                 d = {k: v for k, v in d.items() if v is not None}
             yield d
 
-    def insert(self, record: Dict[str, Any]) -> int:
+    def insert(self, record: Dict[str, Any]) -> str:
         self.dirty = True
         with self.lock:
             key = record.get(self.key_column.name)
             r = self.records.setdefault(key, InnerRecord(key))
             return r.append(Record(record))
 
-    def delete(self, keys: List[Any]) -> int | None:
+    def delete(self, keys: List[Any]) -> str | None:
         """
         Delete records by keys. If the key is not found, it will be ignored.
         Returns the sequence number of the last delete operation, or None if no delete operation is performed.
         """
-        seq = None
+        revision = None
         with self.lock:
             for key in keys:
                 r = self.records.get(key, None)
                 if r is not None:
                     self.dirty = True
-                    seq = r.append(Record({self.key_column.name: key, "-": True}))
-        return seq
+                    revision = r.append(Record({self.key_column.name: key, "-": True}))
+        return revision
 
     def _dump_meta(self) -> Dict[str, Any]:
         return {
@@ -930,10 +930,12 @@ class TableDesc:
         table_name: str,
         columns: Union[Dict[str, str], List[str], None] = None,
         keep_none: bool = False,
+        revision: Optional[str] = None,
     ) -> None:
         self.table_name = table_name
         self.columns: Optional[Dict[str, str]] = None
         self.keep_none = keep_none
+        self.revision = revision
         if columns is not None:
             self.columns = {}
             if isinstance(columns, dict):
@@ -962,6 +964,8 @@ class TableDesc:
             ]
         if self.keep_none:
             ret["keepNone"] = True
+        if self.revision is not None:
+            ret["revision"] = self.revision
         return ret
 
 
@@ -995,7 +999,9 @@ class LocalDataStore:
         table_name: str,
         schema: TableSchema,
         records: List[Dict[str, Any]],
-    ) -> None:
+    ) -> str:
+        if len(records) == 0:
+            return ""
         if self.name_pattern.match(table_name) is None:
             raise RuntimeError(
                 f"invalid table name {table_name}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
@@ -1017,6 +1023,7 @@ class LocalDataStore:
                 f"invalid key column, expected {table.key_column}, actual {schema.key_column}"
             )
 
+        revision = None
         for r in records:
             key = r.get(schema.key_column, None)
             if key is None:
@@ -1024,9 +1031,11 @@ class LocalDataStore:
                     f"key {schema.key_column} should not be none, record: {r.keys()}"
                 )
             if "-" in r:
-                table.delete([key])
+                revision = table.delete([key])
             else:
-                table.insert(r)
+                revision = table.insert(r)
+        # revision will never be None or empty (len(records) > 0), makes mypy happy
+        return revision or ""
 
     def _get_table(
         self, table_name: str, key_column: ColumnSchema | None, create: bool = True
@@ -1063,11 +1072,13 @@ class LocalDataStore:
                 key_column_type: SwType,
                 columns: Optional[Dict[str, str]],
                 keep_none: bool,
+                revision: Optional[str],
             ) -> None:
                 self.name = name
                 self.key_column_type = key_column_type
                 self.columns = columns
                 self.keep_none = keep_none
+                self.revision = revision
 
         infos: List[TableInfo] = []
         for table_desc in tables:
@@ -1081,6 +1092,7 @@ class LocalDataStore:
                     key_column_type,
                     table_desc.columns,
                     table_desc.keep_none,
+                    table_desc.revision,
                 )
             )
 
@@ -1104,6 +1116,7 @@ class LocalDataStore:
                     end,
                     info.keep_none,
                     end_inclusive,
+                    revision=info.revision,
                 )
             )
         for record in _merge_scan(iters, keep_none):
@@ -1141,7 +1154,7 @@ class RemoteDataStore:
         table_name: str,
         schema: TableSchema,
         records: List[Dict[str, Any]],
-    ) -> None:
+    ) -> str:
         data: Dict[str, Any] = {"tableName": table_name}
         column_schemas = []
         for col in schema.columns.values():
@@ -1182,6 +1195,7 @@ class RemoteDataStore:
                 f"[update-table]Table:{table_name}, resp code:{resp.status_code}, \n resp text: {resp.text}, \n records: {records}"
             )
         resp.raise_for_status()
+        return resp.json()["data"]  # type: ignore
 
     @http_retry
     def _do_scan_table_request(self, post_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -1251,7 +1265,10 @@ class DataStore(Protocol):
         table_name: str,
         schema: TableSchema,
         records: List[Dict[str, Any]],
-    ) -> None:
+    ) -> str:
+        """
+        Update a table with records, and return the revision of the table.
+        """
         ...
 
     def scan_tables(
@@ -1297,6 +1314,7 @@ class TableWriter(threading.Thread):
         self.table_name = table_name
         self.key_column = key_column
         self.data_store = data_store or get_data_store()
+        self.latest_revision = ""
 
         self._cond = threading.Condition()
         self._stopped = False
@@ -1362,12 +1380,16 @@ class TableWriter(threading.Thread):
             self._records.append((schema, [record]))
             self._cond.notify()
 
-    def flush(self) -> None:
+    def flush(self) -> str:
+        """
+        Flush the records to the data store, and return the revision of the table.
+        """
         while True:
             with self._cond:
                 if len(self._records) == 0 and len(self._updating_records) == 0:
                     break
             time.sleep(0.1)
+        return self.latest_revision
 
     def run(self) -> None:
         while True:
@@ -1387,14 +1409,14 @@ class TableWriter(threading.Thread):
                     if last_schema is None:
                         last_schema = schema
                     elif last_schema != schema:
-                        self.data_store.update_table(
+                        self.latest_revision = self.data_store.update_table(
                             self.table_name, last_schema, to_submit
                         )
                         to_submit = []
                         last_schema = schema
                     to_submit.extend(records)
                 if len(to_submit) > 0 and last_schema is not None:
-                    self.data_store.update_table(
+                    self.latest_revision = self.data_store.update_table(
                         self.table_name, last_schema, to_submit
                     )
             except Exception as e:

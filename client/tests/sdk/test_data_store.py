@@ -778,7 +778,7 @@ class TestLocalDataStore(BaseTestCase):
             list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "base",
         )
-        ds.update_table(
+        rev = ds.update_table(
             "test",
             data_store.TableSchema(
                 "k",
@@ -843,6 +843,21 @@ class TestLocalDataStore(BaseTestCase):
             list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "overwrite",
         )
+
+        self.assertEqual(
+            [
+                {"k": 0, "a": "0", "b": "0"},
+                {"k": 2, "b": "2"},
+                {"k": 3, "a": "3", "b": "3"},
+            ],
+            list(
+                ds.scan_tables(
+                    [data_store.TableDesc("test", None, False, revision=rev)]
+                )
+            ),
+            "scan with revision",
+        )
+
         ds.update_table(
             "test",
             data_store.TableSchema(
@@ -1346,8 +1361,12 @@ class TestRemoteDataStore(unittest.TestCase):
     @patch("starwhale.api._impl.data_store.requests.post")
     def test_update_table(self, mock_post: Mock) -> None:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = ""
-        self.ds.update_table(
+        mock_post.return_value.json.return_value = {
+            "code": "success",
+            "message": "Success",
+            "data": "fake revision",
+        }
+        revision = self.ds.update_table(
             "t1",
             data_store.TableSchema(
                 "k",
@@ -1365,6 +1384,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 {"k": 5, "z": 0.0},
             ],
         )
+        assert revision == "fake revision"
         mock_post.assert_called_with(
             "http://test/api/v1/datastore/updateTable",
             data=json.dumps(

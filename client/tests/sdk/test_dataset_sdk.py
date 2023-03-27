@@ -640,6 +640,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         update_table_req = rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/updateTable",
+            json={
+                "code": "success",
+                "message": "Success",
+                "data": "fake revision",
+            },
         )
 
         version_req = rm.request(
