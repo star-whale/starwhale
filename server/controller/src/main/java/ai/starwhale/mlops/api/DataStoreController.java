@@ -54,6 +54,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -154,11 +155,13 @@ public class DataStoreController implements DataStoreApi {
                                     throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                                             "table name should not be null or empty: " + x);
                                 }
+                                var ts = StringUtils.hasText(x.getRevision()) ? Long.parseLong(x.getRevision()) : 0;
                                 return DataStoreScanRequest.TableInfo.builder()
                                         .tableName(x.getTableName())
                                         .columnPrefix(x.getColumnPrefix())
                                         .columns(DataStoreController.convertColumns(x.getColumns()))
                                         .keepNone(x.isKeepNone())
+                                        .timestamp(ts)
                                         .build();
                             })
                             .collect(Collectors.toList()))
@@ -223,6 +226,7 @@ public class DataStoreController implements DataStoreApi {
                 .rawResult(request.isRawResult())
                 .encodeWithType(request.isEncodeWithType())
                 .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
+                .timestamp(StringUtils.hasText(request.getRevision()) ? Long.parseLong(request.getRevision()) : 0)
                 .build());
     }
 

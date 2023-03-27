@@ -34,4 +34,5 @@ public class QueryTableRequest {
     private boolean rawResult;
     private boolean encodeWithType;
     private boolean ignoreNonExistingTable = true;
+    private String revision;
 }
