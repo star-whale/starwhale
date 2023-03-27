@@ -32,7 +32,7 @@ public class DatasetViewVo {
 
     private String projectName;
 
-    private String DatasetName;
+    private String datasetName;
 
     private Integer shared;
 
