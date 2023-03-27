@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import sys
 import typing as t
 from http import HTTPStatus
@@ -656,6 +657,18 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             json={"data": {"uploadId": "123"}},
         )
 
+        rm.register_uri(
+            HTTPMethod.HEAD,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+        rm.register_uri(
+            HTTPMethod.POST,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            json={"data": "uri"},
+        )
+
         cnt = 10
         for i in range(0, cnt):
             ds.append(
@@ -678,10 +691,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert file_request.call_count == 2
 
         # TODO: when sdk supports to upload blobs into cloud, remove assertRasise
-        with self.assertRaisesRegex(
-            RuntimeError, "no support upload bin files into cloud instance directly"
-        ):
-            ds.close()
+        ds.close()
 
     @pytest.mark.skip(
         "enable this test when datastore wrapper supports timestamp version"
