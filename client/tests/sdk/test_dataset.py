@@ -270,6 +270,11 @@ class TestDatasetCopy(BaseTestCase):
             HTTPMethod.POST,
             f"{instance_uri}/api/v1/datastore/updateTable",
             status_code=HTTPStatus.OK,
+            json={
+                "code": "success",
+                "message": "Success",
+                "data": "fake revision",
+            },
         )
 
         _cls = create_generic_cls(iter_complex_annotations_swds)
@@ -2140,7 +2145,13 @@ class TestMappingDatasetBuilder(BaseTestCase):
             json={"data": {"id": 1, "name": "project"}},
         )
         update_req = rm.request(
-            HTTPMethod.POST, f"{instance_uri}/api/v1/datastore/updateTable"
+            HTTPMethod.POST,
+            f"{instance_uri}/api/v1/datastore/updateTable",
+            json={
+                "code": "success",
+                "message": "Success",
+                "data": "fake revision",
+            },
         )
 
         server_return_uri = "__server-uri-path__"
