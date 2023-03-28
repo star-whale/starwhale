@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 alter table dataset_version
-    add shared int default 0 not null;
+    add shared tinyint default 0 not null;
 
 create index idx_shared
     on dataset_version (shared);
 
 alter table runtime_version
-    add shared int default 0 not null;
+    add shared tinyint default 0 not null;
 
 create index idx_shared
     on runtime_version (shared);
