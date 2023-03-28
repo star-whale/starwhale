@@ -1,23 +1,30 @@
 import os
+import sys
 import string
+import typing as t
 import tempfile
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
+from pyfakefs.fake_filesystem_unittest import patchfs
 
 from starwhale import URI, URIType
 from starwhale.utils import config
+from starwhale.utils.fs import ensure_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.type import Link
 from starwhale.core.dataset.store import (
     BytesBuffer,
     HttpBackend,
     S3Connection,
+    DatasetStorage,
     S3StorageBackend,
     SignedUrlBackend,
     S3BufferedFileLike,
     HttpBufferedFileLike,
+    LocalFSStorageBackend,
 )
 
 
@@ -145,6 +152,30 @@ class TestDatasetBackend(TestCase):
             bucket="bucket", key_compose=(Link("/path/key2"), 0, -1)
         ) as s3_file:
             assert s3_file.key == "path/key2"
+
+    @patchfs
+    def test_local_fs_backend(self, fake_fs: t.Any) -> None:
+        content = "1234"
+        fpath = Path("/home/test/test.file")
+        ensure_file(fpath, content, parents=True)
+        uri, _ = DatasetStorage.save_data_file(fpath)
+
+        backend = LocalFSStorageBackend()
+        cases = [
+            (sys.maxsize, b"1234"),
+            (1, b"12"),
+            (0, b"1"),
+            (4, b"1234"),
+        ]
+
+        for _end, _content in cases:
+            file = backend._make_file((Link(uri=uri), 0, _end))
+            assert file.read(-1) == _content
+
+            file = backend._make_file(
+                (Link(uri="test.file"), 0, _end), bucket="/home/test"
+            )
+            assert file.read(-1) == _content
 
 
 class TestBytesBuffer(TestCase):
