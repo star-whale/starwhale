@@ -175,7 +175,7 @@ class DatasetTermView(BaseTermView):
             ).run()
         else:
             ds.build(**kwargs)
-        return dataset_uri
+        return ds.uri
 
     @classmethod
     def copy(
