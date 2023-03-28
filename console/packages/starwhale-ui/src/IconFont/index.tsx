@@ -89,6 +89,7 @@ export type IconTypesT =
     | 'file2'
     | 'check'
     | 'invalidFile'
+    | 'group'
 
 interface IIconFontProps {
     style?: React.CSSProperties

@@ -18,6 +18,21 @@ const dataset = {
     'dataset.remove.button': {
         en: 'Remove',
     },
+    'dataset.overview.shared': {
+        en: 'Shared',
+    },
+    'dataset.overview.shared.success': {
+        en: 'Update success',
+    },
+    'dataset.overview.shared.fail': {
+        en: 'Update Failed',
+    },
+    'dataset.overview.shared.yes': {
+        en: 'True',
+    },
+    'dataset.overview.shared.no': {
+        en: 'False',
+    },
 }
 
 const runtime = {

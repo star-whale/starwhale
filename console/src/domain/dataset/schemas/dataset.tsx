@@ -18,6 +18,7 @@ export interface IDatasetDetailSchema {
     versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
+    shared?: number
 }
 
 export interface IUpdateDatasetSchema {

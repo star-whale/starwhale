@@ -11,6 +11,7 @@ export interface IDatasetVersionSchema extends IResourceSchema {
     meta: string
     owner?: IUserSchema
     alias: string
+    shared?: number
 }
 
 export interface IDatasetVersionDetailSchema {
@@ -23,10 +24,11 @@ export interface IDatasetVersionDetailSchema {
     versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
+    shared?: number
 }
 
 export interface IUpdateDatasetVersionSchema {
-    tag: string
+    tag?: string
 }
 
 export interface ICreateDatasetVersionSchema {

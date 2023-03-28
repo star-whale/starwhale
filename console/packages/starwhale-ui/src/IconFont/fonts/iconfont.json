@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "34341578",
+      "name": "group",
+      "font_class": "group",
+      "unicode": "e65d",
+      "unicode_decimal": 58973
+    },
+    {
+      "icon_id": "34125367",
+      "name": "loading",
+      "font_class": "loading",
+      "unicode": "e65c",
+      "unicode_decimal": 58972
+    },
+    {
+      "icon_id": "33793517",
+      "name": "experiment",
+      "font_class": "experiment",
+      "unicode": "e65b",
+      "unicode_decimal": 58971
+    },
+    {
       "icon_id": "33548920",
       "name": "download",
       "font_class": "download",

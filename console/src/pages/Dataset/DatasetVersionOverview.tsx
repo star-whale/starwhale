@@ -2,9 +2,20 @@ import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useDatasetVersion } from '../../domain/dataset/hooks/useDatasetVersion'
+import { Toggle } from '@starwhale/ui'
+import { fetchDatasetVersion, updateDatasetVersionShared } from '@/domain/dataset/services/datasetVersion'
+import { toaster } from 'baseui/toast'
+import { useParams } from 'react-router-dom'
+import IconFont from '@starwhale/ui/IconFont'
+import Shared from '@/domain/dataset/components/Shared'
 
 export default function DatasetVersionOverview() {
-    const { datasetVersion: dataset } = useDatasetVersion()
+    const { projectId, datasetId, datasetVersionId } = useParams<{
+        projectId: string
+        datasetId: string
+        datasetVersionId: string
+    }>()
+    const { datasetVersion: dataset, setDatasetVersion } = useDatasetVersion()
 
     const [t] = useTranslation()
 
@@ -20,6 +31,34 @@ export default function DatasetVersionOverview() {
         {
             label: t('Aliases'),
             value: dataset?.versionAlias ?? '-',
+        },
+        {
+            label: t('dataset.overview.shared'),
+            value: (
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '100%',
+                        gap: '4px',
+                    }}
+                >
+                    <Shared shared={dataset?.shared} isTextShow />
+                    <Toggle
+                        value={dataset?.shared === 1}
+                        onChange={async (v) => {
+                            try {
+                                await updateDatasetVersionShared(projectId, datasetId, datasetVersionId, v)
+                                const data = await fetchDatasetVersion(projectId, datasetId, datasetVersionId)
+                                setDatasetVersion(data)
+                                toaster.positive(t('dataset.overview.shared.success'))
+                            } catch (e) {
+                                toaster.negative(t('dataset.overview.shared.fail'))
+                            }
+                        }}
+                    />
+                </div>
+            ),
         },
         {
             label: t('Created At'),
@@ -50,7 +89,7 @@ export default function DatasetVersionOverview() {
                     >
                         {v?.label}:
                     </div>
-                    <div> {v?.value}</div>
+                    <div style={{ height: '100%' }}> {v?.value}</div>
                 </div>
             ))}
         </div>
