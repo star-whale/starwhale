@@ -131,12 +131,12 @@ export default function EvaluationListCard() {
                     // @ts-ignore
                     renderCell: (props: any) => {
                         return (
-                            <p title={props?.value}>
+                            <div title={props?.value}>
                                 <JobStatus status={props?.value} />
-                            </p>
+                            </div>
                         )
                     },
-                    mapDataToValue: (data: any): string => data?.[column.key],
+                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
