@@ -24,31 +24,44 @@ import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
 import { LabelMedium } from 'baseui/typography'
 import { Button } from '@starwhale/ui'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
+import VisitSelector, { VisitBy } from '@/domain/project/components/VisitSelector'
+import { useLocalStorage } from 'react-use'
+import { useEventCallback } from '@starwhale/core'
+import { formatTimestampDateTime } from '@/utils/datetime'
 
 type IProjectCardProps = {
     project: IProjectSchema
-    query: ReturnType<typeof useFetchProjects>
+    onRefresh?: () => void
     onEdit?: () => void
 }
 
 const useCardStyles = createUseStyles({
     projectCard: {
         'display': 'flex',
-        'height': '120px',
-        'gap': '6px',
+        'height': '144px',
+        'gap': '0px',
         'background': '#FFFFFF',
         'border': '1px solid #E2E7F0',
         'borderRadius': '4px',
-        'padding': '20px',
+        'padding': '16px',
         'flexDirection': 'column',
         'alignItems': 'space-between',
-        'justifyContent': 'space-between',
+        'justifyContent': 'start',
         'textDecoration': 'none',
         'color': ' rgba(2,16,43,0.60)',
         '&:hover': {
             'boxShadow': '0 2px 8px 0 rgba(0,0,0,0.20)',
             '& $actions': {
                 display: 'flex',
+            },
+            '& $text': {
+                '&:hover span': {
+                    textDecoration: 'underline',
+                    color: ' #5181E0 ',
+                },
+                '&:visited': {
+                    color: '#1C4CAD ',
+                },
             },
         },
     },
@@ -77,11 +90,28 @@ const useCardStyles = createUseStyles({
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         flexBasis: '80%',
+        marginBottom: '12px',
+    },
+    time: {
+        background: '#F2F7FF',
+        borderRadius: '3px',
+        fontSize: '12px',
+        lineHeight: '12px',
+        color: 'rgba(2,16,43,0.40)',
+        display: 'flex',
+        justifyContent: 'left',
+        alignItems: 'center',
+        gap: '4px',
+        width: 'fit-content',
+        padding: '2px 6px',
+        marginBottom: '5px',
     },
     description: {
+        margin: 'auto 0',
         display: 'flex',
         justifyContent: 'space-between',
         color: ' rgba(2,16,43,0.60)',
+        // justifySelf: 'center',
     },
     descriptionText: {
         lineHeight: '12px',
@@ -90,7 +120,14 @@ const useCardStyles = createUseStyles({
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
+        alignItems: 'center',
         overflow: 'hidden',
+        wordWrap: 'break-word',
+    },
+    statisticsWrapper: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginTop: 'auto',
     },
     statistics: {
         display: 'flex',
@@ -140,7 +177,7 @@ const useCardStyles = createUseStyles({
     },
 })
 
-const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
+const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
     const styles = useCardStyles()
@@ -167,6 +204,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                             css({
                                 display: 'flex',
                                 fontSize: '12px',
+                                height: '18px',
                                 color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
                                 backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
                                 borderRadius: '9px',
@@ -178,20 +216,20 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                     </p>
                 </div>
             </div>
+            <div className={cn(styles.time)}>
+                <IconFont type='runtime' /> {project.createdTime && formatTimestampDateTime(project.createdTime)}
+            </div>
             <div className={cn(styles.description, 'text-ellipsis')}>
                 <StatefulTooltip
-                    content={() => <p style={{ maxWidth: '300px' }}>{project.description ?? ''}</p>}
+                    content={() => (
+                        <p style={{ maxWidth: '300px', wordWrap: 'break-word' }}>{project.description ?? ''}</p>
+                    )}
                     placement='bottom'
                 >
                     <p className={cn(styles.descriptionText)}>{project.description ?? ''}</p>
                 </StatefulTooltip>
             </div>
-            <div
-                className={css({
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                })}
-            >
+            <div className={styles.statisticsWrapper}>
                 <div className={styles.statistics}>
                     <div className={styles.statisticsItem}>
                         <IconLink
@@ -320,6 +358,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                                 ':hover span': {
                                                     color: ' #5181E0  !important',
                                                 },
+
                                                 ':hover': {
                                                     backgroundColor: '#F0F4FF',
                                                 },
@@ -394,7 +433,7 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
                                 setIsRemoveProjectOpen(false)
                                 await removeProject(project?.id)
                                 toaster.positive(t('Remove Project Success'), { autoHideDuration: 1000 })
-                                await query.refetch()
+                                onRefresh?.()
                             }}
                         >
                             {t('Confirm')}
@@ -407,8 +446,15 @@ const ProjectCard = ({ project, onEdit, query }: IProjectCardProps) => {
 }
 
 export default function ProjectListCard() {
-    const [page] = usePage()
-    const projectsInfo = useFetchProjects({ ...page, pageNum: 1, pageSize: 10000 })
+    const [visit, setVisit] = useLocalStorage('projectVisit', VisitBy.Visited)
+    const [page] = usePage({
+        query: {
+            pageNum: 1,
+            pageSize: 10000,
+            sort: visit,
+        },
+    })
+    const projectsInfo = useFetchProjects(page)
     const [filter, setFilter] = useState('')
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
     const [editProject, setEditProject] = useState<IProjectSchema>()
@@ -447,6 +493,10 @@ export default function ProjectListCard() {
         )
     }, [filter, projectsInfo.data])
 
+    const handleRefresh = useEventCallback(async () => {
+        await projectsInfo.refetch()
+    })
+
     const projectCards = useMemo(() => {
         if (data.length === 0 && filter) {
             return <BusyPlaceholder type='notfound' />
@@ -459,7 +509,7 @@ export default function ProjectListCard() {
                 <ProjectCard
                     key={project.id}
                     project={project}
-                    query={projectsInfo}
+                    onRefresh={handleRefresh}
                     onEdit={() => {
                         setEditProject(project)
                         setIsCreateProjectOpen(true)
@@ -467,7 +517,7 @@ export default function ProjectListCard() {
                 />
             )
         })
-    }, [projectsInfo, data, filter])
+    }, [handleRefresh, data, filter])
 
     return (
         <Card
@@ -485,12 +535,22 @@ export default function ProjectListCard() {
                 </Button>
             }
         >
-            <div className={css({ marginBottom: '20px', width: '280px' })}>
-                <QueryInput
-                    onChange={(val: string) => {
-                        setFilter(val.trim())
-                    }}
-                />
+            <div
+                className={css({
+                    marginBottom: '20px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                })}
+            >
+                <div style={{ maxWidth: '280px' }}>
+                    <QueryInput
+                        over
+                        onChange={(val: string) => {
+                            setFilter(val.trim())
+                        }}
+                    />
+                </div>
+                <VisitSelector value={visit} onChange={setVisit as any} />
             </div>
             <div
                 className={css({

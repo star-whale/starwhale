@@ -120,6 +120,15 @@ const project = {
     'project.remove.confirm.end': {
         en: 'to confirm',
     },
+    'project.visit.visited': {
+        en: 'Visited',
+    },
+    'project.visit.latest': {
+        en: 'Latest',
+    },
+    'project.visit.oldest': {
+        en: 'Oldest',
+    },
 }
 
 const job = {
