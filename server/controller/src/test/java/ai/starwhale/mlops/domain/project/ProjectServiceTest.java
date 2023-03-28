@@ -40,6 +40,7 @@ import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.sort.Sort;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -60,6 +61,8 @@ public class ProjectServiceTest {
     private ProjectService service;
 
     private ProjectMapper projectMapper;
+
+    private ProjectVisitedMapper projectVisitedMapper;
 
     private ProjectDao projectDao;
 
@@ -91,6 +94,8 @@ public class ProjectServiceTest {
                 .willReturn(List.of(project1, project2));
         given(projectMapper.listOfUser(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
+
+        projectVisitedMapper = mock(ProjectVisitedMapper.class);
 
         projectDao = mock(ProjectDao.class);
         given(projectDao.getProjectId(same("1"))).willReturn(1L);
@@ -127,6 +132,7 @@ public class ProjectServiceTest {
 
         IdConverter idConvertor = new IdConverter();
         service = new ProjectService(projectMapper,
+                projectVisitedMapper,
                 projectDao,
                 memberService,
                 idConvertor,

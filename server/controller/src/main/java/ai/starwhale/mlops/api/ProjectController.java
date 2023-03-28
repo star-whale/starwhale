@@ -112,6 +112,7 @@ public class ProjectController implements ProjectApi {
 
     @Override
     public ResponseEntity<ResponseMessage<ProjectVo>> getProjectByUrl(String projectUrl) {
+        projectService.visit(projectUrl);
         ProjectVo vo = projectService.getProjectVo(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse(vo));
     }

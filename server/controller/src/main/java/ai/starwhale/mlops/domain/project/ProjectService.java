@@ -28,6 +28,7 @@ import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
@@ -48,7 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -68,6 +71,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
 
     private final ProjectMapper projectMapper;
 
+    private final ProjectVisitedMapper projectVisitedMapper;
     private final ProjectDao projectDao;
 
     private final MemberService memberService;
@@ -78,14 +82,18 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
 
     private static final String DELETE_SUFFIX = ".deleted";
 
+    private final Map<Long, Visit> visitedProjectCacheMap = new ConcurrentHashMap<>();
+    private static final long storageInterval = 1000;
     private ApplicationContext applicationContext;
 
     public ProjectService(ProjectMapper projectMapper,
+            ProjectVisitedMapper projectVisitedMapper,
             ProjectDao projectDao,
             MemberService memberService,
             IdConverter idConvertor,
             UserService userService) {
         this.projectMapper = projectMapper;
+        this.projectVisitedMapper = projectVisitedMapper;
         this.projectDao = projectDao;
         this.memberService = memberService;
         this.idConvertor = idConvertor;
@@ -416,5 +424,34 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     public Boolean addProjectMember(String projectUrl, Long userId, Long roleId) {
         Long projectId = getProjectId(projectUrl);
         return memberService.addProjectMember(projectId, userId, roleId);
+    }
+
+
+    public void visit(String projectUrl) {
+        if (!Objects.equals("0", projectUrl)) {
+            Long projectId = getProjectId(projectUrl);
+            Long userId = userService.currentUserDetail().getId();
+
+            Visit visit = new Visit(projectId, System.currentTimeMillis());
+            Visit lastVisit = visitedProjectCacheMap.get(userId);
+
+            if (lastVisit == null || needStorage(visit, lastVisit)) {
+                visitedProjectCacheMap.put(userId, visit);
+                projectVisitedMapper.insert(userId, projectId);
+            }
+        }
+    }
+
+
+    private boolean needStorage(Visit current, Visit previous) {
+        return !Objects.equals(current.projectId, previous.projectId)
+                && current.time > previous.time + storageInterval;
+    }
+
+    @AllArgsConstructor
+    static class Visit {
+
+        Long projectId;
+        long time;
     }
 }
