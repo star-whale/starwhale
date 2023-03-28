@@ -132,7 +132,7 @@
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "start": "vite --host 0.0.0.0 --force",
-    "build": "NODE_OPTIONS='--max-old-space-size=5120' vite build; git checkout build",
+    "build": "rm -rf build/* && NODE_OPTIONS='--max-old-space-size=5120' vite build --emptyOutDir false",
     "serve": "vite preview",
     "test": "jest --config jest/jest.config.ts",
     "test:coverage": "jest --coverage --config jest/jest.config.ts",

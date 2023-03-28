@@ -88,6 +88,7 @@ const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
     value = Number(value)
     // eslint-disable-next-line no-param-reassign
     comparedValue = Number(comparedValue)
+
     return (
         <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {renderedValue}{' '}
@@ -199,7 +200,7 @@ export default function EvaluationListCompare({
                         key: attr.name,
                         title: attr.name,
                         values: rows.map((data: any) => data?.[attr.name] ?? '-'),
-                        renderCompare: NumberCompareCell,
+                        renderCompare: StringCompareCell,
                     })
                     break
                 case DataTypes.INT8:
@@ -213,7 +214,7 @@ export default function EvaluationListCompare({
                         key: attr.name,
                         title: attr.name,
                         values: rows.map((data: any) => data?.[attr.name] ?? '-'),
-                        renderCompare: StringCompareCell,
+                        renderCompare: NumberCompareCell,
                     })
                     break
                 default:

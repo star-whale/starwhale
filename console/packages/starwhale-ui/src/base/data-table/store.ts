@@ -86,6 +86,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
     onViewUpdate: (view) => {
         //
         view.updated = false
+        view.updateColumn = false
         view.version = 0
         //
         const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
@@ -142,6 +143,7 @@ const rawCurrentView = {
     sortBy: '',
     version: 0,
     updated: false,
+    updateColumn: false,
     id: 'all',
 }
 const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
@@ -178,7 +180,7 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
         onCurrentViewFiltersChange: (filters) => update({ filters }),
         onCurrentViewQueriesChange: (queries) => update({ queries }),
         onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
-            update({ selectedIds, pinnedIds, ids }),
+            update({ selectedIds, pinnedIds, ids, updateColumn: true }),
         onCurrentViewColumnsPin: (columnId: string, pined = false) => {
             const { pinnedIds = [], ids = [] } = get().currentView
             const $pinnedIds = new Set(pinnedIds)
