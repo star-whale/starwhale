@@ -241,6 +241,7 @@ public class DatasetService {
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
+                    .shared(versionEntity.getShared())
                     .files(collect)
                     .build();
 

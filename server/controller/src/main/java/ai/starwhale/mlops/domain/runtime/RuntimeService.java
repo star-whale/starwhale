@@ -295,6 +295,7 @@ public class RuntimeService {
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
+                    .shared(versionEntity.getShared())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .files(collect)
                     .build();

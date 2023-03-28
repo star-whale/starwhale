@@ -55,6 +55,9 @@ public class DatasetInfoVo implements Serializable {
     @JsonProperty("versionMeta")
     private String versionMeta;
 
+    @JsonProperty("shared")
+    private Integer shared;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 

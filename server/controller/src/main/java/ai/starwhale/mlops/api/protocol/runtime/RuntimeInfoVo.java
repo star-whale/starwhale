@@ -53,6 +53,9 @@ public class RuntimeInfoVo implements Serializable {
     @JsonProperty("manifest")
     private String manifest;
 
+    @JsonProperty("shared")
+    private Integer shared;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -61,6 +64,6 @@ public class RuntimeInfoVo implements Serializable {
     private List<FlattenFileVo> files;
 
     public static RuntimeInfoVo empty() {
-        return new RuntimeInfoVo("", "", "", "", "", "", "", 0L, List.of());
+        return new RuntimeInfoVo("", "", "", "", "", "", "", 0, 0L, List.of());
     }
 }
