@@ -23,10 +23,8 @@ from starwhale.core.dataset.type import (
 )
 
 from .model import Dataset
-from .loader import get_data_loader
 
 __all__ = [
-    "get_data_loader",
     "Link",
     "LinkAuth",
     "DefaultS3LinkAuth",

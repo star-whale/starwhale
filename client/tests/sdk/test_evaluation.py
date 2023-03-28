@@ -9,7 +9,6 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale import get_data_loader
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
@@ -22,7 +21,7 @@ from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
-from starwhale.api._impl.dataset.loader import DataRow, DataLoader
+from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
 
 from .. import ROOT_DIR, BaseTestCase
 

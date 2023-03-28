@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from starwhale import URI, URIType, get_data_loader
+from starwhale import dataset
 
 
 def show_image(image) -> None:
@@ -10,14 +10,14 @@ def show_image(image) -> None:
 
 
 def main():
-    uri = URI("emnist-digits-test/version/latest", expected_type=URIType.DATASET)
-    for idx, data in get_data_loader(uri, 0, 10):
+    ds = dataset("emnist-digits-test/version/latest")
+    for row in ds[0:10]:
         show_image(
-            np.frombuffer(data["image"].to_bytes(), dtype=np.uint8).reshape(
-                data["image"].shape
+            np.frombuffer(row.features.image.to_bytes(), dtype=np.uint8).reshape(
+                row.features.image.shape
             )
         )
-        print(f"label({data['label']})")
+        print(f"label({row.features.label})")
 
 
 if __name__ == "__main__":

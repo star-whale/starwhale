@@ -4,7 +4,7 @@ import os
 from PIL import Image as PILImage
 from PIL import ImageDraw
 
-from starwhale import URI, URIType, get_data_loader, get_dataset_consumption
+from starwhale import dataset
 
 
 def draw_bbox(img, bbox_view_):
@@ -24,12 +24,14 @@ def draw_bbox(img, bbox_view_):
 
 
 def local():
-    uri = URI("coco/version/latest", expected_type=URIType.DATASET)
-    for idx, data in get_data_loader(uri, 0, 1):
-        with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img, PILImage.open(
-            io.BytesIO(data["mask"].to_bytes())
-        ).convert("RGBA") as msk:
-            for seg in data["segments_info"]:
+    ds = dataset("coco/version/latest", readonly=True)
+    for row in ds:
+        with PILImage.open(
+            io.BytesIO(row.features.image.to_bytes())
+        ) as img, PILImage.open(io.BytesIO(row.features.mask.to_bytes())).convert(
+            "RGBA"
+        ) as msk:
+            for seg in row.features.segments_info:
                 draw_bbox(img, seg["bbox"])
 
             msk.putalpha(127)
@@ -39,20 +41,17 @@ def local():
 
 def remote():
     os.environ["SW_POD_NAME"] = "pod-1"
-    uri = URI(
-        "http://localhost:8082/project/starwhale/dataset/coco-link/version/ge3taobuge3gkobzhbtdkzbrgb4ds4q",
-        expected_type=URIType.DATASET,
-    )
-    for idx, data in get_data_loader(
-        uri,
-        session_consumption=get_dataset_consumption(
-            uri, session_id="1", batch_size=10, instance_uri="http://localhost:8082"
-        ),
-    ):
-        with PILImage.open(io.BytesIO(data["image"].to_bytes())) as img, PILImage.open(
-            io.BytesIO(data["mask"].to_bytes())
-        ).convert("RGBA") as msk:
-            for seg in data["segments_info"]:
+    ds = dataset(
+        "http://localhost:8082/project/starwhale/dataset/coco-link/version/ge3taobuge3gkobzhbtdkzbrgb4ds4q"
+    ).make_distributed_consumption(session_id="1", batch_size=10)
+
+    for row in ds:
+        with PILImage.open(
+            io.BytesIO(row.features.image.to_bytes())
+        ) as img, PILImage.open(io.BytesIO(row.features.mask.to_bytes())).convert(
+            "RGBA"
+        ) as msk:
+            for seg in row.features.segments_info:
                 draw_bbox(img, seg["bbox"])
 
             msk.putalpha(127)
