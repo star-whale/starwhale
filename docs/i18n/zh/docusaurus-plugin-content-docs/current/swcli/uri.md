@@ -8,7 +8,7 @@ title: Starwhale资源URI
 
 ![concepts-org.jpg](../img/concepts-org.jpg)
 
-## 实例URI
+## 实例URI {#instance}
 
 实例URI可以是以下形式之一:
 
@@ -31,7 +31,7 @@ swcli model copy mnist/version/latest swcloud/project/<your account name>/demo
 swcli runtime copy pytorch/version/v1 http://localhost:8081/project/<your account name>/demo
 ```
 
-## 项目URI
+## 项目URI {#project}
 
 项目URI的格式为“[<实例URI>/project/]&lt;project name>”。 如果未指定实例URI，则使用当前实例。
 
@@ -42,7 +42,7 @@ swcli project select self   # 选择当前实例中的self项目
 swcli project info local/project/self  # 查看本地实例中的self项目信息
 ```
 
-## 模型/数据集/运行时URI
+## 模型/数据集/运行时URI {#model-dataset-runtime}
 
 - 模型URI: `[<项目URI>/model/]<model name>[/version/<version id|tag>]`.
 - 数据集URI: `[<项目URI>/dataset/]<dataset name>[/version/<version id|tag>]`.
@@ -60,7 +60,7 @@ swcli model info mnist  # 检查mnist模型信息
 swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # 使用版本标签
 ```
 
-## 评估URI
+## 评估URI {#evaluation}
 
 - 格式: `[<项目URI>/eval/]<evaluation id>`.
 - 如果未指定项目URI，将使用默认项目。
@@ -71,3 +71,7 @@ swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/la
 swcli eval info mezdayjzge3w   # 查看默认实例和默认项目中的mezdayjzge3w版本
 swcli eval info local/project/self/eval/mezday # 检查本地实例，self项目，评估id:mezday
 ```
+
+## 默认项目 {#defaultProject}
+
+当模型/数据集/运行时/评估URI的项目部分被省略时，将使用默认项目。默认项目是指通过“swcli project use”命令选择的项目。
