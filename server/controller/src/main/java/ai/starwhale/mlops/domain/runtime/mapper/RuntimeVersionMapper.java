@@ -45,9 +45,6 @@ public interface RuntimeVersionMapper {
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
             @Param("namePrefix") String namePrefix, @Param("tag") String tag);
 
-    @Select("select " + COLUMNS + " from runtime_version where shared = 1")
-    List<RuntimeVersionEntity> listShared();
-
     @Select("select " + COLUMNS + " from runtime_version where id = #{id}")
     RuntimeVersionEntity find(@Param("id") Long id);
 

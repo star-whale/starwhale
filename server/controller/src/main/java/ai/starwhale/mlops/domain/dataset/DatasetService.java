@@ -162,6 +162,7 @@ public class DatasetService {
                         DatasetViewVo.builder()
                                 .ownerName(entity.getUserName())
                                 .projectName(entity.getProjectName())
+                                .datasetId(idConvertor.convert(entity.getDatasetId()))
                                 .datasetName(entity.getDatasetName())
                                 .shared(shared)
                                 .versions(new ArrayList<>())

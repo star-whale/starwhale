@@ -32,6 +32,8 @@ public class DatasetViewVo {
 
     private String projectName;
 
+    private String datasetId;
+
     private String datasetName;
 
     private Integer shared;

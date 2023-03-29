@@ -210,6 +210,7 @@ public class RuntimeService {
                         RuntimeViewVo.builder()
                                 .ownerName(entity.getUserName())
                                 .projectName(entity.getProjectName())
+                                .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                                 .runtimeName(entity.getRuntimeName())
                                 .shared(shared)
                                 .versions(new ArrayList<>())
