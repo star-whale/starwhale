@@ -15,7 +15,7 @@ By default, SWCLI will traverse the directory tree and include all `.py/.sh/.yam
 
 # Example
 
-Here is the .swignore file used in the [MNIST](../../examples/mnist) example
+Here is the .swignore file used in the [MNIST](../examples/mnist.md) example
 
 ```bash
 venv

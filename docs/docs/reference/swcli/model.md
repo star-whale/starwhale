@@ -33,7 +33,7 @@ The `model` command includes the following subcommands:
 swcli model build [OPTIONS] <WORKDIR>
 ```
 
-The `model build` command will put the whole `WORKDIR` into the model, except files that match patterns defined in [.swignore](../../swcli/config/swignore.md).
+The `model build` command will put the whole `WORKDIR` into the model, except files that match patterns defined in [.swignore](../../swcli/swignore.md).
 
 `model build` will read model.yaml and import the module specified in `run.handler` to generate the required configuration to run the model. So if your module depends on third-party libraries, we strongly recommend you use the `--runtime` option; otherwise, you need to ensure that the python runtime used by swcli has these libraries installed.
 

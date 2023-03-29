@@ -11,7 +11,8 @@ module.exports = {
             items: [
                 "getting-started/standalone",
                 "getting-started/server",
-                "getting-started/cloud"
+                "getting-started/cloud",
+                "getting-started/runtime"
             ]
         },
         {
@@ -74,14 +75,6 @@ module.exports = {
             items: [
                 "runtime/getting_started",
                 "runtime/concepts",
-                {
-                    type: 'category',
-                    label: "Examples",
-                    collapsed: true,
-                    items: [
-                        "runtime/examples/pytorch",
-                    ]
-                },
                 {
                     type: 'category',
                     label: "API",
