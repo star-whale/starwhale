@@ -148,6 +148,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'rawType',
                         'stepSpecOverWrites',
                     ]),
+                    runtimeVersionUrl: values_.runtimeVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                     // datasetVersionUrls: values_.datasetVersionId,
                     stepSpecOverWrites: values_.rawType
@@ -201,22 +202,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
-    const getValueLabel = useCallback(
-        (args) => {
-            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
-            // return [dataset?.version?.id, dataset?.version?.name].join('-')
-            const item = dataset?.version
-            if (!item) return ''
-
-            return [
-                item.alias ?? '',
-                item.name ? item.name.substring(0, 8) : '',
-                item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-            ].join(' : ')
-        },
-        [datasetsInfo]
-    )
-
     const stepSpecOverWritesList: StepSpec[] = React.useMemo(() => {
         if (!modelVersionApi) return []
         return _.merge([], stepSource, values?.stepSpecOverWrites)
@@ -234,6 +219,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         const resource = resourcePool?.resources.find((v) => v.name === type)
         return resource
     }
+
+    console.log(values)
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>

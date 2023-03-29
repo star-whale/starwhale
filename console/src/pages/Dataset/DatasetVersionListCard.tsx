@@ -49,7 +49,7 @@ export default function DatasetVersionListCard() {
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Alias'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Alias'), t('Shared'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
                             return [
@@ -64,6 +64,10 @@ export default function DatasetVersionListCard() {
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <>
+                                    <CopyToClipboard
+                                        content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
+                                    />
+                                    &nbsp;&nbsp;
                                     {i ? (
                                         <WithCurrentAuth id='dataset.version.revert'>
                                             <Button
@@ -75,10 +79,6 @@ export default function DatasetVersionListCard() {
                                             </Button>
                                         </WithCurrentAuth>
                                     ) : null}
-                                    &nbsp;&nbsp;
-                                    <CopyToClipboard
-                                        content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
-                                    />
                                 </>,
                             ]
                         }) ?? []

@@ -9,6 +9,7 @@ import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
+import Alias from '@/components/Alias'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -42,7 +43,7 @@ export default function RuntimeListCard() {
                                 {runtime.name}
                             </TextLink>,
                             runtime.version?.name ?? '-',
-                            runtime.version?.alias ?? '-',
+                            <Alias alias={runtime.version?.alias} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),

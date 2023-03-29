@@ -13,6 +13,8 @@ import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
+import Alias from '@/components/Alias'
+import Shared from '@/components/Shared'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -33,6 +35,8 @@ export default function RuntimeVersionListCard() {
             isLoading={runtimesInfo.isLoading}
             columns={[
                 t('Runtime Version'),
+                t('Alias'),
+                t('Shared'),
                 // {
                 //     type: 'tags',
                 //     title: t('Tag'),
@@ -65,6 +69,8 @@ export default function RuntimeVersionListCard() {
                         >
                             {runtime.name}
                         </TextLink>,
+                        <Alias alias={runtime.alias} />,
+                        <Shared shared={runtime.shared} />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,
                         <>

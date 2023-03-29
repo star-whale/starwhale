@@ -213,6 +213,9 @@ const locales0 = {
     'Alias': {
         en: 'Alias',
     },
+    'Shared': {
+        en: 'Shared',
+    },
     'datasets': {
         en: 'Datasets',
     },

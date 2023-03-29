@@ -81,3 +81,15 @@ export async function fetchRuntimeVersionSuggestion(
     })
     return data
 }
+
+export async function updateRuntimeVersionShared(
+    projectId: string,
+    runtimeId: string,
+    runtimeVersionId: string,
+    shared: boolean
+): Promise<IRuntimeVersionSchema> {
+    const resp = await axios.put<IRuntimeVersionSchema>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/shared?shared=${shared ? 1 : 0}`
+    )
+    return resp.data
+}
