@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
+import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
@@ -501,7 +502,7 @@ public class RuntimeService {
     }
 
     // TODO add return value
-    public void buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
+    public BuildImageResult buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
         RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
                 BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
         if (null == runtimeVersion) {
@@ -511,7 +512,10 @@ public class RuntimeService {
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
-            return;
+            return BuildImageResult.builder()
+                    .success(false)
+                    .message(String.format("Runtime image [%s] has already existed", builtImage))
+                    .build();
         }
 
         if (!validateDockerSetting(dockerSetting)) {
@@ -569,9 +573,17 @@ public class RuntimeService {
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);
+            return BuildImageResult.builder()
+                    .success(true)
+                    .message("Image building has started.")
+                    .build();
         } catch (ApiException k8sE) {
             if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
                 log.debug("runtime:{}-{}'s image is building, please wait a moment.", runtimeUrl, versionUrl);
+                return BuildImageResult.builder()
+                        .success(false)
+                        .message("Building image, please wait a moment.")
+                        .build();
             } else {
                 log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
                 throw new SwProcessException(ErrorType.INFRA,

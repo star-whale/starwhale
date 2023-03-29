@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
@@ -203,8 +204,9 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<?> buildRuntimeImage(String projectUrl, String runtimeUrl, String versionUrl) {
-        runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(String projectUrl, String runtimeUrl,
+            String versionUrl) {
+        BuildImageResult res = runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(res));
     }
 }
