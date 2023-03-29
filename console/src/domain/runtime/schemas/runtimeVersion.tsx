@@ -5,11 +5,16 @@ import { IListQuerySchema } from '../../base/schemas/list'
 export interface IRuntimeVersionSchema extends IResourceSchema {
     name: string
     tag: string
-    meta: Record<string, unknown>
     owner?: IUserSchema
     alias: string
     image: string
     runtimeId: string
+    shared?: number
+}
+
+export interface IRuntimeTreeVersionSchema extends IRuntimeVersionSchema {
+    versionName: string
+    createdTime: number
 }
 
 export interface IRuntimeVersionListSchema extends IResourceSchema {

@@ -42,6 +42,7 @@ export default function TreeNode({
         }
         return (
             <Radio
+                isFullWidth
                 checked={isSelected}
                 labelPlacement='right'
                 overrides={{
@@ -49,6 +50,7 @@ export default function TreeNode({
                         style: {
                             marginTop: '0px',
                             marginBottom: '0px',
+                            width: '100%',
                         },
                     },
                 }}

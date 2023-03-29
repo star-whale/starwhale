@@ -6,12 +6,8 @@ import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
 import ModelVersionSelector, { IDataSelectorRef } from '@/domain/model/components/ModelVersionSelector'
-import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
-import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
 import Input, { NumberInput } from '@starwhale/ui/Input'
 import _ from 'lodash'
-import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
-import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import Editor from '@monaco-editor/react'
@@ -28,10 +24,9 @@ import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schem
 import { Toggle } from '@starwhale/ui/Select'
 import { usePage } from '@/hooks/usePage'
 import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
-import MultiTags from '@/components/Tag/MultiTags'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import DynamicSelector from '@starwhale/ui/DynamicSelector/Selector'
 import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
+import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -382,20 +377,15 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
             <Divider orientation='top'>{t('Datasets')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-                <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
+                <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
                     <DatasetTreeSelector projectId={projectId} />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>
-            <div className={styles.row3}>
-                <FormItem label={t('Runtime')} name='runtimeId' required>
-                    <RuntimeSelector projectId={projectId} />
+            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
+                <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
+                    <RuntimeTreeSelector projectId={projectId} />
                 </FormItem>
-                {runtimeId && (
-                    <FormItem label={t('Version')} required name='runtimeVersionUrl'>
-                        <RuntimeVersionSelector projectId={projectId} runtimeId={runtimeId} autoSelected />
-                    </FormItem>
-                )}
             </div>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>

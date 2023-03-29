@@ -1,6 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '../../user/schemas/user'
-import { IRuntimeVersionSchema } from './runtimeVersion'
+import { IRuntimeTreeVersionSchema, IRuntimeVersionSchema } from './runtimeVersion'
 
 export interface IRuntimeSchema extends IResourceSchema {
     name: string
@@ -17,6 +17,7 @@ export interface IRuntimeDetailSchema {
     createdTime?: number
     files?: Array<IRuntimeFileSchema>
     id?: string
+    shared?: number
 }
 
 export interface IRuntimeFileSchema {
@@ -31,4 +32,12 @@ export interface IUpdateRuntimeSchema {
 export interface ICreateRuntimeSchema {
     modelName: string
     zipFile?: FileList
+}
+
+export interface IRuntimeTreeSchema {
+    ownerName: string
+    projectName: string
+    runtimeName: string
+    shared: number
+    versions: IRuntimeTreeVersionSchema[]
 }

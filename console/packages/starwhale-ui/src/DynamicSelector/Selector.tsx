@@ -158,16 +158,15 @@ export function DynamicSelector<T = any>({
                 isFocus
                 {...getSharedProps(lastIndex)}
                 onChange={(newValue: any) => {
-                    const newValues = [...values]
-                    // remove prev item
-                    if (!newValue) {
-                        newValues.splice(-1)
-                    } else {
-                        newValues.push(newValue)
-                    }
-                    // newValues = newValues.filter((tmp) => tmp && tmp.property && tmp.op && isValueExist(tmp.value))
-                    setValues(newValues)
-                    onChange?.(newValues)
+                    // const newValues = [...values]
+                    // // remove prev item
+                    // if (!newValue) {
+                    //     newValues.splice(-1)
+                    // } else {
+                    //     newValues.push(newValue)
+                    // }
+                    setValues(newValue)
+                    onChange?.(newValue)
                 }}
             />
         )

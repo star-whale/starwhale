@@ -17,6 +17,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
 import { Shared } from '../../components/Shared'
+import { Alias } from '@/components/Alias'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -58,7 +59,7 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
-                                datasetVersion.alias,
+                                <Alias alias={datasetVersion.alias} />,
                                 <Shared shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,

@@ -153,7 +153,7 @@ export const defaultLabelRemoveIcon = () => (
         size={12}
     />
 )
-export const defalutPlaceholder = (children) => (
+export const defalutPlaceholder = (children: React.ReactNode) => (
     <LabelSmall
         $style={{
             color: 'rgba(2,16,43,0.40)',
@@ -161,6 +161,7 @@ export const defalutPlaceholder = (children) => (
             width: '150px',
             height: '22px',
             top: 0,
+            left: '8px',
             lineHeight: '22px',
         }}
     >

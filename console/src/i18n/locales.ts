@@ -48,6 +48,9 @@ const runtime = {
     'runtime.remove.button': {
         en: 'Remove',
     },
+    'runtime.selector.view': {
+        en: 'View',
+    },
 }
 
 const model = {
