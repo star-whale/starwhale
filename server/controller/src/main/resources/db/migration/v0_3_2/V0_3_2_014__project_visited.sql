@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.common;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
-@Builder
-@Getter
-@Setter
-@AllArgsConstructor
-public class OrderParams extends BaseParams {
-
-    private String sort;
-
-    private int order;
-
-}
+CREATE TABLE IF NOT EXISTS `project_visited`
+(
+    `id`           bigint   NOT NULL AUTO_INCREMENT COMMENT 'PK',
+    `user_id`      bigint   NOT NULL,
+    `project_id`   bigint   NOT NULL,
+    `visited_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE INDEX `unq_user_project` (`user_id`, `project_id`) USING BTREE,
+    INDEX `idx_visited_time` (`visited_time`) USING BTREE
+);

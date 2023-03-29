@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.domain.project.sort;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.List;
 
-@Builder
-@Getter
-@Setter
-@AllArgsConstructor
-public class OrderParams extends BaseParams {
+public interface Sort {
 
-    private String sort;
-
-    private int order;
-
+    List<ProjectEntity> list(String projectName, User user, boolean showAll);
 }

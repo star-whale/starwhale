@@ -23,16 +23,16 @@ import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
+import ai.starwhale.mlops.domain.project.sort.Sort;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -42,7 +42,6 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -50,8 +49,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,13 +64,14 @@ import org.springframework.util.Assert;
 
 @Slf4j
 @Service
-public class ProjectService implements ProjectAccessor {
+public class ProjectService implements ProjectAccessor, ApplicationContextAware {
 
     public static final String PROJECT_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
 
 
     private final ProjectMapper projectMapper;
 
+    private final ProjectVisitedMapper projectVisitedMapper;
     private final ProjectDao projectDao;
 
     private final MemberService memberService;
@@ -76,16 +82,27 @@ public class ProjectService implements ProjectAccessor {
 
     private static final String DELETE_SUFFIX = ".deleted";
 
+    private final Map<Long, Visit> visitedProjectCacheMap = new ConcurrentHashMap<>();
+    private static final long storageInterval = 1000;
+    private ApplicationContext applicationContext;
+
     public ProjectService(ProjectMapper projectMapper,
+            ProjectVisitedMapper projectVisitedMapper,
             ProjectDao projectDao,
             MemberService memberService,
             IdConverter idConvertor,
             UserService userService) {
         this.projectMapper = projectMapper;
+        this.projectVisitedMapper = projectVisitedMapper;
         this.projectDao = projectDao;
         this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.userService = userService;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     public Project findProject(Long id) {
@@ -125,31 +142,24 @@ public class ProjectService implements ProjectAccessor {
         return ProjectVo.fromBo(findProject(projectUrl), idConvertor);
     }
 
-    /**
-     * Get the list of projects.
-     *
-     * @param projectName Search by project name prefix if the project name is set.
-     * @param pageParams  Paging parameters.
-     * @return A list of ProjectVo objects
-     */
-    public PageInfo<ProjectVo> listProject(String projectName, PageParams pageParams, OrderParams orderParams,
-            User user) {
-        Long userId = user.getId();
+    public PageInfo<ProjectVo> listProject(String projectName, OrderParams orderParams, User user) {
+        boolean showAll = false;
         List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
         for (Role sysRole : sysRoles) {
             if (sysRole.getAuthority().equals("OWNER")) {
-                userId = null;
+                showAll = true;
                 break;
             }
         }
 
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ProjectEntity> entities = listProjects(projectName, userId, orderParams);
+        Sort sort = getSort(orderParams.getSort());
+
+        List<ProjectEntity> entities = sort.list(projectName, user, showAll);
         List<Long> ids = entities.stream().map(ProjectEntity::getId).collect(Collectors.toList());
         Map<Long, ProjectObjectCounts> countMap = getObjectCountsOfProjects(
                 ids);
 
-        return PageUtil.toPageInfo(entities, entity -> {
+        return new PageInfo<>(entities.stream().map(entity -> {
             ProjectVo vo = ProjectVo.fromEntity(entity, idConvertor,
                     userService.findUserById(entity.getOwnerId()));
             ProjectObjectCounts count = countMap.get(entity.getId());
@@ -163,16 +173,20 @@ public class ProjectService implements ProjectAccessor {
                         .build());
             }
             return vo;
-        });
+        }).collect(Collectors.toList()));
     }
 
-    public List<Project> listProjects(String projectName, Long userId, String order) {
-        List<ProjectEntity> list = projectMapper.list(projectName, userId, order);
+    private Sort getSort(String type) {
+        try {
+            return this.applicationContext.getBean(StrUtil.isNotEmpty(type) ? type : "visited", Sort.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            throw new SwValidationException(ValidSubject.PROJECT, "Unknown sort type. " + type);
+        }
+    }
+
+    public List<Project> listProjects() {
+        List<ProjectEntity> list = projectMapper.listOfUser(null, null, null);
         return list.stream().map(this::toProject).collect(Collectors.toList());
-    }
-
-    private List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
-        return projectMapper.list(projectName, userId, null);
     }
 
     /**
@@ -338,8 +352,11 @@ public class ProjectService implements ProjectAccessor {
     }
 
     private Map<Long, ProjectObjectCounts> getObjectCountsOfProjects(List<Long> projectIds) {
-        String ids = Joiner.on(",").join(projectIds);
         Map<Long, ProjectObjectCounts> map = Maps.newHashMap();
+        if (projectIds.isEmpty()) {
+            return map;
+        }
+        String ids = Joiner.on(",").join(projectIds);
         for (Long projectId : projectIds) {
             map.put(projectId, new ProjectObjectCounts());
         }
@@ -407,5 +424,34 @@ public class ProjectService implements ProjectAccessor {
     public Boolean addProjectMember(String projectUrl, Long userId, Long roleId) {
         Long projectId = getProjectId(projectUrl);
         return memberService.addProjectMember(projectId, userId, roleId);
+    }
+
+
+    public void visit(String projectUrl) {
+        if (!Objects.equals("0", projectUrl)) {
+            Long projectId = getProjectId(projectUrl);
+            Long userId = userService.currentUserDetail().getId();
+
+            Visit visit = new Visit(projectId, System.currentTimeMillis());
+            Visit lastVisit = visitedProjectCacheMap.get(userId);
+
+            if (lastVisit == null || needStorage(visit, lastVisit)) {
+                visitedProjectCacheMap.put(userId, visit);
+                projectVisitedMapper.insert(userId, projectId);
+            }
+        }
+    }
+
+
+    private boolean needStorage(Visit current, Visit previous) {
+        return !Objects.equals(current.projectId, previous.projectId)
+                && current.time > previous.time + storageInterval;
+    }
+
+    @AllArgsConstructor
+    static class Visit {
+
+        Long projectId;
+        long time;
     }
 }

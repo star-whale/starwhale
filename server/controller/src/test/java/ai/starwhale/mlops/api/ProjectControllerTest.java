@@ -40,7 +40,6 @@ import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -79,28 +78,23 @@ public class ProjectControllerTest {
 
     @Test
     public void testListProject() {
-        given(projectService.listProject(anyString(), any(PageParams.class), any(OrderParams.class), any(User.class)))
+        given(projectService.listProject(anyString(), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
                         ProjectVo.builder().name("test1").id("1").build(),
                         ProjectVo.builder().name("test2").id("2").build(),
                         ProjectVo.builder().name("test3").id("3").build()
                 )));
-        given(projectService.listProject(same("test1"), any(PageParams.class), any(OrderParams.class), any(User.class)))
+        given(projectService.listProject(same("test1"), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
                         ProjectVo.builder().id("1").build()
                 )));
-        given(projectService.listProject(same("test2"), any(PageParams.class), any(OrderParams.class), any(User.class)))
+        given(projectService.listProject(same("test2"), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
                         ProjectVo.builder().id("2").build()
                 )));
-        given(projectService.listProject(anyString(),
-                argThat(page -> page.getPageNum() == 2 && page.getPageSize() == 2),
-                any(OrderParams.class), any(User.class))).willReturn(new PageInfo<>(List.of(
-                ProjectVo.builder().id("3").build()
-        )));
 
         var resp = controller.listProject(
-                "", 1, 10, "", 1);
+                "", 1, 10, "");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData().getList(), allOf(
                 notNullValue(),
@@ -108,7 +102,7 @@ public class ProjectControllerTest {
         ));
 
         resp = controller.listProject(
-                "test1", 1, 10, "", 1);
+                "test1", 1, 10, "");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData().getList(), allOf(
                 notNullValue(),
@@ -117,7 +111,7 @@ public class ProjectControllerTest {
         ));
 
         resp = controller.listProject(
-                "test2", 1, 10, "", 1);
+                "test2", 1, 10, "");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData().getList(), allOf(
                 notNullValue(),
@@ -126,11 +120,11 @@ public class ProjectControllerTest {
         ));
 
         resp = controller.listProject(
-                "", 2, 2, "", 1);
+                "", 2, 2, "");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData().getList(), allOf(
                 notNullValue(),
-                is(iterableWithSize(1)),
+                is(iterableWithSize(3)),
                 is(hasItem(hasProperty("id", is("3"))))
         ));
 
