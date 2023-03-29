@@ -944,25 +944,25 @@ class DatasetSummary(ASDictMixin):
     def __init__(
         self,
         rows: int = 0,
-        increased_rows: int = 0,
-        data_byte_size: int = 0,
+        updated_rows: int = 0,
+        deleted_rows: int = 0,
+        blobs_byte_size: int = 0,
+        increased_blobs_byte_size: int = 0,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
-        self.increased_rows = increased_rows
-        self.unchanged_rows = rows - increased_rows
-        self.data_byte_size = data_byte_size
-        # TODO: cleanup expired increased_rows, unchanged_rows, data_byte_size fields
-        self.updated_rows = kw.get("updated_rows", 0)
-        self.deleted_rows = kw.get("deleted_rows", 0)
+        self.updated_rows = updated_rows
+        self.deleted_rows = deleted_rows
+        self.blobs_byte_size = blobs_byte_size
+        self.increased_blobs_byte_size = increased_blobs_byte_size
 
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows})"
 
     def __repr__(self) -> str:
         return (
-            f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
-            f"size(data:{self.data_byte_size})"
+            f"Dataset Summary: rows(total: {self.rows}, updated: {self.updated_rows}, deleted: {self.deleted_rows}), "
+            f"size(blobs:{self.blobs_byte_size})"
         )
 
 

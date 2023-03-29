@@ -163,10 +163,8 @@ class TestModelPipelineHandler(TestCase):
         _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 
-        # mock dataset
         m_summary.return_value = DatasetSummary(
             rows=1,
-            increased_rows=1,
         )
 
         fname = "data_ubyte_0.swds_bin"
@@ -239,10 +237,8 @@ class TestModelPipelineHandler(TestCase):
 
                 assert label_data == data[0]["ds_data"]["label"]
 
-        # mock dataset
         m_summary.return_value = DatasetSummary(
             rows=1,
-            increased_rows=1,
         )
 
         fname = "data_ubyte_0.swds_bin"

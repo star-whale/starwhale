@@ -209,7 +209,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 dict(
                     name=self.name,
                     version=_bf.version,
-                    size=_manifest.get("dataset_byte_size", 0),
+                    size=_manifest.get("blobs_byte_size", 0),
                     created_at=_manifest[CREATED_AT_KEY],
                     tags=_bf.tags,
                     path=_bf.path,
@@ -269,7 +269,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 dict(
                     name=_bf.name,
                     version=_bf.version,
-                    size=_manifest.get("dataset_byte_size", 0),
+                    size=_manifest.get("dataset_summary", {}).get("blobs_byte_size", 0),
                     created_at=_manifest[CREATED_AT_KEY],
                     is_removed=_bf.is_removed,
                     path=_bf.path,

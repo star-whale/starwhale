@@ -19,7 +19,7 @@ class TestCloudRequestMixed(TestCase):
         size = ins.get_bundle_size_from_resp("whatever", item)
         assert size == 7
 
-        meta = {"dataset_byte_size": 8}
+        meta = {"dataset_summary": {"blobs_byte_size": 8}}
         item = {"meta": yaml.safe_dump(meta)}
         size = ins.get_bundle_size_from_resp("dataset", item)
         assert size == 8
