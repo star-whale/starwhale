@@ -143,7 +143,7 @@ build-gradio-ui:
 		-v ${ROOT_DIR}:/starwhale \
 		-w /starwhale/gradio/ui \
 		${DH_NODEJS_IMAGE} \
-		/bin/sh -x -c "npm i -g pnpm && pnpm add -g pnpm@8.0.0 && pnpm i && NODE_OPTIONS=--max_old_space_size=4048 pnpm build && \
+		/bin/sh -x -c "npm i -g pnpm@latest && pnpm i && NODE_OPTIONS=--max_old_space_size=4048 pnpm build && \
 			rm -rf ${UI_DEST} && mkdir -p ${UI_DEST} && \
 			mv packages/starwhale/build ${UI_DEST}/es && \
 			chown ${SWU}:${SWG} -R ${UI_DEST} && \

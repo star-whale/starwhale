@@ -1,7 +1,7 @@
 .PHONY: *
 
 install-dev-tools:
-	npm install -g yarn pnpm && pnpm add -g pnpm@8.0.0
+	npm install -g yarn pnpm@latest
 
 install-dependencies:
 	yarn
