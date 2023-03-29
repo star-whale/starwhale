@@ -15,13 +15,16 @@ from collections import defaultdict
 from loguru import logger
 
 from starwhale.consts import STANDALONE_INSTANCE
+from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     empty_dir,
     ensure_dir,
     blake2b_file,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.utils.error import NoSupportError
+from starwhale.base.type import URIType
+from starwhale.base.cloud import CloudRequestMixed
+from starwhale.utils.retry import http_retry
 from starwhale.core.dataset.type import (
     Link,
     BaseArtifact,
@@ -311,11 +314,19 @@ class MappingDatasetBuilder:
             uri, _ = DatasetStorage.save_data_file(bin_path, remove_src=True)
         else:
             sign_name = blake2b_file(bin_path)
-            # TODO: do upload to cloud with new dataset bin storage api
-            uri = sign_name
-            raise NoSupportError(
-                "no support upload bin files into cloud instance directly"
-            )
+            crm = CloudRequestMixed()
+            instance_uri = URI(self.instance_name, expected_type=URIType.INSTANCE)
+
+            @http_retry
+            def _upload() -> str:
+                r = crm.do_multipart_upload_file(
+                    url_path=f"/project/{self.project_name}/dataset/{self.dataset_name}/hashedBlob/{sign_name}",
+                    file_path=bin_path,
+                    instance_uri=instance_uri,
+                )
+                return r.json()["data"]  # type: ignore
+
+            uri = _upload()
 
         self._signed_bins_meta.append(
             MappingDatasetBuilder._SignedBinMeta(

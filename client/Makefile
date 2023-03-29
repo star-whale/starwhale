@@ -10,6 +10,7 @@ clean:
 	rm -rf dist/*
 
 build-ui:
+	make -C ../console install-dev-tools
 	make -C ../console build-all
 
 build-wheel: check clean build-ui

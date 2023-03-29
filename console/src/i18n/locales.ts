@@ -122,6 +122,27 @@ const project = {
     },
 }
 
+const job = {
+    'job.status.created': {
+        en: 'Created',
+    },
+    'job.status.paused': {
+        en: 'Paused',
+    },
+    'job.status.succeeded': {
+        en: 'Succeeded',
+    },
+    'job.status.running': {
+        en: 'Running',
+    },
+    'job.status.cancelled': {
+        en: 'Cancelled',
+    },
+    'job.status.fail': {
+        en: 'Failed',
+    },
+}
+
 const locales0 = {
     'create sth': {
         en: 'Create {{0}}',
@@ -829,6 +850,7 @@ const locales0 = {
     ...runtime,
     ...trash,
     ...project,
+    ...job,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

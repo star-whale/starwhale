@@ -23,6 +23,7 @@ import EvaluationListCompare from './EvaluationListCompare'
 import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
+import JobStatus from '@/domain/job/components/JobStatus'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -119,6 +120,23 @@ export default function EvaluationListCard() {
                         return <p title={props?.value}>{durationToStr(props?.value)}</p>
                     },
                     mapDataToValue: (data: any): string => data.duration,
+                })
+            if (column.key === 'sys/job_status')
+                return CustomColumn({
+                    columnType: column.columnType,
+                    key: column.key,
+                    title: column.key,
+                    sortable: true,
+                    fillWidth: false,
+                    // @ts-ignore
+                    renderCell: (props: any) => {
+                        return (
+                            <div title={props?.value}>
+                                <JobStatus status={props?.value} />
+                            </div>
+                        )
+                    },
+                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({

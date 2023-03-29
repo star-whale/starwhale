@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.matches;
@@ -34,13 +35,14 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.sort.Sort;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -51,12 +53,16 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.context.ApplicationContext;
 
 public class ProjectServiceTest {
 
     private ProjectService service;
 
     private ProjectMapper projectMapper;
+
+    private ProjectVisitedMapper projectVisitedMapper;
 
     private ProjectDao projectDao;
 
@@ -84,10 +90,12 @@ public class ProjectServiceTest {
                 .willReturn(project1);
         given(projectMapper.findExistingByNameAndOwnerName(same("exist_project"), any()))
                 .willReturn(project2);
-        given(projectMapper.list(anyString(), any(), any()))
+        given(projectMapper.listOfUser(anyString(), any(), any()))
                 .willReturn(List.of(project1, project2));
-        given(projectMapper.list(same("p1"), any(), any()))
+        given(projectMapper.listOfUser(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
+
+        projectVisitedMapper = mock(ProjectVisitedMapper.class);
 
         projectDao = mock(ProjectDao.class);
         given(projectDao.getProjectId(same("1"))).willReturn(1L);
@@ -107,7 +115,8 @@ public class ProjectServiceTest {
                 .idTableKey(1L)
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
-        given(userService.getProjectRolesOfUser(any(), any())).willReturn(Collections.emptyList());
+        given(userService.getProjectRolesOfUser(any(), any()))
+                .willReturn(Collections.emptyList());
         given(userService.findRole(same(1L)))
                 .willReturn(Role.builder().id(1L)
                         .roleName(Role.NAME_OWNER)
@@ -123,6 +132,7 @@ public class ProjectServiceTest {
 
         IdConverter idConvertor = new IdConverter();
         service = new ProjectService(projectMapper,
+                projectVisitedMapper,
                 projectDao,
                 memberService,
                 idConvertor,
@@ -151,8 +161,18 @@ public class ProjectServiceTest {
 
     @Test
     public void testListProject() {
+        ApplicationContext context = mock(ApplicationContext.class);
+        service.setApplicationContext(context);
+        Sort sort = mock(Sort.class);
+        Mockito.when(context.getBean(any(), same(Sort.class)))
+                .thenReturn(sort);
+        Mockito.when(sort.list(anyString(), any(), anyBoolean()))
+                .thenReturn(List.of(
+                        ProjectEntity.builder().id(1L).build(),
+                        ProjectEntity.builder().id(2L).build()
+                ));
+
         var res = service.listProject("",
-                PageParams.builder().build(),
                 OrderParams.builder().build(),
                 User.builder().build());
         assertThat(res, allOf(

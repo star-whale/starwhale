@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import sys
 import typing as t
 from http import HTTPStatus
@@ -639,6 +640,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         update_table_req = rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/updateTable",
+            json={
+                "code": "success",
+                "message": "Success",
+                "data": "fake revision",
+            },
         )
 
         version_req = rm.request(
@@ -654,6 +660,18 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             HTTPMethod.POST,
             f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds.pending_commit_version}/file",
             json={"data": {"uploadId": "123"}},
+        )
+
+        rm.register_uri(
+            HTTPMethod.HEAD,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+        rm.register_uri(
+            HTTPMethod.POST,
+            re.compile("http://1.1.1.1/api/v1/project/self/dataset/mnist/hashedBlob/"),
+            json={"data": "uri"},
         )
 
         cnt = 10
@@ -678,10 +696,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert file_request.call_count == 2
 
         # TODO: when sdk supports to upload blobs into cloud, remove assertRasise
-        with self.assertRaisesRegex(
-            RuntimeError, "no support upload bin files into cloud instance directly"
-        ):
-            ds.close()
+        ds.close()
 
     @pytest.mark.skip(
         "enable this test when datastore wrapper supports timestamp version"

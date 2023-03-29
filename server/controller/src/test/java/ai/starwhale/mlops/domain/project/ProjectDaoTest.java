@@ -64,9 +64,9 @@ public class ProjectDaoTest {
                 .willReturn(project1);
         given(projectMapper.findExistingByNameAndOwnerName(any(), any()))
                 .willReturn(project2);
-        given(projectMapper.list(anyString(), any(), any()))
+        given(projectMapper.listOfUser(anyString(), any(), any()))
                 .willReturn(List.of(project1, project2));
-        given(projectMapper.list(same("p1"), any(), any()))
+        given(projectMapper.listOfUser(same("p1"), any(), any()))
                 .willReturn(List.of(project1));
 
         projectDao = new ProjectDao(projectMapper, new IdConverter());

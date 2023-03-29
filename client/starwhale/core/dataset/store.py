@@ -504,6 +504,7 @@ class LocalFSStorageBackend(StorageBackend):
             if not data_path.exists():
                 data_path = bucket_path / _key
 
+        _end = min(_end, data_path.stat().st_size)
         with data_path.open("rb") as f:
             f.seek(_start)
             return io.BytesIO(f.read(_end - _start + 1))  # type: ignore

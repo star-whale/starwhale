@@ -29,7 +29,14 @@ module.exports = {
             ]
         },
         {
-            "Starwhale Dataset": [
+            type: 'category',
+            label: "Starwhale Dataset",
+            link: {
+                type: "doc",
+                id: "dataset/index"
+            },
+            collapsed: true,
+            items: [
                 {
                     type: 'category',
                     label: "Examples",
@@ -54,35 +61,17 @@ module.exports = {
                         "dataset/api/sdk",
                     ]
                 },
-            ],
-            "Starwhale Model": [
-                "model/getting_started",
-                "model/concepts",
-                {
-                    type: 'category',
-                    label: "Examples",
-                    collapsed: true,
-                    items: [
-                        "examples/mnist",
-                        "examples/speech",
-                        "examples/ag_news",
-                        "examples/cifar10",
-                        "examples/pfp",
-                        "examples/nmt",
-                        "examples/ucf101"
-                    ]
-                },
-                {
-                    type: 'category',
-                    label: "API",
-                    collapsed: true,
-                    items: [
-                        "model/api/cli",
-                        "model/api/sdk",
-                    ]
-                },
-            ],
-            "Starwhale Runtime": [
+            ]
+        },
+        {
+            type: 'category',
+            label: "Starwhale Runtime",
+            link: {
+                type: "doc",
+                id: "runtime/index"
+            },
+            collapsed: true,
+            items: [
                 "runtime/getting_started",
                 "runtime/concepts",
                 {
@@ -101,8 +90,17 @@ module.exports = {
                         "runtime/api/cli",
                     ]
                 },
-            ],
-            "Starwhale Evaluation": [
+            ]
+        },
+        {
+            type: 'category',
+            label: "Starwhale Evaluation",
+            link: {
+                type: "doc",
+                id: "evaluation/index"
+            },
+            collapsed: true,
+            items: [
                 "evaluation/getting_started",
                 "evaluation/concepts",
                 {
@@ -144,11 +142,17 @@ module.exports = {
                         "evaluation/api/sdk",
                     ]
                 },
-            ],
+            ]
+        },
+        {
             "Starwhale Instances": [
                 {
                     type: 'category',
                     label: "Starwhale Standalone",
+                    link: {
+                        type: "doc",
+                        id: "instances/standalone/index"
+                    },
                     collapsed: true,
                     items: [
                         "instances/standalone/getting_started",
@@ -228,14 +232,22 @@ module.exports = {
             },
             items: [
                 "swcli/installation",
-                "swcli/uri"
+                "swcli/uri",
+                "swcli/swignore"
+            ]
+        },
+        {
+            type: "category",
+            label: "User Guides",
+            items: [
+                "userguide/model",
             ]
         },
         {
             "Reference": [
                 {
                     type: "category",
-                    label: "Command Line Interface",
+                    label: "Starwhale Client",
                     link: {
                         type: "doc",
                         id: "reference/swcli/index"
@@ -243,7 +255,7 @@ module.exports = {
                     items: [
                         "instances/standalone/api/instance_cli",
                         "instances/standalone/api/project_cli",
-                        "model/api/cli",
+                        "reference/swcli/model",
                         "runtime/api/cli",
                         "dataset/api/cli",
                         "evaluation/api/cli",
@@ -261,7 +273,6 @@ module.exports = {
                         "reference/sdk/overview",
                         "dataset/api/sdk",
                         "dataset/api/data_type",
-                        "model/api/sdk",
                         "evaluation/api/sdk",
                         "reference/sdk/other",
                     ]
