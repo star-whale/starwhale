@@ -36,7 +36,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
-            + "  step_name: ppl\n"
+            + "  name: ppl\n"
             + "  task_num: 1\n"
             + "- cls_name: ''\n"
             + "  concurrency: 1\n"
@@ -47,7 +47,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
-            + "  step_name: cmp\n"
+            + "  name: cmp\n"
             + "  task_num: 1\n";
 
     static final String YAML1 = "- cls_name: ''\n"
@@ -58,7 +58,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
-            + "  step_name: ppl\n"
+            + "  name: ppl\n"
             + "  task_num: 1\n"
             + "- cls_name: ''\n"
             + "  concurrency: 1\n"
@@ -69,7 +69,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
-            + "  step_name: cmp\n"
+            + "  name: cmp\n"
             + "  task_num: 1\n";
 
     static final String YAML2 = "---\n"
@@ -81,7 +81,7 @@ public class JobSpecTest {
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
             + "  job_name: \"default\"\n"
-            + "  step_name: \"ppl\"\n"
+            + "  name: \"ppl\"\n"
             + "  task_num: 1\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
@@ -91,7 +91,7 @@ public class JobSpecTest {
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
             + "  job_name: \"default\"\n"
-            + "  step_name: \"cmp\"\n"
+            + "  name: \"cmp\"\n"
             + "  task_num: 1\n";
 
     static final String YAML3 = "---\n"
@@ -102,7 +102,7 @@ public class JobSpecTest {
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
             + "  job_name: \"default\"\n"
-            + "  step_name: \"ppl\"\n"
+            + "  name: \"ppl\"\n"
             + "  task_num: 1\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
@@ -112,7 +112,7 @@ public class JobSpecTest {
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
             + "  job_name: \"default\"\n"
-            + "  step_name: \"cmp\"\n"
+            + "  name: \"cmp\"\n"
             + "  task_num: 1\n";
 
     private JobSpecParser jobSpecParser;
