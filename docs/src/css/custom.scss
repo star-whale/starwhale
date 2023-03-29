@@ -575,7 +575,7 @@ html[data-theme="light"] .footer__link-item[href*="stackoverflow"] {
 }
 
 .markdown table code {
-  font-size: 16px;
+  white-space: nowrap;
 }
 
 @media only screen and (min-width: 1400px) {
