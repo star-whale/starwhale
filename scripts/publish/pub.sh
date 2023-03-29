@@ -57,7 +57,7 @@ build() {
         popd
     else
         pushd ../../console
-        make install-dev-tools && make build-all
+        timeout 1h bash -c 'while true; do make install-dev-tools && make build-all && break; done'
         popd
     fi
     b_controller
@@ -185,7 +185,7 @@ cli() {
   -s() {
     pushd ../../client
     python3 -m pip install -r requirements-install.txt
-    make build-wheel
+    timeout 1h bash -c 'while true; do make build-wheel && break; done'
     if ! twine upload --repository nexus dist/* ; then echo "[ERROR] Something wrong while uploading pypi version , press CTL+C to interrupt execution if needed"; fi
     popd
     pushd ../../docker
