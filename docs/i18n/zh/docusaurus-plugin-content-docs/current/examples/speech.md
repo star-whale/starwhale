@@ -183,15 +183,15 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
     ```python
     import typing as t
     from pathlib import Path
-    from starwhale import Audio, MIMEType, BuildExecutor
+    from starwhale import Audio, MIMEType
 
     dataset_dir = (
         Path(__file__).parent.parent / "data" / "SpeechCommands" / "speech_commands_v0.02"
     )
     validation_ds_paths = [dataset_dir / "validation_list.txt"]
 
-    class SWDSBuildExecutor(BuildExecutor):      #继承BuildExecutor类，构建swds-bin格式的数据集。
-        def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:  # 实现iter_item方法，返回一个可迭代对象。
+    class SWDSBuildExecutor:
+        def __iter__(self) -> t.Generator:  # 实现__iter__方法。
             for path in validation_ds_paths:
                 with path.open() as f:
                     for item in f.readlines():
@@ -205,27 +205,24 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
                         )
 
                         speaker_id, utterance_num = data_path.stem.split("_nohash_")
-                        annotations = {
+                        yield {
+                            "speech": data,
                             "label": data_path.parent.name,
                             "speaker_id": speaker_id,
                             "utterance_num": int(utterance_num),
                         }
-                        yield data, annotations
     ```
 
-  - 继承`BuildExecutor`类可以构建swds-bin格式的Dataset。swds-bin格式是Starwhale Dataset提供的一种二进制格式，会将原始数据变换后生成，包含元数据、类型信息等，能够支持分片、索引和高效加载。
-  - 构建数据需要实现`iter_item`方法，该方法返回可迭代的数据，包括data和annotations。
-    - data是原始数据，可以使用Starwhale预置的类型来表示，这样便于做Dataset Viewer等。本例子中定义data为Audio类型，当dataset copy到cloud instance后，就能在web ui中可视化整个dataset，包括声音片段的播放等。 ![dataset_viewer.png](../img/examples/sc_dataset_viewer.png)
-    - annotations是若干label的描述，用字典表示。
+  - 构建数据需要实现`__iter__`方法(当handler是class时)，该方法返回可迭代的数据。
 
 - remote-link格式的数据集构建代码
 
     ```python
     import typing as t
     from pathlib import Path
-    from starwhale import Audio, MIMEType, Link, S3LinkAuth, UserRawBuildExecutor
+    from starwhale import Audio, MIMEType, Link, S3LinkAuth
 
-    class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
+    class LinkRawDatasetBuildExecutor:
 
         _auth = S3LinkAuth(
             name="speech", access_key="minioadmin", secret="minioadmin", region="local"
@@ -233,7 +230,7 @@ swcli runtime copy pytorch/version/latest cloud://prod/project/starwhale
         _addr = "10.131.0.1:9000"
         _bucket = "users"
 
-        def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        def __iter__(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
             import boto3
             from botocore.client import Config
 

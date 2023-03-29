@@ -32,7 +32,6 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
-import ai.starwhale.mlops.domain.dataset.index.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
@@ -45,13 +44,13 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,8 +70,6 @@ public class DatasetUploaderTest {
 
     final DataStoreTableNameHelper dataStoreTableNameHelper = new DataStoreTableNameHelper();
 
-    final IndexWriter indexWriter = mock(IndexWriter.class);
-
     @Test
     public void testDatasetUploader() throws IOException {
         DatasetVersionWithMetaConverter datasetVersionWithMetaConverter = new DatasetVersionWithMetaConverter();
@@ -86,9 +83,9 @@ public class DatasetUploaderTest {
         });
         StoragePathCoordinator storagePathCoordinator = new StoragePathCoordinator("/test");
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null));
         UserService userService = mock(UserService.class);
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
-        ProjectMapper projectMapper = mock(ProjectMapper.class);
         ProjectService projectService = mock(ProjectService.class);
         when(projectService.findProject(anyString())).thenReturn(
                 Project.builder().id(1L).build());
@@ -103,7 +100,7 @@ public class DatasetUploaderTest {
 
         DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
                 storagePathCoordinator, storageAccessService, userService,
-                hotJobHolder, projectService, dataStoreTableNameHelper, indexWriter, datasetDao, idConvertor,
+                hotJobHolder, projectService, dataStoreTableNameHelper, datasetDao, idConvertor,
                 versionAliasConvertor);
 
         DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
@@ -112,7 +109,7 @@ public class DatasetUploaderTest {
         uploadRequest.setUploadId(dsVersionId);
         uploadRequest.setSwds(dsName + ":" + dsVersionId);
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
-        datasetUploader.uploadBody(
+        datasetUploader.uploadHashedBlob(
                 dsVersionId,
                 new MockMultipartFile("index.jsonl", "index.jsonl", "plain/text", index_file_content.getBytes()),
                 "abc/index.jsonl");
@@ -123,8 +120,7 @@ public class DatasetUploaderTest {
 
         datasetUploader.end(dsVersionId);
 
-        verify(storageAccessService).put(anyString(), any(byte[].class));
-        verify(storageAccessService).put(anyString(), any(InputStream.class), anyLong());
+        verify(storageAccessService).put(anyString(), any(InputStream.class));
         verify(datasetVersionMapper).updateStatus(1L, DatasetVersion.STATUS_AVAILABLE);
         verify(datasetVersionMapper).insert(any(DatasetVersionEntity.class));
         verify(datasetMapper).findByName(eq(dsName), anyLong(), any());
@@ -133,10 +129,6 @@ public class DatasetUploaderTest {
         when(storageAccessService.list(anyString())).thenReturn(Stream.of("a", "b"));
         datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest);
         datasetUploader.cancel(dsVersionId);
-        verify(datasetVersionMapper).delete(1L);
-        verify(storageAccessService).list(anyString());
-        verify(storageAccessService).delete("a");
-        verify(storageAccessService).delete("b");
         verify(storageAccessService, times(0)).delete("c");
 
         when(datasetMapper.findByName(eq(dsName), anyLong(), any())).thenReturn(
@@ -145,6 +137,7 @@ public class DatasetUploaderTest {
                 .id(1L)
                 .versionName("testversion")
                 .status(DatasetVersion.STATUS_AVAILABLE)
+                .versionMeta(HotDatasetHolderTest.MANIFEST)
                 .build();
         String dsVersion = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
         when(datasetVersionMapper.findByNameAndDatasetId(dsVersion, 1L, true)).thenReturn(mockedEntity);

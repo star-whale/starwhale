@@ -126,7 +126,7 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+    def copy(cls, src_uri: str, dest_uri: str) -> None:
         raise NotImplementedError
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:

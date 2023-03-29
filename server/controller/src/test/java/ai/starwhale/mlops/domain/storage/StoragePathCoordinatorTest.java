@@ -31,7 +31,7 @@ public class StoragePathCoordinatorTest {
                 is("/foo/controller/plugins/panel/name1/version1"));
         assertThat(ins.allocateBundlePath(1L, "dataset", "mnist", "v1"),
                 is("/foo/controller/project/1/dataset/mnist/version/v1"));
-        assertThat(ins.allocateDatasetPath(1L, "mnist", "v1"),
+        assertThat(ins.allocateDatasetVersionPath(1L, "mnist", "v1"),
                 is("/foo/controller/project/1/dataset/mnist/version/v1"));
         assertThat(ins.allocateModelPath(1L, "mnist", "v1"),
                 is("/foo/controller/project/1/model/mnist/version/v1"));

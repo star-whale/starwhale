@@ -132,7 +132,9 @@ class BaseTermView(SWCliConfigMixed):
         return status, style, icon
 
     @staticmethod
-    def prepare_build_bundle(project: str, bundle_name: str, typ: str) -> URI:
+    def prepare_build_bundle(
+        project: str, bundle_name: str, typ: str, auto_gen_version: bool = True
+    ) -> URI:
         console.print(f":construction: start to build {typ} bundle...")
         _project_uri = URI(project, expected_type=URIType.PROJECT)
         if not bundle_name:
@@ -143,9 +145,9 @@ class BaseTermView(SWCliConfigMixed):
             project=_project_uri.project,
             obj_type=typ,
             obj_name=bundle_name,
-            obj_ver=gen_uniq_version(),
+            obj_ver=gen_uniq_version() if auto_gen_version else "",
         )
-        console.print(f":construction_worker: uri:{_uri}")
+        console.print(f":construction_worker: uri {_uri}")
         return _uri
 
     @staticmethod

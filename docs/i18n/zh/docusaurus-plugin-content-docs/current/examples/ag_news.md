@@ -81,7 +81,6 @@ swcli dataset info ag_news_test/version/latest
 🆕 version gi4gcmtbgm2d
 📁 swds workdir: /home/liutianwei/.cache/starwhale/.tmp/tmpwvso4qob
 👍 try to copy source code files...
-👻 import tcan.dataset:AGNewsBuildExecutor@/home/liutianwei/code/starwhale/example/text_cls_AG_NEWS to make swds...
 cleanup done.
 finish gen swds @ /home/liutianwei/.cache/starwhale/.tmp/tmpwvso4qob/data
 🤖 calculate signature with blake2b for 4 files

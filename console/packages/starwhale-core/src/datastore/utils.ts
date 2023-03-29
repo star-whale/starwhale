@@ -13,9 +13,7 @@ export function tableDataLink(
         Authorization?: string
     }
 ) {
-    return `/api/v1/project/${projectId}/dataset/${datasetName}/version/${datasetVersionName}/link?${qs.stringify(
-        query
-    )}`
+    return `/api/v1/project/${projectId}/dataset/${datasetName}/uri?${qs.stringify(query)}`
 }
 
 export function tableNameOfDataset(projectName: string, datasetName: string, datasetVersionName: string) {

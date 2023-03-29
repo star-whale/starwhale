@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.objectstore;
+package ai.starwhale.mlops.domain.storage;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -22,53 +22,45 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.objectstore.StorageAccessParser;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class DsFileGetterTest {
+public class UriAccessorTest {
 
     @Test
     public void testDataOf() throws IOException {
         StorageAccessParser storageAccessParser = mock(StorageAccessParser.class);
-        StorageAccessService storageAccessService = mock(
-                StorageAccessService.class);
-        when(storageAccessService.get(eq("bdc/bdcsd"), anyLong(), anyLong())).thenReturn(
-                new LengthAbleInputStream(new ByteArrayInputStream("abc".getBytes()), 3));
-        when(storageAccessService.head("bdcsd")).thenReturn(new StorageObjectInfo(false, 1L, null));
-        when(storageAccessService.head("bdc/bdcsd")).thenReturn(new StorageObjectInfo(true, 1L, null));
+        StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.get(eq("uri/abc"), anyLong(),
+                anyLong())).thenReturn(new LengthAbleInputStream(new ByteArrayInputStream("abc".getBytes()), 3));
         when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
-        DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
-        when(versionMapper.find(anyLong())).thenReturn(
-                DatasetVersionEntity.builder().storagePath("bdc").build());
-        DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", 1L, 1L);
+        UriAccessor fileGetter = new UriAccessor(storageAccessParser);
+        byte[] bytes = fileGetter.dataOf(1L, "bdcsd", "uri/abc", 1L, 1L);
         Assertions.assertEquals("abc", new String(bytes));
 
     }
 
     @Test
     public void testDataOfHttp() {
-        DsFileGetter fileGetter = new DsFileGetter(null, null);
-        byte[] bytes = fileGetter.dataOf(1L,
+        UriAccessor fileGetter = new UriAccessor(null);
+        byte[] bytes = fileGetter.dataOf(1L, "ds",
                 "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpg",
                 -1L, -1L);
         Assertions.assertEquals(4253, bytes.length);
 
-        Assertions.assertThrows(SwProcessException.class, () -> fileGetter.dataOf(1L,
+        Assertions.assertThrows(SwProcessException.class, () -> fileGetter.dataOf(1L, "ds",
                 "https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/celeba/img_align_celeba/000003.jpgasfa",
                 -1L, -1L));
 
-        Assertions.assertThrows(SwValidationException.class, () -> fileGetter.dataOf(1L,
+        Assertions.assertThrows(SwValidationException.class, () -> fileGetter.dataOf(1L, "ds",
                 "https://abcd:adg",
                 -1L, -1L));
     }
@@ -79,14 +71,13 @@ public class DsFileGetterTest {
         StorageAccessService storageAccessService = mock(
                 StorageAccessService.class);
         when(storageAccessService.signedUrl(eq("/bdc/bdcsd"), anyLong())).thenReturn("abc");
+        when(storageAccessService.signedUrl(eq("/uri/1"),
+                anyLong())).thenReturn("ABC");
         when(storageAccessParser.getStorageAccessServiceFromUri(any())).thenReturn(
                 storageAccessService);
-        DatasetVersionMapper versionMapper = mock(DatasetVersionMapper.class);
-        when(versionMapper.find(anyLong())).thenReturn(
-                DatasetVersionEntity.builder().storagePath("/bdc").build());
-        DsFileGetter fileGetter = new DsFileGetter(storageAccessParser, versionMapper);
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "/bdcsd", 1L));
-        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "s3://host:9080/bucket/bdc/bdcsd", 1L));
+        UriAccessor fileGetter = new UriAccessor(storageAccessParser);
+        Assertions.assertEquals("ABC", fileGetter.linkOf(1L, "bdc", "/uri/1", 1L));
+        Assertions.assertEquals("abc", fileGetter.linkOf(1L, "ds", "s3://host:9080/bucket/bdc/bdcsd", 1L));
     }
 
 }

@@ -17,6 +17,7 @@ from binascii import crc32
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
+import yaml
 import numpy
 import numpy as np
 import torch
@@ -31,7 +32,6 @@ from starwhale.consts import (
     ENV_POD_NAME,
     OBJECT_STORE_DIRNAME,
     DEFAULT_MANIFEST_NAME,
-    ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file, blake2b_file
@@ -60,9 +60,11 @@ from starwhale.core.dataset.type import (
     NumpyBinary,
     ArtifactType,
     BoundingBox3D,
+    DatasetConfig,
     GrayscaleImage,
     COCOObjectAnnotation,
 )
+from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
 from starwhale.api._impl.data_store import STRING, SwObject, _get_type, SwObjectType
@@ -238,16 +240,20 @@ def iter_mnist_user_raw_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
 
 
 class TestDatasetCopy(BaseTestCase):
-    def setUp(self) -> None:
-        return super().setUp()
-
     @patch("os.environ", {})
     @Mocker()
     def test_upload(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
-        dataset_version = "123"
         cloud_project = "project"
+
+        swds_config = DatasetConfig(
+            name=dataset_name, handler=iter_complex_annotations_swds
+        )
+        dataset_uri = URI(dataset_name, expected_type=URIType.DATASET)
+        sd = StandaloneDataset(dataset_uri)
+        sd.build(config=swds_config)
+        dataset_version = sd._version
 
         rm.request(
             HTTPMethod.GET,
@@ -259,9 +265,10 @@ class TestDatasetCopy(BaseTestCase):
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
             json={"data": {"uploadId": 1}},
         )
+
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -277,31 +284,21 @@ class TestDatasetCopy(BaseTestCase):
             },
         )
 
-        _cls = create_generic_cls(iter_complex_annotations_swds)
-        workdir = Path(self.local_storage, "user", "workdir")
-
-        dataset_dir = (
-            Path(self.local_storage)
-            / "self"
-            / "dataset"
-            / dataset_name
-            / dataset_version[:2]
-            / f"{dataset_version}.swds"
+        rm.register_uri(
+            HTTPMethod.HEAD,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+            ),
+            status_code=HTTPStatus.NOT_FOUND,
         )
-        ensure_dir(dataset_dir)
-        ensure_file(dataset_dir / DEFAULT_MANIFEST_NAME, json.dumps({"signature": []}))
-        ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
 
-        project = "self"
-        with _cls(
-            dataset_name=dataset_name,
-            dataset_version=dataset_version,
-            project_name=project,
-            workdir=workdir,
-            alignment_bytes_size=16,
-            volume_bytes_size=1000,
-        ) as e:
-            e.make_swds()
+        upload_blob_req = rm.register_uri(
+            HTTPMethod.POST,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+            ),
+            json={"data": "server_return_uri"},
+        )
 
         os.environ[SWEnv.instance_token] = "1234"
 
@@ -325,6 +322,7 @@ class TestDatasetCopy(BaseTestCase):
             )
             dc.do()
 
+        assert upload_blob_req.call_count == 1
         content = m_update_req.last_request.json()  # type: ignore
         assert {
             "type": "OBJECT",
@@ -415,8 +413,15 @@ class TestDatasetCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
-            json={"signature": []},
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/blob",
+        )
+
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}?versionUrl={dataset_version}",
+            json={
+                "data": {"versionMeta": yaml.safe_dump({"version": dataset_version})}
+            },
         )
 
         rm.request(
@@ -528,7 +533,7 @@ class TestDatasetCopy(BaseTestCase):
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-        tdb = TabularDataset(name=dataset_name, version=dataset_version, project="self")
+        tdb = TabularDataset(name=dataset_name, version="_current", project="self")
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
@@ -1085,7 +1090,7 @@ class TestDatasetType(TestCase):
 
         rm.request(
             HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/version/latest/sign-links?expTimeMillis=60000",
+            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/uri/sign-links?expTimeMillis=60000",
             json={
                 "data": {
                     "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"

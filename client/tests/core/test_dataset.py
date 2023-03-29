@@ -40,18 +40,9 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
 from starwhale.core.dataset.tabular import TabularDatasetRow
-from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
-
-
-class MockBuildExecutor(BaseBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        yield b"", ""
-
-    def make_swds(self) -> DatasetSummary:
-        return DatasetSummary()
 
 
 class StandaloneDatasetTestCase(TestCase):
@@ -59,23 +50,31 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_function_handler_make_swds(self, m_swds_bin: MagicMock) -> None:
+    @patch("starwhale.api._impl.dataset.model.Dataset.commit")
+    @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
+    def test_function_handler_make_swds(
+        self, m_setitem: MagicMock, m_commit: MagicMock
+    ) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         sd._version = "112233"
         swds_config = DatasetConfig(name=name, handler=lambda: 1)
 
-        with self.assertRaises(RuntimeError):
-            sd._call_make_swds(swds_config)
+        with self.assertRaisesRegex(TypeError, "object is not iterable"):
+            sd.build(config=swds_config)
+
+        assert not m_commit.called
+        assert not m_setitem.called
 
         def _iter_swds_bin_item() -> t.Generator:
             yield {"bytes": b"", "link": Link("")}
 
         swds_config.handler = _iter_swds_bin_item
-        sd._call_make_swds(swds_config)
-        assert m_swds_bin.call_count == 1
+        sd.build(config=swds_config)
+
+        assert m_commit.call_count == 1
+        assert m_setitem.call_count == 1
 
     @patch("starwhale.core.dataset.cli.import_object")
     def test_build_only_cli(self, m_import: MagicMock) -> None:
@@ -97,7 +96,6 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[0] == workdir
         assert call_args[1].name == "mnist"
-        assert call_args[1].append is not None
         assert m_import.call_args[0][1] == "mnist:test"
 
     @patch("starwhale.core.dataset.cli.import_object")
@@ -105,9 +103,7 @@ class StandaloneDatasetTestCase(TestCase):
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
-        config = DatasetConfig(
-            name="mnist", handler="dataset:build", append=True, append_from="112233"
-        )
+        config = DatasetConfig(name="mnist", handler="dataset:build")
         yaml_path = Path(workdir) / DefaultYAMLName.DATASET
         ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
 
@@ -124,8 +120,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build.call_count == 1
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
         assert m_import.call_args[0][1] == "dataset:build"
 
         new_workdir = "/tmp/workdir-new"
@@ -142,8 +136,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
         assert m_import.call_args[0][1] == "dataset:build"
 
     @patch("starwhale.core.dataset.cli.import_object")
@@ -155,8 +147,6 @@ class StandaloneDatasetTestCase(TestCase):
         config = DatasetConfig(
             name="mnist-error",
             handler="dataset:not_found",
-            append=True,
-            append_from="112233",
         )
         yaml_path = Path(workdir) / DefaultYAMLName.DATASET
         ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
@@ -184,16 +174,16 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
         assert call_args[1].handler == handler_func
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
         assert call_args[1].attr.data_mime_type == MIMEType.MP4
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
-    @patch("starwhale.core.dataset.model.copy_fs")
     def test_build_workflow(
         self,
-        m_copy_fs: MagicMock,
     ) -> None:
+        class _MockBuildExecutor:
+            def __iter__(self) -> t.Generator:
+                yield {"data": b"", "label": 1}
+
         sw = SWCliConfigMixed()
 
         workdir = "/home/starwhale/myproject"
@@ -203,7 +193,7 @@ class StandaloneDatasetTestCase(TestCase):
         ensure_file(os.path.join(workdir, "mnist.py"), " ")
 
         config = DatasetConfig(**yaml.safe_load(_dataset_yaml))
-        config.handler = MockBuildExecutor
+        config.handler = _MockBuildExecutor
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         sd.build(workdir=Path(workdir), config=config)
@@ -219,8 +209,6 @@ class StandaloneDatasetTestCase(TestCase):
         )
 
         assert snapshot_workdir.exists()
-        assert (snapshot_workdir / "data").exists()
-        assert (snapshot_workdir / "src").exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
         assert _manifest["version"] == build_version
