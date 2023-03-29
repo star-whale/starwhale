@@ -270,22 +270,12 @@ publish_to_k8s() {
   popd
 }
 
-install_necessary_tools() {
-  if ! command -v unzip &> /dev/null
-  then
-    echo "installing unzip"
-    apt update
-    apt install -y unzip
-  fi
-}
-
 main() {
   declare_env
   if ! in_github_action; then
     trap exit_hook EXIT
     publish_to_k8s
   else
-    install_necessary_tools
     publish_to_mini_k8s
   fi
   check_controller_service
