@@ -45,8 +45,8 @@ public class JobSpliteratorEvaluationTest {
         mockJob.setCurrentStep(null);
         mockJob.setSteps(null);
         mockJob.getModel().setStepSpecs(List.of(
-                        StepSpec.builder().stepName("a").taskNum(1).resources(List.of()).build(),
-                        StepSpec.builder().stepName("b").taskNum(1).resources(List.of()).needs(List.of("a")).build()
+                        StepSpec.builder().name("a").taskNum(1).resources(List.of()).build(),
+                        StepSpec.builder().name("b").taskNum(1).resources(List.of()).needs(List.of("a")).build()
                 )
         );
         mockJob.setStepSpec("");
