@@ -33,7 +33,11 @@ def dataset_cmd(ctx: click.Context) -> None:
     help="Dataset build executor handler: [module path]:[class or function name]",
 )
 @click.option("-n", "--name", help="Dataset name")
-@click.option("-p", "--project", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    help="Project URI, the default is the current selected project. The dataset will store in the specified project",
+)
 @click.option("--desc", help="Dataset description")
 @click.option(
     "-as",
@@ -109,7 +113,12 @@ def _diff(
 
 
 @dataset_cmd.command("list", aliases=["ls"])
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, the default is the current selected project.",
+)
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of dataset version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed datasets")
 @click.option(
@@ -136,7 +145,7 @@ def _list(
     filters: list,
 ) -> None:
     """
-    List Dataset
+    List Dataset of the specified project.
 
     The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n
