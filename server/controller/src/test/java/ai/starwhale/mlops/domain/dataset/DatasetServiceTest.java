@@ -35,6 +35,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
@@ -55,13 +56,13 @@ import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -89,7 +90,7 @@ public class DatasetServiceTest {
     private ProjectService projectService;
     private DatasetDao datasetDao;
     private UserService userService;
-    private DsFileGetter dsFileGetter;
+    private UriAccessor uriAccessor;
     private DataLoader dataLoader;
     private TrashService trashService;
     @Setter
@@ -135,7 +136,7 @@ public class DatasetServiceTest {
                 .willReturn(2L);
         datasetDao = mock(DatasetDao.class);
 
-        dsFileGetter = mock(DsFileGetter.class);
+        uriAccessor = mock(UriAccessor.class);
 
         dataLoader = mock(DataLoader.class);
 
@@ -152,7 +153,7 @@ public class DatasetServiceTest {
                 new IdConverter(),
                 new VersionAliasConverter(),
                 userService,
-                dsFileGetter,
+                uriAccessor,
                 dataLoader,
                 trashService
         );
@@ -319,7 +320,6 @@ public class DatasetServiceTest {
         given(datasetMapper.find(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
-
         var res = service.findDatasetsByVersionIds(List.of());
         assertThat(res, allOf(
                 iterableWithSize(1),
@@ -369,34 +369,36 @@ public class DatasetServiceTest {
 
     @Test
     public void testDataOf() {
-        given(dsFileGetter.dataOf(same(1L), anyString(), any(), any()))
+        given(uriAccessor.dataOf(same(1L), anyString(), anyString(), any(), any()))
                 .willReturn(new byte[1]);
 
-        var res = dsFileGetter.dataOf(1L, "", 1L, 1L);
+        when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
+        var res = service.dataOf("", "", "", 1L, 1L);
         assertThat(res, notNullValue());
     }
 
     @Test
     public void testLinkOf() {
-        given(dsFileGetter.linkOf(same(1L), anyString(), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), anyString(), anyLong()))
                 .willReturn("link");
 
-        var res = dsFileGetter.linkOf(1L, "", 1L);
-        assertThat(service.signLink(1L, "", 1L), is("link"));
+        when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
+        assertThat(service.signLink("", "", "", 1L), is("link"));
     }
 
     @Test
     public void testLinksOf() {
-        given(dsFileGetter.linkOf(same(1L), eq("a"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("a"), anyLong()))
                 .willReturn("link1");
 
-        given(dsFileGetter.linkOf(same(1L), eq("b"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("b"), anyLong()))
                 .willReturn("link2");
-        given(dsFileGetter.linkOf(same(1L), eq("x"), anyLong()))
+        given(uriAccessor.linkOf(same(1L), anyString(), eq("x"), anyLong()))
                 .willThrow(SwValidationException.class);
 
+        when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
         Assertions.assertEquals(Map.of("a", "link1", "b", "link2", "x", ""),
-                service.signLinks(1L, Set.of("a", "b", "x"), 1L));
+                service.signLinks("", "", Set.of("a", "b", "x"), 1L));
     }
 
     @Test

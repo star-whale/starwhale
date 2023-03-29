@@ -44,12 +44,12 @@ import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
-import ai.starwhale.mlops.domain.dataset.objectstore.DsFileGetter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -94,7 +94,7 @@ public class DatasetService {
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
     private final UserService userService;
-    private final DsFileGetter dsFileGetter;
+    private final UriAccessor uriAccessor;
     private final DataLoader dataLoader;
     private final TrashService trashService;
     @Setter
@@ -104,7 +104,7 @@ public class DatasetService {
             DatasetVersionMapper datasetVersionMapper, DatasetVoConverter datasetVoConverter,
             DatasetVersionVoConverter versionConvertor, StorageService storageService, DatasetDao datasetDao,
             IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, UserService userService,
-            DsFileGetter dsFileGetter, DataLoader dataLoader, TrashService trashService) {
+            UriAccessor uriAccessor, DataLoader dataLoader, TrashService trashService) {
         this.projectService = projectService;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -115,7 +115,7 @@ public class DatasetService {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.userService = userService;
-        this.dsFileGetter = dsFileGetter;
+        this.uriAccessor = uriAccessor;
         this.dataLoader = dataLoader;
         this.trashService = trashService;
         this.bundleManager = new BundleManager(
@@ -354,19 +354,19 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(Long datasetId, String uri, Long offset,
+    public byte[] dataOf(String project, String datasetName, String uri, Long offset,
             Long size) {
-        return dsFileGetter.dataOf(datasetId, uri, offset, size);
+        return uriAccessor.dataOf(projectService.findProject(project).getId(), datasetName, uri, offset, size);
     }
 
-    public String signLink(Long id, String uri, Long expTimeMillis) {
-        return dsFileGetter.linkOf(id, uri, expTimeMillis);
+    public String signLink(String project, String datasetName, String uri, Long expTimeMillis) {
+        return uriAccessor.linkOf(projectService.findProject(project).getId(), datasetName, uri, expTimeMillis);
     }
 
-    public Map<String, String> signLinks(Long id, Set<String> uris, Long expTimeMillis) {
+    public Map<String, String> signLinks(String project, String datasetName, Set<String> uris, Long expTimeMillis) {
         return uris.stream().collect(Collectors.toMap(u -> u, u -> {
             try {
-                return signLink(id, u, expTimeMillis);
+                return signLink(project, datasetName, u, expTimeMillis);
             } catch (Exception e) {
                 return "";
             }

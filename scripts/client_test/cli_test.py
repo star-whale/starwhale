@@ -8,6 +8,7 @@ from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures._base import Future
 
+from cmds import DatasetExpl
 from cmds.eval_cmd import Evaluation
 from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
@@ -36,37 +37,42 @@ EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
         "workdir": f"{ROOT_DIR}/example/mnist",
         "datasets": [
-            "",
-            "mnist.dataset:RawDatasetProcessExecutor",
-            "mnist.dataset:LinkRawDatasetProcessExecutor",
+            DatasetExpl("mnist_bin", "mnist.dataset:iter_mnist_item"),
+            DatasetExpl(
+                "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
+            ),
         ],
-        # "datasets": [""],
     },
     "cifar10": {
         "workdir": f"{ROOT_DIR}/example/cifar10",
-        "datasets": [""],
+        "datasets": [DatasetExpl("cifar10", "")],
     },
     "nmt": {
         "workdir": f"{ROOT_DIR}/example/nmt",
-        "datasets": [""],
+        "datasets": [DatasetExpl("nmt", "")],
     },
     "pfp": {
         "workdir": f"{ROOT_DIR}/example/PennFudanPed",
-        "datasets": [""],
+        "datasets": [DatasetExpl("pfp", "")],
         "device": "gpu",
     },
     "speech_command": {
         "workdir": f"{ROOT_DIR}/example/speech_command",
-        "datasets": ["", "sc.dataset:LinkRawDatasetBuildExecutor"],
+        "datasets": [
+            DatasetExpl("speech_command", ""),
+            DatasetExpl(
+                "speech_command_link", "sc.dataset:LinkRawDatasetBuildExecutor"
+            ),
+        ],
         "device": "gpu",
     },
     "ag_news": {
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
-        "datasets": [""],
+        "datasets": [DatasetExpl("ag_news", "")],
     },
     "ucf101": {
         "workdir": f"{ROOT_DIR}/example/ucf101",
-        "datasets": [""],
+        "datasets": [DatasetExpl("ucf101", "")],
     },
 }
 RUNTIMES: t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]] = {
@@ -124,14 +130,20 @@ class TestCli:
             }
         )
 
-    def build_dataset(self, _workdir: str, handler: str = "") -> t.Any:
+    def build_dataset(self, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
         self.select_local_instance()
-        _uri = Dataset.build_with_api(workdir=_workdir, handler=handler)
+        ret_uri = Dataset.build_with_api(workdir=_workdir, ds_expl=ds_expl)
+        _uri = URI.capsulate_uri(
+            instance=ret_uri.instance,
+            project=ret_uri.project,
+            obj_type=ret_uri.object.typ,
+            obj_name=ret_uri.object.name,
+            obj_ver=ret_uri.object.version,
+        )
         if self.server_url:
             assert self.dataset_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
-                force=True,
             )
         dss_ = self.datasets.get(_uri.object.name, [])
         dss_.append(_uri)
@@ -280,7 +292,9 @@ class TestCli:
         _model_uri = self.build_model(f"{self._work_dir}/scripts/example")
 
         # 2.dataset build
-        _ds_uri = self.build_dataset(f"{self._work_dir}/scripts/example")
+        _ds_uri = self.build_dataset(
+            f"{self._work_dir}/scripts/example", DatasetExpl("", "")
+        )
 
         # 3.runtime build
         _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
@@ -368,8 +382,8 @@ class TestCli:
             raise
 
         #  download data
-        for d_type in expl["datasets"]:
-            self.build_dataset(workdir_, d_type)
+        for ds_expl in expl["datasets"]:
+            self.build_dataset(workdir_, ds_expl)
         self.build_model(workdir_)
 
         # run_eval

@@ -47,9 +47,11 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -77,12 +79,16 @@ public class DatasetControllerTest {
 
     private DatasetUploader datasetUploader;
 
+    private HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory;
+
     @BeforeEach
     public void setUp() {
         datasetService = mock(DatasetService.class);
         datasetUploader = mock(DatasetUploader.class);
+        hashNamedDatasetObjectStoreFactory = mock(HashNamedDatasetObjectStoreFactory.class);
 
-        controller = new DatasetController(datasetService, new IdConverter(), datasetUploader);
+        controller = new DatasetController(datasetService, new IdConverter(), datasetUploader,
+                hashNamedDatasetObjectStoreFactory);
     }
 
     @Test
@@ -257,19 +263,11 @@ public class DatasetControllerTest {
                         str.append(b);
                     }
                 });
-        given(datasetService.query(anyString(), anyString(), anyString()))
-                .willReturn(DatasetVersion.builder().id(1L).build());
-        given(datasetService.dataOf(same(1L), any(), any(), any()))
+        given(datasetService.dataOf(any(), any(), any(), any(), any()))
                 .willReturn(new byte[]{100});
 
-        controller.pullLinkContent("p1", "d1", "v1", "", 1L, 1L, response);
+        controller.pullUriContent("p1", "d1", "v1", 1L, 1L, response);
         assertThat(str.toString(), is("100"));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "d1", "", "", 1L, 1L, response));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullLinkContent("p1", "", "v1", "", 1L, 1L, response));
     }
 
     @Test
@@ -345,13 +343,25 @@ public class DatasetControllerTest {
     public void testSignLinks() {
         String pj = "pj";
         String ds = "ds";
-        String v = "v";
         String uri = "uri";
-        when(datasetService.query(pj, ds, v)).thenReturn(DatasetVersion.builder().id(1L).build());
         String signUrl = "sign-url";
-        when(datasetService.signLinks(1L, Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
+        when(datasetService.signLinks(pj, "ds", Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
         Assertions.assertEquals(Map.of(uri, signUrl),
-                controller.signLinks(pj, ds, v, Set.of(uri), 100L).getBody().getData());
+                controller.signLinks(pj, ds, Set.of(uri), 100L).getBody().getData());
+    }
+
+    @Test
+    public void testHeadHashedBlob() throws IOException {
+        HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
+        when(hashNamedDatasetObjectStoreFactory.of("p", "d")).thenReturn(hashNamedObjectStore);
+        when(hashNamedObjectStore.head("h1")).thenReturn("a");
+        when(hashNamedObjectStore.head("h2")).thenReturn(null);
+        when(hashNamedObjectStore.head("h3")).thenThrow(IOException.class);
+        Assertions.assertTrue(controller.headHashedBlob("p", "d", "h1").getStatusCode().is2xxSuccessful());
+        Assertions.assertTrue(controller.headHashedBlob("p", "d", "h2").getStatusCode().is4xxClientError());
+        Assertions.assertThrows(SwProcessException.class,
+                () -> controller.headHashedBlob("p", "d", "h3").getStatusCode().is4xxClientError());
+
     }
 
     @Test

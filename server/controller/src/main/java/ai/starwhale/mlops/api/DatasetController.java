@@ -33,10 +33,11 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
+import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
 import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
+import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -71,11 +72,14 @@ public class DatasetController implements DatasetApi {
     private final DatasetService datasetService;
     private final IdConverter idConvertor;
     private final DatasetUploader datasetUploader;
+    private final HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory;
 
-    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader) {
+    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader,
+            HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory) {
         this.datasetService = datasetService;
         this.idConvertor = idConvertor;
         this.datasetUploader = datasetUploader;
+        this.hashNamedDatasetObjectStoreFactory = hashNamedDatasetObjectStoreFactory;
     }
 
     @Override
@@ -177,7 +181,7 @@ public class DatasetController implements DatasetApi {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
         Long uploadId = uploadRequest.getUploadId();
-        String uri = uploadRequest.getUri();
+        String partName = uploadRequest.getPartName();
         switch (uploadRequest.getPhase()) {
             case MANIFEST:
                 String text;
@@ -195,7 +199,7 @@ public class DatasetController implements DatasetApi {
                         new UploadResult(datasetUploader.create(text, dsFile.getOriginalFilename(), uploadRequest))));
             case BLOB:
                 //get ds path and upload to the dest path
-                datasetUploader.uploadBody(uploadId, dsFile, uri);
+                datasetUploader.uploadHashedBlob(uploadId, dsFile, partName);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             case CANCEL:
                 datasetUploader.cancel(uploadId);
@@ -210,42 +214,62 @@ public class DatasetController implements DatasetApi {
         }
     }
 
+    /**
+     * legacy blob content download api, use {@link #signLinks(String, String, Set, Long)} or
+     * {@link #pullUriContent(String, String, String, Long, Long, HttpServletResponse)} instead
+     */
+    @Deprecated
     @Override
     public void pullDs(String projectUrl, String datasetUrl, String versionUrl,
-            String partName, HttpServletResponse httpResponse) {
+            String blobHash, HttpServletResponse httpResponse) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
                     HttpStatus.BAD_REQUEST);
         }
-        datasetUploader.pull(projectUrl, datasetUrl, versionUrl, partName, httpResponse);
+        datasetUploader.pull(projectUrl, datasetUrl, versionUrl, blobHash, httpResponse);
     }
 
     @Override
-    public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-            String uri, Long offset, Long size, HttpServletResponse httpResponse) {
-        if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
-                    HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ResponseMessage<String>> uploadHashedBlob(String projectUrl, String datasetName, String hash,
+            MultipartFile dsFile) {
+        return ResponseEntity.ok(
+                Code.success.asResponse(datasetUploader.uploadHashedBlob(projectUrl, datasetName, dsFile, hash)));
+    }
+
+    public ResponseEntity<?> headHashedBlob(String project, String datasetName, String hash) {
+        HashNamedObjectStore hashNamedObjectStore = hashNamedDatasetObjectStoreFactory.of(project, datasetName);
+        String path = null;
+        try {
+            path = hashNamedObjectStore.head(hash);
+        } catch (IOException e) {
+            log.error("access to main object storage failed", e);
+            throw new SwProcessException(ErrorType.STORAGE, "access to main object storage failed", e);
         }
-        DatasetVersion datasetVersion = datasetService.query(projectUrl, datasetUrl, versionUrl);
+        if (null != path) {
+            return ResponseEntity.ok().header("X-SW-LOCAL-STORAGE-URI", path).build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Override
+    public void pullUriContent(String project, String datasetName, String uri, Long offset, Long size,
+            HttpServletResponse httpResponse) {
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(datasetService.dataOf(datasetVersion.getId(), uri, offset, size));
+            outputStream.write(datasetService.dataOf(project, datasetName, uri, offset, size));
             outputStream.flush();
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK, "error write data to response", e);
         }
-
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<Map>> signLinks(String projectUrl, String datasetUrl, String versionUrl,
-            Set<String> uris, Long expTimeMillis) {
-        DatasetVersion datasetVersion = datasetService.query(projectUrl, datasetUrl, versionUrl);
+    public ResponseEntity<ResponseMessage<Map>> signLinks(String project, String datasetName, Set<String> uris,
+            Long expTimeMillis) {
         return ResponseEntity.ok(Code.success.asResponse(
-                datasetService.signLinks(datasetVersion.getId(), uris, expTimeMillis)));
+                datasetService.signLinks(project, datasetName, uris, expTimeMillis)));
     }
 
     @Override
@@ -315,4 +339,5 @@ public class DatasetController implements DatasetApi {
             return ResponseEntity.notFound().build();
         }
     }
+
 }
