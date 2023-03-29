@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing as t
 import platform
+import tempfile
 import threading
 from http import HTTPStatus
 from types import TracebackType
@@ -18,7 +19,7 @@ from starwhale.consts import (
     FileDesc,
     HTTPMethod,
     CREATED_AT_KEY,
-    SW_AUTO_DIRNAME,
+    SW_TMP_DIR_NAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
@@ -26,11 +27,11 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
-from starwhale.utils.fs import copy_file, ensure_dir, ensure_file
+from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
@@ -110,7 +111,9 @@ class Dataset:
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
-            self._loading_version = self._auto_complete_version(version)
+            self._loading_version = self._auto_complete_version(
+                _origin_uri.object.version
+            )
         else:
             if readonly:
                 raise ValueError(
@@ -149,7 +152,8 @@ class Dataset:
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
 
-        self._workdir = Path(f"{SW_AUTO_DIRNAME}/dataset")
+        self._tmpdir: t.Optional[Path] = None
+
         self._updated_rows_by_commit = 0
         self._deleted_rows_by_commit = 0
         if origin_uri_exists:
@@ -215,11 +219,6 @@ class Dataset:
             )
         return self
 
-    # TODO： remove this function after datastore supports timestamp
-    def _use_loading_version_for_loader(self) -> Dataset:
-        self._use_loading_version = True
-        return self
-
     def _clear_data_loader(self) -> None:
         with self._loader_lock:
             self.__data_loaders = {}
@@ -245,14 +244,7 @@ class Dataset:
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
         with self._loader_lock:
-            # TODO: use datastore timestamp to load specified version data
-            if hasattr(self, "_use_loading_version"):
-                version = self._loading_version
-            else:
-                version = MappingDatasetBuilder._HOLDER_VERSION
-
-            key = f"consumption-{disable_consumption}-{version}"
-
+            key = f"consumption-{disable_consumption}-{self.uri.object.version}"
             _loader = self.__data_loaders.get(key)
             if _loader is None or recreate:
                 if disable_consumption:
@@ -261,7 +253,7 @@ class Dataset:
                     consumption = self._consumption
 
                 _loader = get_data_loader(
-                    self._make_capsulated_uri(obj_ver=version),
+                    self.uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
@@ -397,9 +389,6 @@ class Dataset:
         if self._dataset_builder:
             self._dataset_builder.flush(artifacts_flush)
 
-        loader = self._get_data_loader(disable_consumption=True)
-        loader.tabular_dataset.flush()
-
     @_check_readonly
     def rehash(self) -> None:
         # TODO: rehash for swds-bin format dataset with append/delete items to reduce volumes size
@@ -429,6 +418,19 @@ class Dataset:
 
         if self._dataset_builder:
             self._dataset_builder.close()
+
+        if self._tmpdir is not None:
+            empty_dir(self._tmpdir)
+
+    @property
+    def tmpdir(self) -> Path:
+        if self._tmpdir is None:
+            _base_dir = SWCliConfigMixed().rootdir / SW_TMP_DIR_NAME
+            ensure_dir(_base_dir)
+            self._tmpdir = Path(
+                tempfile.mkdtemp(prefix=f"dataset-{self.name}-", dir=_base_dir)
+            )
+        return self._tmpdir
 
     def diff(self, cmp: Dataset) -> t.Dict:
         # TODO: wait for datastore diff feature
@@ -512,7 +514,7 @@ class Dataset:
             if self._dataset_builder is None:
                 # TODO: support alignment_bytes_size, volume_bytes_size arguments
                 self._dataset_builder = MappingDatasetBuilder(
-                    workdir=self._workdir / "builder",
+                    workdir=self.tmpdir / "builder",
                     dataset_name=self.name,
                     project_name=self.project_uri.project,
                     instance_name=self.project_uri.instance,
@@ -680,7 +682,7 @@ class Dataset:
             self._updated_rows_by_commit = 0
             self._deleted_rows_by_commit = 0
 
-            _m_path = self._workdir / DEFAULT_MANIFEST_NAME
+            _m_path = self.tmpdir / DEFAULT_MANIFEST_NAME
             ensure_file(
                 _m_path,
                 yaml.safe_dump(_manifest, default_flow_style=False),
@@ -703,7 +705,6 @@ class Dataset:
             )
             pccd.tag.add_fast_tag()
 
-        @http_retry
         def _submit_cloud_version(manifest_path: Path) -> None:
             from starwhale.base.bundle_copy import _UploadPhase
 
@@ -765,13 +766,10 @@ class Dataset:
         """
         return self.__has_committed
 
-    def copy(
-        self, dest_uri: str, force: bool = False, dest_local_project_uri: str = ""
-    ) -> None:
+    def copy(self, dest_uri: str, dest_local_project_uri: str = "") -> None:
         CoreDataset.copy(
             str(self.uri),
             dest_uri,
-            force=force,
             dest_local_project_uri=dest_local_project_uri,
         )
 

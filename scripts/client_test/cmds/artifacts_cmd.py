@@ -226,8 +226,6 @@ class Dataset(BaseArtifact):
         workdir: str,
         project: str = "",
         dataset_yaml: str = "",
-        append: bool = False,
-        append_from: str = "",
         runtime_uri: str = "",
     ) -> bool:
         _args = [CLI, self.name, "build"]
@@ -236,8 +234,6 @@ class Dataset(BaseArtifact):
             _args.extend(["--project", project])
         if dataset_yaml:
             _args.extend(["--dataset-yaml", dataset_yaml])
-        if append:
-            _args.extend(["--append", "--append-from", append_from])
         if runtime_uri:
             _args.extend(["--runtime", runtime_uri])
 

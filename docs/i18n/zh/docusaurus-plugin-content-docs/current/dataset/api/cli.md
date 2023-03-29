@@ -70,7 +70,6 @@ Starwhale的数据集分发是高效的，会通过类似chunk机制按需拷贝
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
-|`--force`|`-f`|❌|Boolean|False|`DEST` 存在相同version的dataset，指定该参数后执行copy命令就会强制覆盖。|
 |`--dest-local-project`|`-dlp`|❌|String|当从Cloud Instance向Standalone Instance拷贝数据集时，指定的目标Project，若不设置则通过DEST uri进行推断|Project URI|
 
 ## 对比数据集

@@ -16,7 +16,7 @@ from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils import validate_obj_name
-from starwhale.consts import ENV_POD_NAME, VERSION_PREFIX_CNT, STANDALONE_INSTANCE
+from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import (
     URIType,
@@ -206,6 +206,10 @@ class TabularDataset:
         instance_name: str = "",
         token: str = "",
     ) -> None:
+        from starwhale.api._impl.dataset.builder.mapping_builder import (
+            MappingDatasetBuilder,
+        )
+
         _ok, _reason = validate_obj_name(name)
         if not _ok:
             raise InvalidObjectName(f"{name}: {_reason}")
@@ -216,7 +220,9 @@ class TabularDataset:
         self.version = version
 
         self.project = project
-        self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
+        # TODO: support datastore revision
+        self.table_name = f"{name}/{MappingDatasetBuilder._HOLDER_VERSION}"
+        self.instance_name = instance_name
         self._ds_wrapper = DatastoreWrapperDataset(
             self.table_name,
             project,
@@ -486,8 +492,13 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
         # TODO: support max_retries
 
     def _init_dataset_todo_queue(self) -> Queue:
+        from starwhale.api._impl.dataset.builder.mapping_builder import (
+            MappingDatasetBuilder,
+        )
+
+        # TODO: support datastore revision
         wrapper = DatastoreWrapperDataset(
-            f"{self.dataset_name}/{self.dataset_version[:VERSION_PREFIX_CNT]}/{self.dataset_version}",
+            f"{self.dataset_name}/{MappingDatasetBuilder._HOLDER_VERSION}",
             self.project,
         )
         ids = [i["id"] for i in wrapper.scan_id(self.session_start, self.session_end)]

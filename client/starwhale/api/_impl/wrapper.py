@@ -11,11 +11,11 @@ import requests
 from loguru import logger
 
 from starwhale.consts import VERSION_PREFIX_CNT, STANDALONE_INSTANCE
+from starwhale.consts.env import SWEnv
+from starwhale.utils.retry import http_retry
+from starwhale.utils.config import SWCliConfigMixed
 
 from . import data_store
-from ...consts.env import SWEnv
-from ...utils.retry import http_retry
-from ...utils.config import SWCliConfigMixed
 
 
 class Logger:

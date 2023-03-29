@@ -81,10 +81,10 @@ PennFudanPed 例子是比较典型的COCO格式数据集形式，Starwhale SDK�
 ```python
 from PIL import Image as PILImage
 from pycocotools import mask as coco_mask
-from starwhale import Image, MIMEType, BoundingBox, BuildExecutor, COCOObjectAnnotation
+from starwhale import Image, MIMEType, BoundingBox, COCOObjectAnnotation
 
-class PFPDatasetBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+class PFPDatasetBuildExecutor:
+    def __iter__(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
         self.object_id = 1

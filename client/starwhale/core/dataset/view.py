@@ -158,16 +158,16 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str,
         config: DatasetConfig,
-        disable_copy_src: bool = False,
     ) -> URI:
         dataset_uri = cls.prepare_build_bundle(
-            project=config.project_uri, bundle_name=config.name, typ=URIType.DATASET
+            project=config.project_uri,
+            bundle_name=config.name,
+            typ=URIType.DATASET,
+            auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
 
-        kwargs = dict(
-            workdir=Path(workdir), config=config, disable_copy_src=disable_copy_src
-        )
+        kwargs = dict(workdir=Path(workdir), config=config)
 
         if config.runtime_uri:
             RuntimeProcess.from_runtime_uri(
@@ -182,10 +182,9 @@ class DatasetTermView(BaseTermView):
         cls,
         src_uri: str,
         dest_uri: str,
-        force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        Dataset.copy(src_uri, dest_uri, force, dest_local_project_uri)
+        Dataset.copy(src_uri, dest_uri, dest_local_project_uri)
         console.print(":clap: copy done")
 
     @BaseTermView._header

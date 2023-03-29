@@ -52,10 +52,7 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=DefaultYAMLName.DATASET,
     help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
-@click.option("-a", "--append", is_flag=True, default=None, help="Only append new data")
-@click.option("-af", "--append-from", help="Append from dataset version")
 @click.option("-r", "--runtime", help="runtime uri")
-@click.option("-dcs", "--disable-copy-src", help="disable copy src dir")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -68,10 +65,7 @@ def _build(
     alignment_size: str,
     volume_size: str,
     data_mime_type: str,
-    append: bool,
-    append_from: str,
     runtime: str,
-    disable_copy_src: bool,
 ) -> None:
     # TODO: add dry-run
     # TODO: add compress args
@@ -90,7 +84,6 @@ def _build(
     config.project_uri = project or config.project_uri
     # TODO: support README.md as the default desc
     config.desc = desc or config.desc
-    config.append_from = append_from or config.append_from
 
     config.attr = DatasetAttr(
         volume_size=volume_size or config.attr.volume_size,
@@ -98,11 +91,8 @@ def _build(
         data_mime_type=MIMEType(data_mime_type or config.attr.data_mime_type),
     )
 
-    if append is not None:
-        config.append = append
-
     config.do_validate()
-    view.build(workdir, config, disable_copy_src)
+    view.build(workdir, config)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
@@ -224,9 +214,8 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @dataset_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
-@click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+def _copy(src: str, dest: str, dest_local_project: str) -> None:
     """
     Copy Dataset between Standalone Instance and Cloud Instance
 
@@ -272,7 +261,7 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
             swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
     """
-    DatasetTermView.copy(src, dest, force, dest_local_project)
+    DatasetTermView.copy(src, dest, dest_local_project)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")

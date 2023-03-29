@@ -1,6 +1,6 @@
 name: nmt
 
-handler: nmt.dataset:NMTDatasetBuildExecutor
+handler: nmt.dataset:iter_nmt_item
 
 desc: nmt data and label test dataset
 

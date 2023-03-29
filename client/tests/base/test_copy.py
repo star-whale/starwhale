@@ -491,6 +491,11 @@ class TestBundleCopy(TestCase):
             status_code=HTTPStatus.OK,
             json={"data": {"records": []}},
         )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist?versionUrl={version}",
+            json={"data": {"versionMeta": yaml.safe_dump({"version": version})}},
+        )
 
         cloud_uri = (
             f"cloud://pre-bare/project/myproject/dataset/mnist/version/{version}"
@@ -674,7 +679,7 @@ class TestBundleCopy(TestCase):
         for case in cases:
             head_request = rm.request(
                 HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}",
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
@@ -687,7 +692,7 @@ class TestBundleCopy(TestCase):
                 src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.DATASET
             ).do()
             assert head_request.call_count == 1
-            assert upload_request.call_count == 3
+            assert upload_request.call_count == 2
 
         # TODO: support the flowing case
         with self.assertRaises(NoMockAddress):
@@ -784,108 +789,3 @@ class TestBundleCopy(TestCase):
             )
         )
         assert st.list() == ["latest", "v0"]
-
-    @Mocker()
-    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    def test_upload_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
-        rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/project",
-            json={"data": {"id": 1, "name": "project"}},
-        )
-        rm.request(
-            HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde",
-            json={"message": "already existed"},
-            status_code=HTTPStatus.OK,
-        )
-        rm.request(
-            HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde/file",
-            json={"data": {"uploadId": 1}},
-        )
-
-        dataset_dir = (
-            self._sw_config.rootdir / "self" / "dataset" / "mnist" / "ab" / "abcde.swds"
-        )
-        ensure_dir(dataset_dir)
-
-        hash_name = "27a43c91b7a1a9a9c8e51b1d796691dd"
-        ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
-        ensure_file(
-            dataset_dir / DEFAULT_MANIFEST_NAME,
-            json.dumps(
-                {"signature": [f"1:{DatasetStorage.object_hash_algo}:{hash_name}"]}
-            ),
-        )
-        ensure_dir(dataset_dir / "data")
-        data_path = DatasetStorage._get_object_store_path(hash_name)
-        ensure_dir(data_path.parent)
-        ensure_file(data_path, "")
-
-        bc = DatasetCopy(
-            src_uri="mnist/version/abcde",
-            dest_uri="cloud://pre-bare/project/",
-            typ=URIType.DATASET,
-            force=True,
-        )
-        bc.do()
-
-    @Mocker()
-    @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    def test_download_bundle_dir(self, rm: Mocker, m_td_scan: MagicMock) -> None:
-        hash_name1 = "bfa8805ddc2d43df098e43832c24e494ad"
-        hash_name2 = "f954056e4324495ae5bec4e8e5e6d18f1b"
-        rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/1",
-            json={"data": {"id": 1, "name": "project"}},
-        )
-        rm.request(
-            HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest",
-            json={"message": "existed"},
-            status_code=HTTPStatus.OK,
-        )
-        rm.request(
-            HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest/file",
-            json={
-                "signature": [
-                    f"1:{DatasetStorage.object_hash_algo}:{hash_name1}",
-                    f"2:{DatasetStorage.object_hash_algo}:{hash_name2}",
-                ]
-            },
-        )
-        rm.request(
-            HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/datastore/scanTable",
-            status_code=HTTPStatus.OK,
-            json={"data": {"records": []}},
-        )
-
-        bc = DatasetCopy(
-            src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
-            dest_uri="",
-            local_project_uri="self",
-            typ=URIType.DATASET,
-        )
-        bc.do()
-
-        dataset_dir = (
-            self._sw_config.rootdir
-            / "self"
-            / "dataset"
-            / "mnist"
-            / "la"
-            / "latest.swds"
-        )
-        assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
-        assert (dataset_dir / ARCHIVED_SWDS_META_FNAME).exists()
-
-        link1 = dataset_dir / "data" / hash_name1[: DatasetStorage.short_sign_cnt]
-        link2 = dataset_dir / "data" / hash_name2[: DatasetStorage.short_sign_cnt]
-
-        assert link1.is_symlink() and link2.is_symlink()
-        assert link1.resolve() == DatasetStorage._get_object_store_path(hash_name1)
-        assert link2.resolve() == DatasetStorage._get_object_store_path(hash_name2)

@@ -6,18 +6,11 @@ import torch
 from PIL import Image as PILImage
 from pycocotools import mask as coco_mask
 
-from starwhale import (
-    Link,
-    Image,
-    MIMEType,
-    BoundingBox,
-    BuildExecutor,
-    COCOObjectAnnotation,
-)
+from starwhale import Link, Image, MIMEType, BoundingBox, COCOObjectAnnotation
 
 
-class PFPDatasetBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any, t.Any], None, None]:
+class PFPDatasetBuildExecutor:
+    def __iter__(self) -> t.Generator:
         root_dir = Path(__file__).parent.parent / "data" / "PennFudanPed"
         names = [p.stem for p in (root_dir / "PNGImages").iterdir()]
         self.object_id = 1
