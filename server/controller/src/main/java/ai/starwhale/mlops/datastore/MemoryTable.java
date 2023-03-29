@@ -27,8 +27,8 @@ public interface MemoryTable {
 
     void updateFromWal(Wal.WalEntry entry);
 
-    // update records, returns the revision
-    String update(TableSchemaDesc schema, List<Map<String, Object>> records);
+    // update records, returns the timestamp in milliseconds
+    long update(TableSchemaDesc schema, List<Map<String, Object>> records);
 
     Iterator<RecordResult> query(long timestamp,
             Map<String, String> columns,

@@ -26,4 +26,5 @@ public class TableDesc {
     private String columnPrefix;
     private List<ColumnDesc> columns;
     private boolean keepNone;
+    private String revision;
 }
