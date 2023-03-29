@@ -84,7 +84,7 @@ export function SelectorItemRender(
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-        const valueExists = isValueExist(value)
+        const valueExists = isValueExist({ value: search })
         switch (event.keyCode) {
             case 27:
                 handleReset()
@@ -94,14 +94,16 @@ export function SelectorItemRender(
                 break
             case 8: // backspace
                 event.stopPropagation()
-                if (removing && !valueExists) {
+                if (valueExists) {
                     setRemoving(false)
+                    return
+                }
+                if (removing && !valueExists) {
+                    handleRemove(selectedIds[selectedIds.length - 1])
+                    return
                 }
                 if (!valueExists) {
                     setRemoving(true)
-                }
-                if (removing) {
-                    handleRemove(selectedIds[selectedIds.length - 1])
                 }
                 break
             default:
@@ -110,9 +112,9 @@ export function SelectorItemRender(
     }
 
     const getLabel = React.useCallback(
-        (label: string, id: number | string) => {
+        (label: React.ReactNode, title: string, id: number | string) => {
             return (
-                <LabelContainer key={id} title={label} className='label'>
+                <LabelContainer key={id} title={title} className='label'>
                     {label}
                     <LabelRemove className='label-remove' role='button' onClick={() => handleRemove(id)} tabIndex={0}>
                         {defaultLabelRemoveIcon()}
@@ -127,8 +129,9 @@ export function SelectorItemRender(
     const $selectedLabels = React.useMemo(() => {
         return selectedIds.map((id) => {
             const itemData = itemOption.getData(itemOption.info, id)
-            const label = itemOption.getDataToLabel(itemData)
-            return getLabel(label, id)
+            const labelView = itemOption.getDataToLabelView(itemData)
+            const lableTitle = itemOption.getDataToLabelTitle(itemData)
+            return getLabel(labelView, lableTitle, id)
         })
     }, [selectedIds, itemOption, getLabel])
 

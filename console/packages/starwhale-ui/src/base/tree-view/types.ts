@@ -30,7 +30,7 @@ export type TreeNodeData<T = any> = {
     id?: TreeNodeId
     children?: TreeNodeData[]
     isExpanded?: boolean
-    label: ((node: TreeNodeData) => React.ReactNode) | string
+    label: ((node: TreeNodeData) => React.ReactNode) | React.ReactNode | string
     info?: T
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any
@@ -41,7 +41,7 @@ export type TreeLabelProps = {
     isExpanded?: boolean
     isSelected?: boolean
     isFocusVisible?: boolean
-    label: ((node: TreeNodeData) => React.ReactNode) | string
+    label: ((node: TreeNodeData) => React.ReactNode) | React.ReactNode | string
     overrides?: TreeLabelOverrides
     node: TreeNodeData
 }

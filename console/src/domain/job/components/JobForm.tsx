@@ -31,6 +31,7 @@ import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDat
 import MultiTags from '@/components/Tag/MultiTags'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import DynamicSelector from '@starwhale/ui/DynamicSelector/Selector'
+import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -380,30 +381,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
 
             <Divider orientation='top'>{t('Datasets')}</Divider>
-            {/* <div className={styles.row3}>
-                <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
-                    <DatasetSelector projectId={projectId} />
-                </FormItem>
-                {datasetId && (
-                    <FormItem label={t('Version')} name='datasetVersionId'>
-                        <DatasetVersionSelector projectId={projectId} datasetId={datasetId} autoSelected />
-                    </FormItem>
-                )}
-                <div className='fac'>
-                    <Button
-                        size='compact'
-                        type='button'
-                        onClick={handleAddDataset}
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                    >
-                        Add
-                    </Button>
-                </div>
-            </div> */}
-            <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
+            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
-                    {/* <MultiTags placeholder='' getValueLabel={getValueLabel} /> */}
-                    <DynamicSelector />
+                    <DatasetTreeSelector projectId={projectId} />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>

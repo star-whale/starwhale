@@ -148,7 +148,7 @@ export const defaultLabelRemoveIcon = () => (
             borderRadius: '50%',
             backgroundColor: ' rgba(2,16,43,0.20)',
             color: '#FFF',
-            marginLeft: '6px',
+            // marginLeft: '6px',
         }}
         size={12}
     />

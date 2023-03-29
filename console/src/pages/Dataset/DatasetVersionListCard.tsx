@@ -16,7 +16,7 @@ import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
-import { Shared } from '../../domain/dataset/components/Shared'
+import { Shared } from '../../components/Shared'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()

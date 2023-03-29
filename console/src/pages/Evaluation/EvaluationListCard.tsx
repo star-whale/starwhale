@@ -237,7 +237,26 @@ export default function EvaluationListCard() {
         return unsub
     }, [store])
 
-    if (!$ready) return <BusyPlaceholder />
+    if (!$ready)
+        return (
+            <Card
+                title={t('Evaluations')}
+                style={{
+                    marginRight: expanded ? expandedWidth : '0',
+                    flexShrink: 1,
+                    marginBottom: 0,
+                    width: '100%',
+                    flex: 1,
+                }}
+                extra={
+                    <WithCurrentAuth id='evaluation.create'>
+                        <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
+                    </WithCurrentAuth>
+                }
+            >
+                <BusyPlaceholder />
+            </Card>
+        )
 
     return (
         <Card
@@ -251,9 +270,7 @@ export default function EvaluationListCard() {
             }}
             extra={
                 <WithCurrentAuth id='evaluation.create'>
-                    <Button onClick={() => history.push('new_job')} isLoading={evaluationsInfo.isLoading}>
-                        {t('create')}
-                    </Button>
+                    <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
                 </WithCurrentAuth>
             }
         >

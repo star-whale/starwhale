@@ -14,7 +14,7 @@ export default function Checkbox({ size = 16, children, ...props }: ICheckBoxPro
             Root: {
                 style: {
                     alignItems: 'center',
-                    height: '16px',
+                    minHeight: '16px',
                 },
             },
             Checkmark: {

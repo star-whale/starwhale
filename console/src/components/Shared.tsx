@@ -10,7 +10,7 @@ export function Shared({ shared = 0, isTextShow = false }: { shared?: number; is
             {shared === 1 && (
                 <IconFont type='group' style={{ borderRadius: '2px', backgroundColor: '#E6FFF4', color: '#00B368' }} />
             )}
-            {shared === 1 ? t('dataset.overview.shared.yes') : t('dataset.overview.shared.no')}
+            {isTextShow && (shared === 1 ? t('dataset.overview.shared.yes') : t('dataset.overview.shared.no'))}
         </div>
     )
 }

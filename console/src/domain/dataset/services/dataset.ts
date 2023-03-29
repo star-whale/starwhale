@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { ICreateDatasetSchema, IDatasetSchema, IDatasetDetailSchema } from '../schemas/dataset'
+import { ICreateDatasetSchema, IDatasetSchema, IDatasetDetailSchema, IDatasetTreeSchema } from '../schemas/dataset'
 
 export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
     const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
@@ -11,6 +11,11 @@ export async function listDatasets(projectId: string, query: IListQuerySchema): 
 
 export async function fetchDataset(projectId: string, datasetId: string): Promise<any> {
     const resp = await axios.get<IDatasetDetailSchema>(`/api/v1/project/${projectId}/dataset/${datasetId}`)
+    return resp.data
+}
+
+export async function fetchDatasetTree(projectId: string): Promise<IDatasetTreeSchema[]> {
+    const resp = await axios.get<IDatasetTreeSchema[]>(`/api/v1/project/${projectId}/dataset-tree`)
     return resp.data
 }
 

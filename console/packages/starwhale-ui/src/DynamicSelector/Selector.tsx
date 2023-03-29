@@ -20,7 +20,7 @@ const containsNode = (parent, child) => {
     return child && parent && parent.contains(child as any)
 }
 
-function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
+export function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
     return (
         <Tree
             data={info.data}

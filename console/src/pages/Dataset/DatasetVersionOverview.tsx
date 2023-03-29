@@ -7,7 +7,7 @@ import { fetchDatasetVersion, updateDatasetVersionShared } from '@/domain/datase
 import { toaster } from 'baseui/toast'
 import { useParams } from 'react-router-dom'
 import IconFont from '@starwhale/ui/IconFont'
-import Shared from '@/domain/dataset/components/Shared'
+import Shared from '@/components/Shared'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
