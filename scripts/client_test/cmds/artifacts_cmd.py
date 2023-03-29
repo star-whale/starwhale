@@ -9,7 +9,7 @@ from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.runtime.view import RuntimeTermView
 from starwhale.api._impl.data_store import LocalDataStore
 
-from . import CLI
+from . import CLI, DatasetExpl
 from .base.invoke import invoke, invoke_with_react
 
 
@@ -208,14 +208,15 @@ class Dataset(BaseArtifact):
     @staticmethod
     def build_with_api(
         workdir: str,
+        ds_expl: DatasetExpl,
         dataset_yaml: str = "dataset.yaml",
-        handler: str = "",
     ) -> t.Any:
         yaml_path = Path(workdir) / dataset_yaml
         config = DatasetConfig()
         if yaml_path.exists():
             config = DatasetConfig.create_by_yaml(yaml_path)
-        config.handler = import_object(workdir, handler or config.handler)
+        config.name = ds_expl.name or config.name
+        config.handler = import_object(workdir, ds_expl.handler or config.handler)
         _uri = DatasetTermView.build(workdir, config)
         LocalDataStore.get_instance().dump()
         return _uri
@@ -264,10 +265,8 @@ class Dataset(BaseArtifact):
         _ret_code, _res = invoke([CLI, "-o", "json", self.name, "summary", uri])
         return json.loads(_res) if _ret_code == 0 else {}
 
-    def copy(self, src_uri: str, target_project: str, force: bool) -> bool:
+    def copy(self, src_uri: str, target_project: str) -> bool:
         _args = [CLI, self.name, "copy", src_uri, target_project]
-        if force:
-            _args.append("--force")
         _ret_code, _res = invoke(_args)
         return bool(_ret_code == 0)
 

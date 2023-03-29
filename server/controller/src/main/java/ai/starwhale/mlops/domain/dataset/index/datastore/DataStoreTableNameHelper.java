@@ -24,17 +24,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataStoreTableNameHelper {
 
-    static final int VERSION_PREFIX_CNT = 2;
+    public static final String FORMATTER_TABLE_NAME_DATASET = "project/%s/dataset/%s/_current/meta";
 
-    public static final String FORMATTER_TABLE_NAME_DATASET = "project/%s/dataset/%s/%s/%s/meta";
-
-    public static final String FORMATTER_TABLE_NAME_EVAL_RESULTS = "project/%s/eval/%s/results";
-
-    public static final String FORMATTER_TABLE_NAME_EVAL_SUMMARY = "project/%s/eval/summary";
-
-    public String tableNameOfDataset(Long projectId, String name, String version) {
-        return String.format(FORMATTER_TABLE_NAME_DATASET, projectId, name, version.substring(0, VERSION_PREFIX_CNT),
-                version);
+    public String tableNameOfDataset(Long projectId, String name) {
+        return String.format(FORMATTER_TABLE_NAME_DATASET, projectId, name);
     }
 
 }
