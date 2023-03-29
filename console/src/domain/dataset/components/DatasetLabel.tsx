@@ -1,8 +1,26 @@
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { formatTimestampDateTime } from '@/utils/datetime'
+import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
-import { IDatasetVersionSchema } from '../schemas/datasetVersion'
+import { IDatasetTreeSchema } from '../schemas/dataset'
+import { IDatasetTreeVersionSchema } from '../schemas/datasetVersion'
+
+export const DatasetLabelContainer = themedStyled('div', () => ({
+    display: 'inline-flex',
+    gap: '4px',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    height: '100%',
+    width: '100%',
+}))
+
+export const DatasetLabelText = themedStyled('div', () => ({
+    display: 'inline-flex',
+    minWidth: '0',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}))
 
 export function DatasetLabel({
     version,
@@ -10,29 +28,24 @@ export function DatasetLabel({
     isProjectShow = false,
     style = {},
 }: {
-    version: IDatasetVersionSchema
-    dataset: IDatasetSchema
+    version: IDatasetTreeVersionSchema
+    dataset?: IDatasetTreeSchema
     isProjectShow?: boolean
+    style?: React.CSSProperties
 }) {
     const share = <Shared shared={version.shared} isTextShow={false} />
     const alias = <Alias alias={version.alias} />
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
-    const v = [version.versionName ? version.versionName.substring(0, 8) : ''].join(':')
-    const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : ''].join('/')
+    const name = version?.versionName ?? version?.name
+    const v = (name ?? '').substring(0, 8)
+    const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
+        .filter((v) => !!v)
+        .join('/')
 
     return (
-        <div
-            style={{
-                display: 'inline-flex',
-                gap: '4px',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                ...style,
-            }}
-            title={title}
-        >
-            {share} {isProjectShow ? [p, v].join('/') : v} {alias}
-        </div>
+        <DatasetLabelContainer style={style} title={title}>
+            {share} <DatasetLabelText>{isProjectShow ? [p, v].join('/') : v}</DatasetLabelText> {alias}
+        </DatasetLabelContainer>
     )
 }
 

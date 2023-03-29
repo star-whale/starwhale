@@ -3,12 +3,22 @@ import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelect
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React from 'react'
 import { useFetchDatasetTree } from '../hooks/useFetchDatasetTree'
-import { formatTimestampDateTime } from '@/utils/datetime'
-import Shared from '@/components/Shared'
-import Alias from '@/components/Alias'
 import DatasetLabel from './DatasetLabel'
+import { themedStyled } from '@starwhale/ui/theme/styletron'
+import Button from '@starwhale/ui/Button'
+import useTranslation from '@/hooks/useTranslation'
+
+const DatasetTreeNode = themedStyled('div', () => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    height: '24px',
+    width: '100%',
+}))
 
 export function DatasetTreeSelector(props: any) {
+    const [t] = useTranslation()
     const { projectId } = props
     const datasetInfo = useFetchDatasetTree(projectId)
     const treeData = React.useMemo(() => {
@@ -23,7 +33,22 @@ export function DatasetTreeSelector(props: any) {
                     dataset.versions?.map((item) => {
                         return {
                             id: item.id,
-                            label: <DatasetLabel version={item} dataset={dataset} />,
+                            label: (
+                                <DatasetTreeNode>
+                                    <DatasetLabel version={item} dataset={dataset} />
+                                    <Button
+                                        key='version-history'
+                                        kind='tertiary'
+                                        onClick={() =>
+                                            window.open(
+                                                `/projects/${projectId}/datasets/${dataset.datasetName}/versions/${item.id}/overview`
+                                            )
+                                        }
+                                    >
+                                        {t('dataset.selector.view')}
+                                    </Button>
+                                </DatasetTreeNode>
+                            ),
                             labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow={true} />,
                             labelTitle: '',
                             isExpanded: true,

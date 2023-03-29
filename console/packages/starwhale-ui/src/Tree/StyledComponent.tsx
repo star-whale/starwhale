@@ -13,6 +13,8 @@ export const TreeNodeContainer = themedStyled('div', () => ({
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'nowrap',
+    height: '24px',
+    wdith: '100%',
 }))
 
 export const TreeSearch = (props: any) => {

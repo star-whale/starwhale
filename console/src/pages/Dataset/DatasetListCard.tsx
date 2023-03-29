@@ -13,6 +13,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
+import Alias from '@/components/Alias'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -45,7 +46,7 @@ export default function DatasetListCard() {
                             >
                                 {dataset.name}
                             </TextLink>,
-                            dataset.version?.alias,
+                            <Alias alias={dataset.version?.alias} />,
                             dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <Button

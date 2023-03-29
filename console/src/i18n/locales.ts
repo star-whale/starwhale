@@ -33,6 +33,9 @@ const dataset = {
     'dataset.overview.shared.no': {
         en: 'False',
     },
+    'dataset.selector.view': {
+        en: 'View',
+    },
 }
 
 const runtime = {

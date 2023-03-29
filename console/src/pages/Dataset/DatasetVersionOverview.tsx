@@ -6,8 +6,8 @@ import { Toggle } from '@starwhale/ui'
 import { fetchDatasetVersion, updateDatasetVersionShared } from '@/domain/dataset/services/datasetVersion'
 import { toaster } from 'baseui/toast'
 import { useParams } from 'react-router-dom'
-import IconFont from '@starwhale/ui/IconFont'
 import Shared from '@/components/Shared'
+import { Alias } from '@/components/Alias'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
@@ -30,7 +30,7 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Aliases'),
-            value: dataset?.versionAlias ?? '-',
+            value: <Alias alias={dataset?.versionAlias} />,
         },
         {
             label: t('dataset.overview.shared'),

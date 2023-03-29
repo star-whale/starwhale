@@ -98,8 +98,8 @@ export const LabelsContainer = themedStyled('div', ({ $multiple }) => ({
 LabelsContainer.displayName = 'LabelsContainer'
 
 export const LabelContainer = themedStyled('div', () => ({
-    height: '22px',
-    lineHeight: '22px',
+    height: '24px',
+    lineHeight: '24px',
     padding: '0 8px',
     background: '#EEF1F6',
     borderRadius: '4px',

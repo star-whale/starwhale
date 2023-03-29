@@ -31,6 +31,7 @@ export default function TreeNode({
         if (multiple) {
             return (
                 <Checkbox
+                    isFullWidth
                     checked={isSelected}
                     isIndeterminate={isSelectedIndeterminate}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target?.checked)}

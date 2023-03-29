@@ -6,7 +6,6 @@ export interface IDatasetFileSchema {
     size: string
 }
 export interface IDatasetVersionSchema extends IResourceSchema {
-    name: string
     tag: string
     meta: string
     owner?: IUserSchema
@@ -17,7 +16,6 @@ export interface IDatasetVersionSchema extends IResourceSchema {
 export interface IDatasetTreeVersionSchema extends IDatasetVersionSchema {
     versionName: string
     createdTime: number
-    id: string
 }
 
 export interface IDatasetVersionDetailSchema {

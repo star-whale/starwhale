@@ -41,7 +41,7 @@ function SelectorPopover({
                         padding: '12px 12px',
                         backgroundColor: '#FFF',
                         minHeight: '200px',
-                        minWidth: '300px',
+                        minWidth: '410px',
                     },
                 },
             }}
