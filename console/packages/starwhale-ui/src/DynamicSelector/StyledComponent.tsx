@@ -50,12 +50,21 @@ SelectorItemsContainer.displayName = 'SelectorItemsContainer'
 
 export const StartEnhancer = themedStyled('div', () => ({
     width: '34px',
-    height: '22px',
+    height: '24px',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
 }))
 StartEnhancer.displayName = 'StartEnhancer'
+
+export const EndEnhancer = themedStyled('div', () => ({
+    width: '34px',
+    height: '24px',
+    display: 'grid',
+    placeItems: 'center',
+    flexShrink: 0,
+}))
+EndEnhancer.displayName = 'EndEnhancer'
 
 export const Placeholder = themedStyled('div', () => ({
     position: 'relative',
@@ -109,6 +118,7 @@ export const LabelContainer = themedStyled('div', () => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minWidth: '0',
 }))
 LabelContainer.displayName = 'LabelContainer'
 
@@ -123,6 +133,7 @@ export const LabelRemove = themedStyled('div', () => ({
     overflow: ' hidden',
     display: 'flex',
     alignItems: 'center',
+    flexShrink: 0,
 }))
 LabelRemove.displayName = 'LabelRemove'
 
@@ -139,6 +150,7 @@ export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }) => ({
 AutosizeInputContainer.displayName = 'AutosizeInputContainer'
 
 export const defaultStartEnhancer = () => <IconFont type='filter' size={12} kind='gray' />
+export const defaultEndEnhancer = () => <IconFont type='library' size={12} kind='gray' />
 export const defaultLabelRemoveIcon = () => (
     <IconFont
         type='close'
