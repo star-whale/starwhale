@@ -14,7 +14,7 @@ from itertools import islice
 import yaml
 from loguru import logger
 
-from starwhale.utils import now_str, gen_uniq_version
+from starwhale.utils import now_str, convert_to_bytes, gen_uniq_version
 from starwhale.consts import (
     FileDesc,
     HTTPMethod,
@@ -32,7 +32,11 @@ from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.dataset.type import DatasetSummary
+from starwhale.core.dataset.type import (
+    DatasetSummary,
+    D_ALIGNMENT_SIZE,
+    D_FILE_VOLUME_SIZE,
+)
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
@@ -143,6 +147,8 @@ class Dataset:
         self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
         self._loader_num_workers = _DEFAULT_LOADER_WORKERS
 
+        self._builder_blob_alignment_size = D_ALIGNMENT_SIZE
+        self._builder_blob_volume_size = D_FILE_VOLUME_SIZE
         self._builder_lock = threading.Lock()
         self._dataset_builder: t.Optional[MappingDatasetBuilder] = None
         self._commit_lock = threading.Lock()
@@ -226,17 +232,57 @@ class Dataset:
     def with_loader_config(
         self, num_workers: t.Optional[int] = None, cache_size: t.Optional[int] = None
     ) -> Dataset:
-        if len(self.__data_loaders) != 0:
-            raise RuntimeError(
-                f"loaders({list(self.__data_loaders)}) have already been initialized"
-            )
-
         with self._loader_lock:
+            if len(self.__data_loaders) != 0:
+                raise RuntimeError(
+                    f"loaders({list(self.__data_loaders)}) have already been initialized"
+                )
+
             if num_workers is not None:
                 self._loader_num_workers = num_workers
 
             if cache_size is not None:
                 self._loader_cache_size = cache_size
+
+        return self
+
+    def with_builder_blob_config(
+        self,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+    ) -> Dataset:
+        """Config blob attributes for the dataset builder.
+
+        If you want to config blob attributes, you should call the function before appending, updating or deleting dataset records.
+
+        Arguments:
+            volume_size: (str, int, optional) The max bytes size of the single blob file.
+                When blob file size exceeds the value of volume_size argument, a new blob file is created automatically.
+                The default is 64MB. The argument accepts int(bytes) or str(32K, 64MB, 1GB...) format.
+            alignment_size: (str, int, optional) The alignment size of every bin section in the blob file.
+                The remaining part will be filled with `\0`. Default is 64 bytes.
+
+        Examples:
+        ```python
+        from starwhale import dataset, Binary
+
+        ds = dataset("mnist").with_builder_blob_config(volume_size="32M", alignment_size=128)
+        ds.append({"data": Binary(b"123")})
+        ds.commit()
+        ds.close()
+        ```
+
+        Returns:
+            A Dataset Object
+        """
+        with self._builder_lock:
+            if self._dataset_builder is not None:
+                raise RuntimeError(
+                    "dataset has already accept some changed rows, forbid to config dataset blob attributes"
+                )
+
+            self._builder_blob_volume_size = convert_to_bytes(volume_size)
+            self._builder_blob_alignment_size = convert_to_bytes(alignment_size)
 
         return self
 
@@ -518,6 +564,8 @@ class Dataset:
                     dataset_name=self.name,
                     project_name=self.project_uri.project,
                     instance_name=self.project_uri.instance,
+                    blob_alignment_bytes_size=self._builder_blob_alignment_size,
+                    blob_volume_bytes_size=self._builder_blob_volume_size,
                 )
             return self._dataset_builder
 
@@ -773,8 +821,9 @@ class Dataset:
             dest_local_project_uri=dest_local_project_uri,
         )
 
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         project_uri: t.Union[str, URI] = "",
         fullname: bool = False,
         show_removed: bool = False,
@@ -787,8 +836,9 @@ class Dataset:
             project_uri, fullname, show_removed, page_index, page_size
         )
 
-    @staticmethod
+    @classmethod
     def dataset(
+        cls,
         uri: t.Union[str, URI],
         readonly: bool = False,
     ) -> Dataset:

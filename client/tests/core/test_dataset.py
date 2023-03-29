@@ -163,8 +163,6 @@ class StandaloneDatasetTestCase(TestCase):
                 "dataset:buildFunction",
                 "--project",
                 "self",
-                "-dmt",
-                "video/mp4",
             ],
             obj=mock_obj,
         )
@@ -174,7 +172,6 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
         assert call_args[1].handler == handler_func
-        assert call_args[1].attr.data_mime_type == MIMEType.MP4
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
     def test_build_workflow(

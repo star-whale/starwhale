@@ -972,12 +972,10 @@ class DatasetAttr(ASDictMixin):
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
         alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
-        data_mime_type: MIMEType = MIMEType.UNDEFINED,
         **kw: t.Any,
     ) -> None:
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
-        self.data_mime_type = data_mime_type
         self.kw = kw
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:

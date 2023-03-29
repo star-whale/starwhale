@@ -10,7 +10,7 @@ from starwhale.base.type import URIType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
-from starwhale.core.dataset.type import MIMEType, DatasetAttr, DatasetConfig
+from starwhale.core.dataset.type import DatasetAttr, DatasetConfig
 
 from .view import get_term_view, DatasetTermView
 
@@ -49,7 +49,6 @@ def dataset_cmd(ctx: click.Context) -> None:
     "--volume-size",
     help="swds-bin format dataset: volume size",
 )
-@click.option("-dmt", "--data-mime-type", help="Dataset global default data mime type")
 @click.option(
     "-f",
     "--dataset-yaml",
@@ -68,7 +67,6 @@ def _build(
     dataset_yaml: str,
     alignment_size: str,
     volume_size: str,
-    data_mime_type: str,
     runtime: str,
 ) -> None:
     # TODO: add dry-run
@@ -92,7 +90,6 @@ def _build(
     config.attr = DatasetAttr(
         volume_size=volume_size or config.attr.volume_size,
         alignment_size=alignment_size or config.attr.alignment_size,
-        data_mime_type=MIMEType(data_mime_type or config.attr.data_mime_type),
     )
 
     config.do_validate()
