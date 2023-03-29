@@ -501,7 +501,6 @@ public class RuntimeService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
-    // TODO add return value
     public BuildImageResult buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
         RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
                 BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
