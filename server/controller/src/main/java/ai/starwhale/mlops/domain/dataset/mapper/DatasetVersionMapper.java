@@ -47,9 +47,6 @@ public interface DatasetVersionMapper {
             @Param("namePrefix") String namePrefix,
             @Param("tag") String tag);
 
-    @Select("select " + COLUMNS + " from dataset_version where shared = 1")
-    List<DatasetVersionEntity> listShared();
-
     @Select("select " + COLUMNS + " from dataset_version where id = #{id}")
     DatasetVersionEntity find(@Param("id") Long id);
 

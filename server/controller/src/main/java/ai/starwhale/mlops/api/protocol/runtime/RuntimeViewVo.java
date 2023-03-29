@@ -32,6 +32,8 @@ public class RuntimeViewVo {
 
     private String projectName;
 
+    private String runtimeId;
+
     private String runtimeName;
 
     private Integer shared;
