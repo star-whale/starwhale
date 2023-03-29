@@ -23,6 +23,9 @@ import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -54,8 +57,11 @@ public interface ProjectApi {
             @RequestParam(value = "projectName", required = false) String projectName,
             @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
-            @Valid @RequestParam(value = "sort", required = false) String sort,
-            @Valid @RequestParam(value = "order", required = false, defaultValue = "1") Integer order);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "The sort type of project list. (Default=visited)",
+                    schema = @Schema(allowableValues = {"visited", "latest", "oldest"}))
+            @Valid @RequestParam(value = "sort", required = false) String sort);
 
 
     @Operation(summary = "Create or Recover a new project")

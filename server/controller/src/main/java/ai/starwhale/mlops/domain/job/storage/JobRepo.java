@@ -99,7 +99,7 @@ public class JobRepo {
     }
 
     private List<String> tableNames() {
-        var projects = projectService.listProjects(null, null, null);
+        var projects = projectService.listProjects();
         return projects.stream()
                 .map(Project::getId)
                 .map(this::tableName)
@@ -238,7 +238,7 @@ public class JobRepo {
 
         List<JobFlattenEntity> results = new ArrayList<>();
         // find all projects
-        var projects = projectService.listProjects(null, null, null);
+        var projects = projectService.listProjects();
         for (Project project : projects) {
             results.addAll(this.getJobEntities(project, filter));
         }

@@ -84,6 +84,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Resource
     private ContentCachingFilter contentCachingFilter;
 
+
     public SecurityConfiguration() {
         super();
         // Inherit security context ,so async function calls can effect
