@@ -16,8 +16,21 @@
 
 package ai.starwhale.mlops.domain.upgrade.step;
 
+import ai.starwhale.mlops.backup.db.MysqlBackupService;
+import ai.starwhale.mlops.configuration.DataSourceProperties;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -28,18 +41,60 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class BackupDatabase extends UpgradeStepBase {
 
-    public BackupDatabase(UpgradeAccess upgradeAccess) {
+    private final DataSourceProperties dataSourceProperties;
+    private final StorageAccessService accessService;
+
+    private final StoragePathCoordinator storagePathCoordinator;
+
+    public BackupDatabase(UpgradeAccess upgradeAccess,
+            DataSourceProperties dataSourceProperties,
+            StorageAccessService accessService,
+            StoragePathCoordinator storagePathCoordinator) {
         super(upgradeAccess);
+        this.dataSourceProperties = dataSourceProperties;
+        this.accessService = accessService;
+        this.storagePathCoordinator = storagePathCoordinator;
     }
 
     @Override
     protected void doStep(Upgrade upgrade) {
-        //TODO backup mysql data
         log.info("Back up database" + upgrade.toString());
+        var backupService = getMysqlBackService();
+        try {
+            String sql = backupService.backup(getIgnores());
+            //store sql
+            accessService.put(getStorePath(), new ByteArrayInputStream(sql.getBytes(StandardCharsets.UTF_8)));
+
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new SwProcessException(ErrorType.DB, "Backup mysql error.", e);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.DATASTORE, "Backup mysql error.", e);
+        }
+
+    }
+
+    private MysqlBackupService getMysqlBackService() {
+        return MysqlBackupService.builder()
+                .driver(dataSourceProperties.getDriverClassName())
+                .url(dataSourceProperties.getUrl())
+                .username(dataSourceProperties.getUsername())
+                .password(dataSourceProperties.getPassword())
+                .build();
+    }
+
+    private Set<String> getIgnores() {
+        return Set.of("server_status", "upgrade_log");
+    }
+
+    private String getStorePath() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String now = LocalDateTime.now().format(formatter);
+        return storagePathCoordinator.allocatePluginPath("backupdb", now);
     }
 
     @Override
     public boolean isComplete() {
+        //Sync process
         return true;
     }
 
@@ -51,5 +106,11 @@ public class BackupDatabase extends UpgradeStepBase {
     @Override
     protected String getContent() {
         return "";
+    }
+
+    public static void main(String[] args) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String now = LocalDateTime.now().format(formatter);
+        System.out.println(now);
     }
 }

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.upgrade;
 
+import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
@@ -55,6 +56,7 @@ public class UpgradeService {
     private final UpgradeAccess upgradeAccess;
     private final ControllerLock controllerLock;
     private final JobService jobService;
+    private final DataStore dataStore;
     private final K8sClient k8sClient;
     private final UpgradeStepManager upgradeStepManager;
 
@@ -69,6 +71,7 @@ public class UpgradeService {
     public UpgradeService(UpgradeAccess upgradeAccess,
             ControllerLock controllerLock,
             JobService jobService,
+            DataStore dataStore,
             K8sClient k8sClient,
             UpgradeStepManager upgradeStepManager,
             RestTemplate restTemplate,
@@ -77,6 +80,7 @@ public class UpgradeService {
         this.upgradeAccess = upgradeAccess;
         this.controllerLock = controllerLock;
         this.jobService = jobService;
+        this.dataStore = dataStore;
         this.k8sClient = k8sClient;
         this.currentVersionNumber = StrUtil.subBefore(starwhaleVersion, ":", false);
         this.latestVersionApiUrl = latestVersionApiUrl;
@@ -182,8 +186,8 @@ public class UpgradeService {
             throw new SwValidationException(ValidSubject.UPGRADE, "There are still remaining hot jobs.");
         }
 
-        //TODO 3. terminate datastore
-
+        // 3. terminate datastore
+        dataStore.terminate();
     }
 
     private void checkIsCancelUpgradeAllowed() {

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.mock;
 
+import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.lock.ControllerLock;
@@ -50,6 +51,7 @@ public class UpgradeServiceTest {
     private UpgradeAccess upgradeAccess;
     private ControllerLock controllerLock;
     private JobService jobService;
+    private DataStore dataStore;
     private K8sClient k8sClient;
     private UpgradeStepManager upgradeStepManager;
 
@@ -66,6 +68,7 @@ public class UpgradeServiceTest {
                 .thenReturn(List.of(UpgradeLog.builder().build()));
         controllerLock = new ControllerLockImpl();
         jobService = mock(JobService.class);
+        dataStore = mock(DataStore.class);
         k8sClient = mock(K8sClient.class);
 
         V1Container container = new V1Container();
@@ -88,8 +91,8 @@ public class UpgradeServiceTest {
         currentVersionNumber = "0.4.0";
         latestVersionApiUrl = "";
 
-        upgradeService = new UpgradeService(upgradeAccess, controllerLock, jobService, k8sClient, upgradeStepManager,
-                restTemplate, currentVersionNumber, latestVersionApiUrl);
+        upgradeService = new UpgradeService(upgradeAccess, controllerLock, jobService, dataStore,
+                k8sClient, upgradeStepManager, restTemplate, currentVersionNumber, latestVersionApiUrl);
     }
 
     @Test

@@ -20,11 +20,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 
+import ai.starwhale.mlops.configuration.DataSourceProperties;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
 import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.List;
 import java.util.concurrent.Delayed;
@@ -49,6 +52,8 @@ public class UpgradeStepTest {
     private List<UpgradeStep> steps;
 
     private UpgradeAccess access;
+    private StorageAccessService storageAccessService;
+    private StoragePathCoordinator storagePathCoordinator;
     private K8sClient k8sClient;
 
     private ThreadPoolTaskScheduler scheduler;
@@ -62,6 +67,8 @@ public class UpgradeStepTest {
     @BeforeEach
     public void setUp() throws Exception {
         access = mock(UpgradeAccess.class);
+        storageAccessService = mock(StorageAccessService.class);
+        storagePathCoordinator = mock(StoragePathCoordinator.class);
         k8sClient = mock(K8sClient.class);
         deployed.set(false);
         Mockito.doAnswer(in -> {
@@ -76,7 +83,8 @@ public class UpgradeStepTest {
                         return List.of(new V1Pod());
                     }
                 });
-        backupDatabase = new BackupDatabase(access);
+        DataSourceProperties ds = new DataSourceProperties("", "", "", "");
+        backupDatabase = new BackupDatabase(access, ds, storageAccessService, storagePathCoordinator);
         updateK8sImage = new UpdateK8sImage(access, k8sClient);
         steps = List.of(backupDatabase, updateK8sImage);
         scheduler = mock(ThreadPoolTaskScheduler.class);
