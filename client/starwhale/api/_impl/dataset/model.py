@@ -66,6 +66,12 @@ _DEFAULT_LOADER_WORKERS = 2
 _DEFAULT_LOADER_CACHE_SIZE = 20
 
 
+class _DatasetCreateMode:
+    auto = "auto"
+    empty = "empty"
+    forbid = "forbid"
+
+
 class _Tags:
     def __init__(self, core_dataset: CoreDataset) -> None:
         self.__core_dataset = core_dataset
@@ -99,6 +105,7 @@ class Dataset:
         version: str,
         project_uri: URI,
         readonly: bool = False,
+        create: str = _DatasetCreateMode.auto,
     ) -> None:
         self.name = name
         self.project_uri = project_uri
@@ -113,13 +120,33 @@ class Dataset:
             obj_name=self.name,
         )
 
+        if create not in (
+            _DatasetCreateMode.auto,
+            _DatasetCreateMode.empty,
+            _DatasetCreateMode.forbid,
+        ):
+            raise ValueError(
+                f"the current create mode is not in the accept options: {create}"
+            )
+
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
+            if create == _DatasetCreateMode.empty:
+                raise RuntimeError(
+                    f"dataset already existed, failed to create by the {create} create mode: {self.name}"
+                )
+
             self._loading_version = self._auto_complete_version(
                 _origin_uri.object.version
             )
         else:
+            # TODO: call server or standalone api to create an empty dataset before committing.
+            if create == _DatasetCreateMode.forbid:
+                raise RuntimeError(
+                    "dataset doest not exist, we have already use {create} create mode to ensure dataset existence: {self.name}"
+                )
+
             if readonly:
                 raise ValueError(
                     f"no support to set a non-existed dataset to the readonly mode: {self.name}"
@@ -901,6 +928,7 @@ class Dataset:
     def dataset(
         cls,
         uri: t.Union[str, URI],
+        create: str = _DatasetCreateMode.auto,
         readonly: bool = False,
     ) -> Dataset:
         """Create or load a dataset from standalone instance or cloud instance.
@@ -910,6 +938,11 @@ class Dataset:
 
         Arguments:
             uri: (str, URI, required) The dataset uri.
+            create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
+                `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
+                `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
+                `forbid` mode: If the dataset already exists, nothing is done.If it does not exist, an Exception is raised. This mode ensures the existence of the dataset.
+                The default is `auto`.
             readonly: (bool, optional) For an existing dataset, you can specify the readonly=True argument to ensure
                 the dataset is in readonly mode. Default is False.
 
@@ -921,6 +954,7 @@ class Dataset:
         from starwhale import dataset, Image
 
         # create a new dataset named mnist, and add a row into the dataset
+        # dataset("mnist") is equal to dataset("mnist", create="auto")
         ds = dataset("mnist")
         ds.exists()  # return False, "mnist" dataset is not existing.
         ds.append({"img": Image(), "label": 1})
@@ -937,6 +971,12 @@ class Dataset:
         ds[0].features.label = 1
         ds.commit()
         ds.close()
+
+        # create an empty dataset
+        ds = dataset("mnist-empty", create="empty")
+
+        # ensure the dataset existence
+        ds = dataset("mnist-existed", create="forbid")
         ```
 
         """
@@ -954,6 +994,7 @@ class Dataset:
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
             readonly=readonly,
+            create=create or _DatasetCreateMode.auto,
         )
 
         return ds
