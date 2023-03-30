@@ -36,7 +36,6 @@ def build_ds():
                                 mime_type=MIMEType.JPEG,
                                 link=Link(
                                     uri=f"{PATH_ROOT}/{DATA_PATH}/{category}/{_name}",
-                                    with_local_fs_data=False,
                                 ),
                             ),
                         },
