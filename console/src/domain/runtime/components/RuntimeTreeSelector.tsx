@@ -21,7 +21,7 @@ export function RuntimeTreeSelector(props: any) {
     const [t] = useTranslation()
     const { projectId } = props
     const runtimeInfo = useFetchRuntimeTree(projectId)
-    const treeData = React.useMemo(() => {
+    const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return []
 
         const treeData: TreeNodeData[] = runtimeInfo.data.map((runtime) => {
@@ -49,7 +49,7 @@ export function RuntimeTreeSelector(props: any) {
                                     </Button>
                                 </RuntimeTreeNode>
                             ),
-                            labelView: <RuntimeLabel version={item} runtime={runtime} isProjectShow={true} />,
+                            labelView: <RuntimeLabel version={item} runtime={runtime} isProjectShow />,
                             labelTitle: '',
                             isExpanded: true,
                         }
@@ -58,14 +58,14 @@ export function RuntimeTreeSelector(props: any) {
         })
 
         return treeData
-    }, [runtimeInfo])
+    }, [runtimeInfo, projectId, t])
 
     const options = React.useMemo(() => {
         return [
             {
                 id: 'tree',
                 info: {
-                    data: treeData,
+                    data: $treeData,
                 },
                 multiple: false,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
@@ -75,7 +75,7 @@ export function RuntimeTreeSelector(props: any) {
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [treeData])
+    }, [$treeData])
 
     return <DynamicSelector {...props} options={options} />
 }

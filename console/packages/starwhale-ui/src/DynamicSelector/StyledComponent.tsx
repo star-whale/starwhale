@@ -2,6 +2,7 @@ import { LabelSmall } from 'baseui/typography'
 import IconFont from '../IconFont'
 import { themedStyled } from '../theme/styletron'
 
+// @ts-ignore
 export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) => {
     const $style = $isGrid
         ? {
@@ -38,7 +39,7 @@ export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) =
 })
 SelectorContainer.displayName = 'SelectorContainer'
 
-export const SelectorItemsContainer = themedStyled('div', ({ $isGrid }) => ({
+export const SelectorItemsContainer = themedStyled('div', ({ $isGrid }: any) => ({
     display: 'flex',
     flexGrow: '1',
     gap: '10px',
@@ -74,7 +75,8 @@ export const Placeholder = themedStyled('div', () => ({
 }))
 Placeholder.displayName = 'Placeholder'
 
-export const SelectItemContainer = themedStyled('div', ({ $isGrid }) => {
+// @ts-ignore
+export const SelectItemContainer = themedStyled('div', ({ $isGrid }: any) => {
     const $style = $isGrid
         ? {
               width: '100%',
@@ -99,7 +101,7 @@ export const SelectItemContainer = themedStyled('div', ({ $isGrid }) => {
 })
 SelectItemContainer.displayName = 'SelectItemContainer'
 
-export const LabelsContainer = themedStyled('div', ({ $multiple }) => ({
+export const LabelsContainer = themedStyled('div', ({ $multiple }: any) => ({
     display: 'Grid',
     gridTemplateColumns: !$multiple ? '1fr' : 'repeat(2, 1fr)',
     gap: '1px',
@@ -137,7 +139,7 @@ export const LabelRemove = themedStyled('div', () => ({
 }))
 LabelRemove.displayName = 'LabelRemove'
 
-export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }) => ({
+export const AutosizeInputContainer = themedStyled('div', ({ $isEditing }: any) => ({
     minWidth: $isEditing ? '100px' : 0,
     display: 'inline-block',
     maxWidth: '100%',

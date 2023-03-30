@@ -1,9 +1,6 @@
-/* eslint-disable react/no-unused-prop-types */
-
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Tabs, Tab, TabsProps, TabProps } from 'baseui/tabs-motion'
-import { useHistory, useLocation } from 'react-router-dom'
-import _ from 'lodash'
+import { useHistory } from 'react-router-dom'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { mergeOverrides } from '@/utils/baseui'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
@@ -11,8 +8,8 @@ import { INavItem } from './BaseSidebar'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 export interface IComposedNavTabsProps {
-    style?: React.CSSProperties
-    navStyle?: React.CSSProperties
+    // style?: React.CSSProperties
+    // navStyle?: React.CSSProperties
     fill?: TabsProps['fill']
     tabsOverrides?: TabsProps['overrides']
     tabOverrides?: TabProps['overrides']

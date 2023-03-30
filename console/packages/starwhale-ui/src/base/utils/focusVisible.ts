@@ -4,34 +4,35 @@ Copyright (c) Uber Technologies, Inc.
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
+const __BROWSER__ = true
 
-import type * as React from 'react';
+import type * as React from 'react'
 
 // based on:
 // - https://github.com/mui-org/material-ui/blob/master/packages/material-ui/src/utils/focusVisible.js
 // - https://github.com/WICG/focus-visible/blob/v4.1.5/src/focus-visible.js
 
-let initialized = false;
-let hadKeyboardEvent = true;
-let hadFocusVisibleRecently = false;
+let initialized = false
+let hadKeyboardEvent = true
+let hadFocusVisibleRecently = false
 // @ts-ignore
-let hadFocusVisibleRecentlyTimeout = null;
+let hadFocusVisibleRecentlyTimeout = null
 
 const inputTypesWhitelist = {
-  text: true,
-  search: true,
-  url: true,
-  tel: true,
-  email: true,
-  password: true,
-  number: true,
-  date: true,
-  month: true,
-  week: true,
-  time: true,
-  datetime: true,
-  'datetime-local': true,
-};
+    'text': true,
+    'search': true,
+    'url': true,
+    'tel': true,
+    'email': true,
+    'password': true,
+    'number': true,
+    'date': true,
+    'month': true,
+    'week': true,
+    'time': true,
+    'datetime': true,
+    'datetime-local': true,
+}
 
 /**
  * Computes whether the given element should automatically trigger the
@@ -42,22 +43,22 @@ const inputTypesWhitelist = {
  */
 // @ts-ignore
 function focusTriggersKeyboardModality(node) {
-  const { type, tagName } = node;
+    const { type, tagName } = node
 
-  // @ts-ignore
-  if (tagName === 'INPUT' && inputTypesWhitelist[type] && !node.readOnly) {
-    return true;
-  }
+    // @ts-ignore
+    if (tagName === 'INPUT' && inputTypesWhitelist[type] && !node.readOnly) {
+        return true
+    }
 
-  if (tagName === 'TEXTAREA' && !node.readOnly) {
-    return true;
-  }
+    if (tagName === 'TEXTAREA' && !node.readOnly) {
+        return true
+    }
 
-  if (node.isContentEditable) {
-    return true;
-  }
+    if (node.isContentEditable) {
+        return true
+    }
 
-  return false;
+    return false
 }
 
 /**
@@ -69,10 +70,10 @@ function focusTriggersKeyboardModality(node) {
  */
 // @ts-ignore
 function handleKeyDown(event) {
-  if (event.metaKey || event.altKey || event.ctrlKey) {
-    return;
-  }
-  hadKeyboardEvent = true;
+    if (event.metaKey || event.altKey || event.ctrlKey) {
+        return
+    }
+    hadKeyboardEvent = true
 }
 
 /**
@@ -83,97 +84,97 @@ function handleKeyDown(event) {
  * pointing device, while we still think we're in keyboard modality.
  */
 function handlePointerDown() {
-  hadKeyboardEvent = false;
+    hadKeyboardEvent = false
 }
 
 function handleVisibilityChange() {
-  // @ts-ignore
-  if (this.visibilityState === 'hidden') {
-    // If the tab becomes active again, the browser will handle calling focus
-    // on the element (Safari actually calls it twice).
-    // If this tab change caused a blur on an element with focus-visible,
-    // re-apply the class when the user switches back to the tab.
-    if (hadFocusVisibleRecently) {
-      hadKeyboardEvent = true;
+    // @ts-ignore
+    if (this.visibilityState === 'hidden') {
+        // If the tab becomes active again, the browser will handle calling focus
+        // on the element (Safari actually calls it twice).
+        // If this tab change caused a blur on an element with focus-visible,
+        // re-apply the class when the user switches back to the tab.
+        if (hadFocusVisibleRecently) {
+            hadKeyboardEvent = true
+        }
     }
-  }
 }
 
 // @ts-ignore
 function prepare(doc) {
-  doc.addEventListener('keydown', handleKeyDown, true);
-  doc.addEventListener('mousedown', handlePointerDown, true);
-  doc.addEventListener('pointerdown', handlePointerDown, true);
-  doc.addEventListener('touchstart', handlePointerDown, true);
-  doc.addEventListener('visibilitychange', handleVisibilityChange, true);
+    doc.addEventListener('keydown', handleKeyDown, true)
+    doc.addEventListener('mousedown', handlePointerDown, true)
+    doc.addEventListener('pointerdown', handlePointerDown, true)
+    doc.addEventListener('touchstart', handlePointerDown, true)
+    doc.addEventListener('visibilitychange', handleVisibilityChange, true)
 }
 
 // @ts-ignore
 export function teardown(doc) {
-  doc.removeEventListener('keydown', handleKeyDown, true);
-  doc.removeEventListener('mousedown', handlePointerDown, true);
-  doc.removeEventListener('pointerdown', handlePointerDown, true);
-  doc.removeEventListener('touchstart', handlePointerDown, true);
-  doc.removeEventListener('visibilitychange', handleVisibilityChange, true);
+    doc.removeEventListener('keydown', handleKeyDown, true)
+    doc.removeEventListener('mousedown', handlePointerDown, true)
+    doc.removeEventListener('pointerdown', handlePointerDown, true)
+    doc.removeEventListener('touchstart', handlePointerDown, true)
+    doc.removeEventListener('visibilitychange', handleVisibilityChange, true)
 }
 
 // @ts-ignore
 export function isFocusVisible(event) {
-  try {
-    return event.target.matches(':focus-visible');
-  } catch (error) {
-    // browsers not implementing :focus-visible will throw a SyntaxError
-    // we use our own heuristic for those browsers
-    // rethrow might be better if it's not the expected error but do we really
-    // want to crash if focus-visible malfunctioned?
-  }
+    try {
+        return event.target.matches(':focus-visible')
+    } catch (error) {
+        // browsers not implementing :focus-visible will throw a SyntaxError
+        // we use our own heuristic for those browsers
+        // rethrow might be better if it's not the expected error but do we really
+        // want to crash if focus-visible malfunctioned?
+    }
 
-  // no need for validFocusTarget check. the user does that by attaching it to
-  // focusable events only
-  return hadKeyboardEvent || focusTriggersKeyboardModality(event.target);
+    // no need for validFocusTarget check. the user does that by attaching it to
+    // focusable events only
+    return hadKeyboardEvent || focusTriggersKeyboardModality(event.target)
 }
 
 /**
  * Should be called if a blur event is fired on a focus-visible element
  */
 export function handleBlurVisible() {
-  // To detect a tab/window switch, we look for a blur event followed
-  // rapidly by a visibility change.
-  // If we don't see a visibility change within 100ms, it's probably a
-  // regular focus change.
-  hadFocusVisibleRecently = true;
-  if (__BROWSER__) {
-    // @ts-ignore
-    window.clearTimeout(hadFocusVisibleRecentlyTimeout);
-    // @ts-ignore
-    hadFocusVisibleRecentlyTimeout = window.setTimeout(() => {
-      hadFocusVisibleRecently = false;
-    }, 100);
-  }
+    // To detect a tab/window switch, we look for a blur event followed
+    // rapidly by a visibility change.
+    // If we don't see a visibility change within 100ms, it's probably a
+    // regular focus change.
+    hadFocusVisibleRecently = true
+    if (__BROWSER__) {
+        // @ts-ignore
+        window.clearTimeout(hadFocusVisibleRecentlyTimeout)
+        // @ts-ignore
+        hadFocusVisibleRecentlyTimeout = window.setTimeout(() => {
+            hadFocusVisibleRecently = false
+        }, 100)
+    }
 }
 
 // @ts-ignore
 export function initFocusVisible(node) {
-  if (!initialized && node != null) {
-    initialized = true;
-    prepare(node.ownerDocument);
-  }
+    if (!initialized && node != null) {
+        initialized = true
+        prepare(node.ownerDocument)
+    }
 }
 
 export const forkFocus =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
-    if (typeof rootProps.onFocus === 'function') {
-      rootProps.onFocus(e);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
+        if (typeof rootProps.onFocus === 'function') {
+            rootProps.onFocus(e)
+        }
+        handler(e)
     }
-    handler(e);
-  };
 
 export const forkBlur =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
-    if (typeof rootProps.onBlur === 'function') {
-      rootProps.onBlur(e);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rootProps: any, handler: (e: React.FocusEvent) => void) => (e: React.FocusEvent) => {
+        if (typeof rootProps.onBlur === 'function') {
+            rootProps.onBlur(e)
+        }
+        handler(e)
     }
-    handler(e);
-  };

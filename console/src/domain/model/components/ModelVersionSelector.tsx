@@ -1,4 +1,3 @@
-import { formatTimestampDateTime } from '@/utils/datetime'
 import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
@@ -8,7 +7,6 @@ import { listModelVersions } from '../services/modelVersion'
 import { IModelVersionSchema } from '../schemas/modelVersion'
 import { useEventCallback } from '@starwhale/core/utils'
 import { ModelLabel } from './ModelLabel'
-/* eslint-disable react/require-default-props */
 
 export interface IModelVersionSelectorProps {
     projectId: string
@@ -38,13 +36,13 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         ref
     ) => {
         const [keyword, setKeyword] = useState<string>()
-        const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
+        // const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
         const api = useQuery(
             `listModelVersions:${projectId}:${modelId}:${keyword}`,
             () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
             { enabled: !!modelId, refetchOnWindowFocus: false }
         )
-        const { data, isSuccess, isError, isFetching } = api
+        const { data, isSuccess, isFetching } = api
 
         useImperativeHandle(
             ref,
@@ -59,7 +57,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
             _.debounce((term: string) => {
                 setKeyword(term)
             }),
-            [setKeyword, setOptions]
+            [setKeyword]
         )
 
         const handelChange = useEventCallback((id?: string) => {
@@ -79,7 +77,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
                 return
             }
             if (data) handelChange?.(data?.list[0]?.id)
-        }, [value, autoSelected, modelId, data, handelChange])
+        }, [data, value, autoSelected, handelChange])
 
         const $options = React.useMemo(() => {
             if (!isSuccess) return []
@@ -89,7 +87,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
                     label: <ModelLabel version={item} />,
                 })) ?? []
             return ops
-        }, [data, isSuccess, isError, isFetching])
+        }, [data, isSuccess])
 
         return (
             <Select
@@ -113,5 +111,13 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         )
     }
 )
+ModelVersionSelector.defaultProps = {
+    modelId: '',
+    value: '',
+    onChange: () => {},
+    overrides: undefined,
+    disabled: false,
+    autoSelected: false,
+}
 
 export default ModelVersionSelector

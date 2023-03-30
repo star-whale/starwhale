@@ -1,4 +1,4 @@
-import React, { RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import React, { RefObject, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
 import {
@@ -27,13 +27,10 @@ export function SelectorItemRender(
         value = {},
         options = [],
         onChange = () => {},
-        onRemove = () => {},
         isFocus = false,
         isEditing = false,
         style = {},
         addItemRef,
-        data,
-        ...rest
     }: SelectorItemRenderPropsT,
     itemRef: RefObject<any>
 ) {
@@ -41,7 +38,7 @@ export function SelectorItemRender(
     const [search, setSearch] = useState<any>()
     const [removing, setRemoving] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
+    const inputRef = useRef<any>(null)
 
     const itemOption = useMemo(() => {
         const tmp = options.find((item) => item.id === value?.id)
@@ -148,7 +145,7 @@ export function SelectorItemRender(
     React.useLayoutEffect(() => {
         addItemRef?.({
             inputRef,
-        })
+        } as any)
     }, [addItemRef])
 
     // reset to raw status
@@ -188,14 +185,6 @@ export function SelectorItemRender(
                     />
                 }
             />
-            {/* {!isEditing && isValueExist(value) && (
-                <LabelContainer title={value.value} className='label'>
-                    {value}
-                    <LabelRemove className='label-remove' role='button' onClick={onRemove} tabIndex={0}>
-                        {defaultLabelRemoveIcon()}
-                    </LabelRemove>
-                </LabelContainer>
-            )} */}
             {isEditing && (
                 <AutosizeInputContainer className='autosize-input' {...sharedProps}>
                     {/* @ts-ignore */}

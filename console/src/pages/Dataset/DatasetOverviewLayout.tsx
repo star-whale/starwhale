@@ -1,7 +1,7 @@
 import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
 import useTranslation from '@/hooks/useTranslation'
 import React, { useEffect, useMemo } from 'react'
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
@@ -18,7 +18,6 @@ import { Button } from '@starwhale/ui'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
-import _ from 'lodash'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 export interface IDatasetLayoutProps {

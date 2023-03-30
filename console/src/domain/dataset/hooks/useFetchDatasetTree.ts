@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { fetchDatasetTree } from '../services/dataset'
 

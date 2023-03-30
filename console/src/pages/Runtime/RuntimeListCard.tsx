@@ -43,7 +43,7 @@ export default function RuntimeListCard() {
                                 {runtime.name}
                             </TextLink>,
                             runtime.version?.name ?? '-',
-                            <Alias alias={runtime.version?.alias} />,
+                            <Alias key='alias' alias={runtime.version?.alias} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),

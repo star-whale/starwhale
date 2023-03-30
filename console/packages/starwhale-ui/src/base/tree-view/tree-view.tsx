@@ -25,7 +25,7 @@ import { isFocusVisible } from '../utils/focusVisible'
 import { getOverride, getOverrideProps } from '../helpers/overrides'
 
 import type { SyntheticEvent } from 'react'
-import { useEffect } from 'react';
+import { useEffect } from 'react'
 
 export default function TreeView(props: TreeViewProps) {
     const { data, indentGuides = false, onToggle, onSelect, overrides = {}, renderAll, getId = defaultGetId } = props
@@ -142,12 +142,12 @@ export default function TreeView(props: TreeViewProps) {
 
     // cascade with keyboardControlNode to trigger key event
     useEffect(() => {
-        if (!props.keyboardControlNode?.current) return 
+        if (!props.keyboardControlNode?.current) return
         const node = props.keyboardControlNode.current as HTMLElement
         const handle = (event: KeyboardEvent) => {
             // set default select
             focusTreeItem(selectedNodeId ?? getId(data[0]))
-            
+
             function findTreeNodeData(tmpData: TreeNodeData[]): TreeNodeData | undefined {
                 for (let i = 0; i < tmpData.length; i++) {
                     const node = tmpData[i]
@@ -166,12 +166,10 @@ export default function TreeView(props: TreeViewProps) {
         }
         node.addEventListener('keydown', handle)
         return () => {
-            if (!node) return 
-            node.removeEventListener('keydown',handle)
+            if (!node) return
+            node.removeEventListener('keydown', handle)
         }
-
-    }, [props.keyboardControlNode, onKeyDown, focusTreeItem , selectedNodeId, data, onFocus])
-
+    }, [props.keyboardControlNode, onKeyDown, focusTreeItem, selectedNodeId, data, onFocus])
 
     return (
         <Root role='tree' {...getOverrideProps(RootOverride)}>

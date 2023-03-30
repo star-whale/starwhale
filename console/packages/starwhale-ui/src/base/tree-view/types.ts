@@ -84,4 +84,5 @@ export type TreeViewProps = {
     // note: will NOT affect pre-set data. If you start with multiple sibling nodes open it will be open until you toggle one of them to isExpanded
     singleExpanded?: boolean
     keyboardControlNode?: { current: null }
+    onSelect?: (node: TreeNodeData) => void
 }

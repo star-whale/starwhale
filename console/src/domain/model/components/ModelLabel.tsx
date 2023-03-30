@@ -36,7 +36,7 @@ export function ModelLabel({
     const name = version?.versionName ?? version?.name
     const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
-        .filter((v) => !!v)
+        .filter((tmp) => !!tmp)
         .join('/')
 
     return (

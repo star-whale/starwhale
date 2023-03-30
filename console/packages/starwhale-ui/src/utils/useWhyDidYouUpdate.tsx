@@ -1,11 +1,12 @@
-/* @ts-ignore */
+/* @ts-nocheck */
 /* eslint-disable */
 import React, { useEffect, useRef } from 'react'
 
+// @ts-ignore
 function useWhyDidYouUpdate(name, props) {
     // Get a mutable ref object where we can store props ...
     // ... for comparison next time this hook runs.
-    const previousProps = useRef()
+    const previousProps = useRef<Record<string, any>>()
     useEffect(() => {
         if (previousProps.current) {
             // Get all keys from previous and current props
@@ -15,10 +16,11 @@ function useWhyDidYouUpdate(name, props) {
             // Iterate through keys
             allKeys.forEach((key) => {
                 // If previous is different from current
-                if (previousProps.current[key] !== props[key]) {
+                if (previousProps.current?.[key] !== props[key]) {
                     // Add to changesObj
+                    // @ts-ignore
                     changesObj[key] = {
-                        from: previousProps.current[key],
+                        from: previousProps.current?.[key],
                         to: props[key],
                     }
                 }

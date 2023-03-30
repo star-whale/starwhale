@@ -16,7 +16,7 @@ export default function TreeNode({
     node,
 }: TreeNodePropsT) {
     const $isStaticLabel = !selectable
-    const $isRadioLeaf = selectable && !multiple && node.isLeafNode
+    const $isRadioLeaf = selectable && !multiple && node?.isLeafNode
 
     if ($isStaticLabel || $isRadioLeaf) {
         return (

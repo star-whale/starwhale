@@ -24,15 +24,18 @@ export type TreePropsT = {
 
     multiple?: boolean
     keyboardControlNode?: { current: null }
+
+    renderLabel?: (node: TreeNodeData) => React.ReactNode
+    renderActions?: (node: TreeNodeData) => React.ReactNode
 }
 
 export type TreeNodePropsT = {
     node: TreeNodeData
-    label: TreeNodeData
     multiple?: boolean
     selectable?: boolean
     isSelected?: boolean
     isSelectedIndeterminate?: boolean
     onChange?: (bool: boolean) => void
     actions?: React.ReactNode
+    label: React.ReactNode
 }

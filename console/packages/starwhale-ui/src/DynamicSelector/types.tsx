@@ -1,7 +1,8 @@
 export interface DynamicSelectorPropsT<T> {
     value?: SelectorItemValueT[]
     onChange?: (args: SelectorItemValueT[]) => void
-    startEnhancer?: () => React.ReactNode
+    startEnhancer?: (() => React.ReactNode) | React.ReactNode
+    endEnhancer?: (() => React.ReactNode) | React.ReactNode
     placeholder?: React.ReactNode
     options?: SelectorItemOptionT<T>[]
     data?: T
@@ -36,6 +37,8 @@ export type SelectorItemRenderPropsT = {
     onChange?: (args: SelectorItemValueT) => void
     onRemove?: () => void
     options?: SelectorItemOptionT[]
+    style?: React.CSSProperties
+    addItemRef?: (ref: React.RefObject<any>) => void
 }
 
 export type SelectorItemPropsT = {
@@ -44,4 +47,5 @@ export type SelectorItemPropsT = {
     search?: string
     inputRef?: React.RefObject<HTMLInputElement>
     data?: any
+    info?: SelectorItemOptionT['info']
 } & SelectorSharedPropsT

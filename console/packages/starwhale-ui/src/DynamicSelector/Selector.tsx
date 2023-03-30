@@ -1,12 +1,10 @@
 import React, { useState, useRef } from 'react'
 import { useClickAway } from 'react-use'
-import _ from 'lodash'
 import SelectorItemRender from './SelectorItemRender'
 import { DynamicSelectorPropsT, SelectorItemPropsT, SelectorItemValueT } from './types'
 import {
     defalutPlaceholder,
     defaultEndEnhancer,
-    defaultStartEnhancer,
     EndEnhancer,
     Placeholder,
     SelectorContainer,
@@ -52,11 +50,6 @@ export function DynamicSelector<T = any>({
             inputRef: { current: null | HTMLInputElement }
         }
     }>({})
-
-    // useEffect(() => {
-    //     if (_.isEqual(values, rest.value)) return
-    //     setValues(rest.value ?? [])
-    // }, [values, rest.value])
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
@@ -127,7 +120,7 @@ export function DynamicSelector<T = any>({
                 onRemove: () => handelRemove(i),
                 onKeyDown: (e: KeyboardEvent) => handleKeyDown(e),
                 onClick: () => handleClick(i),
-                addItemRef: (itemRef: any) => handleAddItemRef(itemRef, i),
+                addItemRef: (itemRef: HTMLInputElement) => handleAddItemRef(itemRef, i),
                 onChange: (newValue: any) => handleChange(newValue, i),
             }
         },
@@ -135,38 +128,17 @@ export function DynamicSelector<T = any>({
         [isEditing, options, ref]
     )
 
-    const count = React.useRef(100)
     const $values = React.useMemo(() => {
-        count.current += 1
         const tmps = []
-        // values?.map((value, index) => {
-        //     return (
-        //         <SelectorItemRender
-        //             key={index}
-        //             value={value}
-        //             isFocus={editingIndex === index}
-        //             {...getSharedProps(index)}
-        //         />
-        //     )
-        // }) ?? []
-
         const lastIndex = values.length
         tmps.push(
+            // @ts-ignore
             <SelectorItemRender
-                // key={count.current}
                 key={0}
                 value={{}}
-                // isFocus={editingIndex === lastIndex}
                 isFocus
                 {...getSharedProps(lastIndex)}
                 onChange={(newValue: any) => {
-                    // const newValues = [...values]
-                    // // remove prev item
-                    // if (!newValue) {
-                    //     newValues.splice(-1)
-                    // } else {
-                    //     newValues.push(newValue)
-                    // }
                     setValues(newValue)
                     onChange?.(newValue)
                 }}

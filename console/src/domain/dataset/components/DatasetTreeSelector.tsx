@@ -21,7 +21,7 @@ export function DatasetTreeSelector(props: any) {
     const [t] = useTranslation()
     const { projectId } = props
     const datasetInfo = useFetchDatasetTree(projectId)
-    const treeData = React.useMemo(() => {
+    const $treeData = React.useMemo(() => {
         if (!datasetInfo.isSuccess) return []
 
         const treeData: TreeNodeData[] = datasetInfo.data.map((dataset) => {
@@ -49,7 +49,7 @@ export function DatasetTreeSelector(props: any) {
                                     </Button>
                                 </DatasetTreeNode>
                             ),
-                            labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow={true} />,
+                            labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow />,
                             labelTitle: '',
                             isExpanded: true,
                         }
@@ -58,14 +58,14 @@ export function DatasetTreeSelector(props: any) {
         })
 
         return treeData
-    }, [datasetInfo])
+    }, [datasetInfo, projectId, t])
 
     const options = React.useMemo(() => {
         return [
             {
                 id: 'tree',
                 info: {
-                    data: treeData,
+                    data: $treeData,
                 },
                 multiple: true,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
@@ -75,7 +75,7 @@ export function DatasetTreeSelector(props: any) {
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [treeData])
+    }, [$treeData])
 
     return <DynamicSelector {...props} options={options} />
 }

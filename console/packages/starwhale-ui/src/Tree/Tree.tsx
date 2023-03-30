@@ -5,6 +5,7 @@ import { TreeNodeDataT, TreePropsT } from './types'
 import TreeNode from './TreeNode'
 
 type TreeDataLoaderT = {
+    data: TreeNodeData[]
     search: string
     searchFilter: (search: string, node: TreeNodeData) => boolean
     nodeRender: (node: TreeNodeData) => React.ReactNode
@@ -103,7 +104,7 @@ function useTreeDataSelection({
 }
 
 const searchFilter = (searchTmp: string, node: TreeNodeDataT) =>
-    node.info?.label?.toLocaleLowerCase().includes(searchTmp.toLowerCase())
+    node.info?.label?.toLocaleLowerCase().includes(searchTmp.toLowerCase()) ?? false
 
 export function Tree({
     data: rawData,
@@ -111,8 +112,8 @@ export function Tree({
     selectable = true,
     selectedIds = [],
     onSelectedIdsChange = () => {},
-    renderLabel = (node: TreeNodeDataT) => node?.info.label,
-    renderActions = (node: TreeNodeDataT) => null,
+    renderLabel = (node: TreeNodeDataT) => node?.info?.label,
+    renderActions = () => null,
     multiple = true,
     search: rawSearch,
     keyboardControlNode,
@@ -158,7 +159,6 @@ export function Tree({
         data,
         search,
         searchFilter,
-        selectedIds,
         nodeRender,
     })
 

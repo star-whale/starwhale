@@ -21,7 +21,6 @@ import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 import { Toggle } from '@starwhale/ui/Select'
-import { usePage } from '@/hooks/usePage'
 import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
 import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
 
@@ -63,7 +62,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [t] = useTranslation()
     const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
 
-    const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -115,7 +113,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const modelVersionApi = modelVersionRef.current?.getData()
 
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
-        if (!modelVersionApi) return undefined
+        if (!modelVersionApi?.data) return undefined
         const list = modelVersionApi?.data?.list ?? []
         return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
     }, [modelVersionApi?.data, modelVersionId])

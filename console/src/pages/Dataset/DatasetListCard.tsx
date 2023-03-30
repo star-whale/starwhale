@@ -6,7 +6,6 @@ import { ICreateDatasetSchema } from '@dataset/schemas/dataset'
 import DatasetForm from '@dataset/components/DatasetForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
@@ -54,7 +53,7 @@ export default function DatasetListCard() {
                                 {dataset.name}
                             </TextLink>,
                             dataset.version?.name ?? '-',
-                            <Alias alias={dataset.version?.alias} />,
+                            <Alias key='alias' alias={dataset.version?.alias} />,
                             // dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <Button

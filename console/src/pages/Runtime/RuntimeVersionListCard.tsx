@@ -69,8 +69,8 @@ export default function RuntimeVersionListCard() {
                         >
                             {runtime.name}
                         </TextLink>,
-                        <Alias alias={runtime.alias} />,
-                        <Shared shared={runtime.shared} isTextShow />,
+                        <Alias key='alias' alias={runtime.alias} />,
+                        <Shared key='shared' shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,
                         <>

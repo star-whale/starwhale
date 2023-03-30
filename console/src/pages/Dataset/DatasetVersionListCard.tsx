@@ -59,8 +59,8 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
-                                <Alias alias={datasetVersion.alias} />,
-                                <Shared shared={datasetVersion.shared} isTextShow />,
+                                <Alias key='alias' alias={datasetVersion.alias} />,
+                                <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <>
