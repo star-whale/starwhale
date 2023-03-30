@@ -16,54 +16,25 @@
 
 package ai.starwhale.mlops.api.protocol.runtime;
 
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import java.util.List;
-import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "Runtime information object", title = "RuntimeInfo")
 @Validated
-public class RuntimeInfoVo implements Serializable {
+@Schema(description = "Runtime Version View object", title = "Runtime")
+public class RuntimeVersionViewVo {
 
-    @JsonProperty("id")
     private String id;
 
-    @JsonProperty("name")
-    private String name;
-
-    @JsonProperty("versionName")
     private String versionName;
 
-    @JsonProperty("versionAlias")
-    private String versionAlias;
+    private String alias;
 
-    @JsonProperty("versionTag")
-    private String versionTag;
-
-    @JsonProperty("versionMeta")
-    private String versionMeta;
-
-    @JsonProperty("manifest")
-    private String manifest;
-
-    @JsonProperty("shared")
     private Integer shared;
 
-    @JsonProperty("createdTime")
     private Long createdTime;
-
-    @JsonProperty("files")
-    @Valid
-    private List<FlattenFileVo> files;
-
-    public static RuntimeInfoVo empty() {
-        return new RuntimeInfoVo("", "", "", "", "", "", "", 0, 0L, List.of());
-    }
 }

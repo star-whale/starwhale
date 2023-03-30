@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime.mapper;
 
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Objects;
@@ -34,12 +35,18 @@ import org.apache.ibatis.jdbc.SQL;
 public interface RuntimeVersionMapper {
 
     String COLUMNS = "runtime_version.id, version_order, runtime_id, runtime_version.owner_id,"
-            + " version_name, version_tag, version_meta, storage_path, image, built_image,"
+            + " version_name, version_tag, version_meta, storage_path, image, built_image, shared,"
             + " runtime_version.created_time, runtime_version.modified_time";
+
+    String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, b.runtime_name, b.id as runtime_id,"
+            + " v.id, v.version_order, v.version_name, v.shared, v.created_time, v.modified_time";
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
             @Param("namePrefix") String namePrefix, @Param("tag") String tag);
+
+    @Select("select " + COLUMNS + " from runtime_version where shared = 1")
+    List<RuntimeVersionEntity> listShared();
 
     @Select("select " + COLUMNS + " from runtime_version where id = #{id}")
     RuntimeVersionEntity find(@Param("id") Long id);
@@ -75,6 +82,9 @@ public interface RuntimeVersionMapper {
     @Update("update runtime_version set version_tag = #{tag} where id = #{id}")
     int updateTag(@Param("id") Long id, @Param("tag") String tag);
 
+    @Update("update runtime_version set shared = #{shared} where id = #{id}")
+    int updateShared(@Param("id") Long id, @Param("shared") Integer shared);
+
     @SelectProvider(value = RuntimeVersionProvider.class, method = "findByNameAndRuntimeIdSql")
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("versionName") String versionName,
             @Param("runtimeId") Long runtimeId);
@@ -90,6 +100,29 @@ public interface RuntimeVersionMapper {
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "findLatestByProjectIdSql")
     List<RuntimeVersionEntity> findLatestByProjectId(@Param("projectId") Long projectId, @Param("limit") Integer limit);
+
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from runtime_version as v, runtime_info as b, project_info as p, user_info as u"
+            + " where v.runtime_id = b.id"
+            + " and b.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and p.is_deleted = 0"
+            + " and p.id = #{projectId}"
+            + " order by b.id desc, v.version_order desc")
+    List<RuntimeVersionViewEntity> listRuntimeVersionViewByProject(@Param("projectId") Long projectId);
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from runtime_version as v, runtime_info as b, project_info as p, user_info as u"
+            + " where v.runtime_id = b.id"
+            + " and b.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and p.is_deleted = 0"
+            + " and p.privacy = 1"
+            + " and v.shared = 1"
+            + " and p.id != #{excludeProjectId}"
+            + " order by b.id desc, v.version_order desc")
+    List<RuntimeVersionViewEntity> listRuntimeVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
 
     class RuntimeVersionProvider {
 

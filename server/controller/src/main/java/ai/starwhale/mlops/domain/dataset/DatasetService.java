@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.domain.dataset;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
@@ -44,6 +46,7 @@ import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
@@ -63,7 +66,9 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,11 +136,50 @@ public class DatasetService {
                 query.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, ds -> {
-            DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
             DatasetVo vo = datasetVoConverter.convert(ds);
-            vo.setVersion(versionConvertor.convert(version));
+            DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
+            if (version != null) {
+                vo.setVersion(versionConvertor.convert(version, version));
+            }
             return vo;
         });
+    }
+
+    public List<DatasetViewVo> listDatasetVersionView(String projectUrl) {
+        Long projectId = projectService.getProjectId(projectUrl);
+        var versions = datasetVersionMapper.listDatasetVersionViewByProject(projectId);
+        var shared = datasetVersionMapper.listDatasetVersionViewByShared(projectId);
+        var list = new ArrayList<>(viewEntityToVo(versions, 0));
+        list.addAll(viewEntityToVo(shared, 1));
+        return list;
+    }
+
+    private Collection<DatasetViewVo> viewEntityToVo(List<DatasetVersionViewEntity> list, Integer shared) {
+        Map<Long, DatasetViewVo> map = new LinkedHashMap<>();
+        for (DatasetVersionViewEntity entity : list) {
+            if (!map.containsKey(entity.getDatasetId())) {
+                map.put(entity.getDatasetId(),
+                        DatasetViewVo.builder()
+                                .ownerName(entity.getUserName())
+                                .projectName(entity.getProjectName())
+                                .datasetId(idConvertor.convert(entity.getDatasetId()))
+                                .datasetName(entity.getDatasetName())
+                                .shared(shared)
+                                .versions(new ArrayList<>())
+                                .build());
+            }
+            DatasetVersionEntity latest = datasetVersionMapper.findByLatest(entity.getDatasetId());
+            map.get(entity.getDatasetId())
+                    .getVersions()
+                    .add(DatasetVersionViewVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(entity.getShared())
+                            .build());
+        }
+        return map.values();
     }
 
     public Boolean deleteDataset(DatasetQuery query) {
@@ -198,6 +242,7 @@ public class DatasetService {
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
+                    .shared(versionEntity.getShared())
                     .files(collect)
                     .build();
 
@@ -205,6 +250,20 @@ public class DatasetService {
             throw new StarwhaleApiException(
                     new SwProcessException(ErrorType.STORAGE, "list dataset storage", e),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void shareDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
+            Integer shared) {
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
+                .create(projectUrl, datasetUrl, versionUrl));
+        switch (shared) {
+            case 0:
+            case 1:
+                datasetVersionMapper.updateShared(versionId, shared);
+                break;
+            default:
+                throw new SwValidationException(ValidSubject.DATASET, "Invalid shared value: " + shared);
         }
     }
 
@@ -234,13 +293,7 @@ public class DatasetService {
         List<DatasetVersionEntity> entities = datasetVersionMapper.list(
                 datasetId, query.getVersionName(), query.getVersionTag());
         DatasetVersionEntity latest = datasetVersionMapper.findByLatest(datasetId);
-        return PageUtil.toPageInfo(entities, entity -> {
-            DatasetVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
-            return vo;
-        });
+        return PageUtil.toPageInfo(entities, entity -> versionConvertor.convert(entity, latest));
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
@@ -248,8 +301,9 @@ public class DatasetService {
 
         return versions.stream().map(version -> {
             DatasetEntity ds = datasetMapper.find(version.getDatasetId());
+            DatasetVersionEntity latest = datasetVersionMapper.findByLatest(version.getDatasetId());
             DatasetVo vo = datasetVoConverter.convert(ds);
-            vo.setVersion(versionConvertor.convert(version));
+            vo.setVersion(versionConvertor.convert(version, latest));
             return vo;
         }).collect(Collectors.toList());
     }

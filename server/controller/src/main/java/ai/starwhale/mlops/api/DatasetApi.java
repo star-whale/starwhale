@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
@@ -36,6 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
@@ -205,6 +207,17 @@ public interface DatasetApi {
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
+
+    @Operation(summary = "List dataset tree including global datasets")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/dataset-tree",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl);
+
     /**
      * use #uploadHashedBlob instead
      */
@@ -304,6 +317,27 @@ public interface DatasetApi {
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
 
+
+    @Operation(summary = "Share or unshare the dataset version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareDatasetVersion(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("datasetUrl") String datasetUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl") String versionUrl,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "1 - shared, 0 - unshared",
+                    schema = @Schema())
+            @RequestParam(value = "shared") Integer shared
+    );
 
     @Operation(
             summary = "Manage tag of the dataset version",

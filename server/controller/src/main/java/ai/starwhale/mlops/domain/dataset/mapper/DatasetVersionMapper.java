@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.dataset.mapper;
 
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Objects;
@@ -36,13 +37,15 @@ public interface DatasetVersionMapper {
 
     String COLUMNS = "id, version_order, dataset_id, owner_id,"
             + " version_name, version_tag, version_meta, files_uploaded, storage_path,"
-            + " status, created_time, modified_time, size, index_table";
+            + " status, created_time, modified_time, size, index_table, shared";
+
+    String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, b.dataset_name, b.id as dataset_id,"
+            + " v.id, v.version_order, v.version_name, v.shared, v.created_time, v.modified_time";
 
     @SelectProvider(value = DatasetVersionProvider.class, method = "listSql")
     List<DatasetVersionEntity> list(@Param("datasetId") Long datasetId,
             @Param("namePrefix") String namePrefix,
             @Param("tag") String tag);
-
 
     @Select("select " + COLUMNS + " from dataset_version where id = #{id}")
     DatasetVersionEntity find(@Param("id") Long id);
@@ -92,6 +95,9 @@ public interface DatasetVersionMapper {
     @Update("update dataset_version set version_tag = #{tag} where id = #{id}")
     int updateTag(@Param("id") Long id, @Param("tag") String tag);
 
+    @Update("update dataset_version set shared = #{shared} where id = #{id}")
+    int updateShared(@Param("id") Long id, @Param("shared") Integer shared);
+
     //int updateFilesUploaded(@Param("version") DatasetVersionEntity version);
     @Update("update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}")
     int updateFilesUploaded(@Param("id") Long id, @Param("filesUploaded") String filesUploaded);
@@ -101,6 +107,28 @@ public interface DatasetVersionMapper {
 
     @Delete("delete from dataset_version where id = #{id}")
     int delete(@Param("id") Long id);
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from dataset_version as v, dataset_info as b, project_info as p, user_info as u"
+            + " where v.dataset_id = b.id"
+            + " and b.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and p.is_deleted = 0"
+            + " and p.id = #{projectId}"
+            + " order by b.id desc, v.version_order desc")
+    List<DatasetVersionViewEntity> listDatasetVersionViewByProject(@Param("projectId") Long projectId);
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from dataset_version as v, dataset_info as b, project_info as p, user_info as u"
+            + " where v.dataset_id = b.id"
+            + " and b.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and p.is_deleted = 0"
+            + " and p.privacy = 1"
+            + " and v.shared = 1"
+            + " and p.id != #{excludeProjectId}"
+            + " order by b.id desc, v.version_order desc")
+    List<DatasetVersionViewEntity> listDatasetVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
 
     class DatasetVersionProvider {
 

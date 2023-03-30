@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
@@ -272,6 +273,13 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> shareDatasetVersion(String projectUrl, String datasetUrl,
+            String versionUrl, Integer shared) {
+        datasetService.shareDatasetVersion(projectUrl, datasetUrl, versionUrl, shared);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> manageDatasetTag(String projectUrl,
             String datasetUrl, String versionUrl, DatasetTagRequest datasetTagRequest) {
         TagAction ta;
@@ -313,6 +321,12 @@ public class DatasetController implements DatasetApi {
                             .build());
         }
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(String projectUrl) {
+        List<DatasetViewVo> datasetViewVos = datasetService.listDatasetVersionView(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(datasetViewVos));
     }
 
     @Override

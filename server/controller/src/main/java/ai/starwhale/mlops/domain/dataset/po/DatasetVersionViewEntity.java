@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.runtime.po;
+package ai.starwhale.mlops.domain.dataset.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.base.HasId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,32 +29,21 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEntity {
+public class DatasetVersionViewEntity extends BaseEntity implements HasId {
 
     private Long id;
 
+    private Long datasetId;
+
     private Long versionOrder;
 
-    private Long runtimeId;
+    private String userName;
 
-    private Long ownerId;
+    private String projectName;
+
+    private String datasetName;
 
     private String versionName;
 
-    private String versionTag;
-
-    private String versionMeta;
-
-    private String storagePath;
-
-    private String image;
-
-    private String builtImage;
-
     private Integer shared;
-
-    @Override
-    public String getName() {
-        return versionName;
-    }
 }

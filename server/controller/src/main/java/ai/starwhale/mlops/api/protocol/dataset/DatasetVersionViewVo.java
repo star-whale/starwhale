@@ -16,53 +16,24 @@
 
 package ai.starwhale.mlops.api.protocol.dataset;
 
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import java.util.List;
-import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "SWDataset information object", title = "DatasetInfo")
 @Validated
-public class DatasetInfoVo implements Serializable {
+@Schema(description = "Dataset Version View object", title = "Dataset")
+public class DatasetVersionViewVo {
 
-    @JsonProperty("id")
     private String id;
 
-    @JsonProperty("name")
-    private String name;
-
-    @JsonProperty("versionName")
     private String versionName;
 
-    @JsonProperty("versionAlias")
-    private String versionAlias;
+    private String alias;
 
-    /**
-     * the table name for index in DataStore
-     */
-    String indexTable;
-
-    @JsonProperty("versionTag")
-    private String versionTag;
-
-    @JsonProperty("versionMeta")
-    private String versionMeta;
-
-    @JsonProperty("shared")
     private Integer shared;
 
-    @JsonProperty("createdTime")
     private Long createdTime;
-
-    @JsonProperty("files")
-    @Valid
-    private List<FlattenFileVo> files;
-
 }

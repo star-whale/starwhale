@@ -35,17 +35,22 @@ public class DatasetVersionVoConverter {
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public DatasetVersionVo convert(DatasetVersionEntity entity)
+    public DatasetVersionVo convert(DatasetVersionEntity entity) throws ConvertException {
+        return convert(entity, null);
+    }
+
+    public DatasetVersionVo convert(DatasetVersionEntity entity, DatasetVersionEntity latest)
             throws ConvertException {
         if (entity == null) {
             return null;
         }
         return DatasetVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
-                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                 .name(entity.getVersionName())
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
+                .shared(entity.getShared())
                 .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }

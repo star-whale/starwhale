@@ -18,7 +18,9 @@ package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import ai.starwhale.mlops.common.Constants;
@@ -54,6 +56,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.Trash;
@@ -82,8 +85,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -179,13 +184,50 @@ public class RuntimeService {
             RuntimeVo vo = runtimeConvertor.convert(rt);
             RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
             if (version != null) {
-                RuntimeVersionVo versionVo = versionConvertor.convert(version);
+                RuntimeVersionVo versionVo = versionConvertor.convert(version, version);
                 versionVo.setOwner(userService.findUserById(version.getOwnerId()));
                 vo.setVersion(versionVo);
             }
             vo.setOwner(userService.findUserById(rt.getOwnerId()));
             return vo;
         });
+    }
+
+    public List<RuntimeViewVo> listRuntimeVersionView(String projectUrl) {
+        Long projectId = projectService.getProjectId(projectUrl);
+        var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(projectId);
+        var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
+        var list = new ArrayList<>(viewEntityToVo(versions, 0));
+        list.addAll(viewEntityToVo(shared, 1));
+        return list;
+    }
+
+    private Collection<RuntimeViewVo> viewEntityToVo(List<RuntimeVersionViewEntity> list, Integer shared) {
+        Map<Long, RuntimeViewVo> map = new LinkedHashMap<>();
+        for (RuntimeVersionViewEntity entity : list) {
+            if (!map.containsKey(entity.getRuntimeId())) {
+                map.put(entity.getRuntimeId(),
+                        RuntimeViewVo.builder()
+                                .ownerName(entity.getUserName())
+                                .projectName(entity.getProjectName())
+                                .runtimeId(idConvertor.convert(entity.getRuntimeId()))
+                                .runtimeName(entity.getRuntimeName())
+                                .shared(shared)
+                                .versions(new ArrayList<>())
+                                .build());
+            }
+            RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(entity.getRuntimeId());
+            map.get(entity.getRuntimeId())
+                    .getVersions()
+                    .add(RuntimeVersionViewVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(entity.getShared())
+                            .build());
+        }
+        return map.values();
     }
 
     public Runtime findRuntime(Long runtimeId) {
@@ -254,6 +296,7 @@ public class RuntimeService {
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
+                    .shared(versionEntity.getShared())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .files(collect)
                     .build();
@@ -277,6 +320,19 @@ public class RuntimeService {
         int update = runtimeVersionMapper.update(entity);
         log.info("Runtime Version has been modified. ID={}", entity.getId());
         return update > 0;
+    }
+
+    public void shareRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, Integer shared) {
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
+                .create(projectUrl, runtimeUrl, runtimeVersionUrl));
+        switch (shared) {
+            case 0:
+            case 1:
+                runtimeVersionMapper.updateShared(versionId, shared);
+                break;
+            default:
+                throw new SwValidationException(ValidSubject.RUNTIME, "Invalid shared value: " + shared);
+        }
     }
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
@@ -304,14 +360,12 @@ public class RuntimeService {
                 runtimeId, query.getVersionName(), query.getVersionTag());
         RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(runtimeId);
         return PageUtil.toPageInfo(entities, entity -> {
-            RuntimeVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
+            RuntimeVersionVo vo = versionConvertor.convert(entity, latest);
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });
     }
+
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
         List<RuntimeVersionEntity> versions = runtimeVersionMapper.findByIds(
@@ -319,8 +373,9 @@ public class RuntimeService {
 
         return versions.stream().map(version -> {
             RuntimeEntity rt = runtimeMapper.find(version.getRuntimeId());
+            RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(version.getRuntimeId());
             RuntimeVo vo = runtimeConvertor.convert(rt);
-            vo.setVersion(versionConvertor.convert(version));
+            vo.setVersion(versionConvertor.convert(version, latest));
             vo.setOwner(userService.findUserById(version.getOwnerId()));
             return vo;
         }).collect(Collectors.toList());
