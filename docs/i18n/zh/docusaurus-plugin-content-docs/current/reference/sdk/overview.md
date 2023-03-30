@@ -17,7 +17,6 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 
 - `multi_classification`: 修饰器，适用于多分类问题，用来简化cmp结果的进一步计算和结果存储，能更好的呈现评测结果。
 - `step`: 修饰器，可以指定DAG的依赖关系和Task数量、资源等配置，实现用户自定义评测过程。
-- `get_data_loader`: 获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。
 
 ## 数据类型
 

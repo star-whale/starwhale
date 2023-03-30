@@ -51,32 +51,18 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     def head(
         self, rows: int = 5, show_raw_data: bool = False
     ) -> t.List[t.Dict[str, t.Any]]:
-        from starwhale.api._impl.dataset import get_data_loader
+        from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
         ret = []
-        loader = get_data_loader(self.uri)
-        for idx, row in enumerate(loader._iter_meta()):
-            info: t.Dict[str, t.Any] = {}
-            if idx >= rows:
-                break
-            if show_raw_data:
-                data_row = loader._unpack_row(row)
-                info.update(
-                    {
-                        "index": data_row.index,
-                        "features": data_row.features,
-                        "id": idx,
-                    }
-                )
-            else:
-                info.update(
-                    {
-                        "index": row.id,
-                        "features": row.features,
-                        "id": idx,
-                    }
-                )
-            ret.append(info)
+        sds = SDKDataset.dataset(self.uri, readonly=True)
+        for idx, row in enumerate(sds.head(n=rows, skip_fetch_data=not show_raw_data)):
+            ret.append(
+                {
+                    "index": row.index,
+                    "features": row.features,
+                    "id": idx,
+                }
+            )
 
         return ret
 

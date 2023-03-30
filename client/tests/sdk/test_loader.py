@@ -8,7 +8,6 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
-from starwhale import get_data_loader
 from starwhale.utils import config
 from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.base.uri import URI
@@ -30,7 +29,7 @@ from starwhale.core.dataset.tabular import (
     TabularDatasetRow,
     get_dataset_consumption,
 )
-from starwhale.api._impl.dataset.loader import DataRow, DataLoader
+from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
 
 
 class TestDataLoader(TestCase):

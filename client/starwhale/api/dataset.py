@@ -18,7 +18,6 @@ from ._impl.dataset import (
     NumpyBinary,
     BoundingBox3D,
     GrayscaleImage,
-    get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
@@ -28,7 +27,6 @@ from ._impl.dataset import (
 
 
 __all__ = [
-    "get_data_loader",
     "Link",
     "LinkAuth",
     "DefaultS3LinkAuth",

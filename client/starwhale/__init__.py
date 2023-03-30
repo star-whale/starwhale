@@ -23,14 +23,12 @@ from starwhale.api.dataset import (
     NumpyBinary,
     BoundingBox3D,
     GrayscaleImage,
-    get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
 from starwhale.api.evaluation import PipelineHandler
 from starwhale.core.job.context import Context
-from starwhale.core.dataset.tabular import get_dataset_consumption
 
 dataset = Dataset.dataset
 
@@ -47,7 +45,6 @@ __all__ = [
     "step",
     "pass_context",
     "Context",
-    "get_data_loader",
     "Link",
     "LinkAuth",
     "DefaultS3LinkAuth",
@@ -69,6 +66,5 @@ __all__ = [
     "BoundingBox3D",
     "GrayscaleImage",
     "COCOObjectAnnotation",
-    "get_dataset_consumption",
     "track",
 ]

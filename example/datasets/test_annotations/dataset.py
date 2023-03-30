@@ -7,11 +7,11 @@ from starwhale import (
     Link,
     Text,
     Image,
+    dataset,
     URIType,
     MIMEType,
     ClassLabel,
     BoundingBox,
-    get_data_loader,
     COCOObjectAnnotation,
 )
 from starwhale.api._impl.data_store import Link as PlainLink
@@ -71,16 +71,17 @@ def iter_swds_bin_item():
 def _load_dataset(uri):
     print("-" * 20)
     print(uri)
-    for idx, data in get_data_loader(uri, "idx-0", "idx-2"):
+    ds = dataset(uri, readonly=True)
+    for idx, features in ds["idx-0":"idx-2"]:
         print(
-            f"---->[{idx}] {data['text'].content} data-length:{len(data['text'].to_bytes())}"
+            f"---->[{idx}] {features.text.content} data-length:{len(features.text.to_bytes())}"
         )
         ats = "\n".join(
-            [f"\t{k}-{v}-{type(v)}-{_get_type(v)}" for k, v in data.items()]
+            [f"\t{k}-{v}-{type(v)}-{_get_type(v)}" for k, v in features.items()]
         )
-        print(f"data: {len(data)}\n {ats}")
-        if "artifact_s3_link" in data:
-            link = data["artifact_s3_link"]
+        print(f"data: {len(features)}\n {ats}")
+        if "artifact_s3_link" in features:
+            link = features["artifact_s3_link"]
             content = link.to_bytes(uri)
             image = PILImage.open(io.BytesIO(content))
             print(

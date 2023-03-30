@@ -1,4 +1,3 @@
-import io
 import os
 import typing as t
 from pathlib import Path
@@ -33,13 +32,11 @@ from starwhale.core.dataset.type import (
     JsonDict,
     MIMEType,
     DatasetConfig,
-    DatasetSummary,
     GrayscaleImage,
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
-from starwhale.core.dataset.tabular import TabularDatasetRow
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
@@ -270,56 +267,32 @@ class StandaloneDatasetTestCase(TestCase):
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
-    @patch("starwhale.core.dataset.store.LocalFSStorageBackend._make_file")
-    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
-    def test_head(
-        self,
-        m_scan: MagicMock,
-        m_summary: MagicMock,
-        m_makefile: MagicMock,
-    ) -> None:
-        m_summary.return_value = DatasetSummary(
-            rows=2,
-        )
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id="label-0",
-                features={
-                    "img": GrayscaleImage(
-                        link=Link(
-                            "123",
-                            offset=32,
-                            size=784,
-                            _swds_bin_offset=0,
-                            _swds_bin_size=8160,
-                        )
-                    ),
+    def test_head(self) -> None:
+        from starwhale.api._impl.dataset import Dataset as SDKDataset
+
+        sds = SDKDataset.dataset("mnist-head-test")
+        sds.append(
+            (
+                "label-0",
+                {
+                    "img": GrayscaleImage(fp=b"123"),
                     "label": 0,
                 },
-            ),
-            TabularDatasetRow(
-                id="label-1",
-                features={
-                    "img": GrayscaleImage(
-                        link=Link(
-                            "456",
-                            offset=32,
-                            size=784,
-                            _swds_bin_offset=0,
-                            _swds_bin_size=8160,
-                        )
-                    ),
+            )
+        )
+        sds.append(
+            (
+                "label-1",
+                {
+                    "img": GrayscaleImage(fp=b"456"),
                     "label": 1,
                 },
-            ),
-        ]
-        content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
-        while len(content) < 784:
-            content = content + content
-        m_makefile.side_effect = [io.BytesIO(content), io.BytesIO(content)]
+            )
+        )
+        sds.commit()
+        sds.close()
 
-        dataset_uri = "mnist/version/version"
+        dataset_uri = "mnist-head-test/version/latest"
         ds = Dataset.get_dataset(URI(dataset_uri, expected_type=URIType.DATASET))
 
         results = ds.head(0)
@@ -330,7 +303,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert results[0]["index"] == "label-0"
         assert results[0]["features"]["label"] == 0
         assert results[0]["features"]["img"].mime_type == MIMEType.GRAYSCALE
-        assert len(results[0]["features"]["img"].to_bytes()) == 784
+        assert len(results[0]["features"]["img"].to_bytes()) == 3
         assert len(results) == 1
 
         results = ds.head(5, show_raw_data=True)

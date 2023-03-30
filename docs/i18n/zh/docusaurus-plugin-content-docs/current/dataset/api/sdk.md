@@ -131,35 +131,3 @@ class LinkRawDatasetBuildExecutor(UserRawBuildExecutor):
 ## starwhale.BuildExecutor
 
 `SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
-
-## starwhale.get_data_loader
-
-获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/api/_impl/dataset/loader.py)。该函数返回的loader有两种:一种是表示swds-bin格式的 `SWDSBinDataLoader`, 另一种是表示remote-link或user-raw格式的 `UserRawDataLoader`。两种loader类型目前都能处理在LocalFS和S3协议的对象存储上数据。
-
-```python
-def get_data_loader(
-    dataset_uri: URI,
-    start: int = 0,
-    end: int = sys.maxsize,
-    logger: t.Union[loguru.Logger, None] = None,
-) -> DataLoader:
-```
-
-|参数|说明|
-|---|---|
-|`dataset_uri`| `starwhale.URI` 对象 |
-|`start`| 数据集index的起始位，默认从0开始 |
-|`end`| 数据集index的结束位。start和end表示是左闭右开的区间，即 `start <= i < end` |
-|`logger`|可传入自定义的logger对象|
-
-使用示例如下：
-
-```python
-from starwhale import get_data_loader, URI
-
-uri = URI("mnist/version/latest", expected_type="dataset")
-data_loader = get_data_loader(dataset_uri=uri)
-
-for idx, data, annotations in data_loader:
-    ...
-```
