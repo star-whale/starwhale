@@ -3,7 +3,7 @@ import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import { IUserRoleSchema } from '@user/schemas/user'
 import { ICreateProjectSchema, IProjectSchema, IProjectRoleSchema } from '../schemas/project'
 
-export async function listProjects(query: IListQuerySchema): Promise<IListSchema<IProjectSchema>> {
+export async function listProjects(query: IListQuerySchema & { sort?: string }): Promise<IListSchema<IProjectSchema>> {
     const resp = await axios.get<IListSchema<IProjectSchema>>('/api/v1/project', { params: query })
     return resp.data
 }
