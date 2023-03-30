@@ -186,7 +186,7 @@ public interface RuntimeApi {
             @Parameter(
                     in = ParameterIn.QUERY,
                     required = true,
-                    description = "1 - shared, 0 - unshared",
+                    description = "1 or true - shared, 0 or false - unshared",
                     schema = @Schema())
             @RequestParam(value = "shared") Boolean shared
     );
