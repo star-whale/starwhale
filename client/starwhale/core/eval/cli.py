@@ -17,7 +17,7 @@ from .view import (
 @click.group(
     "eval",
     cls=AliasedGroup,
-    help="Evaluation management, create/list/info/compare evaluation job",
+    help="Evaluation management, run/list/info/compare evaluation job",
 )
 @click.pass_context
 def eval_job_cmd(ctx: click.Context) -> None:
@@ -55,6 +55,7 @@ def _list(
     )
 
 
+# make the internal options hidden in the `--help` output.
 @eval_job_cmd.command("run", help="Run job")
 @click.option(
     "-p",
@@ -68,9 +69,9 @@ def _list(
     envvar=SWEnv.eval_version,
     default=None,
     help=f"Evaluation job version, env is {SWEnv.eval_version}",
+    hidden=True,
 )
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
-# TODO:support multi dataset
 @click.option(
     "datasets",
     "--dataset",
@@ -86,26 +87,35 @@ def _list(
     "--step-spec",
     default="",
     type=str,
-    help="[Cloud_ONLY] A file contains the specification for steps of the job",
+    help="[Cloud_ONLY]a file contains the specification for steps of the job",
+    hidden=True,
 )
 @click.option(
     "--resource-pool",
     default="default",
     type=str,
-    help="[Cloud_ONLY] The node group you would like to run your job on",
+    help="[Cloud_ONLY]the job runs in the specified resource pool",
 )
 @click.option(
     "--use-docker",
     is_flag=True,
     help="[ONLY Standalone]use docker to run evaluation job",
 )
-@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option(
+    "--gencmd",
+    is_flag=True,
+    help="[ONLY Standalone]gen docker run command",
+    hidden=True,
+)
+@click.option("--step", default="", help="Evaluation run step", hidden=True)
+@click.option(
+    "--task-index", default=-1, help="Index of tasks in the current step", hidden=True
+)
 @click.option(
     "--override-task-num",
     default=0,
     help="Total num of tasks in the current step",
+    hidden=True,
 )
 def _run(
     project: str,
