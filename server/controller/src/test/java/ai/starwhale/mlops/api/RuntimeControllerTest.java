@@ -222,7 +222,7 @@ public class RuntimeControllerTest {
 
     @Test
     public void testShareRuntimeVersion() {
-        var resp = controller.shareRuntimeVersion("1", "1", "1", 1);
+        var resp = controller.shareRuntimeVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }

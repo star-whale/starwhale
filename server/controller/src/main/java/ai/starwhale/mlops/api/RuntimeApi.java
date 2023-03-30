@@ -188,7 +188,7 @@ public interface RuntimeApi {
                     required = true,
                     description = "1 - shared, 0 - unshared",
                     schema = @Schema())
-            @RequestParam(value = "shared") Integer shared
+            @RequestParam(value = "shared") Boolean shared
     );
 
     @Operation(summary = "Manage tag of the runtime version")

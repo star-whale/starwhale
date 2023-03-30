@@ -380,7 +380,7 @@ public class DatasetControllerTest {
 
     @Test
     public void testShareRuntimeVersion() {
-        var resp = controller.shareDatasetVersion("1", "1", "1", 1);
+        var resp = controller.shareDatasetVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }

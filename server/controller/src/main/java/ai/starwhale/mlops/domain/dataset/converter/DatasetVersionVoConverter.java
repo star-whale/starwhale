@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.converter;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -50,7 +52,7 @@ public class DatasetVersionVoConverter {
                 .name(entity.getVersionName())
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
-                .shared(entity.getShared())
+                .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())
                 .build();
     }

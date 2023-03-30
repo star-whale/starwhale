@@ -435,10 +435,8 @@ public class RuntimeServiceTest {
 
     @Test
     public void testShareRuntimeVersion() {
-        service.shareRuntimeVersion("1", "r1", "v1", 1);
-        service.shareRuntimeVersion("1", "r1", "v1", 0);
-        assertThrows(SwValidationException.class, () ->
-                service.shareRuntimeVersion("1", "r1", "v1", 2));
+        service.shareRuntimeVersion("1", "r1", "v1", true);
+        service.shareRuntimeVersion("1", "r1", "v1", false);
     }
 
     @Test
@@ -591,25 +589,25 @@ public class RuntimeServiceTest {
         given(runtimeVersionMapper.listRuntimeVersionViewByProject(same(1L)))
                 .willReturn(List.of(
                         RuntimeVersionViewEntity.builder().id(5L).runtimeId(1L).versionOrder(4L).projectName("sw")
-                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                                .userName("sw").shared(false).runtimeName("rt1").build(),
                         RuntimeVersionViewEntity.builder().id(4L).runtimeId(1L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                                .userName("sw").shared(false).runtimeName("rt1").build(),
                         RuntimeVersionViewEntity.builder().id(3L).runtimeId(1L).versionOrder(3L).projectName("sw")
-                                .userName("sw").shared(0).runtimeName("rt1").build(),
+                                .userName("sw").shared(false).runtimeName("rt1").build(),
                         RuntimeVersionViewEntity.builder().id(2L).runtimeId(3L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(0).runtimeName("rt3").build(),
+                                .userName("sw").shared(false).runtimeName("rt3").build(),
                         RuntimeVersionViewEntity.builder().id(1L).runtimeId(3L).versionOrder(1L).projectName("sw")
-                                .userName("sw").shared(0).runtimeName("rt3").build()
+                                .userName("sw").shared(false).runtimeName("rt3").build()
                 ));
 
         given(runtimeVersionMapper.listRuntimeVersionViewByShared(same(1L)))
                 .willReturn(List.of(
                         RuntimeVersionViewEntity.builder().id(8L).runtimeId(2L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(1).runtimeName("rt2").build(),
+                                .userName("sw2").shared(true).runtimeName("rt2").build(),
                         RuntimeVersionViewEntity.builder().id(7L).runtimeId(2L).versionOrder(2L).projectName("sw2")
-                                .userName("sw2").shared(1).runtimeName("rt2").build(),
+                                .userName("sw2").shared(true).runtimeName("rt2").build(),
                         RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(1).runtimeName("rt4").build()
+                                .userName("sw2").shared(true).runtimeName("rt4").build()
                 ));
 
         var res = service.listRuntimeVersionView("1");

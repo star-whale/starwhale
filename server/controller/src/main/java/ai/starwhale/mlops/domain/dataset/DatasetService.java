@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
@@ -149,12 +151,12 @@ public class DatasetService {
         Long projectId = projectService.getProjectId(projectUrl);
         var versions = datasetVersionMapper.listDatasetVersionViewByProject(projectId);
         var shared = datasetVersionMapper.listDatasetVersionViewByShared(projectId);
-        var list = new ArrayList<>(viewEntityToVo(versions, 0));
-        list.addAll(viewEntityToVo(shared, 1));
+        var list = new ArrayList<>(viewEntityToVo(versions, false));
+        list.addAll(viewEntityToVo(shared, true));
         return list;
     }
 
-    private Collection<DatasetViewVo> viewEntityToVo(List<DatasetVersionViewEntity> list, Integer shared) {
+    private Collection<DatasetViewVo> viewEntityToVo(List<DatasetVersionViewEntity> list, Boolean shared) {
         Map<Long, DatasetViewVo> map = new LinkedHashMap<>();
         for (DatasetVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getDatasetId())) {
@@ -164,7 +166,7 @@ public class DatasetService {
                                 .projectName(entity.getProjectName())
                                 .datasetId(idConvertor.convert(entity.getDatasetId()))
                                 .datasetName(entity.getDatasetName())
-                                .shared(shared)
+                                .shared(toInt(shared))
                                 .versions(new ArrayList<>())
                                 .build());
             }
@@ -176,7 +178,7 @@ public class DatasetService {
                             .versionName(entity.getVersionName())
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                             .createdTime(entity.getCreatedTime().getTime())
-                            .shared(entity.getShared())
+                            .shared(toInt(entity.getShared()))
                             .build());
         }
         return map.values();
@@ -242,7 +244,7 @@ public class DatasetService {
                     .versionMeta(versionEntity.getVersionMeta())
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .indexTable(versionEntity.getIndexTable())
-                    .shared(versionEntity.getShared())
+                    .shared(toInt(versionEntity.getShared()))
                     .files(collect)
                     .build();
 
@@ -254,17 +256,10 @@ public class DatasetService {
     }
 
     public void shareDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
-            Integer shared) {
+            Boolean shared) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, datasetUrl, versionUrl));
-        switch (shared) {
-            case 0:
-            case 1:
-                datasetVersionMapper.updateShared(versionId, shared);
-                break;
-            default:
-                throw new SwValidationException(ValidSubject.DATASET, "Invalid shared value: " + shared);
-        }
+        datasetVersionMapper.updateShared(versionId, shared);
     }
 
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
