@@ -4,11 +4,22 @@ import { mergeOverrides } from '../utils'
 
 export interface IRadioProps extends RadioProps {
     overrides?: RadioProps['overrides']
+    isFullWidth?: boolean
 }
 
-export function Radio({ ...props }: IRadioProps) {
+export function Radio({ isFullWidth = false, ...props }: IRadioProps) {
     const overrides = mergeOverrides(
         {
+            Root: {
+                style: {
+                    width: isFullWidth ? '100%' : 'auto',
+                },
+            },
+            Label: {
+                style: {
+                    width: isFullWidth ? '100%' : 'auto',
+                },
+            },
             RadioMarkOuter: {
                 style: ({ $checked }) => ({
                     'width': '16px',

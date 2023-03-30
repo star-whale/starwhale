@@ -16,6 +16,8 @@ import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
+import { Shared } from '../../components/Shared'
+import { Alias } from '@/components/Alias'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -47,7 +49,7 @@ export default function DatasetVersionListCard() {
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Alias'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Alias'), t('Shared'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
                             return [
@@ -57,10 +59,15 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
-                                datasetVersion.alias,
+                                <Alias key='alias' alias={datasetVersion.alias} />,
+                                <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <>
+                                    <CopyToClipboard
+                                        content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
+                                    />
+                                    &nbsp;&nbsp;
                                     {i ? (
                                         <WithCurrentAuth id='dataset.version.revert'>
                                             <Button
@@ -72,10 +79,6 @@ export default function DatasetVersionListCard() {
                                             </Button>
                                         </WithCurrentAuth>
                                     ) : null}
-                                    &nbsp;&nbsp;
-                                    <CopyToClipboard
-                                        content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`}
-                                    />
                                 </>,
                             ]
                         }) ?? []

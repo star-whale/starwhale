@@ -2,7 +2,7 @@ import { useModel, useModelLoading } from '@model/hooks/useModel'
 import useTranslation from '@/hooks/useTranslation'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchModel, removeModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
@@ -18,6 +18,7 @@ import { toaster } from 'baseui/toast'
 import { useFetchModelVersion } from '../../domain/model/hooks/useFetchModelVersion'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
 import ModelVersionSelector from '../../domain/model/components/ModelVersionSelector'
+import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 const useStyles = createUseStyles({
     tagWrapper: {
@@ -105,15 +106,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
         return items
     }, [projectId, modelId, modelVersionId, t])
 
-    const location = useLocation()
-    const activeItemId = useMemo(() => {
-        const item = navItems
-            .slice()
-            .reverse()
-            .find((item_) => (location.pathname ?? '').startsWith(item_.path ?? ''))
-        const paths = item?.path?.split('/') ?? []
-        return paths[paths.length - 1] ?? 'files'
-    }, [location.pathname, navItems])
+    const { activeItemId } = useRouterActivePath(navItems)
 
     const extra = useMemo(() => {
         return (

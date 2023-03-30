@@ -5,16 +5,18 @@ import { expandBorder, expandBorderRadius } from '../utils'
 
 export interface ICheckBoxProps extends CheckboxProps {
     size?: number
+    isFullWidth?: boolean
 }
 
 /* eslint-disable react/jsx-props-no-spreading */
-export default function Checkbox({ size = 16, children, ...props }: ICheckBoxProps) {
+export default function Checkbox({ size = 16, children, isFullWidth, ...props }: ICheckBoxProps) {
     const overrides = mergeOverrides(
         {
             Root: {
                 style: {
                     alignItems: 'center',
-                    height: '16px',
+                    minHeight: '16px',
+                    width: isFullWidth ? '100%' : 'auto',
                 },
             },
             Checkmark: {
@@ -30,6 +32,12 @@ export default function Checkbox({ size = 16, children, ...props }: ICheckBoxPro
                             ...expandBorder('', '', '#799EE8'),
                         },
                     }
+                },
+            },
+            Label: {
+                style: {
+                    lineHeight: 1,
+                    width: isFullWidth ? '100%' : 'auto',
                 },
             },
         },

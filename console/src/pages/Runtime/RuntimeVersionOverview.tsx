@@ -2,9 +2,20 @@ import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useRuntimeVersion } from '@/domain/runtime/hooks/useRuntimeVersion'
+import Alias from '@/components/Alias'
+import Shared from '@/components/Shared'
+import { Toggle } from '@starwhale/ui'
+import { toaster } from 'baseui/toast'
+import { fetchRuntimeVersion, updateRuntimeVersionShared } from '@/domain/runtime/services/runtimeVersion'
+import { useParams } from 'react-router-dom'
 
 export default function RuntimeVersionOverview() {
-    const { runtimeVersion } = useRuntimeVersion()
+    const { projectId, runtimeId, runtimeVersionId } = useParams<{
+        projectId: string
+        runtimeId: string
+        runtimeVersionId: string
+    }>()
+    const { runtimeVersion, setRuntimeVersion } = useRuntimeVersion()
 
     const [t] = useTranslation()
 
@@ -19,7 +30,35 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Aliases'),
-            value: runtimeVersion?.versionAlias ?? '-',
+            value: <Alias alias={runtimeVersion?.versionAlias} />,
+        },
+        {
+            label: t('Shared'),
+            value: (
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '100%',
+                        gap: '4px',
+                    }}
+                >
+                    <Shared shared={runtimeVersion?.shared} isTextShow />
+                    <Toggle
+                        value={runtimeVersion?.shared === 1}
+                        onChange={async (v) => {
+                            try {
+                                await updateRuntimeVersionShared(projectId, runtimeId, runtimeVersionId, v)
+                                const data = await fetchRuntimeVersion(projectId, runtimeId, runtimeVersionId)
+                                setRuntimeVersion(data)
+                                toaster.positive(t('dataset.overview.shared.success'))
+                            } catch (e) {
+                                toaster.negative(t('dataset.overview.shared.fail'))
+                            }
+                        }}
+                    />
+                </div>
+            ),
         },
         {
             label: t('Created At'),

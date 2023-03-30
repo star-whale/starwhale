@@ -1,4 +1,3 @@
-import { formatTimestampDateTime } from '@/utils/datetime'
 import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useImperativeHandle, useState } from 'react'
@@ -6,7 +5,8 @@ import { useQuery, UseQueryResult } from 'react-query'
 import { IListSchema } from '@/domain/base/schemas/list'
 import { listModelVersions } from '../services/modelVersion'
 import { IModelVersionSchema } from '../schemas/modelVersion'
-/* eslint-disable react/require-default-props */
+import { useEventCallback } from '@starwhale/core/utils'
+import { ModelLabel } from './ModelLabel'
 
 export interface IModelVersionSelectorProps {
     projectId: string
@@ -36,7 +36,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         ref
     ) => {
         const [keyword, setKeyword] = useState<string>()
-        const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
+        // const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
         const api = useQuery(
             `listModelVersions:${projectId}:${modelId}:${keyword}`,
             () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
@@ -55,60 +55,46 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         // eslint-disable-next-line react-hooks/exhaustive-deps
         const handleSearchInputChange = React.useCallback(
             _.debounce((term: string) => {
-                if (!term) {
-                    setOptions([])
-                    return
-                }
                 setKeyword(term)
             }),
-            [setKeyword, setOptions]
+            [setKeyword]
         )
 
-        const handelChange = React.useCallback(
-            (id?: string) => {
-                const item = data?.list.find((v) => v.id === id)
-                if (!item || !id) return
-                onChange?.(id, item)
-            },
-            [data, onChange]
-        )
+        const handelChange = useEventCallback((id?: string) => {
+            const item = data?.list.find((v) => v.id === id)
+            if (!item || !id) return
+            onChange?.(id, item)
+        })
 
         useEffect(() => {
-            if (autoSelected) {
-                if (value) {
-                    const item = data?.list.find((v) => v.id === value)
-                    if (!item) {
-                        handelChange?.(data?.list[0]?.id)
-                    }
-                    return
+            if (!data?.list || data?.list.length === 0 || !autoSelected) return
+
+            if (value) {
+                const item = data?.list.find((v) => v.id === value)
+                if (!item) {
+                    handelChange?.(data?.list[0]?.id)
                 }
-                if (data) handelChange?.(data?.list[0]?.id)
+                return
             }
-        }, [value, autoSelected, modelId, data, handelChange])
+            if (data) handelChange?.(data?.list[0]?.id)
+        }, [data, value, autoSelected, handelChange])
 
-        useEffect(() => {
-            if (isSuccess) {
-                const ops =
-                    data?.list.map((item) => ({
-                        id: item.id,
-                        label: [
-                            item.alias ?? '',
-                            item.name ? item.name.substring(0, 8) : '',
-                            item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-                        ].join(' : '),
-                    })) ?? []
-                setOptions(ops)
-            } else {
-                setOptions([])
-            }
-        }, [data?.list, isSuccess])
+        const $options = React.useMemo(() => {
+            if (!isSuccess) return []
+            const ops =
+                data?.list.map((item) => ({
+                    id: item.id,
+                    label: <ModelLabel version={item} />,
+                })) ?? []
+            return ops
+        }, [data, isSuccess])
 
         return (
             <Select
                 disabled={disabled}
                 overrides={overrides}
                 isLoading={isFetching}
-                options={options}
+                options={$options}
                 clearable={false}
                 onChange={(params) => handelChange?.(params.option?.id as string)}
                 onInputChange={(e) => handleSearchInputChange((e.target as HTMLInputElement).value)}
@@ -125,5 +111,13 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         )
     }
 )
+ModelVersionSelector.defaultProps = {
+    modelId: '',
+    value: '',
+    onChange: () => {},
+    overrides: undefined,
+    disabled: false,
+    autoSelected: false,
+}
 
 export default ModelVersionSelector

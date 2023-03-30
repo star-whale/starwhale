@@ -13,6 +13,8 @@ import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
+import Alias from '@/components/Alias'
+import Shared from '@/components/Shared'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -33,6 +35,8 @@ export default function RuntimeVersionListCard() {
             isLoading={runtimesInfo.isLoading}
             columns={[
                 t('Runtime Version'),
+                t('Alias'),
+                t('Shared'),
                 // {
                 //     type: 'tags',
                 //     title: t('Tag'),
@@ -65,9 +69,15 @@ export default function RuntimeVersionListCard() {
                         >
                             {runtime.name}
                         </TextLink>,
+                        <Alias key='alias' alias={runtime.alias} />,
+                        <Shared key='shared' shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,
                         <>
+                            <CopyToClipboard
+                                content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
+                            />
+                            &nbsp;&nbsp;
                             {i ? (
                                 <WithCurrentAuth id='runtime.version.revert'>
                                     <Button
@@ -80,10 +90,6 @@ export default function RuntimeVersionListCard() {
                                     </Button>
                                 </WithCurrentAuth>
                             ) : null}
-                            &nbsp;&nbsp;
-                            <CopyToClipboard
-                                content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
-                            />
                         </>,
                     ]
                 }) ?? []

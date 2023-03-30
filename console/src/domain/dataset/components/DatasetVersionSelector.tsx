@@ -1,9 +1,9 @@
-import { formatTimestampDateTime } from '@/utils/datetime'
 import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
 import { listDatasetVersions } from '../services/datasetVersion'
+import { DatasetLabel } from './DatasetLabel'
 
 export interface IDatasetVersionSelectorProps {
     projectId: string
@@ -59,11 +59,7 @@ export default function DatasetVersionSelector({
             const ops =
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: [
-                        item.alias ?? '',
-                        item.name ? item.name.substring(0, 8) : '',
-                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-                    ].join(' : '),
+                    label: <DatasetLabel version={item} />,
                 })) ?? []
             setOptions(ops)
         } else {
@@ -73,6 +69,7 @@ export default function DatasetVersionSelector({
 
     return (
         <Select
+            searchable={false}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetVersionsInfo.isFetching}

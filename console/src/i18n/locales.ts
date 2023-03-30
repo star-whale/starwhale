@@ -18,6 +18,24 @@ const dataset = {
     'dataset.remove.button': {
         en: 'Remove',
     },
+    'dataset.overview.shared': {
+        en: 'Shared',
+    },
+    'dataset.overview.shared.success': {
+        en: 'Update success',
+    },
+    'dataset.overview.shared.fail': {
+        en: 'Update Failed',
+    },
+    'dataset.overview.shared.yes': {
+        en: 'True',
+    },
+    'dataset.overview.shared.no': {
+        en: 'False',
+    },
+    'dataset.selector.view': {
+        en: 'View',
+    },
 }
 
 const runtime = {
@@ -29,6 +47,9 @@ const runtime = {
     },
     'runtime.remove.button': {
         en: 'Remove',
+    },
+    'runtime.selector.view': {
+        en: 'View',
     },
 }
 
@@ -191,6 +212,9 @@ const locales0 = {
     },
     'Alias': {
         en: 'Alias',
+    },
+    'Shared': {
+        en: 'Shared',
     },
     'datasets': {
         en: 'Datasets',

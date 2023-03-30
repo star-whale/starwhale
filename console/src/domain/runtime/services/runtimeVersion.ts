@@ -28,10 +28,9 @@ export async function fetchRuntimeVersion(
     runtimeId: string,
     runtimeVersionId: string
 ): Promise<any> {
-    const resp = await axios.head<IRuntimeVersionDetailSchema>(
-        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}?queryRequest=${qs.stringify({
-            runtime: runtimeId,
-            project: projectId,
+    const resp = await axios.get<IRuntimeVersionDetailSchema>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}?${qs.stringify({
+            versionUrl: runtimeVersionId,
         })}`
     )
     return resp.data
@@ -80,4 +79,16 @@ export async function fetchRuntimeVersionSuggestion(
         params: { projectId, modelVersionId },
     })
     return data
+}
+
+export async function updateRuntimeVersionShared(
+    projectId: string,
+    runtimeId: string,
+    runtimeVersionId: string,
+    shared: boolean
+): Promise<IRuntimeVersionSchema> {
+    const resp = await axios.put<IRuntimeVersionSchema>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/shared?shared=${shared ? 1 : 0}`
+    )
+    return resp.data
 }

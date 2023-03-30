@@ -6,12 +6,8 @@ import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import Divider from '@/components/Divider'
 import ModelVersionSelector, { IDataSelectorRef } from '@/domain/model/components/ModelVersionSelector'
-import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
-import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
 import Input, { NumberInput } from '@starwhale/ui/Input'
 import _ from 'lodash'
-import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
-import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import Editor from '@monaco-editor/react'
@@ -23,13 +19,10 @@ import Button from '@starwhale/ui/Button'
 import ResourceSelector from '@/domain/setting/components/ResourceSelector'
 import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
-
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 import { Toggle } from '@starwhale/ui/Select'
-import { usePage } from '@/hooks/usePage'
-import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
-import MultiTags from '@/components/Tag/MultiTags'
-import { formatTimestampDateTime } from '@/utils/datetime'
+import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
+import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -38,6 +31,7 @@ const useStyles = createUseStyles({
         display: 'grid',
         gap: 40,
         gridTemplateColumns: '280px 300px 280px',
+        gridTemplateRows: 'minmax(0px, max-content)',
     },
     row4: {
         display: 'grid',
@@ -62,16 +56,12 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
-    const [datasetId, setDatasetId] = useState('')
-    const [runtimeId, setRuntimeId] = useState('')
     const [modelVersionId, setModelVersionId] = useState('')
     const [rawType, setRawType] = React.useState(false)
     const [stepSpecOverWrites, setStepSpecOverWrites] = React.useState('')
     const [t] = useTranslation()
     const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
 
-    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
-    const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -81,8 +71,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         (_changes, values_) => {
             // console.log(_changes, values_)
             if (values_.modelId) setModelId(values_.modelId)
-            if (values_.datasetId) setDatasetId(values_.datasetId)
-            if (values_.runtimeId) setRuntimeId(values_.runtimeId)
             if (values_.modelVersionUrl) setModelVersionId(values_.modelVersionUrl)
             let rawTypeTmp = values_.rawType
             // cascade type with default value
@@ -124,11 +112,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
     const modelVersionApi = modelVersionRef.current?.getData()
 
-    const stepSource: StepSpec[] = React.useMemo(() => {
-        if (!modelVersionApi) return []
+    const stepSource: StepSpec[] | undefined = React.useMemo(() => {
+        if (!modelVersionApi?.data) return undefined
         const list = modelVersionApi?.data?.list ?? []
         return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
-    }, [modelVersionApi, modelVersionId])
+    }, [modelVersionApi?.data, modelVersionId])
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
@@ -150,8 +138,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'rawType',
                         'stepSpecOverWrites',
                     ]),
+                    runtimeVersionUrl: values_.runtimeVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
-                    // datasetVersionUrls: values_.datasetVersionId,
                     stepSpecOverWrites: values_.rawType
                         ? stepSpecOverWrites
                         : yaml.dump(_.merge([], stepSource, values_?.stepSpecOverWrites)),
@@ -185,44 +173,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [stepSource, form, setStepSpecOverWrites, rawType, modelVersionId, stepSpecOverWrites])
 
     React.useEffect(() => {
+        if (!stepSource) return
+
         setStepSpecOverWrites(yaml.dump(stepSource))
         updateFormStepObj([...stepSource])
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites])
 
-    const handleAddDataset = useCallback(() => {
-        const datasetVersionId = form.getFieldValue('datasetVersionId') as string
-        if (!datasetVersionId) return
-        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
-        const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
-        form.setFieldsValue({
-            datasetVersionIdsArr: Array.from(ids),
-        })
-        setDatasetVersionIds(Array.from(ids).join(','))
-    }, [form])
-
-    const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
-
-    const getValueLabel = useCallback(
-        (args) => {
-            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
-            // return [dataset?.version?.id, dataset?.version?.name].join('-')
-            const item = dataset?.version
-            if (!item) return ''
-
-            return [
-                item.alias ?? '',
-                item.name ? item.name.substring(0, 8) : '',
-                item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-            ].join(' : ')
-        },
-        [datasetsInfo]
-    )
-
     const stepSpecOverWritesList: StepSpec[] = React.useMemo(() => {
-        if (!modelVersionApi) return []
+        if (!stepSource) return []
+
         return _.merge([], stepSource, values?.stepSpecOverWrites)
-    }, [stepSource, values?.stepSpecOverWrites, modelVersionApi])
+    }, [stepSource, values?.stepSpecOverWrites])
 
     const handleEditorChange = React.useCallback(
         (value: string) => {
@@ -268,12 +230,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 !rawType &&
                 stepSpecOverWritesList?.map((spec, i) => {
                     return (
-                        <div key={[spec?.step_name, i].join('')} className={styles.row4}>
-                            <FormItem
-                                label={i === 0 && t('Step')}
-                                name={['stepSpecOverWrites', i, 'step_name']}
-                                required
-                            >
+                        <div key={[spec?.name, i].join('')} className={styles.row4}>
+                            <FormItem label={i === 0 && t('Step')} name={['stepSpecOverWrites', i, 'name']} required>
                                 <Input disabled />
                             </FormItem>
                             <FormItem
@@ -378,41 +336,16 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
 
             <Divider orientation='top'>{t('Datasets')}</Divider>
-            <div className={styles.row3}>
-                <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
-                    <DatasetSelector projectId={projectId} />
-                </FormItem>
-                {datasetId && (
-                    <FormItem label={t('Version')} name='datasetVersionId'>
-                        <DatasetVersionSelector projectId={projectId} datasetId={datasetId} autoSelected />
-                    </FormItem>
-                )}
-                <div className='fac'>
-                    <Button
-                        size='compact'
-                        type='button'
-                        onClick={handleAddDataset}
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                    >
-                        Add
-                    </Button>
-                </div>
-            </div>
-            <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
-                <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
-                    <MultiTags placeholder='' getValueLabel={getValueLabel} />
+            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
+                <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
+                    <DatasetTreeSelector projectId={projectId} />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>
-            <div className={styles.row3}>
-                <FormItem label={t('Runtime')} name='runtimeId' required>
-                    <RuntimeSelector projectId={projectId} />
+            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
+                <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
+                    <RuntimeTreeSelector projectId={projectId} />
                 </FormItem>
-                {runtimeId && (
-                    <FormItem label={t('Version')} required name='runtimeVersionUrl'>
-                        <RuntimeVersionSelector projectId={projectId} runtimeId={runtimeId} autoSelected />
-                    </FormItem>
-                )}
             </div>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>

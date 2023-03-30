@@ -6,11 +6,16 @@ export interface IDatasetFileSchema {
     size: string
 }
 export interface IDatasetVersionSchema extends IResourceSchema {
-    name: string
     tag: string
     meta: string
     owner?: IUserSchema
     alias: string
+    shared?: number
+}
+
+export interface IDatasetTreeVersionSchema extends IDatasetVersionSchema {
+    versionName?: string
+    createdTime?: number
 }
 
 export interface IDatasetVersionDetailSchema {
@@ -23,10 +28,11 @@ export interface IDatasetVersionDetailSchema {
     versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
+    shared?: number
 }
 
 export interface IUpdateDatasetVersionSchema {
-    tag: string
+    tag?: string
 }
 
 export interface ICreateDatasetVersionSchema {
