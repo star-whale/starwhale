@@ -21,7 +21,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import URIType, BundleType, DataOriginType
+from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
@@ -301,7 +301,6 @@ class StandaloneDatasetTestCase(TestCase):
                     ),
                     "label": 0,
                 },
-                origin=DataOriginType.NEW,
             ),
             TabularDatasetRow(
                 id="label-1",
@@ -317,7 +316,6 @@ class StandaloneDatasetTestCase(TestCase):
                     ),
                     "label": 1,
                 },
-                origin=DataOriginType.NEW,
             ),
         ]
         content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
