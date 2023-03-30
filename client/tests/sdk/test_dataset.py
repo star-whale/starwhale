@@ -251,8 +251,6 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
                                 {"name": "data_type", "type": "UNKNOWN"},
-                                {"name": "with_local_fs_data", "type": "BOOL"},
-                                {"name": "_local_fs_uri", "type": "STRING"},
                                 {"name": "_signed_uri", "type": "STRING"},
                                 {
                                     "keyType": {"type": "UNKNOWN"},
@@ -448,7 +446,6 @@ class TestDatasetType(TestCase):
             Text("test"),
             Link(
                 "path/to/file",
-                with_local_fs_data=True,
                 data_type=Image(display_name="image"),
             ),
             COCOObjectAnnotation(

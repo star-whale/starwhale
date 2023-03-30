@@ -14,19 +14,9 @@ from urllib.parse import urlparse
 import numpy
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
-from starwhale.consts import (
-    SHORT_VERSION_CNT,
-    VERSION_PREFIX_CNT,
-    DEFAULT_STARWHALE_API_VERSION,
-)
+from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_STARWHALE_API_VERSION
 from starwhale.base.uri import URI
-from starwhale.utils.fs import (
-    ensure_dir,
-    ensure_file,
-    FilePosition,
-    blake2b_content,
-    BLAKE2B_SIGNATURE_ALGO,
-)
+from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
     NoSupportError,
@@ -827,7 +817,6 @@ class Link(ASDictMixin, SwObject):
         offset: int = FilePosition.START.value,
         size: int = -1,
         data_type: t.Optional[t.Union[BaseArtifact, t.Dict]] = None,
-        with_local_fs_data: bool = False,
         use_plain_type: bool = False,
         owner: t.Optional[t.Union[str, URI]] = None,
         **kwargs: t.Any,
@@ -855,19 +844,9 @@ class Link(ASDictMixin, SwObject):
 
         self.data_type = data_type
 
-        self.with_local_fs_data = with_local_fs_data
-        self._local_fs_uri = ""
         self._signed_uri = ""
 
         self.extra_info = kwargs
-
-    @property
-    def local_fs_uri(self) -> str:
-        return self._local_fs_uri
-
-    @local_fs_uri.setter
-    def local_fs_uri(self, value: str) -> None:
-        self._local_fs_uri = value
 
     @property
     def signed_uri(self) -> str:
@@ -894,7 +873,7 @@ class Link(ASDictMixin, SwObject):
         return f"Link {self.uri}"
 
     def __repr__(self) -> str:
-        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, with localFS data:{self.with_local_fs_data}"
+        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}"
 
     @http_retry
     def to_bytes(self) -> bytes:
@@ -902,7 +881,7 @@ class Link(ASDictMixin, SwObject):
         from .store import ObjectStore
 
         key_compose = (
-            Link(self.local_fs_uri) if self.local_fs_uri else self,
+            self,
             self.offset or 0,
             self.size + self.offset - 1 if self.size != -1 else sys.maxsize,
         )
@@ -911,33 +890,6 @@ class Link(ASDictMixin, SwObject):
             key_compose=key_compose, bucket=store.bucket
         ) as f:
             return f.read(self.size)  # type: ignore
-
-    @classmethod
-    def from_local_artifact(
-        cls, data: t.Union[BaseArtifact, Link], store_dir: Path
-    ) -> Link:
-        if isinstance(data, Link):
-            return data
-
-        raw_content = data.to_bytes()
-        sign_name = blake2b_content(raw_content)
-        fpath = (
-            store_dir
-            / BLAKE2B_SIGNATURE_ALGO
-            / sign_name[:VERSION_PREFIX_CNT]
-            / sign_name
-        )
-        ensure_dir(fpath.parent)
-        ensure_file(fpath, raw_content)
-
-        return Link(
-            uri=fpath,
-            offset=0,
-            size=len(raw_content),
-            data_type=data,
-            with_local_fs_data=True,
-            use_plain_type=True,
-        )
 
 
 class DatasetSummary(ASDictMixin):

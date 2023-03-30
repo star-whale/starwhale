@@ -407,7 +407,7 @@ astype() -> Dict[str, t.Any]
 
 ## starwhale.Link
 
-Link类型，用来制作 `remote-link` 和 `user-raw` 类型的数据集。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/core/dataset/type.py#L432)。
+Link类型，用来制作 `remote-link` 类型的数据集。Github上的[代码链接](https://github.com/star-whale/starwhale/blob/dc6e6fdeae2f7c5bd0e72ccd8fb50768b1ce0826/client/starwhale/core/dataset/type.py#L432)。
 
 ```python
 Link(
@@ -416,7 +416,6 @@ Link(
     offset: int = 0,
     size: int = -1,
     data_type: Optional[BaseArtifact] = None,
-    with_local_fs_data: bool = False,
 )
 ```
 
@@ -427,44 +426,6 @@ Link(
 |`offset`|数据相对uri指向的文件偏移量|
 |`size`|数据大小|
 |`data_type`|Link指向的实际数据类型，目前支持 `Binary`, `Image`, `Text`, `Audio` 四种类型|
-|`with_local_fs_data`|是否包含本地文件系统中的数据，用于表示user-raw格式的数据|
-
-### Link使用示例
-
-```python
-import typing as t
-import struct
-from pathlib import Path
-
-from starwhale import Link
-
-def iter_item() -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-    root_dir = Path(__file__).parent.parent / "data"
-    data_fpath = root_dir / "t10k-images-idx3-ubyte"
-    label_fpath = root_dir / "t10k-labels-idx1-ubyte"
-
-    with data_fpath.open("rb") as data_file, label_fpath.open("rb") as label_file:
-        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-        _, label_number = struct.unpack(">II", label_file.read(8))
-
-        image_size = height * width
-        offset = 16
-
-        for i in range(0, min(data_number, label_number)):
-            _data = Link(
-                uri=str(data_fpath.absolute()),
-                offset=offset,
-                size=image_size,
-                data_type=GrayscaleImage(
-                    display_name=f"{i}", shape=(height, width, 1)
-                ),
-                with_local_fs_data=True,
-            )
-            _label = struct.unpack(">B", label_file.read(1))[0]
-            yield _data, {"label": _label}
-            offset += image_size
-
-```
 
 ### Link函数
 

@@ -19,7 +19,7 @@ from typing_extensions import Protocol
 from starwhale.utils import validate_obj_name
 from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
@@ -197,11 +197,6 @@ _TDType = t.TypeVar("_TDType", bound="TabularDataset")
 
 
 class TabularDataset:
-    _map_types = {
-        "data_format": DataFormatType,
-        "object_store_type": ObjectStoreType,
-    }
-
     def __init__(
         self,
         name: str,
@@ -280,10 +275,6 @@ class TabularDataset:
             end = self.end
 
         for _d in self._ds_wrapper.scan(start, end, end_inclusive, revision=revision):
-            for k, v in self._map_types.items():
-                if k not in _d:
-                    continue
-                _d[k] = v(_d[k])
             yield TabularDatasetRow.from_datastore(**_d)
 
     def scan_batch(

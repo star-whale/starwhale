@@ -7,9 +7,15 @@ import threading
 from pathlib import Path
 from collections import defaultdict
 
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.consts import VERSION_PREFIX_CNT
+from starwhale.utils.fs import (
+    ensure_dir,
+    ensure_file,
+    blake2b_content,
+    BLAKE2B_SIGNATURE_ALGO,
+)
 from starwhale.utils.error import NoSupportError
-from starwhale.core.dataset.type import Link
+from starwhale.core.dataset.type import Link, BaseArtifact
 from starwhale.api._impl.data_store import TableWriter, LocalDataStore
 
 from .base import (
@@ -77,12 +83,41 @@ class HandlerThread(threading.Thread):
     def _handle_artifacts(self, record: ArtifactsRecord) -> None:
         table_name = f"{record.typ.value}/{record.source.value}"
         store_dir = self._workdir / record.typ.value / "_files"
+
+        def _convert_data_to_link(data: BaseArtifact) -> Link:
+            raw_content = data.to_bytes()
+            sign_name = blake2b_content(raw_content)
+            fpath = (
+                store_dir
+                / BLAKE2B_SIGNATURE_ALGO
+                / sign_name[:VERSION_PREFIX_CNT]
+                / sign_name
+            )
+            ensure_file(fpath, raw_content, parents=True)
+
+            return Link(
+                uri=sign_name,
+                offset=0,
+                size=len(raw_content),
+                use_plain_type=True,
+                data_type=data,
+            )
+
         for k, v in record.data.items():
+            if isinstance(v, Link):
+                data = v
+            elif isinstance(v, BaseArtifact):
+                data = _convert_data_to_link(v)
+            else:
+                raise NoSupportError(
+                    f"artifact only accepts BaseArtifact or Link type: {v}"
+                )
+
             row = ArtifactsTabularRow(
                 name=k,
                 index=self._artifacts_counter[k],
                 created_at=record.clock_time,
-                data=Link.from_local_artifact(v, store_dir),
+                data=data,
                 link_wrapper=not isinstance(v, Link),
             )
             self._update_table(table_name, row.asdict(), "__key")
