@@ -1,5 +1,5 @@
 version: 1.0
-name: imageNet-fine-tuning
+name: imageNet
 
 run:
   handler: fine-tuning
