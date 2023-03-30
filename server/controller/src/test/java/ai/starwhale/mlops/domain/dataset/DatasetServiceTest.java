@@ -238,10 +238,10 @@ public class DatasetServiceTest {
                 () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
 
         given(datasetVersionMapper.find(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         var res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
@@ -255,7 +255,7 @@ public class DatasetServiceTest {
         ));
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
@@ -332,7 +332,7 @@ public class DatasetServiceTest {
         given(datasetMapper.findByName(same("d1"), same(1L), any()))
                 .willReturn(DatasetEntity.builder().id(1L).build());
         given(datasetVersionMapper.list(same(1L), any(), any()))
-                .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).build()));
+                .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listDs("1", "d1");
         assertThat(res, hasItem(allOf(

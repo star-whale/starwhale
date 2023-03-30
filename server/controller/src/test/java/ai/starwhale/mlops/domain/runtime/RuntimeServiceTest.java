@@ -353,7 +353,7 @@ public class RuntimeServiceTest {
         given(runtimeMapper.findByName(same("r1"), same(1L), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
         given(runtimeVersionMapper.list(same(1L), any(), any()))
-                .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).build()));
+                .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listRuntimeInfo("1", "r1");
         assertThat(res, hasItem(allOf(
@@ -388,10 +388,10 @@ public class RuntimeServiceTest {
                 () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("r3").build()));
 
         given(runtimeVersionMapper.find(same(1L)))
-                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         given(runtimeVersionMapper.findByLatest(same(1L)))
-                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         var res = service.getRuntimeInfo(RuntimeQuery.builder()
                 .projectUrl("p1")
@@ -405,7 +405,7 @@ public class RuntimeServiceTest {
         ));
 
         given(runtimeVersionMapper.findByLatest(same(1L)))
-                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         res = service.getRuntimeInfo(RuntimeQuery.builder()
                 .projectUrl("p1")
