@@ -47,15 +47,22 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         setRuntimeLoading,
     ])
 
-    const runtimeVersionInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
+    const runtimeVersionInfo = useQuery(`fetchRuntimeVersion:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
         fetchRuntime(projectId, runtimeId, runtimeVersionId)
     )
     const { setRuntimeVersion } = useRuntimeVersion()
     const { setRuntimeVersionLoading } = useRuntimeVersionLoading()
+
     useEffect(() => {
         setRuntimeVersionLoading(runtimeVersionInfo.isLoading)
-        setRuntimeVersion(runtimeVersionInfo.data)
-    }, [setRuntimeVersionLoading, runtimeVersionInfo, setRuntimeVersion])
+        if (runtimeVersionInfo.isSuccess) setRuntimeVersion(runtimeVersionInfo.data)
+    }, [
+        setRuntimeVersionLoading,
+        runtimeVersionInfo.isSuccess,
+        runtimeVersionInfo.isLoading,
+        runtimeVersionInfo.data,
+        setRuntimeVersion,
+    ])
 
     const history = useHistory()
     const [page] = usePage()
