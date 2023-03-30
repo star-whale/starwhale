@@ -6,6 +6,8 @@ import { useQuery, UseQueryResult } from 'react-query'
 import { IListSchema } from '@/domain/base/schemas/list'
 import { listModelVersions } from '../services/modelVersion'
 import { IModelVersionSchema } from '../schemas/modelVersion'
+import { useEventCallback } from '@starwhale/core/utils'
+import { ModelLabel } from './ModelLabel'
 /* eslint-disable react/require-default-props */
 
 export interface IModelVersionSelectorProps {
@@ -42,7 +44,7 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
             () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
             { enabled: !!modelId, refetchOnWindowFocus: false }
         )
-        const { data, isSuccess, isFetching } = api
+        const { data, isSuccess, isError, isFetching } = api
 
         useImperativeHandle(
             ref,
@@ -55,60 +57,46 @@ const ModelVersionSelector = React.forwardRef<IDataSelectorRef<any>, IModelVersi
         // eslint-disable-next-line react-hooks/exhaustive-deps
         const handleSearchInputChange = React.useCallback(
             _.debounce((term: string) => {
-                if (!term) {
-                    setOptions([])
-                    return
-                }
                 setKeyword(term)
             }),
             [setKeyword, setOptions]
         )
 
-        const handelChange = React.useCallback(
-            (id?: string) => {
-                const item = data?.list.find((v) => v.id === id)
-                if (!item || !id) return
-                onChange?.(id, item)
-            },
-            [data, onChange]
-        )
+        const handelChange = useEventCallback((id?: string) => {
+            const item = data?.list.find((v) => v.id === id)
+            if (!item || !id) return
+            onChange?.(id, item)
+        })
 
         useEffect(() => {
-            if (autoSelected) {
-                if (value) {
-                    const item = data?.list.find((v) => v.id === value)
-                    if (!item) {
-                        handelChange?.(data?.list[0]?.id)
-                    }
-                    return
+            if (!data?.list || data?.list.length === 0 || !autoSelected) return
+
+            if (value) {
+                const item = data?.list.find((v) => v.id === value)
+                if (!item) {
+                    handelChange?.(data?.list[0]?.id)
                 }
-                if (data) handelChange?.(data?.list[0]?.id)
+                return
             }
+            if (data) handelChange?.(data?.list[0]?.id)
         }, [value, autoSelected, modelId, data, handelChange])
 
-        useEffect(() => {
-            if (isSuccess) {
-                const ops =
-                    data?.list.map((item) => ({
-                        id: item.id,
-                        label: [
-                            item.alias ?? '',
-                            item.name ? item.name.substring(0, 8) : '',
-                            item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-                        ].join(' : '),
-                    })) ?? []
-                setOptions(ops)
-            } else {
-                setOptions([])
-            }
-        }, [data?.list, isSuccess])
+        const $options = React.useMemo(() => {
+            if (!isSuccess) return []
+            const ops =
+                data?.list.map((item) => ({
+                    id: item.id,
+                    label: <ModelLabel version={item} />,
+                })) ?? []
+            return ops
+        }, [data, isSuccess, isError, isFetching])
 
         return (
             <Select
                 disabled={disabled}
                 overrides={overrides}
                 isLoading={isFetching}
-                options={options}
+                options={$options}
                 clearable={false}
                 onChange={(params) => handelChange?.(params.option?.id as string)}
                 onInputChange={(e) => handleSearchInputChange((e.target as HTMLInputElement).value)}

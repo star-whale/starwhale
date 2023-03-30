@@ -19,12 +19,9 @@ import Button from '@starwhale/ui/Button'
 import ResourceSelector from '@/domain/setting/components/ResourceSelector'
 import { min, max } from '@/components/Form/validators'
 import { ISystemResourcePool } from '@/domain/setting/schemas/system'
-
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 import { Toggle } from '@starwhale/ui/Select'
 import { usePage } from '@/hooks/usePage'
-import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
-import { formatTimestampDateTime } from '@/utils/datetime'
 import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
 import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
 
@@ -60,15 +57,12 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
-    const [datasetId, setDatasetId] = useState('')
-    const [runtimeId, setRuntimeId] = useState('')
     const [modelVersionId, setModelVersionId] = useState('')
     const [rawType, setRawType] = React.useState(false)
     const [stepSpecOverWrites, setStepSpecOverWrites] = React.useState('')
     const [t] = useTranslation()
     const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
 
-    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
     const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
@@ -79,8 +73,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         (_changes, values_) => {
             // console.log(_changes, values_)
             if (values_.modelId) setModelId(values_.modelId)
-            if (values_.datasetId) setDatasetId(values_.datasetId)
-            if (values_.runtimeId) setRuntimeId(values_.runtimeId)
             if (values_.modelVersionUrl) setModelVersionId(values_.modelVersionUrl)
             let rawTypeTmp = values_.rawType
             // cascade type with default value
@@ -122,11 +114,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const modelVersionRef = React.useRef<IDataSelectorRef<IModelVersionSchema>>(null)
     const modelVersionApi = modelVersionRef.current?.getData()
 
-    const stepSource: StepSpec[] = React.useMemo(() => {
-        if (!modelVersionApi) return []
+    const stepSource: StepSpec[] | undefined = React.useMemo(() => {
+        if (!modelVersionApi) return undefined
         const list = modelVersionApi?.data?.list ?? []
         return list?.find((v) => v.id === modelVersionId)?.stepSpecs ?? []
-    }, [modelVersionApi, modelVersionId])
+    }, [modelVersionApi?.data, modelVersionId])
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
@@ -150,7 +142,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     ]),
                     runtimeVersionUrl: values_.runtimeVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
-                    // datasetVersionUrls: values_.datasetVersionId,
                     stepSpecOverWrites: values_.rawType
                         ? stepSpecOverWrites
                         : yaml.dump(_.merge([], stepSource, values_?.stepSpecOverWrites)),
@@ -184,28 +175,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [stepSource, form, setStepSpecOverWrites, rawType, modelVersionId, stepSpecOverWrites])
 
     React.useEffect(() => {
+        if (!stepSource) return
+
         setStepSpecOverWrites(yaml.dump(stepSource))
         updateFormStepObj([...stepSource])
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepSource, form, setStepSpecOverWrites])
 
-    const handleAddDataset = useCallback(() => {
-        const datasetVersionId = form.getFieldValue('datasetVersionId') as string
-        if (!datasetVersionId) return
-        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
-        const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
-        form.setFieldsValue({
-            datasetVersionIdsArr: Array.from(ids),
-        })
-        setDatasetVersionIds(Array.from(ids).join(','))
-    }, [form])
-
-    const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
-
     const stepSpecOverWritesList: StepSpec[] = React.useMemo(() => {
-        if (!modelVersionApi) return []
+        if (!stepSource) return []
+
         return _.merge([], stepSource, values?.stepSpecOverWrites)
-    }, [stepSource, values?.stepSpecOverWrites, modelVersionApi])
+    }, [stepSource, values?.stepSpecOverWrites])
 
     const handleEditorChange = React.useCallback(
         (value: string) => {
@@ -219,8 +200,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         const resource = resourcePool?.resources.find((v) => v.name === type)
         return resource
     }
-
-    console.log(values)
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -253,12 +232,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 !rawType &&
                 stepSpecOverWritesList?.map((spec, i) => {
                     return (
-                        <div key={[spec?.step_name, i].join('')} className={styles.row4}>
-                            <FormItem
-                                label={i === 0 && t('Step')}
-                                name={['stepSpecOverWrites', i, 'step_name']}
-                                required
-                            >
+                        <div key={[spec?.name, i].join('')} className={styles.row4}>
+                            <FormItem label={i === 0 && t('Step')} name={['stepSpecOverWrites', i, 'name']} required>
                                 <Input disabled />
                             </FormItem>
                             <FormItem
