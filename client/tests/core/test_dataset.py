@@ -281,7 +281,6 @@ class StandaloneDatasetTestCase(TestCase):
     ) -> None:
         m_summary.return_value = DatasetSummary(
             rows=2,
-            increased_rows=2,
         )
         m_scan.return_value = [
             TabularDatasetRow(

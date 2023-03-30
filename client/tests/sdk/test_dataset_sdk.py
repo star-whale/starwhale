@@ -33,6 +33,7 @@ from starwhale.core.dataset.type import (
     BoundingBox,
     DatasetSummary,
     GrayscaleImage,
+    D_ALIGNMENT_SIZE,
     COCOObjectAnnotation,
 )
 from starwhale.core.dataset.tabular import TabularDatasetInfo
@@ -806,6 +807,20 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         m = empty_ds.manifest()
         assert m == {}
 
+    def test_summary(self) -> None:
+        existed_ds_uri = self._init_simple_dataset_with_str_id()
+        ds = dataset(existed_ds_uri)
+        summary = ds.summary()
+        assert summary is not None
+        assert summary.rows == len(ds)
+        assert summary.updated_rows == 10
+        assert summary.deleted_rows == 0
+        assert (
+            summary.blobs_byte_size
+            == summary.increased_blobs_byte_size
+            == 10 * D_ALIGNMENT_SIZE
+        )
+
     def test_create_dataset(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
 
@@ -924,7 +939,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         rm.request(
             HTTPMethod.POST,
             "http://1.1.1.1/api/v1/datastore/updateTable",
-            json={"data": "datastore-revision"},
+            json={"data": "datastore_revision"},
         )
 
         rm.request(
@@ -984,13 +999,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             / "_manifest.yaml"
         )
         manifest = load_yaml(manifest_path)
-        assert manifest["append_signs"] == []
         assert "created_at" in manifest
         assert "related_datastore_timestamp" in manifest
         assert manifest["dataset_summary"] == {
             "deleted_rows": 0,
             "rows": 1,
             "updated_rows": 1,
+            "blobs_byte_size": 0,
+            "increased_blobs_byte_size": 0,
         }
         assert manifest["message"] == commit_msg
         assert manifest["version"] == ds.loading_version

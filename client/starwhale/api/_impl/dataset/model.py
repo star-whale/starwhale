@@ -165,9 +165,15 @@ class Dataset:
         if origin_uri_exists:
             _summary = self.__loading_core_dataset.summary()
             # TODO: raise none summary exception for existed dataset
-            self._total_rows = 0 if _summary is None else _summary.rows
+            if _summary is None:
+                self._total_rows = 0
+                self._total_blobs_size = 0
+            else:
+                self._total_rows = _summary.rows
+                self._total_blobs_size = _summary.blobs_byte_size
         else:
             self._total_rows = 0
+            self._total_blobs_size = 0
 
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
@@ -708,7 +714,9 @@ class Dataset:
             if self._dataset_builder is None:
                 raise RuntimeError("failed to commit, because dataset builder is None")
 
-            _signs = [str(m) for m in self._dataset_builder.signature_bins_meta]
+            increased_blobs_size = sum(
+                [m.size for m in self._dataset_builder.signature_bins_meta]
+            )
 
             _manifest = {
                 "build": {
@@ -718,12 +726,13 @@ class Dataset:
                 "version": self._pending_commit_version,
                 "related_datastore_timestamp": "",  # TODO: get timestamp from datastore
                 CREATED_AT_KEY: now_str(),
-                "append_signs": _signs,
-                "dataset_summary": {
-                    "rows": self._dataset_builder.calculate_rows_cnt(),  # maybe slow
-                    "updated_rows": self._updated_rows_by_commit,
-                    "deleted_rows": self._deleted_rows_by_commit,
-                },
+                "dataset_summary": DatasetSummary(
+                    rows=self._dataset_builder.calculate_rows_cnt(),  # maybe slow
+                    updated_rows=self._updated_rows_by_commit,
+                    deleted_rows=self._deleted_rows_by_commit,
+                    blobs_byte_size=self._total_blobs_size + increased_blobs_size,
+                    increased_blobs_byte_size=increased_blobs_size,
+                ).asdict(),
                 "message": message,
             }
 

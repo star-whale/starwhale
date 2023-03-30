@@ -115,7 +115,7 @@ class ProjectTermView(BaseTermView):
                         # TODO: add model version for every version
                         _size = _o["files"][0]["size"]
                     else:
-                        _size = pretty_bytes(_v["meta"]["dataset_byte_size"])
+                        _size = pretty_bytes(_v["meta"]["blobs_byte_size"])
 
                     otree.add(
                         f"[{_v['id']}][green]{_v[_k]}[/] :timer_clock: {_v['created_at']} :dizzy:{_size}"
@@ -176,7 +176,7 @@ class ProjectTermViewRich(ProjectTermView):
                         # TODO: add model version for every version
                         _size = _o["files"][0]["size"]
                     else:
-                        _size = pretty_bytes(_v["meta"]["dataset_byte_size"])
+                        _size = pretty_bytes(_v["meta"]["blobs_byte_size"])
 
                     otree.add(
                         f"[{_v['id']}][green]{_v[_k]}[/] :timer_clock: {_v['created_at']} :dizzy:{_size}"

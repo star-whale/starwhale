@@ -43,10 +43,7 @@ class TestDataLoader(TestCase):
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     def test_range_match(self, m_scan_id: MagicMock, m_summary: MagicMock) -> None:
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=True,
-            include_link=False,
-        )
+        m_summary.return_value = DatasetSummary(rows=1)
         m_scan_id.return_value = [{"id": "path/0"}]
         consumption = get_dataset_consumption(
             self.dataset_uri,
@@ -73,10 +70,7 @@ class TestDataLoader(TestCase):
     def test_user_raw_local_store(
         self, m_scan: MagicMock, m_scan_id: MagicMock, m_summary: MagicMock
     ) -> None:
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=True,
-            include_link=False,
-        )
+        m_summary.return_value = DatasetSummary(rows=1)
         m_scan_id.return_value = [{"id": "path/0"}]
 
         consumption = get_dataset_consumption(self.dataset_uri, session_id="1")
@@ -162,10 +156,7 @@ class TestDataLoader(TestCase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             config._config = {}
             os.environ["SW_CLI_CONFIG"] = tmpdirname + "/config.yaml"
-            m_summary.return_value = DatasetSummary(
-                include_user_raw=True,
-                include_link=True,
-            )
+            m_summary.return_value = DatasetSummary(rows=4)
             m_scan_id.return_value = [{"id": i} for i in range(0, 4)]
 
             snapshot_workdir = DatasetStorage(self.dataset_uri).snapshot_workdir
@@ -326,10 +317,7 @@ class TestDataLoader(TestCase):
             "http://127.0.0.1:1234/api/v1/project/self",
             json={"data": {"id": 1, "name": "project"}},
         )
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=False,
-            include_link=False,
-        )
+        m_summary.return_value = DatasetSummary(rows=1)
         m_scan_id.return_value = [{"id": 0}]
         version = "1122334455667788"
         dataset_uri = URI(
@@ -499,10 +487,7 @@ class TestDataLoader(TestCase):
         m_scan_batch: MagicMock,
         m_summary: MagicMock,
     ) -> None:
-        m_summary.return_value = DatasetSummary(
-            include_user_raw=True,
-            include_link=False,
-        )
+        m_summary.return_value = DatasetSummary(rows=4)
         tdsc = m_sc()
         tdsc.get_scan_range.side_effect = [["a", "d"], None]
         tdsc.batch_size = 20
@@ -680,10 +665,7 @@ class TestDataLoader(TestCase):
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_loader_with_cache(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
         rows_cnt = 100
-        m_summary.return_value = DatasetSummary(
-            rows=rows_cnt,
-            increased_rows=rows_cnt,
-        )
+        m_summary.return_value = DatasetSummary(rows=1)
         fname = "data_ubyte_0.swds_bin"
         m_scan.return_value = [
             TabularDatasetRow(

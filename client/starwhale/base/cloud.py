@@ -283,7 +283,9 @@ class CloudRequestMixed:
             return default_size
 
         if typ == "dataset":
-            return int(meta.get("dataset_byte_size", default_size))
+            return int(
+                meta.get("dataset_summary", {}).get("blobs_byte_size", default_size)
+            )
         if typ == "runtime":
             # no size info in meta for now
             return default_size
