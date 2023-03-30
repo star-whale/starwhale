@@ -25,9 +25,14 @@ def eval_job_cmd(ctx: click.Context) -> None:
 
 
 @eval_job_cmd.command(
-    "list", aliases=["ls"], help="List all jobs in the current project"
+    "list", aliases=["ls"], help="List all jobs in the specified project"
 )
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project.",
+)
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option("--show-removed", is_flag=True, help="Show removed dataset")
 @click.option(
@@ -56,7 +61,7 @@ def _list(
     "--project",
     envvar=SWEnv.project,
     default="",
-    help=f"project name, env is {SWEnv.project}",
+    help=f"Project URI, env is {SWEnv.project}.The evaluation result will store in the specified project. Default is the current selected project.",
 )
 @click.option(
     "--version",
