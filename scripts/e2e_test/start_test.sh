@@ -270,16 +270,7 @@ publish_to_k8s() {
   popd
 }
 
-install_necessary_tools() {
-  if ! command -v unzip &> /dev/null
-  then
-    echo "installing unzip"
-    apt update && apt install -y unzip
-  fi
-}
-
 main() {
-  install_necessary_tools
   declare_env
   if ! in_github_action; then
     trap exit_hook EXIT

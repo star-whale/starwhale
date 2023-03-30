@@ -47,5 +47,5 @@ storageSetting:
     hugeFilePartSize: "5242880"
 EOF
 
-)
+) || exit 1
 
