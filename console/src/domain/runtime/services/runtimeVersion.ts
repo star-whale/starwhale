@@ -28,10 +28,9 @@ export async function fetchRuntimeVersion(
     runtimeId: string,
     runtimeVersionId: string
 ): Promise<any> {
-    const resp = await axios.head<IRuntimeVersionDetailSchema>(
-        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}?queryRequest=${qs.stringify({
-            runtime: runtimeId,
-            project: projectId,
+    const resp = await axios.get<IRuntimeVersionDetailSchema>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}?${qs.stringify({
+            versionUrl: runtimeVersionId,
         })}`
     )
     return resp.data

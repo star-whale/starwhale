@@ -8,6 +8,7 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import { mergeOverrides } from '@/utils/baseui'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { INavItem } from './BaseSidebar'
+import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 export interface IComposedNavTabsProps {
     style?: React.CSSProperties
@@ -23,20 +24,12 @@ export interface IBaseNavTabsProps extends IComposedNavTabsProps {
 
 export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOverrides }: IBaseNavTabsProps) {
     const history = useHistory()
-    const location = useLocation()
     const [, theme] = themedUseStyletron()
-
-    const activeItemId = useMemo(() => {
-        const item = navItems
-            .slice()
-            .reverse()
-            .find((item_) => _.startsWith(location.pathname, item_.path) || _.startsWith(item_.path, location.pathname))
-        return item?.path
-    }, [location.pathname, navItems])
+    const { activeItemPath } = useRouterActivePath(navItems)
 
     return (
         <Tabs
-            activeKey={activeItemId}
+            activeKey={activeItemPath}
             onChange={({ activeKey }) => {
                 history.push(activeKey as string)
             }}
@@ -77,7 +70,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                                 Tab: {
                                     style: {
                                         'background': 'transparent',
-                                        'color': item.path === activeItemId ? theme.brandPrimary : '',
+                                        'color': item.path === activeItemPath ? theme.brandPrimary : '',
                                         ':hover': {
                                             background: 'transparent',
                                             color: theme.brandPrimary,

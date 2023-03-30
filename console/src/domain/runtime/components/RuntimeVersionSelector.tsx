@@ -4,6 +4,7 @@ import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
 import { listRuntimeVersions } from '../services/runtimeVersion'
+import { RuntimeLabel } from './RuntimeLabel'
 
 export interface IRuntimeVersionSelectorProps {
     projectId: string
@@ -59,11 +60,7 @@ export default function RuntimeVersionSelector({
             const ops =
                 runtimeVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: [
-                        item.alias ?? '',
-                        item.name ? item.name.substring(0, 8) : '',
-                        item.createdTime ? formatTimestampDateTime(item.createdTime) : '',
-                    ].join(' : '),
+                    label: <RuntimeLabel version={item} />,
                 })) ?? []
             setOptions(ops)
         } else {
@@ -73,6 +70,7 @@ export default function RuntimeVersionSelector({
 
     return (
         <Select
+            searchable={false}
             disabled={disabled}
             overrides={overrides}
             isLoading={runtimeVersionsInfo.isFetching}

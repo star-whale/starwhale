@@ -70,10 +70,14 @@ export default function RuntimeVersionListCard() {
                             {runtime.name}
                         </TextLink>,
                         <Alias alias={runtime.alias} />,
-                        <Shared shared={runtime.shared} />,
+                        <Shared shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,
                         <>
+                            <CopyToClipboard
+                                content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
+                            />
+                            &nbsp;&nbsp;
                             {i ? (
                                 <WithCurrentAuth id='runtime.version.revert'>
                                     <Button
@@ -86,10 +90,6 @@ export default function RuntimeVersionListCard() {
                                     </Button>
                                 </WithCurrentAuth>
                             ) : null}
-                            &nbsp;&nbsp;
-                            <CopyToClipboard
-                                content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`}
-                            />
                         </>,
                     ]
                 }) ?? []

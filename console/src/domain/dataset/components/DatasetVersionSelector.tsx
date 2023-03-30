@@ -70,6 +70,7 @@ export default function DatasetVersionSelector({
 
     return (
         <Select
+            searchable={false}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetVersionsInfo.isFetching}

@@ -13,8 +13,8 @@ export interface IRuntimeVersionSchema extends IResourceSchema {
 }
 
 export interface IRuntimeTreeVersionSchema extends IRuntimeVersionSchema {
-    versionName: string
-    createdTime: number
+    versionName?: string
+    createdTime?: number
 }
 
 export interface IRuntimeVersionListSchema extends IResourceSchema {

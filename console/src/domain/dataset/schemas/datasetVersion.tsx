@@ -14,8 +14,8 @@ export interface IDatasetVersionSchema extends IResourceSchema {
 }
 
 export interface IDatasetTreeVersionSchema extends IDatasetVersionSchema {
-    versionName: string
-    createdTime: number
+    versionName?: string
+    createdTime?: number
 }
 
 export interface IDatasetVersionDetailSchema {
