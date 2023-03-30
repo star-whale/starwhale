@@ -282,11 +282,16 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
+        dataset_config: DatasetConfig = kwargs["config"]
         with SDKDataset.dataset(self.uri) as sds:
+            sds = sds.with_builder_blob_config(
+                volume_size=dataset_config.attr.volume_size,
+                alignment_size=dataset_config.attr.alignment_size,
+            )
             console.print(
                 f":new: pending commit version: {sds.pending_commit_version[:SHORT_VERSION_CNT]}"
             )
-            self._build_from_iterable_handler(sds, kwargs["config"])
+            self._build_from_iterable_handler(sds, dataset_config)
             version = sds.commit()
             self._version = self.uri.object.version = version
 

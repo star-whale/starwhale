@@ -8,4 +8,3 @@ desc: MNIST data and label test dataset
 attr:
   alignment_size: 1k
   volume_size: 4M
-  data_mime_type: "x/grayscale"

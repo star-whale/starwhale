@@ -1082,6 +1082,38 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(history) == 2
         assert {v0, v1} == {history[0]["version"], history[1]["version"]}
 
+    def test_with_builder_blob_config_forbid(self) -> None:
+        ds = dataset("mnist-error")
+        ds.append({"label": 1})
+        with self.assertRaisesRegex(
+            RuntimeError, "dataset has already accept some changed rows"
+        ):
+            ds.with_builder_blob_config(volume_size=1, alignment_size=1)
+
+        ds.close()
+
+    def test_with_builder_blob_config(self) -> None:
+        ds = dataset("mnist").with_builder_blob_config(
+            volume_size=1024, alignment_size=48
+        )
+        ds.append({"bin": Binary(b"abc")})
+        ds.commit()
+        ds.close()
+
+        assert (
+            ds._dataset_builder._artifact_bin_writer.alignment_bytes_size
+            == ds._builder_blob_alignment_size
+            == 48
+        )
+        assert (
+            ds._dataset_builder._artifact_bin_writer.volume_bytes_size
+            == ds._builder_blob_volume_size
+            == 1024
+        )
+
+        assert len(ds._dataset_builder.signature_bins_meta) == 1
+        assert ds._dataset_builder.signature_bins_meta[0].size == 48
+
 
 class TestPytorch(_DatasetSDKTestBase):
     def test_skip_default_transform_without_batch(self) -> None:

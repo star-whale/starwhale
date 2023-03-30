@@ -1504,7 +1504,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
             workdir=self.workdir,
             dataset_name=self.dataset_name,
             project_name=self.project_name,
-            bin_volume_bytes_size=1024 * 1024,
+            blob_volume_bytes_size=1024 * 1024,
         )
         mdb.put(DataRow(index=1, features={"bin": Binary(b"123")}))
         mdb.flush(artifacts_flush=False)
