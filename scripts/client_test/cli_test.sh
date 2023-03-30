@@ -29,5 +29,5 @@ swcli --version
 popd
 
 bash "$SCRIPT_DIR"/update_controller_setting.sh
+python3 -m pip install -r "$SCRIPT_DIR"/requirements.txt
 python3 "$SCRIPT_DIR"/cli_test.py "$1"
-

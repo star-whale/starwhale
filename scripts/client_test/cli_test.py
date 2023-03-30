@@ -4,7 +4,8 @@ import shutil
 import typing as t
 import logging
 import subprocess
-from time import sleep
+from random import randrange
+from time import sleep, time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures._base import Future
 
@@ -343,6 +344,36 @@ class TestCli:
             for name, expl in EXAMPLES.items()
         ]
         status_checkers: t.List[Future] = sum(res, [])
+
+        if os.environ.get("SWNS"):
+            ns = os.environ.get("SWNS")
+
+            def test_kill_pod_case() -> None:
+                time.sleep(60)  # sleep 60 seconds for more pod started
+                from kubernetes import client, config
+
+                # Configs can be set in Configuration class directly or using helper utility
+                config.load_kube_config()
+
+                v1 = client.CoreV1Api()
+                while True:
+                    jobid = randrange(1, 28)
+                    ret = v1.list_namespaced_pod(ns, label_selector=f"job-name={jobid}")
+                    if not ret.items():
+                        continue
+                    break_out = False
+                    for i in ret.items:
+                        if "Running".lower() == i.status.phase.lower():
+                            break_out = True
+                            v1.delete_namespaced_pod(i.metadata.name, i.metadata.namespace)
+                            break
+                    if break_out:
+                        break
+
+            future = self.executor.submit(test_kill_pod_case)
+            self.executor.submit(lambda f: f.result(timeout=10 * 60),
+                                 future)  # 10 minutes to wait for test_kill_pod_case
+
 
         # run evals on standalone
         for name, expl in EXAMPLES.items():
