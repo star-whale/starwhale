@@ -134,7 +134,12 @@ def _quickstart(
     help="[Only Standalone]Create and build a relocated, shareable, packaged runtime bundle. Support python and native libs.",
 )
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
+)
 @click.option(
     "-f",
     "--runtime-yaml",
@@ -271,7 +276,12 @@ def _restore(target: str) -> None:
 
 
 @runtime_cmd.command("list", aliases=["ls"])
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, the default is the current selected project.",
+)
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of runtime version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed runtime")
 @click.option(
@@ -298,7 +308,7 @@ def _list(
     filters: list,
 ) -> None:
     """
-    List Runtime
+    List Runtime of the specified project
 
     The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n

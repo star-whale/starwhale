@@ -22,7 +22,12 @@ def model_cmd(ctx: click.Context) -> None:
 
 @model_cmd.command("build", help="[ONLY Standalone]Build starwhale model")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project. The model package will store in the specified project.",
+)
 @click.option(
     "-f",
     "--model-yaml",
@@ -129,7 +134,12 @@ def _diff(
 
 
 @model_cmd.command("list", aliases=["ls"])
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project.",
+)
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of model version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed model")
 @click.option(
@@ -156,7 +166,7 @@ def _list(
     filters: list,
 ) -> None:
     """
-    List Model
+    List Model of the specified project.
 
     The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n
@@ -210,23 +220,30 @@ def _recover(model: str, force: bool) -> None:
 )
 @click.option(
     "-p",
-    "--project",
+    "--evaluation-project",
     envvar=SWEnv.project,
     default="",
-    help=f"project name, env is {SWEnv.project}",
+    help=f"Project URI, env is {SWEnv.project}.The model evaluation result will store in the specified project. Default is the current selected project.",
 )
 @click.option(
     "--version",
     envvar=SWEnv.eval_version,
     default=None,
     help=f"Evaluation job version, env is {SWEnv.eval_version}",
+    hidden=True,
 )
-@click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=None, help="Index of tasks in the current step")
+@click.option("--step", default="", help="Evaluation run step", hidden=True)
+@click.option(
+    "--task-index",
+    default=None,
+    help="Index of tasks in the current step",
+    hidden=True,
+)
 @click.option(
     "--override-task-num",
     default=0,
     help="Total num of tasks in the current step",
+    hidden=True,
 )
 @click.option("--runtime", default="", help="runtime uri")
 @click.option(
@@ -249,7 +266,7 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY Standalone]the image used when use docker",
 )
 def _eval(
-    project: str,
+    evaluation_project: str,
     target: str,
     model_yaml: str,
     version: str,
@@ -268,7 +285,7 @@ def _eval(
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     ModelTermView.eval(
-        project=project,
+        project=evaluation_project,
         target=target,
         version=version,
         yaml_name=model_yaml,

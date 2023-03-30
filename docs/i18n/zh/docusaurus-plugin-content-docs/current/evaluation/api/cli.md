@@ -40,9 +40,6 @@ swcli eval run [OPTIONS]
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |---|-------|-----|---|------|---|
-|`--version`||❌|String|生成一个随机ID|模型评测的版本号，可以使用该参数进行分Step调试。该参数也可以通过 `SW_EVALUATION_VERSION` 环境变量来设置。|
-|`--step`||❌|String||评测任务的Step名称，实现只执行该Step的目的。如果不指定，则所有Step都会运行，对于继承 `starwhale.PipelineHandler` 的评测任务，就是ppl和cmp两个Step。|
-|`--task-index`||❌|Integer|| `--task-index` 参数用来表明 `--step` 中Step的第n个Task会执行，如果不指定 `--task-index`，则该Step中所有Tasks都会执行。Task索引从0开始，会通过 `starwhale.Context` 传入用户程序中，很多场景下Task的索引值用来指导评测数据集如何分割，实现评测的时候同一个Step的不同Task处理不同部分的评测数据集，实现并行提速。另外需要注意的是，`--task-index` 只有在同时设置 `--step` 参数时才生效。|
 |`--model`||✅||String||Model URI或model.yaml所在的目录。如果在Cloud Instance上运行，支持Model URI形式。|
 |`--dataset`||✅||String||Dataset URI，该参数也可以通过 `SW_DATASET_URI` 环境变量来设置。|
 |`--runtime`||❌|String||`--runtime`参数为Standalone Instance中的Runtime URI。若设置，则表示运行模型评测的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时。设置`--runtime`参数是安全的，只在运行时才会使用Runtime，不会污染当前shell环境。|

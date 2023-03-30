@@ -36,6 +36,7 @@ public class DataStoreScanRequest {
     public static class TableInfo {
 
         private String tableName;
+        // timestamp in milliseconds, used to filter out the data that is older than the timestamp for this table
         private long timestamp;
         private String columnPrefix;
         private Map<String, String> columns;
@@ -43,6 +44,7 @@ public class DataStoreScanRequest {
     }
 
     private List<TableInfo> tables;
+    // timestamp in milliseconds, used to filter out the data that is older than the timestamp for all tables
     private long timestamp;
     private String start;
     private String startType;

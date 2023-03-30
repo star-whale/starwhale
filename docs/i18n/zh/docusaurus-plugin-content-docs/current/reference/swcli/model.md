@@ -33,7 +33,7 @@ model命令用于管理Starwhale Model，包括构建、列表、复制、运行
 swcli model build [选项] <WORKDIR>
 ```
 
-`model build`命令会将整个`WORKDIR`打包到Starwhale Model中，除了[.swignore](../../swcli/config/swignore.md)匹配的文件以外。
+`model build`命令会将整个`WORKDIR`打包到Starwhale Model中，除了[.swignore](../../swcli/swignore.md)匹配的文件以外。
 
 `model build`会尝试导入model.yaml中的`run.handler`参数指定的模块，然后生成运行模型所需要的配置。所以如果您指定的模块依赖第三方库，我们强烈建议您使用`--runtime`选项。如果不指定该选项，您需要确认swcli所使用的python环境已经安装了这些库。
 

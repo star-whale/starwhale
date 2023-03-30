@@ -15,7 +15,7 @@ title: 关于.swignore文件
 
 # 例子
 
-这是[MNIST](../../examples/mnist)示例中使用的.swignore文件
+这是[MNIST](../examples/mnist.md)示例中使用的.swignore文件
 
 ```bash
 venv

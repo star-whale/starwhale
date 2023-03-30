@@ -321,25 +321,6 @@ class TabularDataset:
 
         self.close()
 
-    def fork(self, version: str) -> t.Tuple[int, int]:
-        fork_td = TabularDataset(name=self.name, version=version, project=self.project)
-
-        rows_cnt = 0
-        last_append_seq_id = -1
-        # TODO: tune tabular dataset fork performance
-        for _row in fork_td.scan():
-            rows_cnt += 1
-            last_append_seq_id = max(
-                int(_row.extra_kw.get("_append_seq_id", -1)), last_append_seq_id
-            )
-            _row.origin = DataOriginType.INHERIT
-            self.put(_row)
-
-        # TODO: deepcopy fork_td info dict?
-        self._info = fork_td.info
-        self.flush()
-        return last_append_seq_id, rows_cnt
-
     @classmethod
     def from_uri(
         cls: t.Type[_TDType],
