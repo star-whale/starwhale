@@ -13,10 +13,10 @@ export const DatasetLabelContainer = themedStyled('div', () => ({
     alignItems: 'center',
     height: '100%',
     width: '100%',
+    minWidth: '0',
 }))
 
 export const DatasetLabelText = themedStyled('div', () => ({
-    display: 'inline-flex',
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
