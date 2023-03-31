@@ -186,7 +186,7 @@ export function DynamicSelector<T = any>({
     )
 }
 
-export default SelectorItemByTree
+export default DynamicSelector
 
 // const treeData = [
 //     {

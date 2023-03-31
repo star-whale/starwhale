@@ -1,110 +1,18 @@
 import React, { useEffect } from 'react'
-import { toggleIsExpanded, TreeNodeData, TreeView } from '../base/tree-view'
+import { toggleIsExpanded, TreeView } from '../base/tree-view'
 import { TreeContainer, TreeSearch } from './StyledComponent'
 import { TreeNodeDataT, TreePropsT } from './types'
 import TreeNode from './TreeNode'
+import useTreeDataSelection from './hooks/useTreeDataSelection'
+import useTreeDataLoader from './hooks/useTreeDataLoader'
 
-type TreeDataLoaderT = {
-    data: TreeNodeData[]
-    search: string
-    searchFilter: (search: string, node: TreeNodeData) => boolean
-    nodeRender: (node: TreeNodeData) => React.ReactNode
+const searchFilter = (searchTmp: string, node: TreeNodeDataT) => {
+    if (typeof node.info?.labelTitle !== 'string') return false
+
+    const searchTerm = searchTmp?.toLowerCase() ?? ''
+    const label = node.info?.labelTitle?.toLowerCase() ?? ''
+    return label.includes(searchTerm)
 }
-
-function useTreeDataLoader({ data: $data, search, searchFilter, nodeRender }: TreeDataLoaderT) {
-    const walk = (treeNodes: TreeNodeData[], path: any[] = []): TreeNodeDataT[] => {
-        return treeNodes
-            ?.map((node: TreeNodeData, index: number): TreeNodeDataT => {
-                const pathTmp = [...path, index]
-
-                return {
-                    id: node.id,
-                    label: nodeRender,
-                    isExpanded: node.isExpanded,
-                    path: pathTmp.join('/'),
-                    info: node.info ?? { label: node.label },
-                    isLeafNode: node.children && node.children?.length > 0,
-                    children: node.children ? walk(node.children, [...pathTmp, 'children']) : undefined,
-                }
-            })
-            .filter((node: TreeNodeData) => {
-                if (node.isLeafNode) return true
-                if (!search) return true
-
-                return searchFilter(search, node)
-            })
-    }
-
-    return React.useMemo(() => {
-        return {
-            data: walk($data),
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [$data, search, searchFilter, nodeRender])
-}
-
-function useTreeDataSelection({
-    selectedIds: prevSelectedIds,
-    onSelectedIdsChange,
-    multiple = true,
-}: {
-    selectedIds: any[]
-    onSelectedIdsChange: (ids: any[]) => any[]
-    multiple?: boolean
-}) {
-    return {
-        onToggle: React.useCallback(
-            (toggleNode: TreeNodeDataT) => {
-                if (!toggleNode) return prevSelectedIds
-
-                const $onToggle = (node: TreeNodeDataT) => {
-                    let ids = [node.id]
-
-                    if (!multiple) {
-                        const index = prevSelectedIds.indexOf(node.id)
-                        if (index > -1) {
-                            return []
-                        }
-                        return ids
-                    }
-
-                    if (node.isLeafNode) {
-                        const childrenCount = node?.children?.length || 0
-                        const childrenSelectedCount =
-                            node?.children?.filter((child) => prevSelectedIds.includes(child.id)).length || 0
-                        const isSelected = childrenSelectedCount > 0 && childrenCount === childrenSelectedCount
-                        const isSelectedIndeterminate =
-                            childrenSelectedCount > 0 && childrenSelectedCount < childrenCount
-                        ids = node.children?.map((child: TreeNodeDataT) => child?.id) ?? []
-                        // select all
-                        if (isSelectedIndeterminate) {
-                            return Array.from(new Set([...prevSelectedIds, ...ids]))
-                        }
-                        // disselect all
-                        if (isSelected) return prevSelectedIds.filter((id: any) => !ids.includes(id))
-
-                        return Array.from(new Set([...prevSelectedIds, ...ids]))
-                    }
-
-                    const index = prevSelectedIds.indexOf(node.id)
-                    if (index > -1) {
-                        prevSelectedIds.splice(index, 1)
-                        return [...prevSelectedIds]
-                    }
-
-                    return [...prevSelectedIds, node.id]
-                }
-                const $newIds = $onToggle(toggleNode)
-                onSelectedIdsChange?.($newIds)
-                return $newIds
-            },
-            [onSelectedIdsChange, prevSelectedIds, multiple]
-        ),
-    }
-}
-
-const searchFilter = (searchTmp: string, node: TreeNodeDataT) =>
-    node.info?.label?.toLocaleLowerCase().includes(searchTmp.toLowerCase()) ?? false
 
 export function Tree({
     data: rawData,
@@ -112,7 +20,7 @@ export function Tree({
     selectable = true,
     selectedIds = [],
     onSelectedIdsChange = () => {},
-    renderLabel = (node: TreeNodeDataT) => node?.info?.label,
+    renderLabel = (node: TreeNodeDataT) => node.info?.label,
     renderActions = () => null,
     multiple = true,
     search: rawSearch,
@@ -138,7 +46,6 @@ export function Tree({
                 isSelected = childrenSelectedCount > 0 && childrenCount === childrenSelectedCount
                 isSelectedIndeterminate = childrenSelectedCount > 0 && childrenSelectedCount < childrenCount
             }
-
             return (
                 <TreeNode
                     node={node}
