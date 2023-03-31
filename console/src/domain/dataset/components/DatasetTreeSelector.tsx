@@ -3,7 +3,7 @@ import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelect
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React from 'react'
 import { useFetchDatasetTree } from '../hooks/useFetchDatasetTree'
-import DatasetLabel from './DatasetLabel'
+import DatasetLabel, { getDatastLabel } from './DatasetLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
@@ -49,8 +49,10 @@ export function DatasetTreeSelector(props: any) {
                                     </Button>
                                 </DatasetTreeNode>
                             ),
-                            labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow />,
-                            labelTitle: '',
+                            info: {
+                                labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow />,
+                                labelTitle: getDatastLabel(item, dataset),
+                            },
                             isExpanded: true,
                         }
                     }) ?? [],
@@ -69,8 +71,8 @@ export function DatasetTreeSelector(props: any) {
                 },
                 multiple: true,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
-                getDataToLabelView: (data: any) => data?.labelView,
-                getDataToLabelTitle: (data: any) => data?.labelTitle,
+                getDataToLabelView: (data: any) => data?.info.labelView,
+                getDataToLabelTitle: (data: any) => data?.info.labelTitle,
                 getDataToValue: (data: any) => data?.id,
                 render: SelectorItemByTree as React.FC<any>,
             },
