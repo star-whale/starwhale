@@ -1,8 +1,0 @@
-numpy==1.21.6; python_version=='3.7'
-torch==1.11.0; python_version=='3.7'
-numpy==1.23.2; python_version>='3.8'
-torch==1.12.1; python_version>='3.8'
-torchvision
-Pillow
-scikit-learn
-starwhale
