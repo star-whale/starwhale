@@ -67,7 +67,7 @@ job-step-task 的抽象是实现 `Starwhale Evaluation` 分布式运行的基础
       - type: cpu # nvidia.com/gpu, memory
         request: 1 # float
         limit: 1 # float
-    step_name: ppl
+    name: ppl
     task_num: 2
   - job_name: default
     needs:
@@ -76,6 +76,6 @@ job-step-task 的抽象是实现 `Starwhale Evaluation` 分布式运行的基础
       - type: cpu
         request: 1
         limit: 1
-    step_name: cmp
+    name: cmp
     task_num: 1
 ```

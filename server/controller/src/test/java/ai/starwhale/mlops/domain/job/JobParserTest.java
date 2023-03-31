@@ -32,7 +32,7 @@ public class JobParserTest {
                 + "  job_name: default\n"
                 + "  needs: []\n"
                 + "  resources: []\n"
-                + "  step_name: ppl\n"
+                + "  name: ppl\n"
                 + "  task_num: 1\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
@@ -49,7 +49,7 @@ public class JobParserTest {
                 + "  - type: memory \n"
                 + "    request: 1\n"
                 + "    limit: 1\n"
-                + "  step_name: cmp\n"
+                + "  name: cmp\n"
                 + "  task_num: 1";
         JobSpecParser jobSpecParser = new JobSpecParser();
         List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);

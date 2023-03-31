@@ -7,7 +7,7 @@ default:
     - type: cpu
       request: 1
       limit: 1
-    step_name: ppl
+    name: ppl
     task_num: 2
   - cls_name: ''
     concurrency: 1
@@ -18,5 +18,5 @@ default:
     - type: cpu
       request: 1
       limit: 1
-    step_name: cmp
+    name: cmp
     task_num: 1

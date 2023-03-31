@@ -109,15 +109,15 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
             StepEntity stepEntity = StepEntity.builder()
                     .uuid(UUID.randomUUID().toString())
                     .jobId(job.getId())
-                    .name(stepSpec.getStepName())
+                    .name(stepSpec.getName())
                     .taskNum(stepSpec.getTaskNum())
                     .concurrency(stepSpec.getConcurrency())
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
-            allDependencies.put(stepSpec.getStepName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
-            nameMapping.put(stepSpec.getStepName(), new Tuple2<>(stepEntity, stepSpec));
+            allDependencies.put(stepSpec.getName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
+            nameMapping.put(stepSpec.getName(), new Tuple2<>(stepEntity, stepSpec));
         }
 
         for (StepEntity stepEntity : stepEntities) {
