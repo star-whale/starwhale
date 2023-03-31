@@ -43,6 +43,7 @@ export function useQueryDatasetList(
     options?: IListQuerySchema & {
         filter?: any[]
         query?: QueryTableRequest
+        revision?: string
     },
     enabled = true
 ) {
@@ -70,7 +71,8 @@ export function useQueryDatasetList(
     const recordQuery = useMemo(() => {
         const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
         const filter = options?.filter && options?.filter.length > 0 ? column.toQuery(options?.filter) : undefined
-        const raw = {
+        const revision = options?.revision
+        const raw: any = {
             ...query,
             tableName,
             start,
@@ -78,7 +80,13 @@ export function useQueryDatasetList(
             rawResult: true,
             ignoreNonExistingTable: true,
         }
-        return filter ? { ...raw, filter } : raw
+        if (revision) {
+            raw.revision = revision
+        }
+        if (filter) {
+            raw.filter = filter
+        }
+        return raw
     }, [options?.filter, columnInfo.data?.columnTypes, limit, start, tableName, query])
 
     const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)

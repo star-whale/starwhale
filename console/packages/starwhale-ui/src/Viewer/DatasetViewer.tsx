@@ -111,6 +111,8 @@ export default function DatasetViewer({
         }
     }, [summary, data, hiddenLabels, isZoom])
 
+    if (data === '') return ''
+
     if (!data) return <Placeholder />
 
     return Viewer
