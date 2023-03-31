@@ -105,6 +105,38 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert not ds.committed
         ds.close()
 
+    def test_create_mode(self) -> None:
+        with self.assertRaisesRegex(
+            RuntimeError, "dataset doest not exist, we have already use"
+        ):
+            _ = dataset("mnist", create="forbid")
+
+        ds = dataset("mnist", create="empty")
+        ds.append({"label": 1})
+        ds.commit()
+        ds.close()
+
+        ds = dataset("mnist", create="forbid")
+        assert ds.exists()
+        assert len(ds) == 1
+        ds.close()
+
+        ds = dataset("mnist", create="auto")
+        assert ds.exists()
+        ds.append({"label": 2})
+        ds.commit()
+        ds.close()
+
+        with self.assertRaisesRegex(
+            RuntimeError, "dataset already existed, failed to create"
+        ):
+            _ = dataset("mnist", create="empty")
+
+        with self.assertRaisesRegex(
+            ValueError, "the current create mode is not in the accept options"
+        ):
+            _ = dataset("mnist", create="not-option")
+
     def test_append(self) -> None:
         size = 11
         ds = dataset("mnist")
