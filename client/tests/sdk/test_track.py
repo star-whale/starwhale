@@ -14,7 +14,7 @@ import pytest
 from starwhale.api import track
 from starwhale.utils import now_str, load_yaml
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir, ensure_file, BLAKE2B_SIGNATURE_ALGO
 from starwhale.base.type import URIType
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError, NoSupportError
@@ -55,19 +55,6 @@ class TestTrackBase(BaseTestCase):
         assert isinstance(mr.clock_time, str)
 
     def test_artifacts_tabular_row(self) -> None:
-        atr = ArtifactsTabularRow(
-            name="test_image",
-            index=1,
-            created_at=now_str(),
-            data=Link.from_local_artifact(
-                data=Image(fp=b"123"), store_dir=Path(self.local_storage)
-            ),
-            link_wrapper=True,
-        )
-        ret_dict = atr.asdict()
-        assert atr.key == ret_dict["__key"] == "test_image-0001"
-        assert ret_dict["__link_wrapper"]
-
         atr = ArtifactsTabularRow.from_datastore(
             name="test_image",
             index=0,
@@ -526,12 +513,15 @@ class TestHandler(BaseTestCase):
         audio_link = records[0]["data"]
         assert isinstance(audio_link, Link)
         assert audio_link.data_type["type"] == "audio"  # type: ignore
-        uri_path = Path(audio_link.uri)
+
+        _uri2path = lambda x: files_dir / BLAKE2B_SIGNATURE_ALGO / x[:2] / x
+
+        uri_path = _uri2path(audio_link.uri)
         assert uri_path.exists() and uri_path.is_file()
         assert uri_path.read_bytes() == b"345"
 
-        assert Path(records[1]["data"].uri).read_bytes() == b"123"
-        assert Path(records[2]["data"].uri).read_bytes() == b"000"
+        assert _uri2path(records[1]["data"].uri).read_bytes() == b"123"
+        assert _uri2path(records[2]["data"].uri).read_bytes() == b"000"
 
     def test_run(self) -> None:
         workdir = Path(self.local_storage) / "track"

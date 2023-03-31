@@ -352,8 +352,6 @@ class TestJsonDict(TestCase):
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "data_type": data_store.UNKNOWN,
-                            "with_local_fs_data": data_store.BOOL,
-                            "_local_fs_uri": data_store.STRING,
                             "_signed_uri": data_store.STRING,
                             "extra_info": data_store.SwMapType(
                                 data_store.UNKNOWN, data_store.UNKNOWN
