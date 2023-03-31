@@ -83,17 +83,12 @@ def build(
                 project=project_uri,
                 yaml_path=yaml_path,
             )
+            if push_to:
+                from starwhale import URI
+                # model copy local/project/myproject/model/mnist/version/latest cloud://server/project/starwhale
+                ModelTermView.copy(f"{URI(project_uri).full_uri}/model/{name}/version/latest", push_to)
     finally:
         os.unlink(yaml_path)
-
-    if push_to:
-        print("copy start1")
-        from starwhale import URI
-        p = URI(project_uri)
-        print(f"copy start2:{p.full_uri}")
-        # local/project/myproject/model/mnist-local/version/latest cloud://pre-k8s/project/starwhale
-        ModelTermView.copy(f"{p.full_uri}/model/{name}/version/latest", push_to)
-        print("copy end")
 
 
 def _ingest_obj_entrypoint_name(

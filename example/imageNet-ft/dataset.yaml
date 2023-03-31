@@ -1,0 +1,5 @@
+name: imageNet-for-hotdog
+
+handler: imagenet.dataset:ImageNetBuildExecutor
+
+desc: imageNet-for-hotdog data and label test dataset
