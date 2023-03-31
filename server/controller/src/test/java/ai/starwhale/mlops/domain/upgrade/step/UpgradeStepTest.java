@@ -19,7 +19,9 @@ package ai.starwhale.mlops.domain.upgrade.step;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.backup.db.MysqlBackupService;
 import ai.starwhale.mlops.configuration.DataSourceProperties;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
@@ -69,6 +71,8 @@ public class UpgradeStepTest {
         access = mock(UpgradeAccess.class);
         storageAccessService = mock(StorageAccessService.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
+        when(storagePathCoordinator.allocatePluginPath(anyString(), anyString()))
+                .thenReturn("path");
         k8sClient = mock(K8sClient.class);
         deployed.set(false);
         Mockito.doAnswer(in -> {
@@ -85,6 +89,9 @@ public class UpgradeStepTest {
                 });
         DataSourceProperties ds = new DataSourceProperties("", "", "", "");
         backupDatabase = new BackupDatabase(access, ds, storageAccessService, storagePathCoordinator);
+        MysqlBackupService backupService = mock(MysqlBackupService.class);
+        Mockito.when(backupService.backup(any())).thenReturn("sql");
+        backupDatabase.setMysqlBackupService(backupService);
         updateK8sImage = new UpdateK8sImage(access, k8sClient);
         steps = List.of(backupDatabase, updateK8sImage);
         scheduler = mock(ThreadPoolTaskScheduler.class);
@@ -142,7 +149,7 @@ public class UpgradeStepTest {
                 new Version("0.2", "server:0.2"),
                 new Version("0.1", "server:0.1"),
                 Status.UPGRADING);
-        backupDatabase.doStep(upgrade);
+        backupDatabase.run(upgrade, 2, 1);
     }
 
     @Test
@@ -151,7 +158,7 @@ public class UpgradeStepTest {
                 new Version("0.2", "server:0.2"),
                 new Version("0.1", "server:0.1"),
                 Status.UPGRADING);
-        updateK8sImage.doStep(upgrade);
+        updateK8sImage.run(upgrade, 2, 2);
         Assertions.assertTrue(updateK8sImage.isComplete());
     }
 

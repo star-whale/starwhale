@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,9 @@ public class BackupDatabase extends UpgradeStepBase {
 
     private final StoragePathCoordinator storagePathCoordinator;
 
+    @Setter
+    private MysqlBackupService mysqlBackupService;
+
     public BackupDatabase(UpgradeAccess upgradeAccess,
             DataSourceProperties dataSourceProperties,
             StorageAccessService accessService,
@@ -54,14 +58,19 @@ public class BackupDatabase extends UpgradeStepBase {
         this.dataSourceProperties = dataSourceProperties;
         this.accessService = accessService;
         this.storagePathCoordinator = storagePathCoordinator;
+        this.mysqlBackupService = MysqlBackupService.builder()
+                .driver(dataSourceProperties.getDriverClassName())
+                .url(dataSourceProperties.getUrl())
+                .username(dataSourceProperties.getUsername())
+                .password(dataSourceProperties.getPassword())
+                .build();
     }
 
     @Override
     protected void doStep(Upgrade upgrade) {
         log.info("Back up database" + upgrade.toString());
-        var backupService = getMysqlBackService();
         try {
-            String sql = backupService.backup(getIgnores());
+            String sql = mysqlBackupService.backup(getIgnores());
             //store sql
             accessService.put(getStorePath(), new ByteArrayInputStream(sql.getBytes(StandardCharsets.UTF_8)));
 
@@ -71,15 +80,6 @@ public class BackupDatabase extends UpgradeStepBase {
             throw new SwProcessException(ErrorType.DATASTORE, "Backup mysql error.", e);
         }
 
-    }
-
-    private MysqlBackupService getMysqlBackService() {
-        return MysqlBackupService.builder()
-                .driver(dataSourceProperties.getDriverClassName())
-                .url(dataSourceProperties.getUrl())
-                .username(dataSourceProperties.getUsername())
-                .password(dataSourceProperties.getPassword())
-                .build();
     }
 
     private Set<String> getIgnores() {
