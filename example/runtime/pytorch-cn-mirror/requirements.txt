@@ -15,8 +15,13 @@ numpy==1.23.2; python_version>='3.8'
 scikit-learn==1.1.1; python_version>='3.8'
 scipy==1.8.1; python_version>='3.8'
 importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'
-torch==2.0.0
-torchaudio==2.0.1
-torchdata==0.6.0
-torchtext==0.15.1
-torchvision==0.15.1
+torch==2.0.0; python_version>='3.8'
+torch; python_version=='3.7'
+torchaudio==2.0.1; python_version>='3.8'
+torchaudio; python_version=='3.7'
+torchdata==0.6.0; python_version>='3.8'
+torchdata; python_version=='3.7'
+torchtext==0.15.1; python_version>='3.8'
+torchtext; python_version=='3.7'
+torchvision==0.15.1; python_version>='3.8'
+torchvision; python_version=='3.7'

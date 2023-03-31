@@ -1,2 +1,4 @@
-torch==2.0.0
-torchaudio==2.0.1
+torch==2.0.0; python_version>='3.8'
+torch; python_version=='3.7'
+torchaudio==2.0.1; python_version>='3.8'
+torchaudio; python_version=='3.7'

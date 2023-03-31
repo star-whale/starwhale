@@ -1,2 +1,4 @@
-torch==2.0.0
-torchtext==0.15.1
+torch==2.0.0; python_version>='3.8'
+torch; python_version=='3.7'
+torchtext==0.15.1; python_version>='3.8'
+torchtext; python_version=='3.7'
