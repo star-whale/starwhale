@@ -7,6 +7,9 @@ export function getMeta(meta: string): { revision?: string; rows?: number } {
             revision: obj?.data_datastore_revision,
             rows: obj?.dataset_summary?.rows ?? 0,
         }
-    } catch (e) {}
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e)
+    }
     return {}
 }

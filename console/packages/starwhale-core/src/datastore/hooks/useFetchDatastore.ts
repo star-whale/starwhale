@@ -87,7 +87,7 @@ export function useQueryDatasetList(
             raw.filter = filter
         }
         return raw
-    }, [options?.filter, columnInfo.data?.columnTypes, limit, start, tableName, query])
+    }, [options?.filter, columnInfo.data?.columnTypes, limit, start, tableName, query, options?.revision])
 
     const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
 
