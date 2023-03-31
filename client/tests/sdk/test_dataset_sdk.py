@@ -397,6 +397,85 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert isinstance(item, DataRow)
         assert cnt == 10
 
+    def test_versioning_scan(self) -> None:
+        ds = dataset("mnist")
+        for i in range(0, 10):
+            ds.append({"label": i})
+        ds.info["version"] = "v0"
+        v0 = ds.commit()
+        v0_revision = ds._last_data_datastore_revision
+        ds.close()
+
+        ds = dataset("mnist")
+        del ds[0:2]
+        ds.info["version"] = "v1"
+        v1 = ds.commit()
+        v1_revision = ds._last_data_datastore_revision
+        ds.close()
+
+        ds = dataset("mnist")
+        for row in ds:
+            row.features.label += 10
+            row.features.new_label = 1
+        ds.info["version"] = "v2"
+        v2 = ds.commit()
+        v2_revision = ds._last_data_datastore_revision
+        ds.close()
+
+        ds_v0 = dataset(f"mnist/version/{v0}", readonly=True)
+        manifest_v0 = ds_v0.manifest()
+        rows = list(ds_v0)
+        assert len(rows) == 10 == len(ds_v0)
+        assert ds_v0.info["version"] == "v0"
+        ds_v0.close()
+
+        ds_v1 = dataset(f"mnist/version/{v1}", readonly=True)
+        manifest_v1 = ds_v1.manifest()
+        rows = list(ds_v1)
+        assert len(rows) == 8 == len(ds_v1)
+        assert {r.index for r in rows} == {i for i in range(2, 10)}
+        assert {r.features.label for r in rows} == {i for i in range(2, 10)}
+        assert ds_v1.info["version"] == "v1"
+        ds_v1.close()
+
+        ds_v2 = dataset(f"mnist/version/{v2}", readonly=True)
+        manifest_v2 = ds_v2.manifest()
+        rows = list(ds)
+        assert len(rows) == 8 == len(ds_v2)
+        assert {r.index for r in rows} == {i for i in range(2, 10)}
+        assert {r.features.label for r in rows} == {i + 10 for i in range(2, 10)}
+        assert {r.features.new_label for r in rows} == {1}
+        assert ds_v2.info["version"] == "v2"
+        ds_v2.close()
+
+        assert v0_revision != v1_revision != v2_revision
+        assert manifest_v0["config"]["data_datastore_revision"] == v0_revision
+        assert manifest_v1["config"]["data_datastore_revision"] == v1_revision
+        assert manifest_v2["config"]["data_datastore_revision"] == v2_revision
+
+    def test_versioning_data_scan_in_one_commit(self) -> None:
+        ds = dataset("mnist")
+        ds.append({"label": 0})
+        v0_revision = ds.flush()
+        assert ds._last_data_datastore_revision == v0_revision
+        assert ds[0].features.label == 0
+
+        for i in range(1, 10):
+            ds.append({"label": i})
+        assert ds._Dataset__data_loaders != {}
+        ds.flush()
+        assert ds._Dataset__data_loaders == {}
+        del ds[9]
+        ds.commit()
+        ds.close()
+
+        ds = dataset("mnist", readonly=True)
+        assert len(ds) == 9
+        rows = list(ds)
+        assert len(rows) == 9
+        assert {r.features.label for r in rows} == {i for i in range(0, 9)}
+        ds.close()
+
     def test_get_item_by_int_id(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
@@ -594,6 +673,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     @Mocker()
     def test_cloud_init(self, rm: Mocker) -> None:
+        sw = SWCliConfigMixed()
+        sw.update_instance(
+            uri="http://1.1.1.1", user_name="test", sw_token="123", alias="test"
+        )
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1/api/v1/project/self/dataset/not_found/version/1234",
@@ -610,12 +693,28 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         rm.request(
             HTTPMethod.GET,
+            "http://1.1.1.1/api/v1/project/self",
+            json={"data": {"id": 1, "name": "self"}},
+        )
+
+        scan_table_mock = rm.request(
+            HTTPMethod.POST,
+            "http://1.1.1.1/api/v1/datastore/scanTable",
+            json={"data": {}},
+        )
+
+        rm.request(
+            HTTPMethod.GET,
             "http://1.1.1.1/api/v1/project/self/dataset/mnist",
             json={
                 "data": {
                     "versionMeta": yaml.safe_dump(
-                        {"dataset_summary": DatasetSummary(rows=101).asdict()}
-                    )
+                        {
+                            "dataset_summary": DatasetSummary(rows=101).asdict(),
+                            "data_datastore_revision": "data_v0",
+                            "info_datastore_revision": "info_v1",
+                        }
+                    ),
                 }
             },
             status_code=HTTPStatus.OK,
@@ -623,6 +722,33 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         ds = dataset("http://1.1.1.1/project/self/dataset/mnist/version/1234")
         assert ds.exists()
+
+        rows = list(ds)
+        assert rows == []
+        assert ds.info == {}
+
+        assert scan_table_mock.call_count == 2
+        assert scan_table_mock.request_history[0].json() == {
+            "tables": [
+                {
+                    "tableName": "project/1/dataset/mnist/_current/meta",
+                    "revision": "data_v0",
+                }
+            ],
+            "limit": 1000,
+        }
+        assert scan_table_mock.request_history[1].json() == {
+            "tables": [
+                {
+                    "tableName": "project/1/dataset/mnist/_current/info",
+                    "revision": "info_v1",
+                }
+            ],
+            "end": "0000000000000000",
+            "start": "0000000000000000",
+            "limit": 1000,
+            "endInclusive": True,
+        }
 
     @Mocker()
     def test_create_for_cloud(self, rm: Mocker) -> None:
@@ -1000,7 +1126,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         )
         manifest = load_yaml(manifest_path)
         assert "created_at" in manifest
-        assert "related_datastore_timestamp" in manifest
+        assert "data_datastore_revision" in manifest
+        assert "info_datastore_revision" in manifest
         assert manifest["dataset_summary"] == {
             "deleted_rows": 0,
             "rows": 1,

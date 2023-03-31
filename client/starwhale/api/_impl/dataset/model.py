@@ -8,7 +8,7 @@ import threading
 from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
-from functools import wraps, partial
+from functools import wraps, partial, lru_cache
 from itertools import islice
 
 import yaml
@@ -43,6 +43,7 @@ from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
     TabularDataset,
+    DatastoreRevision,
     TabularDatasetInfo,
     DatastoreWrapperDataset,
     get_dataset_consumption,
@@ -175,6 +176,9 @@ class Dataset:
             self._total_rows = 0
             self._total_blobs_size = 0
 
+        self._last_data_datastore_revision = ""
+        self._last_info_datastore_revision = ""
+
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
         if not version:
@@ -304,15 +308,43 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
+                data_revision = self._last_data_datastore_revision
+                if data_revision == "":
+                    data_revision = self._get_datastore_revision(self.uri).data
+
                 _loader = get_data_loader(
                     self.uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
+                    dataset_scan_revision=data_revision,
                 )
                 self.__data_loaders[key] = _loader
 
         return _loader
+
+    @lru_cache(maxsize=32)
+    def _get_datastore_revision(self, uri: URI) -> DatastoreRevision:
+        if uri.object.typ != URIType.DATASET:
+            raise NoSupportError(
+                f"only support to fetch dataset datastore revision: {uri}"
+            )
+
+        if uri.object.version == "":
+            raise RuntimeError(f"cannot get version of uri: {uri}")
+
+        if uri.instance_type == InstanceType.CLOUD:
+            crm = CloudRequestMixed()
+            r = crm.do_http_request(
+                path=f"/project/{uri.project}/dataset/{uri.object.name}",
+                instance_uri=uri,
+                params={"versionUrl": uri.object.version},
+            ).json()
+            manifest = yaml.safe_load(r["data"]["versionMeta"])
+        else:
+            manifest = DatasetStorage(uri).manifest
+
+        return DatastoreRevision.from_manifest(manifest)
 
     def batch_iter(
         self, batch_size: int = 1, drop_not_full: bool = False
@@ -426,20 +458,30 @@ class Dataset:
 
     @property
     def info(self) -> TabularDatasetInfo:
-        if self.__info is not None:
+        with self._info_lock:
+            if self.__info is None:
+                info_revision = self._last_info_datastore_revision
+                if info_revision == "":
+                    info_revision = self._get_datastore_revision(self.uri).info
+
+                self._info_ds_wrapper = TabularDataset.from_uri(
+                    self.uri, info_datastore_revision=info_revision
+                )._info_ds_wrapper
+                self.__info = TabularDatasetInfo.load_from_datastore(
+                    self._info_ds_wrapper
+                )
+
             return self.__info
 
-        with self._info_lock:
-            # TODO: use uniform dataset table to store info
-            self._info_ds_wrapper = TabularDataset.from_uri(self.uri)._info_ds_wrapper
-            self.__info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
-
-        return self.__info
-
     @_check_readonly
-    def flush(self, artifacts_flush: bool = False) -> None:
+    def flush(self, artifacts_flush: bool = False) -> str:
+        revision = ""
         if self._dataset_builder:
-            self._dataset_builder.flush(artifacts_flush)
+            revision = self._dataset_builder.flush(artifacts_flush)
+            self._last_data_datastore_revision = revision
+            self._clear_data_loader()
+
+        return revision
 
     @_check_readonly
     def rehash(self) -> None:
@@ -706,11 +748,14 @@ class Dataset:
             return self._commit(tags or [], message)
 
     def _commit(self, tags: t.List[str], message: str) -> str:
-        def _save_info() -> None:
+        def _save_info() -> str:
+            revision = ""
             if self.__info is not None and self._info_ds_wrapper is not None:
-                self.__info.save_to_datastore(self._info_ds_wrapper)
+                revision = self.__info.save_to_datastore(self._info_ds_wrapper)
+                self._last_info_datastore_revision = revision
+            return revision
 
-        def _dump_manifest() -> Path:
+        def _dump_manifest(dataset_revision: str, info_revision: str) -> Path:
             if self._dataset_builder is None:
                 raise RuntimeError("failed to commit, because dataset builder is None")
 
@@ -724,7 +769,6 @@ class Dataset:
                     "starwhale": STARWHALE_VERSION,
                 },
                 "version": self._pending_commit_version,
-                "related_datastore_timestamp": "",  # TODO: get timestamp from datastore
                 CREATED_AT_KEY: now_str(),
                 "dataset_summary": DatasetSummary(
                     rows=self._dataset_builder.calculate_rows_cnt(),  # maybe slow
@@ -735,6 +779,10 @@ class Dataset:
                 ).asdict(),
                 "message": message,
             }
+
+            _manifest.update(
+                DatastoreRevision(data=dataset_revision, info=info_revision).asdict()
+            )
 
             self._updated_rows_by_commit = 0
             self._deleted_rows_by_commit = 0
@@ -799,9 +847,13 @@ class Dataset:
         if self.__has_committed:
             raise RuntimeError("Dataset has already committed")
 
-        self.flush(artifacts_flush=True)
-        _save_info()
-        manifest_path = _dump_manifest()
+        dataset_revision = self.flush(artifacts_flush=True)
+        info_revision = _save_info()
+        manifest_path = _dump_manifest(dataset_revision, info_revision)
+
+        logger.debug(
+            f"dataset commit: revision-{dataset_revision}, info revision-{info_revision}"
+        )
         if self.project_uri.instance == STANDALONE_INSTANCE:
             _submit_standalone_version(manifest_path)
         else:

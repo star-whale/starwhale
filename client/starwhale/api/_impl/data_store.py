@@ -785,7 +785,7 @@ class InnerRecord:
         self._reorder()
         ret: Dict[str, Any] = dict()
         for seq, record in self.records.items():
-            if revision is None or seq <= int(revision):
+            if revision is None or revision == "" or seq <= int(revision):
                 if "-" in record and record["-"]:
                     ret = record.data
                 else:

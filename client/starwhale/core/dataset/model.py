@@ -30,7 +30,6 @@ from starwhale.api._impl.dataset.loader import DataRow
 
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
-from .tabular import TabularDataset
 
 if t.TYPE_CHECKING:
     from starwhale.api._impl.dataset.model import Dataset as SDKDataset
@@ -67,6 +66,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return ret
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        # TODO: standalone or cloud dataset diff by datastore diff feature
         raise NotImplementedError
 
     @classmethod
@@ -120,63 +120,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
-
-    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
-        # TODO: support cross-instance diff: standalone <--> cloud
-        if compare_uri.instance_type != InstanceType.STANDALONE:
-            raise NoSupportError(
-                f"only support standalone uri, but compare_uri({compare_uri}) is for cloud instance"
-            )
-
-        if self.uri.object.name != compare_uri.object.name:
-            raise NoSupportError(
-                f"only support two versions diff in one dataset, base dataset:{self.uri}, compare dataset:{compare_uri}"
-            )
-
-        if self.uri.object.version == compare_uri.object.version:
-            return {}
-
-        compare_ds = StandaloneDataset(compare_uri)
-        base_summary = self.summary()
-        compare_summary = compare_ds.summary()
-        base_tds_iter = TabularDataset.from_uri(self.uri).scan()
-        compare_tds_iter = TabularDataset.from_uri(compare_uri).scan()
-
-        unchanged_cnt = 0
-        diff_updated = []
-
-        # TODO: tune diff performance
-        for _brow, _crow in zip(base_tds_iter, compare_tds_iter):
-            if _brow == _crow:
-                unchanged_cnt += 1
-            else:
-                diff_updated.append((_brow.asdict(), _crow.asdict()))
-
-        # TODO: tune diff deleted and added rows like git diff
-        diff_deleted_keys = [r.id for r in base_tds_iter]
-        diff_added_keys = [r.id for r in compare_tds_iter]
-
-        return {
-            "version": {
-                "base": self.uri.object.version,
-                "compare": compare_uri.object.version,
-            },
-            "summary": {
-                "base": base_summary.asdict() if base_summary else {},
-                "compare": compare_summary.asdict() if compare_summary else {},
-            },
-            "diff": {
-                "updated": diff_updated,
-                "deleted": diff_deleted_keys,
-                "added": diff_added_keys,
-            },
-            "diff_rows": {
-                "unchanged": unchanged_cnt,
-                "updated": len(diff_updated),
-                "added": len(diff_added_keys),
-                "deleted": len(diff_deleted_keys),
-            },
-        }
 
     def history(
         self,
