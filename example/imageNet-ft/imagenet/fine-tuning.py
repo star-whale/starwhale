@@ -24,6 +24,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
+from copy import deepcopy
 from pathlib import Path
 
 from d2l import torch as d2l
@@ -33,12 +34,28 @@ from torch import nn
 from torch.utils import data
 from torchvision.models import ResNet
 from torchvision.models.resnet import BasicBlock
+from torchvision.transforms import Compose
 
-from starwhale import step, model, dataset
+from starwhale import step, model, dataset, Image
+from starwhale.integrations.pytorch import default_transform
 from starwhale.utils.fs import ensure_dir
 from evaluator import ImageNetEvaluation
 
 ROOTDIR = Path(__file__).parent.parent
+_LABEL_NAMES = ["hotdog", "not-hotdog"]
+
+
+class SwCompose(Compose):
+    def __call__(self, img):
+        # todo: TypeError: cannot pickle '_thread.lock' object
+        img = deepcopy(img)
+        # todo: refactor sw object
+        _img = img.get("img").to_pil()
+        for t in self.transforms:
+            _img = t(_img)
+        # todo: RuntimeError: <function Dataset.__setitem__ at 0x7f12e2efc430> does not work in the readonly mode
+        img["img"] = _img
+        return img
 
 
 @step(name="resnet-fine-tuning")
@@ -56,26 +73,34 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     normalize = torchvision.transforms.Normalize(
         [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-    train_augs = torchvision.transforms.Compose([
+    train_augs = SwCompose([
         torchvision.transforms.RandomResizedCrop(224),
         torchvision.transforms.RandomHorizontalFlip(),
         torchvision.transforms.ToTensor(),
         normalize])
 
-    test_augs = torchvision.transforms.Compose([
+    test_augs = SwCompose([
         torchvision.transforms.Resize([256, 256]),
         torchvision.transforms.CenterCrop(224),
         torchvision.transforms.ToTensor(),
         normalize])
 
-    dataset
+    # use starwhale dataset
+    server_pro_uri = "cloud://server/project/starwhale"
+    # server_pro_uri = "local/project/self"
+    test_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True)
+    train_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_train/version/latest", readonly=True)
+    #  todo: support batch
+    #  todo: support wrapper transform()
+    test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs))
+    train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs))
 
-    # dataset todo: use sw datasets?!
-    data_dir = ROOTDIR / "data"
-    train_iter = data.DataLoader(torchvision.datasets.ImageFolder(
-        os.path.join(data_dir, 'train'), transform=train_augs), batch_size=batch_size, shuffle=True)
-    test_iter = data.DataLoader(torchvision.datasets.ImageFolder(
-        os.path.join(data_dir, 'test'), transform=test_augs), batch_size=batch_size)
+    # use original dataset
+    # data_dir = ROOTDIR / "data"
+    # train_iter = data.DataLoader(torchvision.datasets.ImageFolder(
+    #     os.path.join(data_dir, 'train'), transform=train_augs), batch_size=batch_size, shuffle=True)
+    # test_iter = data.DataLoader(torchvision.datasets.ImageFolder(
+    #     os.path.join(data_dir, 'test'), transform=test_augs), batch_size=batch_size)
     loss = nn.CrossEntropyLoss(reduction="none")
     if param_group:
         params_1x = [param for name, param in finetune_net.named_parameters()
@@ -87,7 +112,10 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     else:
         trainer = torch.optim.SGD(finetune_net.parameters(), lr=learning_rate,
                                   weight_decay=0.001)
-    d2l.train_ch13(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
+    # todo: could not compatible native pytorch program
+    # d2l.train_ch13(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
+    train(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
+
     # todo use tmp or via sw deal?
     ft_dir = ROOTDIR / "models"
     ensure_dir(ft_dir)
@@ -95,9 +123,61 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     model.build(evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
 
 
-def build_model():
-    model.build(evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
+def train_batch(net, X, y, loss, trainer, devices):
+    """Train for a minibatch with mutiple GPUs (defined in Chapter 13).
+
+    Defined in :numref:`sec_image_augmentation`"""
+    if isinstance(X, list):
+        # Required for BERT fine-tuning (to be covered later)
+        X = [x.to(devices[0]) for x in X]
+    else:
+        X = X.to(devices[0])
+    # y = y.to(devices[0])
+    net.train()
+    trainer.zero_grad()
+    pred = net(X)
+    print(f"pred:{pred}, y:{y}")
+    l = loss(pred, y)
+    l.sum().backward()
+    trainer.step()
+    train_loss_sum = l.sum()
+    train_acc_sum = d2l.accuracy(pred, y)
+    return train_loss_sum, train_acc_sum
+
+
+def train(net, train_iter, test_iter, loss, trainer, num_epochs,
+          devices=d2l.try_all_gpus()):
+    """Train a model with mutiple GPUs (defined in Chapter 13).
+
+    Defined in :numref:`sec_image_augmentation`"""
+    timer, num_batches = d2l.Timer(), len(train_iter)
+    animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
+                            legend=['train loss', 'train acc', 'test acc'])
+    net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+    for epoch in range(num_epochs):
+        # Sum of training loss, sum of training accuracy, no. of examples,
+        # no. of predictions
+        metric = d2l.Accumulator(4)
+        for i, features in enumerate(train_iter):
+            timer.start()
+            print(f"i:{i}, features:{features}")
+            label = features.get("label")[0]
+            label = torch.stack(torch.tensor(_LABEL_NAMES.index(label), dtype=torch.int8))
+            l, acc = train_batch(
+                net, features.get("img"), label, loss, trainer, devices)
+            metric.add(l, acc, [label].shape[0], [features.get("label")].numel())
+            timer.stop()
+            if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+                animator.add(epoch + (i + 1) / num_batches,
+                             (metric[0] / metric[2], metric[1] / metric[3],
+                              None))
+        test_acc = d2l.evaluate_accuracy_gpu(net, test_iter)
+        animator.add(epoch + 1, (None, None, test_acc))
+    print(f'loss {metric[0] / metric[2]:.3f}, train acc '
+          f'{metric[1] / metric[3]:.3f}, test acc {test_acc:.3f}')
+    print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec on '
+          f'{str(devices)}')
 
 
 if __name__ == '__main__':
-    build_model()
+    run()

@@ -16,18 +16,23 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale import BuildExecutor, Image, MIMEType
+from starwhale import Image, MIMEType
+
+_TItem = t.Generator[t.Dict[str, t.Any], None, None]
 
 ROOT_DIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
 
 
-class ImageNetBuildExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        for idx, label in enumerate(_LABEL_NAMES):
-            path = ROOT_DIR / "data" / "test" / label
-            for _f in os.listdir(path):
-                yield {
-                    "img": Image(fp=path / _f, display_name=_f, mime_type=MIMEType.PNG),
-                    "label": label,
-                }
+def iter_hotdog_item() -> _TItem:
+    """
+    used for classic mode, build by cli but without copy
+    :return:
+    """
+    for idx, label in enumerate(_LABEL_NAMES):
+        path = ROOT_DIR / "data" / "test" / label
+        for _f in os.listdir(path):
+            yield {
+                "img": Image(fp=path / _f, display_name=_f, mime_type=MIMEType.PNG),
+                "label": label,
+            }

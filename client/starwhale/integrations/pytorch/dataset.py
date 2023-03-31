@@ -24,7 +24,7 @@ def default_transform(data: t.Any) -> t.Any:
         return data.to_bytes()
     elif isinstance(data, sw_type.Text):
         return data.to_str()
-    elif isinstance(data, collections.abc.Mapping):  # type: ignore
+    elif isinstance(data, collections.abc.Mapping) or isinstance(data, dict):  # type: ignore
         try:
             return data_type({k: default_transform(v) for k, v in data.items()})
         except TypeError:
@@ -59,7 +59,6 @@ class TorchIterableDataset(IterableDataset):
             self.transform = (
                 _dummy_transform if skip_default_transform else default_transform
             )
-
         self.drop_index = drop_index
 
     def __iter__(self) -> t.Iterator:

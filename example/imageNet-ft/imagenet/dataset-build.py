@@ -22,8 +22,13 @@ ROOT_DIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
 
 
-def build_ds(tag: str = "test"):
-    ds = dataset(f"hotdog_{tag}")
+def build_ds(push_to: str, tag: str = "test"):
+    """
+    build by sdk and with copy
+    :param push_to: cloud://server/project/starwhale
+    :param tag: dataset tag
+    """
+    ds = dataset(f"cloud://server/project/starwhale/dataset/hotdog_{tag}")
     for idx, label in enumerate(_LABEL_NAMES):
         path = ROOT_DIR / "data" / tag / label
         for _f in os.listdir(path):
@@ -33,8 +38,9 @@ def build_ds(tag: str = "test"):
             })
     ds.commit()
     ds.close()
-    ds.copy("cloud://server/project/starwhale")
+    # if push_to:
+    #     ds.copy(push_to)
 
 
 if __name__ == "__main__":
-    build_ds(tag=sys.argv[1])
+    build_ds(tag=sys.argv[1], push_to=os.getenv("STARWHALE_SERVER_PROJECT_URI", "cloud://server/project/starwhale"))
