@@ -89,7 +89,8 @@ public class BackupDatabase extends UpgradeStepBase {
     private String getStorePath() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String now = LocalDateTime.now().format(formatter);
-        return storagePathCoordinator.allocatePluginPath("backupdb", now);
+        return storagePathCoordinator.allocatePluginPath("backupdb",
+                String.format("%s-%s", upgrade.getProgressId(), now));
     }
 
     @Override
