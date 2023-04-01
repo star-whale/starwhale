@@ -34,6 +34,8 @@ import pyarrow as pa  # type: ignore
 import requests
 import jsonlines
 from loguru import logger
+from filelock import FileLock
+from jsonlines import Writer
 from typing_extensions import Protocol
 
 from starwhale.consts import STANDALONE_INSTANCE
@@ -44,35 +46,7 @@ from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 
-try:
-    import fcntl
-
-    has_fcntl = True
-except ImportError:
-    has_fcntl = False
-
 datastore_table_file_ext = ".sw-datastore.json"
-
-
-def _check_move(src: str, dest: str) -> bool:
-    if has_fcntl:
-        with open(os.path.join(os.path.dirname(dest), ".lock"), "w") as f:
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX)  # type: ignore
-            except OSError:
-                return False
-            try:
-                os.rename(src, dest)
-                return True
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)  # type: ignore
-    else:
-        # windows
-        try:
-            os.rename(src, dest)
-            return True
-        except FileExistsError:
-            return False
 
 
 class SwType(metaclass=ABCMeta):
@@ -776,6 +750,11 @@ class InnerRecord:
         self.records[seq] = record
         return str(seq)
 
+    def update(self, other: InnerRecord | None) -> None:
+        if other is None:
+            return
+        self.records.update(other.records)
+
     def _reorder(self) -> None:
         if not self.ordered:
             self.records = OrderedDict(sorted(self.records.items()))
@@ -795,6 +774,7 @@ class InnerRecord:
         return ret
 
     def dumps(self) -> Dict[str, Any]:
+        self._reorder()
         return {
             "key": self.key,
             "records": {seq: record.dumps() for seq, record in self.records.items()},
@@ -882,7 +862,9 @@ class MemoryTable:
         }
 
     @classmethod
-    def _parse_meta(cls, meta: Dict[str, Any]) -> ColumnSchema:
+    def _parse_meta(cls, meta: Any) -> ColumnSchema:
+        if not isinstance(meta, dict):
+            raise RuntimeError(f"Invalid meta data {meta}")
         if meta["version"] != "0.1":
             raise ValueError(f"Unsupported version {meta['version']}")
         return ColumnSchema.loads(meta["key_column"])
@@ -893,8 +875,6 @@ class MemoryTable:
             raise RuntimeError(f"File {file} does not exist")
         with jsonlines.open(file) as reader:
             meta = reader.read()
-            if not isinstance(meta, dict):
-                raise RuntimeError(f"Invalid meta data {meta} in {file}")
             key_column = cls._parse_meta(meta)
             table = MemoryTable(table_name, key_column)
             for record in reader:
@@ -903,25 +883,47 @@ class MemoryTable:
             return table
 
     def dump(self, root_path: str, if_dirty: bool = True) -> None:
+        root = Path(root_path)
+        lock = root / ".lock"
+        with FileLock(lock):
+            return self._dump(root, if_dirty)
+
+    def _dump(self, root_path: Path, if_dirty: bool = True) -> None:
         if if_dirty and not self.dirty:
             return
-        dst = os.path.join(root_path, f"{self.table_name}{datastore_table_file_ext}")
-        base = os.path.dirname(dst)
-        temp_filename = os.path.join(base, f"temp.{os.getpid()}")
+        dst = root_path / f"{self.table_name}{datastore_table_file_ext}"
+
+        base = dst.parent
+        temp_filename = base / f"temp.{os.getpid()}"
         ensure_dir(base)
 
         # dump key column info
         with jsonlines.open(temp_filename, mode="w") as writer:
             writer.write(self._dump_meta())
-            for ir in self.records.values():
+            dumped_keys = self._dump_from_local_file(dst, writer)
+
+            for k, ir in self.records.items():
+                if k in dumped_keys:
+                    continue
                 writer.write(ir.dumps())
 
-        # TODO: remove the lock, and disable concurrent access to the table
-        while not _check_move(temp_filename, dst):
-            # wait for the file to be released
-            time.sleep(0.1)
-
+        os.rename(temp_filename, dst)
         self.dirty = False
+
+    def _dump_from_local_file(self, file: Path, output: Writer) -> List[str]:
+        if not file.exists():
+            return []
+
+        dumped_keys = []
+        with jsonlines.open(file, mode="r") as reader:
+            self._parse_meta(reader.read())
+            for i in reader:
+                ir = InnerRecord.loads(i)
+                r = self.records.get(ir.key)
+                ir.update(r)
+                dumped_keys.append(ir.key)
+                output.write(ir.dumps())
+        return dumped_keys
 
 
 class TableDesc:
