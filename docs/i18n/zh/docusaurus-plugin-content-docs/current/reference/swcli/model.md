@@ -1,5 +1,5 @@
 ---
-title: Starwhale Model相关命令
+title: Starwhale模型相关命令
 ---
 
 ## 概述
@@ -8,11 +8,11 @@ title: Starwhale Model相关命令
 swcli [全局选项] model [选项] <SUBCOMMAND> [参数]...
 ```
 
-model命令用于管理Starwhale Model，包括构建、列表、复制、运行等等。
+`model`命令用于管理Starwhale模型，包括构建、列表、复制、运行等等。
 
-要在SWCLI中引用某个模型，您可以使用[Model URI](../../swcli/uri.md#model-dataset-runtime)。
+要在SWCLI中引用某个模型，您可以使用[模型URI](../../swcli/uri.md#model-dataset-runtime)。
 
-`model` 命令包括以下子命令：
+`model`命令包括以下子命令：
 
 | 子命令 | Standalone | Cloud |
 | --- | ---------- | ----- |
@@ -33,7 +33,7 @@ model命令用于管理Starwhale Model，包括构建、列表、复制、运行
 swcli model build [选项] <WORKDIR>
 ```
 
-`model build`命令会将整个`WORKDIR`打包到Starwhale Model中，除了[.swignore](../../swcli/swignore.md)匹配的文件以外。
+`model build`命令会将整个`WORKDIR`打包到Starwhale模型中，除了[.swignore](../../swcli/swignore.md)匹配的文件以外。
 
 `model build`会尝试导入model.yaml中的`run.handler`参数指定的模块，然后生成运行模型所需要的配置。所以如果您指定的模块依赖第三方库，我们强烈建议您使用`--runtime`选项。如果不指定该选项，您需要确认swcli所使用的python环境已经安装了这些库。
 
@@ -41,23 +41,23 @@ swcli model build [选项] <WORKDIR>
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
-| `-p`或`--project` | ❌ | String | [默认项目](../../swcli/uri.md#defaultProject) | 项目URI |
-| `-f`或`--model-yaml` | ❌ | String | ${workdir}/model.yaml | model.yaml所在路径 |
+| `--project`或`-p` | ❌ | String | [默认项目](../../swcli/uri.md#defaultProject) | 项目URI |
+| `--model-yaml`或`-f` | ❌ | String | ${workdir}/model.yaml | model.yaml所在路径 |
 | `--runtime` | ❌ | String | | 运行此命令时使用的[Starwhale Runtime](../../runtime/index.md)的URI。如果指定此选项，该命令将在Starwhale Runtime指定的独立python环境中运行。否则它将直接在swcli当前的python环境中运行。 |
 
 ### model.yaml
 
-model.yaml描述了创建Starwhale Model所需的信息。
+model.yaml描述了创建Starwhale模型所需的信息。
 
 | 字段 | 说明 | 必填项 | 类型 | 默认值 |
 | --- | --- | ------- | --- | ----- |
-| name | Starwhale Model名字 | ✅ | String | |
+| name | Starwhale模型名字 | ✅ | String | |
 | version | model.yaml的语法版本。仅支持 1.0。 | ❌ | String | 1.0 |
-| desc | Starwhale Model的描述 | ❌ | String | |
+| desc | Starwhale模型的描述 | ❌ | String | |
 | run.handler | 模型评估的入口。格式为“{模块路径}:{类名}”。此字段值是关于命令中指定的WORKDIR参数的相对路径。 | ✅ | String | |
 | run.envs | 运行模型时注入的环境变量，格式为 {name}={value} | ❌ | List[String] | |
 
-关于`run.handler` 和`run.envs` 的更多信息，参见[Starwhale Evaluation](../../evaluation/index.md)。
+关于`run.handler`和`run.envs`的更多信息，参见[Starwhale Evaluation](../../evaluation/index.md)。
 
 例子:
 
@@ -78,7 +78,7 @@ run:
 swcli model copy [选项] <SRC> <DEST>
 ```
 
-`model copy`将模型从`SRC`复制到`DEST`。这里`SRC`和`DEST`都是模型 URI。
+`model copy`将模型从`SRC`复制到`DEST`。这里`SRC`和`DEST`都是模型URI。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
@@ -90,7 +90,7 @@ swcli model copy [选项] <SRC> <DEST>
 swcli model eval [选项] <MODEL>
 ```
 
-`model eval`命令启动一个模型评估 `MODEL`参数可以是模型URI或包含model.yaml的本地目录。如果是本地目录，SWCLI将创建一个临时的Starwhale Model并基于它运行评估。
+`model eval`命令启动一个模型评估 `MODEL`参数可以是模型URI或包含model.yaml的本地目录。如果是本地目录，SWCLI将创建一个临时的Starwhale模型并基于它运行评估。
 
 **`model eval`仅适用于[Standalone实例](../../instances/standalone/index.md).**
 
@@ -109,7 +109,7 @@ swcli model eval [选项] <MODEL>
 swcli model history [选项] <MODEL>
 ```
 
-`model history` 命令输出指定Starwhale Model的所有历史版本。
+`model history`命令输出指定Starwhale模型的所有历史版本。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
@@ -133,7 +133,7 @@ swcli model info [选项] <MODEL>
 swcli model list [选项]
 ```
 
-`model list`命令显示所有的Starwhale Model。
+`model list`命令显示所有的Starwhale模型。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
@@ -156,17 +156,17 @@ swcli model list [选项]
 swcli model remove [选项] <MODEL>
 ```
 
-`model remove` 命令可以删除指定的Starwhale Model或某个版本。
+`model remove`命令可以删除指定的Starwhale模型或某个版本。
 
 如果MODEL参数不包含版本，则删除所有版本。
 
-被删除的Starwhale Model或版本可以在垃圾回收之前通过`swcli model recover`恢复。要永久删除某个Starwhale Model或版本，您可以使用`--force`选项。
+被删除的Starwhale模型或版本可以在垃圾回收之前通过`swcli model recover`恢复。要永久删除某个Starwhale模型或版本，您可以使用`--force`选项。
 
-被删除的Starwhale Model或版本可以通过`swcli model list --show-removed`列出。
+被删除的Starwhale模型或版本可以通过`swcli model list --show-removed`列出。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
-| `--force`或`-f` | ❌ | Boolean | False | 使用此选项永久删除某个星鲸模型或版本。删除后不可恢复。 |
+| `--force`或`-f` | ❌ | Boolean | False | 使用此选项永久删除某个Starwhale模型或版本。删除后不可恢复。 |
 
 ## swcli model recover {#recover}
 
@@ -174,15 +174,15 @@ swcli model remove [选项] <MODEL>
 swcli model recover [选项] <MODEL>
 ```
 
-`model recover`命令可以恢复以前删除的Starwhale Model或版本。
+`model recover`命令可以恢复以前删除的Starwhale模型或版本。
 
 如果MODEL参数不指定版本，则会恢复所有删除的版本。
 
-已经被垃圾回收或者使用`--force`选项删除的Starwhale Model或版本无法使用本命令恢复。
+已经被垃圾回收或者使用`--force`选项删除的Starwhale模型或版本无法使用本命令恢复。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | ------ | ------- | ----------- | ----- | ----------- |
-| `--force`或`-f` | ❌ | Boolean | False | 如果使用了该选项，当前同名的Starwhale Model或版本会被强制覆盖。 |
+| `--force`或`-f` | ❌ | Boolean | False | 如果使用了该选项，当前同名的Starwhale模型或版本会被强制覆盖。 |
 
 ## swcli model tag {#tag}
 

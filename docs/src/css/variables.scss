@@ -139,10 +139,6 @@ $mq-desktop: 1382px !default;
   @return $remValue;
 }
 
-html {
-  font-size: 16px;
-}
-
 @include mobile-only {
   html {
     font-size: 10px;
