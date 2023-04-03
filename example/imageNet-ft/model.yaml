@@ -2,7 +2,7 @@ version: 1.0
 name: imageNet
 
 run:
-  handler: fine-tuning
+  handler: imagenet.fine_tuning
 
 model:
   - models/resnet18-f37072fd.pth

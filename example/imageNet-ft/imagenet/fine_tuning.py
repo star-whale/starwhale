@@ -23,8 +23,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
-from copy import deepcopy
+
 from pathlib import Path
 
 from d2l import torch as d2l
@@ -34,28 +33,13 @@ from torch import nn
 from torch.utils import data
 from torchvision.models import ResNet
 from torchvision.models.resnet import BasicBlock
-from torchvision.transforms import Compose
 
-from starwhale import step, model, dataset, Image
-from starwhale.integrations.pytorch import default_transform
+from starwhale import step, model, dataset
 from starwhale.utils.fs import ensure_dir
-from evaluator import ImageNetEvaluation
+from .evaluator import ImageNetEvaluation, SwCompose, evaluate_accuracy_gpu
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
-
-
-class SwCompose(Compose):
-    def __call__(self, img):
-        # todo: TypeError: cannot pickle '_thread.lock' object
-        img = deepcopy(img)
-        # todo: refactor sw object
-        _img = img.get("img").to_pil()
-        for t in self.transforms:
-            _img = t(_img)
-        # todo: RuntimeError: <function Dataset.__setitem__ at 0x7f12e2efc430> does not work in the readonly mode
-        img["img"] = _img
-        return img
 
 
 @step(name="resnet-fine-tuning")
@@ -88,6 +72,7 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     # use starwhale dataset
     server_pro_uri = "cloud://server/project/starwhale"
     # server_pro_uri = "local/project/self"
+    # todo: this should control datastore write, but not control user rewrite the obj?
     test_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True)
     train_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_train/version/latest", readonly=True)
     #  todo: support batch
@@ -116,11 +101,10 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     # d2l.train_ch13(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
     train(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
 
-    # todo use tmp or via sw deal?
     ft_dir = ROOTDIR / "models"
     ensure_dir(ft_dir)
     torch.save(finetune_net.state_dict(), ft_dir / "resnet-ft.pth")
-    model.build(evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
+    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
 
 
 def train_batch(net, X, y, loss, trainer, devices):
@@ -136,7 +120,6 @@ def train_batch(net, X, y, loss, trainer, devices):
     net.train()
     trainer.zero_grad()
     pred = net(X)
-    print(f"pred:{pred}, y:{y}")
     l = loss(pred, y)
     l.sum().backward()
     trainer.step()
@@ -160,18 +143,17 @@ def train(net, train_iter, test_iter, loss, trainer, num_epochs,
         metric = d2l.Accumulator(4)
         for i, features in enumerate(train_iter):
             timer.start()
-            print(f"i:{i}, features:{features}")
             label = features.get("label")[0]
-            label = torch.stack(torch.tensor(_LABEL_NAMES.index(label), dtype=torch.int8))
+            label = torch.stack((torch.tensor(_LABEL_NAMES.index(label), dtype=torch.long),))
             l, acc = train_batch(
                 net, features.get("img"), label, loss, trainer, devices)
-            metric.add(l, acc, [label].shape[0], [features.get("label")].numel())
+            metric.add(l, acc, label.shape[0], label.numel())
             timer.stop()
             if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
                 animator.add(epoch + (i + 1) / num_batches,
                              (metric[0] / metric[2], metric[1] / metric[3],
                               None))
-        test_acc = d2l.evaluate_accuracy_gpu(net, test_iter)
+        test_acc = evaluate_accuracy_gpu(net, test_iter)
         animator.add(epoch + 1, (None, None, test_acc))
     print(f'loss {metric[0] / metric[2]:.3f}, train acc '
           f'{metric[1] / metric[3]:.3f}, test acc {test_acc:.3f}')
@@ -180,4 +162,4 @@ def train(net, train_iter, test_iter, loss, trainer, num_epochs,
 
 
 if __name__ == '__main__':
-    run()
+    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")

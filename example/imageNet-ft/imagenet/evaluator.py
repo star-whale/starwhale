@@ -31,17 +31,61 @@ import numpy as np
 from d2l import torch as d2l
 import torch
 import torchvision
-from torch.utils import data as dataset
+from torch import nn
+from torch.utils import data
 from torchvision.models import ResNet
 from torchvision.models.resnet import BasicBlock
 
+from torchvision.transforms import Compose
 from gradio import gradio
 from starwhale.api.service import api
-from starwhale import PipelineHandler, Image, multi_classification
+from starwhale import PipelineHandler, Image, multi_classification, dataset
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
 _NUM_CLASSES = len(_LABEL_NAMES)
+
+
+class SwCompose(Compose):
+    def __call__(self, img):
+        # todo: TypeError: cannot pickle '_thread.lock' object
+        # img = deepcopy(img) #error
+        img_tmp = dict()
+        # todo: refactor sw object
+        _img = img.get("img").to_pil()
+        for t in self.transforms:
+            _img = t(_img)
+        # todo: RuntimeError: <function Dataset.__setitem__ at 0x7f12e2efc430> does not work in the readonly mode
+        # img["img"] = _img #error
+        img_tmp["img"] = _img
+        img_tmp["label"] = img.get("label")
+        return img_tmp
+
+
+def evaluate_accuracy_gpu(net, data_iter, device=None):
+    """Compute the accuracy for a model on a dataset using a GPU.
+
+    Defined in :numref:`sec_lenet`"""
+    if isinstance(net, nn.Module):
+        net.eval()  # Set the model to evaluation mode
+        if not device:
+            device = next(iter(net.parameters())).device
+    # No. of correct predictions, no. of predictions
+    metric = d2l.Accumulator(2)
+
+    with torch.no_grad():
+        for features in data_iter:
+            X = features.get("img")
+            y = features.get("label")[0]
+            y = torch.stack((torch.tensor(_LABEL_NAMES.index(y), dtype=torch.long),))
+            if isinstance(X, list):
+                # Required for BERT Fine-tuning (to be covered later)
+                X = [x.to(device) for x in X]
+            else:
+                X = X.to(device)
+            y = y.to(device)
+            metric.add(d2l.accuracy(net(X), y), d2l.size(y))
+    return metric[0] / metric[1]
 
 
 # todo need some hook for user
@@ -99,31 +143,43 @@ def run(fine_tuned: bool = False):
         )
     net.eval()
 
-    data_dir = ROOTDIR / "data" / "hotdog"
-    normalize = torchvision.transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    test_augs = torchvision.transforms.Compose([
+    normalize = torchvision.transforms.Normalize(
+        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+    test_augs = SwCompose([
         torchvision.transforms.Resize([256, 256]),
         torchvision.transforms.CenterCrop(224),
         torchvision.transforms.ToTensor(),
         normalize])
-    test_iter = dataset.DataLoader(torchvision.datasets.ImageFolder(
-        os.path.join(data_dir, 'test'), transform=test_augs), batch_size=128)
-    index = 0
-    for X, y in test_iter:
-        y_res = net(X)
-        print(f"index:{index}, res:{y_res}")
-        index += 1
-        if len(y_res.shape) > 1 and y_res.shape[1] > 1:
-            y_res = d2l.argmax(y_res, axis=1)
-            print(f"after argmax res:{y_res}")
-        cmp = astype(y_res, y.dtype) == y
-        cmp_astype = astype(cmp, y.dtype)
-        sum = reduce_sum(cmp_astype)
-        print(
-            f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}")
+    # use starwhale dataset
+    server_pro_uri = "cloud://server/project/starwhale"
+    # server_pro_uri = "local/project/self"
+    # todo: this should control datastore write, but not control user rewrite the obj?
+    test_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True)
+    #  todo: support batch
+    #  todo: support wrapper transform()
+    test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs))
 
-    # test_acc = d2l.evaluate_accuracy(net, test_iter)
-    # print(f'test acc {test_acc:.3f}')
+    # debug
+    # index = 0
+    # for features in test_iter:
+    #     X = features.get("img")
+    #     y = features.get("label")[0]
+    #     y = torch.stack((torch.tensor(_LABEL_NAMES.index(y), dtype=torch.long),))
+    #     y_res = net(X)
+    #     print(f"index:{index}, res:{y_res}")
+    #     index += 1
+    #     if len(y_res.shape) > 1 and y_res.shape[1] > 1:
+    #         y_res = d2l.argmax(y_res, axis=1)
+    #         print(f"after argmax res:{y_res}")
+    #     cmp = astype(y_res, y.dtype) == y
+    #     cmp_astype = astype(cmp, y.dtype)
+    #     sum = reduce_sum(cmp_astype)
+    #     print(
+    #         f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}")
+
+    test_acc = evaluate_accuracy_gpu(net, test_iter)
+    print(f'test acc {test_acc:.3f}')
 
 
 astype = lambda x, *args, **kwargs: x.type(*args, **kwargs)
