@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from starwhale.consts.env import SWEnv
 from starwhale.utils import disable_progress_bar
 from starwhale.consts import DefaultYAMLName
 from starwhale.utils.fs import ensure_file
@@ -21,7 +22,8 @@ def build(
     name: t.Optional[str] = None,
     project_uri: str = "",
     desc: str = "",
-    push_to: t.Optional[str] = None,
+    remote_instance_uri: t.Optional[str] = None,
+    remote_project: t.Optional[str] = None,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -34,7 +36,8 @@ def build(
         desc: (str, optional) The description of the Starwhale Model Package.
         project_uri: (str, optional) The project uri of the Starwhale Model Package. If the argument is not specified,
             the project_uri is the config value of `swcli project select` command.
-        push_to: (str, optional) The destination project uri of the Starwhale Model Package
+        remote_instance_uri: (str, optional) The destination instance uri of the Starwhale Model Package
+        remote_project: (str, optional) The destination project uri of the Starwhale Model Package
 
     Examples:
     ```python
@@ -83,21 +86,16 @@ def build(
                 project=project_uri,
                 yaml_path=yaml_path,
             )
-            if push_to:
+            remote_instance_uri = remote_instance_uri or os.getenv(SWEnv.instance_uri)
+            remote_project = remote_project or os.getenv(SWEnv.project)
+            if remote_instance_uri and remote_project:
                 from starwhale import URI
                 # model copy local/project/myproject/model/mnist/version/latest cloud://server/project/starwhale
-                ModelTermView.copy(f"{URI(project_uri).full_uri}/model/{name}/version/latest", push_to)
+                ModelTermView.copy(f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+                                   f"{remote_instance_uri}/project/{remote_project}",
+                                   )
     finally:
         os.unlink(yaml_path)
-
-    if push_to:
-        print("copy start1")
-        from starwhale import URI
-        p = URI(project_uri)
-        print(f"copy start2:{p.full_uri}")
-        # local/project/myproject/model/mnist-local/version/latest cloud://pre-k8s/project/starwhale
-        ModelTermView.copy(f"{p.full_uri}/model/{name}/version/latest", push_to)
-        print("copy end")
 
 
 def _ingest_obj_entrypoint_name(

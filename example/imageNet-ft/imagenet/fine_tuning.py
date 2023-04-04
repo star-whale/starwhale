@@ -11,8 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import os
 from pathlib import Path
+from typing import Optional
 
 from d2l import torch as d2l
 import torch
@@ -22,16 +23,21 @@ from torch.utils import data
 from torchvision.models import ResNet
 from torchvision.models.resnet import BasicBlock
 
-from starwhale import step, model, dataset
-from starwhale.utils.fs import ensure_dir
-from .evaluator import ImageNetEvaluation, SwCompose, evaluate_accuracy_gpu
+from starwhale import model, dataset
+from starwhale.consts.env import SWEnv
+from pipeline import ImageNetEvaluation, SwCompose
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
 
 
-@step(name="resnet-fine-tuning")
-def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
+def run(learning_rate=5e-5,
+        batch_size=128,
+        num_epochs=5,
+        param_group=True,
+        remote_instance_uri: Optional[str] = None,
+        remote_project: Optional[str] = None,
+        ):
     # init
     finetune_net = ResNet(BasicBlock, [2, 2, 2, 2])
     # load from pretrained model todo: load form existed sw model package(sdk)
@@ -58,15 +64,17 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
         normalize])
 
     # use starwhale dataset
-    server_pro_uri = "cloud://server/project/starwhale"
+    remote_instance_uri = remote_instance_uri or os.getenv(SWEnv.instance_uri)
+    remote_project = remote_project or os.getenv(SWEnv.project)
+    server_pro_uri = f"{remote_instance_uri}/project/{remote_project}"
     # server_pro_uri = "local/project/self"
     # todo: this should control datastore write, but not control user rewrite the obj?
     test_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True)
     train_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_train/version/latest", readonly=True)
     #  todo: support batch
     #  todo: support wrapper transform()
-    test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs))
-    train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs))
+    test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs), batch_size=batch_size)
+    train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs), batch_size=batch_size)
 
     # use original dataset
     # data_dir = ROOTDIR / "data"
@@ -89,10 +97,8 @@ def run(learning_rate=5e-5, batch_size=128, num_epochs=5, param_group=True):
     # d2l.train_ch13(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
     train(finetune_net, train_iter, test_iter, loss, trainer, num_epochs)
 
-    ft_dir = ROOTDIR / "models"
-    ensure_dir(ft_dir)
-    torch.save(finetune_net.state_dict(), ft_dir / "resnet-ft.pth")
-    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
+    torch.save(finetune_net.state_dict(), ROOTDIR / "models" / "resnet-ft.pth")
+    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation)
 
 
 def train_batch(net, X, y, loss, trainer, devices):
@@ -129,25 +135,23 @@ def train(net, train_iter, test_iter, loss, trainer, num_epochs,
         # Sum of training loss, sum of training accuracy, no. of examples,
         # no. of predictions
         metric = d2l.Accumulator(4)
-        for i, features in enumerate(train_iter):
+        for i, (features, labels) in enumerate(train_iter):
             timer.start()
-            label = features.get("label")[0]
-            label = torch.stack((torch.tensor(_LABEL_NAMES.index(label), dtype=torch.long),))
             l, acc = train_batch(
-                net, features.get("img"), label, loss, trainer, devices)
-            metric.add(l, acc, label.shape[0], label.numel())
+                net, features, labels, loss, trainer, devices)
+            metric.add(l, acc, labels.shape[0], labels.numel())
             timer.stop()
             if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
                 animator.add(epoch + (i + 1) / num_batches,
                              (metric[0] / metric[2], metric[1] / metric[3],
                               None))
-        test_acc = evaluate_accuracy_gpu(net, test_iter)
-        animator.add(epoch + 1, (None, None, test_acc))
-    print(f'loss {metric[0] / metric[2]:.3f}, train acc '
-          f'{metric[1] / metric[3]:.3f}, test acc {test_acc:.3f}')
-    print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec on '
-          f'{str(devices)}')
+        # test_acc = evaluate_accuracy_gpu(net, test_iter)
+        # animator.add(epoch + 1, (None, None, test_acc))
+        print(f'epoch[{epoch}] loss {metric[0] / metric[2]:.3f}, train acc {metric[1] / metric[3]:.3f}')
+        print(f'epoch[{epoch}] {metric[2] * num_epochs / timer.sum():.1f} examples/sec on {str(devices)}')
 
 
 if __name__ == '__main__':
-    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation, push_to="cloud://server/project/starwhale")
+    os.environ.setdefault(SWEnv.instance_uri, "cloud://server")
+    os.environ.setdefault(SWEnv.project, "starwhale")
+    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation)

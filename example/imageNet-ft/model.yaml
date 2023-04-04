@@ -1,8 +1,8 @@
 version: 1.0
-name: imageNet
+name: imageNet-all
 
 run:
-  handler: imagenet.fine_tuning
+  handler: imagenet.pipeline:ImageNetEvaluation
 
 model:
   - models/resnet18-f37072fd.pth

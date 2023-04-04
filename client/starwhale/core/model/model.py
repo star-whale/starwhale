@@ -6,7 +6,7 @@ import json
 import shutil
 import typing as t
 import tarfile
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from collections import defaultdict
 
@@ -36,7 +36,8 @@ from starwhale.consts import (
     DEFAULT_EVALUATION_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
-    DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
+    DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL, DEFAULT_FINETUNE_JOBS_FILE_NAME, DEFAULT_FINETUNE_JOB_NAME,
+    DEFAULT_EVALUATION_JOB_NAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -218,30 +219,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
 
-    def _gen_model_serving(self, ppl: str, workdir: Path) -> None:
-        rc_dir = str(
-            self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
-            / SW_EVALUATION_EXAMPLE_DIR
-        )
-        # render spec
-        svc = self._get_service(ppl, workdir, hijack=Hijack(True, rc_dir))
-        file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
-        ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
-
-        if len(svc.example_resources) == 0:
-            return
-
-        # check duplicate file names, do not support using examples with same name in different dir
-        names = set([os.path.basename(i) for i in svc.example_resources])
-        if len(names) != len(svc.example_resources):
-            raise NoSupportError("duplicate file names in examples")
-
-        # copy example resources for online evaluation in server instance
-        dst = self.store.hidden_sw_dir / SW_EVALUATION_EXAMPLE_DIR
-        ensure_dir(dst)
-        for f in svc.example_resources:
-            shutil.copy2(f, dst)
-
     def _render_eval_layout(self, workdir: Path) -> None:
         # render eval layout
         eval_layout = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME
@@ -249,54 +226,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             content = load_yaml(eval_layout)
             dst = self.store.hidden_sw_dir / EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME
             ensure_file(dst, json.dumps(content), parents=True)
-
-    @staticmethod
-    def _get_service(
-        module: str, pkg: Path, hijack: t.Optional[Hijack] = None
-    ) -> Service:
-        module, _, attr = module.partition(":")
-        m = load_module(module, pkg)
-        apis = dict()
-        ins: t.Any = None
-        svc: t.Optional[Service] = None
-
-        # TODO: refine this ugly ad hoc
-        Context.set_runtime_context(
-            Context(pkg, version="-1", project="tmp-project-for-build")
-        )
-
-        # TODO: check duplication
-        for k, v in m.__dict__.items():
-            if isinstance(v, Service):
-                apis.update(v.apis)
-                # use Service in module
-                svc = v
-        if attr:
-            cls = getattr(m, attr)
-            ins = cls()
-            if isinstance(ins, PipelineHandler):
-                apis.update(ins.svc.apis)
-
-        from starwhale.api._impl.service import internal_api_list
-
-        apis.update(internal_api_list())
-
-        # check if we need to instance the model when using custom handler
-        if ins is None:
-            for i in apis.values():
-                fn = i.func.__qualname__
-                # TODO: support deep path classes (also modules)
-                if "." in fn:
-                    ins = getattr(m, fn.split(".", 1)[0])()
-                    break
-
-        if svc is None:
-            svc = Service()
-        for api in apis.values():
-            svc.add_api_instance(api)
-        svc.api_instance = ins
-        svc.hijack = hijack
-        return svc
 
     @classmethod
     def eval_user_handler(
@@ -306,7 +235,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         workdir: Path,
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
-        job_name: str = "default",
+        job_name: str = DEFAULT_EVALUATION_JOB_NAME,
         step_name: str = "",
         task_index: t.Optional[int] = None,
         task_num: int = 0,
@@ -333,12 +262,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
-            generate_jobs_yaml(
-                run_handler=_model_config.run.handler,
+            yaml_path = EvaluationHandlerParser(
                 workdir=workdir,
-                yaml_path=yaml_path,
-            )
+                handler=_model_config.run.handler,
+                target_dir=_run_dir,
+            ).run()
 
         logger.debug(f"parse job from yaml:{yaml_path}")
 
@@ -394,6 +322,68 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             _f = _run_dir / DEFAULT_MANIFEST_NAME
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
+            console.print(
+                f":{100 if _status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {_status}!"
+            )
+
+    @classmethod
+    def fine_tune(
+        cls,
+        project: str,
+        workdir: Path,
+        dataset_uris: t.List[str],
+        model_yaml_name: str = DefaultYAMLName.MODEL,
+        job_name: str = DEFAULT_FINETUNE_JOB_NAME,
+    ) -> None:
+        _model_config = cls.load_model_config(workdir / model_yaml_name, workdir)
+
+        _project_uri = URI(project, expected_type=URIType.PROJECT)
+
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_FINETUNE_JOBS_FILE_NAME
+
+        if not yaml_path.exists():
+            # do not auto generate eval_job.yaml in the user workdir
+            yaml_path = FinetuneHandlerParser(
+                workdir=workdir,
+                handler=_model_config.run.handler,
+                target_dir=workdir,  # todo use tmp?
+            ).run()
+
+        logger.debug(f"parse fine tune job from yaml:{yaml_path}")
+        version = gen_uniq_version()
+        console.print(
+            f":hourglass_not_done: start to run fine-tune[{job_name}:{version}]..."
+        )
+        _scheduler = Scheduler(
+            project=_project_uri.project,
+            version=version,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            steps=Step.get_steps_from_yaml(job_name, yaml_path),
+        )
+        _status = RunStatus.START
+        try:
+            _results = _scheduler.run()
+            _status = RunStatus.SUCCESS
+
+            exceptions: t.List[Exception] = []
+            for _r in _results:
+                for _tr in _r.task_results:
+                    if _tr.exception:
+                        exceptions.append(_tr.exception)
+            if exceptions:
+                raise Exception(*exceptions)
+
+            logger.debug(
+                f"-->[Finished] fine-tune[{job_name}:{version}] execute finished, results info:{_results}"
+            )
+        except Exception as e:
+            _status = RunStatus.FAILED
+            logger.error(
+                f"-->[Failed] fine-tune[{job_name}:{version}] execute failed, error info:{e}"
+            )
+            raise
+        finally:
             console.print(
                 f":{100 if _status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
@@ -562,22 +552,34 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(workdir=workdir, yaml_path=yaml_path),
             ),
             (
-                generate_jobs_yaml,
-                5,
-                "generate jobs yaml",
-                dict(
-                    run_handler=_model_config.run.handler,
+                EvaluationHandlerParser(
                     workdir=workdir,
-                    yaml_path=self.store.src_dir
-                    / SW_AUTO_DIRNAME
-                    / DEFAULT_EVALUATION_JOBS_FILE_NAME,
-                ),
+                    handler=_model_config.run.handler,
+                    target_dir=self.store.src_dir,
+                ).run,
+                5,
+                "generate eval jobs",
+                dict(raise_err=True),
             ),
             (
-                self._gen_model_serving,
+                FinetuneHandlerParser(
+                    workdir=workdir,
+                    handler=_model_config.run.handler,
+                    target_dir=self.store.src_dir,
+                ).run,
+                5,
+                "generate fine tune jobs",
+                dict(raise_err=False),
+            ),
+            (
+                ServeHandlerParser(
+                    workdir=workdir,
+                    handler=_model_config.run.handler,
+                    target_dir=self.store.src_dir,
+                ).run,
                 10,
                 "generate model serving",
-                dict(ppl=_model_config.run.handler, workdir=workdir),
+                dict(raise_err=True),
             ),
             (
                 self._render_eval_layout,
@@ -694,8 +696,130 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         port: int,
     ) -> None:
         _model_config = cls.load_model_config(workdir / model_yaml, workdir)
-        svc = cls._get_service(_model_config.run.handler, workdir)
+        svc = ServeHandlerParser.get_service(_model_config.run.handler, workdir)
         svc.serve(host, port, _model_config.name)
+
+
+class HandlerParser:
+    sw_dir: str = SW_AUTO_DIRNAME
+
+    def __init__(self, workdir: Path, handler: t.Any, target_dir: Path) -> None:
+        self.workdir = workdir
+        self.handler = handler
+        self.target_dir = target_dir
+
+    @abstractmethod
+    def run(self, raise_err: bool = True) -> t.Any:
+        ...
+
+
+class EvaluationHandlerParser(HandlerParser):
+    def run(self, raise_err: bool = True) -> t.Any:
+        try:
+            yaml_path = self.target_dir / self.sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+            generate_jobs_yaml(
+                run_handler=self.handler,
+                workdir=self.workdir,
+                yaml_path=yaml_path,
+            )
+            return yaml_path
+        except Exception as e:
+            logger.error("error in evaluation handler parse processing", e)
+            if raise_err:
+                raise e
+
+
+class ServeHandlerParser(HandlerParser):
+    @staticmethod
+    def get_service(
+        module: str, pkg: Path, hijack: t.Optional[Hijack] = None
+    ) -> Service:
+        module, _, attr = module.partition(":")
+        m = load_module(module, pkg)
+        apis = dict()
+        ins: t.Any = None
+        svc: t.Optional[Service] = None
+
+        # TODO: refine this ugly ad hoc
+        Context.set_runtime_context(
+            Context(pkg, version="-1", project="tmp-project-for-build")
+        )
+
+        # TODO: check duplication
+        for k, v in m.__dict__.items():
+            if isinstance(v, Service):
+                apis.update(v.apis)
+                # use Service in module
+                svc = v
+        if attr:
+            cls = getattr(m, attr)
+            ins = cls()
+            if isinstance(ins, PipelineHandler):
+                apis.update(ins.svc.apis)
+
+        from starwhale.api._impl.service import internal_api_list
+
+        apis.update(internal_api_list())
+
+        # check if we need to instance the model when using custom handler
+        if ins is None:
+            for i in apis.values():
+                fn = i.func.__qualname__
+                # TODO: support deep path classes (also modules)
+                if "." in fn:
+                    ins = getattr(m, fn.split(".", 1)[0])()
+                    break
+
+        if svc is None:
+            svc = Service()
+        for api in apis.values():
+            svc.add_api_instance(api)
+        svc.api_instance = ins
+        svc.hijack = hijack
+        return svc
+
+    def run(self, raise_err: bool = True) -> t.Any:
+        try:
+            rc_dir = f"{self.sw_dir}/{SW_EVALUATION_EXAMPLE_DIR}"
+            # render spec
+            svc = ServeHandlerParser.get_service(self.handler, self.workdir, hijack=Hijack(True, rc_dir))
+            file = self.target_dir / self.sw_dir / EVALUATION_SVC_META_FILE_NAME
+            ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
+
+            if len(svc.example_resources) == 0:
+                return
+
+            # check duplicate file names, do not support using examples with same name in different dir
+            names = set([os.path.basename(i) for i in svc.example_resources])
+            if len(names) != len(svc.example_resources):
+                raise NoSupportError("duplicate file names in examples")
+
+            # copy example resources for online evaluation in server instance
+            dst = self.target_dir / self.sw_dir / SW_EVALUATION_EXAMPLE_DIR
+            ensure_dir(dst)
+            for f in svc.example_resources:
+                shutil.copy2(f, dst)
+        except Exception as e:
+            logger.error("error in serve handler parse processing", e)
+            if raise_err:
+                raise e
+
+
+class FinetuneHandlerParser(HandlerParser):
+    def run(self, raise_err: bool = True) -> t.Any:
+        try:
+            yaml_path = self.target_dir / self.sw_dir / DEFAULT_FINETUNE_JOBS_FILE_NAME
+            generate_jobs_yaml(
+                job_name=DEFAULT_FINETUNE_JOB_NAME,
+                run_handler=self.handler,
+                workdir=self.workdir,
+                yaml_path=yaml_path,
+            )
+            return yaml_path
+        except Exception as e:
+            logger.error("error in fine tune handler parse processing", e)
+            if raise_err:
+                raise e
 
 
 class CloudModel(CloudBundleModelMixin, Model):

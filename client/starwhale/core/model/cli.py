@@ -300,6 +300,51 @@ def _eval(
     )
 
 
+@model_cmd.command("ft")
+@click.argument("target")
+@click.option(
+    "-f",
+    "--model-yaml",
+    default=DefaultYAMLName.MODEL,
+    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
+)
+@click.option(
+    "-p",
+    "--project",
+    envvar=SWEnv.project,
+    default="",
+    help=f"Project URI, env is {SWEnv.project}. Default is the current selected project.",
+)
+@click.option("--runtime", default="", help="runtime uri")
+@click.option(
+    "datasets",
+    "--dataset",
+    required=True,
+    envvar=SWEnv.dataset_uri,
+    multiple=True,
+    help=f"dataset uri, env is {SWEnv.dataset_uri}",
+)
+def _fine_tune(
+    target: str,
+    model_yaml: str,
+    project: str,
+    datasets: list,
+    runtime: str,
+) -> None:
+    """
+    [ONLY Standalone]Run evaluation processing with root dir of {target}.
+
+    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    """
+    ModelTermView.fine_tune(
+        target=target,
+        project=project,
+        yaml_name=model_yaml,
+        dataset_uris=datasets,
+        runtime_uri=runtime,
+    )
+
+
 @model_cmd.command("serve")
 @click.argument("target", required=False, default="")
 @click.option(
