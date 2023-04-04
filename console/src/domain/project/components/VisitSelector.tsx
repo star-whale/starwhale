@@ -31,6 +31,7 @@ export default function VisitSelector({ value = VisitBy.Visited, onChange }: IRo
                 Root: {
                     style: {
                         width: 'fit-content',
+                        minWidth: '100px',
                         ...expandBorder('0'),
                     },
                 },

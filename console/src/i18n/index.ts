@@ -7,8 +7,8 @@ import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en.json'
 import zh from 'javascript-time-ago/locale/zh.json'
 
-TimeAgo.addDefaultLocale(en)
-TimeAgo.addLocale(zh)
+TimeAgo.addDefaultLocale(zh)
+TimeAgo.addLocale(en)
 
 i18n.use(LanguageDetector)
     .use(initReactI18next)
@@ -22,8 +22,16 @@ i18n.use(LanguageDetector)
                     }
                 }, {}),
             },
+            zh: {
+                translations: Object.entries(locales).reduce((p, [k, v]) => {
+                    return {
+                        ...p,
+                        [k]: v.zh,
+                    }
+                }, {}),
+            },
         },
-        fallbackLng: 'en',
+        fallbackLng: 'zh',
         debug: false,
         ns: ['translations'],
         defaultNS: 'translations',

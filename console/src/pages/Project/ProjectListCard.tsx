@@ -550,7 +550,10 @@ export default function ProjectListCard() {
                         }}
                     />
                 </div>
-                <VisitSelector value={visit} onChange={setVisit as any} />
+                <div className={css({ display: 'flex', alignItems: 'center', minWidth: '100px', fontSize: '12px' })}>
+                    {t('project.visit.orderby')}
+                    <VisitSelector value={visit} onChange={setVisit as any} />
+                </div>
             </div>
             <div
                 className={css({

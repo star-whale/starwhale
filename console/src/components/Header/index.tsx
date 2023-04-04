@@ -296,7 +296,7 @@ export default function Header() {
             {currentUser && (
                 <div className={styles.systemWrapper}>
                     <TextLink to='/projects' style={{ color: '#FFF' }}>
-                        {t('Project')}
+                        {t('Project List')}
                     </TextLink>
                 </div>
             )}

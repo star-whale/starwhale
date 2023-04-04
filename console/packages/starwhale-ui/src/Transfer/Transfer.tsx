@@ -8,6 +8,7 @@ import Input from '../Input'
 import TransferList from './TransferList'
 import useUnSortedSelection from '../utils/useUnsortedSelection'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
+import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
     transfer: {
@@ -110,6 +111,7 @@ export default function Transfer({
     value = defaultValue,
     onChange = () => {},
 }: TransferPropsT) {
+    const [t] = useTranslation()
     const styles = useStyles()
     const [css, theme] = useStyletron()
     const [query, setQuery] = React.useState('')
@@ -202,7 +204,11 @@ export default function Transfer({
                 </div>
             )}
             <div className='list'>
-                <TransferList columns={$leftFilteredColumns} operators={leftOperators} title='Invisible Columns' />
+                <TransferList
+                    columns={$leftFilteredColumns}
+                    operators={leftOperators}
+                    title={t('table.column.invisible')}
+                />
                 <div className='transfer-list-toolbar'>
                     <Button
                         disabled={leftOperators?.selectedIds?.length === 0}
@@ -232,7 +238,7 @@ export default function Transfer({
                     </Button>
                 </div>
                 <TransferList
-                    title='Visible Columns'
+                    title={t('table.column.visible')}
                     emptyMessage={() => <BusyPlaceholder type='empty' style={{ minHeight: '0' }} />}
                     columns={$rightFilteredColumns}
                     isDragable={isDragable}

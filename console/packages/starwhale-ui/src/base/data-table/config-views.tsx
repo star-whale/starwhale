@@ -143,7 +143,7 @@ function ConfigViews(props: PropsT) {
                             if (!newView.name) return toaster.negative('name required', { autoHideDuration: 2000 })
 
                             if (store.checkDuplicateViewName(newView.name, newView.id)) {
-                                toaster.negative('View name already exists', { autoHideDuration: 2000 })
+                                toaster.negative(t('table.view.name.exsts'), { autoHideDuration: 2000 })
                                 return
                             }
 
@@ -211,6 +211,7 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
             },
         },
     }
+    const [t] = useTranslation()
 
     const ListItem = ({
         data,
@@ -286,11 +287,11 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
             >
                 {/* @ts-ignore */}
                 <Button as='link' overrides={overrides} onClick={props.setIsAddViewOpen}>
-                    Add View
+                    {t('table.view.add')}
                 </Button>
                 {/* @ts-ignore */}
                 <Button as='link' overrides={overrides} onClick={props.setIsManageViewOpen}>
-                    Manage View
+                    {t('table.view.manage')}
                 </Button>
             </div>
         </StyledList>
