@@ -181,7 +181,7 @@ export default function EvaluationListCard() {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
         })
-        toaster.positive('Successfully saved', {})
+        toaster.positive(t('evaluation.save.success'), {})
         return {}
     }
 

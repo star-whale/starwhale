@@ -10,7 +10,7 @@ import cn from 'classnames'
 import { SortDirectionsT } from '../types'
 import { SORT_DIRECTIONS } from '../constants'
 import Button from '../../../Button'
-import { LocaleContext } from '../locales'
+import { LocaleContext } from 'baseui/locale'
 import Checkbox from '../../../Checkbox'
 import { themedUseStyletron } from '../../../theme/styletron'
 

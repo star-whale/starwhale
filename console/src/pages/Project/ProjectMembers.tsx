@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useFetchProjectMembers } from '@project/hooks/useFetchProjectMembers'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import Button from '@starwhale/ui/Button'
 import Card from '@/components/Card'
 import { SIZE as ButtonSize } from 'baseui/button'
@@ -17,6 +17,8 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import MemberAddForm from '@project/components/MemberAddForm'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { Breadcrumbs } from 'baseui/breadcrumbs'
 
 export default function ProjectMembers() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -26,15 +28,81 @@ export default function ProjectMembers() {
     const [data, setData] = useState<IProjectRoleSchema[]>([])
     const [filter, setFilter] = useState('')
     const [showAddMember, setShowAddMember] = useState(false)
+    const { project } = useProject()
+    const history = useHistory()
 
     useEffect(() => {
         const items = members.data ?? []
         setData(items.filter((i) => (filter && i.user.name.includes(filter)) || filter === ''))
     }, [filter, members.data])
 
+    const breadcrumbItems = useMemo(() => {
+        const items = [
+            {
+                title: t('Project List'),
+                path: `/projects/`,
+            },
+            {
+                title: project?.name,
+                path: `/projects/${projectId}/`,
+            },
+            {
+                title: t('Manage Project Member'),
+            },
+        ]
+        return items
+    }, [projectId, project?.name, t])
+
     return (
         <Card
-            title={t('Manage Project Members')}
+            title={
+                <Breadcrumbs
+                    overrides={{
+                        List: {
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                            },
+                        },
+                        ListItem: {
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                            },
+                        },
+                    }}
+                >
+                    {breadcrumbItems.map((item, idx) => {
+                        const Icon = item?.icon
+                        return (
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                style={{
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    cursor: idx !== breadcrumbItems.length - 1 ? 'pointer' : undefined,
+                                }}
+                                key={item.path}
+                                onClick={
+                                    item.path && idx !== breadcrumbItems.length - 1
+                                        ? () => {
+                                              if (item.path) {
+                                                  history.push(item.path)
+                                              }
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {Icon}
+                                <span>{item.title}</span>
+                            </div>
+                        )
+                    })}
+                </Breadcrumbs>
+            }
             extra={
                 <WithCurrentAuth id='member.create'>
                     <Button

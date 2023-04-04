@@ -1,11 +1,20 @@
 export interface ILocaleItem {
     en: string
+    zh: string
 }
 
 const basic = {
     'resource.unit.cpu': {
         en: 'Core',
         zh: '核',
+    },
+    'remove.yes': {
+        en: 'Yes',
+        zh: '是',
+    },
+    'remove.no': {
+        en: 'No',
+        zh: '否',
     },
 }
 
@@ -226,6 +235,13 @@ const job = {
     },
 }
 
+const evaluation = {
+    'evaluation.save.success': {
+        en: 'Save Evaluation Success',
+        zh: '保存成功',
+    },
+}
+
 const table = {
     'table.column.manage': {
         en: 'Manage Columns',
@@ -282,6 +298,13 @@ const table = {
     'table.search.placeholder': {
         en: 'Search and Filter',
         zh: '搜索和过滤',
+    },
+}
+
+const widget = {
+    'panel.save.success': {
+        en: 'Panel setting saved',
+        zh: '保存成功',
     },
 }
 
@@ -441,6 +464,18 @@ const locales0 = {
     'Project Role': {
         en: 'Project Role',
         zh: '项目角色',
+    },
+    'Onwer': {
+        en: 'Onwer',
+        zh: '所有者',
+    },
+    'Maintainer': {
+        en: 'Maintainer',
+        zh: '维护者',
+    },
+    'Guest': {
+        en: 'Guest',
+        zh: '访客',
     },
     'USER': {
         en: 'USER',
@@ -1231,6 +1266,8 @@ const locales0 = {
     ...project,
     ...job,
     ...table,
+    ...evaluation,
+    ...widget,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

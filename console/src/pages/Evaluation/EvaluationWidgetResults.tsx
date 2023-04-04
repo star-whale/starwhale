@@ -17,6 +17,7 @@ import { getToken } from '@/api'
 import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
+import useTranslation from '@/hooks/useTranslation'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -204,6 +205,7 @@ interface Layout {
 }
 
 function EvaluationWidgetResults() {
+    const [t] = useTranslation()
     const { jobId, projectId: projectFromUri } = useParams<{ jobId: string; projectId: string }>()
     const { project } = useProject()
     const projectId = project?.id ?? projectFromUri
@@ -213,7 +215,7 @@ function EvaluationWidgetResults() {
     const [layouts, setLayouts] = React.useState<Layout[]>([])
     const onStateChange = async (data: any) => {
         await updatePanelSetting(projectId, storeKey, data)
-        toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
+        toaster.positive(t('panel.save.success'), { autoHideDuration: 2000 })
     }
 
     const tables = React.useMemo(() => {

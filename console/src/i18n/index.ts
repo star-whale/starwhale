@@ -1,14 +1,14 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import { locales } from '@/i18n/locales'
+import { locales } from './locales'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import TimeAgo from 'javascript-time-ago'
 
 import en from 'javascript-time-ago/locale/en.json'
 import zh from 'javascript-time-ago/locale/zh.json'
 
-TimeAgo.addDefaultLocale(zh)
-TimeAgo.addLocale(en)
+TimeAgo.addDefaultLocale(en)
+TimeAgo.addLocale(zh)
 
 i18n.use(LanguageDetector)
     .use(initReactI18next)
@@ -31,7 +31,7 @@ i18n.use(LanguageDetector)
                 }, {}),
             },
         },
-        fallbackLng: 'zh',
+        fallbackLng: 'en',
         debug: false,
         ns: ['translations'],
         defaultNS: 'translations',
