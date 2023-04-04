@@ -1,0 +1,7 @@
+version: 1.0
+name: chat-gpt
+
+run:
+  handler: code.evaluator
+
+desc: supported by chat gpt api

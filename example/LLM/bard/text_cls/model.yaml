@@ -1,0 +1,7 @@
+version: 1.0
+name: bard-txt-classify
+
+run:
+  handler: code.evaluator
+
+desc: TextClassification by google bard api
