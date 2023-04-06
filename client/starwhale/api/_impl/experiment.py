@@ -65,7 +65,7 @@ def _register_ft(
 
     _registered_ft_func.value = step(
         job_name=DEFAULT_FINETUNE_JOB_NAME,
-        name="fine-tune",
+        name="fine_tune",
         resources=resources,
         concurrency=1,
         task_num=1,

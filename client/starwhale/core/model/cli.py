@@ -300,8 +300,8 @@ def _eval(
     )
 
 
-@model_cmd.command("ft")
-@click.argument("target")
+@model_cmd.command("fine-tune", aliases=["ft"])
+@click.argument("target", required=False, default="")
 @click.option(
     "-f",
     "--model-yaml",
@@ -315,7 +315,8 @@ def _eval(
     default="",
     help=f"Project URI, env is {SWEnv.project}. Default is the current selected project.",
 )
-@click.option("--runtime", default="", help="runtime uri")
+@click.option("-r", "--runtime", default="", help="runtime uri")
+@click.option("-m", "--model", default="", help="model uri")
 @click.option(
     "datasets",
     "--dataset",
@@ -330,6 +331,7 @@ def _fine_tune(
     project: str,
     datasets: list,
     runtime: str,
+    model: str,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -342,6 +344,7 @@ def _fine_tune(
         yaml_name=model_yaml,
         dataset_uris=datasets,
         runtime_uri=runtime,
+        model_uri=model,
     )
 
 

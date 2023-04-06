@@ -88,7 +88,7 @@ set_py_and_sw() {
     fi
 }
 
-run() {
+eval() {
     echo "-->[Running] start to run evaluation: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
         swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
@@ -105,6 +105,16 @@ serve() {
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
     else
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --host 0.0.0.0 || exit 1
+    fi
+}
+
+fine_tune() {
+    echo "-->[FineTuning] start to fine tune, use $(which swcli) cli ..."
+    export
+    if [ "${RUNTIME_RESTORED}" != "1" ]; then
+        swcli ${VERBOSE} model ft --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" || exit 1
+    else
+        swcli ${VERBOSE} model ft --model "${SW_MODEL_VERSION}" || exit 1
     fi
 }
 
@@ -149,11 +159,14 @@ case "$1" in
     pre_config)
         pre_config
         ;;
-    run)
-        prepare $1 && run
+    run|evaluation)
+        prepare $1 && eval
         ;;
     serve)
         prepare $1 && serve
+        ;;
+    fine_tune)
+        prepare $1 && fine_tune
         ;;
     *)
         prepare "starwhale" && exec "$@"

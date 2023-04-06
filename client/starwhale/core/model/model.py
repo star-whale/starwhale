@@ -334,6 +334,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = DEFAULT_FINETUNE_JOB_NAME,
+        step_name: str = "fine_tune",
+        task_index: int = 0,
+        task_num: int = 1,
     ) -> None:
         _model_config = cls.load_model_config(workdir / model_yaml_name, workdir)
 
@@ -363,7 +366,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
         _status = RunStatus.START
         try:
-            _results = _scheduler.run()
+            _results = _scheduler.run(step_name=step_name, task_index=task_index, task_num=task_num)
             _status = RunStatus.SUCCESS
 
             exceptions: t.List[Exception] = []
@@ -557,18 +560,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     target_dir=self.store.src_dir,
                 ).run,
                 5,
-                "generate eval jobs",
+                "generate jobs",
                 dict(raise_err=True),
-            ),
-            (
-                FinetuneHandlerParser(
-                    workdir=workdir,
-                    handler=_model_config.run.handler,
-                    target_dir=self.store.src_dir,
-                ).run,
-                5,
-                "generate fine tune jobs",
-                dict(raise_err=False),
             ),
             (
                 ServeHandlerParser(

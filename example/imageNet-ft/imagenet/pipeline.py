@@ -30,7 +30,6 @@ from starwhale.api import model, experiment
 from starwhale.api.service import api
 from starwhale import PipelineHandler, Image, multi_classification, dataset
 from starwhale.consts.env import SWEnv
-from starwhale.utils.fs import ensure_dir
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
@@ -105,7 +104,9 @@ def fine_tune(learning_rate=5e-5,
     remote_project = remote_project or os.getenv(SWEnv.project)
     # "local/project/self"
     server_pro_uri = f"{remote_instance_uri}/project/{remote_project}"
-    train_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_train/version/latest", readonly=True)
+    dataset_uri = f"{server_pro_uri}/dataset/{os.getenv(SWEnv.dataset_uri, 'hotdog_train/version/latest')}"
+    print(f"dataset is:{dataset_uri}")
+    train_dataset = dataset(dataset_uri, readonly=True)
     train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs), batch_size=batch_size)
 
     loss = nn.CrossEntropyLoss(reduction="none")
@@ -146,7 +147,7 @@ def fine_tune(learning_rate=5e-5,
 
     # save and build model
     torch.save(finetune_net.state_dict(), ROOTDIR / "models" / "resnet-ft.pth")
-    model.build(workdir=ROOTDIR, evaluation_handler=ImageNetEvaluation)
+    model.build(workdir=ROOTDIR, name="imageNet-all", evaluation_handler=ImageNetEvaluation)
 
 
 def train_batch(net, X, y, loss, trainer, devices):

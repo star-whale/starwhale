@@ -192,11 +192,24 @@ class ModelTermView(BaseTermView):
         dataset_uris: t.List[str],
         yaml_name: str = DefaultYAMLName.MODEL,
         runtime_uri: str = "",
+        model_uri: str = "",
     ) -> None:
+        if target and model_uri:
+            console.print("workdir and model can not both set together")
+            sys.exit(1)
+        if not target and not model_uri:
+            console.print("workdir or model needs to be set")
+            sys.exit(1)
+
+        if target:
+            workdir = cls._get_workdir(target)
+        else:
+            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
+            workdir = _m.store.src_dir
 
         kw = dict(
             project=project,
-            workdir=cls._get_workdir(target),
+            workdir=workdir,
             dataset_uris=dataset_uris,
             model_yaml_name=yaml_name,
         )
