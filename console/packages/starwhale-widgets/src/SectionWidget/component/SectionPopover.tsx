@@ -4,23 +4,28 @@ import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
-
-const COLUMN_OPTIONS = [
-    { label: 'Rename', type: 'rename' },
-    { label: 'Add above', type: 'addAbove' },
-    { label: 'Add belove', type: 'addBelow' },
-    { label: 'Delete', type: 'delete' },
-]
+import useTranslation from '@/hooks/useTranslation'
 
 // @ts-ignore
 export default function SectionPopover({ onOptionSelect }) {
+    const [t] = useTranslation()
+
+    const $options = React.useMemo(() => {
+        return [
+            { label: t('panel.rename'), type: 'rename' },
+            { label: t('panel.add.above'), type: 'addAbove' },
+            { label: t('panel.add.below'), type: 'addBelow' },
+            { label: t('panel.delete'), type: 'delete' },
+        ]
+    }, [t])
+
     return (
         <StatefulPopover
             focusLock
             placement={PLACEMENT.bottom}
             content={({ close }) => (
                 <StatefulMenu
-                    items={COLUMN_OPTIONS}
+                    items={$options}
                     onItemSelect={({ item }) => {
                         if (item.type === 'delete') {
                             close()
@@ -30,7 +35,7 @@ export default function SectionPopover({ onOptionSelect }) {
                         close()
                     }}
                     overrides={{
-                        List: { style: { height: '160px', width: '150px' } },
+                        List: { style: { minHeight: '160px', minWidth: '150px' } },
                         Option: {
                             props: {
                                 getItemLabel: (item: { label: string; type: string }) => {

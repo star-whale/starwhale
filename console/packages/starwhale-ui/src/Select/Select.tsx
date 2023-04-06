@@ -2,6 +2,7 @@ import { Select as BaseSelect, SelectProps, SIZE } from 'baseui/select'
 import React from 'react'
 import IconFont from '../IconFont'
 import { mergeOverrides } from '../utils'
+import useTranslation from '@/hooks/useTranslation'
 
 export { SIZE } from 'baseui/select'
 
@@ -11,6 +12,7 @@ export interface ISelectProps extends SelectProps {
 }
 
 export function Select({ size = 'compact', ...props }: ISelectProps) {
+    const [t] = useTranslation()
     const overrides = mergeOverrides(
         {
             ControlContainer: {
@@ -46,6 +48,8 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
         },
         props.overrides
     )
+
+    props.placeholder ??= t('selector.placeholder')
 
     // eslint-disable-next-line  react/jsx-props-no-spreading
     return <BaseSelect size={size} {...props} overrides={overrides} />

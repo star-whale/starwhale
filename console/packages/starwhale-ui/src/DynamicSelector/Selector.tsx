@@ -13,6 +13,7 @@ import {
 } from './StyledComponent'
 import Tree from '../Tree/Tree'
 import { KEY_STRINGS } from 'baseui/menu'
+import useTranslation from '@/hooks/useTranslation'
 
 // @ts-ignore
 const containsNode = (parent, child) => {
@@ -37,10 +38,11 @@ export function DynamicSelector<T = any>({
     onChange,
     startEnhancer,
     endEnhancer = defaultEndEnhancer(),
-    placeholder = 'Select Item',
     options = [],
     ...rest
 }: DynamicSelectorPropsT<T>) {
+    const [t] = useTranslation()
+    const placeholder = rest.placeholder ?? t('selector.placeholder')
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [values, setValues] = useState<SelectorItemValueT[]>(rest.value ?? [])

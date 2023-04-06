@@ -39,6 +39,13 @@ export function RuntimeTreeSelector(props: any) {
                                     <Button
                                         key='version-history'
                                         kind='tertiary'
+                                        overrides={{
+                                            BaseButton: {
+                                                style: {
+                                                    flexShrink: 0,
+                                                },
+                                            },
+                                        }}
                                         onClick={() =>
                                             window.open(
                                                 `/projects/${projectId}/runtimes/${runtime.runtimeName}/versions/${item.id}/overview`

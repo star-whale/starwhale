@@ -5,14 +5,18 @@ import IconFont from '@starwhale/ui/IconFont'
 // @FIXME move to ui
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
-
-const COLUMN_OPTIONS = [
-    { label: 'Edit', type: 'edit' },
-    { label: 'Remove', type: 'delete' },
-]
+import useTranslation from '@/hooks/useTranslation'
 
 // @ts-ignore
 export default function ChartConfigPopover({ onOptionSelect }) {
+    const [t] = useTranslation()
+    const $options = React.useMemo(() => {
+        return [
+            { label: t('panel.chart.edit'), type: 'edit' },
+            { label: t('panel.chart.delete'), type: 'delete' },
+        ]
+    }, [])
+
     return (
         <StatefulPopover
             dismissOnClickOutside
@@ -20,7 +24,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
             placement={PLACEMENT.bottom}
             content={({ close }) => (
                 <StatefulMenu
-                    items={COLUMN_OPTIONS}
+                    items={$options}
                     onItemSelect={({ item }) => {
                         close()
                         if (item.type === 'delete') {

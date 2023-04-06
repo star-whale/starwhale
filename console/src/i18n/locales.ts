@@ -16,6 +16,10 @@ const basic = {
         en: 'No',
         zh: '否',
     },
+    'add': {
+        en: 'Add',
+        zh: '添加',
+    },
 }
 
 const dataset = {
@@ -301,10 +305,81 @@ const table = {
     },
 }
 
+const ui = {
+    'selector.placeholder': {
+        en: 'Select...',
+        zh: '请选择',
+    },
+}
+
 const widget = {
+    'panel.name': {
+        en: 'Panel',
+        zh: '面板',
+    },
+    'panel.save': {
+        en: 'Save',
+        zh: '保存',
+    },
+    'panel.add': {
+        en: 'Add Panel',
+        zh: '添加面板',
+    },
+    'panel.rename': {
+        en: 'Rename',
+        zh: '重命名',
+    },
+    'panel.delete': {
+        en: 'Delete',
+        zh: '删除',
+    },
+    'panel.add.above': {
+        en: 'Add Panel Above',
+        zh: '在上方添加新面板',
+    },
+    'panel.add.below': {
+        en: 'Add Panel Below',
+        zh: '在下方添加新面板',
+    },
     'panel.save.success': {
         en: 'Panel setting saved',
         zh: '保存成功',
+    },
+    'panel.chart.add': {
+        en: 'Add Chart',
+        zh: '添加图表',
+    },
+    'panel.chart.title': {
+        en: 'Chart Title',
+        zh: '图表标题',
+    },
+    'panel.chart.delete': {
+        en: 'Delete Chart',
+        zh: '删除图表',
+    },
+    'panel.chart.edit': {
+        en: 'Edit Chart',
+        zh: '编辑图表',
+    },
+    'panel.chart.type': {
+        en: 'Chart Type',
+        zh: '图表类型',
+    },
+    'panel.chart.table.name': {
+        en: 'Table Name',
+        zh: '数据表',
+    },
+    'panel.list.placeholder': {
+        en: 'Click "Add Chart" to add visualizations',
+        zh: '点击 "添加图表" 添加可视化图表',
+    },
+    'panel.view.config.custom': {
+        en: 'Custom',
+        zh: '自定义',
+    },
+    'panel.view.config.model-buildin': {
+        en: 'Model Build-in',
+        zh: '模型内置配置',
     },
 }
 
@@ -627,7 +702,7 @@ const locales0 = {
     },
     'Owner': {
         en: 'Owner',
-        zh: '拥有者',
+        zh: '操作者',
     },
     'File': {
         en: 'File',
@@ -1268,6 +1343,7 @@ const locales0 = {
     ...table,
     ...evaluation,
     ...widget,
+    ...ui,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
