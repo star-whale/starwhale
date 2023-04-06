@@ -27,8 +27,12 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -45,15 +49,25 @@ public class SystemSettingService implements CommandLineRunner {
     private final List<SystemSettingListener> listeners;
     private final RunTimeProperties runTimeProperties;
     private final DockerSetting dockerSetting;
+    private final ResourcePool defaultResourcePool;
+    private final K8sClient defaultK8sClient;
     @Getter
     protected SystemSetting systemSetting;
 
-    public SystemSettingService(SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners,
-                                RunTimeProperties runTimeProperties, DockerSetting dockerSetting) {
+
+    public SystemSettingService(
+            SystemSettingMapper systemSettingMapper,
+            List<SystemSettingListener> listeners,
+            RunTimeProperties runTimeProperties,
+            DockerSetting dockerSetting,
+            K8sClient defaultK8sClient
+    ) {
         this.systemSettingMapper = systemSettingMapper;
         this.listeners = listeners;
         this.runTimeProperties = runTimeProperties;
         this.dockerSetting = dockerSetting;
+        this.defaultK8sClient = defaultK8sClient;
+        this.defaultResourcePool = ResourcePool.defaults(defaultK8sClient);
     }
 
     public String querySetting() {
@@ -79,22 +93,39 @@ public class SystemSettingService implements CommandLineRunner {
             log.error("invalid setting yaml {}", setting, e);
             throw new SwValidationException(ValidSubject.SETTING);
         }
+        if (!CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
+            for (var rp : systemSetting.getResourcePoolSetting()) {
+                try {
+                    rp.generateK8sClient(defaultK8sClient);
+                } catch (IOException e) {
+                    log.error("invalid k8s client config for resource pool {}", rp.getName(), e);
+                    throw new SwValidationException(ValidSubject.SETTING);
+                }
+            }
+        }
         systemSettingMapper.put(setting);
         listeners.forEach(l -> l.onUpdate(systemSetting));
         return querySetting();
     }
 
     public ResourcePool queryResourcePool(String rpName) {
-        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? ResourcePool.defaults() :
+        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? defaultResourcePool :
                 this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
-                        .orElse(ResourcePool.defaults());
+                        .orElse(defaultResourcePool);
     }
 
     public List<ResourcePool> getResourcePools() {
-        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? List.of(ResourcePool.defaults())
+        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? List.of(defaultResourcePool)
                 : this.systemSetting.getResourcePoolSetting();
     }
 
+    public List<K8sClient> getK8sClients() {
+        if (CollectionUtils.isEmpty(getResourcePools())) {
+            return List.of();
+        }
+        return getResourcePools().stream().map(ResourcePool::getK8sClient)
+            .filter(Objects::nonNull).collect(Collectors.toList());
+    }
 
     @Override
     public void run(String... args) throws Exception {

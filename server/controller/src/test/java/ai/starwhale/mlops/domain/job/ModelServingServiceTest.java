@@ -87,13 +87,16 @@ public class ModelServingServiceTest {
 
     @BeforeEach
     public void setUp() {
+        when(systemSettingService.getK8sClients()).thenReturn(List.of(k8sClient));
+        when(systemSettingService.getResourcePools()).thenReturn(List.of(
+                ResourcePool.builder().name("default").k8sClient(k8sClient).build()
+        ));
         svc = new ModelServingService(
                 modelServingMapper,
                 runtimeDao,
                 projectService,
                 modelDao,
                 userService,
-                k8sClient,
                 k8sJobTemplate,
                 runtimeMapper,
                 modelMapper,
@@ -149,7 +152,7 @@ public class ModelServingServiceTest {
         var modelVer = ModelVersionEntity.builder().id(9L).versionName("mp-9").build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
         when(systemSettingService.queryResourcePool("default")).thenReturn(
-                ResourcePool.builder().nodeSelector(Map.of("foo", "bar")).build());
+                ResourcePool.builder().nodeSelector(Map.of("foo", "bar")).k8sClient(k8sClient).build());
 
         var spec = "---\n"
                 + "resources:\n"

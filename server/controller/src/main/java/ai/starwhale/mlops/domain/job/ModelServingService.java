@@ -57,6 +57,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +82,6 @@ public class ModelServingService {
     private final ProjectService projectService;
     private final ModelDao modelDao;
     private final RuntimeDao runtimeDao;
-    private final K8sClient k8sClient;
     private final K8sJobTemplate k8sJobTemplate;
     private final RuntimeMapper runtimeMapper;
     private final ModelMapper modelMapper;
@@ -105,7 +105,6 @@ public class ModelServingService {
             ProjectService projectService,
             ModelDao modelDao,
             UserService userService,
-            K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
             RuntimeMapper runtimeMapper,
             ModelMapper modelMapper,
@@ -123,7 +122,6 @@ public class ModelServingService {
         this.projectService = projectService;
         this.modelDao = modelDao;
         this.userService = userService;
-        this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
         this.runtimeMapper = runtimeMapper;
         this.modelMapper = modelMapper;
@@ -137,7 +135,18 @@ public class ModelServingService {
         this.minTtlSec = minTtlSec;
 
         availableWorkloads = new ConcurrentHashMap<>();
-        this.k8sClient.watchStatefulSet(new ResourceEventHandler<>() {
+        watchWorkloads();
+    }
+
+    private void watchWorkloads() {
+        var k8sClients = systemSettingService.getK8sClients();
+        for (var k8sClient : k8sClients) {
+            watchWorkloadsOfCluster(k8sClient);
+        }
+    }
+
+    private void watchWorkloadsOfCluster(K8sClient k8sClient) {
+        k8sClient.watchStatefulSet(new ResourceEventHandler<>() {
             private Long getServiceId(V1StatefulSet ss) {
                 if (ss.getMetadata() == null || ss.getMetadata().getName() == null) {
                     return null;
@@ -243,6 +252,9 @@ public class ModelServingService {
         } catch (ApiException e) {
             log.error(e.getResponseBody(), e);
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
+        } catch (IOException e) {
+            log.error("failed to deploy model serving job", e);
+            throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, "failed to deploy model serving job", e);
         }
 
         var idStr = idConverter.convert(id);
@@ -258,7 +270,7 @@ public class ModelServingService {
             long id,
             ModelServingSpec modelServingSpec,
             String resourcePool
-    ) throws ApiException {
+    ) throws ApiException, IOException {
         // fast path
         if (availableWorkloads.get(id) != null) {
             // already exists
@@ -299,6 +311,7 @@ public class ModelServingService {
 
         var nodeSelectors = pool.getNodeSelector();
         var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec, nodeSelectors);
+        var k8sClient = pool.getK8sClient();
         try {
             ss = k8sClient.deployStatefulSet(ss);
         } catch (ApiException e) {
@@ -361,14 +374,17 @@ public class ModelServingService {
     public void gc() {
         try {
             synchronized (this) {
-                internalGc();
+                var k8sClients = systemSettingService.getK8sClients();
+                for (var k8sClient : k8sClients) {
+                    internalGc(k8sClient);
+                }
             }
         } catch (ApiException e) {
             log.error("Failed to gc, code: {}, body: {}", e.getCode(), e.getResponseBody(), e);
         }
     }
 
-    public void internalGc() throws ApiException {
+    public void internalGc(K8sClient k8sClient) throws ApiException {
         var labelSelector = K8sClient.toV1LabelSelector(Map.of(
                 K8sJobTemplate.LABEL_WORKLOAD_TYPE,
                 K8sJobTemplate.WORKLOAD_TYPE_ONLINE_EVAL
@@ -418,7 +434,7 @@ public class ModelServingService {
             if (entity == null) {
                 // delete the unknown stateful set
                 log.info("delete stateful set {} when there is no entry in db", name);
-                deleteStatefulSet(name);
+                deleteStatefulSet(k8sClient, name);
                 continue;
             }
 
@@ -426,7 +442,7 @@ public class ModelServingService {
             var last = entity.getLastVisitTime().getTime();
             if (now - last > maxTtlSec * 1000) {
                 log.info("delete stateful set {} when it reaches the max TTL (since {})", name, last);
-                deleteStatefulSet(name);
+                deleteStatefulSet(k8sClient, name);
                 continue;
             }
 
@@ -481,11 +497,11 @@ public class ModelServingService {
         var key = mayBeGarbageCollected.keySet().iterator().next();
         var oldest = mayBeGarbageCollected.get(key);
         var name = Objects.requireNonNull(oldest.getMetadata()).getName();
-        deleteStatefulSet(name);
+        deleteStatefulSet(k8sClient, name);
         log.info("delete stateful set {}", name);
     }
 
-    private void deleteStatefulSet(String name) {
+    private void deleteStatefulSet(K8sClient k8sClient, String name) {
         // mark deleted
         var id = getServiceIdFromName(name);
         if (id != null) {

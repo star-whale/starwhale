@@ -23,11 +23,13 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -53,7 +55,7 @@ public class TaskWatcherForScheduleTest {
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
         verify(taskScheduler).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stopSchedule(List.of(task));
     }
 
     @Test
@@ -62,18 +64,21 @@ public class TaskWatcherForScheduleTest {
                 SwTaskScheduler.class);
         TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
                 taskStatusMachine, 0L);
+        var jobRuntime = JobRuntime.builder().build();
+        var k8sClient = mock(K8sClient.class);
+        var resourcePool = ResourcePool.builder().name("resource pool").k8sClient(k8sClient).build();
+        var job = Job.builder().jobRuntime(jobRuntime).resourcePool(resourcePool).build();
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.PAUSED)
-                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
-                        .build()).build()).build())
+                .step(Step.builder().job(job).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(2)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(2)).stopSchedule(List.of(task));
     }
 
     @Test
@@ -93,6 +98,6 @@ public class TaskWatcherForScheduleTest {
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stopSchedule(List.of(task));
     }
 }

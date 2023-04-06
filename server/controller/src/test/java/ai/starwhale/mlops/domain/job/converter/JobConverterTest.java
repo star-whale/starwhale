@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,8 @@ public class JobConverterTest {
         DatasetDao datasetDao = mock(DatasetDao.class);
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
-        when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
+        var k8sClient = mock(K8sClient.class);
+        when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults(k8sClient));
         jobConvertor = new JobConverter(
                 idConvertor,
                 runtimeService,

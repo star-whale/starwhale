@@ -17,7 +17,14 @@
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import io.kubernetes.client.informer.SharedInformerFactory;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.util.Config;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +39,8 @@ import org.springframework.util.StringUtils;
  * bo represent agent
  */
 @Slf4j
-@Data
 @Builder
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResourcePool {
@@ -42,17 +49,22 @@ public class ResourcePool {
     String name;
     Map<String, String> nodeSelector;
     List<Resource> resources;
+    String kubeConfig;
+    String namespace;
 
-    public static ResourcePool defaults() {
+    private transient K8sClient k8sClient;
+
+    public static ResourcePool defaults(K8sClient k8sClient) {
         return ResourcePool
-                .builder()
-                .name(DEFAULT_NAME)
-                .nodeSelector(Map.of())
-                .resources(List.of(
-                        new Resource(ResourceOverwriteSpec.RESOURCE_CPU),
-                        new Resource(ResourceOverwriteSpec.RESOURCE_MEMORY)
-                ))
-                .build();
+            .builder()
+            .name(DEFAULT_NAME)
+            .nodeSelector(Map.of())
+            .resources(List.of(
+                new Resource(ResourceOverwriteSpec.RESOURCE_CPU),
+                new Resource(ResourceOverwriteSpec.RESOURCE_MEMORY)
+            ))
+            .k8sClient(k8sClient)
+            .build();
     }
 
     public void validateResource(RuntimeResource resource) {
@@ -120,5 +132,28 @@ public class ResourcePool {
     public List<RuntimeResource> validateAndPatchResource(List<RuntimeResource> runtimeResources) {
         validateResources(runtimeResources);
         return patchResources(runtimeResources);
+    }
+
+    public void generateK8sClient(K8sClient defaultK8sClient) throws IOException {
+        if (!StringUtils.hasText(kubeConfig)) {
+            // use the default k8s client when kubeConfig not specified
+            this.k8sClient = defaultK8sClient;
+            return;
+        }
+
+        if (!StringUtils.hasText(namespace)) {
+            throw new IllegalArgumentException("namespace is empty");
+        }
+
+        var is = new java.io.ByteArrayInputStream(kubeConfig.getBytes());
+        var apiClient = Config.fromConfig(is);
+        this.k8sClient = new K8sClient(
+                apiClient,
+                new CoreV1Api(apiClient),
+                new BatchV1Api(apiClient),
+                new AppsV1Api(apiClient),
+                namespace,
+                new SharedInformerFactory(apiClient)
+        );
     }
 }

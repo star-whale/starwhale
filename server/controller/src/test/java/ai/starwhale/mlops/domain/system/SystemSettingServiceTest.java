@@ -26,6 +26,7 @@ import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,9 +53,11 @@ public class SystemSettingServiceTest {
     SystemSettingMapper systemSettingMapper;
     SystemSettingListener listener;
     private SystemSettingService systemSettingService;
+    private K8sClient k8sClient;
 
     @BeforeEach
     public void setUp() throws Exception {
+        k8sClient = mock(K8sClient.class);
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
         listener = mock(SystemSettingListener.class);
@@ -62,7 +65,9 @@ public class SystemSettingServiceTest {
                 systemSettingMapper,
                 List.of(listener),
                 new RunTimeProperties("", new Pypi("url1", "url2", "host1")),
-                new DockerSetting("", "", ""));
+                new DockerSetting("", "", ""),
+                k8sClient
+        );
         systemSettingService.run();
     }
 
@@ -108,7 +113,7 @@ public class SystemSettingServiceTest {
                 + "  extraIndexUrl: \"\"\n"
                 + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
-        Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
+        Assertions.assertEquals(ResourcePool.defaults(k8sClient).getName(), resourcePool.getName());
     }
 
 
@@ -124,7 +129,9 @@ public class SystemSettingServiceTest {
                         mock(SystemSettingMapper.class),
                         List.of(listener),
                         new RunTimeProperties("", new Pypi("", "", "")),
-                        new DockerSetting("abcd.com", "admin", "admin123"));
+                        new DockerSetting("abcd.com", "admin", "admin123"),
+                        k8sClient
+                );
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
@@ -136,7 +143,7 @@ public class SystemSettingServiceTest {
                 + "  extraIndexUrl: \"\"\n"
                 + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
-        Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
+        Assertions.assertEquals(ResourcePool.defaults(k8sClient).getName(), resourcePool.getName());
     }
 
 

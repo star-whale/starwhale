@@ -30,14 +30,11 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
-import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
-import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,32 +54,25 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class K8sTaskScheduler implements SwTaskScheduler {
 
-    final K8sClient k8sClient;
-
     final RunTimeProperties runTimeProperties;
-
     final TaskTokenValidator taskTokenValidator;
-
     final K8sJobTemplate k8sJobTemplate;
-
     final String instanceUri;
     final int datasetLoadBatchSize;
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
 
-    public K8sTaskScheduler(K8sClient k8sClient,
+    public K8sTaskScheduler(
             TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
-            ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode,
-            ResourceEventHandler<V1Pod> eventHandlerPod, @Value("${sw.instance-uri}") String instanceUri,
+            @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
-            StorageAccessService storageAccessService) {
-        this.k8sClient = k8sClient;
+            StorageAccessService storageAccessService
+    ) {
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
@@ -99,12 +89,13 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @Override
-    public void stopSchedule(Collection<Long> taskIds) {
-        taskIds.forEach(id -> {
+    public void stopSchedule(Collection<Task> tasks) {
+        tasks.forEach(task -> {
             try {
-                k8sClient.deleteJob(id.toString());
+                var k8sClient = task.getStep().getJob().getResourcePool().getK8sClient();
+                k8sClient.deleteJob(task.getId().toString());
             } catch (ApiException e) {
-                log.warn("delete k8s job failed {}", id, e);
+                log.warn("delete k8s job failed {}", task, e);
             }
         });
     }
@@ -143,12 +134,20 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            Map<String, String> nodeSelector = null != task.getStep().getJob().getResourcePool()
-                    ? task.getStep().getJob().getResourcePool().getNodeSelector() : Map.of();
+            var pool = task.getStep().getJob().getResourcePool();
+            Map<String, String> nodeSelector = pool.getNodeSelector();
 
             k8sJobTemplate.renderJob(k8sJob, task.getId().toString(),
                     this.restartPolicy, this.backoffLimit, containerSpecMap, nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
+
+            var k8sClient = pool.getK8sClient();
+            if (k8sClient == null) {
+                log.error("k8s client is null, task {} will be failed", task.getId());
+                taskFailed(task);
+                return;
+            }
+
             try {
                 k8sClient.deleteJob(task.getId().toString());
                 log.info("existing k8s job {} deleted  before start it", task.getId());
@@ -168,9 +167,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     private ResourceOverwriteSpec getResourceSpec(Task task) {
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
         var pool = task.getStep().getJob().getResourcePool();
-        if (pool != null) {
-            runtimeResources = pool.patchResources(runtimeResources);
-        }
+        runtimeResources = pool.patchResources(runtimeResources);
         if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }

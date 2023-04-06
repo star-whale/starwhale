@@ -66,7 +66,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(),
                     task.getId(), task.getStatus());
             if (deletionDelayMilliseconds <= 0) {
-                taskScheduler.stopSchedule(List.of(task.getId()));
+                taskScheduler.stopSchedule(List.of(task));
             } else {
                 addToDeleteQueue(task);
             }
@@ -78,35 +78,35 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
     private void addToDeleteQueue(Task task) {
         var deleteTime = task.getStartTime() + deletionDelayMilliseconds;
-        taskToDeletes.put(new TaskToDelete(task.getId(), deleteTime));
+        taskToDeletes.put(new TaskToDelete(task, deleteTime));
         log.debug("add task {} to delete queue, delete time {}", task.getId(), deleteTime);
     }
 
     @Scheduled(fixedDelay = 30000)
     public void processTaskDeletion() {
         var task = taskToDeletes.poll();
-        List<Long> taskIds = new ArrayList<>();
+        List<Task> tasks = new ArrayList<>();
         while (task != null) {
-            taskIds.add(task.getTaskId());
-            log.debug("delete task {}", task.getTaskId());
+            tasks.add(task.getTask());
+            log.debug("delete task {}", task.getTask());
             task = taskToDeletes.poll();
         }
-        taskScheduler.stopSchedule(taskIds);
+        taskScheduler.stopSchedule(tasks);
     }
 
     static class TaskToDelete implements Delayed {
 
-        private final Long taskId;
+        private final Task task;
 
         private final Long deleteTime;
 
-        public TaskToDelete(Long taskId, Long deleteTime) {
-            this.taskId = taskId;
+        public TaskToDelete(Task task, Long deleteTime) {
+            this.task = task;
             this.deleteTime = deleteTime;
         }
 
-        public Long getTaskId() {
-            return taskId;
+        public Task getTask() {
+            return task;
         }
 
         @Override

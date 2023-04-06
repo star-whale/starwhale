@@ -61,13 +61,13 @@ public class K8sTaskSchedulerTest {
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
-        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
-        scheduler.schedule(Set.of(mockTask()));
+        K8sTaskScheduler scheduler = buildK8sSheduler();
+        scheduler.schedule(Set.of(mockTask(k8sClient)));
         verify(k8sClient).deployJob(any());
     }
 
     @NotNull
-    private K8sTaskScheduler buildK8sSheduler(K8sClient k8sClient) throws IOException {
+    private K8sTaskScheduler buildK8sSheduler() throws IOException {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
@@ -76,13 +76,11 @@ public class K8sTaskSchedulerTest {
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
-        K8sTaskScheduler scheduler = new K8sTaskScheduler(k8sClient,
+        K8sTaskScheduler scheduler = new K8sTaskScheduler(
                 taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
-                null,
-                null,
-                null, "http://instanceUri", 50,
+                "http://instanceUri", 50,
                 "OnFailure", 10,
                 storageAccessService);
         return scheduler;
@@ -92,8 +90,8 @@ public class K8sTaskSchedulerTest {
     public void testException() throws ApiException, IOException {
         K8sClient k8sClient = mock(K8sClient.class);
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
-        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
-        Task task = mockTask();
+        K8sTaskScheduler scheduler = buildK8sSheduler();
+        Task task = mockTask(k8sClient);
         scheduler.schedule(Set.of(task));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
@@ -105,19 +103,16 @@ public class K8sTaskSchedulerTest {
         var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
-                client,
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
-                null,
-                null,
-                null, "",
+                 "",
                 50,
                 "OnFailure",
                 10,
                 mock(StorageAccessService.class)
         );
-        var task = mockTask();
+        var task = mockTask(client);
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         task.getTaskRequest()
@@ -133,7 +128,7 @@ public class K8sTaskSchedulerTest {
                 .getContainers().get(0).getEnv().contains(expectedEnv));
     }
 
-    private Task mockTask() {
+    private Task mockTask(K8sClient k8sclient) {
         Job job = Job.builder()
                 .id(1L)
                 .model(Model.builder().path("path_swmp").build())
@@ -144,7 +139,7 @@ public class K8sTaskSchedulerTest {
                         List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).build()))
                 .stepSpec("")
-                .resourcePool(ResourcePool.builder().name("bj01").build())
+                .resourcePool(ResourcePool.builder().name("bj01").k8sClient(k8sclient).build())
                 .project(Project.builder().name("project").build())
                 .build();
         Step step = new Step();

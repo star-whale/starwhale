@@ -184,7 +184,7 @@ public class JobService {
 
         var pool = systemSettingService.queryResourcePool(resourcePool);
         if (pool != null) {
-            List<StepSpec> steps = null;
+            List<StepSpec> steps;
             try {
                 steps = jobSpecParser.parseStepFromYaml(stepSpecOverWrites);
             } catch (JsonProcessingException e) {
