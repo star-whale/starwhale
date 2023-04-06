@@ -15,6 +15,7 @@ from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from typing import (
     Any,
+    Set,
     cast,
     Dict,
     List,
@@ -891,13 +892,12 @@ class MemoryTable:
     def _dump(self, root_path: Path, if_dirty: bool = True) -> None:
         if if_dirty and not self.dirty:
             return
-        dst = root_path / f"{self.table_name}{datastore_table_file_ext}"
 
+        dst = root_path / f"{self.table_name}{datastore_table_file_ext}"
         base = dst.parent
         temp_filename = base / f"temp.{os.getpid()}"
         ensure_dir(base)
 
-        # dump key column info
         with jsonlines.open(temp_filename, mode="w") as writer:
             writer.write(self._dump_meta())
             dumped_keys = self._dump_from_local_file(dst, writer)
@@ -910,19 +910,21 @@ class MemoryTable:
         os.rename(temp_filename, dst)
         self.dirty = False
 
-    def _dump_from_local_file(self, file: Path, output: Writer) -> List[str]:
-        if not file.exists():
-            return []
+    def _dump_from_local_file(self, file: Path, output: Writer) -> Set[str]:
+        dumped_keys: Set[str] = set()
 
-        dumped_keys = []
+        if not file.exists():
+            return dumped_keys
+
         with jsonlines.open(file, mode="r") as reader:
             self._parse_meta(reader.read())
             for i in reader:
                 ir = InnerRecord.loads(i)
                 r = self.records.get(ir.key)
                 ir.update(r)
-                dumped_keys.append(ir.key)
+                dumped_keys.add(ir.key)
                 output.write(ir.dumps())
+
         return dumped_keys
 
 
