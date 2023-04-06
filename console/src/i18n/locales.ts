@@ -245,7 +245,7 @@ const evaluation = {
 const table = {
     'table.column.manage': {
         en: 'Manage Columns',
-        zh: '管理列',
+        zh: '列管理',
     },
     'table.column.invisible': {
         en: 'Invisible Columns',
@@ -651,7 +651,7 @@ const locales0 = {
     },
     'Version History': {
         en: 'Version History',
-        zh: '版本历史记录',
+        zh: '版本历史',
     },
     'Version': {
         en: 'Version',
@@ -799,7 +799,7 @@ const locales0 = {
     },
     'Logout': {
         en: 'Logout',
-        zh: '注销',
+        zh: '登出',
     },
     'Change Password': {
         en: 'Change Password',

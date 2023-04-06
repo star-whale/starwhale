@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useContext } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { headerHeight } from '@/consts'
+import { headerHeight, languages } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
 import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
@@ -25,6 +25,7 @@ import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import IconFont from '@starwhale/ui/IconFont'
 import Logo from './Logo'
 import Avatar from '../Avatar'
+import LanguageSelector from './LanguageSelector'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: (props: IThemedStyleProps) => ({
@@ -122,14 +123,14 @@ const useStyles = createUseStyles({
         'display': 'flex',
         'align-items': 'center',
         'height': '100%',
-        'margin-left': '12px',
+        'margin-left': '8px',
         'padding': '10px 0 10px 0',
         'justifyContent': 'flex-end',
-        'width': '220px',
 
         '&:hover': {
             '& $userMenu': {
                 display: 'flex',
+                width: '220px',
             },
         },
     },
@@ -301,6 +302,16 @@ export default function Header() {
                 </div>
             )}
             <div style={{ flexGrow: 1 }} />
+
+            <div
+                style={{
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                }}
+            >
+                <LanguageSelector />
+            </div>
 
             {currentUser && (
                 <div className={styles.userWrapper}>

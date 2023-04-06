@@ -27,7 +27,7 @@ function JobStatus({
     const JOB_STATUS = {
         [JobStatusType.CREATED]: (
             <p className={cls} style={{ color: '#2B65D9', backgroundColor: '#EBF1FF' }}>
-                \2022{t('job.status.created')}
+                {t('job.status.created')}
             </p>
         ),
         [JobStatusType.PAUSED]: (
