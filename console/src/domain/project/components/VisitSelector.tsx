@@ -1,10 +1,10 @@
 import React from 'react'
 import Select from '@starwhale/ui/Select'
 import useTranslation from '@/hooks/useTranslation'
-import { expandBorder } from '@starwhale/ui/utils'
+import { expandPadding } from '@starwhale/ui/utils'
 import IconFont from '@starwhale/ui/IconFont'
 
-export interface IRoleSelectorProps {
+export interface IVisitSelectorProps {
     value?: string
     onChange?: (newValue: string) => void
 }
@@ -14,7 +14,7 @@ export enum VisitBy {
     Oldest = 'oldest',
 }
 
-export default function VisitSelector({ value = VisitBy.Visited, onChange }: IRoleSelectorProps) {
+export default function VisitSelector({ value = VisitBy.Visited, onChange }: IVisitSelectorProps) {
     const [t] = useTranslation()
 
     const options = [
@@ -31,15 +31,15 @@ export default function VisitSelector({ value = VisitBy.Visited, onChange }: IRo
                 Root: {
                     style: {
                         width: 'fit-content',
-                        minWidth: '100px',
-                        ...expandBorder('0'),
+                        minWidth: '138px',
                     },
                 },
-                ControlContainer: {
+                ValueContainer: {
                     style: {
-                        ...expandBorder('0'),
+                        ...expandPadding('3px', '8px', '3px', '8px'),
                     },
                 },
+
                 SelectArrow: ({ $isOpen }) => {
                     return (
                         <IconFont

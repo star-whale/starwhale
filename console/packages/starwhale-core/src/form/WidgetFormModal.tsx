@@ -102,7 +102,7 @@ export default function WidgetFormModal({
                         position: 'relative',
                     }}
                 >
-                    {!type && 'Select a metric to visalize in this chart'}
+                    {!type && t('panel.add.placeholder')}
                     {type && (
                         <div
                             style={{

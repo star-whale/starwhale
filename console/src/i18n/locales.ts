@@ -195,7 +195,7 @@ const project = {
         zh: '以确认',
     },
     'project.visit.orderby': {
-        en: 'Order By',
+        en: 'Sort by',
         zh: '排序',
     },
     'project.visit.visited': {
@@ -332,6 +332,10 @@ const widget = {
     'panel.delete': {
         en: 'Delete',
         zh: '删除',
+    },
+    'panel.add.placeholder': {
+        en: 'Select a metric to visualize in this chart',
+        zh: '选择图表展示',
     },
     'panel.add.above': {
         en: 'Add Panel Above',
