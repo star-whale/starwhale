@@ -20,6 +20,8 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_FINETUNE_JOB_NAME,
+    DEFAULT_FINETUNE_JOBS_FILE_NAME,
     DEFAULT_EVALUATION_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
@@ -63,7 +65,7 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.base.blob.store.LocalFileStore.copy_dir")
     @patch("starwhale.api._impl.job._preload_to_register_jobs")
     @patch("starwhale.core.model.model.file_stat")
-    @patch("starwhale.core.model.model.ServeHandlerScanner.get_service")
+    @patch("starwhale.core.model.model.ServeHandlerParser.get_service")
     @patch("starwhale.core.model.model.Walker.files")
     @patch("starwhale.core.model.model.blake2b_file")
     def test_build_workflow(
@@ -78,6 +80,7 @@ class StandaloneModelTestCase(TestCase):
         from starwhale.api._impl.job import _jobs_global
 
         _jobs_global["default"] = []
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = []
 
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
@@ -102,12 +105,15 @@ class StandaloneModelTestCase(TestCase):
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.MODEL}"
         )
-        assert m_preload.call_count == 1
+        assert m_preload.call_count == 2
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
         assert (
             bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
+        ).exists()
+        assert (
+            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_FINETUNE_JOBS_FILE_NAME
         ).exists()
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
@@ -180,6 +186,7 @@ class StandaloneModelTestCase(TestCase):
         assert len(_list[self.name]) == 0
 
         _jobs_global["default"] = []
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = []
         ModelTermView.build(self.workdir, "self", Path(self.workdir) / "model.yaml")
 
     def test_get_file_desc(self):
@@ -411,7 +418,7 @@ class CloudModelTest(TestCase):
 
 
 @patch("starwhale.core.model.model.generate_jobs_yaml")
-@patch("starwhale.core.model.model.ServeHandlerScanner.get_service")
+@patch("starwhale.core.model.model.ServeHandlerParser.get_service")
 @patch("starwhale.utils.config.load_swcli_config")
 def test_build_with_custom_config_file(
     m_sw_config: MagicMock,

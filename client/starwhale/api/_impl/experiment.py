@@ -13,9 +13,9 @@
 #  limitations under the License.
 
 import threading
-from typing import Callable, Any, Dict, Optional
+from typing import Any, Dict, Callable, Optional
 
-from starwhale.consts import DEFAULT_FINETUNE_JOB_NAME, DecoratorInjectAttr
+from starwhale.consts import DecoratorInjectAttr, DEFAULT_FINETUNE_JOB_NAME
 
 
 def fine_tune(*args: Any, **kw: Any) -> Any:

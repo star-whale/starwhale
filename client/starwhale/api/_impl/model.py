@@ -8,10 +8,10 @@ from pathlib import Path
 
 import yaml
 
-from starwhale.consts.env import SWEnv
 from starwhale.utils import disable_progress_bar
 from starwhale.consts import DefaultYAMLName
 from starwhale.utils.fs import ensure_file
+from starwhale.consts.env import SWEnv
 
 _path_T = t.Union[str, Path]
 
@@ -90,10 +90,12 @@ def build(
             remote_project = remote_project or os.getenv(SWEnv.project)
             if remote_instance_uri and remote_project:
                 from starwhale import URI
+
                 # model copy local/project/myproject/model/mnist/version/latest cloud://server/project/starwhale
-                ModelTermView.copy(f"{URI(project_uri).full_uri}/model/{name}/version/latest",
-                                   f"{remote_instance_uri}/project/{remote_project}",
-                                   )
+                ModelTermView.copy(
+                    f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+                    f"{remote_instance_uri}/project/{remote_project}",
+                )
     finally:
         os.unlink(yaml_path)
 

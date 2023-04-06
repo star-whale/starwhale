@@ -30,14 +30,16 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_FINETUNE_JOB_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
+    DEFAULT_EVALUATION_JOB_NAME,
     DEFAULT_STARWHALE_API_VERSION,
     EVALUATION_SVC_META_FILE_NAME,
+    DEFAULT_FINETUNE_JOBS_FILE_NAME,
     DEFAULT_EVALUATION_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
-    DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL, DEFAULT_FINETUNE_JOBS_FILE_NAME, DEFAULT_FINETUNE_JOB_NAME,
-    DEFAULT_EVALUATION_JOB_NAME,
+    DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -70,7 +72,6 @@ from starwhale.core.job.scheduler import Scheduler
 
 
 class ModelRunConfig(ASDictMixin):
-
     # TODO: use attr to tune class
     def __init__(
         self,
@@ -98,7 +99,6 @@ class ModelRunConfig(ASDictMixin):
 
 
 class ModelConfig(ASDictMixin):
-
     # TODO: use attr to tune class
     def __init__(
         self,
@@ -459,7 +459,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.List[t.Dict[str, t.Any]]:
-
         _r = []
         for _bf in self.store.iter_bundle_history():
             _manifest_path = _bf.path / DEFAULT_MANIFEST_NAME
@@ -716,7 +715,9 @@ class HandlerParser:
 class EvaluationHandlerParser(HandlerParser):
     def run(self, raise_err: bool = True) -> t.Any:
         try:
-            yaml_path = self.target_dir / self.sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+            yaml_path = (
+                self.target_dir / self.sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+            )
             generate_jobs_yaml(
                 run_handler=self.handler,
                 workdir=self.workdir,
@@ -782,7 +783,9 @@ class ServeHandlerParser(HandlerParser):
         try:
             rc_dir = f"{self.sw_dir}/{SW_EVALUATION_EXAMPLE_DIR}"
             # render spec
-            svc = ServeHandlerParser.get_service(self.handler, self.workdir, hijack=Hijack(True, rc_dir))
+            svc = ServeHandlerParser.get_service(
+                self.handler, self.workdir, hijack=Hijack(True, rc_dir)
+            )
             file = self.target_dir / self.sw_dir / EVALUATION_SVC_META_FILE_NAME
             ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
 

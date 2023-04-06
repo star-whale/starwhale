@@ -200,9 +200,10 @@ def generate_jobs_yaml(
     with _jobs_global_lock:
         jobs = {job_name: deepcopy(_jobs_global.get(job_name))}
 
-        _jobs_global.__delitem__(job_name)  # type: ignore[func-returns-value]
+        if _jobs_global.__contains__(job_name):
+            _jobs_global.__delitem__(job_name)  # type: ignore[func-returns-value]
 
-    if not jobs:
+    if not jobs.get(job_name):
         raise RuntimeError(f"not found any jobs for {job_name}")
 
     _validate_jobs_dag(jobs)
