@@ -36,7 +36,7 @@ from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
     EVALUATION_SVC_META_FILE_NAME,
     DEFAULT_FINETUNE_JOBS_FILE_NAME,
-    DEFAULT_EVALUATION_JOBS_FILE_NAME,
+    DEFAULT_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
@@ -258,11 +258,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
         ensure_dir(_run_dir)
 
-        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = EvaluationHandlerParser(
+            yaml_path = JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
                 target_dir=_run_dir,
@@ -339,11 +339,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         _project_uri = URI(project, expected_type=URIType.PROJECT)
 
-        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_FINETUNE_JOBS_FILE_NAME
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = FinetuneHandlerParser(
+            yaml_path = JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
                 target_dir=workdir,  # todo use tmp?
@@ -442,7 +442,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest = self._get_bundle_info()
         _store = self.store
         _om = {}
-        yaml_path = _store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+        yaml_path = _store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME
         if _store.snapshot_workdir.exists():
             if yaml_path.exists():
                 _om = load_yaml(yaml_path)
@@ -551,7 +551,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(workdir=workdir, yaml_path=yaml_path),
             ),
             (
-                EvaluationHandlerParser(
+                JobHandlerParser(
                     workdir=workdir,
                     handler=_model_config.run.handler,
                     target_dir=self.store.src_dir,
@@ -712,11 +712,11 @@ class HandlerParser:
         ...
 
 
-class EvaluationHandlerParser(HandlerParser):
+class JobHandlerParser(HandlerParser):
     def run(self, raise_err: bool = True) -> t.Any:
         try:
             yaml_path = (
-                self.target_dir / self.sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+                self.target_dir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
             )
             generate_jobs_yaml(
                 run_handler=self.handler,
@@ -804,23 +804,6 @@ class ServeHandlerParser(HandlerParser):
                 shutil.copy2(f, dst)
         except Exception as e:
             logger.error("error in serve handler parse processing", e)
-            if raise_err:
-                raise e
-
-
-class FinetuneHandlerParser(HandlerParser):
-    def run(self, raise_err: bool = True) -> t.Any:
-        try:
-            yaml_path = self.target_dir / self.sw_dir / DEFAULT_FINETUNE_JOBS_FILE_NAME
-            generate_jobs_yaml(
-                job_name=DEFAULT_FINETUNE_JOB_NAME,
-                run_handler=self.handler,
-                workdir=self.workdir,
-                yaml_path=yaml_path,
-            )
-            return yaml_path
-        except Exception as e:
-            logger.error("error in fine tune handler parse processing", e)
             if raise_err:
                 raise e
 

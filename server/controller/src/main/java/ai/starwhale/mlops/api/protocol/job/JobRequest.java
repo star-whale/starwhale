@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.domain.job.JobType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
@@ -46,4 +47,7 @@ public class JobRequest implements Serializable {
 
     @JsonProperty("stepSpecOverWrites")
     private String stepSpecOverWrites;
+
+    @JsonProperty("type")
+    private JobType type = JobType.EVALUATION;
 }

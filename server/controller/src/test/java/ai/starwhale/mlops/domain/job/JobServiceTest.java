@@ -218,11 +218,11 @@ public class JobServiceTest {
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", "stepSpec1");
+                 "", "1", "stepSpec1", JobType.EVALUATION);
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "stepSpec2");
+                "", "1", "stepSpec2", JobType.FINE_TUNE);
         assertThat(res, is(1L));
     }
 

@@ -480,7 +480,7 @@ public class ModelService {
                 .modelId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getSwmp())
-                .evalJobs("")
+                .jobs("")
                 .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
                 .build();
             modelVersionMapper.insert(modelVersionEntity);
@@ -540,7 +540,7 @@ public class ModelService {
             jobContent = new String(
                     Objects.requireNonNull(
                             TarFileUtil.getContentFromTarFile(
-                                multipartFile.getInputStream(), ".starwhale", "eval_jobs.yaml")
+                                multipartFile.getInputStream(), ".starwhale", "jobs.yaml")
                     )
             );
             TarFileUtil.extract(inputStream, (name, size, in) ->
@@ -554,7 +554,7 @@ public class ModelService {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         // update job content
-        modelVersionEntity.setEvalJobs(jobContent);
+        modelVersionEntity.setJobs(jobContent);
         modelVersionMapper.update(modelVersionEntity);
     }
 

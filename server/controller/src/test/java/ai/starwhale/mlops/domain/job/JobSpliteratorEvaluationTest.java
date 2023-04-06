@@ -44,9 +44,27 @@ public class JobSpliteratorEvaluationTest {
         Job mockJob = jobMockHolder.mockJob();
         mockJob.setCurrentStep(null);
         mockJob.setSteps(null);
+        mockJob.setStatus(JobStatus.CREATED);
         mockJob.getModel().setStepSpecs(List.of(
-                        StepSpec.builder().name("a").taskNum(1).resources(List.of()).build(),
-                        StepSpec.builder().name("b").taskNum(1).resources(List.of()).needs(List.of("a")).build()
+                        StepSpec.builder()
+                            .jobName("default")
+                            .name("a")
+                            .taskNum(1)
+                            .resources(List.of())
+                            .build(),
+                        StepSpec.builder()
+                            .jobName("default")
+                            .name("b")
+                            .taskNum(1)
+                            .resources(List.of())
+                            .needs(List.of("a"))
+                            .build(),
+                        StepSpec.builder()
+                            .jobName("fine_tune")
+                            .name("m")
+                            .taskNum(1)
+                            .resources(List.of())
+                            .build()
                 )
         );
         mockJob.setStepSpec("");
@@ -56,14 +74,10 @@ public class JobSpliteratorEvaluationTest {
         JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
                 new StoragePathCoordinator("/test"), taskMapper, jobDao, stepMapper,
                 mock(JobSpecParser.class));
-        Job build = Job.builder()
-                .id(1L)
-                .status(JobStatus.CREATED)
-                .stepSpec("xxx")
-                .build();
-        jobSpliteratorEvaluation.split(build);
-        build.setStatus(JobStatus.RUNNING);
-        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(build));
+
+        jobSpliteratorEvaluation.split(mockJob);
+        mockJob.setStatus(JobStatus.RUNNING);
+        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(mockJob));
 
     }
 }

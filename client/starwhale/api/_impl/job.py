@@ -186,10 +186,7 @@ def _preload_to_register_jobs(run_handler: str, workdir: Path) -> None:
 
 
 def generate_jobs_yaml(
-    run_handler: str,
-    workdir: t.Union[Path, str],
-    yaml_path: t.Union[Path, str],
-    job_name: str = DEFAULT_EVALUATION_JOB_NAME,
+    run_handler: str, workdir: t.Union[Path, str], yaml_path: t.Union[Path, str]
 ) -> None:
     workdir = Path(workdir)
     logger.debug(f"ingest steps from run_handler {run_handler} at {workdir}")
@@ -198,13 +195,13 @@ def generate_jobs_yaml(
 
     global _jobs_global, _jobs_global_lock
     with _jobs_global_lock:
-        jobs = {job_name: deepcopy(_jobs_global.get(job_name))}
+        jobs = deepcopy(_jobs_global)
 
-        if _jobs_global.__contains__(job_name):
-            _jobs_global.__delitem__(job_name)  # type: ignore[func-returns-value]
+        _names = list(_jobs_global.keys())
+        [_jobs_global.__delitem__(n) for n in _names]  # type: ignore[func-returns-value]
 
-    if not jobs.get(job_name):
-        raise RuntimeError(f"not found any jobs for {job_name}")
+    if not jobs:
+        raise RuntimeError("not found any jobs")
 
     _validate_jobs_dag(jobs)
     ensure_file(

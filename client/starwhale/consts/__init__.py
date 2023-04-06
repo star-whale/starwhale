@@ -20,7 +20,7 @@ DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 
 # evaluation related constants
 DEFAULT_EVALUATION_JOB_NAME = "default"
-DEFAULT_EVALUATION_JOBS_FILE_NAME = "eval_jobs.yaml"
+DEFAULT_JOBS_FILE_NAME = "jobs.yaml"
 DEFAULT_FINETUNE_JOB_NAME = "fine_tune"
 DEFAULT_FINETUNE_JOBS_FILE_NAME = "fine_tune_jobs.yaml"
 EVALUATION_SVC_META_FILE_NAME = "svc.json"

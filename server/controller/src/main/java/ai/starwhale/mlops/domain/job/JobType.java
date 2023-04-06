@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.domain.job;
 
 public enum JobType {
-    EVALUATION, TRAIN, SERVING
+    EVALUATION, TRAIN, FINE_TUNE, SERVING, CUSTOM
 }
