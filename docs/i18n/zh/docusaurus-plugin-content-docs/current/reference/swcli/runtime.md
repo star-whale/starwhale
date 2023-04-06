@@ -30,21 +30,18 @@ swcli [全局选项] model [选项] <SUBCOMMAND> [参数]...
 ## swcli runtime activate {#activate}
 
 ```bash
-swcli [全局选项] runtime activate [选项]
+swcli [全局选项] runtime activate [选项] URI
 ```
 
-`runtime activate`根据指定的运行时创建一个全新的Python环境，类似`source venv/bin/activate`或`conda activate xxx`的效果。关闭当前shell或切换到其他shell后，需要重新激活Runtime。
+`runtime activate`根据指定的运行时创建一个全新的Python环境，类似`source venv/bin/activate`或`conda activate xxx`的效果。关闭当前shell或切换到其他shell后，需要重新激活Runtime。`URI` 参数为Runtime URI。
 
-**`runtime activate`仅适用于[Standalone实例](../../instances/standalone/index.md).**
+**`runtime activate`仅适用于[Standalone实例](../../instances/standalone/index.md).** Activate命令激活环境时，会检测Runtime URI对应的环境是否在本地构建过，如果没有，则自动构建venv或conda环境，并下载Runtime对应的Python依赖包。
 
 对于已经激活的Runtime，如果想要退出该环境，需要在venv环境中执行 `deactivate` 命令或conda环境中执行`conda deactivate` 命令。
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
-| `--uri` or `-u` | ❌ | String | | 运行时URI |
-| `--path` | `-p` | ❌ | String | | venv或conda目录路径 |
-
-`--uri`和`--path`不能同时使用。
+|`--force-restore`|`-f`|❌|Bool|False|对Runtime强制重新restore|
 
 ## swcli runtime build {#build}
 

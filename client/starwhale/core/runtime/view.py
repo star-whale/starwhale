@@ -52,8 +52,8 @@ class RuntimeTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
-    def activate(cls, path: str = "", uri: str = "") -> None:
-        Runtime.activate(path, uri)
+    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+        Runtime.activate(uri, force_restore)
 
     @BaseTermView._only_standalone
     def dockerize(

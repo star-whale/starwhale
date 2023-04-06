@@ -14,7 +14,6 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
-from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
 
@@ -22,7 +21,7 @@ from .view import get_term_view, RuntimeTermView
 @click.group(
     "runtime",
     cls=AliasedGroup,
-    help="Runtime management, quickstart/build/copy/activate/restore...",
+    help="Runtime management, quickstart/build/copy/activate...",
 )
 @click.pass_context
 def runtime_cmd(ctx: click.Context) -> None:
@@ -264,7 +263,8 @@ def _history(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> Non
     view(runtime).history(fullname)
 
 
-@runtime_cmd.command("restore")
+# hide runtime restore command for the users in the command help output.
+@runtime_cmd.command("restore", hidden=True)
 @click.argument("target")
 def _restore(target: str) -> None:
     """
@@ -409,18 +409,24 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 @runtime_cmd.command(
     "activate",
     aliases=["actv"],
-    help="[Only Standalone]Activate python runtime environment for development",
+    help="",
 )
-@click.option("-u", "--uri", help="Runtime uri which has already been restored")
-@click.option("-p", "--path", help="User's runtime workdir")
-def _activate(uri: str, path: str) -> None:
-    if uri and path:
-        raise ExclusiveArgsError(f"only uri({uri}) or path({path}) can take effect")
+@click.argument("uri")
+@click.option(
+    "-f",
+    "--force-restore",
+    help="Force to restore runtime into the related snapshot workdir even the runtime has been restored",
+)
+def _activate(uri: str, force_restore: bool) -> None:
+    """
+    [Only Standalone]Activate python runtime environment for development
 
-    if not uri and not path:
-        raise MissingFieldError("uri or path is required.")
+    When the runtime has not been restored, activate command will restore runtime automatically.
 
-    RuntimeTermView.activate(path, uri)
+    URI: Runtime uri in the standalone instance
+    """
+    _uri = URI(uri, expected_type=URIType.RUNTIME)
+    RuntimeTermView.activate(_uri, force_restore)
 
 
 @runtime_cmd.command("lock")

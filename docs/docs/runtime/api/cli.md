@@ -140,31 +140,6 @@ swcli runtime extract [OPTIONS] RUNTIME
     👏 extracted @ /home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni 🎉
     ```
 
-## Restore runtime python environment
-
-```bash
-swcli runtime restore [OPTIONS] TARGET
-```
-
-- This command will prepare dirs, restore python environment with virtualenv or conda, and show activate command. It will help you create a runtime environment, then run an evaluation job or build a dataset.
-- `TARGET` argument is `RUNTIME URI` or runtime working dir path.
-- Restore python environment will run `pip install` command to download python packages, which may take some time.
-- In the Starwhale agent docker environment, only the working dir path is supported.
-
-- Example:
-
-    ```bash
-    ❯ swcli runtime restore mnist/version/g4zwkyjumm2d
-    🏌 try to restore python runtime environment/home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni ...
-    🍞 restore python:3.7.13 venv@/home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni, use local env data: False
-    👏 create venv@/home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni/dep/python/venv, python:3.7.13 (default, Mar 29 2022, 02:18:16)
-    [GCC 7.5.0]
-     👏 activate.sw and activate.host is generated at /home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni
-     🧭 run cmd:
-             Docker Container:  $(sh /home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni/activate.sw)
-             Host:  $(sh /home/liutianwei/.cache/starwhale/self/workdir/runtime/mnist/g4/g4zwkyjumm2dinrtmftdgyjznb4xcni/activate.host)
-    ```
-
 ## List runtimes
 
 ```bash
