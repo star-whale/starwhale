@@ -9,6 +9,7 @@ import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Transfer } from '@starwhale/ui/Transfer'
 import Button from '@starwhale/ui/Button'
+import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
     transferWrapper: {
@@ -63,6 +64,7 @@ type T = string
 const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
     const styles = useStyles()
     const [, theme] = useStyletron()
+    const [t] = useTranslation()
     const [isOpen, setIsOpen] = React.useState(false)
     const { expandedWidth, expanded, setExpanded } = useDrawer()
 
@@ -159,11 +161,13 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                         },
                     }}
                 >
-                    Manage Columns
+                    {t('table.column.manage')}
                 </Button>
             )}
             <Wrapper>
-                <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>Manage Columns</div>
+                <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>
+                    {t('table.column.manage')}
+                </div>
                 <div className={cn('body', props.isInline ? 'body--inline' : '', 'inherit-height')}>
                     <Transfer
                         columns={columns}

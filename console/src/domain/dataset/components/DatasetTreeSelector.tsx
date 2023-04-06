@@ -37,6 +37,13 @@ export function DatasetTreeSelector(props: any) {
                                 <DatasetTreeNode>
                                     <DatasetLabel version={item} dataset={dataset} />
                                     <Button
+                                        overrides={{
+                                            BaseButton: {
+                                                style: {
+                                                    flexShrink: 0,
+                                                },
+                                            },
+                                        }}
                                         key='version-history'
                                         kind='tertiary'
                                         onClick={() =>

@@ -11,6 +11,7 @@ import { GridLayout } from './component/GridBasicLayout'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
+import useTranslation from '@/hooks/useTranslation'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:section',
@@ -188,11 +189,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
 }
 
 const EmptyPlaceholder = () => {
+    const [t] = useTranslation()
+
     return (
         <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
             <IconFont type='emptyChart' size={64} />
-            {/* eslint-disable-next-line react/no-unescaped-entities */}
-            <span>Click "Add Chart" to add visualizations</span>
+            <span>{t('panel.list.placeholder')}</span>
         </BusyPlaceholder>
     )
 }

@@ -13,6 +13,7 @@ import WidgetFormModal from '../form/WidgetFormModal'
 import WidgetPreviewModal from '../form/WidgetPreviewModal'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
+import useTranslation from '@/hooks/useTranslation'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -51,7 +52,13 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
     const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
     const [viewWidget, setViewWidget] = useState<PanelPreviewEvent>()
     const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
-    const form = useRef(new WidgetFormModel().initPanelSchema())
+    const form = useRef(new WidgetFormModel())
+
+    // @FIXME useTranslation
+    const [t] = useTranslation()
+    useEffect(() => {
+        form.current.initPanelSchema()
+    }, [t])
 
     const { toSave } = useRestoreState(store, initialState, dynamicVars)
 

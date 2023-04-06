@@ -8,10 +8,11 @@ import { expandBorder } from '@/utils'
 import { useEventCallback } from '@starwhale/core/utils'
 import FilterOperateSelector, { FilterOperateSelectorValueT } from './filter-operate-selector'
 import type { ColumnT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 import FilterShell from './filter-shell'
 import Checkbox from '../../Checkbox'
 import IconFont from '../../IconFont'
+import useTranslation from '@/hooks/useTranslation'
 
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 
@@ -34,6 +35,7 @@ export const CategoricalFilter = React.forwardRef<
     CategoricalFilterProps
 >((props, ref) => {
     const [css, theme] = useStyletron()
+    const [t] = useTranslation()
     // const locale = React.useContext(LocaleContext)
 
     const [categories, setCategories] = React.useState<FilterOperateSelectorValueT[]>(
@@ -164,7 +166,7 @@ export const CategoricalFilter = React.forwardRef<
                 onClick={handleAddFilter}
                 startEnhancer={() => <IconFont type='item-add' size={16} />}
             >
-                Add filter
+                {t('table.filter.add')}
             </Button>
         </div>
     )

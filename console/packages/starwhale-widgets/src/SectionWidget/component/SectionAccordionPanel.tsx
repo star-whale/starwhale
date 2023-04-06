@@ -7,11 +7,13 @@ import { Panel, PanelProps } from 'baseui/accordion'
 import React, { useCallback } from 'react'
 import { expandBorder, expandMargin, expandPadding } from '@starwhale/ui/utils'
 import SectionPopover from './SectionPopover'
+import useTranslation from '@/hooks/useTranslation'
 
 // @FIXME type define
 const Header = React.forwardRef((props, ref) => {
     // console.log('Header', props)
     const { $expanded, children, onClick, onPanelAdd } = props as any
+    const [t] = useTranslation()
 
     const actions = {
         // @ts-ignore
@@ -86,7 +88,7 @@ const Header = React.forwardRef((props, ref) => {
                     },
                 }}
             >
-                Add Chart
+                {t('panel.chart.add')}
             </Button>
         </div>
     )

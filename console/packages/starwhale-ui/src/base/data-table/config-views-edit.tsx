@@ -8,6 +8,7 @@ import ConfigManageColumns from './config-manage-columns'
 import Input from '../../Input'
 import Select from '../../Select'
 import ConfigQuery from './config-query'
+import useTranslation from '@/hooks/useTranslation'
 
 type ViewListPropsT = {
     view: ConfigT
@@ -16,7 +17,7 @@ type ViewListPropsT = {
 }
 function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     const [css] = useStyletron()
-    // const [t] = useTranslation()
+    const [t] = useTranslation()
     const [name, setName] = React.useState(props.view?.name ?? '')
     const [sortBy, setSortBy] = React.useState(props.view?.sortBy ?? '')
     const [queries, setQueries] = React.useState(props.view?.queries ?? [])
@@ -61,9 +62,9 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     flexDirection: 'column',
                 })}
             >
-                <LabelSmall>View Name *</LabelSmall>
+                <LabelSmall>{t('table.view.name')} *</LabelSmall>
                 <Input
-                    placeholder='input text'
+                    placeholder={t('table.view.name.placeholder')}
                     required
                     clearable
                     value={name}
@@ -84,7 +85,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     flexDirection: 'column',
                 })}
             >
-                <LabelSmall>Add Filter</LabelSmall>
+                <LabelSmall>{t('table.filter.add')}</LabelSmall>
                 <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
             </div>
             <div className='inherit-height' style={{ minHeight: '300px' }}>
@@ -106,7 +107,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     flexDirection: 'column',
                 })}
             >
-                <LabelSmall>Sort</LabelSmall>
+                <LabelSmall>{t('table.sort.by')}</LabelSmall>
                 <div
                     style={{
                         display: 'grid',
@@ -117,7 +118,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     <Select
                         size='compact'
                         options={$keys}
-                        placeholder='select...'
+                        placeholder={t('table.sort.placeholder')}
                         clearable={false}
                         onChange={(params: any) => {
                             if (!params.option) {
@@ -134,8 +135,8 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                         name='number'
                         align={ALIGN.horizontal}
                     >
-                        <Radio value='ASC'>Ascending</Radio>
-                        <Radio value='DESC'>Descending</Radio>
+                        <Radio value='ASC'>{t('table.sort.asc')}</Radio>
+                        <Radio value='DESC'>{t('table.sort.desc')}</Radio>
                     </RadioGroup>
                 </div>
             </div>

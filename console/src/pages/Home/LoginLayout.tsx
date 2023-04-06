@@ -1,5 +1,4 @@
 import React from 'react'
-import bg from '@/assets/bg.jpg'
 import BaseLayout from '../BaseLayout'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
@@ -16,9 +15,9 @@ export default function LoginLayout({ children, style }: ILoginLayoutProps) {
             contentStyle={{
                 height: '100%',
             }}
+            className='login-bg'
             style={{
                 backgroundColor: theme.brandLoginBackground,
-                backgroundImage: `url(${bg})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',

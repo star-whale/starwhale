@@ -47,7 +47,7 @@ const customPrimaryColors = {
 }
 
 const primitives: Partial<Primitives> = {
-    primaryFontFamily: 'Source Sans Pro',
+    primaryFontFamily: 'Inter',
 }
 
 const overrides: {
