@@ -79,8 +79,8 @@ class StandaloneModelTestCase(TestCase):
     ) -> None:
         from starwhale.api._impl.job import _jobs_global
 
-        _jobs_global["default"] = []
-        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = []
+        _jobs_global["default"] = [Step(name="ppl")]
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = [Step(name="ft")]
 
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
@@ -185,8 +185,8 @@ class StandaloneModelTestCase(TestCase):
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list[self.name]) == 0
 
-        _jobs_global["default"] = []
-        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = []
+        _jobs_global["default"] = [Step(name="ppl")]
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = [Step(name="ft")]
         ModelTermView.build(self.workdir, "self", Path(self.workdir) / "model.yaml")
 
     def test_get_file_desc(self):
