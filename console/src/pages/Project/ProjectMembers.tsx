@@ -40,7 +40,7 @@ export default function ProjectMembers() {
         const items = [
             {
                 title: t('Project List'),
-                path: `/projects/`,
+                path: '/projects/',
             },
             {
                 title: project?.name,
@@ -73,7 +73,6 @@ export default function ProjectMembers() {
                     }}
                 >
                     {breadcrumbItems.map((item, idx) => {
-                        const Icon = item?.icon
                         return (
                             <div
                                 role='button'
@@ -96,7 +95,6 @@ export default function ProjectMembers() {
                                         : undefined
                                 }
                             >
-                                {Icon}
                                 <span>{item.title}</span>
                             </div>
                         )

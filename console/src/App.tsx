@@ -2,7 +2,7 @@
 import React from 'react'
 import { Client as Styletron } from 'styletron-engine-atomic'
 import { Provider as StyletronProvider } from 'styletron-react'
-import { BaseProvider } from 'baseui'
+import { BaseProvider, LocaleProvider } from 'baseui'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { useSidebar } from '@/hooks/useSidebar'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -12,7 +12,6 @@ import { ToasterContainer } from 'baseui/toast'
 import { ConfirmCtxProvider } from '@starwhale/ui/Modal'
 import Routes from './routes'
 import { AuthProvider } from './api/Auth'
-import { LocaleProvider } from 'baseui'
 import i18n from './i18n'
 import locales from '@starwhale/ui/i18n'
 
@@ -27,7 +26,7 @@ export default function App(): any {
     const overrideLanguage = React.useMemo(() => {
         // @ts-ignore
         return locales?.[i18n.language] ?? {}
-    }, [i18n.language])
+    }, [])
 
     return (
         <QueryClientProvider client={queryClient}>

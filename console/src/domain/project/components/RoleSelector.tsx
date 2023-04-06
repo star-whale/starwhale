@@ -2,8 +2,6 @@ import Select from '@starwhale/ui/Select'
 import React from 'react'
 import { useFetchRoleList } from '@project/hooks/useFetchRoleList'
 import useTranslation from '@/hooks/useTranslation'
-import IconFont from '@starwhale/ui/IconFont'
-import { expandBorder } from '@starwhale/ui/utils'
 
 export interface IRoleSelectorProps {
     value?: string

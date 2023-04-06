@@ -13,6 +13,7 @@ import Button from '../../../Button'
 import { LocaleContext } from 'baseui/locale'
 import Checkbox from '../../../Checkbox'
 import { themedUseStyletron } from '../../../theme/styletron'
+import { DataTableLocaleT } from '../locale'
 
 type HeaderCellPropsT = {
     index: number
@@ -40,7 +41,8 @@ type HeaderCellPropsT = {
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
-    const locale = React.useContext(LocaleContext)
+    //@ts-ignore
+    const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
     const [css, theme] = themedUseStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)

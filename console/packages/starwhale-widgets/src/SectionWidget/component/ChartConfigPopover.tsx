@@ -15,7 +15,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
             { label: t('panel.chart.edit'), type: 'edit' },
             { label: t('panel.chart.delete'), type: 'delete' },
         ]
-    }, [])
+    }, [t])
 
     return (
         <StatefulPopover

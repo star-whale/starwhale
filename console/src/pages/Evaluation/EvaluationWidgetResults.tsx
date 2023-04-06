@@ -205,6 +205,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 interface Layout {
     name: string
     content: string | object
+    label: string
 }
 
 function EvaluationWidgetResults() {
@@ -242,7 +243,7 @@ function EvaluationWidgetResults() {
             const layout = tryParseSimplified(data) ?? data
             updateLayout({ name: 'model-builtin', content: layout, label: t('panel.view.config.model-buildin') })
         })
-    }, [projectId, job, updateLayout])
+    }, [projectId, job, updateLayout, t])
 
     useEffect(() => {
         if (!storeKey) {
@@ -255,7 +256,7 @@ function EvaluationWidgetResults() {
             setCurrentLayout(layout)
             updateLayout(layout)
         })
-    }, [projectId, job, storeKey, updateLayout])
+    }, [projectId, job, storeKey, updateLayout, t])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>

@@ -49,6 +49,7 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
         props.overrides
     )
 
+    // eslint-disable-next-line no-param-reassign
     props.placeholder ??= t('selector.placeholder')
 
     // eslint-disable-next-line  react/jsx-props-no-spreading

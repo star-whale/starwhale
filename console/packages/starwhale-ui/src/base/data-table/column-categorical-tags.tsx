@@ -19,6 +19,7 @@ import { matchesQuery, splitByQuery } from './text-search'
 import { Tag, KIND as TAG_KIND, VARIANT as TAG_VARIANT } from 'baseui/tag'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import IconFont from '../../IconFont'
+import { DataTableLocaleT } from './locale'
 
 type OptionsT = SharedColumnOptionsT<string>
 
@@ -261,7 +262,8 @@ type CategoricalEditPopoverProps = {
 
 export function CategoricalEditPopover(props: CategoricalEditPopoverProps) {
     const [css, theme] = useStyletron()
-    const locale = React.useContext(LocaleContext)
+    //@ts-ignore
+    const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
     const inputRef = React.useRef(null)
     React.useEffect(() => {
         if (inputRef.current) {

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useContext } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { headerHeight, languages } from '@/consts'
+import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
 import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
