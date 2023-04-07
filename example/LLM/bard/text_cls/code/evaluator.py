@@ -2,7 +2,7 @@ import os
 from Bard import Chatbot
 # https://github.com/acheong08/Bard
 # This evaluation shall be run in USA or UK, or errors would be raised
-bard_key = os.getenv("__Secure-1PSID")
+bard_key = os.getenv("BARD_TOKEN")
 chatbot = Chatbot(bard_key)
 
 from starwhale import evaluation, multi_classification
