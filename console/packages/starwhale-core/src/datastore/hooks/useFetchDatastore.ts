@@ -61,9 +61,11 @@ export function useQueryDatasetList(
         {
             tableName,
             start: 0,
-            limit: 0,
+            limit: 1,
             rawResult: true,
             ignoreNonExistingTable: true,
+            encodeWithType: true,
+            keepNone: true,
         },
         enabled
     )
@@ -79,6 +81,8 @@ export function useQueryDatasetList(
             limit,
             rawResult: true,
             ignoreNonExistingTable: true,
+            encodeWithType: true,
+            keepNone: true,
         }
         if (revision) {
             raw.revision = revision

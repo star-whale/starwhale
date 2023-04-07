@@ -82,7 +82,8 @@ export interface QueryTableRequest {
     limit?: number
 
     ignoreNonExistingTable?: boolean
-
+    encodeWithType?: boolean
+    keepNone?: boolean
     rawResult?: boolean
 }
 
