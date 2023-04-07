@@ -1,28 +1,33 @@
 import os
+
 import openai
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 from starwhale import evaluation, multi_classification
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
 _LABEL_NAMES = ["world", "sports", "business", "sci/tech"]
 
 
-def label_number(raw:str) -> None:
+def label_number(raw: str) -> None:
     for idx, l in enumerate(_LABEL_NAMES):
         if l.upper() in raw.upper():
             return idx
     return 0
 
+
 @evaluation.predict
 def ppl(data: dict, **kw):
     # create a completion
     text = data["text"]
-    chat_result = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[
-        {
-            "role": "user",
-            "content": f"please tell me which class does the text below belongs to. world , sports , business  or sci/tech : {text}. Answer me as short as possible"
-        }
-    ])
+    chat_result = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": f"please tell me which class does the text below belongs to. world , sports , business  or sci/tech : {text}. Answer me as short as possible",
+            }
+        ],
+    )
     result_raw = chat_result.choices[0].message.content
     print(f"the class for : {text} is \n {result_raw}")
     return label_number(result_raw)
