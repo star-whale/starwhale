@@ -4,7 +4,7 @@ from starwhale import evaluation
 
 # This evaluation shall be run in USA or UK, or errors would be raised
 # https://github.com/acheong08/Bard
-bard_key = os.getenv("__Secure-1PSID")
+bard_key = os.getenv("BARD_TOKEN")
 chatbot = Chatbot(bard_key)
 
 
