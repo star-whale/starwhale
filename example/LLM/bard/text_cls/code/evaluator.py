@@ -21,7 +21,7 @@ def label_number(raw:str) -> None:
 def ppl(data: dict, **kw):
     text = data["text"]
     result_raw = chatbot.ask(
-        f"please tell me which class does the text below belongs to. world , sports , business  or sci/tech : {text}. Answer me as short as possible")
+        f"please tell me which class does the text below belongs to. world , sports , business  or sci/tech : {text}. Answer me as short as possible").get("content")
     print(f"the class for : {text} is \n {result_raw}")
     return label_number(result_raw)
 

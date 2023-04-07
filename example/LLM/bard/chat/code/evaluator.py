@@ -11,6 +11,6 @@ chatbot = Chatbot(bard_key)
 @evaluation.predict
 def ppl(data: dict, **kw):
     text_ = data["text"]
-    response = chatbot.ask(text_)
+    response = chatbot.ask(text_).get("content")
     print(f"U: {text_}\n Bard: {response} \n")
     return response
