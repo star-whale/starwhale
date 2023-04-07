@@ -145,9 +145,9 @@ class TestCli:
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
             )
-        dss_ = self.datasets.get(_uri.object.name, [])
+        dss_ = self.datasets.get(ds_expl.name, [])
         dss_.append(_uri)
-        self.datasets.update({_uri.object.name: dss_})
+        self.datasets.update({ds_expl.name: dss_})
         assert len(self.dataset_api.list())
         assert self.dataset_api.info(_uri.full_uri)
         return _uri
