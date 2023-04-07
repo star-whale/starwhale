@@ -57,20 +57,24 @@ swcli project info local/project/self  # 查看本地实例中的self项目信�
 swcli model info mnist/version/hbtdenjxgm4ggnrtmftdgyjzm43tioi  # 检查模型信息，模型名称：mnist，版本：hbtdenjxgm4ggnrtmftdgyjzm43tioi
 swcli model remove mnist/version/hbtdenj  # 使用短版本ID
 swcli model info mnist  # 检查mnist模型信息
-swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # 使用版本标签
+swcli model run mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # 使用版本标签
 ```
 
-## 评估URI {#evaluation}
+## 作业URI {#job}
 
-- 格式: `[<项目URI>/eval/]<evaluation id>`.
+- 格式: `[<项目URI>/job/]<job id>`.
 - 如果未指定项目URI，将使用默认项目。
 
 例子：
 
 ```bash
-swcli eval info mezdayjzge3w   # 查看默认实例和默认项目中的mezdayjzge3w版本
-swcli eval info local/project/self/eval/mezday # 检查本地实例，self项目，评估id:mezday
+swcli job info mezdayjzge3w   # 查看默认实例和默认项目中的mezdayjzge3w版本
+swcli job info local/project/self/job/mezday # 检查本地实例，self项目，作业id:mezday
 ```
+
+## 默认实例 {#defaultInstance}
+
+当项目URI中的实例部分被省略时，将使用默认实例进行替代。默认实例是由`swcli instance login`或`swcli instance use`指定的。
 
 ## 默认项目 {#defaultProject}
 

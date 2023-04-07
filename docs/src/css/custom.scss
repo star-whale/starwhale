@@ -3,6 +3,7 @@
 
 @font-face {
   font-family: 'Inter';
+  ;
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
@@ -53,8 +54,8 @@ html {
   --ifm-hr-margin-vertical: 4rem;
   --docusaurus-announcement-bar-height: 40px !important;
 
-  --ifm-font-family-monospace: 'Roboto Mono', sans-serif;
-  --ifm-font-family-base: 'Inter', sans-serif;
+  --ifm-font-family-monospace: 'Roboto Mono',"PingFang SC","Hiragino Sans GB","Heiti SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;
+  --ifm-font-family-base: 'Inter',"PingFang SC","Hiragino Sans GB","Heiti SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;
   --ifm-font-size-base: 16px;
 
   --max-page-width: 100%;

@@ -8,8 +8,11 @@
     "sidebar.mainSidebar.category.Reference": {
         "message": "参考指南"
     },
-    "sidebar.mainSidebar.category.Guides": {
+    "sidebar.mainSidebar.category.User Guides": {
         "message": "用户指南"
+    },
+    "sidebar.mainSidebar.category.Starwhale Instances": {
+        "message": "Starwhale实例"
     },
     "sidebar.mainSidebar.category.Command Line Interface": {
         "message": "Starwhale Client"
