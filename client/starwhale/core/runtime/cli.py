@@ -14,6 +14,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
+from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
 
 from .view import get_term_view, RuntimeTermView
 from .model import RuntimeInfoFilter
@@ -129,91 +130,235 @@ def _quickstart(
     )
 
 
-@runtime_cmd.command(
-    "build",
-    help="[Only Standalone]Create and build a relocated, shareable, packaged runtime bundle. Support python and native libs.",
+@runtime_cmd.command("build")
+@optgroup.group(
+    "\n  ** Acceptable build sources",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of the runtime build source, default is runtime.yaml source",
 )
-@click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option(
-    "-p",
-    "--project",
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-c",
+    "--conda",
     default="",
-    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
+    help="from conda environment name",
 )
-@click.option(
-    "-f",
-    "--runtime-yaml",
-    default=DefaultYAMLName.RUNTIME,
-    help="Runtime yaml filename, default use ${workdir}/runtime.yaml file",
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-cp",
+    "--conda-prefix",
+    default="",
+    help="from conda environment prefix path",
 )
-@click.option(
-    "-gab",
-    "--gen-all-bundles",
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-v",
+    "--venv",
+    help="from virtualenv or python-venv environment prefix path",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-s",
+    "--shell",
     is_flag=True,
-    help="Generate conda or venv files into runtime",
+    help="from current shell, venv or conda environment has been activated",
 )
-@click.option(
-    "-ie", "--include-editable", is_flag=True, help="Include editable packages"
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-y",
+    "--yaml",
+    help="from runtime yaml format file path.Default use runtime.yaml in the work directory(pwd)",
+    default=DefaultYAMLName.RUNTIME,
 )
-@click.option(
-    "-ilw", "--include-local-wheel", is_flag=True, help="Include local wheel packages"
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-d",
+    "--docker",
+    default="",
+    help="from docker image",
 )
-@click.option(
+@optgroup.group(
+    "\n  ** Runtime YAML Source Configuration",
+    help="The configurations only work for `--from-runtime-yaml` source",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-del",
     "--disable-env-lock",
     is_flag=True,
-    help="Disable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
+    help="Disable virtualenv/conda environment dependencies lock",
 )
-@click.option(
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-nc",
     "--no-cache",
     is_flag=True,
     help="Invalid the cached(installed) packages in the isolate env when env-lock is enabled, \
     only for auto-generated environments",
 )
-@optgroup.group(  # type: ignore
-    "Python environment selectors",
-    cls=MutuallyExclusiveOptionGroup,
-    help="The selector of the python environment, default is the starwhale auto create env prefix path",
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-dad",
+    "--download-all-deps",
+    is_flag=True,
+    help="Download all python dependencies into the runtime bundle file, the file size of swrt maybe very large.",
+    hidden=True,
 )
-@optgroup.option(  # type: ignore
-    "-ep", "--env-prefix-path", default="", help="Conda or virtualenv prefix path"
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-ie",
+    "--include-editable",
+    is_flag=True,
+    help="Include editable packages",
+    hidden=True,
 )
-@optgroup.option(  # type: ignore
-    "-en",
-    "--env-name",
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-ilw",
+    "--include-local-wheel",
+    is_flag=True,
+    help="Include local wheel packages",
+    hidden=True,
+)
+@optgroup.group(
+    "\n  ** Conda/Venv/Shell Sources Configurations",
+    help="The configurations only work for `--from-conda-name`, `--from-conda-prefix-path`, `--from-venv-prefix-path` and `--from-shell` sources",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--cuda",
+    type=click.Choice(_SUPPORT_CUDA + [""], case_sensitive=False),
     default="",
-    help="conda name in lock or gen all bundles process",
+    help="cuda version, works for shell, conda name, conda prefix path and venv prefix path sources",
 )
-@optgroup.option(  # type: ignore
-    "-es", "--env-use-shell", is_flag=True, default=False, help="use current shell"
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--cudnn",
+    default="",
+    type=click.Choice(list(_SUPPORT_CUDNN.keys()) + [""], case_sensitive=False),
+    help="cudnn version, works for shell, conda name, conda prefix path and venv prefix path sources",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--arch",
+    type=click.Choice(
+        [SupportArch.AMD64, SupportArch.ARM64, SupportArch.NOARCH],
+        case_sensitive=False,
+    ),
+    default=SupportArch.NOARCH,
+    help="system architecture, works for shell, conda name, conda prefix path and venv prefix path sources",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-dad",
+    "--download-all-deps",
+    is_flag=True,
+    help="Download all python dependencies into the runtime bundle file, the file size of swrt maybe very large.",
+    hidden=True,
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-ie",
+    "--include-editable",
+    is_flag=True,
+    help="Include editable packages",
+    hidden=True,
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-ilw",
+    "--include-local-wheel",
+    is_flag=True,
+    help="Include local wheel packages",
+    hidden=True,
+)
+@optgroup.group("\n  ** Global Configurations")
+@optgroup.option("-n", "--name", default="", help="runtime name")  # type: ignore[no-untyped-call]
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
 )
 def _build(
-    workdir: str,
+    name: str,
     project: str,
-    runtime_yaml: str,
-    gen_all_bundles: bool,
+    cuda: str,
+    cudnn: str,
+    arch: str,
+    download_all_deps: bool,
     include_editable: bool,
     include_local_wheel: bool,
     disable_env_lock: bool,
     no_cache: bool,
-    env_prefix_path: str,
-    env_name: str,
-    env_use_shell: bool,
+    conda: str,
+    conda_prefix: str,
+    venv: str,
+    shell: bool,
+    yaml: str,
+    docker: str,
 ) -> None:
-    RuntimeTermView.build(
-        workdir=workdir,
-        project=project,
-        yaml_name=runtime_yaml,
-        gen_all_bundles=gen_all_bundles,
-        include_editable=include_editable,
-        include_local_wheel=include_local_wheel,
-        disable_env_lock=disable_env_lock,
-        no_cache=no_cache,
-        env_prefix_path=env_prefix_path,
-        env_name=env_name,
-        env_use_shell=env_use_shell,
-    )
+    """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
+    Runtime build only works in the Standalone instance.
+
+    Acceptable sources:
+
+        \b
+        - runtime.yaml file: The most flexible and customizable way.By the runtime.yaml file,
+            you can specify the runtime name, python version, conda or venv environment, and the python dependency packages etc.
+        - conda name: Lock the conda environment with conda name and generate the runtime bundle.
+        - conda prefix path: Lock the conda environment with conda prefix path and generate the runtime bundle.
+        - venv prefix path: Lock the virtualenv or python venv environment with venv prefix path and generate the runtime bundle.
+        - shell: Lock the current shell environment and generate the runtime bundle. The current shell must be conda or venv.
+        - docker image: Use the docker image as the runtime directly.
+
+    Examples:
+
+        \b
+        - from runtime.yaml:
+        swcli runtime build  # use the current directory as the workdir and use the default runtime.yaml file
+        swcli runtime build -y example/pytorch/runtime.yaml # use example/pytorch/runtime.yaml as the runtime.yaml file
+        swcli runtime build --yaml runtime.yaml # use runtime.yaml at the current directory as the runtime.yaml file
+
+        \b
+        - from conda name:
+        swcli runtime build -c pytorch # lock pytorch conda environment and use `pytorch` as the runtime name
+        swcli runtime build --conda pytorch --name pytorch-runtime # use `pytorch-runtime` as the runtime name
+        swcli runtime build --conda pytorch --cuda 11.4 # specify the cuda version
+        swcli runtime build --conda pytorch --arch noarch # specify the system architecture
+
+        \b
+        - from conda prefix path:
+        swcli runtime build --conda-prefix /home/starwhale/anaconda3/envs/pytorch # get conda prefix path by `conda info --envs` command
+
+        \b
+        - from venv prefix path:
+        swcli runtime build -v /home/starwhale/.virtualenvs/pytorch
+        swcli runtime build --venv /home/starwhale/.local/share/virtualenvs/pytorch --arch amd64
+
+        \b
+        - from docker image:
+        swcli runtime build --docker pytorch/pytorch:1.9.0-cuda11.1-cudnn8-runtime  # use the docker image as the runtime directly
+
+        \b
+        - from shell:
+        swcli runtime build -s --cuda 11.4 --cudnn 8 # specify the cuda and cudnn version
+        swcli runtime build --shell --name pytorch-runtime # lock the current shell environment and use `pytorch-runtime` as the runtime name
+    """
+    if docker:
+        RuntimeTermView.build_from_docker_image(
+            image=docker, runtime_name=name, project=project
+        )
+    elif conda or conda_prefix or venv or shell:
+        # TODO: support auto mode for cuda, cudnn and arch
+        RuntimeTermView.build_from_python_env(
+            runtime_name=name,
+            conda_name=conda,
+            conda_prefix=conda_prefix,
+            venv_prefix=venv,
+            project=project,
+            cuda=cuda,
+            cudnn=cudnn,
+            arch=arch,
+            download_all_deps=download_all_deps,
+            include_editable=include_editable,
+            include_local_wheel=include_local_wheel,
+        )
+    else:
+        RuntimeTermView.build_from_runtime_yaml(
+            workdir=Path.cwd(),
+            yaml_path=Path(yaml),
+            project=project,
+            runtime_name=name,
+            download_all_deps=download_all_deps,
+            include_editable=include_editable,
+            include_local_wheel=include_local_wheel,
+            no_cache=no_cache,
+            disable_env_lock=disable_env_lock,
+        )
 
 
 @runtime_cmd.command("remove", aliases=["rm"])
@@ -465,9 +610,9 @@ def _activate(uri: str, force_restore: bool) -> None:
 @click.argument("target_dir", default=".")
 @click.option(
     "-f",
-    "--yaml-name",
+    "--yaml-path",
     default=DefaultYAMLName.RUNTIME,
-    help=f"Runtime YAML file name, default is {DefaultYAMLName.RUNTIME}",
+    help=f"Runtime YAML file path, default is {DefaultYAMLName.RUNTIME} at the current working directory",
 )
 @optgroup.group(  # type: ignore
     "Python environment selectors",
@@ -511,7 +656,7 @@ def _activate(uri: str, force_restore: bool) -> None:
 )
 def _lock(
     target_dir: str,
-    yaml_name: str,
+    yaml_path: str,
     env_name: str,
     env_prefix_path: str,
     env_use_shell: bool,
@@ -524,12 +669,12 @@ def _lock(
     """
     [Only Standalone]Lock Python venv or conda environment
 
-    TARGET_DIR: the runtime.yaml and local file dir, default is "."
+    TARGET_DIR: the lock files will store in the `target_dir` , default is "."
     """
 
     RuntimeTermView.lock(
         target_dir,
-        yaml_name,
+        Path(yaml_path),
         env_name,
         env_prefix_path,
         no_cache,
