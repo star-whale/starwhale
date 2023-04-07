@@ -40,7 +40,7 @@
     mv.id as mv_id,
     mv.model_id,
     mv.version_name as mv_version_name,
-    mv.eval_jobs as mv_eval_jobs,
+    mv.jobs as mv_jobs,
     mv.version_tag as mv_version_tag,
     mv.version_meta as mv_version_meta,
     mv.created_time as mv_created_time,
@@ -216,7 +216,7 @@
     <result column="mv_version_meta" property="versionMeta"/>
     <result column="mv_storage_path" property="storagePath"/>
     <result column="mv_manifest" property="manifest"/>
-    <result column="mv_eval_jobs" property="evalJobs"/>
+    <result column="mv_jobs" property="jobs"/>
     <result column="mv_created_time" property="createdTime"/>
     <result column="mv_modified_time" property="modifiedTime"/>
     <result column="owner_id" property="ownerId"/>

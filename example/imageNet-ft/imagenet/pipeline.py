@@ -13,7 +13,7 @@
 #  limitations under the License.
 import os
 from pathlib import Path
-from typing import Union, Any, Optional
+from typing import Union, Any, Optional, Dict
 
 import numpy as np
 from d2l import torch as d2l
@@ -182,10 +182,21 @@ class ImageNetEvaluation(PipelineHandler):
         self.net.eval()
         super().__init__()
 
+    def _pre(self, data: Image) -> torch.Tensor:
+        normalize = torchvision.transforms.Normalize(
+            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+        test_augs = Compose([
+            torchvision.transforms.Resize([256, 256]),
+            torchvision.transforms.CenterCrop(224),
+            torchvision.transforms.ToTensor(),
+            normalize])
+        return torch.stack([test_augs(data.to_pil())]).to(self.device)
+
     @torch.no_grad()
-    def ppl(self, data: Image, index: Union[int, str], **kw) -> Any:
-        output = self.net(data)
-        pred_value = output.argmax(1, axis=1).item()
+    def ppl(self, data: Dict[str, Any], **kw) -> Any:
+        output = self.net(self._pre(data.get("img")))
+        pred_value = output.argmax(1).item()
         probability_matrix = np.exp(output.tolist()).tolist()
         return pred_value, probability_matrix[0]
 
@@ -199,7 +210,7 @@ class ImageNetEvaluation(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["ds_data"]["label"])
+            label.append(_LABEL_NAMES.index(_data["ds_data"]["label"]))
             result.append(_data["result"][0])
             pr.append(_data["result"][1])
         return label, result, pr
@@ -207,8 +218,10 @@ class ImageNetEvaluation(PipelineHandler):
     @api(
         gradio.File(), gradio.Label()
     )
-    def online_eval(self, content: str):
-        _, prob = self.ppl(Image(content))
+    def online_eval(self, file: Any):
+        with open(file.name, "rb") as f:
+            data = Image(f.read(), shape=(28, 28, 1))
+        _, prob = self.ppl({"img": data})
         return {_LABEL_NAMES[i]: p for i, p in enumerate(prob)}
 
 
