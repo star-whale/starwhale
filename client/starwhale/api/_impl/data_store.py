@@ -4,6 +4,7 @@ import os
 import re
 import abc
 import sys
+import copy
 import json
 import time
 import atexit
@@ -776,7 +777,9 @@ class InnerRecord:
             self.records = OrderedDict(sorted(self.records.items()))
             self.ordered = True
 
-    def get_record(self, revision: Optional[str] = None) -> Dict[str, Any]:
+    def get_record(
+        self, revision: Optional[str] = None, deep_copy: bool = False
+    ) -> Dict[str, Any]:
         self._reorder()
         ret: Dict[str, Any] = dict()
         for seq, record in self.records.items():
@@ -788,6 +791,8 @@ class InnerRecord:
                         ret = dict()
                     ret.update(record)
         ret.update({self.key_column: self.key})
+        if deep_copy:
+            ret = copy.deepcopy(ret)
         return ret
 
     def dumps(self) -> Dict[str, Any]:
@@ -908,6 +913,7 @@ class MemoryTable:
         keep_none: bool = False,
         end_inclusive: bool = False,
         revision: Optional[str] = None,
+        deep_copy: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
 
@@ -920,7 +926,7 @@ class MemoryTable:
                     records.append(v)
         records.sort(key=lambda x: x.key)
         for ir in records:
-            r = ir.get_record(revision)
+            r = ir.get_record(revision, deep_copy)
             if columns is None:
                 d = dict(r)
             else:
@@ -937,7 +943,7 @@ class MemoryTable:
         with self.lock:
             key = record.get(self.key_column.name)
             r = self.records.setdefault(key, InnerRecord(self.key_column.name))
-            return r.append(Record(record))
+            return r.append(Record(copy.deepcopy(record)))
 
     def delete(self, keys: List[Any]) -> str | None:
         """

@@ -761,6 +761,43 @@ class TestMemoryTable(BaseTestCase):
             "get changes by revision",
         )
 
+    def test_deep_copy(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        obj = {"b": 1}
+
+        # insert a mutable object
+        table.insert({"k": 0, "a": obj})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 1}}],
+            list(table.scan()),
+        )
+        # change the object
+        obj["b"] = 2
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 1}}],
+            list(table.scan()),
+        )
+
+        # get the mutable object without deep copy
+        obj = next(table.scan())["a"]
+        self.assertEqual({"b": 1}, obj)
+        # change the object
+        obj["b"] = 3
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 3}}],
+            list(table.scan()),
+        )
+
+        # get the mutable object with deep copy
+        obj = next(table.scan(deep_copy=True))["a"]
+        self.assertEqual({"b": 3}, obj)
+        # change the object
+        obj["b"] = 4
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 3}}],
+            list(table.scan()),
+        )
+
 
 class TestLocalDataStore(BaseTestCase):
     def test_data_store_update_table(self) -> None:
