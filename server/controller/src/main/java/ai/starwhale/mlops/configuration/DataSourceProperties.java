@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.configuration;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@EqualsAndHashCode(callSuper = false)
 @Data
-@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+@ConfigurationProperties(prefix = "spring.datasource")
+public class DataSourceProperties {
 
-    private Long id;
+    String driverClassName;
 
-    private String userName;
+    String url;
 
-    private String userPwd;
+    String username;
 
-    private String userPwdSalt;
-
-    private Integer userEnabled;
-
+    String password;
 }

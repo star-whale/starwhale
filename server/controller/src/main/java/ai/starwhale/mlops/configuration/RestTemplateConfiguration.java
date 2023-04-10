@@ -14,31 +14,18 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.configuration;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
-@SuperBuilder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+@Configuration
+public class RestTemplateConfiguration {
 
-    private Long id;
-
-    private String userName;
-
-    private String userPwd;
-
-    private String userPwdSalt;
-
-    private Integer userEnabled;
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
 }

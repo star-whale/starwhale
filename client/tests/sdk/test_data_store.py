@@ -20,43 +20,16 @@ from .. import BaseTestCase
 class TestBasicFunctions(BaseTestCase):
     def test_get_table_path(self) -> None:
         self.assertEqual(
-            os.path.join("a", "b.sw-datastore.json"),
+            Path("a") / "b.sw-datastore",
             data_store._get_table_path("a", "b"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c.sw-datastore.json"),
+            Path("a") / "b" / "c.sw-datastore",
             data_store._get_table_path("a", "b/c"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c", "d.sw-datastore.json"),
+            Path("a") / "b" / "c" / "d.sw-datastore",
             data_store._get_table_path("a", "b/c/d"),
-        )
-
-    def test_parse_data_table_name(self) -> None:
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base-123.txt"),
-            "invalid extension",
-        )
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base_1.sw-datastore.json"),
-            "invalid prefix",
-        )
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base-i.sw-datastore.json"),
-            "invalid index",
-        )
-        self.assertEqual(
-            ("base", 123),
-            data_store._parse_data_table_name("base-123.sw-datastore.json"),
-            "base",
-        )
-        self.assertEqual(
-            ("patch", 123),
-            data_store._parse_data_table_name("patch-123.sw-datastore.json"),
-            "patch",
         )
 
     def test_merge_scan(self) -> None:

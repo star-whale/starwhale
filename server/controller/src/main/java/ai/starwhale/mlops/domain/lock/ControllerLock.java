@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.domain.lock;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+public interface ControllerLock {
 
-@EqualsAndHashCode(callSuper = false)
-@Data
-@SuperBuilder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+    String TYPE_WRITE_REQUEST = "request_write";
 
-    private Long id;
+    void lock(String type, String key);
 
-    private String userName;
+    void unlock(String type, String key);
 
-    private String userPwd;
+    boolean isLocked(String type);
 
-    private String userPwdSalt;
-
-    private Integer userEnabled;
-
+    void clear();
 }

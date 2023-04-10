@@ -16,7 +16,11 @@
 
 package ai.starwhale.mlops.domain.system;
 
+import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.upgrade.UpgradeService;
+import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
+import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,15 +30,35 @@ public class SystemService {
 
     private final SystemSettingService systemSettingService;
 
+    private final UpgradeService upgradeService;
     private final String controllerVersion;
 
-    public SystemService(SystemSettingService systemSettingService, @Value("${sw.version}") String controllerVersion) {
+    public SystemService(SystemSettingService systemSettingService,
+            UpgradeService upgradeService,
+            @Value("${sw.version}") String controllerVersion) {
         this.systemSettingService = systemSettingService;
+        this.upgradeService = upgradeService;
         this.controllerVersion = controllerVersion;
+    }
+
+    public String upgrade(String version, String image) {
+        return upgradeService.upgrade(new Version(version, image)).getProgressId();
+    }
+
+    public List<UpgradeLog> getUpgradeLog() {
+        return upgradeService.getUpgradeLog();
     }
 
     public String controllerVersion() {
         return controllerVersion;
+    }
+
+    public LatestVersionVo getLatestVersion() {
+        Version latestVersion = upgradeService.getLatestVersion();
+        return LatestVersionVo.builder()
+                .version(latestVersion.getNumber())
+                .image(latestVersion.getImage())
+                .build();
     }
 
     public List<ResourcePool> listResourcePools() {
