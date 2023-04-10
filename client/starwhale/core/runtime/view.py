@@ -3,6 +3,8 @@ import typing as t
 from pathlib import Path
 
 import click
+from rich.pretty import Pretty
+from rich.syntax import Syntax
 
 from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import (
@@ -19,7 +21,13 @@ from starwhale.utils.venv import get_python_version
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 
-from .model import Runtime, _SUPPORT_CUDA, StandaloneRuntime, _SUPPORT_PYTHON_VERSIONS
+from .model import (
+    Runtime,
+    _SUPPORT_CUDA,
+    RuntimeInfoFilter,
+    StandaloneRuntime,
+    _SUPPORT_PYTHON_VERSIONS,
+)
 
 
 class RuntimeTermView(BaseTermView):
@@ -46,9 +54,52 @@ class RuntimeTermView(BaseTermView):
             title="Runtime History", history=self.runtime.history(), fullname=fullname
         )
 
-    @BaseTermView._header
-    def info(self, fullname: bool = False) -> None:
-        self._print_info(self.runtime.info(), fullname=fullname)
+    def info(
+        self,
+        fullname: bool = False,
+        output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
+    ) -> None:
+        info = self.runtime.info()
+        if not info:
+            console.print(
+                f":anguished_face: No runtime info found: {self.uri}", style="red"
+            )
+            return
+
+        if self.uri.object.version:
+            basic_content = Pretty(info["basic"], expand_all=True)
+            runtime_content = Syntax(
+                info.get("runtime_yaml", ""), "yaml", theme="ansi_dark"
+            )
+            manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
+            _locks = []
+            for fname, content in info.get("lock", {}).items():
+                _locks.append(f"#lock file: {fname}")
+                _locks.append(content)
+            lock_content = "\n".join(_locks)
+
+            if output_filter == RuntimeInfoFilter.basic:
+                console.print(basic_content)
+            elif output_filter == RuntimeInfoFilter.runtime_yaml:
+                console.print(runtime_content)
+            elif output_filter == RuntimeInfoFilter.lock:
+                console.print(lock_content)
+            elif output_filter == RuntimeInfoFilter.manifest:
+                console.print(manifest_content)
+            else:
+                console.rule("[green bold] Runtime Basic Info")
+                console.print(basic_content)
+                console.rule("[green bold] runtime.yaml")
+                console.print(runtime_content)
+                console.rule("[green bold] _manifest.yaml")
+                console.print(manifest_content)
+                console.rule("[green bold] Runtime Lock Files")
+                console.print(lock_content)
+        else:
+            console.print(Pretty(info["basic"], expand_all=True))
+            BaseTermView._print_history(
+                title="History List", history=info["history"], fullname=fullname
+            )
 
     @classmethod
     @BaseTermView._only_standalone
@@ -346,9 +397,26 @@ class RuntimeTermViewJson(RuntimeTermView):
         )
         cls.pretty_json(_data)
 
-    def info(self, fullname: bool = False) -> None:
-        _data = self.get_info_data(self.runtime.info(), fullname=fullname)
-        self.pretty_json(_data)
+    def info(
+        self,
+        fullname: bool = False,
+        output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
+    ) -> None:
+        info = self.runtime.info()
+
+        if self.uri.object.version:
+            if output_filter == RuntimeInfoFilter.basic:
+                info = {"basic": info["basic"]}
+            elif output_filter == RuntimeInfoFilter.lock:
+                info = {"lock": info.get("lock", {})}
+            elif output_filter == RuntimeInfoFilter.manifest:
+                info = {"manifest": info.get("manifest", {})}
+            elif output_filter == RuntimeInfoFilter.runtime_yaml:
+                info = {"runtime_yaml": info.get("runtime_yaml", "")}
+        else:
+            info["history"] = BaseTermView.get_history_data(info["history"], fullname)
+
+        self.pretty_json(info)
 
     def history(self, fullname: bool = False) -> None:
         fullname = fullname or self.uri.instance_type == InstanceType.CLOUD

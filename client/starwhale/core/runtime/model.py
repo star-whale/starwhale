@@ -6,6 +6,7 @@ import typing as t
 import platform
 import tempfile
 from abc import ABCMeta
+from enum import Enum, unique
 from pathlib import Path
 from collections import defaultdict
 
@@ -14,6 +15,7 @@ import jinja2
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from fs.tarfs import TarFS
 from typing_extensions import Protocol
 
 from starwhale.utils import (
@@ -124,6 +126,15 @@ _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
 _SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
 _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
 _SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
+
+@unique
+class RuntimeInfoFilter(Enum):
+    basic = "basic"
+    runtime_yaml = "runtime_yaml"
+    manifest = "manifest"
+    lock = "lock"
+    all = "all"
 
 
 class DockerEnv(ASDictMixin):
@@ -705,7 +716,50 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._detected_sw_version: str = ""
 
     def info(self) -> t.Dict[str, t.Any]:
-        return self._get_bundle_info()
+        ret: t.Dict[str, t.Any] = {}
+        if not self.store.bundle_path.exists():
+            return ret
+
+        ret["basic"] = {
+            "name": self.uri.object.name,
+            "uri": self.uri.full_uri,
+            "project": self.uri.project,
+            "snapshot_workdir": str(self.store.snapshot_workdir),
+            "bundle_path": str(self.store.bundle_path),
+        }
+
+        if not self.uri.object.version:
+            ret["history"] = self.history()
+            return ret
+
+        ret["basic"]["version"] = self.uri.object.version
+        ret["basic"]["tags"] = StandaloneTag(self.uri).list()
+
+        if self.store.snapshot_workdir.exists():
+            ret["manifest"] = self.store.manifest
+            ret["runtime_yaml"] = (
+                self.store.snapshot_workdir / DefaultYAMLName.RUNTIME
+            ).read_text()
+            ret["lock"] = {}
+            for fname in ret["manifest"]["environment"]["lock"]["files"]:
+                ret["lock"][os.path.basename(fname)] = (
+                    self.store.snapshot_workdir / "dependencies" / fname
+                ).read_text()
+        else:
+            with TarFS(str(self.store.bundle_path)) as tar:
+                with tar.open(DEFAULT_MANIFEST_NAME) as f:
+                    ret["manifest"] = yaml.safe_load(f)
+
+                with tar.open(DefaultYAMLName.RUNTIME) as f:
+                    ret["runtime_yaml"] = f.read()
+
+                ret["lock"] = {}
+                for fname in ret["manifest"]["environment"]["lock"]["files"]:
+                    fpath = os.path.join("dependencies", fname)
+                    with tar.open(fpath) as f:
+                        ret["lock"][os.path.basename(fpath)] = f.read()
+
+        return ret
 
     def list_tags(self) -> t.List[str]:
         return self.tag.list()

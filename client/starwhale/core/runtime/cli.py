@@ -17,6 +17,7 @@ from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
+from .model import RuntimeInfoFilter
 
 
 @click.group(
@@ -248,12 +249,49 @@ def _recover(runtime: str, force: bool) -> None:
     RuntimeTermView(runtime).recover(force)
 
 
-@runtime_cmd.command("info", help="Show runtime details")
+@runtime_cmd.command("info")
 @click.argument("runtime")
-@click.option("--fullname", is_flag=True, help="Show version fullname")
+@click.option(
+    "--fullname",
+    is_flag=True,
+    help="Show version fullname of the runtime without specified version",
+)
+@click.option(
+    "-of",
+    "--output-filter",
+    type=click.Choice([f.value for f in RuntimeInfoFilter], case_sensitive=False),
+    default=RuntimeInfoFilter.basic.value,
+    show_default=True,
+    help="Filter the output content of the specified runtime version. Only standalone instance supports this option.",
+)
 @click.pass_obj
-def _info(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
-    view(runtime).info(fullname)
+def _info(
+    view: t.Type[RuntimeTermView],
+    runtime: str,
+    fullname: bool,
+    output_filter: str,
+) -> None:
+    """Show runtime details
+
+    RUNTIME: argument use the `Runtime URI` format. version is optional for the runtime uri.
+
+    Example:
+
+        \b
+        - show all versions of runtime
+          swcli runtime info pytorch
+          swcli runtime info pytorch --fullname  # full version name
+
+        \b
+        - show the specified version of runtime
+          swcli runtime info pytorch/version/v0  # show basic info
+          swcli runtime info pytorch/version/v0 --output-filter basic  # show basic info
+          swcli runtime info pytorch/version/v1 -of runtime_yaml  # show runtime.yaml content
+          swcli runtime info pytorch/version/v1 -of lock # show auto lock file content
+          swcli runtime info pytorch/version/v1 -of manifest # show _manifest.yaml content
+          swcli runtime info pytorch/version/v1 -of all # show all info of the runtime
+    """
+    view(runtime).info(fullname, RuntimeInfoFilter(output_filter))
 
 
 @runtime_cmd.command("history", help="Show runtime history")

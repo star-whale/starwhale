@@ -180,7 +180,7 @@ class CloudRequestMixed:
         }
 
         if uri.object.version:
-            # TODO: add manifest info by controller api
+            # TODO: add manifest, lock(runtime), model/dataset/runtime yaml info by controller api
             _manifest["version"] = uri.object.version
             _info = self._fetch_bundle_version_info(uri, typ)
             _manifest[CREATED_AT_KEY] = self.fmt_timestamp(_info["createdTime"])
