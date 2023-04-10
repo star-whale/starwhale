@@ -134,7 +134,8 @@ build-gradio-ui:
 	$(eval SWG=$(shell id -g))
 	docker volume create --name ${YARN_VOLUME}
 	# use the latest version of starwhale version gradio
-	rm -rf ${GRADIO_DIR} && git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio ${GRADIO_DIR}
+	git config --global --add safe.directory $(realpath ${GRADIO_DIR}) || echo "gradio not exists"
+	(([ -d ${GRADIO_DIR} ] && git -C ${GRADIO_DIR} clean -f -x && git -C ${GRADIO_DIR} checkout . && git -C ${GRADIO_DIR} reset --hard && git -C ${GRADIO_DIR} pull) || (rm -rf ${GRADIO_DIR} &&git clone --depth 1 --branch=feat/sw-gradio-widget https://github.com/star-whale/gradio ${GRADIO_DIR}))
 	# TODO use non root user to run the building, pnpm should be supported in the building image
 	docker run --rm \
 		-v ${YARN_VOLUME}:/var/yarn-cache \
@@ -147,4 +148,5 @@ build-gradio-ui:
 			mv packages/starwhale/build ${UI_DEST}/es && \
 			chown ${SWU}:${SWG} -R ${UI_DEST} && \
 			chown ${SWU}:${SWG} -R /starwhale/gradio"
+	git -C ${GRADIO_DIR} clean -f -x
 

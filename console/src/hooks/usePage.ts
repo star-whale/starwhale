@@ -20,15 +20,7 @@ export function usePage(opt?: {
         updateQuery = updateQuery0
     }
 
-    const {
-        pageNum: pageStr = '1',
-        pageSize: pageSizeStr,
-        search,
-        q,
-        sort_by: sortBy,
-        sort_asc: sortAsc,
-        ...rest
-    } = query
+    const { pageNum: pageStr = '1', pageSize: pageSizeStr, search, q, sort: sortBy, sort_asc: sortAsc, ...rest } = query
     let pageNum = parseInt(pageStr, 10)
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(pageNum) || pageNum <= 0) {
@@ -49,7 +41,7 @@ export function usePage(opt?: {
                 pageSize,
                 search,
                 q,
-                sort_by: sortBy,
+                sort: sortBy,
                 sort_asc: sortAsc === 'true',
             }),
             [q, search, sortAsc, sortBy, pageNum, pageSize, rest]

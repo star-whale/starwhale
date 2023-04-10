@@ -10,7 +10,7 @@ from starwhale.base.type import URIType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
-from starwhale.core.dataset.type import MIMEType, DatasetAttr, DatasetConfig
+from starwhale.core.dataset.type import DatasetAttr, DatasetConfig
 
 from .view import get_term_view, DatasetTermView
 
@@ -33,7 +33,11 @@ def dataset_cmd(ctx: click.Context) -> None:
     help="Dataset build executor handler: [module path]:[class or function name]",
 )
 @click.option("-n", "--name", help="Dataset name")
-@click.option("-p", "--project", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    help="Project URI, the default is the current selected project. The dataset will store in the specified project",
+)
 @click.option("--desc", help="Dataset description")
 @click.option(
     "-as",
@@ -45,17 +49,13 @@ def dataset_cmd(ctx: click.Context) -> None:
     "--volume-size",
     help="swds-bin format dataset: volume size",
 )
-@click.option("-dmt", "--data-mime-type", help="Dataset global default data mime type")
 @click.option(
     "-f",
     "--dataset-yaml",
     default=DefaultYAMLName.DATASET,
     help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
-@click.option("-a", "--append", is_flag=True, default=None, help="Only append new data")
-@click.option("-af", "--append-from", help="Append from dataset version")
 @click.option("-r", "--runtime", help="runtime uri")
-@click.option("-dcs", "--disable-copy-src", help="disable copy src dir")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -67,11 +67,7 @@ def _build(
     dataset_yaml: str,
     alignment_size: str,
     volume_size: str,
-    data_mime_type: str,
-    append: bool,
-    append_from: str,
     runtime: str,
-    disable_copy_src: bool,
 ) -> None:
     # TODO: add dry-run
     # TODO: add compress args
@@ -90,19 +86,14 @@ def _build(
     config.project_uri = project or config.project_uri
     # TODO: support README.md as the default desc
     config.desc = desc or config.desc
-    config.append_from = append_from or config.append_from
 
     config.attr = DatasetAttr(
         volume_size=volume_size or config.attr.volume_size,
         alignment_size=alignment_size or config.attr.alignment_size,
-        data_mime_type=MIMEType(data_mime_type or config.attr.data_mime_type),
     )
 
-    if append is not None:
-        config.append = append
-
     config.do_validate()
-    view.build(workdir, config, disable_copy_src)
+    view.build(workdir, config)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
@@ -119,7 +110,12 @@ def _diff(
 
 
 @dataset_cmd.command("list", aliases=["ls"])
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, the default is the current selected project.",
+)
 @click.option("-f", "--fullname", is_flag=True, help="Show fullname of dataset version")
 @click.option("-sr", "--show-removed", is_flag=True, help="Show removed datasets")
 @click.option(
@@ -146,7 +142,7 @@ def _list(
     filters: list,
 ) -> None:
     """
-    List Dataset
+    List Dataset of the specified project.
 
     The filtering flag (-fl or --filter) format is a key=value pair or a flag.
     If there is more than one filter, then pass multiple flags.\n
@@ -224,9 +220,8 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @dataset_cmd.command("copy", aliases=["cp"])
 @click.argument("src")
 @click.argument("dest")
-@click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+def _copy(src: str, dest: str, dest_local_project: str) -> None:
     """
     Copy Dataset between Standalone Instance and Cloud Instance
 
@@ -272,7 +267,7 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
             swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
     """
-    DatasetTermView.copy(src, dest, force, dest_local_project)
+    DatasetTermView.copy(src, dest, dest_local_project)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")
@@ -296,7 +291,7 @@ def _tag(
     view(dataset).tag(tags, remove, quiet)
 
 
-@dataset_cmd.command("head", help="Print the first 10 rows of the dataset")
+@dataset_cmd.command("head", help="Print the first 5 rows of the dataset")
 @click.argument("dataset")
 @click.option("-n", "--rows", default=5, help="Print the first NUM rows of the dataset")
 @click.option(

@@ -88,3 +88,15 @@ export async function revertDatasetVersion(
     })
     return resp.data
 }
+
+export async function updateDatasetVersionShared(
+    projectId: string,
+    datasetId: string,
+    datasetVersionId: string,
+    shared: boolean
+): Promise<IDatasetVersionSchema> {
+    const resp = await axios.put<IDatasetVersionSchema>(
+        `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersionId}/shared?shared=${shared ? 1 : 0}`
+    )
+    return resp.data
+}

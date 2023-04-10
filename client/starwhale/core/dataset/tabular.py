@@ -9,6 +9,7 @@ from copy import deepcopy
 from enum import Enum, unique
 from queue import Queue
 from types import TracebackType
+from functools import partial
 from collections import UserDict, defaultdict
 
 import requests
@@ -16,15 +17,9 @@ from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils import validate_obj_name
-from starwhale.consts import ENV_POD_NAME, VERSION_PREFIX_CNT, STANDALONE_INSTANCE
+from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
-from starwhale.base.type import (
-    URIType,
-    InstanceType,
-    DataFormatType,
-    DataOriginType,
-    ObjectStoreType,
-)
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
@@ -41,6 +36,28 @@ from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
 from starwhale.api._impl.data_store import TableEmptyException
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
+
+_DR_DATA_KEY = "data_datastore_revision"
+_DR_INFO_KEY = "info_datastore_revision"
+
+
+class DatastoreRevision(t.NamedTuple):
+    data: str
+    info: str
+
+    def asdict(self) -> t.Dict:
+        return {
+            _DR_DATA_KEY: self.data,
+            _DR_INFO_KEY: self.info,
+        }
+
+    @classmethod
+    def from_manifest(cls, manifest: t.Dict | None) -> DatastoreRevision:
+        manifest = manifest or {}
+        return DatastoreRevision(
+            data=manifest.get(_DR_DATA_KEY, ""),
+            info=manifest.get(_DR_INFO_KEY, ""),
+        )
 
 
 class TabularDatasetInfo(UserDict):
@@ -90,9 +107,9 @@ class TabularDatasetInfo(UserDict):
         d.pop("id", None)
         return cls(d)
 
-    def save_to_datastore(self, ds_wrapper: DatastoreWrapperDataset) -> None:
+    def save_to_datastore(self, ds_wrapper: DatastoreWrapperDataset) -> str:
         ds_wrapper.put(data_id=self._ROW_ID, **self.data)
-        ds_wrapper.flush()
+        return ds_wrapper.flush()
 
 
 class TabularDatasetRow(ASDictMixin):
@@ -102,12 +119,10 @@ class TabularDatasetRow(ASDictMixin):
     def __init__(
         self,
         id: t.Union[str, int],
-        origin: DataOriginType = DataOriginType.NEW,
         features: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
-        self.origin = origin
         self.features = features or {}
         self.extra_kw = kw
         # TODO: add non-starwhale object store related fields, such as address, authority
@@ -118,7 +133,6 @@ class TabularDatasetRow(ASDictMixin):
     def from_datastore(
         cls,
         id: t.Union[str, int],
-        origin: str = DataOriginType.NEW.value,
         **kw: t.Any,
     ) -> TabularDatasetRow:
         _content = {}
@@ -132,7 +146,6 @@ class TabularDatasetRow(ASDictMixin):
 
         return cls(
             id=id,
-            origin=DataOriginType(origin),
             features=_content,
             **_extra_kw,
         )
@@ -140,9 +153,6 @@ class TabularDatasetRow(ASDictMixin):
     def __eq__(self, o: object) -> bool:
         s = deepcopy(self.__dict__)
         o = deepcopy(o.__dict__)
-
-        s.pop("origin", None)
-        o.pop("origin", None)
         return s == o
 
     def _do_validate(self) -> None:
@@ -154,9 +164,6 @@ class TabularDatasetRow(ASDictMixin):
 
         if not isinstance(self.features, dict) or not self.features:
             raise FieldTypeOrValueError("no data field")
-
-        if not isinstance(self.origin, DataOriginType):
-            raise NoSupportError(f"data origin: {self.origin}")
 
     def __str__(self) -> str:
         return f"row-{self.id}"
@@ -190,48 +197,39 @@ _TDType = t.TypeVar("_TDType", bound="TabularDataset")
 
 
 class TabularDataset:
-    _map_types = {
-        "data_format": DataFormatType,
-        "origin": DataOriginType,
-        "object_store_type": ObjectStoreType,
-    }
-
     def __init__(
         self,
         name: str,
-        version: str,
         project: str,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         instance_name: str = "",
         token: str = "",
+        data_datastore_revision: str = "",
+        info_datastore_revision: str = "",
     ) -> None:
         _ok, _reason = validate_obj_name(name)
         if not _ok:
             raise InvalidObjectName(f"{name}: {_reason}")
         self.name = name
 
-        if not version:
-            raise FieldTypeOrValueError("no version field")
-        self.version = version
-
         self.project = project
-        self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
-        self._ds_wrapper = DatastoreWrapperDataset(
-            self.table_name,
-            project,
+        self.instance_name = instance_name
+
+        dwd = partial(
+            DatastoreWrapperDataset,
+            dataset_name=name,
+            project=project,
             instance_name=instance_name,
             token=token,
-            kind=DatasetTableKind.META,
+        )
+        self._ds_wrapper = dwd(
+            kind=DatasetTableKind.META, dataset_scan_revision=data_datastore_revision
+        )
+        self._info_ds_wrapper = dwd(
+            kind=DatasetTableKind.INFO, dataset_scan_revision=info_datastore_revision
         )
 
-        self._info_ds_wrapper = DatastoreWrapperDataset(
-            self.table_name,
-            project,
-            instance_name=instance_name,
-            token=token,
-            kind=DatasetTableKind.INFO,
-        )
         self._info_changed = False
         self._info: t.Optional[TabularDatasetInfo] = None
         self._info_lock = threading.Lock()
@@ -255,18 +253,20 @@ class TabularDataset:
     def delete(self, row_id: t.Union[str, int]) -> None:
         self._ds_wrapper.delete(row_id)
 
-    def flush(self) -> None:
+    def flush(self) -> t.Tuple[str, str]:
+        info_revision = ""
         if self._info is not None and self._info_changed:
-            self._info.save_to_datastore(self._info_ds_wrapper)
+            info_revision = self._info.save_to_datastore(self._info_ds_wrapper)
 
-        self._ds_wrapper.flush()
-        self._info_ds_wrapper.flush()
+        data_revision = self._ds_wrapper.flush()
+        return data_revision, info_revision
 
     def scan(
         self,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         end_inclusive: bool = False,
+        revision: str = "",
     ) -> t.Generator[TabularDatasetRow, None, None]:
         if start is None or (self.start is not None and start < self.start):
             start = self.start
@@ -274,11 +274,7 @@ class TabularDataset:
         if end is None or (self.end is not None and end > self.end):
             end = self.end
 
-        for _d in self._ds_wrapper.scan(start, end, end_inclusive):
-            for k, v in self._map_types.items():
-                if k not in _d:
-                    continue
-                _d[k] = v(_d[k])
+        for _d in self._ds_wrapper.scan(start, end, end_inclusive, revision=revision):
             yield TabularDatasetRow.from_datastore(**_d)
 
     def scan_batch(
@@ -286,9 +282,10 @@ class TabularDataset:
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         batch_size: int = 32,
+        revision: str = "",
     ) -> t.Generator[t.List[TabularDatasetRow], None, None]:
         batch = []
-        for r in self.scan(start, end):
+        for r in self.scan(start, end, revision=revision):
             batch.append(r)
             if len(batch) % batch_size == 0:
                 yield batch
@@ -315,39 +312,23 @@ class TabularDataset:
 
         self.close()
 
-    def fork(self, version: str) -> t.Tuple[int, int]:
-        fork_td = TabularDataset(name=self.name, version=version, project=self.project)
-
-        rows_cnt = 0
-        last_append_seq_id = -1
-        # TODO: tune tabular dataset fork performance
-        for _row in fork_td.scan():
-            rows_cnt += 1
-            last_append_seq_id = max(
-                int(_row.extra_kw.get("_append_seq_id", -1)), last_append_seq_id
-            )
-            _row.origin = DataOriginType.INHERIT
-            self.put(_row)
-
-        # TODO: deepcopy fork_td info dict?
-        self._info = fork_td.info
-        self.flush()
-        return last_append_seq_id, rows_cnt
-
     @classmethod
     def from_uri(
         cls: t.Type[_TDType],
         uri: URI,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
+        data_datastore_revision: str = "",
+        info_datastore_revision: str = "",
     ) -> _TDType:
         return cls(
-            uri.object.name,
-            uri.object.version,
-            uri.project,
+            name=uri.object.name,
+            project=uri.project,
             start=start,
             end=end,
             instance_name=uri.instance,
+            data_datastore_revision=data_datastore_revision,
+            info_datastore_revision=info_datastore_revision,
         )
 
     @property
@@ -486,9 +467,10 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
         # TODO: support max_retries
 
     def _init_dataset_todo_queue(self) -> Queue:
+        # TODO: support datastore revision
         wrapper = DatastoreWrapperDataset(
-            f"{self.dataset_name}/{self.dataset_version[:VERSION_PREFIX_CNT]}/{self.dataset_version}",
-            self.project,
+            dataset_name=self.dataset_name,
+            project=self.project,
         )
         ids = [i["id"] for i in wrapper.scan_id(self.session_start, self.session_end)]
         id_cnt = len(ids)

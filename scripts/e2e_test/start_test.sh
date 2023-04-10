@@ -270,16 +270,7 @@ publish_to_k8s() {
   popd
 }
 
-install_necessary_tools() {
-  if ! command -v unzip &> /dev/null
-  then
-    echo "installing unzip"
-    apt update && apt install -y unzip
-  fi
-}
-
 main() {
-  install_necessary_tools
   declare_env
   if ! in_github_action; then
     trap exit_hook EXIT
@@ -288,8 +279,15 @@ main() {
     publish_to_mini_k8s
   fi
   check_controller_service
-  client_test
-  api_test
+  if client_test; then
+    api_test
+    kubectl scale deployment controller -n $SWNS --replicas=0
+    kubectl scale deployment mysql -n $SWNS --replicas=0
+    kubectl scale deployment minio -n $SWNS --replicas=0
+  else
+    exit 1
+  fi
+
 }
 
 declare_env

@@ -23,11 +23,8 @@ from starwhale.core.dataset.type import (
 )
 
 from .model import Dataset
-from .loader import get_data_loader
-from .builder import BuildExecutor
 
 __all__ = [
-    "get_data_loader",
     "Link",
     "LinkAuth",
     "DefaultS3LinkAuth",
@@ -35,7 +32,6 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
-    "BuildExecutor",
     "Binary",
     "NumpyBinary",
     "Text",

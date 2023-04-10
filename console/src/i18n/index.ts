@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import { locales } from '@/i18n/locales'
+import { locales } from './locales'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import TimeAgo from 'javascript-time-ago'
 
@@ -19,6 +19,14 @@ i18n.use(LanguageDetector)
                     return {
                         ...p,
                         [k]: v.en,
+                    }
+                }, {}),
+            },
+            zh: {
+                translations: Object.entries(locales).reduce((p, [k, v]) => {
+                    return {
+                        ...p,
+                        [k]: v.zh,
                     }
                 }, {}),
             },

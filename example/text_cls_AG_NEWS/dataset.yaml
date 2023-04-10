@@ -1,6 +1,6 @@
 name: ag_news
 
-handler: tcan.dataset:AGNewsBuildExecutor
+handler: tcan.dataset:iter_agnews_item
 
 desc: AG_NEWS data and label test dataset
 

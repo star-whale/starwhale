@@ -130,7 +130,7 @@ class BundleCopy(CloudRequestMixed):
         )
         return ok
 
-    def _get_target_path(self, uri: URI) -> Path:
+    def _get_versioned_resource_path(self, uri: URI) -> Path:
         if uri.instance_type != InstanceType.STANDALONE:
             raise NoSupportError(f"{uri} to get target dir path")
 
@@ -144,21 +144,24 @@ class BundleCopy(CloudRequestMixed):
             / f"{self.bundle_version}{get_bundle_type_by_uri(self.typ)}"
         )
 
-    def _is_existed(self, uri: URI) -> bool:
+    def _check_version_existed(self, uri: URI) -> bool:
         if uri.instance_type == InstanceType.CLOUD:
             return self._check_cloud_obj_existed(uri)
         else:
-            return self._get_target_path(uri).exists()
+            return self._get_versioned_resource_path(uri).exists()
 
-    def _get_remote_bundle_console_url(self) -> str:
-        version = self.src_uri.object.version
+    def _get_remote_bundle_console_url(self, with_version: bool = True) -> str:
         if self.src_uri.instance_type == InstanceType.CLOUD:
             remote = self.src_uri
             resource_name = self.src_uri.object.name
         else:
             remote = self.dest_uri
             resource_name = self.dest_uri.object.name or self.src_uri.object.name
-        return f"{remote.instance}/projects/{remote.project}/{self.typ}s/{resource_name}/versions/{version}/overview"
+
+        url = f"{remote.instance}/projects/{remote.project}/{self.typ}s/{resource_name}"
+        if with_version:
+            url = f"{url}/versions/{self.src_uri.object.version}/overview"
+        return url
 
     def _get_remote_bundle_api_url(self, for_head: bool = False) -> str:
         version = self.src_uri.object.version
@@ -187,7 +190,7 @@ class BundleCopy(CloudRequestMixed):
         return "/".join(base)
 
     def _do_upload_bundle_tar(self, progress: Progress) -> None:
-        file_path = self._get_target_path(self.src_uri)
+        file_path = self._get_versioned_resource_path(self.src_uri)
         task_id = progress.add_task(
             f":bowling: upload {file_path.name}",
             total=file_path.stat().st_size,
@@ -208,7 +211,7 @@ class BundleCopy(CloudRequestMixed):
         )
 
     def _do_download_bundle_tar(self, progress: Progress) -> None:
-        file_path = self._get_target_path(self.dest_uri)
+        file_path = self._get_versioned_resource_path(self.dest_uri)
         ensure_dir(os.path.dirname(file_path))
         task_id = progress.add_task(f":bowling: download to {file_path}...")
 
@@ -226,16 +229,14 @@ class BundleCopy(CloudRequestMixed):
 
     def do(self) -> None:
         remote_url = self._get_remote_bundle_console_url()
-        if self._is_existed(self.dest_uri) and not self.force:
+        if self._check_version_existed(self.dest_uri) and not self.force:
             console.print(f":tea: {remote_url} was already existed, skip copy")
             return
 
-        if not self._is_existed(self.src_uri):
+        if not self._check_version_existed(self.src_uri):
             raise NotFoundError(str(self.src_uri))
 
-        console.print(
-            f":construction: start to copy {self.src_uri} -> {self.dest_uri}..."
-        )
+        console.print(f":construction: start to copy {self.src_uri} -> {self.dest_uri}")
 
         with Progress(
             SpinnerColumn(),
@@ -249,15 +250,23 @@ class BundleCopy(CloudRequestMixed):
             refresh_per_second=0.2,
         ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
-                if self.typ == URIType.DATASET or self.typ == URIType.MODEL:
+                if self.typ == URIType.MODEL:
                     self._do_upload_bundle_dir(progress)
-                else:
+                elif self.typ == URIType.RUNTIME:
                     self._do_upload_bundle_tar(progress)
-            else:
-                if self.typ == URIType.DATASET or self.typ == URIType.MODEL:
-                    self._do_download_bundle_dir(progress)
                 else:
+                    raise NoSupportError(
+                        f"no support to copy {self.typ} from standalone to server"
+                    )
+            else:
+                if self.typ == URIType.MODEL:
+                    self._do_download_bundle_dir(progress)
+                elif self.typ == URIType.RUNTIME:
                     self._do_download_bundle_tar(progress)
+                else:
+                    raise NoSupportError(
+                        f"no support to copy {self.typ} from server to standalone"
+                    )
 
                 _dest_uri = URI.capsulate_uri(
                     instance=STANDALONE_INSTANCE,
@@ -268,7 +277,8 @@ class BundleCopy(CloudRequestMixed):
                 )
                 StandaloneTag(_dest_uri).add_fast_tag()
                 self._update_manifest(
-                    self._get_target_path(_dest_uri), {CREATED_AT_KEY: now_str()}
+                    self._get_versioned_resource_path(_dest_uri),
+                    {CREATED_AT_KEY: now_str()},
                 )
         console.print(f":tea: console url of the remote bundle: {remote_url}")
 
@@ -279,7 +289,7 @@ class BundleCopy(CloudRequestMixed):
         raise NotImplementedError
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
-        _workdir = self._get_target_path(self.dest_uri)
+        _workdir = self._get_versioned_resource_path(self.dest_uri)
 
         def _download(_tid: TaskID, fd: FileNode) -> None:
             if fd.signature:
@@ -417,9 +427,6 @@ class BundleCopy(CloudRequestMixed):
             # TODO throw errors
             wait(futures)
 
-    def _do_ubd_datastore(self) -> None:
-        raise NotImplementedError
-
     def _do_ubd_end(self, upload_id: str, url_path: str, ok: bool) -> None:
         phase = _UploadPhase.END if ok else _UploadPhase.CANCEL
         self.do_http_request(
@@ -441,7 +448,7 @@ class BundleCopy(CloudRequestMixed):
         progress: t.Optional[Progress] = None,
         workdir: t.Optional[Path] = None,
     ) -> None:
-        workdir = workdir or self._get_target_path(self.src_uri)
+        workdir = workdir or self._get_versioned_resource_path(self.src_uri)
         url_path = self._get_remote_bundle_api_url()
 
         res_data = self._do_ubd_bundle_prepare(
@@ -454,7 +461,6 @@ class BundleCopy(CloudRequestMixed):
             raise Exception("upload id is empty")
         exists_files: list = res_data.get("existed", [])
         try:
-            self._do_ubd_datastore()
             self._do_ubd_blobs(
                 progress=progress,
                 workdir=workdir,

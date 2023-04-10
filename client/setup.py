@@ -36,6 +36,7 @@ install_requires = [
     "psutil>=5.5.0",
     "GitPython>=3.1.24",
     "fastapi>=0.71.0",
+    "filelock",
 ]
 
 extras_require = {

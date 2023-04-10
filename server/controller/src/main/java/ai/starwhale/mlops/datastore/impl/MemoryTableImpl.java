@@ -255,7 +255,7 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    public String update(TableSchemaDesc schema, @NonNull List<Map<String, Object>> records) {
+    public long update(TableSchemaDesc schema, @NonNull List<Map<String, Object>> records) {
         var decodedRecords = new ArrayList<Map<String, BaseValue>>();
         String keyColumn;
         if (schema.getKeyColumn() == null) {
@@ -315,7 +315,7 @@ public class MemoryTableImpl implements MemoryTable {
             this.insertRecords(timestamp, decodedRecords);
         }
 
-        return Long.toString(timestamp);
+        return timestamp;
     }
 
     private void insertRecords(long timestamp, List<Map<String, BaseValue>> records) {
@@ -360,8 +360,11 @@ public class MemoryTableImpl implements MemoryTable {
     private Map<String, BaseValue> getRecordMap(BaseValue key, List<MemoryRecord> versions, long timestamp) {
         var ret = new HashMap<String, BaseValue>();
         boolean deleted = false;
+        boolean hasVersion = false;
         for (var record : versions) {
             if (record.getTimestamp() <= timestamp) {
+                // record may be empty, use hasVersion to mark if there is a record
+                hasVersion = true;
                 if (record.isDeleted()) {
                     deleted = true;
                     ret.clear();
@@ -374,7 +377,10 @@ public class MemoryTableImpl implements MemoryTable {
         if (deleted) {
             ret.put(DELETED_FLAG_COLUMN_NAME, BoolValue.TRUE);
         }
-        ret.put(this.schema.getKeyColumn(), key);
+
+        if (hasVersion) {
+            ret.put(this.schema.getKeyColumn(), key);
+        }
         return ret;
     }
 
@@ -496,6 +502,7 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var iterator = this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).entrySet().stream()
                 .map(entry -> this.getRecordMap(entry.getKey(), entry.getValue(), timestamp))
+                .filter(record -> !record.isEmpty())
                 .iterator();
         return new Iterator<>() {
 

@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -116,7 +117,7 @@ public class DataStoreControllerTest {
     }
 
     @Test
-    public void testUpdate() {
+    public void testUpdate() throws InterruptedException {
         this.controller.updateTable(new UpdateTableRequest() {
             {
                 setTableName("t1");
@@ -140,7 +141,7 @@ public class DataStoreControllerTest {
                 }));
             }
         });
-        this.controller.updateTable(new UpdateTableRequest() {
+        var updateResp = this.controller.updateTable(new UpdateTableRequest() {
             {
                 setTableName("t1");
                 setTableSchemaDesc(new TableSchemaDesc("k",
@@ -163,6 +164,7 @@ public class DataStoreControllerTest {
                 }));
             }
         });
+        Thread.sleep(1);
         this.controller.updateTable(new UpdateTableRequest() {
             {
                 setTableName("t2");
@@ -305,6 +307,66 @@ public class DataStoreControllerTest {
         assertThat("t2",
                 Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                 is(List.of(Map.of("k", "00000003", "b", "00000002"))));
+
+        // scan with empty revision string will get the latest revision
+        resp = this.controller.scanTable(new ScanTableRequest() {
+            {
+                setEncodeWithType(true);
+                setTables(List.of(new TableDesc() {
+                    {
+                        setTableName("t1");
+                        setRevision("");
+                        setColumns(List.of(new ColumnDesc() {
+                            {
+                                setColumnName("k");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("a");
+                            }
+                        }));
+                    }
+                }));
+            }
+        });
+        assertThat("t1", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertNull(Objects.requireNonNull(resp.getBody()).getData().getColumnTypes());
+        assertThat("t1",
+                Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                is(List.of(Map.of("k", Map.of("type", "INT32", "value", "00000000"),
+                                "a", Map.of("type", "STRING", "value", "1")),
+                        Map.of("k", Map.of("type", "INT32", "value", "00000001"),
+                                "a", Map.of("type", "INT32", "value", "00000002")))));
+
+        // scan with revision
+        resp = this.controller.scanTable(new ScanTableRequest() {
+            {
+                setEncodeWithType(true);
+                setTables(List.of(new TableDesc() {
+                    {
+                        setTableName("t1");
+                        setRevision(updateResp.getBody().getData());
+                        setColumns(List.of(new ColumnDesc() {
+                            {
+                                setColumnName("k");
+                            }
+                        }, new ColumnDesc() {
+                            {
+                                setColumnName("a");
+                            }
+                        }));
+                    }
+                }));
+            }
+        });
+        assertThat("t1", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertNull(Objects.requireNonNull(resp.getBody()).getData().getColumnTypes());
+        assertThat("t1",
+                Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                is(List.of(Map.of("k", Map.of("type", "INT32", "value", "00000000"),
+                                "a", Map.of("type", "INT32", "value", "00000001")),
+                        Map.of("k", Map.of("type", "INT32", "value", "00000001"),
+                                "a", Map.of("type", "INT32", "value", "00000002")))));
     }
 
     @Nested

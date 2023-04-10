@@ -5,8 +5,7 @@ from pathlib import Path
 import boto3
 from botocore.client import Config as S3Config
 
-from starwhale import Link, Image, MIMEType, S3LinkAuth, BoundingBox  # noqa: F401
-from starwhale.core.dataset.store import S3Connection, S3StorageBackend  # noqa: F401
+from starwhale import Link, Image, MIMEType, BoundingBox
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
@@ -27,23 +26,17 @@ def do_iter_item():
                 x, y, w, h = sg["bbox"]
                 sg["bbox_view"] = BoundingBox(x=x, y=y, width=w, height=h)
             data["mask"] = Image(
+                fp=msk_f_pth,
                 display_name=msk_f_name,
                 shape=img_shape,
                 mime_type=MIMEType.PNG,
                 as_mask=True,
-                link=Link(
-                    with_local_fs_data=True,
-                    uri=str(msk_f_pth.absolute()),
-                ),
             )
 
             data["image"] = Image(
+                fp=img_pth,
                 display_name=img_name,
                 shape=img_shape,
-                link=Link(
-                    uri=str(img_pth.absolute()),
-                    with_local_fs_data=True,
-                ),
             )
 
             yield data
@@ -101,7 +94,6 @@ def do_iter_item_from_s3():
             mime_type=MIMEType.PNG,
             as_mask=True,
             link=Link(
-                with_local_fs_data=False,
                 uri=f"s3://{RUI_ROOT}/annotations/panoptic_val2017/{msk_f_name}",
             ),
         )
@@ -111,7 +103,6 @@ def do_iter_item_from_s3():
             shape=img_shape,
             link=Link(
                 uri=f"s3://{RUI_ROOT}/val2017/{img_name}",
-                with_local_fs_data=False,
             ),
         )
 
@@ -142,7 +133,6 @@ def do_iter_item_from_http():
             mime_type=MIMEType.PNG,
             as_mask=True,
             link=Link(
-                with_local_fs_data=False,
                 uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/annotations/panoptic_val2017/{msk_f_name}",
             ),
         )
@@ -152,7 +142,6 @@ def do_iter_item_from_http():
             shape=img_shape,
             link=Link(
                 uri=f"https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/coco/extracted/val2017/{img_name}",
-                with_local_fs_data=False,
             ),
         )
 

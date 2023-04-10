@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
@@ -45,6 +46,7 @@ public class SwOutputFile implements OutputFile {
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
         var out = new PipedOutputStream();
         var in = new PipedInputStream(out);
+        var exception = new AtomicReference<IOException>();
         var t = new Thread(() -> {
             try {
                 this.storageAccessService.put(this.path, in);
@@ -56,6 +58,7 @@ public class SwOutputFile implements OutputFile {
                 } catch (IOException ex) {
                     // ignore this
                 }
+                exception.set(e);
             }
         });
         t.start();
@@ -86,6 +89,9 @@ public class SwOutputFile implements OutputFile {
                     t.join();
                 } catch (InterruptedException e) {
                     throw new IOException(e);
+                }
+                if (exception.get() != null) {
+                    throw exception.get();
                 }
             }
         };

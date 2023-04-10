@@ -1,6 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
-import { IDatasetFileSchema, IDatasetVersionSchema } from './datasetVersion'
+import { IDatasetFileSchema, IDatasetTreeVersionSchema, IDatasetVersionSchema } from './datasetVersion'
 
 export interface IDatasetSchema extends IResourceSchema {
     name: string
@@ -18,6 +18,7 @@ export interface IDatasetDetailSchema {
     versionAlias?: string
     files?: Array<IDatasetFileSchema>
     indexTable?: string
+    shared?: number
 }
 
 export interface IUpdateDatasetSchema {
@@ -28,4 +29,12 @@ export interface ICreateDatasetSchema {
     datasetName: string
     zipFile?: FileList
     importPath?: string
+}
+
+export interface IDatasetTreeSchema {
+    ownerName: string
+    projectName: string
+    datasetName: string
+    shared: number
+    versions: IDatasetTreeVersionSchema[]
 }

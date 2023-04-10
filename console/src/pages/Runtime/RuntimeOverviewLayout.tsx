@@ -2,7 +2,7 @@ import { useRuntime, useRuntimeLoading } from '@/domain/runtime/hooks/useRuntime
 import useTranslation from '@/hooks/useTranslation'
 import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
-import { useHistory, useParams, useLocation } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime, removeRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
@@ -14,6 +14,7 @@ import { useRuntimeVersion, useRuntimeVersionLoading } from '@/domain/runtime/ho
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { Button } from '@starwhale/ui'
+import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -46,15 +47,22 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
         setRuntimeLoading,
     ])
 
-    const runtimeVersionInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
+    const runtimeVersionInfo = useQuery(`fetchRuntimeVersion:${projectId}:${runtimeId}:${runtimeVersionId}`, () =>
         fetchRuntime(projectId, runtimeId, runtimeVersionId)
     )
     const { setRuntimeVersion } = useRuntimeVersion()
     const { setRuntimeVersionLoading } = useRuntimeVersionLoading()
+
     useEffect(() => {
         setRuntimeVersionLoading(runtimeVersionInfo.isLoading)
-        setRuntimeVersion(runtimeVersionInfo.data)
-    }, [setRuntimeVersionLoading, runtimeVersionInfo, setRuntimeVersion])
+        if (runtimeVersionInfo.isSuccess) setRuntimeVersion(runtimeVersionInfo.data)
+    }, [
+        setRuntimeVersionLoading,
+        runtimeVersionInfo.isSuccess,
+        runtimeVersionInfo.isLoading,
+        runtimeVersionInfo.data,
+        setRuntimeVersion,
+    ])
 
     const history = useHistory()
     const [page] = usePage()
@@ -84,26 +92,18 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
             {
                 title: t('Metadata'),
                 path: `/projects/${projectId}/runtimes/${runtimeId}/versions/${runtimeVersionId}/meta`,
-                pattern: '/\\/meta\\/?',
+                pattern: '/meta\\/?',
             },
             {
                 title: t('Files'),
                 path: `/projects/${projectId}/runtimes/${runtimeId}/versions/${runtimeVersionId}/files`,
-                pattern: '/\\/files\\/?',
+                pattern: '/files\\/?',
             },
         ]
         return items
     }, [projectId, runtimeId, runtimeVersionId, t])
 
-    const location = useLocation()
-    const activeItemId = useMemo(() => {
-        const item = navItems
-            .slice()
-            .reverse()
-            .find((item_) => (location.pathname ?? '').startsWith(item_.path ?? ''))
-        const paths = item?.path?.split('/') ?? []
-        return paths[paths.length - 1] ?? 'files'
-    }, [location.pathname, navItems])
+    const { activeItemId } = useRouterActivePath(navItems)
 
     const extra = useMemo(() => {
         return (

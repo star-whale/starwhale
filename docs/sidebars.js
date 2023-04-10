@@ -11,7 +11,8 @@ module.exports = {
             items: [
                 "getting-started/standalone",
                 "getting-started/server",
-                "getting-started/cloud"
+                "getting-started/cloud",
+                "getting-started/runtime"
             ]
         },
         {
@@ -59,35 +60,6 @@ module.exports = {
                         "dataset/api/cli",
                         "dataset/api/data_type",
                         "dataset/api/sdk",
-                    ]
-                },
-            ]
-        },
-        {
-            type: 'category',
-            label: "Starwhale Runtime",
-            link: {
-                type: "doc",
-                id: "runtime/index"
-            },
-            collapsed: true,
-            items: [
-                "runtime/getting_started",
-                "runtime/concepts",
-                {
-                    type: 'category',
-                    label: "Examples",
-                    collapsed: true,
-                    items: [
-                        "runtime/examples/pytorch",
-                    ]
-                },
-                {
-                    type: 'category',
-                    label: "API",
-                    collapsed: true,
-                    items: [
-                        "runtime/api/cli",
                     ]
                 },
             ]
@@ -241,6 +213,7 @@ module.exports = {
             label: "User Guides",
             items: [
                 "userguide/model",
+                "userguide/runtime",
             ]
         },
         {
@@ -256,7 +229,7 @@ module.exports = {
                         "instances/standalone/api/instance_cli",
                         "instances/standalone/api/project_cli",
                         "reference/swcli/model",
-                        "runtime/api/cli",
+                        "reference/swcli/runtime",
                         "dataset/api/cli",
                         "evaluation/api/cli",
                         "instances/standalone/api/utilities_cli"

@@ -1,4 +1,3 @@
-import io
 import os
 import typing as t
 from pathlib import Path
@@ -21,7 +20,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import URIType, BundleType, DataOriginType
+from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
@@ -33,25 +32,14 @@ from starwhale.core.dataset.type import (
     JsonDict,
     MIMEType,
     DatasetConfig,
-    DatasetSummary,
     GrayscaleImage,
     D_FILE_VOLUME_SIZE,
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
-from starwhale.core.dataset.tabular import TabularDatasetRow
-from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
-
-
-class MockBuildExecutor(BaseBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        yield b"", ""
-
-    def make_swds(self) -> DatasetSummary:
-        return DatasetSummary()
 
 
 class StandaloneDatasetTestCase(TestCase):
@@ -59,23 +47,31 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_function_handler_make_swds(self, m_swds_bin: MagicMock) -> None:
+    @patch("starwhale.api._impl.dataset.model.Dataset.commit")
+    @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
+    def test_function_handler_make_swds(
+        self, m_setitem: MagicMock, m_commit: MagicMock
+    ) -> None:
         name = "mnist"
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         sd._version = "112233"
         swds_config = DatasetConfig(name=name, handler=lambda: 1)
 
-        with self.assertRaises(RuntimeError):
-            sd._call_make_swds(swds_config)
+        with self.assertRaisesRegex(TypeError, "object is not iterable"):
+            sd.build(config=swds_config)
+
+        assert not m_commit.called
+        assert not m_setitem.called
 
         def _iter_swds_bin_item() -> t.Generator:
             yield {"bytes": b"", "link": Link("")}
 
         swds_config.handler = _iter_swds_bin_item
-        sd._call_make_swds(swds_config)
-        assert m_swds_bin.call_count == 1
+        sd.build(config=swds_config)
+
+        assert m_commit.call_count == 1
+        assert m_setitem.call_count == 1
 
     @patch("starwhale.core.dataset.cli.import_object")
     def test_build_only_cli(self, m_import: MagicMock) -> None:
@@ -97,7 +93,6 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[0] == workdir
         assert call_args[1].name == "mnist"
-        assert call_args[1].append is not None
         assert m_import.call_args[0][1] == "mnist:test"
 
     @patch("starwhale.core.dataset.cli.import_object")
@@ -105,9 +100,7 @@ class StandaloneDatasetTestCase(TestCase):
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
-        config = DatasetConfig(
-            name="mnist", handler="dataset:build", append=True, append_from="112233"
-        )
+        config = DatasetConfig(name="mnist", handler="dataset:build")
         yaml_path = Path(workdir) / DefaultYAMLName.DATASET
         ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
 
@@ -124,8 +117,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build.call_count == 1
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
         assert m_import.call_args[0][1] == "dataset:build"
 
         new_workdir = "/tmp/workdir-new"
@@ -142,8 +133,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
         assert m_import.call_args[0][1] == "dataset:build"
 
     @patch("starwhale.core.dataset.cli.import_object")
@@ -155,8 +144,6 @@ class StandaloneDatasetTestCase(TestCase):
         config = DatasetConfig(
             name="mnist-error",
             handler="dataset:not_found",
-            append=True,
-            append_from="112233",
         )
         yaml_path = Path(workdir) / DefaultYAMLName.DATASET
         ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
@@ -173,8 +160,6 @@ class StandaloneDatasetTestCase(TestCase):
                 "dataset:buildFunction",
                 "--project",
                 "self",
-                "-dmt",
-                "video/mp4",
             ],
             obj=mock_obj,
         )
@@ -184,16 +169,15 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
         assert call_args[1].handler == handler_func
-        assert call_args[1].append
-        assert call_args[1].append_from == "112233"
-        assert call_args[1].attr.data_mime_type == MIMEType.MP4
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
-    @patch("starwhale.core.dataset.model.copy_fs")
     def test_build_workflow(
         self,
-        m_copy_fs: MagicMock,
     ) -> None:
+        class _MockBuildExecutor:
+            def __iter__(self) -> t.Generator:
+                yield {"data": b"", "label": 1}
+
         sw = SWCliConfigMixed()
 
         workdir = "/home/starwhale/myproject"
@@ -203,7 +187,7 @@ class StandaloneDatasetTestCase(TestCase):
         ensure_file(os.path.join(workdir, "mnist.py"), " ")
 
         config = DatasetConfig(**yaml.safe_load(_dataset_yaml))
-        config.handler = MockBuildExecutor
+        config.handler = _MockBuildExecutor
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         sd.build(workdir=Path(workdir), config=config)
@@ -219,8 +203,6 @@ class StandaloneDatasetTestCase(TestCase):
         )
 
         assert snapshot_workdir.exists()
-        assert (snapshot_workdir / "data").exists()
-        assert (snapshot_workdir / "src").exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
         assert _manifest["version"] == build_version
@@ -285,59 +267,32 @@ class StandaloneDatasetTestCase(TestCase):
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
-    @patch("starwhale.core.dataset.store.LocalFSStorageBackend._make_file")
-    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
-    def test_head(
-        self,
-        m_scan: MagicMock,
-        m_summary: MagicMock,
-        m_makefile: MagicMock,
-    ) -> None:
-        m_summary.return_value = DatasetSummary(
-            rows=2,
-            increased_rows=2,
-        )
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id="label-0",
-                features={
-                    "img": GrayscaleImage(
-                        link=Link(
-                            "123",
-                            offset=32,
-                            size=784,
-                            _swds_bin_offset=0,
-                            _swds_bin_size=8160,
-                        )
-                    ),
+    def test_head(self) -> None:
+        from starwhale.api._impl.dataset import Dataset as SDKDataset
+
+        sds = SDKDataset.dataset("mnist-head-test")
+        sds.append(
+            (
+                "label-0",
+                {
+                    "img": GrayscaleImage(fp=b"123"),
                     "label": 0,
                 },
-                origin=DataOriginType.NEW,
-            ),
-            TabularDatasetRow(
-                id="label-1",
-                features={
-                    "img": GrayscaleImage(
-                        link=Link(
-                            "456",
-                            offset=32,
-                            size=784,
-                            _swds_bin_offset=0,
-                            _swds_bin_size=8160,
-                        )
-                    ),
+            )
+        )
+        sds.append(
+            (
+                "label-1",
+                {
+                    "img": GrayscaleImage(fp=b"456"),
                     "label": 1,
                 },
-                origin=DataOriginType.NEW,
-            ),
-        ]
-        content = b"\x00_\xfe\xc3\x00\x00\x00\x00"
-        while len(content) < 784:
-            content = content + content
-        m_makefile.side_effect = [io.BytesIO(content), io.BytesIO(content)]
+            )
+        )
+        sds.commit()
+        sds.close()
 
-        dataset_uri = "mnist/version/version"
+        dataset_uri = "mnist-head-test/version/latest"
         ds = Dataset.get_dataset(URI(dataset_uri, expected_type=URIType.DATASET))
 
         results = ds.head(0)
@@ -348,7 +303,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert results[0]["index"] == "label-0"
         assert results[0]["features"]["label"] == 0
         assert results[0]["features"]["img"].mime_type == MIMEType.GRAYSCALE
-        assert len(results[0]["features"]["img"].to_bytes()) == 784
+        assert len(results[0]["features"]["img"].to_bytes()) == 3
         assert len(results) == 1
 
         results = ds.head(5, show_raw_data=True)
@@ -397,8 +352,6 @@ class TestJsonDict(TestCase):
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "data_type": data_store.UNKNOWN,
-                            "with_local_fs_data": data_store.BOOL,
-                            "_local_fs_uri": data_store.STRING,
                             "_signed_uri": data_store.STRING,
                             "extra_info": data_store.SwMapType(
                                 data_store.UNKNOWN, data_store.UNKNOWN

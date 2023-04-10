@@ -14,20 +14,9 @@ from urllib.parse import urlparse
 import numpy
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
-from starwhale.consts import (
-    LATEST_TAG,
-    SHORT_VERSION_CNT,
-    VERSION_PREFIX_CNT,
-    DEFAULT_STARWHALE_API_VERSION,
-)
+from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_STARWHALE_API_VERSION
 from starwhale.base.uri import URI
-from starwhale.utils.fs import (
-    ensure_dir,
-    ensure_file,
-    FilePosition,
-    blake2b_content,
-    BLAKE2B_SIGNATURE_ALGO,
-)
+from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
     NoSupportError,
@@ -38,7 +27,7 @@ from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
-D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
+D_ALIGNMENT_SIZE = 128  # for page cache
 
 
 @unique
@@ -828,14 +817,13 @@ class Link(ASDictMixin, SwObject):
         offset: int = FilePosition.START.value,
         size: int = -1,
         data_type: t.Optional[t.Union[BaseArtifact, t.Dict]] = None,
-        with_local_fs_data: bool = False,
         use_plain_type: bool = False,
         owner: t.Optional[t.Union[str, URI]] = None,
         **kwargs: t.Any,
     ) -> None:
         self._type = "link"
         self.owner = owner.raw if (owner and isinstance(owner, URI)) else owner
-        self.uri = (str(uri)).strip()
+        self.uri = str(uri).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
         if offset < 0:
@@ -856,19 +844,9 @@ class Link(ASDictMixin, SwObject):
 
         self.data_type = data_type
 
-        self.with_local_fs_data = with_local_fs_data
-        self._local_fs_uri = ""
         self._signed_uri = ""
 
         self.extra_info = kwargs
-
-    @property
-    def local_fs_uri(self) -> str:
-        return self._local_fs_uri
-
-    @local_fs_uri.setter
-    def local_fs_uri(self, value: str) -> None:
-        self._local_fs_uri = value
 
     @property
     def signed_uri(self) -> str:
@@ -895,7 +873,7 @@ class Link(ASDictMixin, SwObject):
         return f"Link {self.uri}"
 
     def __repr__(self) -> str:
-        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, with localFS data:{self.with_local_fs_data}"
+        return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}"
 
     @http_retry
     def to_bytes(self) -> bytes:
@@ -903,7 +881,7 @@ class Link(ASDictMixin, SwObject):
         from .store import ObjectStore
 
         key_compose = (
-            Link(self.local_fs_uri) if self.local_fs_uri else self,
+            self,
             self.offset or 0,
             self.size + self.offset - 1 if self.size != -1 else sys.maxsize,
         )
@@ -913,57 +891,30 @@ class Link(ASDictMixin, SwObject):
         ) as f:
             return f.read(self.size)  # type: ignore
 
-    @classmethod
-    def from_local_artifact(
-        cls, data: t.Union[BaseArtifact, Link], store_dir: Path
-    ) -> Link:
-        if isinstance(data, Link):
-            return data
-
-        raw_content = data.to_bytes()
-        sign_name = blake2b_content(raw_content)
-        fpath = (
-            store_dir
-            / BLAKE2B_SIGNATURE_ALGO
-            / sign_name[:VERSION_PREFIX_CNT]
-            / sign_name
-        )
-        ensure_dir(fpath.parent)
-        ensure_file(fpath, raw_content)
-
-        return Link(
-            uri=fpath,
-            offset=0,
-            size=len(raw_content),
-            data_type=data,
-            with_local_fs_data=True,
-            use_plain_type=True,
-        )
-
 
 class DatasetSummary(ASDictMixin):
     def __init__(
         self,
         rows: int = 0,
-        increased_rows: int = 0,
-        data_byte_size: int = 0,
+        updated_rows: int = 0,
+        deleted_rows: int = 0,
+        blobs_byte_size: int = 0,
+        increased_blobs_byte_size: int = 0,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
-        self.increased_rows = increased_rows
-        self.unchanged_rows = rows - increased_rows
-        self.data_byte_size = data_byte_size
-        # TODO: cleanup expired increased_rows, unchanged_rows, data_byte_size fields
-        self.updated_rows = kw.get("updated_rows", 0)
-        self.deleted_rows = kw.get("deleted_rows", 0)
+        self.updated_rows = updated_rows
+        self.deleted_rows = deleted_rows
+        self.blobs_byte_size = blobs_byte_size
+        self.increased_blobs_byte_size = increased_blobs_byte_size
 
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows})"
 
     def __repr__(self) -> str:
         return (
-            f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
-            f"size(data:{self.data_byte_size})"
+            f"Dataset Summary: rows(total: {self.rows}, updated: {self.updated_rows}, deleted: {self.deleted_rows}), "
+            f"size(blobs:{self.blobs_byte_size})"
         )
 
 
@@ -973,12 +924,10 @@ class DatasetAttr(ASDictMixin):
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
         alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
-        data_mime_type: MIMEType = MIMEType.UNDEFINED,
         **kw: t.Any,
     ) -> None:
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
-        self.data_mime_type = data_mime_type
         self.kw = kw
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
@@ -999,8 +948,6 @@ class DatasetConfig(ASDictMixin):
         attr: t.Dict[str, t.Any] = {},
         project_uri: str = "",
         runtime_uri: str = "",
-        append: bool = False,
-        append_from: str = LATEST_TAG,
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -1012,8 +959,6 @@ class DatasetConfig(ASDictMixin):
         self.exclude_pkg_data = exclude_pkg_data
         self.project_uri = project_uri
         self.runtime_uri = runtime_uri
-        self.append = append
-        self.append_from = append_from
 
         self.kw = kw
 

@@ -2,19 +2,26 @@ from __future__ import annotations
 
 import os
 import re
+import abc
+import sys
 import json
 import time
 import atexit
 import base64
 import struct
 import urllib
+import inspect
+import zipfile
 import binascii
+import tempfile
 import importlib
 import threading
+import contextlib
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from typing import (
     Any,
+    Set,
     cast,
     Dict,
     List,
@@ -34,6 +41,8 @@ import pyarrow as pa  # type: ignore
 import requests
 import jsonlines
 from loguru import logger
+from filelock import FileLock
+from jsonlines import Writer
 from typing_extensions import Protocol
 
 from starwhale.consts import STANDALONE_INSTANCE
@@ -44,35 +53,7 @@ from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 
-try:
-    import fcntl
-
-    has_fcntl = True
-except ImportError:
-    has_fcntl = False
-
-datastore_table_file_ext = ".sw-datastore.json"
-
-
-def _check_move(src: str, dest: str) -> bool:
-    if has_fcntl:
-        with open(os.path.join(os.path.dirname(dest), ".lock"), "w") as f:
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX)  # type: ignore
-            except OSError:
-                return False
-            try:
-                os.rename(src, dest)
-                return True
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)  # type: ignore
-    else:
-        # windows
-        try:
-            os.rename(src, dest)
-            return True
-        except FileExistsError:
-            return False
+datastore_table_file_ext = ".sw-datastore"
 
 
 class SwType(metaclass=ABCMeta):
@@ -688,21 +669,17 @@ class TableSchema:
         )
 
 
-def _get_table_path(root_path: str, table_name: str) -> str:
-    return str(Path(root_path) / table_name.strip("/")) + datastore_table_file_ext
-
-
-def _parse_data_table_name(name: str) -> Tuple[str, int]:
-    try:
-        if name.endswith(datastore_table_file_ext):
-            if name.startswith("base-"):
-                return "base", int(name[5 : -len(datastore_table_file_ext)])
-            elif name.startswith("patch-"):
-                return "patch", int(name[6 : -len(datastore_table_file_ext)])
-    except ValueError:
-        # ignore invalid filename
-        pass
-    return "", 0
+def _get_table_path(root_path: str | Path, table_name: str) -> Path:
+    """
+    get table path from table name, return the matched file path if there is only one file match the table name
+    """
+    expect_prefix = Path(root_path) / (table_name.strip("/") + datastore_table_file_ext)
+    paths = list(expect_prefix.parent.glob(f"{expect_prefix.name}*"))
+    if len(paths) > 1:
+        raise RuntimeError(f"can not find table {table_name}, get files {paths}")
+    if len(paths) == 1:
+        return paths[0]
+    return expect_prefix
 
 
 def _merge_scan(
@@ -776,6 +753,11 @@ class InnerRecord:
         self.records[seq] = record
         return str(seq)
 
+    def update(self, other: InnerRecord | None) -> None:
+        if other is None:
+            return
+        self.records.update(other.records)
+
     def _reorder(self) -> None:
         if not self.ordered:
             self.records = OrderedDict(sorted(self.records.items()))
@@ -785,7 +767,7 @@ class InnerRecord:
         self._reorder()
         ret: Dict[str, Any] = dict()
         for seq, record in self.records.items():
-            if revision is None or seq <= int(revision):
+            if revision is None or revision == "" or seq <= int(revision):
                 if "-" in record and record["-"]:
                     ret = record.data
                 else:
@@ -795,6 +777,7 @@ class InnerRecord:
         return ret
 
     def dumps(self) -> Dict[str, Any]:
+        self._reorder()
         return {
             "key": self.key,
             "records": {seq: record.dumps() for seq, record in self.records.items()},
@@ -814,6 +797,83 @@ class InnerRecord:
         return time.monotonic_ns()
 
 
+class Compressor(abc.ABC):
+    @abc.abstractmethod
+    def extension(self) -> str:
+        """
+        Return the extension of the compressed file.
+        """
+        ...
+
+    @abc.abstractmethod
+    def compress(self, source: Path) -> Path:
+        """
+        Compress the file and return the path to the compressed file.
+        """
+        ...
+
+    @contextlib.contextmanager
+    @abc.abstractmethod
+    def decompress(self, source: Path) -> Iterator[Path]:
+        """
+        Decompress the file and return the path to the temp decompressed file.
+        And the temp file will be deleted after the context manager exits.
+        """
+        ...
+
+
+class NoCompressor(Compressor):
+    def extension(self) -> str:
+        return ".json"
+
+    def compress(self, source: Path) -> Path:
+        # never be called
+        # we need to duplicate the file because the dump method will remove the source file
+        raise RuntimeError("should not be called")
+
+    @contextlib.contextmanager
+    def decompress(self, source: Path) -> Iterator[Path]:
+        # compatible with the existing json file
+        yield source
+
+
+class ZipCompressor(Compressor):
+    def extension(self) -> str:
+        return ".zip"
+
+    def compress(self, source: Path) -> Path:
+        output = tempfile.mktemp()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(source, source.name)
+        return Path(output)
+
+    @contextlib.contextmanager
+    def decompress(self, source: Path) -> Iterator[Path]:
+        with zipfile.ZipFile(source, "r") as zipf:
+            # extract to tmp dir
+            tmp_dir = tempfile.TemporaryDirectory()
+            zipf.extractall(tmp_dir.name)
+            file_name = zipf.namelist()[0]
+            try:
+                yield Path(tmp_dir.name) / file_name
+            finally:
+                tmp_dir.cleanup()
+
+
+# get all the compressors in this module
+compressors: Dict[str, Compressor] = {}
+for name, obj in inspect.getmembers(sys.modules[__name__]):
+    if inspect.isclass(obj) and issubclass(obj, Compressor) and obj != Compressor:
+        compressors[obj.__name__] = obj()
+
+
+def get_compressor(file: Path) -> Compressor:
+    for compressor in compressors.values():
+        if file.suffix == compressor.extension():
+            return compressor
+    raise ValueError(f"Unknown compressor for file {file}")
+
+
 class MemoryTable:
     def __init__(self, table_name: str, key_column: ColumnSchema) -> None:
         self.table_name = table_name
@@ -821,6 +881,7 @@ class MemoryTable:
         self.records: Dict[Any, InnerRecord] = {}
         self.lock = threading.Lock()
         self.dirty = False
+        self.compressor = ZipCompressor()
 
     def scan(
         self,
@@ -882,7 +943,9 @@ class MemoryTable:
         }
 
     @classmethod
-    def _parse_meta(cls, meta: Dict[str, Any]) -> ColumnSchema:
+    def _parse_meta(cls, meta: Any) -> ColumnSchema:
+        if not isinstance(meta, dict):
+            raise RuntimeError(f"Invalid meta data {meta}")
         if meta["version"] != "0.1":
             raise ValueError(f"Unsupported version {meta['version']}")
         return ColumnSchema.loads(meta["key_column"])
@@ -891,37 +954,76 @@ class MemoryTable:
     def loads(cls, file: Path, table_name: str) -> MemoryTable:
         if not file.exists() or not file.is_file():
             raise RuntimeError(f"File {file} does not exist")
-        with jsonlines.open(file) as reader:
-            meta = reader.read()
-            if not isinstance(meta, dict):
-                raise RuntimeError(f"Invalid meta data {meta} in {file}")
-            key_column = cls._parse_meta(meta)
-            table = MemoryTable(table_name, key_column)
-            for record in reader:
-                ir = InnerRecord.loads(record)
-                table.records[ir.key] = ir
-            return table
+
+        with get_compressor(file).decompress(file) as f:
+            with jsonlines.open(f) as reader:
+                meta = reader.read()
+                key_column = cls._parse_meta(meta)
+                table = MemoryTable(table_name, key_column)
+                for record in reader:
+                    ir = InnerRecord.loads(record)
+                    table.records[ir.key] = ir
+        return table
 
     def dump(self, root_path: str, if_dirty: bool = True) -> None:
+        root = Path(root_path)
+        lock = root / ".lock"
+        with FileLock(lock):
+            return self._dump(root, if_dirty)
+
+    def _dump(self, root_path: Path, if_dirty: bool = True) -> None:
         if if_dirty and not self.dirty:
             return
-        dst = os.path.join(root_path, f"{self.table_name}{datastore_table_file_ext}")
-        base = os.path.dirname(dst)
-        temp_filename = os.path.join(base, f"temp.{os.getpid()}")
+
+        dst = Path(_get_table_path(root_path, self.table_name))
+        base = dst.parent
+        temp_filename = base / f"temp.{os.getpid()}"
         ensure_dir(base)
 
-        # dump key column info
         with jsonlines.open(temp_filename, mode="w") as writer:
             writer.write(self._dump_meta())
-            for ir in self.records.values():
+            dumped_keys = self._dump_from_local_file(dst, writer)
+
+            for k, ir in self.records.items():
+                if k in dumped_keys:
+                    continue
                 writer.write(ir.dumps())
 
-        # TODO: remove the lock, and disable concurrent access to the table
-        while not _check_move(temp_filename, dst):
-            # wait for the file to be released
-            time.sleep(0.1)
+        compressed = self.compressor.compress(temp_filename)
+        os.unlink(temp_filename)
+        if dst.suffix == datastore_table_file_ext:
+            # the dst file is must not exist, we never save a table as a sw-datastore file
+            # use the same extension as compressed file
+            ext = datastore_table_file_ext + self.compressor.extension()
+        else:
+            # the dst file is a compressed file, change the extension
+            ext = self.compressor.extension()
 
+        # make dst file have the same extension as compressed file
+        new_dst = dst.with_suffix(ext)
+        os.rename(compressed, new_dst)
+        if new_dst != dst and dst.exists():
+            # remove the old file if it is not the new file name
+            dst.unlink()
         self.dirty = False
+
+    def _dump_from_local_file(self, existing: Path, output: Writer) -> Set[str]:
+        dumped_keys: Set[str] = set()
+
+        if not existing.exists():
+            return dumped_keys
+
+        with get_compressor(existing).decompress(existing) as f:
+            with jsonlines.open(f, mode="r") as reader:
+                self._parse_meta(reader.read())
+                for i in reader:
+                    ir = InnerRecord.loads(i)
+                    r = self.records.get(ir.key)
+                    ir.update(r)
+                    dumped_keys.add(ir.key)
+                    output.write(ir.dumps())
+
+        return dumped_keys
 
 
 class TableDesc:

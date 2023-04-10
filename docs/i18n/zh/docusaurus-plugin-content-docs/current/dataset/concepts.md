@@ -83,13 +83,12 @@ title: 核心概念
 |attr|数据集构建参数|否|Dict||
 |attr.volume_size|swds-bin格式的数据集每个data文件的大小。当写数字时，单位bytes；也可以是数字+单位格式，如64M, 1GB等|否|Int或Str|64MB|
 |attr.alignment_size|swds-bin格式的数据集每个数据块的数据alignment大小，如果设置alignment_size为4k，数据块大小为7.9K，则会补齐0.1K的空数据，让数据块为alignment_size的整数倍，提升page size等读取效率|否|Integer或String|4k|
-|attr.data_mime_type|如果不在代码中为每条数据指定MIMEType，则会使用该字段，便于Dataset Viewer呈现|否|String|undefined|
 |append|当append设置为True时，表示此次数据集构建会继承 `append_from`版本的数据集内容，实现追加数据集的目的。|否|Boolean|False|
 |append_from|与 `append` 参数组合使用，指定继承数据集的版本，注意此处并不是Dataset URI，而是同一个数据集下的其他版本号或tag，默认为latest，即最近一次构建的版本。|否|String|latest|
 |project_uri|Project URI|`swcli project select`命令设定的project|String||
 |runtime_uri|Runtime URI，若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时|否|String||
 
-当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。Starwhale SDK会根据函数返回值判断首个元素为 `Starwhale.Link` 类型时，构建remote-link或user-raw格式的数据集，否则构建user-raw格式的数据集。不支持混合格式的数据集。
+当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。
 
 ### 使用示例
 
@@ -113,7 +112,6 @@ desc: MNIST data and label test dataset
 attr:
   alignment_size: 1k
   volume_size: 4M
-  data_mime_type: "x/grayscale"
 ```
 
 #### handler为generator function的例子

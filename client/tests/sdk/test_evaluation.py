@@ -9,12 +9,11 @@ from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale import get_data_loader
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, RunSubDirType, DataOriginType
+from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.job.context import Context
@@ -22,7 +21,7 @@ from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
-from starwhale.api._impl.dataset.loader import DataRow, DataLoader
+from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -163,10 +162,8 @@ class TestModelPipelineHandler(TestCase):
         _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 
-        # mock dataset
         m_summary.return_value = DatasetSummary(
             rows=1,
-            increased_rows=1,
         )
 
         fname = "data_ubyte_0.swds_bin"
@@ -239,10 +236,8 @@ class TestModelPipelineHandler(TestCase):
 
                 assert label_data == data[0]["ds_data"]["label"]
 
-        # mock dataset
         m_summary.return_value = DatasetSummary(
             rows=1,
-            increased_rows=1,
         )
 
         fname = "data_ubyte_0.swds_bin"
@@ -263,7 +258,6 @@ class TestModelPipelineHandler(TestCase):
                         ),
                         "label": label_data,
                     },
-                    origin=DataOriginType.NEW,
                     id=0,
                 ).asdict(),
             ],

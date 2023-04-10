@@ -8,7 +8,7 @@ import { CategoricalFilter } from './column-categorical'
 import Column from './column'
 import { COLUMNS } from './constants'
 import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 
 type OptionsT = SharedColumnOptionsT<boolean>
 

@@ -64,7 +64,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 rowIndex === data.rowHighlightIndex ? 'table-row--hovering' : undefined,
 
                 css({
-                    ...theme.borders.border200,
+                    // ...theme.borders.border200,
                     borderTop: 'none',
                     borderBottom: 'none',
                     borderRight: 'none',

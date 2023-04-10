@@ -3,22 +3,23 @@ from __future__ import annotations
 import os
 import typing as t
 import platform
+import tempfile
 import threading
 from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
-from functools import wraps, partial
+from functools import wraps, partial, lru_cache
 from itertools import islice
 
 import yaml
 from loguru import logger
 
-from starwhale.utils import now_str, gen_uniq_version
+from starwhale.utils import now_str, convert_to_bytes, gen_uniq_version
 from starwhale.consts import (
     FileDesc,
     HTTPMethod,
     CREATED_AT_KEY,
-    SW_AUTO_DIRNAME,
+    SW_TMP_DIR_NAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
@@ -26,18 +27,23 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
-from starwhale.utils.fs import copy_file, ensure_dir, ensure_file
+from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.retry import http_retry
-from starwhale.core.dataset.type import DatasetSummary
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.dataset.type import (
+    DatasetSummary,
+    D_ALIGNMENT_SIZE,
+    D_FILE_VOLUME_SIZE,
+)
 from starwhale.core.dataset.model import Dataset as CoreDataset
 from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
     TabularDataset,
+    DatastoreRevision,
     TabularDatasetInfo,
     DatastoreWrapperDataset,
     get_dataset_consumption,
@@ -58,6 +64,12 @@ _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
 
 _DEFAULT_LOADER_WORKERS = 2
 _DEFAULT_LOADER_CACHE_SIZE = 20
+
+
+class _DatasetCreateMode:
+    auto = "auto"
+    empty = "empty"
+    forbid = "forbid"
 
 
 class _Tags:
@@ -93,6 +105,7 @@ class Dataset:
         version: str,
         project_uri: URI,
         readonly: bool = False,
+        create: str = _DatasetCreateMode.auto,
     ) -> None:
         self.name = name
         self.project_uri = project_uri
@@ -107,11 +120,33 @@ class Dataset:
             obj_name=self.name,
         )
 
+        if create not in (
+            _DatasetCreateMode.auto,
+            _DatasetCreateMode.empty,
+            _DatasetCreateMode.forbid,
+        ):
+            raise ValueError(
+                f"the current create mode is not in the accept options: {create}"
+            )
+
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
-            self._loading_version = self._auto_complete_version(version)
+            if create == _DatasetCreateMode.empty:
+                raise RuntimeError(
+                    f"dataset already existed, failed to create by the {create} create mode: {self.name}"
+                )
+
+            self._loading_version = self._auto_complete_version(
+                _origin_uri.object.version
+            )
         else:
+            # TODO: call server or standalone api to create an empty dataset before committing.
+            if create == _DatasetCreateMode.forbid:
+                raise RuntimeError(
+                    "dataset doest not exist, we have already use {create} create mode to ensure dataset existence: {self.name}"
+                )
+
             if readonly:
                 raise ValueError(
                     f"no support to set a non-existed dataset to the readonly mode: {self.name}"
@@ -140,6 +175,8 @@ class Dataset:
         self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
         self._loader_num_workers = _DEFAULT_LOADER_WORKERS
 
+        self._builder_blob_alignment_size = D_ALIGNMENT_SIZE
+        self._builder_blob_volume_size = D_FILE_VOLUME_SIZE
         self._builder_lock = threading.Lock()
         self._dataset_builder: t.Optional[MappingDatasetBuilder] = None
         self._commit_lock = threading.Lock()
@@ -149,15 +186,25 @@ class Dataset:
         self._info_ds_wrapper: t.Optional[DatastoreWrapperDataset] = None
         self.__info: t.Optional[TabularDatasetInfo] = None
 
-        self._workdir = Path(f"{SW_AUTO_DIRNAME}/dataset")
+        self._tmpdir: t.Optional[Path] = None
+
         self._updated_rows_by_commit = 0
         self._deleted_rows_by_commit = 0
         if origin_uri_exists:
             _summary = self.__loading_core_dataset.summary()
             # TODO: raise none summary exception for existed dataset
-            self._total_rows = 0 if _summary is None else _summary.rows
+            if _summary is None:
+                self._total_rows = 0
+                self._total_blobs_size = 0
+            else:
+                self._total_rows = _summary.rows
+                self._total_blobs_size = _summary.blobs_byte_size
         else:
             self._total_rows = 0
+            self._total_blobs_size = 0
+
+        self._last_data_datastore_revision = ""
+        self._last_info_datastore_revision = ""
 
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
@@ -215,11 +262,6 @@ class Dataset:
             )
         return self
 
-    # TODO： remove this function after datastore supports timestamp
-    def _use_loading_version_for_loader(self) -> Dataset:
-        self._use_loading_version = True
-        return self
-
     def _clear_data_loader(self) -> None:
         with self._loader_lock:
             self.__data_loaders = {}
@@ -227,12 +269,12 @@ class Dataset:
     def with_loader_config(
         self, num_workers: t.Optional[int] = None, cache_size: t.Optional[int] = None
     ) -> Dataset:
-        if len(self.__data_loaders) != 0:
-            raise RuntimeError(
-                f"loaders({list(self.__data_loaders)}) have already been initialized"
-            )
-
         with self._loader_lock:
+            if len(self.__data_loaders) != 0:
+                raise RuntimeError(
+                    f"loaders({list(self.__data_loaders)}) have already been initialized"
+                )
+
             if num_workers is not None:
                 self._loader_num_workers = num_workers
 
@@ -241,18 +283,51 @@ class Dataset:
 
         return self
 
+    def with_builder_blob_config(
+        self,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+    ) -> Dataset:
+        """Config blob attributes for the dataset builder.
+
+        If you want to config blob attributes, you should call the function before appending, updating or deleting dataset records.
+
+        Arguments:
+            volume_size: (str, int, optional) The max bytes size of the single blob file.
+                When blob file size exceeds the value of volume_size argument, a new blob file is created automatically.
+                The default is 64MB. The argument accepts int(bytes) or str(32K, 64MB, 1GB...) format.
+            alignment_size: (str, int, optional) The alignment size of every bin section in the blob file.
+                The remaining part will be filled with `\0`. Default is 64 bytes.
+
+        Examples:
+        ```python
+        from starwhale import dataset, Binary
+
+        ds = dataset("mnist").with_builder_blob_config(volume_size="32M", alignment_size=128)
+        ds.append({"data": Binary(b"123")})
+        ds.commit()
+        ds.close()
+        ```
+
+        Returns:
+            A Dataset Object
+        """
+        with self._builder_lock:
+            if self._dataset_builder is not None:
+                raise RuntimeError(
+                    "dataset has already accept some changed rows, forbid to config dataset blob attributes"
+                )
+
+            self._builder_blob_volume_size = convert_to_bytes(volume_size)
+            self._builder_blob_alignment_size = convert_to_bytes(alignment_size)
+
+        return self
+
     def _get_data_loader(
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
         with self._loader_lock:
-            # TODO: use datastore timestamp to load specified version data
-            if hasattr(self, "_use_loading_version"):
-                version = self._loading_version
-            else:
-                version = MappingDatasetBuilder._HOLDER_VERSION
-
-            key = f"consumption-{disable_consumption}-{version}"
-
+            key = f"consumption-{disable_consumption}-{self.uri.object.version}"
             _loader = self.__data_loaders.get(key)
             if _loader is None or recreate:
                 if disable_consumption:
@@ -260,15 +335,43 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
+                data_revision = self._last_data_datastore_revision
+                if data_revision == "":
+                    data_revision = self._get_datastore_revision(self.uri).data
+
                 _loader = get_data_loader(
-                    self._make_capsulated_uri(obj_ver=version),
+                    self.uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
+                    dataset_scan_revision=data_revision,
                 )
                 self.__data_loaders[key] = _loader
 
         return _loader
+
+    @lru_cache(maxsize=32)
+    def _get_datastore_revision(self, uri: URI) -> DatastoreRevision:
+        if uri.object.typ != URIType.DATASET:
+            raise NoSupportError(
+                f"only support to fetch dataset datastore revision: {uri}"
+            )
+
+        if uri.object.version == "":
+            raise RuntimeError(f"cannot get version of uri: {uri}")
+
+        if uri.instance_type == InstanceType.CLOUD:
+            crm = CloudRequestMixed()
+            r = crm.do_http_request(
+                path=f"/project/{uri.project}/dataset/{uri.object.name}",
+                instance_uri=uri,
+                params={"versionUrl": uri.object.version},
+            ).json()
+            manifest = yaml.safe_load(r["data"]["versionMeta"])
+        else:
+            manifest = DatasetStorage(uri).manifest
+
+        return DatastoreRevision.from_manifest(manifest)
 
     def batch_iter(
         self, batch_size: int = 1, drop_not_full: bool = False
@@ -382,23 +485,30 @@ class Dataset:
 
     @property
     def info(self) -> TabularDatasetInfo:
-        if self.__info is not None:
+        with self._info_lock:
+            if self.__info is None:
+                info_revision = self._last_info_datastore_revision
+                if info_revision == "":
+                    info_revision = self._get_datastore_revision(self.uri).info
+
+                self._info_ds_wrapper = TabularDataset.from_uri(
+                    self.uri, info_datastore_revision=info_revision
+                )._info_ds_wrapper
+                self.__info = TabularDatasetInfo.load_from_datastore(
+                    self._info_ds_wrapper
+                )
+
             return self.__info
 
-        with self._info_lock:
-            # TODO: use uniform dataset table to store info
-            self._info_ds_wrapper = TabularDataset.from_uri(self.uri)._info_ds_wrapper
-            self.__info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
-
-        return self.__info
-
     @_check_readonly
-    def flush(self, artifacts_flush: bool = False) -> None:
+    def flush(self, artifacts_flush: bool = False) -> str:
+        revision = ""
         if self._dataset_builder:
-            self._dataset_builder.flush(artifacts_flush)
+            revision = self._dataset_builder.flush(artifacts_flush)
+            self._last_data_datastore_revision = revision
+            self._clear_data_loader()
 
-        loader = self._get_data_loader(disable_consumption=True)
-        loader.tabular_dataset.flush()
+        return revision
 
     @_check_readonly
     def rehash(self) -> None:
@@ -429,6 +539,19 @@ class Dataset:
 
         if self._dataset_builder:
             self._dataset_builder.close()
+
+        if self._tmpdir is not None:
+            empty_dir(self._tmpdir)
+
+    @property
+    def tmpdir(self) -> Path:
+        if self._tmpdir is None:
+            _base_dir = SWCliConfigMixed().rootdir / SW_TMP_DIR_NAME
+            ensure_dir(_base_dir)
+            self._tmpdir = Path(
+                tempfile.mkdtemp(prefix=f"dataset-{self.name}-", dir=_base_dir)
+            )
+        return self._tmpdir
 
     def diff(self, cmp: Dataset) -> t.Dict:
         # TODO: wait for datastore diff feature
@@ -512,10 +635,12 @@ class Dataset:
             if self._dataset_builder is None:
                 # TODO: support alignment_bytes_size, volume_bytes_size arguments
                 self._dataset_builder = MappingDatasetBuilder(
-                    workdir=self._workdir / "builder",
+                    workdir=self.tmpdir / "builder",
                     dataset_name=self.name,
                     project_name=self.project_uri.project,
                     instance_name=self.project_uri.instance,
+                    blob_alignment_bytes_size=self._builder_blob_alignment_size,
+                    blob_volume_bytes_size=self._builder_blob_volume_size,
                 )
             return self._dataset_builder
 
@@ -650,15 +775,20 @@ class Dataset:
             return self._commit(tags or [], message)
 
     def _commit(self, tags: t.List[str], message: str) -> str:
-        def _save_info() -> None:
+        def _save_info() -> str:
+            revision = ""
             if self.__info is not None and self._info_ds_wrapper is not None:
-                self.__info.save_to_datastore(self._info_ds_wrapper)
+                revision = self.__info.save_to_datastore(self._info_ds_wrapper)
+                self._last_info_datastore_revision = revision
+            return revision
 
-        def _dump_manifest() -> Path:
+        def _dump_manifest(dataset_revision: str, info_revision: str) -> Path:
             if self._dataset_builder is None:
                 raise RuntimeError("failed to commit, because dataset builder is None")
 
-            _signs = [str(m) for m in self._dataset_builder.signature_bins_meta]
+            increased_blobs_size = sum(
+                [m.size for m in self._dataset_builder.signature_bins_meta]
+            )
 
             _manifest = {
                 "build": {
@@ -666,21 +796,25 @@ class Dataset:
                     "starwhale": STARWHALE_VERSION,
                 },
                 "version": self._pending_commit_version,
-                "related_datastore_timestamp": "",  # TODO: get timestamp from datastore
                 CREATED_AT_KEY: now_str(),
-                "append_signs": _signs,
-                "dataset_summary": {
-                    "rows": self._dataset_builder.calculate_rows_cnt(),  # maybe slow
-                    "updated_rows": self._updated_rows_by_commit,
-                    "deleted_rows": self._deleted_rows_by_commit,
-                },
+                "dataset_summary": DatasetSummary(
+                    rows=self._dataset_builder.calculate_rows_cnt(),  # maybe slow
+                    updated_rows=self._updated_rows_by_commit,
+                    deleted_rows=self._deleted_rows_by_commit,
+                    blobs_byte_size=self._total_blobs_size + increased_blobs_size,
+                    increased_blobs_byte_size=increased_blobs_size,
+                ).asdict(),
                 "message": message,
             }
+
+            _manifest.update(
+                DatastoreRevision(data=dataset_revision, info=info_revision).asdict()
+            )
 
             self._updated_rows_by_commit = 0
             self._deleted_rows_by_commit = 0
 
-            _m_path = self._workdir / DEFAULT_MANIFEST_NAME
+            _m_path = self.tmpdir / DEFAULT_MANIFEST_NAME
             ensure_file(
                 _m_path,
                 yaml.safe_dump(_manifest, default_flow_style=False),
@@ -703,7 +837,6 @@ class Dataset:
             )
             pccd.tag.add_fast_tag()
 
-        @http_retry
         def _submit_cloud_version(manifest_path: Path) -> None:
             from starwhale.base.bundle_copy import _UploadPhase
 
@@ -741,9 +874,13 @@ class Dataset:
         if self.__has_committed:
             raise RuntimeError("Dataset has already committed")
 
-        self.flush(artifacts_flush=True)
-        _save_info()
-        manifest_path = _dump_manifest()
+        dataset_revision = self.flush(artifacts_flush=True)
+        info_revision = _save_info()
+        manifest_path = _dump_manifest(dataset_revision, info_revision)
+
+        logger.debug(
+            f"dataset commit: revision-{dataset_revision}, info revision-{info_revision}"
+        )
         if self.project_uri.instance == STANDALONE_INSTANCE:
             _submit_standalone_version(manifest_path)
         else:
@@ -765,18 +902,16 @@ class Dataset:
         """
         return self.__has_committed
 
-    def copy(
-        self, dest_uri: str, force: bool = False, dest_local_project_uri: str = ""
-    ) -> None:
+    def copy(self, dest_uri: str, dest_local_project_uri: str = "") -> None:
         CoreDataset.copy(
             str(self.uri),
             dest_uri,
-            force=force,
             dest_local_project_uri=dest_local_project_uri,
         )
 
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         project_uri: t.Union[str, URI] = "",
         fullname: bool = False,
         show_removed: bool = False,
@@ -789,9 +924,11 @@ class Dataset:
             project_uri, fullname, show_removed, page_index, page_size
         )
 
-    @staticmethod
+    @classmethod
     def dataset(
+        cls,
         uri: t.Union[str, URI],
+        create: str = _DatasetCreateMode.auto,
         readonly: bool = False,
     ) -> Dataset:
         """Create or load a dataset from standalone instance or cloud instance.
@@ -801,6 +938,11 @@ class Dataset:
 
         Arguments:
             uri: (str, URI, required) The dataset uri.
+            create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
+                `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
+                `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
+                `forbid` mode: If the dataset already exists, nothing is done.If it does not exist, an Exception is raised. This mode ensures the existence of the dataset.
+                The default is `auto`.
             readonly: (bool, optional) For an existing dataset, you can specify the readonly=True argument to ensure
                 the dataset is in readonly mode. Default is False.
 
@@ -812,6 +954,7 @@ class Dataset:
         from starwhale import dataset, Image
 
         # create a new dataset named mnist, and add a row into the dataset
+        # dataset("mnist") is equal to dataset("mnist", create="auto")
         ds = dataset("mnist")
         ds.exists()  # return False, "mnist" dataset is not existing.
         ds.append({"img": Image(), "label": 1})
@@ -828,6 +971,12 @@ class Dataset:
         ds[0].features.label = 1
         ds.commit()
         ds.close()
+
+        # create an empty dataset
+        ds = dataset("mnist-empty", create="empty")
+
+        # ensure the dataset existence
+        ds = dataset("mnist-existed", create="forbid")
         ```
 
         """
@@ -845,6 +994,7 @@ class Dataset:
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
             readonly=readonly,
+            create=create or _DatasetCreateMode.auto,
         )
 
         return ds

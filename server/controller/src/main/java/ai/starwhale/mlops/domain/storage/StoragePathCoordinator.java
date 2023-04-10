@@ -75,9 +75,13 @@ public class StoragePathCoordinator {
     /**
      * @return consistency of path is guaranteed among multiple method calls
      */
-    public String allocateDatasetPath(Long projectId, String datasetName, String datasetVersion) {
+    public String allocateDatasetVersionPath(Long projectId, String datasetName, String datasetVersion) {
         checkKeyWord(datasetVersion, ValidSubject.DATASET);
         return allocateBundlePath(projectId, BUNDLE_DATASET, datasetName, datasetVersion);
+    }
+
+    public String allocateDatasetPath(Long projectId, String datasetName) {
+        return String.format(STORAGE_PATH_FORMATTER_DATASET_POOL, prefix, projectId, datasetName);
     }
 
     /**
@@ -107,6 +111,11 @@ public class StoragePathCoordinator {
      */
     static final String STORAGE_PATH_FORMATTER_BUNDLE = "%s/project/%s/%s/%s/version/%s";
     static final String STORAGE_PATH_FORMATTER_MODEL_POOL = "%s/project/%s/common-model/%s";
+
+    /**
+     * {prefix}/project/{projectId}/common-dataset/{datasetName}
+     */
+    static final String STORAGE_PATH_FORMATTER_DATASET_POOL = "%s/project/%s/common-dataset/%s";
 
     public String allocateBundlePath(Long projectId, String bundleType, String bundleName,
             String bundleVersion) {

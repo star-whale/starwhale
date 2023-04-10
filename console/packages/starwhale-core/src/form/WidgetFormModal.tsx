@@ -9,6 +9,7 @@ import { StoreType, useEditorContext } from '../context/EditorContextProvider'
 import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
 import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
+import useTranslation from '@/hooks/useTranslation'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -27,6 +28,7 @@ export default function WidgetFormModal({
     handleFormSubmit: (args: any) => void
     id?: string
 }) {
+    const [t] = useTranslation()
     // @FIXME use event bus handle global state
     const { dynamicVars } = useEditorContext()
     const { prefix } = dynamicVars
@@ -84,7 +86,7 @@ export default function WidgetFormModal({
                 },
             }}
         >
-            <ModalHeader>Add Chart</ModalHeader>
+            <ModalHeader>{t('panel.chart.add')}</ModalHeader>
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
@@ -100,7 +102,7 @@ export default function WidgetFormModal({
                         position: 'relative',
                     }}
                 >
-                    {!type && 'Select a metric to visalize in this chart'}
+                    {!type && t('panel.add.placeholder')}
                     {type && (
                         <div
                             style={{

@@ -21,6 +21,7 @@ import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
+import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -58,7 +59,7 @@ export const CONFIG: WidgetConfig = {
     group: WidgetGroupType.LIST,
     description: 'ui layout for dynamic grid view',
     optionConfig: {
-        title: 'Panel',
+        title: '',
         isExpaned: true,
         layoutConfig: {
             padding: 20,
@@ -78,16 +79,19 @@ type Option = typeof CONFIG['optionConfig']
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {
+    const [t] = useTranslation()
     const styles = useStyles()
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { title = '', isExpaned = false, layoutConfig, layout } = optionConfig as Option
+    const { isExpaned = false, layoutConfig, layout } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
+
+    const title = optionConfig?.title || t('panel.name')
 
     const [isModelOpen, setIsModelOpen] = useState(false)
 
@@ -280,7 +284,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </div>
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
-                <ModalHeader>Panel</ModalHeader>
+                <ModalHeader>{t('panel.name')}</ModalHeader>
                 <ModalBody>
                     <SectionForm onSubmit={handleSectionForm} formData={{ name: title }} />
                 </ModalBody>
@@ -290,11 +294,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
 }
 
 const EmptyPlaceholder = () => {
+    const [t] = useTranslation()
+
     return (
         <BusyPlaceholder type='center' style={{ minHeight: '240px' }}>
             <IconFont type='emptyChart' size={64} />
-            {/* eslint-disable-next-line react/no-unescaped-entities */}
-            <span>Click "Add Chart" to add visualizations</span>
+            <span>{t('panel.list.placeholder')}</span>
         </BusyPlaceholder>
     )
 }

@@ -41,7 +41,7 @@ export default function SectionForm({ formData, onSubmit }: any) {
 
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <FormItem name='name' label='Name'>
+            <FormItem name='name' label={t('sth name')}>
                 <Input size='compact' />
             </FormItem>
             <FormItem>

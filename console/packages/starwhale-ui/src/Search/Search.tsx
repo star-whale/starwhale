@@ -7,6 +7,7 @@ import FilterRenderer from './FilterRenderer'
 import { ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
+import useTranslation from '@/hooks/useTranslation'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -69,6 +70,7 @@ export interface ISearchProps {
 
 export default function Search({ value = [], onChange, ...props }: ISearchProps) {
     const styles = useStyles()
+    const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [items, setItems] = useState<ValueT[]>(value)
@@ -174,7 +176,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             <div className={styles.placeholder}>
                 {!isEditing && items.length === 0 && (
                     <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute' }}>
-                        Search and Filter
+                        {t('table.search.placeholder')}
                     </LabelSmall>
                 )}
             </div>

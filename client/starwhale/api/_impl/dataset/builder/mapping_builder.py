@@ -38,7 +38,7 @@ from starwhale.api._impl.dataset.loader import DataRow
 
 class RotatedBinWriter:
     """
-    bin format:
+    format:
         header_magic    uint32  I
         crc             uint32  I
         _reserved       uint64  Q
@@ -180,7 +180,6 @@ class RotatedBinWriter:
 
 
 class MappingDatasetBuilder:
-    _HOLDER_VERSION = "_current"
     _STASH_URI = "_starwhale_stash_uri"
 
     class _SignedBinMeta(t.NamedTuple):
@@ -197,8 +196,8 @@ class MappingDatasetBuilder:
         dataset_name: str,
         project_name: str,
         instance_name: str = STANDALONE_INSTANCE,
-        bin_alignment_bytes_size: int = D_ALIGNMENT_SIZE,
-        bin_volume_bytes_size: int = D_FILE_VOLUME_SIZE,
+        blob_alignment_bytes_size: int = D_ALIGNMENT_SIZE,
+        blob_volume_bytes_size: int = D_FILE_VOLUME_SIZE,
     ) -> None:
         self.workdir = Path(workdir)
         self.dataset_name = dataset_name
@@ -207,11 +206,10 @@ class MappingDatasetBuilder:
 
         self._in_standalone = instance_name == STANDALONE_INSTANCE
 
-        self._bin_alignment_bytes_size = bin_alignment_bytes_size
-        self._bin_volume_bytes_size = bin_volume_bytes_size
+        self._blob_alignment_bytes_size = blob_alignment_bytes_size
+        self._blob_volume_bytes_size = blob_volume_bytes_size
         self._tabular_dataset = TabularDataset(
             name=dataset_name,
-            version=self._HOLDER_VERSION,  # use a holder version value, all versions of one dataset use the unified table
             project=project_name,
             instance_name=instance_name,
         )
@@ -236,14 +234,15 @@ class MappingDatasetBuilder:
         self._artifact_bin_writer = RotatedBinWriter(
             workdir=self._artifact_bin_tmpdir,
             rotated_bin_notify_queue=self._abs_queue,
-            alignment_bytes_size=bin_alignment_bytes_size,
-            volume_bytes_size=bin_volume_bytes_size,
+            alignment_bytes_size=self._blob_alignment_bytes_size,
+            volume_bytes_size=self._blob_volume_bytes_size,
         )
 
         self._stash_uri_rows_map: t.Dict[
             Path, t.List[t.Tuple[BaseArtifact, TabularDatasetRow]]
         ] = defaultdict(list)
         self._signed_bins_meta: t.List[MappingDatasetBuilder._SignedBinMeta] = []
+        self._last_flush_revision = ""
 
     def __enter__(self) -> MappingDatasetBuilder:
         return self
@@ -384,14 +383,15 @@ class MappingDatasetBuilder:
     def delete(self, key: t.Union[str, int]) -> None:
         self._tabular_dataset.delete(key)
 
-    def flush(self, artifacts_flush: bool = False) -> None:
+    def flush(self, artifacts_flush: bool = False) -> str:
         self._rows_put_queue.join()
 
         if artifacts_flush:
             self._artifact_bin_writer._rotate()
             self._abs_queue.join()
 
-        self._tabular_dataset.flush()
+        self._last_flush_revision, _ = self._tabular_dataset.flush()
+        return self._last_flush_revision
 
     def _threads_join(self) -> None:
         self._abs_thread.join()
@@ -411,4 +411,11 @@ class MappingDatasetBuilder:
 
     def calculate_rows_cnt(self) -> int:
         # TODO: tune performance by datastore
-        return len([row for row in self._tabular_dataset.scan()])
+        return len(
+            [
+                row
+                for row in self._tabular_dataset.scan(
+                    revision=self._last_flush_revision
+                )
+            ]
+        )

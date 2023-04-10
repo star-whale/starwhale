@@ -8,16 +8,12 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 
 - `class PipelineHandler`: 提供默认的模型评测过程定义，需要用户实现 `ppl` 和 `cmp` 函数。
 - `class Context`: 执行模型评测过程中传入的上下文信息，包括Project、Task ID等。
-- `class SWDSBinBuildExecutor`: 提供swds-bin格式的数据集构建类，需要用户实现 `iter_item` 函数。
-- `class UserRawBuildExecutor`: 提供remote-link和user-raw格式的数据集构建类，需要用户实现 `iter_item` 函数。
-- `class BuildExecutor`: `SWDSBinBuildExecutor` 类的别称，同为swds-bin格式的数据集构建类。
 - `class URI`: starwhale uri的类定义，可以将字符串转化成URI对象。
 
 ## 函数
 
 - `multi_classification`: 修饰器，适用于多分类问题，用来简化cmp结果的进一步计算和结果存储，能更好的呈现评测结果。
 - `step`: 修饰器，可以指定DAG的依赖关系和Task数量、资源等配置，实现用户自定义评测过程。
-- `get_data_loader`: 获取Starwhale Dataset的Data Loader，是一个可迭代的对象，能够获取数据集中具体样本的索引、data和annotations。
 
 ## 数据类型
 
@@ -29,7 +25,7 @@ Starwhale 提供一系列的Python SDK，帮助用户更容易的制作数据集
 - `Audio`: 音频类型。
 - `Text`: 文本类型，默认为 `utf-8` 格式。
 - `Binary`: 二进制类型，用bytes存储。
-- `Link`: Link类型，用来制作 `remote-link` 和 `user-raw` 类型的数据集。
+- `Link`: Link类型，用来制作 `remote-link`类型的数据。
 - `S3LinkAuth`: 当数据存储在基于S3协议的对象存储上时，该类型负责描述授权、密钥信息。
 - `LocalFSLinkAuth`: 描述数据存储在本地文件系统上。
 - `DefaultS3LinkAuth`: 使用默认值初始化 `S3LinkAuth` 类型后得到的变量。

@@ -17,7 +17,7 @@ from .view import (
 @click.group(
     "eval",
     cls=AliasedGroup,
-    help="Evaluation management, create/list/info/compare evaluation job",
+    help="Evaluation management, run/list/info/compare evaluation job",
 )
 @click.pass_context
 def eval_job_cmd(ctx: click.Context) -> None:
@@ -25,9 +25,14 @@ def eval_job_cmd(ctx: click.Context) -> None:
 
 
 @eval_job_cmd.command(
-    "list", aliases=["ls"], help="List all jobs in the current project"
+    "list", aliases=["ls"], help="List all jobs in the specified project"
 )
-@click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project.",
+)
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option("--show-removed", is_flag=True, help="Show removed dataset")
 @click.option(
@@ -50,22 +55,23 @@ def _list(
     )
 
 
+# make the internal options hidden in the `--help` output.
 @eval_job_cmd.command("run", help="Run job")
 @click.option(
     "-p",
     "--project",
     envvar=SWEnv.project,
     default="",
-    help=f"project name, env is {SWEnv.project}",
+    help=f"Project URI, env is {SWEnv.project}.The evaluation result will store in the specified project. Default is the current selected project.",
 )
 @click.option(
     "--version",
     envvar=SWEnv.eval_version,
     default=None,
     help=f"Evaluation job version, env is {SWEnv.eval_version}",
+    hidden=True,
 )
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
-# TODO:support multi dataset
 @click.option(
     "datasets",
     "--dataset",
@@ -81,26 +87,35 @@ def _list(
     "--step-spec",
     default="",
     type=str,
-    help="[Cloud_ONLY] A file contains the specification for steps of the job",
+    help="[Cloud_ONLY]a file contains the specification for steps of the job",
+    hidden=True,
 )
 @click.option(
     "--resource-pool",
     default="default",
     type=str,
-    help="[Cloud_ONLY] The node group you would like to run your job on",
+    help="[Cloud_ONLY]the job runs in the specified resource pool",
 )
 @click.option(
     "--use-docker",
     is_flag=True,
     help="[ONLY Standalone]use docker to run evaluation job",
 )
-@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option("--step", default="", help="Evaluation run step")
-@click.option("--task-index", default=-1, help="Index of tasks in the current step")
+@click.option(
+    "--gencmd",
+    is_flag=True,
+    help="[ONLY Standalone]gen docker run command",
+    hidden=True,
+)
+@click.option("--step", default="", help="Evaluation run step", hidden=True)
+@click.option(
+    "--task-index", default=-1, help="Index of tasks in the current step", hidden=True
+)
 @click.option(
     "--override-task-num",
     default=0,
     help="Total num of tasks in the current step",
+    hidden=True,
 )
 def _run(
     project: str,

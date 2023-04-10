@@ -13,7 +13,7 @@ import { LabelSmall } from 'baseui/typography'
 import Column from './column'
 import { COLUMNS } from './constants'
 import type { ColumnT, SharedColumnOptionsT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 import FilterShell from './filter-shell'
 import { matchesQuery, splitByQuery, HighlightCellText } from './text-search'
 

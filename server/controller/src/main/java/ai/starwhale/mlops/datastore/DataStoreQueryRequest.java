@@ -30,6 +30,7 @@ import lombok.NoArgsConstructor;
 public class DataStoreQueryRequest {
 
     private String tableName;
+    // timestamp in milliseconds, used to filter out the data that is older than the timestamp for this table
     private long timestamp;
     private Map<String, String> columns;
     private List<OrderByDesc> orderBy;

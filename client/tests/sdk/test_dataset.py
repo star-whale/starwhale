@@ -11,12 +11,12 @@ import struct
 import typing as t
 import threading
 from http import HTTPStatus
-from types import TracebackType
 from pathlib import Path
 from binascii import crc32
 from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
+import yaml
 import numpy
 import numpy as np
 import torch
@@ -24,17 +24,9 @@ import pytest
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from tests import ROOT_DIR
 from starwhale.utils import config
-from starwhale.consts import (
-    HTTPMethod,
-    ENV_POD_NAME,
-    OBJECT_STORE_DIRNAME,
-    DEFAULT_MANIFEST_NAME,
-    ARCHIVED_SWDS_META_FNAME,
-)
+from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file, blake2b_file
 from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
@@ -60,10 +52,11 @@ from starwhale.core.dataset.type import (
     NumpyBinary,
     ArtifactType,
     BoundingBox3D,
+    DatasetConfig,
     GrayscaleImage,
     COCOObjectAnnotation,
 )
-from starwhale.core.dataset.store import DatasetStorage
+from starwhale.core.dataset.model import StandaloneDataset
 from starwhale.api._impl.data_store import Link as DataStoreRawLink
 from starwhale.api._impl.data_store import STRING, SwObject, _get_type, SwObjectType
 from starwhale.core.dataset.tabular import (
@@ -80,22 +73,8 @@ from starwhale.api._impl.dataset.builder.mapping_builder import (
     RotatedBinWriter,
     MappingDatasetBuilder,
 )
-from starwhale.api._impl.dataset.builder.iterable_builder import (
-    BinWriter,
-    RowWriter,
-    _data_magic,
-    _header_size,
-    _header_magic,
-    BuildExecutor,
-    _header_struct,
-    create_generic_cls,
-)
 
 from .. import BaseTestCase
-
-_mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
-_mnist_data_path = _mnist_dir / "data"
-_mnist_label_path = _mnist_dir / "label"
 
 _TGenItem = t.Generator[t.Tuple[t.Any, t.Any], None, None]
 
@@ -145,109 +124,21 @@ def iter_complex_annotations_swds() -> _TGenItem:
         yield f"idx-{i}", data
 
 
-def iter_mnist_swds_bin_item_with_id() -> _TGenItem:
-    for data in iter_mnist_swds_bin_item():
-        display_name = data["data"].display_name
-        yield f"mnist-{display_name}", data
-
-
-def iter_mnist_swds_bin_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
-    with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
-        "rb"
-    ) as label_file:
-        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-        _, label_number = struct.unpack(">II", label_file.read(8))
-        print(
-            f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
-        )
-        image_size = height * width
-
-        for i in range(0, min(data_number, label_number)):
-            _data = data_file.read(image_size)
-            _label = struct.unpack(">B", label_file.read(1))[0]
-            yield {
-                "data": GrayscaleImage(
-                    _data,
-                    display_name=f"{i}",
-                    shape=(height, width, 1),
-                ),
-                "label": _label,
-            }
-
-
-class MNISTBuildExecutor(BuildExecutor):
-    def get_info(self) -> t.Optional[t.Dict[str, t.Any]]:
-        return {
-            "int": 1,
-            "dict": {"a": 1, "b": 2},
-            "list": [1, 2, 3],
-            "list_dict": [{"a": 1}, {"b": 2}],
-        }
-
-    def iter_item(self) -> t.Generator[t.Dict[str, t.Any], None, None]:
-        return iter_mnist_swds_bin_item()
-
-
-class MNISTBuildWithIDExecutor(BuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        return iter_mnist_swds_bin_item_with_id()
-
-
-def iter_mnist_user_raw_item_with_id() -> t.Generator[
-    t.Tuple[t.Any, t.Any], None, None
-]:
-    for data in iter_mnist_user_raw_item():
-        image_ = data["image"]
-        yield f"mnist-link-{image_.display_name}", data
-
-
-def iter_mnist_user_raw_item() -> t.Generator[t.Dict[str, t.Any], None, None]:
-    with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
-        "rb"
-    ) as label_file:
-        _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-        _, label_number = struct.unpack(">II", label_file.read(8))
-
-        image_size = height * width
-        offset = 16
-
-        for i in range(0, min(data_number, label_number)):
-            _label = struct.unpack(">B", label_file.read(1))[0]
-            _local_link = Link(
-                uri=_mnist_label_path,
-                with_local_fs_data=True,
-            )
-            yield {
-                "image": GrayscaleImage(
-                    display_name=f"{i}",
-                    shape=(height, width, 1),
-                    link=Link(
-                        uri=str(_mnist_data_path.absolute()),
-                        offset=offset,
-                        size=image_size,
-                        with_local_fs_data=True,
-                    ),
-                ),
-                "original_data": Binary(fp=_mnist_data_path.absolute()),
-                "label": _label,
-                "link": _local_link,
-                "list_link": [_local_link],
-                "dict_link": {"key": _local_link},
-            }
-            offset += image_size
-
-
 class TestDatasetCopy(BaseTestCase):
-    def setUp(self) -> None:
-        return super().setUp()
-
     @patch("os.environ", {})
     @Mocker()
     def test_upload(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
-        dataset_version = "123"
         cloud_project = "project"
+
+        swds_config = DatasetConfig(
+            name=dataset_name, handler=iter_complex_annotations_swds
+        )
+        dataset_uri = URI(dataset_name, expected_type=URIType.DATASET)
+        sd = StandaloneDataset(dataset_uri)
+        sd.build(config=swds_config)
+        dataset_version = sd._version
 
         rm.request(
             HTTPMethod.GET,
@@ -259,9 +150,10 @@ class TestDatasetCopy(BaseTestCase):
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
             json={"data": {"uploadId": 1}},
         )
+
         rm.request(
             HTTPMethod.HEAD,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
@@ -277,31 +169,21 @@ class TestDatasetCopy(BaseTestCase):
             },
         )
 
-        _cls = create_generic_cls(iter_complex_annotations_swds)
-        workdir = Path(self.local_storage, "user", "workdir")
-
-        dataset_dir = (
-            Path(self.local_storage)
-            / "self"
-            / "dataset"
-            / dataset_name
-            / dataset_version[:2]
-            / f"{dataset_version}.swds"
+        rm.register_uri(
+            HTTPMethod.HEAD,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+            ),
+            status_code=HTTPStatus.NOT_FOUND,
         )
-        ensure_dir(dataset_dir)
-        ensure_file(dataset_dir / DEFAULT_MANIFEST_NAME, json.dumps({"signature": []}))
-        ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
 
-        project = "self"
-        with _cls(
-            dataset_name=dataset_name,
-            dataset_version=dataset_version,
-            project_name=project,
-            workdir=workdir,
-            alignment_bytes_size=16,
-            volume_bytes_size=1000,
-        ) as e:
-            e.make_swds()
+        upload_blob_req = rm.register_uri(
+            HTTPMethod.POST,
+            re.compile(
+                f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/"
+            ),
+            json={"data": "server_return_uri"},
+        )
 
         os.environ[SWEnv.instance_token] = "1234"
 
@@ -325,6 +207,7 @@ class TestDatasetCopy(BaseTestCase):
             )
             dc.do()
 
+        assert upload_blob_req.call_count == 1
         content = m_update_req.last_request.json()  # type: ignore
         assert {
             "type": "OBJECT",
@@ -368,8 +251,6 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
                                 {"name": "data_type", "type": "UNKNOWN"},
-                                {"name": "with_local_fs_data", "type": "BOOL"},
-                                {"name": "_local_fs_uri", "type": "STRING"},
                                 {"name": "_signed_uri", "type": "STRING"},
                                 {
                                     "keyType": {"type": "UNKNOWN"},
@@ -415,8 +296,15 @@ class TestDatasetCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/file",
-            json={"signature": []},
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/blob",
+        )
+
+        rm.request(
+            HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}?versionUrl={dataset_version}",
+            json={
+                "data": {"versionMeta": yaml.safe_dump({"version": dataset_version})}
+            },
         )
 
         rm.request(
@@ -452,7 +340,6 @@ class TestDatasetCopy(BaseTestCase):
                                 },
                             ],
                         },
-                        {"type": "STRING", "name": "origin"},
                         {"type": "INT64", "name": "_append_seq_id"},
                         {
                             "type": "OBJECT",
@@ -484,7 +371,6 @@ class TestDatasetCopy(BaseTestCase):
                                 "width": "0000000000000003",
                                 "height": "0000000000000004",
                             },
-                            "origin": "+",
                         }
                     ],
                 }
@@ -528,7 +414,7 @@ class TestDatasetCopy(BaseTestCase):
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-        tdb = TabularDataset(name=dataset_name, version=dataset_version, project="self")
+        tdb = TabularDataset(name=dataset_name, project="self")
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
@@ -537,290 +423,6 @@ class TestDatasetCopy(BaseTestCase):
         assert isinstance(bbox, BoundingBox)
         assert bbox.x == 2 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
-
-
-class MockBinWriter:
-    def __init__(self) -> None:
-        self.total_bin_size = 0
-
-    def write_row(self, row: TabularDatasetRow) -> None:
-        """
-        Find large bytes or local fs file in row data. Convert them to accessible link
-        """
-        print("write_row")
-
-    def flush(self) -> None:
-        print("flush")
-
-    def __enter__(self) -> BinWriter:
-        return self
-
-    def __exit__(
-        self,
-        type: t.Optional[t.Type[BaseException]],
-        value: t.Optional[BaseException],
-        trace: TracebackType,
-    ) -> None:
-        print("exit")
-
-
-class TestDatasetBuildExecutor(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
-        self.object_store_dir = os.path.join(
-            self.local_storage, OBJECT_STORE_DIRNAME, DatasetStorage.object_hash_algo
-        )
-        self.raw_data = os.path.join(self.local_storage, ".user", "data")
-        self.workdir = os.path.join(self.local_storage, ".user", "workdir")
-        self.data_file_sign = blake2b_file(_mnist_data_path)
-        self.label_file_sign = blake2b_file(_mnist_label_path)
-
-    def test_user_raw_with_id_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_user_raw_item_with_id)
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="332211",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-            bin_writer=MockBinWriter(),
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 10
-
-    def test_user_raw_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_user_raw_item)
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="332211",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-            scan = e.tabular_dataset.scan()
-            for row in scan:
-                assert isinstance(row.features.get("original_data"), Binary)
-                assert not row.features.get("original_data").fp
-                assert row.features.get("original_data").link.uri
-
-        assert summary.rows == 10
-
-    def test_swds_bin_with_id_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_swds_bin_item_with_id)
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 10
-
-    def test_swds_bin_function_handler(self) -> None:
-        _cls = create_generic_cls(iter_mnist_swds_bin_item)
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 10
-
-    def test_abnormal_function_handler(self) -> None:
-        non_generator_f = lambda: 1
-        with self.assertRaises(RuntimeError):
-            _cls = create_generic_cls(non_generator_f)  # type: ignore
-
-        list_f = lambda: [{"d": b"1", "a": 1}, {"d": b"2", "a": 2}, {"d": b"2", "a": 2}]
-        _cls = create_generic_cls(list_f)  # type: ignore
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-        assert summary.rows == 3
-
-        def _gen_only_one() -> t.Generator:
-            yield {"d": b"1", "a": 1}
-
-        _cls = create_generic_cls(_gen_only_one)
-        assert issubclass(_cls, BuildExecutor)
-        with _cls(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 1
-
-    def test_complex_annotation(self) -> None:
-        _cls = create_generic_cls(iter_complex_annotations_swds)
-        name = "complex_annotations"
-        version = "123"
-        project = "self"
-        with _cls(
-            dataset_name=name,
-            dataset_version=version,
-            project_name=project,
-            workdir=Path(self.workdir),
-            alignment_bytes_size=16,
-            volume_bytes_size=1000,
-        ) as e:
-            summary = e.make_swds()
-
-        assert summary.rows == 15
-        tdb = TabularDataset(name=name, version=version, project=project)
-        meta_list = list(tdb.scan("idx-0", "idx-1"))
-        assert len(meta_list) > 0
-        features = meta_list[0].features
-        assert isinstance(features["link"], DataStoreRawLink)
-        assert isinstance(features["coco"], COCOObjectAnnotation)
-        assert features["coco"].bbox == [0, 0, 1, 10]
-        assert isinstance(features["list_bbox"][0], BoundingBox)
-        assert isinstance(features["mask"], Image)
-        assert isinstance(features["mask"].link, Link)
-
-    def test_swds_bin_id_workflow(self) -> None:
-        with MNISTBuildWithIDExecutor(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            assert e.data_tmpdir.exists()
-            summary = e.make_swds()
-
-        summary_content = json.dumps(summary.asdict())
-        assert summary_content
-        assert summary.rows == 10
-        assert summary.increased_rows == 10
-        assert summary.unchanged_rows == 0
-
-        tdb = TabularDataset(name="mnist", version="112233", project="self")
-        meta = list(tdb.scan())
-        assert len(meta) == 10
-        assert meta[0].id == "mnist-0"
-        assert meta[1].id == "mnist-1"
-        ids = list(tdb._ds_wrapper.scan_id(None, None))
-        assert len(ids) == 10
-        assert isinstance(ids[9], dict)
-        assert ids[9]["id"] == "mnist-9"
-
-    def test_swds_bin_workflow(self) -> None:
-        with MNISTBuildExecutor(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            assert e.data_tmpdir.exists()
-            summary = e.make_swds()
-
-        assert not e.data_tmpdir.exists()
-
-        data_files_sign = []
-        for f in e.data_output_dir.iterdir():
-            if not f.is_symlink():
-                continue
-            data_files_sign.append(f.resolve().name)
-
-        summary_content = json.dumps(summary.asdict())
-        assert summary_content
-        assert summary.rows == 10
-        assert summary.increased_rows == 10
-        assert summary.unchanged_rows == 0
-
-        assert len(data_files_sign) == 10
-
-        for _sign in data_files_sign:
-            _sign_fpath = (Path(self.object_store_dir) / _sign[:2] / _sign).resolve()
-            assert _sign_fpath.exists()
-            assert _sign == blake2b_file(_sign_fpath)
-            assert (
-                _sign_fpath
-                == (
-                    e.data_output_dir / _sign[: DatasetStorage.short_sign_cnt]
-                ).resolve()
-            )
-
-        src_data_path = (
-            Path(self.object_store_dir) / data_files_sign[0][:2] / data_files_sign[0]
-        )
-        data_content = src_data_path.read_bytes()
-        _parser = _header_struct.unpack(data_content[:_header_size])
-        assert _parser[0] == _header_magic
-        assert _parser[3] == 28 * 28
-        assert _parser[6] == _data_magic
-        assert len(data_content) == _header_size + _parser[3] + _parser[4]
-
-        tdb = TabularDataset(name="mnist", version="112233", project="self")
-        meta = list(tdb.scan(start=0, end=1))[0]
-        assert meta.id == 0
-        assert meta.features["data"].link.extra_info["bin_offset"] == 0
-        assert meta.features["data"].link.offset == 32
-        assert meta.features["data"].link.extra_info["bin_size"] == 864
-        assert meta.features["data"].link.uri in data_files_sign
-        assert meta.features["data"].type == ArtifactType.Image
-        assert meta.features["data"].mime_type == MIMEType.GRAYSCALE
-
-        assert list(tdb.info) == ["int", "dict", "list", "list_dict"]
-        assert tdb.info["list_dict"] == [{"a": 1}, {"b": 2}]
-        assert tdb.info["list"] == [1, 2, 3]
-        assert tdb.info["dict"] == {"a": 1, "b": 2}
-
-        link_data_path = (
-            Path(self.workdir)
-            / "data"
-            / data_files_sign[0][: DatasetStorage.short_sign_cnt]
-        )
-        assert link_data_path.exists()
-        link_data_path.unlink()
-        dummy_path = Path(self.workdir) / "dummy"
-        ensure_file(dummy_path, "")
-        link_data_path.symlink_to(dummy_path)
-        assert link_data_path.exists()
-
-        with MNISTBuildExecutor(
-            dataset_name="mnist",
-            dataset_version="112233",
-            project_name="self",
-            workdir=Path(self.workdir),
-            alignment_bytes_size=64,
-            volume_bytes_size=100,
-        ) as e:
-            summary = e.make_swds()
-
-        assert link_data_path.resolve() != dummy_path
-        assert link_data_path.resolve() == src_data_path.resolve()
 
 
 class TestDatasetType(TestCase):
@@ -844,7 +446,6 @@ class TestDatasetType(TestCase):
             Text("test"),
             Link(
                 "path/to/file",
-                with_local_fs_data=True,
                 data_type=Image(display_name="image"),
             ),
             COCOObjectAnnotation(
@@ -1085,7 +686,7 @@ class TestDatasetType(TestCase):
 
         rm.request(
             HTTPMethod.POST,
-            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/version/latest/sign-links?expTimeMillis=60000",
+            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist/uri/sign-links?expTimeMillis=60000",
             json={
                 "data": {
                     "s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file": "http://127.0.0.1:9001/signed_url"
@@ -1445,7 +1046,7 @@ class TestTabularDatasetInfo(BaseTestCase):
         assert isinstance(load_info["image"], Image)
 
     def test_tabular_dataset_property(self) -> None:
-        td = TabularDataset(name="test", version="123", project="self")
+        td = TabularDataset(name="test", project="self")
         assert td._info is None
         assert isinstance(td.info, TabularDatasetInfo)
         assert not bool(td.info)
@@ -1465,7 +1066,7 @@ class TestTabularDatasetInfo(BaseTestCase):
 
         td.close()
 
-        loaded_td = TabularDataset(name="test", version="123", project="self")
+        loaded_td = TabularDataset(name="test", project="self")
         assert loaded_td.info["a"] == 1
         assert list(loaded_td.info) == ["a", "b", "dict"]
         assert not loaded_td._info_changed
@@ -1517,15 +1118,11 @@ class TestTabularDataset(TestCase):
             assert rs[0].id == "path/1"
             assert isinstance(rs[0], TabularDatasetRow)
 
-            last_append_seq_id, rows_cnt = td.fork("123")
-            assert last_append_seq_id == 2
-            assert rows_cnt == 3
-
         with self.assertRaises(InvalidObjectName):
-            TabularDataset("", "", "")
+            TabularDataset(name="", project="")
 
-        with self.assertRaises(FieldTypeOrValueError):
-            TabularDataset("a123", "", "")
+        with self.assertRaisesRegex(RuntimeError, "project is not set"):
+            TabularDataset(name="a123", project="")
 
     def test_row(self) -> None:
         s_row = TabularDatasetRow(
@@ -1553,7 +1150,6 @@ class TestTabularDataset(TestCase):
             "id": 0,
             "features/l": Image(link=Link("abcdef"), shape=[1, 2, 3]),
             "features/a": 1,
-            "origin": "+",
         }
 
         u_row_dict = u_row.asdict()
@@ -1573,214 +1169,6 @@ class TestTabularDataset(TestCase):
         for r in (s_row, u_row, l_row):
             copy_r = TabularDatasetRow.from_datastore(**r.asdict())
             assert copy_r == r
-
-
-class TestRowWriter(BaseTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        self._original_cwd = os.getcwd()
-        os.chdir(self.local_storage)
-
-    def tearDown(self) -> None:
-        if hasattr(self, "_original_cwd"):
-            os.chdir(self._original_cwd)
-        super().tearDown()
-
-    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_row_update(self, m_make_swds: MagicMock) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-
-        assert rw._builder is None
-        assert not rw.is_alive()
-        assert rw._queue.empty()
-
-        rw._builder = MagicMock()
-
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-        first_builder = rw._builder
-        assert rw._builder is not None
-        assert rw._queue.qsize() == 1
-
-        rw.update(DataRow(index=2, features={"data": Binary(b"test"), "label": 2}))
-        second_builder = rw._builder
-        assert first_builder == second_builder
-        assert rw._queue.qsize() == 2
-
-        rw._builder = None
-        rw.update(DataRow(index=3, features={"data": Binary(b"test"), "label": 3}))
-        assert rw._builder is not None
-        assert rw.daemon
-        assert isinstance(rw._builder, BuildExecutor)
-        assert m_make_swds.call_count == 1
-
-    @pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
-    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_update_exception(self, m_make_swds: MagicMock) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-
-        assert rw._raise_run_exception() is None
-        rw._builder = MagicMock()
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-        assert rw._run_exception is None
-
-        rw._run_exception = ValueError("test")
-        with self.assertRaises(threading.ThreadError):
-            rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-
-        rw._run_exception = None
-        rw._builder = None
-        m_make_swds.side_effect = TypeError("thread test")
-        with self.assertRaises(threading.ThreadError):
-            rw.update(DataRow(index=2, features={"data": Binary(b"test"), "label": 2}))
-            rw.join()
-            rw.update(DataRow(index=3, features={"data": Binary(b"test"), "label": 3}))
-
-    def test_iter(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw._builder = MagicMock()
-        size = 10
-        for i in range(0, size):
-            rw.update(DataRow(index=i, features={"data": Binary(b"test"), "label": i}))
-
-        rw.update(None)  # type: ignore
-        assert not rw.is_alive()
-        assert rw._queue.qsize() == size + 1
-
-        items = list(rw)
-        assert len(items) == size
-        assert items[0].index == 0
-        assert items[9].index == 9
-
-    def test_iter_block(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw._builder = MagicMock()
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-
-        thread = threading.Thread(target=lambda: list(rw), daemon=True)
-        thread.start()
-        assert thread.is_alive()
-        time.sleep(1)
-        assert thread.is_alive()
-
-        rw.update(None)  # type: ignore
-        time.sleep(0.1)
-        assert not thread.is_alive()
-
-    def test_iter_none(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw._builder = MagicMock()
-        size = 10
-        for _ in range(0, size):
-            rw.update(None)  # type: ignore
-
-        assert rw._queue.qsize() == size
-        assert len(list(rw)) == 0
-
-    def test_iter_merge_none(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw._builder = MagicMock()
-        size = 10
-        for _ in range(0, size):
-            rw.update(None)  # type: ignore
-
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-        rw.update(None)  # type: ignore
-
-        assert rw._queue.qsize() == size + 2
-        items = list(rw)
-        assert len(items) == 1
-        assert items[0].index == 1
-
-    def test_close(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-        rw.close()
-        assert not rw.is_alive()
-
-        with RowWriter(dataset_name="mnist", dataset_version="123456") as context_rw:
-            context_rw.update(
-                DataRow(index=1, features={"data": Binary(b"test"), "label": 1})
-            )
-        assert not rw.is_alive()
-
-    def test_make_swds_bin(self) -> None:
-        workdir = Path(self.local_storage) / ".user" / "workdir"
-
-        assert not workdir.exists()
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
-        assert rw._builder is None
-        size = 100
-        for i in range(0, size):
-            rw.update(DataRow(index=i, features={"data": Binary(b"test"), "label": i}))
-        rw.close()
-
-        assert isinstance(rw._builder, BuildExecutor)
-        assert rw._queue.qsize() == 0
-        assert rw.summary.rows == size
-
-        data_dir = workdir / "data"
-        assert data_dir.exists()
-        files = list(data_dir.iterdir())
-        assert len(files) == 1
-        assert files[0].is_symlink()
-
-    def test_make_link(self) -> None:
-        user_dir = Path(self.local_storage) / ".user"
-        raw_data_file = user_dir / "data_file"
-        raw_content = "123"
-        ensure_dir(user_dir)
-        ensure_file(raw_data_file, content=raw_content)
-
-        workdir = user_dir / "workdir"
-        assert not workdir.exists()
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456", workdir=workdir)
-        assert rw._builder is None
-        size = 100
-        for i in range(0, size):
-            rw.update(
-                DataRow(
-                    index=i,
-                    features={
-                        "data": Link(uri="minio://1/1/1/"),
-                        "label": i,
-                        "label2": 2,
-                    },
-                )
-            )
-        rw.close()
-
-        assert rw._queue.qsize() == 0
-        assert rw.summary.rows == size
-
-        data_dir = workdir / "data"
-        assert data_dir.exists()
-        files = list(data_dir.iterdir())
-        assert len(files) == 0
-
-    @patch("starwhale.api._impl.dataset.builder.BuildExecutor.make_swds")
-    def test_append_swds_bin(self, m_make_swds: MagicMock) -> None:
-        rw = RowWriter(
-            dataset_name="mnist",
-            dataset_version="123456",
-            append=True,
-            append_from_version="abcdefg",
-        )
-        assert isinstance(rw._builder, BuildExecutor)
-
-    def test_flush(self) -> None:
-        rw = RowWriter(dataset_name="mnist", dataset_version="123456")
-        rw._builder = MagicMock()
-        rw.flush()
-
-        rw.update(DataRow(index=1, features={"data": Binary(b"test"), "label": 1}))
-        thread = threading.Thread(target=rw.flush, daemon=True)
-        thread.start()
-        time.sleep(0.2)
-        assert thread.is_alive()
-
-        item = rw._queue.get(block=True)
-        assert item.index == 1  # type: ignore
-        rw.flush()
 
 
 class TestRotatedBinWriter(TestCase):
@@ -1931,7 +1319,6 @@ class TestMappingDatasetBuilder(BaseTestCase):
 
         self.tdb = TabularDataset(
             name=self.dataset_name,
-            version=self.holder_dataset_version,
             project=self.project_name,
         )
 
@@ -2113,7 +1500,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
             workdir=self.workdir,
             dataset_name=self.dataset_name,
             project_name=self.project_name,
-            bin_volume_bytes_size=1024 * 1024,
+            blob_volume_bytes_size=1024 * 1024,
         )
         mdb.put(DataRow(index=1, features={"bin": Binary(b"123")}))
         mdb.flush(artifacts_flush=False)

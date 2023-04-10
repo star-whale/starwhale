@@ -7,7 +7,7 @@ ENV TZ=Etc/UTC
 
 # Install common tools/git/software-properties-common
 RUN apt-get update \
-    && apt-get install -y ca-certificates curl gnupg lsb-release wget jq vim rsync\
+    && apt-get install -y ca-certificates curl gnupg lsb-release wget jq vim rsync zip unzip\
     && apt-get install -y git git-lfs\
     && git lfs install \
     && apt-get install -y software-properties-common
@@ -44,9 +44,5 @@ RUN add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-# do some cache
-RUN git clone https://github.com/star-whale/starwhale.git \
-    && cd starwhale/server && make build-package \
-    && cd ../client && python3 -m pip install -r requirements-install.txt && make build-wheel \
-    && cd ../console && make install-dependencies \
-    && rm -rf /starwhale
+# Remove third party apt sources
+RUN rm -rf /etc/apt/sources.list.d/*

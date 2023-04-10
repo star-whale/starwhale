@@ -6,13 +6,13 @@ import { ICreateDatasetSchema } from '@dataset/schemas/dataset'
 import DatasetForm from '@dataset/components/DatasetForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
+import Alias from '@/components/Alias'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -35,7 +35,14 @@ export default function DatasetListCard() {
         <Card title={t('Datasets')}>
             <Table
                 isLoading={datasetsInfo.isLoading}
-                columns={[t('sth name', [t('Dataset')]), t('Alias'), t('Owner'), t('Created'), t('Action')]}
+                columns={[
+                    t('sth name', [t('Dataset')]),
+                    t('Version'),
+                    t('Alias'),
+                    // t('Owner'),
+                    t('Created'),
+                    t('Action'),
+                ]}
                 data={
                     datasetsInfo.data?.list.map((dataset) => {
                         return [
@@ -45,8 +52,9 @@ export default function DatasetListCard() {
                             >
                                 {dataset.name}
                             </TextLink>,
-                            dataset.version?.alias,
-                            dataset.owner && <User user={dataset.owner} />,
+                            dataset.version?.name ?? '-',
+                            <Alias key='alias' alias={dataset.version?.alias} />,
+                            // dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <Button
                                 key='version-history'

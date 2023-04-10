@@ -50,4 +50,7 @@ public class DatasetVersionVo implements Serializable {
 
     @JsonProperty("owner")
     private UserVo owner;
+
+    @JsonProperty("shared")
+    private Integer shared;
 }

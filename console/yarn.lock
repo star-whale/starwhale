@@ -1718,6 +1718,45 @@
   resolved "https://registry.npmmirror.com/@faker-js/faker/-/faker-6.3.1.tgz"
   integrity sha512-8YXBE2ZcU/pImVOHX7MWrSR/X5up7t6rPWZlk34RwZEcdr3ua6X+32pSd6XuOQRN+vbuvYNfA6iey8NbrjuMFQ==
 
+"@formatjs/ecma402-abstract@1.14.3":
+  version "1.14.3"
+  resolved "https://registry.npmmirror.com/@formatjs/ecma402-abstract/-/ecma402-abstract-1.14.3.tgz#6428f243538a11126180d121ce8d4b2f17465738"
+  integrity sha512-SlsbRC/RX+/zg4AApWIFNDdkLtFbkq3LNoZWXZCE/nHVKqoIJyaoQyge/I0Y38vLxowUn9KTtXgusLD91+orbg==
+  dependencies:
+    "@formatjs/intl-localematcher" "0.2.32"
+    tslib "^2.4.0"
+
+"@formatjs/fast-memoize@1.2.8":
+  version "1.2.8"
+  resolved "https://registry.npmmirror.com/@formatjs/fast-memoize/-/fast-memoize-1.2.8.tgz#425a69f783005f69e11f9e38a7f87f8822d330c6"
+  integrity sha512-PemNUObyoIZcqdQ1ixTPugzAzhEj7j6AHIyrq/qR6x5BFTvOQeXHYsVZUqBEFduAIscUaDfou+U+xTqOiunJ3Q==
+  dependencies:
+    tslib "^2.4.0"
+
+"@formatjs/icu-messageformat-parser@2.3.0":
+  version "2.3.0"
+  resolved "https://registry.npmmirror.com/@formatjs/icu-messageformat-parser/-/icu-messageformat-parser-2.3.0.tgz#8e8fd577c3e39454ef14bba4963f2e1d5f2cc46c"
+  integrity sha512-xqtlqYAbfJDF4b6e4O828LBNOWXrFcuYadqAbYORlDRwhyJ2bH+xpUBPldZbzRGUN2mxlZ4Ykhm7jvERtmI8NQ==
+  dependencies:
+    "@formatjs/ecma402-abstract" "1.14.3"
+    "@formatjs/icu-skeleton-parser" "1.3.18"
+    tslib "^2.4.0"
+
+"@formatjs/icu-skeleton-parser@1.3.18":
+  version "1.3.18"
+  resolved "https://registry.npmmirror.com/@formatjs/icu-skeleton-parser/-/icu-skeleton-parser-1.3.18.tgz#7aed3d60e718c8ad6b0e64820be44daa1e29eeeb"
+  integrity sha512-ND1ZkZfmLPcHjAH1sVpkpQxA+QYfOX3py3SjKWMUVGDow18gZ0WPqz3F+pJLYQMpS2LnnQ5zYR2jPVYTbRwMpg==
+  dependencies:
+    "@formatjs/ecma402-abstract" "1.14.3"
+    tslib "^2.4.0"
+
+"@formatjs/intl-localematcher@0.2.32":
+  version "0.2.32"
+  resolved "https://registry.npmmirror.com/@formatjs/intl-localematcher/-/intl-localematcher-0.2.32.tgz#00d4d307cd7d514b298e15a11a369b86c8933ec1"
+  integrity sha512-k/MEBstff4sttohyEpXxCmC3MqbUn9VvHGlZ8fauLzkbwXmVrEeyzS+4uhrvAk9DWU9/7otYWxyDox4nT/KVLQ==
+  dependencies:
+    tslib "^2.4.0"
+
 "@gar/promisify@^1.0.1", "@gar/promisify@^1.1.3":
   version "1.1.3"
   resolved "https://registry.npmmirror.com/@gar/promisify/-/promisify-1.1.3.tgz"
@@ -1760,6 +1799,35 @@
   version "0.2.4"
   resolved "https://registry.npmmirror.com/@icons/material/-/material-0.2.4.tgz"
   integrity sha512-QPcGmICAPbGLGb6F/yNf/KzKqvFx8z5qx3D1yFqVAjoFmXK35EgyW+cJ57Te3CNsmzblwtzakLGFqHPqrfb4Tw==
+
+"@internationalized/date@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@internationalized/date/-/date-3.1.0.tgz#da48aeaa971df6ad410cd32597c174d6cab9a3b4"
+  integrity sha512-wjeur7K4AecT+YwoBmBXQ/+n5lP69tuZc34hw09s44EozZK7FZHSyfPvRp5/xEb2D6abLboskDY4jG+Nt0TNUQ==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
+
+"@internationalized/message@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@internationalized/message/-/message-3.1.0.tgz#b284014cd8bbb430a648b76c87c62bdca968b04c"
+  integrity sha512-Oo5m70FcBdADf7G8NkUffVSfuCdeAYVfsvNjZDi9ELpjvkc4YNJVTHt/NyTI9K7FgAVoELxiP9YmN0sJ+HNHYQ==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
+    intl-messageformat "^10.1.0"
+
+"@internationalized/number@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.npmmirror.com/@internationalized/number/-/number-3.2.0.tgz#dffb661cacd61a87b814c47b7d5240a286249066"
+  integrity sha512-GUXkhXSX1Ee2RURnzl+47uvbOxnlMnvP9Er+QePTjDjOPWuunmLKlEkYkEcLiiJp7y4l9QxGDLOlVr8m69LS5w==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
+
+"@internationalized/string@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@internationalized/string/-/string-3.1.0.tgz#0b365906a8c3f44800b0db52c2e990cff345abce"
+  integrity sha512-TJQKiyUb+wyAfKF59UNeZ/kELMnkxyecnyPCnBI1ma4NaXReJW+7Cc2mObXAqraIBJUVv7rgI46RLKrLgi35ng==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
 
 "@isaacs/string-locale-compare@^1.1.0":
   version "1.1.0"
@@ -3411,6 +3479,38 @@
   resolved "https://registry.npmmirror.com/@polka/url/-/url-1.0.0-next.21.tgz#5de5a2385a35309427f6011992b544514d559aa1"
   integrity sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==
 
+"@react-aria/i18n@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-aria/i18n/-/i18n-3.7.0.tgz#c1dfcd7a76a5161cbccbd6980ecf201c9b4d1826"
+  integrity sha512-PZCWmhO9mJvelwiYlsXLY6W4L2o+oza3xnDx0cZDVqp/Hf+OwMAPHWtZsFRTKdjk4TaOPB/ISc9HknWn6UpY4w==
+  dependencies:
+    "@internationalized/date" "^3.1.0"
+    "@internationalized/message" "^3.1.0"
+    "@internationalized/number" "^3.2.0"
+    "@internationalized/string" "^3.1.0"
+    "@react-aria/ssr" "^3.5.0"
+    "@react-aria/utils" "^3.15.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-aria/ssr@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-aria/ssr/-/ssr-3.5.0.tgz#40c1270a75868185f72a88cafe37bd1392f690cb"
+  integrity sha512-h0MJdSWOd1qObLnJ8mprU31wI8tmKFJMuwT22MpWq6psisOOZaga6Ml4u6Ee6M6duWWISjXvqO4Sb/J0PBA+nQ==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
+
+"@react-aria/utils@^3.15.0":
+  version "3.15.0"
+  resolved "https://registry.npmmirror.com/@react-aria/utils/-/utils-3.15.0.tgz#a836674dd40ec7f15e9f7a69b1a14f19b1ee42e6"
+  integrity sha512-aJZBG++iz1UwTW5gXFaHicKju4p0MPhAyBTcf2awHYWeTUUslDjJcEnNg7kjBYZBOrOSlA2rAt7/7C5CCURQPg==
+  dependencies:
+    "@react-aria/ssr" "^3.5.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+    clsx "^1.1.1"
+
 "@react-dnd/asap@^5.0.1":
   version "5.0.2"
   resolved "https://registry.npmmirror.com/@react-dnd/asap/-/asap-5.0.2.tgz"
@@ -3425,6 +3525,373 @@
   version "4.0.2"
   resolved "https://registry.npmmirror.com/@react-dnd/shallowequal/-/shallowequal-4.0.2.tgz"
   integrity sha512-/RVXdLvJxLg4QKvMoM5WlwNR9ViO9z8B/qPcc+C0Sa/teJY7QG7kJ441DwzOjMYEY7GmU4dj5EcGHIkKZiQZCA==
+
+"@react-stately/calendar@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@react-stately/calendar/-/calendar-3.1.0.tgz#3254ab630972f5bfeedf821a3580ad83bc087e2e"
+  integrity sha512-PZXXHyrLoYEUAUL8oFoxHNc7mKrQXLxnYQkY9v3a6SxgST3J4tYoqIXrie0uqpm1LI+1JfKb2lyRGlVPRTBuNQ==
+  dependencies:
+    "@internationalized/date" "^3.1.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/calendar" "^3.1.0"
+    "@react-types/datepicker" "^3.2.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/checkbox@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-stately/checkbox/-/checkbox-3.4.0.tgz#34712864e6b6dbae033b30a279dc32a26bbc1a9b"
+  integrity sha512-zqwHMmlzza1exS6Bbqj4Mom3ygtG8pLguHweZ9OO7BFQLwBmzJsrFNqDcj7xh8iEWxXKQfZ2YOuhkaGvu4GRjA==
+  dependencies:
+    "@react-stately/toggle" "^3.5.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/checkbox" "^3.4.2"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/collections@^3.6.0":
+  version "3.6.0"
+  resolved "https://registry.npmmirror.com/@react-stately/collections/-/collections-3.6.0.tgz#4fbecbbbb354badbc46618262e91743754257673"
+  integrity sha512-znkaqCPo7F1yyzEKDAB5MpX1Vw5UHcUQhDNrys5YOqAkX6/G/AChnBz0B63UxS3fjyqgnuJylRRmUp9nTqO21w==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/combobox@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-stately/combobox/-/combobox-3.4.0.tgz#d4189bfe7b17a94a6158357de51ebd4166f819c5"
+  integrity sha512-QVKNosNqSS7PnjrNVrGat9KKlCcv7e3nTehQuIu18ZE2JVH7Jdf/73zkSMurrnQfbPVeiHkGK1deWqrzoNzYQQ==
+  dependencies:
+    "@react-stately/list" "^3.7.0"
+    "@react-stately/menu" "^3.5.0"
+    "@react-stately/select" "^3.4.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/combobox" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/data@^3.9.0":
+  version "3.9.0"
+  resolved "https://registry.npmmirror.com/@react-stately/data/-/data-3.9.0.tgz#fab8ac8ae5bb829baa63d1176e90c237e8d9137a"
+  integrity sha512-67zP/QkVInsU9wtKVj1b0MwaogDCC15eEe9/ULRf6xmaw0m6VOfm/Rz4Y9OvR8cQd5o+ImuAeRYEorRJ59yK5w==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/datepicker@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.npmmirror.com/@react-stately/datepicker/-/datepicker-3.3.0.tgz#4dd777756f5f0abb3617b5d61bf34d428f0c563f"
+  integrity sha512-HH/WPAMXwULyBKHICxTLGDk3cPGf9Yhf8sX2DES935aupd+6YqzQrh97buOedKsF5WKZfzMMtUVqy8uepo6S6g==
+  dependencies:
+    "@internationalized/date" "^3.1.0"
+    "@internationalized/string" "^3.1.0"
+    "@react-stately/overlays" "^3.5.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/datepicker" "^3.2.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/dnd@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@react-stately/dnd/-/dnd-3.1.0.tgz#b8d2c9baba72607bf0d9aa73ab1e0ccd2a39cfb8"
+  integrity sha512-PctHJqRm37vdKs91vB18lfdas4CypStbgj6ENApUXSDLd8XrVgthH4sYrX1BX/RbZyCr7u+TG7qVKGcRfsvbTw==
+  dependencies:
+    "@react-stately/selection" "^3.12.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/grid@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-stately/grid/-/grid-3.5.0.tgz#345a98a2f541d5372ebefe44d42f54e22c08d54e"
+  integrity sha512-kCmO2KyHoIJWiCqUXJTD0I/4q/6h3pXGdyD4tWmqWdysxf+x09K/Mx/JwwFqee5LICZgt8MtBrfV+ijLZ8mQAg==
+  dependencies:
+    "@react-stately/selection" "^3.12.0"
+    "@react-types/grid" "^3.1.6"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/list@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-stately/list/-/list-3.7.0.tgz#7484cc46d995a18b2b43de50449aba7faae76809"
+  integrity sha512-/BxCqXFjX9P+OJWjIYmUWaOGJ2hlZHUdymVwZPkIWdO9K7069LWckdYFXRqLFMwIGLUcXVfw4jR0BIQqWlR4eA==
+  dependencies:
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/selection" "^3.12.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/menu@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-stately/menu/-/menu-3.5.0.tgz#04fda461dc3971bc84bf49436625b3e044bca3bc"
+  integrity sha512-JL6TcT+SbYdlxNLOS84SXp6njDNZuXfkt05o4rS51evmjM2+hlYaB9+yUMqrCb/J2nW7vVAg51TDAhLgmGTYKg==
+  dependencies:
+    "@react-stately/overlays" "^3.5.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/menu" "^3.8.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/numberfield@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-stately/numberfield/-/numberfield-3.4.0.tgz#09745a220d4d955de4e9a34c8118d7791a1770e7"
+  integrity sha512-R+LjwRpspttiO0tZ8KikXu184D3HZJG37jVcp/yM1jyMURmQHWfjjR6PHuD66PSV5PtM2KQlBj6PGvDLg1UwlQ==
+  dependencies:
+    "@internationalized/number" "^3.2.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/numberfield" "^3.4.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/overlays@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-stately/overlays/-/overlays-3.5.0.tgz#3c33a6f678f728497c94729e8a861ddf1e8704bb"
+  integrity sha512-r+U/G0Y4tCfI5wyBeIu+hmcZVRN8ChoK2zM1srPH9nDKsijQard2goX+9YmKng2LJ01Re/P6F8S8jYbpfEdLfQ==
+  dependencies:
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/overlays" "^3.7.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/radio@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-stately/radio/-/radio-3.7.0.tgz#5312503f36677fd3a42f8fb7bc820463cf879b08"
+  integrity sha512-TKyR6RfX1qZRPAxVWIKMTt2s3J+IlxFZHykiEl85gHBmABSWW4JO4RjkgcmbaAGLAhu1pJU8ktJOyi+MyndpHA==
+  dependencies:
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/radio" "^3.4.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/searchfield@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-stately/searchfield/-/searchfield-3.4.0.tgz#863b9741f17672b39a80eb28cb9860dd715809f8"
+  integrity sha512-aaQLczPUIJwTGlllALT49RSvWY55oqmJWhLL7j3hnL1cNV0WmkmoSdAo7drDaux5vkgkurxuwMEZ8ymFYeZ+Nw==
+  dependencies:
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/searchfield" "^3.4.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/select@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-stately/select/-/select-3.4.0.tgz#e6df572279b5baed264552032f8060dbf49c9ebb"
+  integrity sha512-thSqD3apMCSgZgKtqHKGVIQRyvG8l0supIuzJicBwq6xg+J8X5muPCZgchCSNmU6im/l81XXE8LGuHGgMilORA==
+  dependencies:
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/list" "^3.7.0"
+    "@react-stately/menu" "^3.5.0"
+    "@react-stately/selection" "^3.12.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/select" "^3.7.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/selection@^3.12.0":
+  version "3.12.0"
+  resolved "https://registry.npmmirror.com/@react-stately/selection/-/selection-3.12.0.tgz#feb5ad753ea93870566f2c0b07f0387b690bd860"
+  integrity sha512-qgUaPwqtAl7YaZxxGdb55ZaVuMB1rG+Vr+9fgG8dPtDYCNaPeIlg7ndC4ylzDhCWIx8D5qZotcrqCA4+93TwdA==
+  dependencies:
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/slider@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.npmmirror.com/@react-stately/slider/-/slider-3.3.0.tgz#abfd70be9b8fce5f19898d2dcad116a26dd88781"
+  integrity sha512-17aGJYHBRY3g4ZeiIgCNOvYl3HBARvSJhUKoNxZMRa2pqREW+WmBRRAXv5KTymW/KfcGb0RCq1ytYsderEgZAQ==
+  dependencies:
+    "@react-aria/i18n" "^3.7.0"
+    "@react-aria/utils" "^3.15.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@react-types/slider" "^3.4.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/table@^3.8.0":
+  version "3.8.0"
+  resolved "https://registry.npmmirror.com/@react-stately/table/-/table-3.8.0.tgz#2728ee73ab7dd68f009a39252bf075aafbf8d130"
+  integrity sha512-WmOcW9+4zm6MQZxYEC77u5HMxTcvcotkFptohHd0YtHXx+z5iwClCVKKFG2mc5lE+K4iQE41Q56nVKLjAu+TsA==
+  dependencies:
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/grid" "^3.5.0"
+    "@react-stately/selection" "^3.12.0"
+    "@react-types/grid" "^3.1.6"
+    "@react-types/shared" "^3.17.0"
+    "@react-types/table" "^3.5.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/tabs@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.npmmirror.com/@react-stately/tabs/-/tabs-3.3.0.tgz#9674cb2f7c701bdc7dcc7a0c1bc88f62350da7c1"
+  integrity sha512-Kf47+aXGf4NvnREMDqH+uuTa0QsYCxOp0poywR8lRPmYsL7V8yrTS2wXQnDL7cq8PXbL5v+ew0xmrV+BiUlNRg==
+  dependencies:
+    "@react-stately/list" "^3.7.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/tabs" "^3.2.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/toggle@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-stately/toggle/-/toggle-3.5.0.tgz#fee5a29d7699e43867c52981834af5393f47c1c4"
+  integrity sha512-vKwLLkFsiIve4pXIQC/dqLAz7Z+qtzJ8+D00EXXO1Nf8YHcyIMDkTmi3NTM8Qtvmt4xX2hbJFiPDF6WvF6mBIg==
+  dependencies:
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/checkbox" "^3.4.2"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/tooltip@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.npmmirror.com/@react-stately/tooltip/-/tooltip-3.3.0.tgz#7991bc26e21d07368e0f797407652548fa558811"
+  integrity sha512-cYg4zKUc0y71L5OO5DyaCoh248A7wvXAU6VGMhppPGx+iPoWJMLBBdEJjf8Oa12NGxNv9SC5lTcv6js2k4+WwQ==
+  dependencies:
+    "@react-stately/overlays" "^3.5.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/tooltip" "^3.3.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/tree@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-stately/tree/-/tree-3.5.0.tgz#1d0dffd93c17b004953c27817be1ae2da9f96e5b"
+  integrity sha512-5+MzMQUFq3+lbGkZC0SlcIDrYmPvxBKuC8xL5W6SuFekbrrxrS6IJexRe4QulaaAliDpX2/9DVZTt38eVfyf0A==
+  dependencies:
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/selection" "^3.12.0"
+    "@react-stately/utils" "^3.6.0"
+    "@react-types/shared" "^3.17.0"
+    "@swc/helpers" "^0.4.14"
+
+"@react-stately/utils@^3.6.0":
+  version "3.6.0"
+  resolved "https://registry.npmmirror.com/@react-stately/utils/-/utils-3.6.0.tgz#f273e7fcb348254347d2e88c8f0c45571060c207"
+  integrity sha512-rptF7iUWDrquaYvBAS4QQhOBQyLBncDeHF03WnHXAxnuPJXNcr9cXJtjJPGCs036ZB8Q2hc9BGG5wNyMkF5v+Q==
+  dependencies:
+    "@swc/helpers" "^0.4.14"
+
+"@react-types/calendar@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmmirror.com/@react-types/calendar/-/calendar-3.1.0.tgz#cee348fbc502884237b86c1b4ed22853d9b6ea3c"
+  integrity sha512-6VKBxG27cLKti8Ik+T2N1y6FqJSgIXuQPMehOA1ASqPQLtnRBEoSgLjuN5qj7RTWgmdTvQmofqVznVFoUe5ozQ==
+  dependencies:
+    "@internationalized/date" "^3.1.0"
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/checkbox@^3.4.2":
+  version "3.4.2"
+  resolved "https://registry.npmmirror.com/@react-types/checkbox/-/checkbox-3.4.2.tgz#6089e9ef2d023415a5f871e312f30bae54143ba5"
+  integrity sha512-/NWFCEQLvVgo25afPt2jv4syxYvZeY/D/n2Y92IGtoNV4akdz4AuQ65+1X+JOhQc/ZbAblWw5fFWUZoQs3CLZg==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/combobox@^3.6.0":
+  version "3.6.0"
+  resolved "https://registry.npmmirror.com/@react-types/combobox/-/combobox-3.6.0.tgz#a78e3d0e73723053d49e15b6660883f755734c05"
+  integrity sha512-tfZtZ12Kf2bKt3EcFKWcUxrLNc61Y1CGynsOQ/KvHTFwlLTTtKnt/wWuf4kxdqlTK7dDqJzWRGWKlWx6eKlx3w==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/datepicker@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.npmmirror.com/@react-types/datepicker/-/datepicker-3.2.0.tgz#a8b7b5da5160774882e73aa175c0fc76ecd82ac9"
+  integrity sha512-wcxLI6aW+r6nO2bsypxMIaWJHG5YYAD7WtJmhR5n5GK5juUCu/hzKBhdwxE1qtD3kMvIKTDJkMXLVNGmJP0mFw==
+  dependencies:
+    "@internationalized/date" "^3.1.0"
+    "@react-types/overlays" "^3.7.0"
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/grid@^3.1.6":
+  version "3.1.6"
+  resolved "https://registry.npmmirror.com/@react-types/grid/-/grid-3.1.6.tgz#751828e3cfc6bde41e03c3217f0371166f206674"
+  integrity sha512-j6dO5KgkuIbIhEZYSxd86ZomohCyv3VNQhY2qBHlRoxZs0976komauEOjOpMOu0PxwsFGUgUFqlKOtc34f1SHQ==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/menu@^3.8.0":
+  version "3.8.0"
+  resolved "https://registry.npmmirror.com/@react-types/menu/-/menu-3.8.0.tgz#578d4697caa838e72b2652a81f1241a9cb7815cc"
+  integrity sha512-1nwGUwKNHJf60vOsg7p48NPQIzMsSprxw8VXfStr8eE5uU4vvKfVNQNUgvpkRmHmel8BrYdh1WnERXJJ3yKUgQ==
+  dependencies:
+    "@react-types/overlays" "^3.7.0"
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/numberfield@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-types/numberfield/-/numberfield-3.4.0.tgz#ecf29f515e0ebafa2145e275018bd04cd2821759"
+  integrity sha512-3kKkCFJ9cqCHuoz2BWy3DZLg6SQzqjzbO3DvNTrORd2k7bsI0Ydlfsz1rkCU53GStqovgopX4jo6EZLeRfv05Q==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/overlays@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-types/overlays/-/overlays-3.7.0.tgz#22dcd1bbc1f8e17b0d7a757414c50ce580ae0d26"
+  integrity sha512-LstucncZ8dM+xJYEijI1V6jGH20w5XO/T60r7JTrgQElMC86phPeoWkMTN4c2lsRikybolDbvXL6XsF76YO56A==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/radio@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-types/radio/-/radio-3.4.0.tgz#0bfc2bae6b5ac0b57636efdf8d2c90e5826e7c82"
+  integrity sha512-klgEU+987xVUCRqBoxXJiPJvy0upfo76dFnK5eF7U7BzcxhuiFeLDUcqUHtK92Cy5QOiDAF2ML0vUYGIabKMPA==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/searchfield@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-types/searchfield/-/searchfield-3.4.0.tgz#42bd161af0d75130b7f1417e8b43237a9b1cc5a1"
+  integrity sha512-rYupNbyBAjycx6SXCALjINj/nOx7lIq9f4Dk1xo1dd8X6yYU0EF4WlahNua7UV8JC5oYlxN40G7yi4lAS+CdWQ==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+    "@react-types/textfield" "^3.7.0"
+
+"@react-types/select@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-types/select/-/select-3.7.0.tgz#7d1840525d345625ac6ad69005b192930ca5abec"
+  integrity sha512-BaynMuW0dQ9ModFzW291+3n1D9bwKSFh03g3+1PvhRcBg1EXq1vFyfFBj4uuBymI0T7oCbnjGh19xo0vKIYRrA==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/shared@^3.17.0":
+  version "3.17.0"
+  resolved "https://registry.npmmirror.com/@react-types/shared/-/shared-3.17.0.tgz#b7c5e318664aadb315d305a27dd2a209d1837d95"
+  integrity sha512-1SNZ/RhVrrQ1e6yE0bPV7d5Sfp+Uv0dfUEhwF9MAu2v5msu7AMewnsiojKNA0QA6Ing1gpDLjHCxtayQfuxqcg==
+
+"@react-types/slider@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@react-types/slider/-/slider-3.4.0.tgz#3a6e68a0cbe6a9741395eeebb83ca15fbf0893bd"
+  integrity sha512-Kj+B6njpm4ltiu3gCBOPRnbzllV21IVr0bCQdNnWcf5DX8aN4VdI8EFkTz0DSwMm2WPCwZop0MDWDoRwXJK1ng==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/table@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.npmmirror.com/@react-types/table/-/table-3.5.0.tgz#25f5576c56e1678367fe687e3a66f9a74b9ff472"
+  integrity sha512-/Mvn1MQbdnk7i6ivam8kdIh2PKF9GD3A7KC8v1E4JNAgsbOzOkt5JC4PMc1EtAK2eppMEKTN+B84oHKMl1F8Hg==
+  dependencies:
+    "@react-types/grid" "^3.1.6"
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/tabs@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.npmmirror.com/@react-types/tabs/-/tabs-3.2.0.tgz#44f9539b003a42ed547ec1625c10247d772c0146"
+  integrity sha512-rOQm+JDYcGV+HE/EQ23vr6J3tqvXjFiDA107rU7n4B4mNjJ46k5gOhPdGTosv6wr1+Tp7XD5XMaFfqk+O0/ZZw==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/textfield@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmmirror.com/@react-types/textfield/-/textfield-3.7.0.tgz#c8e118be03e82a87d2612937accaae903090cdb1"
+  integrity sha512-4Rqld8VZG324hecw6bqGY2gta1gm5sDhO48nyChfdmjVlFHXLDKazAcrgP76uSmUI6tffUPj3eYxQyTp5uLhyQ==
+  dependencies:
+    "@react-types/shared" "^3.17.0"
+
+"@react-types/tooltip@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.npmmirror.com/@react-types/tooltip/-/tooltip-3.3.0.tgz#676f50860a3cd4317b55581533f749d867becf24"
+  integrity sha512-TMaKkjYbysZbMnY8zjI2Djh8QMHvB8LoN9EjOZX++3ZsO74CeCeOoGARh6+4c0Bu5rg4BXhNyi+y1JL3jtUEBg==
+  dependencies:
+    "@react-types/overlays" "^3.7.0"
+    "@react-types/shared" "^3.17.0"
 
 "@rjsf/core@^5.0.0-beta.12":
   version "5.0.0-beta.12"
@@ -3642,6 +4109,7 @@
     react-in-viewport "^1.0.0-alpha.28"
     react-resizable "^3.0.4"
     react-sortablejs "^6.1.4"
+    react-stately "^3.21.0"
     rxjs "^7.5.7"
     tsc "^2.0.4"
     tslib "2.4.0"
@@ -3661,6 +4129,7 @@
     react-in-viewport "^1.0.0-alpha.28"
     react-resizable "^3.0.4"
     react-sortablejs "^6.1.4"
+    react-stately "^3.21.0"
     rxjs "7.5.6"
     tsc "^2.0.4"
     tslib "2.4.0"
@@ -4953,6 +5422,13 @@
     "@svgr/babel-preset" "^6.3.1"
     "@svgr/hast-util-to-babel-ast" "^6.3.1"
     svg-parser "^2.0.4"
+
+"@swc/helpers@^0.4.14":
+  version "0.4.14"
+  resolved "https://registry.npmmirror.com/@swc/helpers/-/helpers-0.4.14.tgz#1352ac6d95e3617ccb7c1498ff019654f1e12a74"
+  integrity sha512-4C7nX/dvpzB7za4Ql9K81xK3HPxCpHMgwTZVyf+9JQ6VUbn9jjZVN7/Nkdz/Ugzs2CSjqnL/UPXroiVBVHUWUw==
+  dependencies:
+    tslib "^2.4.0"
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -13514,6 +13990,16 @@ interpret@^2.2.0:
   resolved "https://registry.npmmirror.com/interpret/-/interpret-2.2.0.tgz"
   integrity sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==
 
+intl-messageformat@^10.1.0:
+  version "10.3.1"
+  resolved "https://registry.npmmirror.com/intl-messageformat/-/intl-messageformat-10.3.1.tgz#99b280b706e4eeb232458dcb1b5758e80abf919c"
+  integrity sha512-mqHc6arhbogrdImIsEscdjWnJcg2bvg3MiyGXDsTSGmPbbM2KtRUe7oNgDUbkM3HMn4KbyOct2JyJScmwRgGSQ==
+  dependencies:
+    "@formatjs/ecma402-abstract" "1.14.3"
+    "@formatjs/fast-memoize" "1.2.8"
+    "@formatjs/icu-messageformat-parser" "2.3.0"
+    tslib "^2.4.0"
+
 invariant@^2.2.4:
   version "2.2.4"
   resolved "https://registry.npmmirror.com/invariant/-/invariant-2.2.4.tgz"
@@ -19374,6 +19860,34 @@ react-sortablejs@^6.1.4:
   dependencies:
     classnames "2.3.1"
     tiny-invariant "1.2.0"
+
+react-stately@^3.21.0:
+  version "3.21.0"
+  resolved "https://registry.npmmirror.com/react-stately/-/react-stately-3.21.0.tgz#9bb7ed0a14804559388a5fadd39d56c92a8c29b1"
+  integrity sha512-nnGkuRAoq9auj5SYRwxM6eVYvkS9WhxH9iKuzlqE1Gverp3JDFMFgKSaG/DFWG/m1TPlGvwYUwdVjyhINsFUqA==
+  dependencies:
+    "@react-stately/calendar" "^3.1.0"
+    "@react-stately/checkbox" "^3.4.0"
+    "@react-stately/collections" "^3.6.0"
+    "@react-stately/combobox" "^3.4.0"
+    "@react-stately/data" "^3.9.0"
+    "@react-stately/datepicker" "^3.3.0"
+    "@react-stately/dnd" "^3.1.0"
+    "@react-stately/list" "^3.7.0"
+    "@react-stately/menu" "^3.5.0"
+    "@react-stately/numberfield" "^3.4.0"
+    "@react-stately/overlays" "^3.5.0"
+    "@react-stately/radio" "^3.7.0"
+    "@react-stately/searchfield" "^3.4.0"
+    "@react-stately/select" "^3.4.0"
+    "@react-stately/selection" "^3.12.0"
+    "@react-stately/slider" "^3.3.0"
+    "@react-stately/table" "^3.8.0"
+    "@react-stately/tabs" "^3.3.0"
+    "@react-stately/toggle" "^3.5.0"
+    "@react-stately/tooltip" "^3.3.0"
+    "@react-stately/tree" "^3.5.0"
+    "@react-types/shared" "^3.17.0"
 
 react-string-replace@^0.4.1:
   version "0.4.4"

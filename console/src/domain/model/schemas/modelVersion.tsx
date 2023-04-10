@@ -44,6 +44,6 @@ export interface StepSpec {
     needs?: string[]
     resources?: RuntimeResource[]
     job_name?: string
-    step_name?: string
+    name?: string
     task_num?: number
 }

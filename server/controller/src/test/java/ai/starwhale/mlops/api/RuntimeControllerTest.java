@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
@@ -35,6 +36,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
@@ -201,6 +203,26 @@ public class RuntimeControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.NOT_FOUND));
 
         resp = controller.headRuntime("p2", "r1", "v1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testListRuntimeTree() {
+        given(runtimeService.listRuntimeVersionView(anyString()))
+                .willReturn(List.of(RuntimeViewVo.builder().build()));
+
+        var resp = controller.listRuntimeTree("1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(1))
+        ));
+    }
+
+    @Test
+    public void testShareRuntimeVersion() {
+        var resp = controller.shareRuntimeVersion("1", "1", "1", 1);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }

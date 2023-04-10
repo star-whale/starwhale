@@ -51,6 +51,8 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private String builtImage;
 
+    private Integer shared;
+
     @Override
     public String getName() {
         return versionName;

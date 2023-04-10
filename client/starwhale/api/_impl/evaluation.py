@@ -207,9 +207,7 @@ class PipelineHandler(metaclass=ABCMeta):
         for uri_str in self.dataset_uris:
             _uri = URI(uri_str, expected_type=URIType.DATASET)
             ds = Dataset.dataset(_uri, readonly=True)
-            ds.make_distributed_consumption(
-                session_id=self.context.version
-            )._use_loading_version_for_loader()
+            ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
             for rows in ds.batch_iter(self.ppl_batch_size):

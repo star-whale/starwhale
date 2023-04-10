@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
@@ -36,6 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
@@ -97,10 +99,10 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl);
+            String datasetUrl);
 
     @Operation(summary = "Recover a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -114,10 +116,10 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl);
+            String datasetUrl);
 
     @Operation(summary = "Get the information of a dataset",
             description = "Return the information of the latest version of the current dataset")
@@ -176,35 +178,49 @@ public interface DatasetApi {
                     description = "Project Url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(
                     in = ParameterIn.PATH,
                     description = "Dataset Url",
                     required = true,
                     schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Dataset version name prefix",
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
-                    String name,
+            String name,
             @Parameter(
                     in = ParameterIn.QUERY,
                     description = "Dataset version tag",
                     schema = @Schema())
             @RequestParam(value = "tag", required = false)
-                    String tag,
+            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-                    Integer pageNum,
+            Integer pageNum,
             @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
             @Valid
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-                    Integer pageSize);
+            Integer pageSize);
 
+
+    @Operation(summary = "List dataset tree including global datasets")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/dataset-tree",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<DatasetViewVo>>> listDatasetTree(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl);
+
+    /**
+     * use #uploadHashedBlob instead
+     */
     @Operation(summary = "Create a new dataset version",
             description = "Create a new version of the dataset. "
                     + "The data resources can be selected by uploading the file package or entering the server path.")
@@ -213,6 +229,7 @@ public interface DatasetApi {
             value = "/project/{projectUrl}/dataset/{datasetName}/version/{versionName}/file",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @Deprecated
     ResponseEntity<ResponseMessage<UploadResult>> uploadDs(
             @PathVariable(name = "projectUrl") String projectUrl,
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
@@ -221,6 +238,9 @@ public interface DatasetApi {
             @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile dsFile,
             DatasetUploadRequest uploadRequest);
 
+    /**
+     * legacy blob content download api, use {@link #signLinks} or {@link #pullUriContent} instead
+     */
     @Operation(summary = "Pull Dataset files",
             description = "Pull Dataset files part by part. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -228,6 +248,7 @@ public interface DatasetApi {
             value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/file",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @Deprecated
     void pullDs(
             @PathVariable(name = "projectUrl") String projectUrl,
             @PathVariable(name = "datasetUrl") String datasetUrl,
@@ -236,39 +257,87 @@ public interface DatasetApi {
             @RequestParam(name = "partName", required = false) String partName,
             HttpServletResponse httpResponse);
 
+
+    @Operation(summary = "Upload a hashed BLOB to dataset object store",
+            description = "Upload a hashed BLOB to dataset object store, returns a uri of the main storage")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> uploadHashedBlob(
+            @PathVariable(name = "projectName") String projectName,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
+            @PathVariable(name = "datasetName") String datasetName,
+            @PathVariable(name = "hash") String hash,
+            @Parameter(description = "file content") @RequestPart(value = "file", required = true)
+            MultipartFile dsFile);
+
+    @Operation(summary = "Test if a hashed blob exists in this dataset",
+            description = "404 if not exists; 200 if exists")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}",
+            method = RequestMethod.HEAD,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<?> headHashedBlob(
+            @PathVariable(name = "projectName") String projectName,
+            @PathVariable(name = "datasetName") String datasetName,
+            @PathVariable(name = "hash") String hash);
+
+
     @Operation(summary = "Pull Dataset uri file contents",
             description = "Pull Dataset uri file contents ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link",
+            value = "/project/{projectName}/dataset/{datasetName}/uri",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void pullLinkContent(
-            @PathVariable(name = "projectUrl") String projectUrl,
-            @PathVariable(name = "datasetUrl") String datasetUrl,
-            @PathVariable(name = "versionUrl") String versionUrl,
-            @Parameter(name = "uri", description = "uri of the link")
-            @RequestParam(name = "uri", required = true) String uri,
+    void pullUriContent(
+            @PathVariable(name = "projectName") String projectName,
+            @PathVariable(name = "datasetName") String datasetName,
+            @Parameter(name = "uri", required = true) String uri,
             @Parameter(name = "offset", description = "offset in the content")
             @RequestParam(name = "offset", required = false) Long offset,
             @Parameter(name = "size", description = "data size")
             @RequestParam(name = "size", required = false) Long size,
             HttpServletResponse httpResponse);
 
-
     @Operation(summary = "Sign SWDS uris to get a batch of temporarily accessible links",
             description = "Sign SWDS uris to get a batch of temporarily accessible links")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-            value = "/project/{projectName}/dataset/{datasetName}/version/{version}/sign-links",
+            value = "/project/{projectName}/dataset/{datasetName}/uri/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectUrl,
-            @PathVariable(name = "datasetName") String datasetUrl,
-            @PathVariable(name = "version") String versionUrl,
+    ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectName,
+            @PathVariable(name = "datasetName") String datasetName,
             @RequestBody Set<String> uris,
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
             @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
+
+
+    @Operation(summary = "Share or unshare the dataset version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(
+            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/shared",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> shareDatasetVersion(
+            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("datasetUrl") String datasetUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("versionUrl") String versionUrl,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "1 - shared, 0 - unshared",
+                    schema = @Schema())
+            @RequestParam(value = "shared") Integer shared
+    );
 
     @Operation(
             summary = "Manage tag of the dataset version",
@@ -339,12 +408,12 @@ public interface DatasetApi {
                     description = "Project url",
                     schema = @Schema())
             @PathVariable("projectUrl")
-                    String projectUrl,
+            String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("datasetUrl")
-                    String datasetUrl,
+            String datasetUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
-                    String versionUrl);
+            String versionUrl);
 
 }

@@ -157,9 +157,9 @@ public class DataStore {
         //noinspection ConstantConditions
         table.lock();
         try {
-            var revision = table.update(schema, records);
+            var ts = table.update(schema, records);
             this.dirtyTables.put(table, "");
-            return revision;
+            return Long.toString(ts);
         } finally {
             table.unlock();
         }
@@ -191,7 +191,7 @@ public class DataStore {
             var schema = table.getSchema();
             var columns = this.getColumnAliases(schema, req.getColumns());
             var results = new ArrayList<RecordResult>();
-            var timestamp = req.getTimestamp() * 1000;
+            var timestamp = req.getTimestamp();
             if (timestamp == 0) {
                 timestamp = System.currentTimeMillis();
             }
@@ -291,9 +291,9 @@ public class DataStore {
                 var ret = new TableMeta();
                 ret.tableName = info.getTableName();
                 if (info.getTimestamp() > 0) {
-                    ret.timestamp = info.getTimestamp() * 1000;
+                    ret.timestamp = info.getTimestamp();
                 } else if (req.getTimestamp() > 0) {
-                    ret.timestamp = req.getTimestamp() * 1000;
+                    ret.timestamp = req.getTimestamp();
                 } else {
                     ret.timestamp = currentTimestamp;
                 }

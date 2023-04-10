@@ -51,6 +51,7 @@
     "react-in-viewport": "^1.0.0-alpha.28",
     "react-resizable": "^3.0.4",
     "react-sortablejs": "^6.1.4",
+    "react-stately": "^3.21.0",
     "rxjs": "^7.5.7",
     "tsc": "^2.0.4",
     "tslib": "2.4.0"

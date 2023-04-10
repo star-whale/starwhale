@@ -17,10 +17,12 @@ import { getToken } from '@/api'
 import { tryParseSimplified } from '@/domain/panel/utils'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
+import useTranslation from '@/hooks/useTranslation'
 
 const PAGE_TABLE_SIZE = 100
 
 function Summary({ fetch }: any) {
+    const [t] = useTranslation()
     const record: Record<string, string> = fetch?.data?.records?.[0]
     const [expanded, setExpanded] = React.useState<boolean>(false)
 
@@ -94,9 +96,11 @@ function Summary({ fetch }: any) {
                                     gap: '8px',
                                     fontWeight: 'bold',
                                     color: 'rgba(2,16,43,0.60)',
+                                    position: 'relative',
+                                    left: '-9px',
                                 }}
                             >
-                                Summary
+                                {t('Summary')}
                                 <IconFont type={!expanded ? 'arrow_down' : 'arrow_top'} />
                             </div>
                         </Button>
@@ -201,9 +205,11 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 interface Layout {
     name: string
     content: string | object
+    label: string
 }
 
 function EvaluationWidgetResults() {
+    const [t] = useTranslation()
     const { jobId, projectId: projectFromUri } = useParams<{ jobId: string; projectId: string }>()
     const { project } = useProject()
     const projectId = project?.id ?? projectFromUri
@@ -213,7 +219,7 @@ function EvaluationWidgetResults() {
     const [layouts, setLayouts] = React.useState<Layout[]>([])
     const onStateChange = async (data: any) => {
         await updatePanelSetting(projectId, storeKey, data)
-        toaster.positive('Panel setting saved', { autoHideDuration: 2000 })
+        toaster.positive(t('panel.save.success'), { autoHideDuration: 2000 })
     }
 
     const tables = React.useMemo(() => {
@@ -235,9 +241,9 @@ function EvaluationWidgetResults() {
         fetchModelVersionPanelSetting(projectId, job?.modelName, job?.modelVersion, getToken()).then((data) => {
             if (!data) return
             const layout = tryParseSimplified(data) ?? data
-            updateLayout({ name: 'model-builtin', content: layout })
+            updateLayout({ name: 'model-builtin', content: layout, label: t('panel.view.config.model-buildin') })
         })
-    }, [projectId, job, updateLayout])
+    }, [projectId, job, updateLayout, t])
 
     useEffect(() => {
         if (!storeKey) {
@@ -246,11 +252,11 @@ function EvaluationWidgetResults() {
         fetchPanelSetting(projectId, storeKey).then((data) => {
             // try simplified version for standalone usage
             const parsed = tryParseSimplified(JSON.parse(data)) ?? data
-            const layout = { name: 'custom', content: parsed }
+            const layout = { name: 'custom', content: parsed, label: t('panel.view.config.custom') }
             setCurrentLayout(layout)
             updateLayout(layout)
         })
-    }, [projectId, job, storeKey, updateLayout])
+    }, [projectId, job, storeKey, updateLayout, t])
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
@@ -290,7 +296,7 @@ function EvaluationWidgetResults() {
                             },
                         }}
                         clearable={false}
-                        options={layouts.map((layout) => ({ id: layout.name, label: layout.name }))}
+                        options={layouts.map((layout) => ({ id: layout.name, label: layout.label }))}
                         value={currentLayout ? [{ id: currentLayout.name, label: currentLayout.name }] : []}
                         onChange={({ value }) => {
                             const layout = layouts.find((l) => l.name === value[0].id)

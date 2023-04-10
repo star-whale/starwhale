@@ -1,7 +1,7 @@
 import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
 import useTranslation from '@/hooks/useTranslation'
 import React, { useEffect, useMemo } from 'react'
-import { useHistory, useLocation, useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
@@ -18,6 +18,7 @@ import { Button } from '@starwhale/ui'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
+import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -83,21 +84,21 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         const items = [
             {
                 title: t('Overview'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview/?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/overview?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/overview\\/?',
             },
             {
                 title: t('Metadata'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta/?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/meta?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/meta\\/?',
             },
             {
                 title: t('Files'),
-                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
+                path: `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
                     pageParams
                 )}`,
                 pattern: '/\\/files\\/?',
@@ -106,15 +107,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         return items
     }, [projectId, datasetId, datasetVersionId, t, pageParams])
 
-    const location = useLocation()
-    const activeItemId = useMemo(() => {
-        const item = navItems
-            .slice()
-            .reverse()
-            .find((item_) => (location.pathname ?? '').startsWith(item_.path ?? ''))
-        const paths = item?.path?.split('/') ?? []
-        return paths[paths.length - 1] ?? 'files'
-    }, [location.pathname, navItems])
+    const { activeItemId } = useRouterActivePath(navItems)
 
     const extra = useMemo(() => {
         return (

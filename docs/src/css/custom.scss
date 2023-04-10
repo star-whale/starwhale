@@ -2,12 +2,12 @@
 @import "src/css/variables.scss";
 
 @font-face {
-  font-family: 'Poppins';
+  font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
   src: local(''),
-    url('/static/fonts/Poppins-Regular.ttf') format('truetype'),
+    url('/static/fonts/Inter-Regular.ttf') format('truetype'),
 }
 
 @font-face {
@@ -53,8 +53,8 @@ html {
   --ifm-hr-margin-vertical: 4rem;
   --docusaurus-announcement-bar-height: 40px !important;
 
-  --ifm-font-family-monospace: 'Roboto Mono';
-  --ifm-font-family-base: 'Poppins';
+  --ifm-font-family-monospace: 'Roboto Mono', sans-serif;
+  --ifm-font-family-base: 'Inter', sans-serif;
   --ifm-font-size-base: 16px;
 
   --max-page-width: 100%;
@@ -270,7 +270,6 @@ html[data-theme="light"] .hero .button.button--primary {
   background-size: 24px;
   padding-left: 30px;
   line-height: 24px;
-  font-size: 16px;
   color: rgba(255, 255, 255, 0.8);
   letter-spacing: 0;
   text-align: center;
