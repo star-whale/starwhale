@@ -717,7 +717,7 @@ class JobHandlerParser(HandlerParser):
             )
             return yaml_path
         except Exception as e:
-            logger.error("error in evaluation handler parse processing", e)
+            logger.error("error in job handler parse processing", e)
             if raise_err:
                 raise e
 
