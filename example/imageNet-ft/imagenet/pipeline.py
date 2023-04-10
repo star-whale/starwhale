@@ -11,7 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
 from typing import Any, Dict
 from pathlib import Path
 
@@ -35,7 +34,6 @@ from starwhale import (
     multi_classification,
 )
 from starwhale.api import model, experiment
-from starwhale.consts.env import SWEnv
 from starwhale.api.service import api
 
 ROOTDIR = Path(__file__).parent.parent
@@ -257,72 +255,3 @@ class ImageNetEvaluation(PipelineHandler):
         _, prob = self.ppl({"img": data})
         return {_LABEL_NAMES[i]: p for i, p in enumerate(prob)}
 
-
-@torch.no_grad()
-def evaluation(fine_tuned: bool = False):
-    if fine_tuned:
-        net = ResNet(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=2)
-        net.load_state_dict(
-            torch.load(str(ROOTDIR / "models" / "resnet-ft.pth"))  # type: ignore
-        )
-    else:
-        net = ResNet(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=1000)
-        net.load_state_dict(
-            torch.load(str(ROOTDIR / "models" / "resnet18-f37072fd.pth"))  # type: ignore
-        )
-    net.eval()
-
-    normalize = torchvision.transforms.Normalize(
-        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
-    )
-
-    test_augs = SwCompose(
-        [
-            torchvision.transforms.Resize([256, 256]),
-            torchvision.transforms.CenterCrop(224),
-            torchvision.transforms.ToTensor(),
-            normalize,
-        ]
-    )
-    # use starwhale dataset
-    server_pro_uri = "cloud://server/project/starwhale"
-    # server_pro_uri = "local/project/self"
-    # todo: this should control datastore write, but not control user rewrite the obj?
-    test_dataset = dataset(
-        f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True
-    )
-    #  todo: support batch
-    #  todo: support wrapper transform()
-    test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs))
-
-    # debug
-    index = 0
-    for features in test_iter:
-        X = features.get("img")
-        y = features.get("label")[0]
-        y = torch.stack((torch.tensor(_LABEL_NAMES.index(y), dtype=torch.long),))
-        y_res = net(X)
-        print(f"index:{index}, res:{y_res}")
-        index += 1
-        if len(y_res.shape) > 1 and y_res.shape[1] > 1:
-            y_res = d2l.argmax(y_res, axis=1)
-            print(f"after argmax res:{y_res}")
-        cmp = astype(y_res, y.dtype) == y
-        cmp_astype = astype(cmp, y.dtype)
-        sum = reduce_sum(cmp_astype)
-        print(
-            f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}"
-        )
-
-    test_acc = evaluate_accuracy(net, test_iter)
-    print(f"test acc {test_acc:.3f}")
-
-
-astype = lambda x, *args, **kwargs: x.type(*args, **kwargs)
-reduce_sum = lambda x, *args, **kwargs: x.sum(*args, **kwargs)
-size = lambda x, *args, **kwargs: x.numel(*args, **kwargs)
-
-if __name__ == "__main__":
-    os.environ.setdefault(SWEnv.instance_uri, "cloud://server")
-    os.environ.setdefault(SWEnv.project, "starwhale")
-    evaluation(fine_tuned=True)
