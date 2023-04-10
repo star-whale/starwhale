@@ -651,6 +651,31 @@ class TestMemoryTable(BaseTestCase):
             "latest 1 with rev",
         )
 
+    def test_insert_with_diff(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table.insert({"k": 0, "a": "0"})
+        table.insert({"k": 0, "a": "1"})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan()),
+        )
+        self.assertEqual(len(table.records[0].records), 2)
+
+        # insert the same row again
+        table.insert({"k": 0, "a": "1"})
+        self.assertEqual(len(table.records[0].records), 2)
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan()),
+        )
+
+        # insert with None
+        table.insert({"k": 0, "a": None})
+        self.assertEqual(
+            [{"*": 0, "k": 0}],
+            list(table.scan()),
+        )
+
     def test_merge_dump(self):
         table_name = "test"
         table = data_store.MemoryTable(table_name, ColumnSchema("k", INT64))
