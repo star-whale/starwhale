@@ -130,7 +130,7 @@ class TestCli:
             }
         )
 
-    def build_dataset(self, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
+    def build_dataset(self, name: str, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
         self.select_local_instance()
         ret_uri = Dataset.build_with_api(workdir=_workdir, ds_expl=ds_expl)
         _uri = URI.capsulate_uri(
@@ -145,9 +145,9 @@ class TestCli:
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
             )
-        dss_ = self.datasets.get(ds_expl.name, [])
+        dss_ = self.datasets.get(name, [])
         dss_.append(_uri)
-        self.datasets.update({ds_expl.name: dss_})
+        self.datasets.update({name: dss_})
         assert len(self.dataset_api.list())
         assert self.dataset_api.info(_uri.full_uri)
         return _uri
@@ -293,7 +293,7 @@ class TestCli:
 
         # 2.dataset build
         _ds_uri = self.build_dataset(
-            f"{self._work_dir}/scripts/example", DatasetExpl("", "")
+            "simple", f"{self._work_dir}/scripts/example", DatasetExpl("", "")
         )
 
         # 3.runtime build
@@ -323,7 +323,7 @@ class TestCli:
         for name, expl in EXAMPLES.items():
             workdir_ = expl["workdir"]
             for d_type in expl["datasets"]:
-                self.build_dataset(workdir_, d_type)
+                self.build_dataset(name, workdir_, d_type)
             self.build_model(workdir_)
 
         for name, rt in RUNTIMES.items():
@@ -383,7 +383,7 @@ class TestCli:
 
         #  download data
         for ds_expl in expl["datasets"]:
-            self.build_dataset(workdir_, ds_expl)
+            self.build_dataset(expl_name, workdir_, ds_expl)
         self.build_model(workdir_)
 
         # run_eval
