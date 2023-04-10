@@ -11,30 +11,24 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Any, Dict
 from pathlib import Path
+from typing import Any, Dict
 
 import numpy as np
 import torch
 import torchvision
 from d2l import torch as d2l
+from starwhale.api import experiment, model
+from starwhale.api.service import api
 from torch import nn
-from gradio import gradio
 from torch.utils import data
 from torchvision.models import ResNet
-from torchvision.transforms import Compose
 from torchvision.models.resnet import BasicBlock
+from torchvision.transforms import Compose
 
-from starwhale import (
-    Image,
-    Context,
-    dataset,
-    pass_context,
-    PipelineHandler,
-    multi_classification,
-)
-from starwhale.api import model, experiment
-from starwhale.api.service import api
+from gradio import gradio
+from starwhale import (Context, Image, PipelineHandler, dataset,
+                       multi_classification, pass_context)
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
@@ -254,4 +248,3 @@ class ImageNetEvaluation(PipelineHandler):
             data = Image(f.read(), shape=(28, 28, 1))
         _, prob = self.ppl({"img": data})
         return {_LABEL_NAMES[i]: p for i, p in enumerate(prob)}
-

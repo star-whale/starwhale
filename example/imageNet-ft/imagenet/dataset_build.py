@@ -16,8 +16,9 @@ import os
 import sys
 from pathlib import Path
 
-from starwhale import Image, dataset, MIMEType
 from starwhale.consts.env import SWEnv
+
+from starwhale import Image, MIMEType, dataset
 
 ROOT_DIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
