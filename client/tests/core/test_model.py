@@ -104,7 +104,7 @@ class StandaloneModelTestCase(TestCase):
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.MODEL}"
         )
-        assert m_preload.call_count == 2
+        assert m_preload.call_count == 1
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()

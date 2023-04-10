@@ -13,7 +13,7 @@ from collections import defaultdict
 import yaml
 from loguru import logger
 
-from starwhale.consts import DecoratorInjectAttr, DEFAULT_EVALUATION_JOB_NAME
+from starwhale.consts import DecoratorInjectAttr, DEFAULT_JOB_NAME
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
@@ -75,7 +75,7 @@ def _do_resource_transform(resources: t.Optional[t.Dict[str, t.Any]]) -> t.List[
 
 
 def step(
-    job_name: str = DEFAULT_EVALUATION_JOB_NAME,
+    job_name: str = DEFAULT_JOB_NAME,
     resources: t.Optional[t.Dict[str, t.Any]] = None,
     concurrency: int = 1,
     task_num: int = 1,

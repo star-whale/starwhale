@@ -7,7 +7,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from loguru import logger
 
 from starwhale.utils import load_yaml
-from starwhale.consts import RunStatus, DEFAULT_EVALUATION_JOB_NAME
+from starwhale.consts import RunStatus, DEFAULT_JOB_NAME
 from starwhale.base.mixin import ASDictMixin
 
 from .dag import DAG, generate_dag
@@ -38,7 +38,7 @@ class Step(ASDictMixin):
     def __init__(
         self,
         name: str,
-        job_name: str = DEFAULT_EVALUATION_JOB_NAME,
+        job_name: str = DEFAULT_JOB_NAME,
         resources: t.Optional[t.List[t.Dict]] = None,
         needs: t.Optional[t.List[str]] = None,
         concurrency: int = 1,
