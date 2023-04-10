@@ -1,4 +1,4 @@
-name: imageNet-for-hotdog
+name: image-net-for-hotdog
 
 handler: imagenet.dataset:iter_hotdog_item
 

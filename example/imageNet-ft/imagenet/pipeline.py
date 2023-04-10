@@ -13,7 +13,7 @@
 #  limitations under the License.
 import os
 from pathlib import Path
-from typing import Union, Any, Optional, Dict
+from typing import Any, Dict
 
 import numpy as np
 from d2l import torch as d2l
@@ -28,7 +28,7 @@ from torchvision.transforms import Compose
 from gradio import gradio
 from starwhale.api import model, experiment
 from starwhale.api.service import api
-from starwhale import PipelineHandler, Image, multi_classification, dataset
+from starwhale import PipelineHandler, Image, multi_classification, dataset, pass_context, Context
 from starwhale.consts.env import SWEnv
 
 ROOTDIR = Path(__file__).parent.parent
@@ -50,7 +50,7 @@ class SwCompose(Compose):
 
 
 @torch.no_grad()
-def evaluate_accuracy_gpu(net, data_iter, device=None):
+def evaluate_accuracy(net, data_iter, device=None):
     """Compute the accuracy for a model on a dataset using a GPU.
 
     Defined in :numref:`sec_lenet`"""
@@ -72,19 +72,19 @@ def evaluate_accuracy_gpu(net, data_iter, device=None):
     return metric[0] / metric[1]
 
 
+@pass_context
 @experiment.fine_tune()
-def fine_tune(learning_rate=5e-5,
+def fine_tune(context: Context,
+              learning_rate=5e-5,
               batch_size=128,
-              num_epochs=5,
+              num_epochs=10,
               param_group=True,
-              remote_instance_uri: Optional[str] = None,
-              remote_project: Optional[str] = None,
               ):
     # init
     finetune_net = ResNet(BasicBlock, [2, 2, 2, 2])
     # load from pretrained model todo: load form existed sw model package(sdk)
     finetune_net.load_state_dict(
-        torch.load(str(ROOTDIR / "models" / "resnet18-f37072fd.pth"))  # type: ignore
+        torch.load(str(ROOTDIR / "models" / "resnet18.pth"))  # type: ignore
     )
     # reset to 2 class
     finetune_net.fc = nn.Linear(finetune_net.fc.in_features, 2)
@@ -100,13 +100,7 @@ def fine_tune(learning_rate=5e-5,
         normalize])
 
     # use starwhale dataset
-    remote_instance_uri = remote_instance_uri or os.getenv(SWEnv.instance_uri)
-    remote_project = remote_project or os.getenv(SWEnv.project)
-    # "local/project/self"
-    server_pro_uri = f"{remote_instance_uri}/project/{remote_project}"
-    dataset_uri = f"{server_pro_uri}/dataset/{os.getenv(SWEnv.dataset_uri, 'hotdog_train/version/latest')}"
-    print(f"dataset is:{dataset_uri}")
-    train_dataset = dataset(dataset_uri, readonly=True)
+    train_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
     train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs), batch_size=batch_size)
 
     loss = nn.CrossEntropyLoss(reduction="none")
@@ -147,7 +141,8 @@ def fine_tune(learning_rate=5e-5,
 
     # save and build model
     torch.save(finetune_net.state_dict(), ROOTDIR / "models" / "resnet-ft.pth")
-    model.build(workdir=ROOTDIR, name="imageNet-all", evaluation_handler=ImageNetEvaluation)
+    # todo: the name of ft model can be set by env
+    model.build(workdir=ROOTDIR, name="imageNet-for-hotdog", evaluation_handler=ImageNetEvaluation)
 
 
 def train_batch(net, X, y, loss, trainer, devices):
@@ -274,7 +269,7 @@ def evaluation(fine_tuned: bool = False):
         print(
             f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}")
 
-    test_acc = evaluate_accuracy_gpu(net, test_iter)
+    test_acc = evaluate_accuracy(net, test_iter)
     print(f'test acc {test_acc:.3f}')
 
 

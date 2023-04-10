@@ -11,7 +11,8 @@ environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.4
-  docker:
-    image: 10.131.0.1:8083/ft-starwhale:latest
+  python: 3.8 # must be same with model train env
+#  docker:
+#    image: 10.131.0.1:8083/ft-starwhale:latest
 mode: venv
-name: image-net
+name: image-net-for-finetune

@@ -31,8 +31,11 @@ def iter_hotdog_item() -> _TItem:
     """
     for idx, label in enumerate(_LABEL_NAMES):
         path = ROOT_DIR / "data" / "test" / label
-        for _f in os.listdir(path):
-            yield {
-                "img": Image(fp=path / _f, display_name=_f, mime_type=MIMEType.PNG),
-                "label": label,
-            }
+        for _fn in os.listdir(path):
+            _f = path / _fn
+            with open(_f, mode="rb") as image_file:
+                yield {
+                    "img": Image(fp=image_file.read(), display_name=_fn, mime_type=MIMEType.PNG),
+                    "label": label,
+                }
+
