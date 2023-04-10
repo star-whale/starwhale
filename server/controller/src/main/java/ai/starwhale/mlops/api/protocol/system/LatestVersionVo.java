@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.po;
+package ai.starwhale.mlops.api.protocol.system;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.validation.annotation.Validated;
 
-@EqualsAndHashCode(callSuper = false)
 @Data
-@SuperBuilder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserEntity extends BaseEntity implements Serializable {
+@Builder
+@Schema(description = "Latest verion", title = "Version")
+@Validated
+public class LatestVersionVo {
 
-    private Long id;
+    private String version;
 
-    private String userName;
-
-    private String userPwd;
-
-    private String userPwdSalt;
-
-    private Integer userEnabled;
-
+    private String image;
 }

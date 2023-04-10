@@ -268,6 +268,7 @@ publish_to_k8s() {
   bash pub.sh --config
   source pub.sh all -s --app $SWNAME --ns $SWNS
   popd
+  source upgrade_test.sh
 }
 
 main() {
