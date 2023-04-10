@@ -30,13 +30,13 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_JOBS_FILE_NAME,
     DEFAULT_FINETUNE_JOB_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
     DEFAULT_EVALUATION_JOB_NAME,
     DEFAULT_STARWHALE_API_VERSION,
     EVALUATION_SVC_META_FILE_NAME,
     DEFAULT_FINETUNE_JOBS_FILE_NAME,
-    DEFAULT_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
@@ -366,7 +366,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
         _status = RunStatus.START
         try:
-            _results = _scheduler.run(step_name=step_name, task_index=task_index, task_num=task_num)
+            _results = _scheduler.run(
+                step_name=step_name, task_index=task_index, task_num=task_num
+            )
             _status = RunStatus.SUCCESS
 
             exceptions: t.List[Exception] = []
@@ -708,9 +710,7 @@ class HandlerParser:
 class JobHandlerParser(HandlerParser):
     def run(self, raise_err: bool = True) -> t.Any:
         try:
-            yaml_path = (
-                self.target_dir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
-            )
+            yaml_path = self.target_dir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
             generate_jobs_yaml(
                 run_handler=self.handler,
                 workdir=self.workdir,

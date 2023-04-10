@@ -35,7 +35,8 @@ def iter_hotdog_item() -> _TItem:
             _f = path / _fn
             with open(_f, mode="rb") as image_file:
                 yield {
-                    "img": Image(fp=image_file.read(), display_name=_fn, mime_type=MIMEType.PNG),
+                    "img": Image(
+                        fp=image_file.read(), display_name=_fn, mime_type=MIMEType.PNG
+                    ),
                     "label": label,
                 }
-

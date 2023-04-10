@@ -34,10 +34,16 @@ def build_ds(ds_uri: str):
         for _fn in os.listdir(path):
             _f = path / _fn
             with open(_f, mode="rb") as image_file:
-                ds.append({
-                    "img": Image(fp=image_file.read(), display_name=_fn, mime_type=MIMEType.PNG),
-                    "label": label,
-                })
+                ds.append(
+                    {
+                        "img": Image(
+                            fp=image_file.read(),
+                            display_name=_fn,
+                            mime_type=MIMEType.PNG,
+                        ),
+                        "label": label,
+                    }
+                )
     ds.commit()
     ds.close()
 

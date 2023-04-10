@@ -20,8 +20,8 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_FINETUNE_JOB_NAME,
     DEFAULT_JOBS_FILE_NAME,
+    DEFAULT_FINETUNE_JOB_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
@@ -108,9 +108,7 @@ class StandaloneModelTestCase(TestCase):
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
-        assert (
-            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
-        ).exists()
+        assert (bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME).exists()
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
         assert "name" not in _manifest

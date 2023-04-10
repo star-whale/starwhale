@@ -51,7 +51,6 @@ make download-model
 - `make download-data` 命令下载数据的时候，如果遇到网络问题，请合理设置代理。
 - `make download-model` 命令执行结束后，可以到`data`目录查看原始数据，`models`目录查看已经构建好的模型。
 
-
 ## Starwhale的模型微调过程
 
 ### 步骤1：构建Starwhale Dataset
@@ -86,7 +85,6 @@ python3 imagenet/dataset_build.py test
 swcli dataset info hotdog_train/version/latest
 swcli dataset info hotdog_test/version/latest
 ```
-
 
 ### 步骤2：Standalone Instance中评测模型
 

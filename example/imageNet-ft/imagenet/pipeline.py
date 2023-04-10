@@ -12,24 +12,31 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
-from pathlib import Path
 from typing import Any, Dict
+from pathlib import Path
 
 import numpy as np
-from d2l import torch as d2l
 import torch
 import torchvision
+from d2l import torch as d2l
 from torch import nn
+from gradio import gradio
 from torch.utils import data
 from torchvision.models import ResNet
+from torchvision.transforms import Compose
 from torchvision.models.resnet import BasicBlock
 
-from torchvision.transforms import Compose
-from gradio import gradio
+from starwhale import (
+    Image,
+    Context,
+    dataset,
+    pass_context,
+    PipelineHandler,
+    multi_classification,
+)
 from starwhale.api import model, experiment
-from starwhale.api.service import api
-from starwhale import PipelineHandler, Image, multi_classification, dataset, pass_context, Context
 from starwhale.consts.env import SWEnv
+from starwhale.api.service import api
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
@@ -46,7 +53,9 @@ class SwCompose(Compose):
             _img = t(_img)
         # todo: RuntimeError: <function Dataset.__setitem__ at 0x7f12e2efc430> does not work in the readonly mode
         # img["img"] = _img #error
-        return _img, torch.tensor(_LABEL_NAMES.index(img.get("label")), dtype=torch.long)
+        return _img, torch.tensor(
+            _LABEL_NAMES.index(img.get("label")), dtype=torch.long
+        )
 
 
 @torch.no_grad()
@@ -74,12 +83,13 @@ def evaluate_accuracy(net, data_iter, device=None):
 
 @pass_context
 @experiment.fine_tune()
-def fine_tune(context: Context,
-              learning_rate=5e-5,
-              batch_size=128,
-              num_epochs=10,
-              param_group=True,
-              ):
+def fine_tune(
+    context: Context,
+    learning_rate=5e-5,
+    batch_size=128,
+    num_epochs=10,
+    param_group=True,
+):
     # init
     finetune_net = ResNet(BasicBlock, [2, 2, 2, 2])
     # load from pretrained model todo: load form existed sw model package(sdk)
@@ -91,36 +101,54 @@ def fine_tune(context: Context,
     nn.init.xavier_uniform_(finetune_net.fc.weight)
 
     normalize = torchvision.transforms.Normalize(
-        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+    )
 
-    train_augs = SwCompose([
-        torchvision.transforms.RandomResizedCrop(224),
-        torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.ToTensor(),
-        normalize])
+    train_augs = SwCompose(
+        [
+            torchvision.transforms.RandomResizedCrop(224),
+            torchvision.transforms.RandomHorizontalFlip(),
+            torchvision.transforms.ToTensor(),
+            normalize,
+        ]
+    )
 
     # use starwhale dataset
     train_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
-    train_iter = data.DataLoader(train_dataset.to_pytorch(transform=train_augs), batch_size=batch_size)
+    train_iter = data.DataLoader(
+        train_dataset.to_pytorch(transform=train_augs), batch_size=batch_size
+    )
 
     loss = nn.CrossEntropyLoss(reduction="none")
     if param_group:
-        params_1x = [param for name, param in finetune_net.named_parameters()
-                     if name not in ["fc.weight", "fc.bias"]]
-        trainer = torch.optim.SGD([{'params': params_1x},
-                                   {'params': finetune_net.fc.parameters(),
-                                    'lr': learning_rate * 10}],
-                                  lr=learning_rate, weight_decay=0.001)
+        params_1x = [
+            param
+            for name, param in finetune_net.named_parameters()
+            if name not in ["fc.weight", "fc.bias"]
+        ]
+        trainer = torch.optim.SGD(
+            [
+                {"params": params_1x},
+                {"params": finetune_net.fc.parameters(), "lr": learning_rate * 10},
+            ],
+            lr=learning_rate,
+            weight_decay=0.001,
+        )
     else:
-        trainer = torch.optim.SGD(finetune_net.parameters(), lr=learning_rate,
-                                  weight_decay=0.001)
+        trainer = torch.optim.SGD(
+            finetune_net.parameters(), lr=learning_rate, weight_decay=0.001
+        )
 
     devices = d2l.try_all_gpus()
 
     # train(finetune_net, train_iter, loss, trainer, num_epochs)
     timer, num_batches = d2l.Timer(), len(train_iter)
-    animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
-                            legend=['train loss', 'train acc', 'test acc'])
+    animator = d2l.Animator(
+        xlabel="epoch",
+        xlim=[1, num_epochs],
+        ylim=[0, 1],
+        legend=["train loss", "train acc", "test acc"],
+    )
     net = nn.DataParallel(finetune_net, device_ids=devices).to(devices[0])
     for epoch in range(num_epochs):
         # Sum of training loss, sum of training accuracy, no. of examples,
@@ -128,21 +156,29 @@ def fine_tune(context: Context,
         metric = d2l.Accumulator(4)
         for i, (features, labels) in enumerate(train_iter):
             timer.start()
-            l, acc = train_batch(
-                net, features, labels, loss, trainer, devices)
+            l, acc = train_batch(net, features, labels, loss, trainer, devices)
             metric.add(l, acc, labels.shape[0], labels.numel())
             timer.stop()
             if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
-                animator.add(epoch + (i + 1) / num_batches,
-                             (metric[0] / metric[2], metric[1] / metric[3],
-                              None))
-        print(f'epoch[{epoch}] loss {metric[0] / metric[2]:.3f}, train acc {metric[1] / metric[3]:.3f}')
-        print(f'epoch[{epoch}] {metric[2] * num_epochs / timer.sum():.1f} examples/sec on {str(devices)}')
+                animator.add(
+                    epoch + (i + 1) / num_batches,
+                    (metric[0] / metric[2], metric[1] / metric[3], None),
+                )
+        print(
+            f"epoch[{epoch}] loss {metric[0] / metric[2]:.3f}, train acc {metric[1] / metric[3]:.3f}"
+        )
+        print(
+            f"epoch[{epoch}] {metric[2] * num_epochs / timer.sum():.1f} examples/sec on {str(devices)}"
+        )
 
     # save and build model
     torch.save(finetune_net.state_dict(), ROOTDIR / "models" / "resnet-ft.pth")
     # todo: the name of ft model can be set by env
-    model.build(workdir=ROOTDIR, name="imageNet-for-hotdog", evaluation_handler=ImageNetEvaluation)
+    model.build(
+        workdir=ROOTDIR,
+        name="imageNet-for-hotdog",
+        evaluation_handler=ImageNetEvaluation,
+    )
 
 
 def train_batch(net, X, y, loss, trainer, devices):
@@ -179,13 +215,17 @@ class ImageNetEvaluation(PipelineHandler):
 
     def _pre(self, data: Image) -> torch.Tensor:
         normalize = torchvision.transforms.Normalize(
-            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+        )
 
-        test_augs = Compose([
-            torchvision.transforms.Resize([256, 256]),
-            torchvision.transforms.CenterCrop(224),
-            torchvision.transforms.ToTensor(),
-            normalize])
+        test_augs = Compose(
+            [
+                torchvision.transforms.Resize([256, 256]),
+                torchvision.transforms.CenterCrop(224),
+                torchvision.transforms.ToTensor(),
+                normalize,
+            ]
+        )
         return torch.stack([test_augs(data.to_pil())]).to(self.device)
 
     @torch.no_grad()
@@ -210,9 +250,7 @@ class ImageNetEvaluation(PipelineHandler):
             pr.append(_data["result"][1])
         return label, result, pr
 
-    @api(
-        gradio.File(), gradio.Label()
-    )
+    @api(gradio.File(), gradio.Label())
     def online_eval(self, file: Any):
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))
@@ -235,18 +273,24 @@ def evaluation(fine_tuned: bool = False):
     net.eval()
 
     normalize = torchvision.transforms.Normalize(
-        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+    )
 
-    test_augs = SwCompose([
-        torchvision.transforms.Resize([256, 256]),
-        torchvision.transforms.CenterCrop(224),
-        torchvision.transforms.ToTensor(),
-        normalize])
+    test_augs = SwCompose(
+        [
+            torchvision.transforms.Resize([256, 256]),
+            torchvision.transforms.CenterCrop(224),
+            torchvision.transforms.ToTensor(),
+            normalize,
+        ]
+    )
     # use starwhale dataset
     server_pro_uri = "cloud://server/project/starwhale"
     # server_pro_uri = "local/project/self"
     # todo: this should control datastore write, but not control user rewrite the obj?
-    test_dataset = dataset(f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True)
+    test_dataset = dataset(
+        f"{server_pro_uri}/dataset/hotdog_test/version/latest", readonly=True
+    )
     #  todo: support batch
     #  todo: support wrapper transform()
     test_iter = data.DataLoader(test_dataset.to_pytorch(transform=test_augs))
@@ -267,17 +311,18 @@ def evaluation(fine_tuned: bool = False):
         cmp_astype = astype(cmp, y.dtype)
         sum = reduce_sum(cmp_astype)
         print(
-            f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}")
+            f"cmp: {cmp}, cmp_astype:{cmp_astype}, sum:{float(sum)}, y:{y}, y_size:{size(y)}, acc:{float(sum) / size(y)}"
+        )
 
     test_acc = evaluate_accuracy(net, test_iter)
-    print(f'test acc {test_acc:.3f}')
+    print(f"test acc {test_acc:.3f}")
 
 
 astype = lambda x, *args, **kwargs: x.type(*args, **kwargs)
 reduce_sum = lambda x, *args, **kwargs: x.sum(*args, **kwargs)
 size = lambda x, *args, **kwargs: x.numel(*args, **kwargs)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     os.environ.setdefault(SWEnv.instance_uri, "cloud://server")
     os.environ.setdefault(SWEnv.project, "starwhale")
     evaluation(fine_tuned=True)
