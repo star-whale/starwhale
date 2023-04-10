@@ -4,7 +4,8 @@ import qs from 'qs'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { scanTable, queryTable, listTables, exportTable } from '../services/datastore'
 import { QueryTableRequest } from '../schemas/datastore'
-import { ColumnFilterModel } from '../filter'
+import { useDatastoreFilter } from '../filter'
+import useDatastore from './useDatastore'
 
 export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
@@ -57,22 +58,10 @@ export function useQueryDatasetList(
         }
     }, [options])
 
-    const columnInfo = useQueryDatastore(
-        {
-            tableName,
-            start: 0,
-            limit: 1,
-            rawResult: true,
-            ignoreNonExistingTable: true,
-            encodeWithType: true,
-            keepNone: true,
-        },
-        enabled
-    )
+    const { toQuery } = useDatastoreFilter()
 
     const recordQuery = useMemo(() => {
-        const column = new ColumnFilterModel(columnInfo.data?.columnTypes ?? [])
-        const filter = options?.filter && options?.filter.length > 0 ? column.toQuery(options?.filter) : undefined
+        const filter = options?.filter && options?.filter.length > 0 ? toQuery(options?.filter) : undefined
         const revision = options?.revision
         const raw: any = {
             ...query,
@@ -91,19 +80,22 @@ export function useQueryDatasetList(
             raw.filter = filter
         }
         return raw
-    }, [options?.filter, columnInfo.data?.columnTypes, limit, start, tableName, query, options?.revision])
+    }, [options?.filter, limit, start, tableName, query, options?.revision, toQuery])
 
-    const recordInfo = useQueryDatastore(recordQuery, columnInfo.isSuccess)
+    const recordInfo = useQueryDatastore(recordQuery, enabled)
+    const { records, columnTypes } = useDatastore(recordInfo?.data?.records)
 
+    // when fetch error
     React.useEffect(() => {
-        if (tableName && enabled && columnInfo.isError) {
-            columnInfo.refetch()
+        if (tableName && enabled && recordInfo.isError) {
+            recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tableName, enabled])
 
+    // when table changed
     React.useEffect(() => {
-        if (recordQuery.tableName && columnInfo.isSuccess) {
+        if (recordQuery.tableName && recordInfo.isSuccess) {
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,9 +103,9 @@ export function useQueryDatasetList(
 
     return {
         recordQuery,
-        columnInfo,
+        columnInfo: recordInfo,
         recordInfo,
-        columnTypes: columnInfo.data?.columnTypes,
-        records: recordInfo.data?.records,
+        columnTypes,
+        records,
     }
 }
