@@ -1,0 +1,7 @@
+version: 1.0
+name: bard
+
+run:
+  handler: code.evaluator
+
+desc: supported by google bard api

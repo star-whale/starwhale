@@ -1,0 +1,7 @@
+version: 1.0
+name: chat-gpt-txt-classify
+
+run:
+  handler: code.evaluator
+
+desc: TextClassification by chat gpt api
