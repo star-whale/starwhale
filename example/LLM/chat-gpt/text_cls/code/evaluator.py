@@ -8,7 +8,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 _LABEL_NAMES = ["world", "sports", "business", "sci/tech"]
 
 
-def label_number(raw: str) -> None:
+def label_number(raw: str) -> int:
     for idx, l in enumerate(_LABEL_NAMES):
         if l.upper() in raw.upper():
             return idx
