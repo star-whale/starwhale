@@ -25,11 +25,27 @@ export class SwType implements ISwType {
         if (schema.type === 'MAP') {
             return {
                 ...schema,
-                // toString: () => 'MAP',
                 value: 'MAP',
             }
         }
-
+        if (schema.type === 'BYTES') {
+            return {
+                ...schema,
+                value: 'BYTES',
+            }
+        }
+        if (schema.type === 'TUPLE') {
+            return {
+                ...schema,
+                value: 'TUPLE',
+            }
+        }
+        if (schema.type === 'OBJECT') {
+            return {
+                ...schema,
+                value: 'OBJECT',
+            }
+        }
         return schema
     }
 

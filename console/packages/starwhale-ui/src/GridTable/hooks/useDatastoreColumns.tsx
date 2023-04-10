@@ -5,8 +5,8 @@ import { BooleanColumn, CustomColumn, NumericalColumn, StringColumn } from '../.
 import { ColumnT, FilterTypes, RenderCellT } from '../../base/data-table/types'
 import { StringCell } from '@starwhale/ui/base/data-table/column-string'
 
-const isPrivateSys = (str: string) => str.startsWith('sys/_')
-const isPrivate = (str: string) => str.startsWith('_')
+const isPrivateSys = (str: string = '') => str.startsWith('sys/_')
+const isPrivate = (str: string = '') => str.startsWith('_')
 const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
     if (ca.name === 'sys/id') return -1
     if (cb.name === 'sys/id') return 1
@@ -19,7 +19,8 @@ const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
     if (!ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
         return 1
     }
-    return ca.name.localeCompare(cb.name)
+
+    return 1
 }
 
 function RenderMixedCell({ value, ...props }: RenderCellT<any>['props']) {
@@ -46,6 +47,8 @@ export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
                         })
                     )
                 }
+
+                console.log(column)
 
                 switch (column.type) {
                     default:

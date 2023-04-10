@@ -36,13 +36,15 @@ export function useDatastore(records: RecordListSchemaT = []) {
             if (cached.current.has(key)) return cached.current.get(key)
             const recordTmp = _.get(records, key)
             if (!recordTmp) return undefined
-            const schema = SwType.decode_schema(recordTmp)
-            if (schema)
-                cached.current.put(key, {
+            let schema = SwType.decode_schema(recordTmp)
+            if (schema) {
+                schema = {
                     ...schema,
                     name: name,
                     mixed: true,
-                })
+                }
+                cached.current.put(key, schema)
+            }
             return schema
         },
         [records]
