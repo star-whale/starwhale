@@ -24,6 +24,7 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
+import { useDatastore } from '@starwhale/core/datastore'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -76,7 +77,9 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreColumns(columnInfo?.data?.columnTypes)
+    const { records, columnTypes, getSchema } = useDatastore(evaluationsInfo?.data?.records)
+    const $columns = useDatastoreColumns(columnTypes)
+
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
@@ -85,12 +88,11 @@ export default function EvaluationListCard() {
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (item: any) => item['sys/id'],
+                    mapDataToValue: (item: any) => item['sys/id'].value,
                     // @ts-ignore
                     renderCell: (props: any) => {
-                        const { data } = props ?? {}
-                        if (!data) return <></>
-                        const id = data['sys/id']
+                        if (!props.value) return <></>
+                        const id = props.value
 
                         return (
                             <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
@@ -119,7 +121,7 @@ export default function EvaluationListCard() {
                     renderCell: (props: any) => {
                         return <p title={props?.value}>{durationToStr(props?.value)}</p>
                     },
-                    mapDataToValue: (data: any): string => data.duration,
+                    mapDataToValue: (data: any): string => data.duration.value,
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
@@ -136,7 +138,7 @@ export default function EvaluationListCard() {
                             </div>
                         )
                     },
-                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
+                    mapDataToValue: (data: any): string => column.key && data?.[column.key].value,
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
@@ -145,7 +147,7 @@ export default function EvaluationListCard() {
                     title: column.key,
                     fillWidth: false,
                     mapDataToValue: (data: any) =>
-                        column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
+                        column.key && data[column.key] && formatTimestampDateTime(data[column.key].value),
                 })
 
             return {
@@ -154,9 +156,11 @@ export default function EvaluationListCard() {
             }
         })
     }, [t, $columns, projectId])
+
     const $compareRows = React.useMemo(() => {
-        return evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
-    }, [store.rowSelectedIds, evaluationsInfo.data?.records])
+        return records.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
+    }, [store.rowSelectedIds, records])
+
     const $ready = React.useMemo(() => {
         return columnInfo.isSuccess && evaluationViewConfig.isSuccess
     }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
@@ -286,7 +290,7 @@ export default function EvaluationListCard() {
                             selectable
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
-                            data={evaluationsInfo.data?.records ?? []}
+                            data={records}
                             onSave={doSave as any}
                             onChange={doChange}
                             emptyColumnMessage={

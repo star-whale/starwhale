@@ -7,7 +7,7 @@ interface ISwType {
     toString(): string
 }
 
-class SwType implements ISwType {
+export class SwType implements ISwType {
     name: string
     constructor(name: string) {
         this.name = name
@@ -23,10 +23,14 @@ class SwType implements ISwType {
     }
     static decode_schema(schema: any): any {
         if (schema.type === 'MAP') {
-            return new SwMapType(SwType.decode_schema(schema.key), SwType.decode_schema(schema.value))
+            return {
+                ...schema,
+                // toString: () => 'MAP',
+                value: 'MAP',
+            }
         }
 
-        return schema.value
+        return schema
     }
 
     toString(): string {
@@ -34,17 +38,17 @@ class SwType implements ISwType {
     }
 }
 
-class SwCompositeType implements SwType {
-    constructor() {
-        super()
+export class SwCompositeType extends SwType {
+    constructor(name: string) {
+        super(name)
     }
-
-    serialize(value:any) {
+    serialize(value: any) {
         return JSON.stringify(value)
     }
+}
 
-class SwListType implements SwCompositeType {
-    constructor(public element_type: SwType) { super()}
+export class SwListType extends SwCompositeType {
+    constructor(public element_type: SwType) {}
 
     get name(): string {
         return `list<${this.element_type.toString()}>`
@@ -81,11 +85,11 @@ class SwListType implements SwCompositeType {
             "type": "MAP"
         },
  */
-class SwMapType implements SwCompositeType {
-    constructor(public key_type: SwType, public value_type: SwType) {}
-
-    get name(): string {
-        return `map<${this.key_type.toString()}, ${this.value_type.toString()}>`
+export class SwMapType extends SwCompositeType {
+    constructor(public key_type: SwType, public value_type: SwType) {
+        super('map')
+        this.key_type = key_type
+        this.value_type = value_type
     }
 
     encode(value: any): any {
@@ -120,7 +124,7 @@ interface SwTupleElementType {
     type: SwType
 }
 
-class SwTupleType implements SwCompositeType {
+export class SwTupleType extends SwCompositeType {
     constructor(public element_type: SwTupleElementType[]) {}
 
     get name(): string {
@@ -176,7 +180,8 @@ class SwTupleType implements SwCompositeType {
         return `tuple<${this.element_type.map((et) => `${et.name}:${et.type.toString()}`).join(', ')}>`
     }
 }
-class SwObjectType extends SwCompositeType {
+
+export class SwObjectType extends SwCompositeType {
     private raw_type: any
     private attrs: { [key: string]: SwType }
 

@@ -47,6 +47,7 @@ export type SharedColumnOptionsT<ValueT> = {
 }
 
 export type RenderCellT<ValueT> = React.Component<{
+    data: any
     value: ValueT
     isMeasured?: boolean
     isSelected?: boolean

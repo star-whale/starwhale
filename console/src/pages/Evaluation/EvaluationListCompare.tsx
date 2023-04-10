@@ -176,7 +176,7 @@ export default function EvaluationListCompare({
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
-                    values: rows.map((data: any) => data?.[attr.name]),
+                    values: rows.map((data: any) => data?.[attr.name].value),
                     renderValue: (v: any) => (v > 0 ? formatTimestampDateTime(v) : '-'),
                     renderCompare: NoneCompareCell,
                 })
@@ -186,7 +186,7 @@ export default function EvaluationListCompare({
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
-                    values: rows.map((data: any) => data?.[attr.name]),
+                    values: rows.map((data: any) => data?.[attr.name].value),
                     renderValue: (v: any) => (_.isNumber(v) ? durationToStr(v) : '-'),
                     renderCompare: NumberCompareCell,
                 })
@@ -199,7 +199,7 @@ export default function EvaluationListCompare({
                     rowWithAttrs.push({
                         key: attr.name,
                         title: attr.name,
-                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
+                        values: rows.map((data: any) => data?.[attr.name].value ?? '-'),
                         renderCompare: StringCompareCell,
                     })
                     break
@@ -213,7 +213,7 @@ export default function EvaluationListCompare({
                     rowWithAttrs.push({
                         key: attr.name,
                         title: attr.name,
-                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
+                        values: rows.map((data: any) => data?.[attr.name].value ?? '-'),
                         renderCompare: NumberCompareCell,
                     })
                     break
