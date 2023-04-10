@@ -334,7 +334,7 @@ def _fine_tune(
     model: str,
 ) -> None:
     """
-    [ONLY Standalone]Run evaluation processing with root dir of {target}.
+    [ONLY Standalone]Run fine tuning with root dir of {target}.
 
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
