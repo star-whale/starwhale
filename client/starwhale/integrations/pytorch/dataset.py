@@ -59,6 +59,7 @@ class TorchIterableDataset(IterableDataset):
             self.transform = (
                 _dummy_transform if skip_default_transform else default_transform
             )
+
         self.drop_index = drop_index
 
     def __iter__(self) -> t.Iterator:
