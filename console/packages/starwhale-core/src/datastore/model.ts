@@ -24,10 +24,10 @@ export class SwType implements ISwType {
     }
     static decode_schema(schema: any): any {
         if (schema.type === 'MAP') {
-            const a = new SwMapType(new SwMapKeyType()).decode(schema.value)
+            const a = new SwMapType(new SwMapKeyType(), schema.value)
             return {
                 ...schema,
-                value: JSON.stringify(Object.fromEntries(a)),
+                value: a,
             }
         }
         if (schema.type === 'BYTES') {
@@ -133,9 +133,10 @@ export class SwMapKeyType extends SwType {
 }
 
 export class SwMapType extends SwCompositeType {
-    constructor(public key_type: SwMapKeyType) {
+    constructor(public key_type: SwMapKeyType, public value_schema: any) {
         super('map')
         this.key_type = key_type
+        this.value_schema = value_schema
     }
 
     decode(value: any): any {
@@ -147,6 +148,14 @@ export class SwMapType extends SwCompositeType {
             res.set(this.key_type.decode(k).value, SwType.decode_schema(v).value)
         }
         return res
+    }
+
+    get value(): any {
+        return this.decode(this.value_schema)
+    }
+
+    toString(): string {
+        return JSON.stringify(Object.fromEntries(this.decode(this.value_schema)))
     }
 }
 
