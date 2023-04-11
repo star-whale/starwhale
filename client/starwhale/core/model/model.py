@@ -558,7 +558,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 JobHandlerParser(
                     workdir=workdir,
                     handler=_model_config.run.handler,
-                    yaml_path=self.store.src_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME,
+                    yaml_path=self.store.src_dir
+                    / SW_AUTO_DIRNAME
+                    / DEFAULT_JOBS_FILE_NAME,
                 ).run,
                 5,
                 "generate jobs",
