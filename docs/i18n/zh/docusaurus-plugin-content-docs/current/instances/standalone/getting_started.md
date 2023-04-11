@@ -66,12 +66,6 @@ Runtime的示例程序在 `example/runtime/pytorch` 目录中。
   swcli runtime info pytorch/version/latest
   ```
 
-- 预先restore Starwhale Runtime(可选):
-
-  ```bash
-  swcli runtime restore pytorch/version/latest
-  ```
-
 ## 构建Starwhale Model模型包
 
 Model的示例程序在 `example/mnist` 目录中。

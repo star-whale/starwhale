@@ -652,8 +652,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         bc.do()
 
     @classmethod
-    def activate(cls, path: str = "", uri: str = "") -> None:
-        StandaloneRuntime.activate(path, uri)
+    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+        StandaloneRuntime.activate(uri, force_restore)
 
     @classmethod
     def lock(
@@ -1242,24 +1242,23 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
     @classmethod
-    def activate(cls, path: str = "", uri: str = "") -> None:
-        if uri:
-            _uri = URI(uri, expected_type=URIType.RUNTIME)
-            if _uri.instance_type != InstanceType.STANDALONE:
-                raise NoSupportError(f"{uri} is not the standalone instance")
+    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+        if uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(f"{uri} is not the standalone instance")
 
-            _rt = StandaloneRuntime(_uri)
-            mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
-            prefix_path = _rt.store.export_dir / mode
-        elif path:
-            # TODO: support non-standard runtime.yaml name
-            _rf = Path(path) / DefaultYAMLName.RUNTIME
-            _config = RuntimeConfig.create_by_yaml(_rf)
-            mode = _config.mode
-            prefix_path = Path(path) / f".{mode}"
-        else:
-            raise Exception("No uri or path to activate")
+        _rt = StandaloneRuntime(uri)
+        workdir = _rt.store.snapshot_workdir
+        if not workdir.exists():
+            console.print(f":package: extract swrt into {workdir}")
+            _rt.extract(force=True, target=workdir)
 
+        mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
+        prefix_path = _rt.store.export_dir / mode
+        if not prefix_path.exists() or force_restore:
+            console.print(f":safety_vest: restore runtime into {workdir}")
+            cls.restore(workdir)
+
+        console.print(f":carrot: activate the current shell for the runtime uri: {uri}")
         activate_python_env(
             mode=mode, identity=str(prefix_path.resolve()), interactive=True
         )
