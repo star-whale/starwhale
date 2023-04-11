@@ -10,8 +10,12 @@ import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { DataTypes } from '@starwhale/core'
+import { DataTypes, isBoolType, isComplexType, isNumbericType, isStringType } from '@starwhale/core'
 import { GridTable } from '@starwhale/ui/GridTable'
+import { T } from '@/assets/GradioWidget/es/Tabs'
+import useTranslation from '@/hooks/useTranslation'
+import { get } from 'svelte/store'
+import { getValue } from '../../utils/helper/getValue/getValue'
 
 const useStyles = createUseStyles({
     header: {},
@@ -75,40 +79,40 @@ type CellT<T> = {
 const isValidValue = (str: string) => str !== '-'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<any>) => {
+const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
     return (
-        <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {renderedValue}
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {val(renderedValue)}
         </div>
     )
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<number>) => {
+const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
     // eslint-disable-next-line no-param-reassign
-    value = Number(value)
+    value = Number(val(value))
     // eslint-disable-next-line no-param-reassign
-    comparedValue = Number(comparedValue)
+    comparedValue = Number(val(comparedValue))
 
     return (
-        <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {renderedValue}{' '}
-            {isValidValue(renderedValue) && value > comparedValue && (
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {val(renderedValue)}{' '}
+            {isValidValue(val(renderedValue)) && value > comparedValue && (
                 <IconFont type='rise' style={{ color: '#00B368' }} />
             )}
-            {isValidValue(renderedValue) && value < comparedValue && (
+            {isValidValue(val(renderedValue)) && value < comparedValue && (
                 <IconFont type='decline' style={{ color: '#CC3D3D' }} />
             )}
         </div>
     )
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<string>) => {
-    const longestCommonString = longestCommonSubstring(value, String(comparedValue))
-    const index = value.indexOf(longestCommonString)
-    const front = value.substring(0, index)
-    const end = value.substring(index + longestCommonString.length, value.length)
+const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
+    const longestCommonString = longestCommonSubstring(val(value), val(comparedValue))
+    const index = val(value).indexOf(longestCommonString)
+    const front = val(value).substring(0, index)
+    const end = val(value).substring(index + longestCommonString.length, val(value).length)
     return (
-        <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {front}
             <span
                 style={{
@@ -122,6 +126,24 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
     )
 }
 
+function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{ value: any; type: DataTypes }>) {
+    if (isNumbericType(comparedValue.type) || isBoolType(comparedValue.type)) {
+        return NumberCompareCell({ value, comparedValue, renderedValue, data })
+    }
+    if (isStringType(comparedValue.type) || isComplexType(comparedValue.type)) {
+        return StringCompareCell({ value, comparedValue, renderedValue, data })
+    }
+    return NoneCompareCell({ value, comparedValue, renderedValue, data })
+}
+
+function val(r: any) {
+    if (r === undefined) return
+
+    if (typeof r === 'object' && 'value' in r) {
+        return r.value
+    }
+}
+
 export default function EvaluationListCompare({
     rows = [],
     attrs,
@@ -132,19 +154,20 @@ export default function EvaluationListCompare({
     attrs: RecordListVO['columnTypes']
 }) {
     const store = useEvaluationCompareStore()
+    const [t] = useTranslation()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
     const styles = useStyles()
 
     React.useEffect(() => {
-        const row = rows.find((r) => r.id === store.compare?.comparePinnedKey)
-        const pinKey = row ? store.compare?.comparePinnedKey : rows[0].id
+        const row = rows.find((r) => val(r.id) === store.compare?.comparePinnedKey)
+        const pinKey = row ? store.compare?.comparePinnedKey : val(rows[0].id)
         if (
             !_.isEqual(
                 store.rowSelectedIds,
-                rows.map((r) => r.id)
+                rows.map((r) => val(r.id))
             )
         ) {
-            store.onSelectMany(rows.map((v) => v.id))
+            store.onSelectMany(rows.map((v) => val(v.id)))
         }
         if (!store.isInit) {
             store.onCompareUpdate({
@@ -154,31 +177,35 @@ export default function EvaluationListCompare({
         }
         if (pinKey !== store.compare?.comparePinnedKey) {
             store.onCompareUpdate({
-                comparePinnedKey: row ? store.compare?.comparePinnedKey : rows[0].id,
+                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(rows[0].id),
             })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows])
 
-    const conmparePinnedRow: any = useMemo(() => {
-        return rows.find((r) => r.id === comparePinnedKey) ?? {}
+    const comparePinnedRow: any = useMemo(() => {
+        return rows.find((r) => val(r.id) === comparePinnedKey) ?? rows[0]
     }, [rows, comparePinnedKey])
 
     const comparePinnedRowIndex = useMemo(() => {
-        return rows.findIndex((r) => r.id === comparePinnedKey)
+        return Math.max(
+            rows.findIndex((r) => val(r.id) === comparePinnedKey),
+            0
+        )
     }, [rows, comparePinnedKey])
 
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
 
         attrs?.forEach((attr) => {
+            const values = rows.map((data: any) => _.get(data, [attr.name]))
+
             if (attr.name.endsWith('time')) {
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
-                    values: rows.map((data: any) => data?.[attr.name]),
-                    renderValue: (v: any) => (v > 0 ? formatTimestampDateTime(v) : '-'),
-                    renderCompare: NoneCompareCell,
+                    values,
+                    renderValue: (v: any) => (val(v) > 0 ? formatTimestampDateTime(val(v)) : '-'),
                 })
                 return
             }
@@ -186,40 +213,16 @@ export default function EvaluationListCompare({
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
-                    values: rows.map((data: any) => data?.[attr.name]),
-                    renderValue: (v: any) => (_.isNumber(v) ? durationToStr(v) : '-'),
-                    renderCompare: NumberCompareCell,
+                    values,
+                    renderValue: (v: any) => (_.isNumber(val(v)) ? durationToStr(val(v)) : '-'),
                 })
                 return
             }
-
-            switch (attr.type) {
-                case DataTypes.BOOL:
-                case DataTypes.STRING:
-                    rowWithAttrs.push({
-                        key: attr.name,
-                        title: attr.name,
-                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
-                        renderCompare: StringCompareCell,
-                    })
-                    break
-                case DataTypes.INT8:
-                case DataTypes.INT16:
-                case DataTypes.INT32:
-                case DataTypes.INT64:
-                case DataTypes.FLOAT16:
-                case DataTypes.FLOAT32:
-                case DataTypes.FLOAT64:
-                    rowWithAttrs.push({
-                        key: attr.name,
-                        title: attr.name,
-                        values: rows.map((data: any) => data?.[attr.name] ?? '-'),
-                        renderCompare: NumberCompareCell,
-                    })
-                    break
-                default:
-                    break
-            }
+            rowWithAttrs.push({
+                key: attr.name,
+                title: attr.name,
+                values,
+            })
         })
 
         return rowWithAttrs.sort((a: RowT, b: RowT) => {
@@ -230,24 +233,24 @@ export default function EvaluationListCompare({
 
     const $rowsWithDiffOnly = useMemo(() => {
         if (!compareShowDiffOnly) return $rowWithAttrs
-
-        return $rowWithAttrs.filter((row) => new Set(row.values).size !== 1)
     }, [$rowWithAttrs, compareShowDiffOnly])
 
     const $columns = useMemo(
         () => [
             StringColumn({
-                key: 'attrs',
-                title: '',
+                key: 'Metrics',
+                title: t('evaluation.compare.column.metrics'),
                 pin: 'LEFT',
                 minWidth: 200,
+                fillWidth: false,
                 mapDataToValue: (item: any) => item.title,
             }),
             ...rows.map((row: any, index) =>
                 CustomColumn({
                     minWidth: 200,
-                    key: String(row.id),
-                    title: row.id,
+                    key: val(row.id),
+                    title: val(row.id),
+                    fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {
                         const rowLength = $rowsWithDiffOnly.length
@@ -255,14 +258,17 @@ export default function EvaluationListCompare({
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const { value, renderValue, renderCompare } = data
                         const renderedValue = renderValue ? renderValue(value) : value
+
                         const newProps = {
                             value,
                             renderedValue,
-                            comparedValue: conmparePinnedRow?.[data.key],
+                            comparedValue: comparePinnedRow?.[data.key],
                             data,
                         }
 
-                        if (comparePinnedKey && comparePinnedRowIndex === index) {
+                        // console.log(newProps, comparePinnedRow, data.key, comparePinnedRow?.[data.key])
+
+                        if (comparePinnedRowIndex === index) {
                             return (
                                 <div
                                     className={cn('cell--pinned', styles.cellCompare, styles.cellPinned)}
@@ -275,14 +281,14 @@ export default function EvaluationListCompare({
                             )
                         }
 
-                        if (renderedValue === newProps.comparedValue) {
+                        if (val(renderedValue) === val(newProps.comparedValue)) {
                             return <div className={cn('cell--eq', styles.cellCompare)}>{NoneCompareCell(newProps)}</div>
                         }
 
-                        if (compareShowCellChanges && comparePinnedKey && comparePinnedRowIndex !== index) {
+                        if (compareShowCellChanges && comparePinnedRowIndex !== index) {
                             return (
                                 <div className={cn('cell--neq', styles.cellCompare, styles.cellNotEqual)}>
-                                    {renderCompare(newProps)}
+                                    {MixedCompareCell(newProps)}
                                 </div>
                             )
                         }
@@ -300,7 +306,7 @@ export default function EvaluationListCompare({
         [
             styles,
             rows,
-            conmparePinnedRow,
+            comparePinnedRow,
             comparePinnedRowIndex,
             compareShowCellChanges,
             comparePinnedKey,

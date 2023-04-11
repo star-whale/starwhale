@@ -80,20 +80,19 @@ export default function EvaluationListCard() {
     const { records, columnTypes, getSchema } = useDatastore(evaluationsInfo?.data?.records)
     const $columns = useDatastoreColumns(columnTypes)
 
+    console.log(records)
+
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (item: any) => item['sys/id'],
+                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        if (!props.value) return <></>
-                        const id = props.value
-
+                    renderCell: ({ value: id }) => {
+                        if (!id) return <></>
                         return (
                             <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
                                 {id}
@@ -103,7 +102,6 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -118,36 +116,33 @@ export default function EvaluationListCard() {
                         return aNum - bNum
                     },
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        return <p title={props?.value}>{durationToStr(props?.value)}</p>
-                    },
-                    mapDataToValue: (data: any): string => data.duration,
+                    renderCell: ({ value }) => <p title={value}>{durationToStr(value)}</p>,
+                    mapDataToValue: (data: any): number => _.get(data, [column.key, 'value'], 0),
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     sortable: true,
                     fillWidth: false,
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        return (
-                            <div title={props?.value}>
-                                <JobStatus status={props?.value} />
-                            </div>
-                        )
-                    },
-                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
+                    renderCell: ({ value }) => (
+                        <div title={value}>
+                            <JobStatus status={value} />
+                        </div>
+                    ),
+                    mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (data: any) =>
-                        column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
+                    // @ts-ignore
+                    renderCell: ({ value }) => {
+                        return <p title={value}>{formatTimestampDateTime(value)}</p>
+                    },
+                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
 
             return {
@@ -308,7 +303,7 @@ export default function EvaluationListCard() {
                             <EvaluationListCompare
                                 title={t('Compare Evaluations')}
                                 rows={$compareRows}
-                                attrs={evaluationsInfo?.data?.columnTypes}
+                                attrs={columnTypes}
                             />
                         </Card>
                     )

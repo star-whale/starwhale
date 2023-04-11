@@ -86,7 +86,39 @@ export function hexlify(str: Uint8Array) {
     return result
 }
 
-export const isBasicType = (v: string) =>
-    ['BOOL', 'INT8', 'INT16', 'INT32', 'INT64', 'FLOAT16', 'FLOAT32', 'FLOAT64', 'STRING'].includes(v)
+export enum DataTypes {
+    BOOL = 'BOOL',
+    BYTES = 'BYTES',
+    FLOAT16 = 'FLOAT16',
+    FLOAT32 = 'FLOAT32',
+    FLOAT64 = 'FLOAT64',
+    INT16 = 'INT16',
+    INT32 = 'INT32',
+    INT64 = 'INT64',
+    INT8 = 'INT8',
+    STRING = 'STRING',
+    UNKNOWN = 'UNKNOWN',
+    LIST = 'LIST',
+    TUPLE = 'TUPLE',
+    MAP = 'MAP',
+    OBJECT = 'OBJECT',
+}
+
+export const isBasicType = (v: string) => isNumbericType(v) || isStringType(v) || isBoolType(v)
+export const isStringType = (v: string) => v === DataTypes.STRING
+export const isBoolType = (v: string) => v === DataTypes.BOOL
+export const isNumbericType = (v: string) =>
+    [
+        DataTypes.FLOAT16,
+        DataTypes.FLOAT32,
+        DataTypes.FLOAT64,
+        DataTypes.INT16,
+        DataTypes.INT32,
+        DataTypes.INT64,
+        DataTypes.INT8,
+    ].includes(v as DataTypes)
+
+export const isComplexType = (v: string) =>
+    [DataTypes.LIST, DataTypes.TUPLE, DataTypes.MAP, DataTypes.OBJECT, DataTypes.BYTES].includes(v as DataTypes)
 
 export const isSearchColumns = (v: string) => !v.startsWith('_')

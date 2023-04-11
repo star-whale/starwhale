@@ -39,11 +39,11 @@ export type SharedColumnOptionsT<ValueT> = {
     minWidth?: number
     sortable?: boolean
     title: string
-    key?: string
+    key: string
     pin?: 'LEFT'
     filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
-    columnType?: ColumnSchemaDesc
+    renderCell?: RenderCellT<ValueT>
 }
 
 export type RenderCellT<ValueT> = React.Component<{

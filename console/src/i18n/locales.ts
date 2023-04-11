@@ -244,6 +244,10 @@ const evaluation = {
         en: 'Save Evaluation Success',
         zh: '保存成功',
     },
+    'evaluation.compare.column.metrics': {
+        en: 'Metrics',
+        zh: '指标',
+    },
 }
 
 const table = {
