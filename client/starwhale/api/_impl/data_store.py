@@ -778,7 +778,7 @@ class InnerRecord:
             self.ordered = True
 
     def get_record(
-        self, revision: Optional[str] = None, deep_copy: bool = False
+        self, revision: Optional[str] = None, deep_copy: Optional[bool] = None
     ) -> Dict[str, Any]:
         self._reorder()
         ret: Dict[str, Any] = dict()
@@ -913,9 +913,13 @@ class MemoryTable:
         keep_none: bool = False,
         end_inclusive: bool = False,
         revision: Optional[str] = None,
-        deep_copy: bool = False,
+        deep_copy: Optional[bool] = None,
     ) -> Iterator[Dict[str, Any]]:
         _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
+        if deep_copy is None:
+            env = os.getenv("SW_DATASTORE_SCAN_DEEP_COPY")
+            # make deep copy to True as default if env is not set
+            deep_copy = True if env is None else env.strip().upper() == "TRUE"
 
         with self.lock:
             records = []

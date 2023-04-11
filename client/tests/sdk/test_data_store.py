@@ -779,7 +779,7 @@ class TestMemoryTable(BaseTestCase):
         )
 
         # get the mutable object without deep copy
-        obj = next(table.scan())["a"]
+        obj = next(table.scan(deep_copy=False))["a"]
         self.assertEqual({"b": 1}, obj)
         # change the object
         obj["b"] = 3
@@ -788,13 +788,37 @@ class TestMemoryTable(BaseTestCase):
             list(table.scan()),
         )
 
+        def change_and_validate(dst):
+            self.assertEqual({"b": 3}, dst)
+            # change the object
+            dst["b"] = 4
+            self.assertEqual(
+                [{"*": 0, "k": 0, "a": {"b": 3}}],
+                list(table.scan()),
+            )
+
         # get the mutable object with deep copy
         obj = next(table.scan(deep_copy=True))["a"]
+        change_and_validate(obj)
+
+        # get the mutable object with deep copy env
+        os.environ["SW_DATASTORE_SCAN_DEEP_COPY"] = "true"
+        obj = next(table.scan())["a"]
+        change_and_validate(obj)
+
+        # get the mutable object without env or deep copy param (True by default)
+        obj = next(table.scan())["a"]
+        change_and_validate(obj)
+
+        # get the mutable object with non True env
+        os.environ["SW_DATASTORE_SCAN_DEEP_COPY"] = "foo"
+        obj = next(table.scan())["a"]
         self.assertEqual({"b": 3}, obj)
         # change the object
         obj["b"] = 4
+        # changed
         self.assertEqual(
-            [{"*": 0, "k": 0, "a": {"b": 3}}],
+            [{"*": 0, "k": 0, "a": {"b": 4}}],
             list(table.scan()),
         )
 
