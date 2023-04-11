@@ -264,6 +264,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             yaml_path = JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
+                target_dir=_run_dir,
             ).run()
 
         logger.debug(f"parse job from yaml:{yaml_path}")
@@ -347,6 +348,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             yaml_path = JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
+                target_dir=workdir,  # todo use tmp?
             ).run()
 
         logger.debug(f"parse fine-tune job from yaml:{yaml_path}")
@@ -554,8 +556,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ),
             (
                 JobHandlerParser(
-                    workdir=self.store.src_dir,
+                    workdir=workdir,
                     handler=_model_config.run.handler,
+                    target_dir=self.store.src_dir,
                 ).run,
                 5,
                 "generate jobs",
@@ -563,8 +566,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ),
             (
                 ServeHandlerParser(
-                    workdir=self.store.src_dir,
+                    workdir=workdir,
                     handler=_model_config.run.handler,
+                    target_dir=self.store.src_dir,
                 ).run,
                 10,
                 "generate model serving",
@@ -692,9 +696,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 class HandlerParser:
     sw_dir: str = SW_AUTO_DIRNAME
 
-    def __init__(self, workdir: Path, handler: t.Any) -> None:
+    def __init__(self, workdir: Path, handler: t.Any, target_dir: Path) -> None:
         self.workdir = workdir
         self.handler = handler
+        self.target_dir = target_dir
 
     @abstractmethod
     def run(self, raise_err: bool = True) -> t.Any:
@@ -704,7 +709,7 @@ class HandlerParser:
 class JobHandlerParser(HandlerParser):
     def run(self, raise_err: bool = True) -> t.Any:
         try:
-            yaml_path = self.workdir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
+            yaml_path = self.target_dir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
             generate_jobs_yaml(
                 run_handler=self.handler,
                 workdir=self.workdir,
@@ -773,7 +778,7 @@ class ServeHandlerParser(HandlerParser):
             svc = ServeHandlerParser.get_service(
                 self.handler, self.workdir, hijack=Hijack(True, rc_dir)
             )
-            file = self.workdir / self.sw_dir / EVALUATION_SVC_META_FILE_NAME
+            file = self.target_dir / self.sw_dir / EVALUATION_SVC_META_FILE_NAME
             ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
 
             if len(svc.example_resources) == 0:
@@ -785,7 +790,7 @@ class ServeHandlerParser(HandlerParser):
                 raise NoSupportError("duplicate file names in examples")
 
             # copy example resources for online evaluation in server instance
-            dst = self.workdir / self.sw_dir / SW_EVALUATION_EXAMPLE_DIR
+            dst = self.target_dir / self.sw_dir / SW_EVALUATION_EXAMPLE_DIR
             ensure_dir(dst)
             for f in svc.example_resources:
                 shutil.copy2(f, dst)
