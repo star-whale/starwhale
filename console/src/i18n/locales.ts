@@ -244,9 +244,17 @@ const evaluation = {
         en: 'Save Evaluation Success',
         zh: '保存成功',
     },
-    'evaluation.compare.column.metrics': {
+    'compare.column.metrics': {
         en: 'Metrics',
         zh: '指标',
+    },
+    'compare.config.show.changes': {
+        en: 'Show cell changes',
+        zh: '内容对比',
+    },
+    'compare.config.show.diff': {
+        en: 'Rows with diff only',
+        zh: '只显示不同内容',
     },
 }
 

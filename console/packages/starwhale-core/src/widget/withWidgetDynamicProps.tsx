@@ -5,7 +5,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
 import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
 import { useIsInViewport } from '../utils'
-import { exportTable, useDatastore } from '../datastore'
+import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
@@ -131,6 +131,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 })
             )
             return () => subscription.unsubscribe()
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [eventBus, id, query])
 
         if (tableName && !recordInfo.isSuccess)

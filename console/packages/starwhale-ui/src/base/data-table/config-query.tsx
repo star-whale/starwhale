@@ -19,7 +19,7 @@ function ConfigQuery(props: PropsT) {
         return props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
     }, [props.columns])
 
-    return <DatastoreMixedTypeSearch fields={columnTypes} value={props.value} onChange={props.onChange} />
+    return <DatastoreMixedTypeSearch fields={columnTypes as any} value={props.value} onChange={props.onChange} />
 }
 
 function ConfigQueryInline(props: PropsT & { width: number }) {

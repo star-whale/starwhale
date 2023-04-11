@@ -12,10 +12,7 @@ import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { DataTypes, isBoolType, isComplexType, isNumbericType, isStringType } from '@starwhale/core'
 import { GridTable } from '@starwhale/ui/GridTable'
-import { T } from '@/assets/GradioWidget/es/Tabs'
 import useTranslation from '@/hooks/useTranslation'
-import { get } from 'svelte/store'
-import { getValue } from '../../utils/helper/getValue/getValue'
 
 const useStyles = createUseStyles({
     header: {},
@@ -78,6 +75,15 @@ type CellT<T> = {
 
 const isValidValue = (str: string) => str !== '-'
 
+function val(r: any) {
+    if (r === undefined) return ''
+
+    if (typeof r === 'object' && 'value' in r) {
+        return r.value
+    }
+
+    return r
+}
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
     return (
@@ -88,18 +94,16 @@ const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ 
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
-    // eslint-disable-next-line no-param-reassign
-    value = Number(val(value))
-    // eslint-disable-next-line no-param-reassign
-    comparedValue = Number(val(comparedValue))
+    const valueV = Number(val(value))
+    const comparedValueV = Number(val(comparedValue))
 
     return (
         <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {val(renderedValue)}{' '}
-            {isValidValue(val(renderedValue)) && value > comparedValue && (
+            {isValidValue(val(renderedValue)) && valueV > comparedValueV && (
                 <IconFont type='rise' style={{ color: '#00B368' }} />
             )}
-            {isValidValue(val(renderedValue)) && value < comparedValue && (
+            {isValidValue(val(renderedValue)) && valueV < comparedValueV && (
                 <IconFont type='decline' style={{ color: '#CC3D3D' }} />
             )}
         </div>
@@ -134,14 +138,6 @@ function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{
         return StringCompareCell({ value, comparedValue, renderedValue, data })
     }
     return NoneCompareCell({ value, comparedValue, renderedValue, data })
-}
-
-function val(r: any) {
-    if (r === undefined) return
-
-    if (typeof r === 'object' && 'value' in r) {
-        return r.value
-    }
 }
 
 export default function EvaluationListCompare({
@@ -233,13 +229,17 @@ export default function EvaluationListCompare({
 
     const $rowsWithDiffOnly = useMemo(() => {
         if (!compareShowDiffOnly) return $rowWithAttrs
+        return $rowWithAttrs.filter(({ values }) => {
+            const firstValue = val(values[0])
+            return values.some((v) => val(v) !== firstValue)
+        })
     }, [$rowWithAttrs, compareShowDiffOnly])
 
     const $columns = useMemo(
         () => [
             StringColumn({
                 key: 'Metrics',
-                title: t('evaluation.compare.column.metrics'),
+                title: t('compare.column.metrics'),
                 pin: 'LEFT',
                 minWidth: 200,
                 fillWidth: false,
@@ -253,7 +253,7 @@ export default function EvaluationListCompare({
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {
-                        const rowLength = $rowsWithDiffOnly.length
+                        const rowLength = $rowsWithDiffOnly?.length ?? 0
                         const data = props.value || {}
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const { value, renderValue, renderCompare } = data
@@ -303,15 +303,7 @@ export default function EvaluationListCompare({
                 })
             ),
         ],
-        [
-            styles,
-            rows,
-            comparePinnedRow,
-            comparePinnedRowIndex,
-            compareShowCellChanges,
-            comparePinnedKey,
-            $rowsWithDiffOnly,
-        ]
+        [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
     )
 
     return (
@@ -330,7 +322,7 @@ export default function EvaluationListCompare({
                             })
                         }}
                     >
-                        Show cell changes
+                        {t('compare.config.show.changes')}
                     </Checkbox>
                     <Checkbox
                         checked={store.compare?.compareShowDiffOnly}
@@ -341,7 +333,7 @@ export default function EvaluationListCompare({
                             })
                         }}
                     >
-                        Rows with diff only
+                        {t('compare.config.show.diff')}
                     </Checkbox>
                 </div>
             </div>

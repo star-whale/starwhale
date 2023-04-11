@@ -1,3 +1,4 @@
+/* eslint-disable */
 interface ISwType {
     name: string
     decode(value: any): any

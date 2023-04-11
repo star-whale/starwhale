@@ -1,7 +1,6 @@
 import React from 'react'
 import { OPERATOR, DataTypes } from './constants'
-import { ColumnDesc, ColumnSchemaDesc, TableQueryFilterDesc, TableQueryOperandDesc } from './schemas/datastore'
-import { isBasicType, isSearchColumns } from './utils'
+import { ColumnDesc, TableQueryFilterDesc, TableQueryOperandDesc } from './schemas/datastore'
 import { RecordSchemaT } from '@starwhale/core/datastore'
 
 export type RecordFilterSchemaT = {
@@ -77,7 +76,7 @@ export function useDatastoreFilter(columnTypes?: RecordSchemaT[], options: { mix
                 },
             }
         },
-        []
+        [options.mixed]
     )
 
     const toQuery = React.useCallback(

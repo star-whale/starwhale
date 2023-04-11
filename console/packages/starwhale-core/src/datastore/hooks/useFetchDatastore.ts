@@ -6,7 +6,6 @@ import { scanTable, queryTable, listTables, exportTable } from '../services/data
 import { QueryTableRequest } from '../schemas/datastore'
 import { useDatastoreFilter } from '../filter'
 import useDatastore from './useDatastore'
-import { useIfChanged } from '@starwhale/core/utils'
 
 export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {

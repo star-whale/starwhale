@@ -88,23 +88,6 @@ function useSearchColumns(columnTypes: { name: string; type: string }[]) {
     return searchColumns
 }
 
-export function DatastoreMixedTypeRecordSearch({
-    records,
-    ...props
-}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
-    const { columnTypes } = useDatastore(records)
-    const searchColumns = useSearchColumns(columnTypes)
-    return <Search {...props} fields={searchColumns} />
-}
-
-export function DatastoreMixedTypeSearch({
-    fields,
-    ...props
-}: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
-    const searchColumns = useSearchColumns(fields)
-    return <Search {...props} fields={searchColumns} />
-}
-
 export default function Search({ value = [], onChange, fields }: ISearchProps) {
     const styles = useStyles()
     const [t] = useTranslation()
@@ -185,7 +168,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
             />
         )
         return tmps
-    }, [items, isEditing, editingItem, onChange])
+    }, [items, isEditing, editingItem, onChange, fields])
 
     return (
         <div
@@ -216,4 +199,21 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
             <div className={styles.filters}>{filters}</div>
         </div>
     )
+}
+
+export function DatastoreMixedTypeRecordSearch({
+    records,
+    ...props
+}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
+    const { columnTypes } = useDatastore(records)
+    const searchColumns = useSearchColumns(columnTypes)
+    return <Search {...props} fields={searchColumns} />
+}
+
+export function DatastoreMixedTypeSearch({
+    fields,
+    ...props
+}: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
+    const searchColumns = useSearchColumns(fields)
+    return <Search {...props} fields={searchColumns} />
 }

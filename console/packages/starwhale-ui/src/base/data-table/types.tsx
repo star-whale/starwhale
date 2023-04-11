@@ -1,6 +1,6 @@
 // @flow
 
-import { ColumnSchemaDesc } from '@starwhale/core/datastore'
+import { ColumnSchemaDesc, RecordSchemaT } from '@starwhale/core/datastore'
 import * as React from 'react'
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
 import { IStore, ITableState } from './store'
@@ -44,6 +44,7 @@ export type SharedColumnOptionsT<ValueT> = {
     filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
     renderCell?: RenderCellT<ValueT>
+    columnType?: RecordSchemaT
 }
 
 export type RenderCellT<ValueT> = React.Component<{
