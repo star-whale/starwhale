@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import torch
@@ -57,7 +57,7 @@ class SwCompose(Compose):
 
 
 @torch.no_grad()
-def evaluate_accuracy(net, data_iter, device=None):
+def evaluate_accuracy(net, data_iter, device=None) -> float:
     """Compute the accuracy for a model on a dataset using a GPU.
 
     Defined in :numref:`sec_lenet`"""
@@ -87,7 +87,7 @@ def fine_tune(
     batch_size=128,
     num_epochs=10,
     param_group=True,
-):
+) -> None:
     # init
     finetune_net = ResNet(BasicBlock, [2, 2, 2, 2])
     # load from pretrained model todo: load form existed sw model package(sdk)
@@ -179,7 +179,7 @@ def fine_tune(
     )
 
 
-def train_batch(net, X, y, loss, trainer, devices):
+def train_batch(net, X, y, loss, trainer, devices) -> Tuple[float, float]:
     """Train for a minibatch with mutiple GPUs (defined in Chapter 13).
 
     Defined in :numref:`sec_image_augmentation`"""
@@ -191,12 +191,12 @@ def train_batch(net, X, y, loss, trainer, devices):
     # y = y.to(devices[0])
     net.train()
     trainer.zero_grad()
-    pred = net(X)
-    l = loss(pred, y)
-    l.sum().backward()
+    _predict = net(X)
+    _loss = loss(_predict, y)
+    _loss.sum().backward()
     trainer.step()
-    train_loss_sum = l.sum()
-    train_acc_sum = d2l.accuracy(pred, y)
+    train_loss_sum = _loss.sum()
+    train_acc_sum = d2l.accuracy(_predict, y)
     return train_loss_sum, train_acc_sum
 
 
@@ -249,7 +249,7 @@ class ImageNetEvaluation(PipelineHandler):
         return label, result, pr
 
     @api(gradio.File(), gradio.Label())
-    def online_eval(self, file: Any):
+    def online_eval(self, file: Any) -> Any:
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))
         _, prob = self.ppl({"img": data})
