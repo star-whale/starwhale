@@ -27,8 +27,14 @@ from torchvision.models.resnet import BasicBlock
 from torchvision.transforms import Compose
 
 from gradio import gradio
-from starwhale import (Context, Image, PipelineHandler, dataset,
-                       multi_classification, pass_context)
+from starwhale import (
+    Context,
+    Image,
+    PipelineHandler,
+    dataset,
+    multi_classification,
+    pass_context,
+)
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
