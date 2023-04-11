@@ -22,8 +22,7 @@ def build(
     name: t.Optional[str] = None,
     project_uri: str = "",
     desc: str = "",
-    remote_instance_uri: t.Optional[str] = None,
-    remote_project: t.Optional[str] = None,
+    remote_project_uri: t.Optional[str] = None,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -36,8 +35,7 @@ def build(
         desc: (str, optional) The description of the Starwhale Model Package.
         project_uri: (str, optional) The project uri of the Starwhale Model Package. If the argument is not specified,
             the project_uri is the config value of `swcli project select` command.
-        remote_instance_uri: (str, optional) The destination instance uri of the Starwhale Model Package
-        remote_project: (str, optional) The destination project uri of the Starwhale Model Package
+        remote_project_uri: (str, optional) The destination project uri(cloud://remote-instance/project/starwhale) of the Starwhale Model Package
 
     Examples:
     ```python
@@ -86,15 +84,20 @@ def build(
                 project=project_uri,
                 yaml_path=yaml_path,
             )
-            remote_instance_uri = remote_instance_uri or os.getenv(SWEnv.instance_uri)
-            remote_project = remote_project or os.getenv(SWEnv.project)
-            if remote_instance_uri and remote_project:
-                from starwhale import URI
 
-                # model copy local/project/myproject/model/mnist/version/latest cloud://server/project/starwhale
+            from starwhale import URI, URIType
+
+            if remote_project_uri:
+                remote_project_uri = URI(
+                    remote_project_uri, expected_type=URIType.PROJECT
+                ).full_uri
+            elif os.getenv(SWEnv.instance_uri) and os.getenv(SWEnv.project):
+                remote_project_uri = f"{os.getenv(SWEnv.instance_uri)}/project/{os.getenv(SWEnv.project)}"
+
+            if remote_project_uri:
                 ModelTermView.copy(
                     f"{URI(project_uri).full_uri}/model/{name}/version/latest",
-                    f"{remote_instance_uri}/project/{remote_project}",
+                    remote_project_uri,
                 )
     finally:
         os.unlink(yaml_path)
