@@ -14,15 +14,15 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
-from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
+from .model import RuntimeInfoFilter
 
 
 @click.group(
     "runtime",
     cls=AliasedGroup,
-    help="Runtime management, quickstart/build/copy/activate/restore...",
+    help="Runtime management, quickstart/build/copy/activate...",
 )
 @click.pass_context
 def runtime_cmd(ctx: click.Context) -> None:
@@ -248,12 +248,43 @@ def _recover(runtime: str, force: bool) -> None:
     RuntimeTermView(runtime).recover(force)
 
 
-@runtime_cmd.command("info", help="Show runtime details")
+@runtime_cmd.command("info")
 @click.argument("runtime")
-@click.option("--fullname", is_flag=True, help="Show version fullname")
+@click.option(
+    "-of",
+    "--output-filter",
+    type=click.Choice([f.value for f in RuntimeInfoFilter], case_sensitive=False),
+    default=RuntimeInfoFilter.basic.value,
+    show_default=True,
+    help="Filter the output content. Only standalone instance supports this option.",
+)
 @click.pass_obj
-def _info(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
-    view(runtime).info(fullname)
+def _info(
+    view: t.Type[RuntimeTermView],
+    runtime: str,
+    output_filter: str,
+) -> None:
+    """Show runtime details
+
+    RUNTIME: argument use the `Runtime URI` format. Version is optional for the Runtime URI.
+    If the version is not specified, the latest version will be used.
+
+    Example:
+
+        \b
+          swcli runtime info pytorch # show basic info from the latest version of runtime
+          swcli runtime info pytorch/version/v0  # show basic info
+          swcli runtime info pytorch/version/v0 --output-filter basic  # show basic info
+          swcli runtime info pytorch/version/v1 -of runtime_yaml  # show runtime.yaml content
+          swcli runtime info pytorch/version/v1 -of lock # show auto lock file content
+          swcli runtime info pytorch/version/v1 -of manifest # show _manifest.yaml content
+          swcli runtime info pytorch/version/v1 -of all # show all info of the runtime
+    """
+    uri = URI(runtime, expected_type=URIType.RUNTIME)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info(RuntimeInfoFilter(output_filter))
 
 
 @runtime_cmd.command("history", help="Show runtime history")
@@ -264,7 +295,8 @@ def _history(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> Non
     view(runtime).history(fullname)
 
 
-@runtime_cmd.command("restore")
+# hide runtime restore command for the users in the command help output.
+@runtime_cmd.command("restore", hidden=True)
 @click.argument("target")
 def _restore(target: str) -> None:
     """
@@ -409,18 +441,24 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 @runtime_cmd.command(
     "activate",
     aliases=["actv"],
-    help="[Only Standalone]Activate python runtime environment for development",
+    help="",
 )
-@click.option("-u", "--uri", help="Runtime uri which has already been restored")
-@click.option("-p", "--path", help="User's runtime workdir")
-def _activate(uri: str, path: str) -> None:
-    if uri and path:
-        raise ExclusiveArgsError(f"only uri({uri}) or path({path}) can take effect")
+@click.argument("uri")
+@click.option(
+    "-f",
+    "--force-restore",
+    help="Force to restore runtime into the related snapshot workdir even the runtime has been restored",
+)
+def _activate(uri: str, force_restore: bool) -> None:
+    """
+    [Only Standalone]Activate python runtime environment for development
 
-    if not uri and not path:
-        raise MissingFieldError("uri or path is required.")
+    When the runtime has not been restored, activate command will restore runtime automatically.
 
-    RuntimeTermView.activate(path, uri)
+    URI: Runtime uri in the standalone instance
+    """
+    _uri = URI(uri, expected_type=URIType.RUNTIME)
+    RuntimeTermView.activate(_uri, force_restore)
 
 
 @runtime_cmd.command("lock")

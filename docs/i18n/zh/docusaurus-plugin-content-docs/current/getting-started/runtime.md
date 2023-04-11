@@ -49,13 +49,11 @@ dump dependencies info...
 ### 在shell中使用Starwhale Runtime
 
 ```console
-# 基于Starwhale Runtime创建对应的python环境
-swcli runtime restore pytorch
 # 激活runtime
-swcli runtime activate --uri pytorch
+swcli runtime activate pytorch/version/latest
 ```
 
-`swcli runtime restore`会下载runtime的所有python依赖。这个过程可能需要很长时间。
+`swcli runtime activate`会下载runtime的所有python依赖，并在当前shell环境中激活该环境。这个过程可能需要很长时间。
 
 当runtime被激活时，所有依赖项都已在您的python环境中准备就绪，类似于virtualenv的`source venv/bin/activate`或者conda的`conda activate`命令。如果您关闭了shell或切换到另一个shell，则下次使用之前需要重新激活这个runtime。
 

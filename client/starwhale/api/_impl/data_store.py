@@ -2,15 +2,22 @@ from __future__ import annotations
 
 import os
 import re
+import abc
+import sys
+import copy
 import json
 import time
 import atexit
 import base64
 import struct
 import urllib
+import inspect
+import zipfile
 import binascii
+import tempfile
 import importlib
 import threading
+import contextlib
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from typing import (
@@ -47,7 +54,7 @@ from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 
-datastore_table_file_ext = ".sw-datastore.json"
+datastore_table_file_ext = ".sw-datastore"
 
 
 class SwType(metaclass=ABCMeta):
@@ -663,21 +670,17 @@ class TableSchema:
         )
 
 
-def _get_table_path(root_path: str, table_name: str) -> str:
-    return str(Path(root_path) / table_name.strip("/")) + datastore_table_file_ext
-
-
-def _parse_data_table_name(name: str) -> Tuple[str, int]:
-    try:
-        if name.endswith(datastore_table_file_ext):
-            if name.startswith("base-"):
-                return "base", int(name[5 : -len(datastore_table_file_ext)])
-            elif name.startswith("patch-"):
-                return "patch", int(name[6 : -len(datastore_table_file_ext)])
-    except ValueError:
-        # ignore invalid filename
-        pass
-    return "", 0
+def _get_table_path(root_path: str | Path, table_name: str) -> Path:
+    """
+    get table path from table name, return the matched file path if there is only one file match the table name
+    """
+    expect_prefix = Path(root_path) / (table_name.strip("/") + datastore_table_file_ext)
+    paths = list(expect_prefix.parent.glob(f"{expect_prefix.name}*"))
+    if len(paths) > 1:
+        raise RuntimeError(f"can not find table {table_name}, get files {paths}")
+    if len(paths) == 1:
+        return paths[0]
+    return expect_prefix
 
 
 def _merge_scan(
@@ -738,16 +741,29 @@ def _update_schema(key_column: str, record: Dict[str, Any]) -> TableSchema:
 
 
 class InnerRecord:
-    def __init__(self, key: Any, record: Optional[Record] = None) -> None:
-        self.key = key
+    def __init__(self, key_column: str, record: Optional[Record] = None) -> None:
+        self.key = ""
+        self.key_column = key_column
         self.records: OrderedDict[int, Record] = OrderedDict()
         self.ordered = True
         if record is not None:
             self.append(record)
 
     def append(self, record: Record) -> str:
-        self.ordered = False
+        if not self.key:
+            self.key = record[self.key_column]
         seq = self._get_seq_num()
+        if len(self.records) > 0:
+            last = self.get_record()
+            # get diff of the last and record
+            # let the record only contains the diff or None
+            diff = {
+                k: v for k, v in record.items() if v is None or last.get(k, None) != v
+            }
+            if not diff:
+                return str(seq)
+            record = Record(diff)
+        self.ordered = False
         self.records[seq] = record
         return str(seq)
 
@@ -761,7 +777,9 @@ class InnerRecord:
             self.records = OrderedDict(sorted(self.records.items()))
             self.ordered = True
 
-    def get_record(self, revision: Optional[str] = None) -> Dict[str, Any]:
+    def get_record(
+        self, revision: Optional[str] = None, deep_copy: Optional[bool] = None
+    ) -> Dict[str, Any]:
         self._reorder()
         ret: Dict[str, Any] = dict()
         for seq, record in self.records.items():
@@ -772,12 +790,15 @@ class InnerRecord:
                     if "-" in ret:
                         ret = dict()
                     ret.update(record)
+        ret.update({self.key_column: self.key})
+        if deep_copy:
+            ret = copy.deepcopy(ret)
         return ret
 
     def dumps(self) -> Dict[str, Any]:
         self._reorder()
         return {
-            "key": self.key,
+            "key": self.key_column,
             "records": {seq: record.dumps() for seq, record in self.records.items()},
         }
 
@@ -788,11 +809,91 @@ class InnerRecord:
         ret.records = OrderedDict(
             {int(seq): Record.loads(record) for seq, record in data["records"].items()}
         )
+        first = ret.records[next(iter(ret.records))]
+
+        ret.key = first[data["key"]]
         return ret
 
     @staticmethod
     def _get_seq_num() -> int:
         return time.monotonic_ns()
+
+
+class Compressor(abc.ABC):
+    @abc.abstractmethod
+    def extension(self) -> str:
+        """
+        Return the extension of the compressed file.
+        """
+        ...
+
+    @abc.abstractmethod
+    def compress(self, source: Path) -> Path:
+        """
+        Compress the file and return the path to the compressed file.
+        """
+        ...
+
+    @contextlib.contextmanager
+    @abc.abstractmethod
+    def decompress(self, source: Path) -> Iterator[Path]:
+        """
+        Decompress the file and return the path to the temp decompressed file.
+        And the temp file will be deleted after the context manager exits.
+        """
+        ...
+
+
+class NoCompressor(Compressor):
+    def extension(self) -> str:
+        return ".json"
+
+    def compress(self, source: Path) -> Path:
+        # never be called
+        # we need to duplicate the file because the dump method will remove the source file
+        raise RuntimeError("should not be called")
+
+    @contextlib.contextmanager
+    def decompress(self, source: Path) -> Iterator[Path]:
+        # compatible with the existing json file
+        yield source
+
+
+class ZipCompressor(Compressor):
+    def extension(self) -> str:
+        return ".zip"
+
+    def compress(self, source: Path) -> Path:
+        output = tempfile.mktemp()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(source, source.name)
+        return Path(output)
+
+    @contextlib.contextmanager
+    def decompress(self, source: Path) -> Iterator[Path]:
+        with zipfile.ZipFile(source, "r") as zipf:
+            # extract to tmp dir
+            tmp_dir = tempfile.TemporaryDirectory()
+            zipf.extractall(tmp_dir.name)
+            file_name = zipf.namelist()[0]
+            try:
+                yield Path(tmp_dir.name) / file_name
+            finally:
+                tmp_dir.cleanup()
+
+
+# get all the compressors in this module
+compressors: Dict[str, Compressor] = {}
+for name, obj in inspect.getmembers(sys.modules[__name__]):
+    if inspect.isclass(obj) and issubclass(obj, Compressor) and obj != Compressor:
+        compressors[obj.__name__] = obj()
+
+
+def get_compressor(file: Path) -> Compressor:
+    for compressor in compressors.values():
+        if file.suffix == compressor.extension():
+            return compressor
+    raise ValueError(f"Unknown compressor for file {file}")
 
 
 class MemoryTable:
@@ -802,6 +903,7 @@ class MemoryTable:
         self.records: Dict[Any, InnerRecord] = {}
         self.lock = threading.Lock()
         self.dirty = False
+        self.compressor = ZipCompressor()
 
     def scan(
         self,
@@ -811,8 +913,13 @@ class MemoryTable:
         keep_none: bool = False,
         end_inclusive: bool = False,
         revision: Optional[str] = None,
+        deep_copy: Optional[bool] = None,
     ) -> Iterator[Dict[str, Any]]:
         _end_check: Callable = lambda x, y: x <= y if end_inclusive else x < y
+        if deep_copy is None:
+            env = os.getenv("SW_DATASTORE_SCAN_DEEP_COPY")
+            # make deep copy to True as default if env is not set
+            deep_copy = True if env is None else env.strip().upper() == "TRUE"
 
         with self.lock:
             records = []
@@ -821,9 +928,9 @@ class MemoryTable:
                     end is None or _end_check(k, end)
                 ):
                     records.append(v)
-        records.sort(key=lambda x: cast(str, x.key))
+        records.sort(key=lambda x: x.key)
         for ir in records:
-            r = ir.get_record(revision)
+            r = ir.get_record(revision, deep_copy)
             if columns is None:
                 d = dict(r)
             else:
@@ -839,8 +946,8 @@ class MemoryTable:
         self.dirty = True
         with self.lock:
             key = record.get(self.key_column.name)
-            r = self.records.setdefault(key, InnerRecord(key))
-            return r.append(Record(record))
+            r = self.records.setdefault(key, InnerRecord(self.key_column.name))
+            return r.append(Record(copy.deepcopy(record)))
 
     def delete(self, keys: List[Any]) -> str | None:
         """
@@ -874,14 +981,16 @@ class MemoryTable:
     def loads(cls, file: Path, table_name: str) -> MemoryTable:
         if not file.exists() or not file.is_file():
             raise RuntimeError(f"File {file} does not exist")
-        with jsonlines.open(file) as reader:
-            meta = reader.read()
-            key_column = cls._parse_meta(meta)
-            table = MemoryTable(table_name, key_column)
-            for record in reader:
-                ir = InnerRecord.loads(record)
-                table.records[ir.key] = ir
-            return table
+
+        with get_compressor(file).decompress(file) as f:
+            with jsonlines.open(f) as reader:
+                meta = reader.read()
+                key_column = cls._parse_meta(meta)
+                table = MemoryTable(table_name, key_column)
+                for record in reader:
+                    ir = InnerRecord.loads(record)
+                    table.records[ir.key] = ir
+        return table
 
     def dump(self, root_path: str, if_dirty: bool = True) -> None:
         root = Path(root_path)
@@ -893,7 +1002,7 @@ class MemoryTable:
         if if_dirty and not self.dirty:
             return
 
-        dst = root_path / f"{self.table_name}{datastore_table_file_ext}"
+        dst = Path(_get_table_path(root_path, self.table_name))
         base = dst.parent
         temp_filename = base / f"temp.{os.getpid()}"
         ensure_dir(base)
@@ -907,23 +1016,39 @@ class MemoryTable:
                     continue
                 writer.write(ir.dumps())
 
-        os.rename(temp_filename, dst)
+        compressed = self.compressor.compress(temp_filename)
+        os.unlink(temp_filename)
+        if dst.suffix == datastore_table_file_ext:
+            # the dst file is must not exist, we never save a table as a sw-datastore file
+            # use the same extension as compressed file
+            ext = datastore_table_file_ext + self.compressor.extension()
+        else:
+            # the dst file is a compressed file, change the extension
+            ext = self.compressor.extension()
+
+        # make dst file have the same extension as compressed file
+        new_dst = dst.with_suffix(ext)
+        os.rename(compressed, new_dst)
+        if new_dst != dst and dst.exists():
+            # remove the old file if it is not the new file name
+            dst.unlink()
         self.dirty = False
 
-    def _dump_from_local_file(self, file: Path, output: Writer) -> Set[str]:
+    def _dump_from_local_file(self, existing: Path, output: Writer) -> Set[str]:
         dumped_keys: Set[str] = set()
 
-        if not file.exists():
+        if not existing.exists():
             return dumped_keys
 
-        with jsonlines.open(file, mode="r") as reader:
-            self._parse_meta(reader.read())
-            for i in reader:
-                ir = InnerRecord.loads(i)
-                r = self.records.get(ir.key)
-                ir.update(r)
-                dumped_keys.add(ir.key)
-                output.write(ir.dumps())
+        with get_compressor(existing).decompress(existing) as f:
+            with jsonlines.open(f, mode="r") as reader:
+                self._parse_meta(reader.read())
+                for i in reader:
+                    ir = InnerRecord.loads(i)
+                    r = self.records.get(ir.key)
+                    ir.update(r)
+                    dumped_keys.add(ir.key)
+                    output.write(ir.dumps())
 
         return dumped_keys
 

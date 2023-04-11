@@ -116,22 +116,25 @@ public class MysqlBackupService {
                     .append("\n/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n");
 
             sql.append("\n\nCREATE DATABASE /*!32312 IF NOT EXISTS*/ `").append(database).append("` ")
-                .append("/*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ ")
-                .append("/*!80016 DEFAULT ENCRYPTION='N' */;");
+                    .append("/*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ ")
+                    .append("/*!80016 DEFAULT ENCRYPTION='N' */;");
 
             sql.append("\n\nUSE `").append(database).append("`;\n\n");
 
             // get the tables that are in the database
             TablesResponse allTablesAndViews = getAllTablesAndViews(statement, database);
 
-            List<String> tables = allTablesAndViews.getTables().stream()
-                    .filter(t -> !ignores.contains(t))
-                    .collect(Collectors.toList());
+            List<String> tables = allTablesAndViews.getTables();
+            //.stream()
+            //.filter(t -> !ignores.contains(t))
+            //.collect(Collectors.toList());
 
             for (String table : tables) {
                 try {
                     sql.append(getTableCreateStatement(statement, table));
-                    sql.append(getDataInsertStatement(statement, table));
+                    if (!ignores.contains(table)) {
+                        sql.append(getDataInsertStatement(statement, table));
+                    }
                 } catch (SQLException e) {
                     log.error("Exception occurred while processing table: " + table, e);
                 }

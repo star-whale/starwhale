@@ -67,12 +67,6 @@ Runtime example code are in the `example/runtime/pytorch` directory.
   swcli runtime info pytorch/version/latest
   ```
 
-- Restore Starwhale Runtime(optional):
-
-  ```bash
-  swcli runtime restore pytorch/version/latest
-  ```
-
 ## Building Model
 
 Model example code are in the `example/mnist` directory.

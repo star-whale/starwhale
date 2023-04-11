@@ -439,7 +439,7 @@ class TestHandler(BaseTestCase):
         assert isinstance(h._table_writers["metrics/user"], TableWriter)
 
         h.flush()
-        datastore_file_path = workdir / "metrics" / "user.sw-datastore.json"
+        datastore_file_path = workdir / "metrics" / "user.sw-datastore.zip"
         assert datastore_file_path.exists()
         assert datastore_file_path.is_file()
 
@@ -495,7 +495,7 @@ class TestHandler(BaseTestCase):
 
         h.flush()
 
-        datastore_file_path = workdir / "artifacts" / "user.sw-datastore.json"
+        datastore_file_path = workdir / "artifacts" / "user.sw-datastore.zip"
         assert datastore_file_path.exists()
         assert datastore_file_path.is_file()
 
@@ -549,8 +549,8 @@ class TestHandler(BaseTestCase):
         assert "metrics/_system" in h._table_writers
         assert "artifacts/user" in h._table_writers
 
-        assert (workdir / "metrics" / "user.sw-datastore.json").exists()
-        assert (workdir / "metrics" / "_system.sw-datastore.json").exists()
+        assert (workdir / "metrics" / "user.sw-datastore.zip").exists()
+        assert (workdir / "metrics" / "_system.sw-datastore.zip").exists()
         assert (workdir / "artifacts" / "_files").exists()
         assert len(list((workdir / "artifacts" / "_files").iterdir())) != 0
         assert (workdir / "params" / "user.json").exists()

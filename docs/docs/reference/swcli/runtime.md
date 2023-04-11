@@ -30,21 +30,18 @@ The `runtime` command includes the following subcommands:
 ## swcli runtime activate {#activate}
 
 ```bash
-swcli [GLOBAL OPTIONS] runtime activate [OPTIONS]
+swcli [GLOBAL OPTIONS] runtime activate [OPTIONS] URI
 ```
 
 Like `source venv/bin/activate` or `conda activate xxx`, `runtime activate` setups a new python environment according to the settings of the specified runtime. When the current shell is closed or switched to another shell, you need to reactivate the runtime.
 
-**`runtime activate` only works for the [standalone instance](../../instances/standalone/index.md).**
+**`runtime activate` only works for the [standalone instance](../../instances/standalone/index.md).** When the 'activate' command is used to activate an environment, it will check if the environment corresponding to the Runtime URI has been locally built. If not, it will automatically create a 'venv' or 'conda' environment, and download the Python dependencies for the corresponding Runtime.
 
 If you want to quit the activated runtime environment, please run `venv deactivate` for the venv environment or `conda deactivate` in the conda environment.
 
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
-| `--uri` or `-u` | ❌ | String | | the Runtime URI |
-| `--path` | `-p` | ❌ | String | | Path to venv or conda directory |
-
-`--uri` and `--path` can not be used together.
+|`--force-restore`|`-f`|❌|Bool|False|Force to restore runtime into the related snapshot workdir even the runtime has been restored|
 
 ## swcli runtime build {#build}
 
@@ -119,7 +116,7 @@ swcli [GLOBAL OPTIONS] runtime info [OPTIONS] RUNTIME
 
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
-| `--fullname` | ❌ | Boolean | False | Show the full version name. Only the first 12 characters are shown if this option is false. |
+| `--output-filter` or `-of` | ❌ | Choice of [basic|runtime_yaml|manifest|lock|all] | basic | Filter the output content. Only standalone instance supports this option. |
 
 ## swcli runtime list {#list}
 

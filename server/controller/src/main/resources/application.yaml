@@ -12,6 +12,9 @@ spring:
       static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
+  public-api:
+    base-url: ${SW_PUBLIC_API_BASE_URL:}
+    latest-version: ${SW_LATEST_VERSION_URL:${sw.public-api.base-url}/version/latest}
   docker:
     registry: ${SW_DOCKER_REGISTRY_URL:}
   runtime:

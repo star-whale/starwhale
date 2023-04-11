@@ -49,6 +49,7 @@ from starwhale.core.runtime.model import (
     _TEMPLATE_DIR,
     RuntimeConfig,
     WheelDependency,
+    RuntimeInfoFilter,
     StandaloneRuntime,
 )
 from starwhale.core.runtime.store import RuntimeStorage
@@ -546,27 +547,22 @@ class StandaloneRuntimeTestCase(TestCase):
         for p in _manifest["artifacts"]["dependencies"]:
             assert os.path.exists(os.path.join(runtime_workdir, p))
 
-        uri = URI(name, expected_type=URIType.RUNTIME)
-        sr = StandaloneRuntime(uri)
-        ensure_dir(sr.store.bundle_dir / f"xx{sr.store.bundle_type}")
-        info = sr.info()
-        assert info["project"] == "self"
-        assert "version" not in info
-        assert len(info["history"]) == 1
-        assert info["history"][0]["version"] == build_version
-
         uri = URI(f"{name}/version/{build_version[:6]}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         info = sr.info()
         assert "history" not in info
-        assert info["version"] == build_version
+        assert info["basic"]["version"] == build_version
+        assert "manifest" in info
+        assert "runtime_yaml" in info
+        assert "requirements-sw-lock.txt" in info["lock"]
 
         rts = StandaloneRuntime.list(URI(""))
         assert len(rts[0]) == 1
         assert len(rts[0][name]) == 1
         assert rts[0][name][0]["version"] == build_version
 
-        runtime_term_view = get_term_view({"output": "json"})
+        runtime_json_view = get_term_view({"output": "json"})
+        runtime_term_view = get_term_view({"output": "terminal"})
 
         build_uri = f"{name}/version/{build_version}"
         tag_manifest_path = (
@@ -581,9 +577,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert "t1" not in tag_content["tags"]
         assert "t2" in tag_content["tags"]
 
-        runtime_term_view(name).history(fullname=True)
-        runtime_term_view(name).info(fullname=True)
-        runtime_term_view(f"{name}/version/{build_version}").info(fullname=True)
+        uri = f"{name}/version/{build_version}"
+        for f in RuntimeInfoFilter:
+            runtime_term_view(uri).info(output_filter=f)
+            runtime_json_view(uri).info(output_filter=f)
 
         runtime_term_view.list()
         RuntimeTermViewRich.list()
@@ -2017,9 +2014,17 @@ class StandaloneRuntimeTestCase(TestCase):
             reset_qemu_static=False,
         )
 
+    @patch("starwhale.core.runtime.model.StandaloneRuntime.restore")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime.extract")
     @patch("shellingham.detect_shell")
     @patch("os.execl")
-    def test_activate(self, m_execl: MagicMock, m_detect: MagicMock) -> None:
+    def test_activate(
+        self,
+        m_execl: MagicMock,
+        m_detect: MagicMock,
+        m_extract: MagicMock,
+        m_restore: MagicMock,
+    ) -> None:
         sw = SWCliConfigMixed()
         name = "rttest"
         version = "123"
@@ -2037,10 +2042,14 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(snapshot_dir)
         ensure_file(snapshot_dir / DEFAULT_MANIFEST_NAME, yaml.safe_dump(manifest))
 
+        ensure_dir(snapshot_dir / "export" / "venv")
+
         m_detect.return_value = ["zsh", "/usr/bin/zsh"]
-        uri = f"{name}/version/{version}"
+        uri = URI(f"{name}/version/{version}", expected_type=URIType.RUNTIME)
         StandaloneRuntime.activate(uri=uri)
         assert m_execl.call_args[0][0] == "/usr/bin/zsh"
+        assert not m_extract.called
+        assert not m_restore.called
 
         m_execl.reset_mock()
         runtime_config = self.get_runtime_config()
@@ -2049,12 +2058,13 @@ class StandaloneRuntimeTestCase(TestCase):
             snapshot_dir / DefaultYAMLName.RUNTIME, yaml.safe_dump(runtime_config)
         )
 
+        m_execl.reset_mock()
         m_detect.return_value = ["bash", "/usr/bin/bash"]
-        StandaloneRuntime.activate(path=str(snapshot_dir))
+        StandaloneRuntime.activate(uri=uri, force_restore=True)
+        assert not m_extract.called
+        assert m_restore.called
+        assert m_restore.call_args[0][0] == snapshot_dir
         assert m_execl.call_args[0][0] == "/usr/bin/bash"
-
-        with self.assertRaises(Exception):
-            RuntimeTermView.activate()
 
     def test_property(self) -> None:
         name = "rttest"

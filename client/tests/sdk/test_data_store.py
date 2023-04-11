@@ -20,43 +20,16 @@ from .. import BaseTestCase
 class TestBasicFunctions(BaseTestCase):
     def test_get_table_path(self) -> None:
         self.assertEqual(
-            os.path.join("a", "b.sw-datastore.json"),
+            Path("a") / "b.sw-datastore",
             data_store._get_table_path("a", "b"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c.sw-datastore.json"),
+            Path("a") / "b" / "c.sw-datastore",
             data_store._get_table_path("a", "b/c"),
         )
         self.assertEqual(
-            os.path.join("a", "b", "c", "d.sw-datastore.json"),
+            Path("a") / "b" / "c" / "d.sw-datastore",
             data_store._get_table_path("a", "b/c/d"),
-        )
-
-    def test_parse_data_table_name(self) -> None:
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base-123.txt"),
-            "invalid extension",
-        )
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base_1.sw-datastore.json"),
-            "invalid prefix",
-        )
-        self.assertEqual(
-            ("", 0),
-            data_store._parse_data_table_name("base-i.sw-datastore.json"),
-            "invalid index",
-        )
-        self.assertEqual(
-            ("base", 123),
-            data_store._parse_data_table_name("base-123.sw-datastore.json"),
-            "base",
-        )
-        self.assertEqual(
-            ("patch", 123),
-            data_store._parse_data_table_name("patch-123.sw-datastore.json"),
-            "patch",
         )
 
     def test_merge_scan(self) -> None:
@@ -678,6 +651,31 @@ class TestMemoryTable(BaseTestCase):
             "latest 1 with rev",
         )
 
+    def test_insert_with_diff(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        table.insert({"k": 0, "a": "0"})
+        table.insert({"k": 0, "a": "1"})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan()),
+        )
+        self.assertEqual(len(table.records[0].records), 2)
+
+        # insert the same row again
+        table.insert({"k": 0, "a": "1"})
+        self.assertEqual(len(table.records[0].records), 2)
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": "1"}],
+            list(table.scan()),
+        )
+
+        # insert with None
+        table.insert({"k": 0, "a": None})
+        self.assertEqual(
+            [{"*": 0, "k": 0}],
+            list(table.scan()),
+        )
+
     def test_merge_dump(self):
         table_name = "test"
         table = data_store.MemoryTable(table_name, ColumnSchema("k", INT64))
@@ -761,6 +759,67 @@ class TestMemoryTable(BaseTestCase):
             [{"*": 0, "k": 0, "a": "2", "b": 1, "c": 2.0}],
             list(table.scan(revision=rev)),
             "get changes by revision",
+        )
+
+    def test_deep_copy(self):
+        table = data_store.MemoryTable("test", ColumnSchema("k", INT64))
+        obj = {"b": 1}
+
+        # insert a mutable object
+        table.insert({"k": 0, "a": obj})
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 1}}],
+            list(table.scan()),
+        )
+        # change the object
+        obj["b"] = 2
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 1}}],
+            list(table.scan()),
+        )
+
+        # get the mutable object without deep copy
+        obj = next(table.scan(deep_copy=False))["a"]
+        self.assertEqual({"b": 1}, obj)
+        # change the object
+        obj["b"] = 3
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 3}}],
+            list(table.scan()),
+        )
+
+        def change_and_validate(dst):
+            self.assertEqual({"b": 3}, dst)
+            # change the object
+            dst["b"] = 4
+            self.assertEqual(
+                [{"*": 0, "k": 0, "a": {"b": 3}}],
+                list(table.scan()),
+            )
+
+        # get the mutable object with deep copy
+        obj = next(table.scan(deep_copy=True))["a"]
+        change_and_validate(obj)
+
+        # get the mutable object with deep copy env
+        os.environ["SW_DATASTORE_SCAN_DEEP_COPY"] = "true"
+        obj = next(table.scan())["a"]
+        change_and_validate(obj)
+
+        # get the mutable object without env or deep copy param (True by default)
+        obj = next(table.scan())["a"]
+        change_and_validate(obj)
+
+        # get the mutable object with non True env
+        os.environ["SW_DATASTORE_SCAN_DEEP_COPY"] = "foo"
+        obj = next(table.scan())["a"]
+        self.assertEqual({"b": 3}, obj)
+        # change the object
+        obj["b"] = 4
+        # changed
+        self.assertEqual(
+            [{"*": 0, "k": 0, "a": {"b": 4}}],
+            list(table.scan()),
         )
 
 
