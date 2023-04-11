@@ -13,7 +13,7 @@ from collections import defaultdict
 import yaml
 from loguru import logger
 
-from starwhale.consts import DecoratorInjectAttr, DEFAULT_JOB_NAME
+from starwhale.consts import DEFAULT_JOB_NAME, DecoratorInjectAttr
 from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
@@ -21,6 +21,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.core.job.step import Step
 from starwhale.core.job.context import Context
 
+AFTER_LOAD_HOOKS: t.Dict[str, t.Callable] = defaultdict()
 _T_JOBS = t.Dict[str, t.List[Step]]
 _jobs_global: _T_JOBS = defaultdict(list)
 _jobs_global_lock = threading.Lock()
@@ -156,33 +157,8 @@ def _preload_to_register_jobs(run_handler: str, workdir: Path) -> None:
         logger.debug(f"preload module-{module_name}")
         return
 
-    # TODO: raise exception for @step, @predict or @evaluate in the Pipeline methods
-    # TODO: step decorate auto inject some flags into function builtin fields
-    # TODO: need to handle DecoratorInjectAttr.Evaluate ?
-    if inspect.isfunction(func_or_cls):
-        if getattr(func_or_cls, DecoratorInjectAttr.Predict, False) or getattr(
-            func_or_cls, DecoratorInjectAttr.Step, False
-        ):
-            logger.debug(
-                f"preload function-{func_or_cls_name} from module-{module_name}"
-            )
-        else:
-            raise RuntimeError(
-                f"preload function-{func_or_cls_name} does not use step or predict decorator"
-            )
-    elif inspect.isclass(func_or_cls):
-        from starwhale.api._impl.evaluation import PipelineHandler
-
-        if issubclass(func_or_cls, PipelineHandler):
-            ppl_func = getattr(func_or_cls, "ppl")
-            cmp_func = getattr(func_or_cls, "cmp")
-            step(task_num=2, name="ppl")(ppl_func)
-            step(task_num=1, needs=["ppl"], name="cmp")(cmp_func)
-            logger.debug(f"preload class-{func_or_cls_name} from Pipeline")
-        else:
-            logger.debug(f"preload user custom class-{func_or_cls_name}")
-    else:
-        raise NoSupportError(f"failed to preload for {run_handler}")
+    for _, _h in AFTER_LOAD_HOOKS.items():
+        _h(run_handler, func_or_cls)
 
 
 def generate_jobs_yaml(

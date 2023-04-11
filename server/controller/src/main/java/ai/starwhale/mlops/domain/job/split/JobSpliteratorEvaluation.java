@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
@@ -91,17 +90,11 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         List<StepSpec> stepSpecs;
         try {
             if (!StringUtils.hasText(job.getStepSpec())) {
-                stepSpecs = job.getModel().getStepSpecs().stream().filter(stepSpec -> {
-                    var jobName = stepSpec.getJobName();
-                    var type = job.getType();
-                    if (type == JobType.EVALUATION) {
-                        return jobName.equalsIgnoreCase("default")
-                            || jobName.equalsIgnoreCase(type.name())
-                            || jobName.equalsIgnoreCase(job.getComment());
-                    }
+                stepSpecs = job.getModel().getStepSpecs().stream()
                     // TODO support custom jobs use name
-                    return jobName.equalsIgnoreCase(type.name()) || jobName.equalsIgnoreCase(job.getComment());
-                }).collect(Collectors.toList());
+                    .filter(stepSpec -> stepSpec.getJobName().equalsIgnoreCase(job.getType().name())
+                        || stepSpec.getJobName().equalsIgnoreCase(job.getComment()))
+                    .collect(Collectors.toList());
             } else {
                 stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
             }

@@ -9,6 +9,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.api._impl.job import (
     _jobs_global,
     pass_context,
+    AFTER_LOAD_HOOKS,
     _validate_jobs_dag,
     generate_jobs_yaml,
     _do_resource_transform,
@@ -233,6 +234,7 @@ def evaluate_handler(*args, **kwargs): ...
             f"{self.module_name}:predict_handler", self.workdir, yaml_path
         )
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
@@ -305,6 +307,7 @@ class MockHandler(PipelineHandler):
         assert self.module_name not in sys.modules
         generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
@@ -373,6 +376,7 @@ class MockHandler:
         assert self.module_name not in sys.modules
         generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
@@ -452,6 +456,7 @@ class MockReport:
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml(self.module_name, self.workdir, yaml_path)
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)

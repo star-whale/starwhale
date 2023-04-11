@@ -11,30 +11,30 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
 from typing import Any, Dict, Tuple
+from pathlib import Path
 
 import numpy as np
 import torch
 import torchvision
 from d2l import torch as d2l
-from starwhale.api import experiment, model
-from starwhale.api.service import api
 from torch import nn
+from gradio import gradio
 from torch.utils import data
 from torchvision.models import ResNet
-from torchvision.models.resnet import BasicBlock
 from torchvision.transforms import Compose
+from torchvision.models.resnet import BasicBlock
 
-from gradio import gradio
 from starwhale import (
-    Context,
     Image,
-    PipelineHandler,
+    Context,
     dataset,
-    multi_classification,
     pass_context,
+    PipelineHandler,
+    multi_classification,
 )
+from starwhale.api import model, experiment
+from starwhale.api.service import api
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["hotdog", "not-hotdog"]
