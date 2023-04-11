@@ -77,9 +77,8 @@ const isValidValue = (str: string) => str !== '-'
 
 function val(r: any) {
     if (r === undefined) return ''
-
     if (typeof r === 'object' && 'value' in r) {
-        return r.value
+        return r.value.toString()
     }
 
     return r

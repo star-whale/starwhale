@@ -151,7 +151,7 @@ export class SwMapType extends SwCompositeType {
     }
 
     get value(): any {
-        return this.decode(this.value_schema)
+        return Object.fromEntries(this.decode(this.value_schema))
     }
 
     toString(): string {
