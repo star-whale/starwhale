@@ -96,8 +96,8 @@ def build(
 
             if remote_project_uri:
                 ModelTermView.copy(
-                    f"{URI(project_uri).full_uri}/model/{name}/version/latest",
-                    remote_project_uri,
+                    src_uri=f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+                    dest_uri=remote_project_uri,
                 )
     finally:
         os.unlink(yaml_path)
