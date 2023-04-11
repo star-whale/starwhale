@@ -261,10 +261,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = JobHandlerParser(
+            JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
-                target_dir=_run_dir,
+                yaml_path=yaml_path,
             ).run()
 
         logger.debug(f"parse job from yaml:{yaml_path}")
@@ -345,10 +345,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = JobHandlerParser(
+            JobHandlerParser(
                 workdir=workdir,
                 handler=_model_config.run.handler,
-                target_dir=workdir,  # todo use tmp?
+                yaml_path=yaml_path,  # todo use tmp?
             ).run()
 
         logger.debug(f"parse fine-tune job from yaml:{yaml_path}")
@@ -558,7 +558,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 JobHandlerParser(
                     workdir=workdir,
                     handler=_model_config.run.handler,
-                    target_dir=self.store.src_dir,
+                    yaml_path=self.store.src_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME,
                 ).run,
                 5,
                 "generate jobs",
@@ -696,10 +696,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 class HandlerParser:
     sw_dir: str = SW_AUTO_DIRNAME
 
-    def __init__(self, workdir: Path, handler: t.Any, target_dir: Path) -> None:
+    def __init__(self, workdir: Path, handler: t.Any) -> None:
         self.workdir = workdir
         self.handler = handler
-        self.target_dir = target_dir
 
     @abstractmethod
     def run(self, raise_err: bool = True) -> t.Any:
@@ -707,15 +706,17 @@ class HandlerParser:
 
 
 class JobHandlerParser(HandlerParser):
+    def __init__(self, yaml_path: Path, workdir: Path, handler: t.Any) -> None:
+        super().__init__(workdir, handler)
+        self.yaml_path = yaml_path
+
     def run(self, raise_err: bool = True) -> t.Any:
         try:
-            yaml_path = self.target_dir / self.sw_dir / DEFAULT_JOBS_FILE_NAME
             generate_jobs_yaml(
                 run_handler=self.handler,
                 workdir=self.workdir,
-                yaml_path=yaml_path,
+                yaml_path=self.yaml_path,
             )
-            return yaml_path
         except Exception as e:
             logger.error("error in job handler parse processing", e)
             if raise_err:
@@ -723,6 +724,10 @@ class JobHandlerParser(HandlerParser):
 
 
 class ServeHandlerParser(HandlerParser):
+    def __init__(self, target_dir: Path, workdir: Path, handler: t.Any) -> None:
+        super().__init__(workdir, handler)
+        self.target_dir = target_dir
+
     @staticmethod
     def get_service(
         module: str, pkg: Path, hijack: t.Optional[Hijack] = None
