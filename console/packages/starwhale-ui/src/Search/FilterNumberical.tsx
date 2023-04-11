@@ -1,6 +1,6 @@
 import React from 'react'
 import { NumberInput } from '../Input'
-import Filter from './filter'
+import Filter from './Filter'
 import { FilterT, KIND, FilterTypeOperators } from './types'
 
 function FilterNumberical(): FilterT {

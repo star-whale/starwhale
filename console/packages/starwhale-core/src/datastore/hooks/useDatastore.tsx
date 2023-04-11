@@ -56,7 +56,8 @@ export function useDatastore(records: RecordListSchemaT = []) {
         return records.map((record, index) => {
             const recordTmp: Record<string, any> = {}
             Object.keys(record).forEach((key) => {
-                recordTmp[key] = getSchema(key, index)
+                const schema = getSchema(key, index)
+                if (schema) recordTmp[key] = schema
             })
             return recordTmp
         })
@@ -65,7 +66,7 @@ export function useDatastore(records: RecordListSchemaT = []) {
     const $columnTypes = React.useMemo(() => {
         if (records.length === 0) return []
 
-        const columnTypes: (RecordSchemaT | undefined)[] = []
+        const columnTypes: RecordSchemaT[] = []
         const rowIndex = 0
         const record = records[rowIndex]
         Object.keys(record).forEach((key) => {

@@ -1,7 +1,7 @@
 import { DataTypeT } from '@starwhale/core/datastore'
-import FilterString from './filterString'
-import FilterBoolean from './filterBoolean'
-import FilterNumberical from './filterNumberical'
+import FilterString from './FilterString'
+import FilterBoolean from './FilterBoolean'
+import FilterNumberical from './FilterNumberical'
 import { FilterT, KIND } from './types'
 
 export const dataStoreToFilter = (dataStoreKind?: DataTypeT): (() => FilterT) => {

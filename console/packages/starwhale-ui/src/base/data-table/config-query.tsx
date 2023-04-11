@@ -3,9 +3,10 @@ import Search from '@starwhale/ui/Search'
 import { ColumnT, QueryT } from './types'
 import { ColumnSchemaDesc } from '@starwhale/core/datastore'
 import { currentQueriesSelector, IStore } from './store'
-import { Popover, StatefulPopover } from 'baseui/popover'
+import { StatefulPopover } from 'baseui/popover'
 import IconFont from '../../IconFont'
 import Button from '@starwhale/ui/Button'
+import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 
 type PropsT = {
     columns: ColumnT[]
@@ -18,7 +19,7 @@ function ConfigQuery(props: PropsT) {
         return props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
     }, [props.columns])
 
-    return <Search fields={columnTypes as ColumnSchemaDesc[]} value={props.value} onChange={props.onChange} />
+    return <DatastoreMixedTypeSearch fields={columnTypes} value={props.value} onChange={props.onChange} />
 }
 
 function ConfigQueryInline(props: PropsT & { width: number }) {
@@ -82,9 +83,12 @@ function useConfigQuery(store: IStore, { columns, queryable }: { columns: Column
         return <ConfigQuery columns={columns} value={value} onChange={onChange} />
     }, [queryable, columns, value, onChange])
 
-    const renderConfigQueryInline = React.useCallback(({ width }: { width: number }) => {
-        return <ConfigQueryInline columns={columns} value={value} onChange={onChange} width={width} />
-    }, [columns, value, onChange])
+    const renderConfigQueryInline = React.useCallback(
+        ({ width }: { width: number }) => {
+            return <ConfigQueryInline columns={columns} value={value} onChange={onChange} width={width} />
+        },
+        [columns, value, onChange]
+    )
 
     return {
         renderConfigQuery,

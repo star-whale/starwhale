@@ -12,22 +12,6 @@ export type RecordFilterSchemaT = {
 } & ColumnDesc
 
 export function useDatastoreFilter(columnTypes?: RecordSchemaT[], options: { mixed: boolean } = { mixed: true }) {
-    const searchColumns = React.useMemo(() => {
-        const arr: RecordFilterSchemaT[] = []
-        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
-        columns.forEach((column) => {
-            if (isBasicType(column.type)) {
-                arr.push({
-                    ...column,
-                    path: column.name,
-                    label: column.name,
-                })
-            }
-        })
-
-        return columns
-    }, [])
-
     /**
         "operator": "AND",
         "operands": [
@@ -117,11 +101,10 @@ export function useDatastoreFilter(columnTypes?: RecordSchemaT[], options: { mix
                 operands: filters,
             }
         },
-        [searchColumns, getQuery]
+        [getQuery]
     )
 
     return {
-        searchColumns,
         getQuery,
         toQuery,
     }
