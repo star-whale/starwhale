@@ -87,7 +87,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         }, [tableConfig])
         const inViewport = useIsInViewport(myRef as any)
         const { recordInfo, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
-        console.log(tableOptions)
         const inViewLoadRef = useRef(false)
         const tableNameRef = useRef('')
 

@@ -57,7 +57,7 @@ export function useDatastore(records: RecordListSchemaT = []) {
             const recordTmp: Record<string, any> = {}
             Object.keys(record).forEach((key) => {
                 const schema = getSchema(key, index)
-                if (schema) recordTmp[key] = schema
+                if (schema) recordTmp[key] = schema.value
             })
             return recordTmp
         })

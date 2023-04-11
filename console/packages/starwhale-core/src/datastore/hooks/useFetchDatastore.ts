@@ -6,6 +6,7 @@ import { scanTable, queryTable, listTables, exportTable } from '../services/data
 import { QueryTableRequest } from '../schemas/datastore'
 import { useDatastoreFilter } from '../filter'
 import useDatastore from './useDatastore'
+import { useIfChanged } from '@starwhale/core/utils'
 
 export function useScanDatastore(query: any, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
@@ -54,7 +55,7 @@ export function useQueryDatasetList(
         return {
             start: (pageNum - 1) * pageSize ?? 0,
             limit: pageSize ?? 0,
-            query: options?.query ?? {},
+            query: options?.query,
         }
     }, [options])
 
@@ -64,7 +65,7 @@ export function useQueryDatasetList(
         const filter = options?.filter && options?.filter.length > 0 ? toQuery(options?.filter) : undefined
         const revision = options?.revision
         const raw: any = {
-            ...query,
+            ...(query ?? {}),
             tableName,
             start,
             limit,
@@ -82,6 +83,8 @@ export function useQueryDatasetList(
         return raw
     }, [options?.filter, limit, start, tableName, query, options?.revision, toQuery])
 
+    // useIfChanged({ filter: options?.filter, limit, start, tableName, query, revision: options?.revision, toQuery })
+
     const recordInfo = useQueryDatastore(recordQuery, enabled)
     const { records, columnTypes } = useDatastore(recordInfo?.data?.records)
 
@@ -95,11 +98,11 @@ export function useQueryDatasetList(
 
     // when table changed
     React.useEffect(() => {
-        if (recordQuery.tableName && recordInfo.isSuccess) {
+        if (recordQuery.tableName && !recordInfo.isLoading) {
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recordQuery.tableName])
+    }, [recordQuery])
 
     return {
         recordQuery,

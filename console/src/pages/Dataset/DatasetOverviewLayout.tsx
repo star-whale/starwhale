@@ -19,7 +19,7 @@ import { ConfirmButton } from '@starwhale/ui/Modal'
 import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
-import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
+import { DatastoreMixedTypeRecordSearch } from '@starwhale/ui/Search/Search'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -156,7 +156,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 )}
                 {datasetVersionId && (
                     <div style={{ marginBottom: '10px' }}>
-                        <DatastoreMixedTypeSearch
+                        <DatastoreMixedTypeRecordSearch
                             records={datastore.data?.records as RecordListSchemaT}
                             value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
                             onChange={(items) => {

@@ -88,7 +88,7 @@ export default function EvaluationListCard() {
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (item: any) => item['sys/id'].value,
+                    mapDataToValue: (item: any) => item['sys/id'],
                     // @ts-ignore
                     renderCell: (props: any) => {
                         if (!props.value) return <></>
@@ -121,7 +121,7 @@ export default function EvaluationListCard() {
                     renderCell: (props: any) => {
                         return <p title={props?.value}>{durationToStr(props?.value)}</p>
                     },
-                    mapDataToValue: (data: any): string => data.duration.value,
+                    mapDataToValue: (data: any): string => data.duration,
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
@@ -138,7 +138,7 @@ export default function EvaluationListCard() {
                             </div>
                         )
                     },
-                    mapDataToValue: (data: any): string => column.key && data?.[column.key].value,
+                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
@@ -147,7 +147,7 @@ export default function EvaluationListCard() {
                     title: column.key,
                     fillWidth: false,
                     mapDataToValue: (data: any) =>
-                        column.key && data[column.key] && formatTimestampDateTime(data[column.key].value),
+                        column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
                 })
 
             return {

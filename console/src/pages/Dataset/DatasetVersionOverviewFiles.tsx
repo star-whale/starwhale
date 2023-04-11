@@ -195,6 +195,7 @@ export default function DatasetVersionFiles() {
         }),
         [projectId, datasetVersion, token]
     )
+
     const { records: datasets } = useDatasets(records, columnTypes, options)
 
     const Records = React.useMemo(() => {

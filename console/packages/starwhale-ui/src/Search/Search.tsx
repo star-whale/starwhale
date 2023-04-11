@@ -88,7 +88,10 @@ function useSearchColumns(columnTypes: { name: string; type: string }[]) {
     return searchColumns
 }
 
-export function DatastoreMixedTypeRecordSearch({ records, ...props }: ISearchProps & { records: RecordListSchemaT }) {
+export function DatastoreMixedTypeRecordSearch({
+    records,
+    ...props
+}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
     const { columnTypes } = useDatastore(records)
     const searchColumns = useSearchColumns(columnTypes)
     return <Search {...props} fields={searchColumns} />

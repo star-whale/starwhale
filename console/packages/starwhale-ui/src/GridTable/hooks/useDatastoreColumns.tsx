@@ -43,12 +43,10 @@ export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
                             key: column.name,
                             title: column.name,
                             renderCell: RenderMixedCell as any,
-                            mapDataToValue: (data: any): string => data?.[column.name].value,
+                            mapDataToValue: (data: any): string => data?.[column.name],
                         })
                     )
                 }
-
-                console.log(column)
 
                 switch (column.type) {
                     default:
