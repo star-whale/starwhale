@@ -307,6 +307,34 @@ class StandaloneModelTestCase(TestCase):
         )
         schedule_all_mock.assert_called_once()
 
+    @patch("starwhale.core.job.step.Step.get_steps_from_yaml")
+    @patch("starwhale.core.model.model.generate_jobs_yaml")
+    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_task")
+    def test_fine_tune(
+        self,
+        single_task_mock: MagicMock,
+        gen_yaml_mock: MagicMock,
+        gen_job_mock: MagicMock,
+    ):
+        gen_job_mock.return_value = [
+            Step(
+                job_name="fine_tune",
+                name="ft",
+                cls_name="",
+                resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                concurrency=1,
+                task_num=1,
+                needs=[],
+            ),
+        ]
+        StandaloneModel.fine_tune(
+            project="test",
+            workdir=Path(self.workdir),
+            dataset_uris=["mnist/version/latest"],
+        )
+        gen_yaml_mock.assert_called_once()
+        single_task_mock.assert_called_once()
+
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")
     def test_list_with_project(self, req: Mocker, mock_list: MagicMock):
