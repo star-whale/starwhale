@@ -7,10 +7,10 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from loguru import logger
 
 from starwhale.utils import load_yaml
-from starwhale.consts import RunStatus, DEFAULT_JOB_NAME
+from starwhale.consts import RunStatus
 from starwhale.base.mixin import ASDictMixin
 
-from .dag import DAG, generate_dag
+from .dag import DAG
 from .task import TaskResult, TaskExecutor
 from .context import Context
 
@@ -38,7 +38,7 @@ class Step(ASDictMixin):
     def __init__(
         self,
         name: str,
-        job_name: str = DEFAULT_JOB_NAME,
+        show_name: str = "",
         resources: t.Optional[t.List[t.Dict]] = None,
         needs: t.Optional[t.List[str]] = None,
         concurrency: int = 1,
@@ -50,8 +50,8 @@ class Step(ASDictMixin):
         extra_kwargs: t.Optional[t.Dict] = None,
         **kw: t.Any,
     ):
-        self.job_name = job_name
         self.name = name
+        self.show_name = show_name or name
         self.module_name = module_name
         self.cls_name = cls_name
         self.func_name = func_name
@@ -68,26 +68,64 @@ class Step(ASDictMixin):
         return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}"
 
     def __repr__(self) -> str:
-        return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}, job-{self.job_name}, needs-{self.needs}"
+        return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}, needs-{self.needs}"
 
     @classmethod
     def get_steps_from_yaml(
-        cls, job_name: str, yaml_path: t.Union[str, Path]
+        cls, job_name: str | int, yaml_path: t.Union[str, Path]
     ) -> t.List[Step]:
+        # default run index 0 handler
+        job_name = job_name or "0"
         jobs = load_yaml(yaml_path)
-        return [cls(**v) for v in jobs[job_name]]
+        if job_name in jobs:
+            job = jobs[job_name]
+        else:
+            job_index = int(job_name)
+            sorted_jobs = sorted(jobs.items())
+            job = sorted_jobs[job_index][1]
+
+        """
+        - cls_name: MNISTInference
+          concurrency: 1
+          extra_args: []
+          extra_kwargs: {}
+          func_name: ppl
+          name: mnist.evaluator:MNISTInference.ppl
+          show_name: ppl
+          needs: ["mnist.evaluator:MNISTInference.cmp"]
+          module_name: mnist.evaluator
+          replicas: 2
+          resources: []
+        """
+        steps = []
+        for v in job:
+            step = Step(
+                name=v["name"],
+                show_name=v["show_name"],
+                resources=v["resources"],
+                needs=v["needs"],
+                concurrency=v["concurrency"],
+                task_num=v["replicas"],
+                cls_name=v["cls_name"],
+                module_name=v["module_name"],
+                func_name=v["func_name"],
+                extra_args=v.get("extra_args"),
+                extra_kwargs=v.get("extra_kwargs"),
+            )
+            steps.append(step)
+        return steps
 
     @staticmethod
     def generate_dag(steps: t.List[Step]) -> DAG:
-        _vertices: t.List[str] = []
-        _edges: t.List[t.Tuple[str, str]] = []
+        dag = DAG()
+        # add all vertexes before add edges
         for step in steps:
-            _vertices.append(step.name)
-            if not step.needs:
-                continue
-            for _pre in step.needs:
-                _edges.append((_pre, step.name))
-        return generate_dag(_vertices, _edges)
+            dag.add_vertex(step.name)
+
+        for step in steps:
+            for pre in step.needs or []:
+                dag.add_edge(pre, step.name)
+        return dag
 
 
 class StepExecutor:

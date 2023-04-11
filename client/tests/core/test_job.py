@@ -20,21 +20,15 @@ class JobTestCase(TestCase):
             Step.generate_dag(
                 [
                     Step(
-                        job_name="default",
                         name="ppl-1",
-                        resources=[],
                         needs=["cmp"],
                     ),
                     Step(
-                        job_name="default",
                         name="ppl-2",
-                        resources=[],
                         needs=["ppl-1"],
                     ),
                     Step(
-                        job_name="default",
                         name="cmp",
-                        resources=[],
                         needs=["ppl-2"],
                     ),
                 ]
@@ -43,25 +37,21 @@ class JobTestCase(TestCase):
         _dag = Step.generate_dag(
             [
                 Step(
-                    job_name="default",
                     name="base",
                     resources=[],
                     needs=[],
                 ),
                 Step(
-                    job_name="default",
                     name="ppl-1",
                     resources=[],
                     needs=["base"],
                 ),
                 Step(
-                    job_name="default",
                     name="ppl-2",
                     resources=[],
                     needs=["base"],
                 ),
                 Step(
-                    job_name="default",
                     name="cmp",
                     resources=[],
                     needs=["ppl-1", "ppl-2"],
@@ -99,7 +89,6 @@ class JobTestCase(TestCase):
                 dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
                 steps=[
                     Step(
-                        job_name="default",
                         name="ppl",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
@@ -108,7 +97,6 @@ class JobTestCase(TestCase):
                         needs=["cmp"],
                     ),
                     Step(
-                        job_name="default",
                         name="cmp",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
@@ -131,7 +119,6 @@ class JobTestCase(TestCase):
             dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
             steps=[
                 Step(
-                    job_name="default",
                     name="ppl",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
@@ -139,7 +126,6 @@ class JobTestCase(TestCase):
                     needs=[],
                 ),
                 Step(
-                    job_name="default",
                     name="cmp",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,

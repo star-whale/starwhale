@@ -19,9 +19,6 @@ DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 
 # evaluation related constants
-DEFAULT_JOB_NAME = "default"
-DEFAULT_EVALUATION_JOB_NAME = "evaluation"
-DEFAULT_FINETUNE_JOB_NAME = "fine_tune"
 DEFAULT_JOBS_FILE_NAME = "jobs.yaml"
 EVALUATION_SVC_META_FILE_NAME = "svc.json"
 # auto generated evaluation panel layout file name from yaml or local console
