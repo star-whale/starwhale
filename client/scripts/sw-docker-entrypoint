@@ -109,7 +109,7 @@ serve() {
 }
 
 fine_tune() {
-    echo "-->[Fine-Tuning] start to fine tune, use $(which swcli) cli ..."
+    echo "-->[Fine-Tuning] start to fine-tune, use $(which swcli) cli ..."
     export
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
         swcli ${VERBOSE} model ft --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" || exit 1

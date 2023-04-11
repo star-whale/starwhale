@@ -79,8 +79,8 @@ def build_ds(ds_uri: str):
 
 ```bash
 # 根据sdk构建所需数据集
-python3 imagenet/dataset_build.py train
-python3 imagenet/dataset_build.py test
+python3 imagenet/dataset.py train
+python3 imagenet/dataset.py test
 # 查看最新构建的数据集详情
 swcli dataset info hotdog_train/version/latest
 swcli dataset info hotdog_test/version/latest
@@ -144,4 +144,4 @@ swcli eval info {eval version}
 
 ### 步骤3：Cloud Instance中评测模型
 
-在fine tune功能界面中创建相关任务即可.
+在fine-tune功能界面中创建相关任务即可.

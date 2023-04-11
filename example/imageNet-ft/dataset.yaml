@@ -1,5 +1,0 @@
-name: image-net-for-hotdog
-
-handler: imagenet.dataset:iter_hotdog_item
-
-desc: imageNet-for-hotdog data and label test dataset

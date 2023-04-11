@@ -351,7 +351,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 target_dir=workdir,  # todo use tmp?
             ).run()
 
-        logger.debug(f"parse fine tune job from yaml:{yaml_path}")
+        logger.debug(f"parse fine-tune job from yaml:{yaml_path}")
         version = gen_uniq_version()
         console.print(
             f":hourglass_not_done: start to run fine-tune[{job_name}:{version}]..."
