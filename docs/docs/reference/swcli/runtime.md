@@ -116,7 +116,7 @@ swcli [GLOBAL OPTIONS] runtime info [OPTIONS] RUNTIME
 
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
-| `--fullname` | ❌ | Boolean | False | Show the full version name. Only the first 12 characters are shown if this option is false. |
+| `--output-filter` or `-of` | ❌ | Choice of [basic|runtime_yaml|manifest|lock|all] | basic | Filter the output content. Only standalone instance supports this option. |
 
 ## swcli runtime list {#list}
 

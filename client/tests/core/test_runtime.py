@@ -49,6 +49,7 @@ from starwhale.core.runtime.model import (
     _TEMPLATE_DIR,
     RuntimeConfig,
     WheelDependency,
+    RuntimeInfoFilter,
     StandaloneRuntime,
 )
 from starwhale.core.runtime.store import RuntimeStorage
@@ -546,27 +547,22 @@ class StandaloneRuntimeTestCase(TestCase):
         for p in _manifest["artifacts"]["dependencies"]:
             assert os.path.exists(os.path.join(runtime_workdir, p))
 
-        uri = URI(name, expected_type=URIType.RUNTIME)
-        sr = StandaloneRuntime(uri)
-        ensure_dir(sr.store.bundle_dir / f"xx{sr.store.bundle_type}")
-        info = sr.info()
-        assert info["project"] == "self"
-        assert "version" not in info
-        assert len(info["history"]) == 1
-        assert info["history"][0]["version"] == build_version
-
         uri = URI(f"{name}/version/{build_version[:6]}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         info = sr.info()
         assert "history" not in info
-        assert info["version"] == build_version
+        assert info["basic"]["version"] == build_version
+        assert "manifest" in info
+        assert "runtime_yaml" in info
+        assert "requirements-sw-lock.txt" in info["lock"]
 
         rts = StandaloneRuntime.list(URI(""))
         assert len(rts[0]) == 1
         assert len(rts[0][name]) == 1
         assert rts[0][name][0]["version"] == build_version
 
-        runtime_term_view = get_term_view({"output": "json"})
+        runtime_json_view = get_term_view({"output": "json"})
+        runtime_term_view = get_term_view({"output": "terminal"})
 
         build_uri = f"{name}/version/{build_version}"
         tag_manifest_path = (
@@ -581,9 +577,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert "t1" not in tag_content["tags"]
         assert "t2" in tag_content["tags"]
 
-        runtime_term_view(name).history(fullname=True)
-        runtime_term_view(name).info(fullname=True)
-        runtime_term_view(f"{name}/version/{build_version}").info(fullname=True)
+        uri = f"{name}/version/{build_version}"
+        for f in RuntimeInfoFilter:
+            runtime_term_view(uri).info(output_filter=f)
+            runtime_json_view(uri).info(output_filter=f)
 
         runtime_term_view.list()
         RuntimeTermViewRich.list()

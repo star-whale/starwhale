@@ -16,6 +16,7 @@ from starwhale.base.type import URIType, RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
 
 from .view import get_term_view, RuntimeTermView
+from .model import RuntimeInfoFilter
 
 
 @click.group(
@@ -247,12 +248,43 @@ def _recover(runtime: str, force: bool) -> None:
     RuntimeTermView(runtime).recover(force)
 
 
-@runtime_cmd.command("info", help="Show runtime details")
+@runtime_cmd.command("info")
 @click.argument("runtime")
-@click.option("--fullname", is_flag=True, help="Show version fullname")
+@click.option(
+    "-of",
+    "--output-filter",
+    type=click.Choice([f.value for f in RuntimeInfoFilter], case_sensitive=False),
+    default=RuntimeInfoFilter.basic.value,
+    show_default=True,
+    help="Filter the output content. Only standalone instance supports this option.",
+)
 @click.pass_obj
-def _info(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
-    view(runtime).info(fullname)
+def _info(
+    view: t.Type[RuntimeTermView],
+    runtime: str,
+    output_filter: str,
+) -> None:
+    """Show runtime details
+
+    RUNTIME: argument use the `Runtime URI` format. Version is optional for the Runtime URI.
+    If the version is not specified, the latest version will be used.
+
+    Example:
+
+        \b
+          swcli runtime info pytorch # show basic info from the latest version of runtime
+          swcli runtime info pytorch/version/v0  # show basic info
+          swcli runtime info pytorch/version/v0 --output-filter basic  # show basic info
+          swcli runtime info pytorch/version/v1 -of runtime_yaml  # show runtime.yaml content
+          swcli runtime info pytorch/version/v1 -of lock # show auto lock file content
+          swcli runtime info pytorch/version/v1 -of manifest # show _manifest.yaml content
+          swcli runtime info pytorch/version/v1 -of all # show all info of the runtime
+    """
+    uri = URI(runtime, expected_type=URIType.RUNTIME)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info(RuntimeInfoFilter(output_filter))
 
 
 @runtime_cmd.command("history", help="Show runtime history")
