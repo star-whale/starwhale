@@ -547,15 +547,6 @@ class StandaloneRuntimeTestCase(TestCase):
         for p in _manifest["artifacts"]["dependencies"]:
             assert os.path.exists(os.path.join(runtime_workdir, p))
 
-        uri = URI(name, expected_type=URIType.RUNTIME)
-        sr = StandaloneRuntime(uri)
-        ensure_dir(sr.store.bundle_dir / f"xx{sr.store.bundle_type}")
-        info = sr.info()
-        assert info["basic"]["project"] == "self"
-        assert "version" not in info
-        assert len(info["history"]) == 1
-        assert info["history"][0]["version"] == build_version
-
         uri = URI(f"{name}/version/{build_version[:6]}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         info = sr.info()
@@ -585,10 +576,6 @@ class StandaloneRuntimeTestCase(TestCase):
         tag_content = yaml.safe_load(tag_manifest_path.read_text())
         assert "t1" not in tag_content["tags"]
         assert "t2" in tag_content["tags"]
-
-        runtime_term_view(name).history(fullname=True)
-        runtime_term_view(name).info(fullname=True)
-        runtime_json_view(name).info(fullname=True)
 
         uri = f"{name}/version/{build_version}"
         for f in RuntimeInfoFilter:

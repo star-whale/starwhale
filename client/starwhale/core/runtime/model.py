@@ -728,10 +728,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             "bundle_path": str(self.store.bundle_path),
         }
 
-        if not self.uri.object.version:
-            ret["history"] = self.history()
-            return ret
-
         ret["basic"]["version"] = self.uri.object.version
         ret["basic"]["tags"] = StandaloneTag(self.uri).list()
 

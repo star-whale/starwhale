@@ -252,38 +252,28 @@ def _recover(runtime: str, force: bool) -> None:
 @runtime_cmd.command("info")
 @click.argument("runtime")
 @click.option(
-    "--fullname",
-    is_flag=True,
-    help="Show version fullname of the runtime without specified version",
-)
-@click.option(
     "-of",
     "--output-filter",
     type=click.Choice([f.value for f in RuntimeInfoFilter], case_sensitive=False),
     default=RuntimeInfoFilter.basic.value,
     show_default=True,
-    help="Filter the output content of the specified runtime version. Only standalone instance supports this option.",
+    help="Filter the output content. Only standalone instance supports this option.",
 )
 @click.pass_obj
 def _info(
     view: t.Type[RuntimeTermView],
     runtime: str,
-    fullname: bool,
     output_filter: str,
 ) -> None:
     """Show runtime details
 
-    RUNTIME: argument use the `Runtime URI` format. version is optional for the runtime uri.
+    RUNTIME: argument use the `Runtime URI` format. Version is optional for the Runtime URI.
+    If the version is not specified, the latest version will be used.
 
     Example:
 
         \b
-        - show all versions of runtime
-          swcli runtime info pytorch
-          swcli runtime info pytorch --fullname  # full version name
-
-        \b
-        - show the specified version of runtime
+          swcli runtime info pytorch # show basic info from the latest version of runtime
           swcli runtime info pytorch/version/v0  # show basic info
           swcli runtime info pytorch/version/v0 --output-filter basic  # show basic info
           swcli runtime info pytorch/version/v1 -of runtime_yaml  # show runtime.yaml content
@@ -291,7 +281,11 @@ def _info(
           swcli runtime info pytorch/version/v1 -of manifest # show _manifest.yaml content
           swcli runtime info pytorch/version/v1 -of all # show all info of the runtime
     """
-    view(runtime).info(fullname, RuntimeInfoFilter(output_filter))
+    uri = URI(runtime, expected_type=URIType.RUNTIME)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info(RuntimeInfoFilter(output_filter))
 
 
 @runtime_cmd.command("history", help="Show runtime history")

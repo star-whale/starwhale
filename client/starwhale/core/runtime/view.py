@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 from pathlib import Path
@@ -31,11 +33,14 @@ from .model import (
 
 
 class RuntimeTermView(BaseTermView):
-    def __init__(self, runtime_uri: str) -> None:
+    def __init__(self, runtime_uri: str | URI) -> None:
         super().__init__()
 
-        self.raw_uri = runtime_uri
-        self.uri = URI(runtime_uri, expected_type=URIType.RUNTIME)
+        if isinstance(runtime_uri, URI):
+            self.uri = runtime_uri
+        else:
+            self.uri = URI(runtime_uri, expected_type=URIType.RUNTIME)
+
         self.runtime = Runtime.get_runtime(self.uri)
 
     @BaseTermView._simple_action_print
@@ -56,7 +61,6 @@ class RuntimeTermView(BaseTermView):
 
     def info(
         self,
-        fullname: bool = False,
         output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
     ) -> None:
         info = self.runtime.info()
@@ -66,40 +70,34 @@ class RuntimeTermView(BaseTermView):
             )
             return
 
-        if self.uri.object.version:
-            basic_content = Pretty(info["basic"], expand_all=True)
-            runtime_content = Syntax(
-                info.get("runtime_yaml", ""), "yaml", theme="ansi_dark"
-            )
-            manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
-            _locks = []
-            for fname, content in info.get("lock", {}).items():
-                _locks.append(f"#lock file: {fname}")
-                _locks.append(content)
-            lock_content = "\n".join(_locks)
+        basic_content = Pretty(info["basic"], expand_all=True)
+        runtime_content = Syntax(
+            info.get("runtime_yaml", ""), "yaml", theme="ansi_dark"
+        )
+        manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
+        _locks = []
+        for fname, content in info.get("lock", {}).items():
+            _locks.append(f"#lock file: {fname}")
+            _locks.append(content)
+        lock_content = "\n".join(_locks)
 
-            if output_filter == RuntimeInfoFilter.basic:
-                console.print(basic_content)
-            elif output_filter == RuntimeInfoFilter.runtime_yaml:
-                console.print(runtime_content)
-            elif output_filter == RuntimeInfoFilter.lock:
-                console.print(lock_content)
-            elif output_filter == RuntimeInfoFilter.manifest:
-                console.print(manifest_content)
-            else:
-                console.rule("[green bold] Runtime Basic Info")
-                console.print(basic_content)
-                console.rule("[green bold] runtime.yaml")
-                console.print(runtime_content)
-                console.rule("[green bold] _manifest.yaml")
-                console.print(manifest_content)
-                console.rule("[green bold] Runtime Lock Files")
-                console.print(lock_content)
+        if output_filter == RuntimeInfoFilter.basic:
+            console.print(basic_content)
+        elif output_filter == RuntimeInfoFilter.runtime_yaml:
+            console.print(runtime_content)
+        elif output_filter == RuntimeInfoFilter.lock:
+            console.print(lock_content)
+        elif output_filter == RuntimeInfoFilter.manifest:
+            console.print(manifest_content)
         else:
-            console.print(Pretty(info["basic"], expand_all=True))
-            BaseTermView._print_history(
-                title="History List", history=info["history"], fullname=fullname
-            )
+            console.rule("[green bold] Runtime Basic Info")
+            console.print(basic_content)
+            console.rule("[green bold] runtime.yaml")
+            console.print(runtime_content)
+            console.rule("[green bold] _manifest.yaml")
+            console.print(manifest_content)
+            console.rule("[green bold] Runtime Lock Files")
+            console.print(lock_content)
 
     @classmethod
     @BaseTermView._only_standalone
@@ -399,22 +397,18 @@ class RuntimeTermViewJson(RuntimeTermView):
 
     def info(
         self,
-        fullname: bool = False,
         output_filter: RuntimeInfoFilter = RuntimeInfoFilter.basic,
     ) -> None:
         info = self.runtime.info()
 
-        if self.uri.object.version:
-            if output_filter == RuntimeInfoFilter.basic:
-                info = {"basic": info["basic"]}
-            elif output_filter == RuntimeInfoFilter.lock:
-                info = {"lock": info.get("lock", {})}
-            elif output_filter == RuntimeInfoFilter.manifest:
-                info = {"manifest": info.get("manifest", {})}
-            elif output_filter == RuntimeInfoFilter.runtime_yaml:
-                info = {"runtime_yaml": info.get("runtime_yaml", "")}
-        else:
-            info["history"] = BaseTermView.get_history_data(info["history"], fullname)
+        if output_filter == RuntimeInfoFilter.basic:
+            info = {"basic": info.get("basic", {})}
+        elif output_filter == RuntimeInfoFilter.lock:
+            info = {"lock": info.get("lock", {})}
+        elif output_filter == RuntimeInfoFilter.manifest:
+            info = {"manifest": info.get("manifest", {})}
+        elif output_filter == RuntimeInfoFilter.runtime_yaml:
+            info = {"runtime_yaml": info.get("runtime_yaml", "")}
 
         self.pretty_json(info)
 
