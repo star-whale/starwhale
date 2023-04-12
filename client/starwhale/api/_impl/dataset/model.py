@@ -1020,7 +1020,7 @@ class Dataset:
             ```python
             from starwhale import Dataset
             myds = Dataset.from_dict("translation", {"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}},"content.child_content")
-            print(myds[0].features.zh-cn)
+            print(myds[0].features["zh-cn"])
             ```
         """
 
@@ -1036,7 +1036,6 @@ class Dataset:
                     raise ValueError(
                         f"The field_selector {field_selector} isn't in data: {data}"
                     )
-                    break
         if not isinstance(data_items, list):
             raise ValueError(
                 f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
