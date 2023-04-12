@@ -618,7 +618,7 @@ public class RuntimeService {
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
+            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null, List.of());
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);

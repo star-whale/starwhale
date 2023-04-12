@@ -42,6 +42,7 @@ public class ResourcePool {
     String name;
     Map<String, String> nodeSelector;
     List<Resource> resources;
+    List<Toleration> tolerations;
 
     public static ResourcePool defaults() {
         return ResourcePool
