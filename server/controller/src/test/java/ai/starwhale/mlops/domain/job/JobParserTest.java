@@ -50,10 +50,18 @@ public class JobParserTest {
                 + "    request: 1\n"
                 + "    limit: 1\n"
                 + "  name: cmp\n"
+                + "  task_num: 1\n"
+                + "evaluation:\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  job_name: evaluation\n"
+                + "  needs: []\n"
+                + "  resources: []\n"
+                + "  name: ft\n"
                 + "  task_num: 1";
         JobSpecParser jobSpecParser = new JobSpecParser();
         List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);
-        Assertions.assertEquals(stepMetaDatas.size(), 2);
+        Assertions.assertEquals(stepMetaDatas.size(), 3);
         Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
         Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);
     }
