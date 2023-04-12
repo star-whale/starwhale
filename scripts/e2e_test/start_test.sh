@@ -224,7 +224,9 @@ api_test() {
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
   popd
-  source upgrade_test.sh
+  if ! in_github_action; then
+    source upgrade_test.sh
+  fi
 }
 
 restore_env() {
