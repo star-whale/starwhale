@@ -6,7 +6,7 @@ import json
 import shutil
 import typing as t
 import tarfile
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from pathlib import Path
 from collections import defaultdict
 
@@ -218,6 +218,30 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
 
+    def _gen_model_serving(self, ppl: str, workdir: Path) -> None:
+        rc_dir = str(
+            self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
+            / SW_EVALUATION_EXAMPLE_DIR
+        )
+        # render spec
+        svc = self._get_service(ppl, workdir, hijack=Hijack(True, rc_dir))
+        file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
+        ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
+
+        if len(svc.example_resources) == 0:
+            return
+
+        # check duplicate file names, do not support using examples with same name in different dir
+        names = set([os.path.basename(i) for i in svc.example_resources])
+        if len(names) != len(svc.example_resources):
+            raise NoSupportError("duplicate file names in examples")
+
+        # copy example resources for online evaluation in server instance
+        dst = self.store.hidden_sw_dir / SW_EVALUATION_EXAMPLE_DIR
+        ensure_dir(dst)
+        for f in svc.example_resources:
+            shutil.copy2(f, dst)
+
     def _render_eval_layout(self, workdir: Path) -> None:
         # render eval layout
         eval_layout = workdir / SW_AUTO_DIRNAME / EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME
@@ -225,6 +249,54 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             content = load_yaml(eval_layout)
             dst = self.store.hidden_sw_dir / EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME
             ensure_file(dst, json.dumps(content), parents=True)
+
+    @staticmethod
+    def _get_service(
+        module: str, pkg: Path, hijack: t.Optional[Hijack] = None
+    ) -> Service:
+        module, _, attr = module.partition(":")
+        m = load_module(module, pkg)
+        apis = dict()
+        ins: t.Any = None
+        svc: t.Optional[Service] = None
+
+        # TODO: refine this ugly ad hoc
+        Context.set_runtime_context(
+            Context(pkg, version="-1", project="tmp-project-for-build")
+        )
+
+        # TODO: check duplication
+        for k, v in m.__dict__.items():
+            if isinstance(v, Service):
+                apis.update(v.apis)
+                # use Service in module
+                svc = v
+        if attr:
+            cls = getattr(m, attr)
+            ins = cls()
+            if isinstance(ins, PipelineHandler):
+                apis.update(ins.svc.apis)
+
+        from starwhale.api._impl.service import internal_api_list
+
+        apis.update(internal_api_list())
+
+        # check if we need to instance the model when using custom handler
+        if ins is None:
+            for i in apis.values():
+                fn = i.func.__qualname__
+                # TODO: support deep path classes (also modules)
+                if "." in fn:
+                    ins = getattr(m, fn.split(".", 1)[0])()
+                    break
+
+        if svc is None:
+            svc = Service()
+        for api in apis.values():
+            svc.add_api_instance(api)
+        svc.api_instance = ins
+        svc.hijack = hijack
+        return svc
 
     @classmethod
     def eval_user_handler(
@@ -261,11 +333,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            JobHandlerParser(
+            generate_jobs_yaml(
+                run_handler=_model_config.run.handler,
                 workdir=workdir,
-                handler=_model_config.run.handler,
                 yaml_path=yaml_path,
-            ).run()
+            )
 
         logger.debug(f"parse job from yaml:{yaml_path}")
 
@@ -345,11 +417,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            JobHandlerParser(
+            generate_jobs_yaml(
+                run_handler=_model_config.run.handler,
                 workdir=workdir,
-                handler=_model_config.run.handler,
-                yaml_path=yaml_path,  # todo use tmp?
-            ).run()
+                yaml_path=yaml_path,
+            )
 
         logger.debug(f"parse fine-tune job from yaml:{yaml_path}")
         version = gen_uniq_version()
@@ -555,26 +627,22 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(workdir=workdir, yaml_path=yaml_path),
             ),
             (
-                JobHandlerParser(
+                generate_jobs_yaml,
+                5,
+                "generate jobs yaml",
+                dict(
+                    run_handler=_model_config.run.handler,
                     workdir=workdir,
-                    handler=_model_config.run.handler,
                     yaml_path=self.store.src_dir
                     / SW_AUTO_DIRNAME
                     / DEFAULT_JOBS_FILE_NAME,
-                ).run,
-                5,
-                "generate jobs",
-                dict(raise_err=True),
+                ),
             ),
             (
-                ServeHandlerParser(
-                    workdir=workdir,
-                    handler=_model_config.run.handler,
-                    target_dir=self.store.src_dir,
-                ).run,
+                self._gen_model_serving,
                 10,
                 "generate model serving",
-                dict(raise_err=True),
+                dict(ppl=_model_config.run.handler, workdir=workdir),
             ),
             (
                 self._render_eval_layout,
@@ -691,120 +759,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         port: int,
     ) -> None:
         _model_config = cls.load_model_config(workdir / model_yaml, workdir)
-        svc = ServeHandlerParser.get_service(_model_config.run.handler, workdir)
+        svc = cls._get_service(_model_config.run.handler, workdir)
         svc.serve(host, port, _model_config.name)
-
-
-class HandlerParser:
-    sw_dir: str = SW_AUTO_DIRNAME
-
-    def __init__(self, workdir: Path, handler: t.Any) -> None:
-        self.workdir = workdir
-        self.handler = handler
-
-    @abstractmethod
-    def run(self, raise_err: bool = True) -> t.Any:
-        ...
-
-
-class JobHandlerParser(HandlerParser):
-    def __init__(self, yaml_path: Path, workdir: Path, handler: t.Any) -> None:
-        super().__init__(workdir, handler)
-        self.yaml_path = yaml_path
-
-    def run(self, raise_err: bool = True) -> t.Any:
-        try:
-            generate_jobs_yaml(
-                run_handler=self.handler,
-                workdir=self.workdir,
-                yaml_path=self.yaml_path,
-            )
-        except Exception as e:
-            logger.error("error in job handler parse processing", e)
-            if raise_err:
-                raise e
-
-
-class ServeHandlerParser(HandlerParser):
-    def __init__(self, target_dir: Path, workdir: Path, handler: t.Any) -> None:
-        super().__init__(workdir, handler)
-        self.target_dir = target_dir
-
-    @staticmethod
-    def get_service(
-        module: str, pkg: Path, hijack: t.Optional[Hijack] = None
-    ) -> Service:
-        module, _, attr = module.partition(":")
-        m = load_module(module, pkg)
-        apis = dict()
-        ins: t.Any = None
-        svc: t.Optional[Service] = None
-
-        # TODO: refine this ugly ad hoc
-        Context.set_runtime_context(
-            Context(pkg, version="-1", project="tmp-project-for-build")
-        )
-
-        # TODO: check duplication
-        for k, v in m.__dict__.items():
-            if isinstance(v, Service):
-                apis.update(v.apis)
-                # use Service in module
-                svc = v
-        if attr:
-            cls = getattr(m, attr)
-            ins = cls()
-            if isinstance(ins, PipelineHandler):
-                apis.update(ins.svc.apis)
-
-        from starwhale.api._impl.service import internal_api_list
-
-        apis.update(internal_api_list())
-
-        # check if we need to instance the model when using custom handler
-        if ins is None:
-            for i in apis.values():
-                fn = i.func.__qualname__
-                # TODO: support deep path classes (also modules)
-                if "." in fn:
-                    ins = getattr(m, fn.split(".", 1)[0])()
-                    break
-
-        if svc is None:
-            svc = Service()
-        for api in apis.values():
-            svc.add_api_instance(api)
-        svc.api_instance = ins
-        svc.hijack = hijack
-        return svc
-
-    def run(self, raise_err: bool = True) -> t.Any:
-        try:
-            rc_dir = f"{self.sw_dir}/{SW_EVALUATION_EXAMPLE_DIR}"
-            # render spec
-            svc = ServeHandlerParser.get_service(
-                self.handler, self.workdir, hijack=Hijack(True, rc_dir)
-            )
-            file = self.target_dir / self.sw_dir / EVALUATION_SVC_META_FILE_NAME
-            ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
-
-            if len(svc.example_resources) == 0:
-                return
-
-            # check duplicate file names, do not support using examples with same name in different dir
-            names = set([os.path.basename(i) for i in svc.example_resources])
-            if len(names) != len(svc.example_resources):
-                raise NoSupportError("duplicate file names in examples")
-
-            # copy example resources for online evaluation in server instance
-            dst = self.target_dir / self.sw_dir / SW_EVALUATION_EXAMPLE_DIR
-            ensure_dir(dst)
-            for f in svc.example_resources:
-                shutil.copy2(f, dst)
-        except Exception as e:
-            logger.error("error in serve handler parse processing", e)
-            if raise_err:
-                raise e
 
 
 class CloudModel(CloudBundleModelMixin, Model):

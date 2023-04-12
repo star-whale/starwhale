@@ -64,7 +64,7 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.base.blob.store.LocalFileStore.copy_dir")
     @patch("starwhale.api._impl.job._preload_to_register_jobs")
     @patch("starwhale.core.model.model.file_stat")
-    @patch("starwhale.core.model.model.ServeHandlerParser.get_service")
+    @patch("starwhale.core.model.model.StandaloneModel._get_service")
     @patch("starwhale.core.model.model.Walker.files")
     @patch("starwhale.core.model.model.blake2b_file")
     def test_build_workflow(
@@ -440,7 +440,7 @@ class CloudModelTest(TestCase):
 
 
 @patch("starwhale.core.model.model.generate_jobs_yaml")
-@patch("starwhale.core.model.model.ServeHandlerParser.get_service")
+@patch("starwhale.core.model.model.StandaloneModel._get_service")
 @patch("starwhale.utils.config.load_swcli_config")
 def test_build_with_custom_config_file(
     m_sw_config: MagicMock,
