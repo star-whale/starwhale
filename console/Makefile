@@ -1,5 +1,8 @@
 .PHONY: *
 
+ut:
+	yarn test:coverage
+
 install-dev-tools:
 	npm install -g yarn pnpm@latest
 

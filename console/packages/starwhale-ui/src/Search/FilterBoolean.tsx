@@ -1,4 +1,4 @@
-import Filter from './filter'
+import Filter from './Filter'
 import { FilterT, FilterTypeOperators, KIND } from './types'
 
 function FilterBoolean(): FilterT {

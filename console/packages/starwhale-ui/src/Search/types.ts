@@ -161,6 +161,13 @@ export const Operators: Record<string, OperatorT> = {
     // },
 }
 
+export type SearchFieldSchemaT = {
+    name: string
+    type: string
+    path: string
+    label: string
+}
+
 export type FilterSharedPropsT = {
     isDisabled?: boolean
     isEditing?: boolean

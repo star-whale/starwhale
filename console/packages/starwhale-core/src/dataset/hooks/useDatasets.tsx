@@ -10,12 +10,20 @@ export function useDatasets<T extends RecordListVO['records'] = RecordT[]>(
 ): DatasetsT {
     const recordsTmp = React.useMemo(() => {
         return (
-            records?.map((record) => {
-                return {
-                    ...getSummary(record, options),
-                    columnTypes,
-                }
-            }) ?? []
+            records
+                ?.map((record) => {
+                    const tmp: Record<string, any> = {}
+                    Object.entries(record).forEach(([key, v]) => {
+                        tmp[key] = v.value
+                    })
+                    return tmp
+                })
+                .map((record) => {
+                    return {
+                        ...getSummary(record, options),
+                        columnTypes,
+                    }
+                }) ?? []
         )
     }, [records, options, columnTypes])
 

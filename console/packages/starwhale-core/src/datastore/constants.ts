@@ -15,6 +15,7 @@ export enum DataTypes {
     MAP = 'MAP',
     OBJECT = 'OBJECT',
 }
+
 export enum OPERATOR {
     EQUAL = 'EQUAL',
     GREATER = 'GREATER',
