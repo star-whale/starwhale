@@ -60,11 +60,11 @@ set_pip_cache() {
 set_py_and_sw() {
     pre_config
 
-    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".config.environment.python") || exit 1
+    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.python") || exit 1
     _RUNTIME="python${_MANIFEST_RUNTIME}"
 
     ORIGIN_SW_VER=$(swcli --version)
-    DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} | jq -r ".config.environment.lock.starwhale_version") || exit 1
+    DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.lock.starwhale_version") || exit 1
     DETECTED_SW_VER=${DETECTED_SW_VER:-$ORIGIN_SW_VER}
 
     echo "**** DETECT RUNTIME: python version: ${_RUNTIME}, starwhale version: ${DETECTED_SW_VER}"
