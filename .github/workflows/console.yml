@@ -86,7 +86,7 @@ jobs:
         with:
           name: console
           fail_ci_if_error: true
-          flags: unittests,jest,ui
+          flags: unittests,console
           verbose: true
           directory: ./console/coverage
 
