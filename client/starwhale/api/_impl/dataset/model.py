@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import typing as t
 import platform
 import tempfile
@@ -1000,9 +1001,7 @@ class Dataset:
         return ds
 
     @classmethod
-    def from_dict(
-        cls, name: str = "", data: dict = {}, field_selector: str = ""
-    ) -> Dataset:
+    def from_json(cls, name: str, json_text: str, field_selector: str = "") -> Dataset:
         """Create a new dataset from a dict.
         Arguments:
             name: (str, required) The dataset name you would like to use.
@@ -1014,17 +1013,16 @@ class Dataset:
             Examples:
             ```python
             from starwhale import Dataset
-            myds = Dataset.from_dict("translation", [{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}])
+            myds = Dataset.from_json("translation", '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]')
             print(myds[0].features.en)
             ```
             ```python
             from starwhale import Dataset
-            myds = Dataset.from_dict("translation", {"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}},"content.child_content")
+            myds = Dataset.from_json("translation", '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',"content.child_content")
             print(myds[0].features["zh-cn"])
             ```
         """
-
-        data_items = data
+        data_items = json.loads(json_text)
         if field_selector:
             # Split field selector by dots
             fields = field_selector.split(".")
@@ -1034,7 +1032,7 @@ class Dataset:
                     data_items = data_items[field]
                 else:
                     raise ValueError(
-                        f"The field_selector {field_selector} isn't in data: {data}"
+                        f"The field_selector {field_selector} isn't in json_text: {json_text}"
                     )
         if not isinstance(data_items, list):
             raise ValueError(
