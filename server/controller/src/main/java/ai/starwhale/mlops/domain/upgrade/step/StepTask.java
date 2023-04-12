@@ -60,7 +60,7 @@ public class StepTask implements Runnable {
         if (future != null) {
             future.cancel(false);
         }
-        var iter = steps.listIterator();
+        var iter = steps.listIterator(steps.size());
         while (iter.hasPrevious()) {
             iter.previous().cancel(upgrade);
         }

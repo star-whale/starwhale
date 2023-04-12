@@ -94,24 +94,26 @@ public class UpgradeService {
         controllerLock.lock(ControllerLock.TYPE_WRITE_REQUEST, LOCK_OPERATOR);
 
         try {
-            // 1. Check whether upgrade is allowed
-            checkIsUpgradeAllowed(version.getNumber());
-
-            // 2. Set server status to upgrading
             String progressId = buildUuid();
-            upgradeAccess.setStatusToUpgrading(progressId);
-
             Upgrade upgrade = Upgrade.builder()
                     .progressId(progressId)
                     .current(new Version(currentVersionNumber, getCurrentImage()))
                     .to(version)
                     .status(Status.UPGRADING)
                     .build();
+
+            // 1. Check whether upgrade is allowed
+            checkIsUpgradeAllowed(upgrade);
+
+            // 2. Set server status to upgrading
+            upgradeAccess.setStatusToUpgrading(progressId);
+
             // 3. Do upgrade
             doUpgrade(upgrade);
 
             return upgrade;
         } catch (Exception e) {
+            upgradeAccess.setStatusToNormal();
             controllerLock.unlock(ControllerLock.TYPE_WRITE_REQUEST, LOCK_OPERATOR);
             throw e;
         }
@@ -125,7 +127,7 @@ public class UpgradeService {
         return upgradeAccess.readLog(progressId);
     }
 
-    public void cancelUpgrade() {
+    public synchronized void cancelUpgrade() {
         if (upgradeAtomicReference.get() == null) {
             throw new SwValidationException(ValidSubject.UPGRADE, "No upgrade progress is running");
         }
@@ -163,9 +165,15 @@ public class UpgradeService {
         }
     }
 
-    private void checkIsUpgradeAllowed(String newVersion) {
+    private void checkIsUpgradeAllowed(Upgrade upgrade) {
         // Check whether upgrade is allowed:
+        if (Objects.equals(upgrade.getTo().getImage(), upgrade.getCurrent().getImage())) {
+            throw new SwValidationException(ValidSubject.UPGRADE,
+                    "The new image is the same as the current image.");
+        }
+
         // 0. new version is later than current version
+        String newVersion = upgrade.getTo().getNumber();
         if (!Objects.equals("ignored", newVersion)
                 && StrUtil.compareVersion(newVersion, currentVersionNumber) <= 0) {
             throw new SwValidationException(ValidSubject.UPGRADE,
@@ -206,12 +214,8 @@ public class UpgradeService {
     private void doUpgrade(Upgrade upgrade) {
         log.info("Upgrading");
         upgradeAtomicReference.set(upgrade);
-        try {
-            upgradeStepManager.runSteps(upgrade);
-        } catch (Exception e) {
-            log.error("", e);
-            upgradeAccess.setStatusToNormal();
-        }
+        upgradeStepManager.runSteps(upgrade);
+
     }
 
     private void doCancel(Upgrade upgrade) {
