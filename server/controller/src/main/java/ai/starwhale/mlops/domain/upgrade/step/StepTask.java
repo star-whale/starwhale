@@ -56,6 +56,16 @@ public class StepTask implements Runnable {
 
     }
 
+    public synchronized void cancel() {
+        if (future != null) {
+            future.cancel(false);
+        }
+        var iter = steps.listIterator(steps.size());
+        while (iter.hasPrevious()) {
+            iter.previous().cancel(upgrade);
+        }
+    }
+
     private UpgradeStep runCurrent() {
         if (current < steps.size()) {
             UpgradeStep step = steps.get(current);

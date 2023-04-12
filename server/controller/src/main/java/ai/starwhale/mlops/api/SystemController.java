@@ -56,6 +56,12 @@ public class SystemController implements SystemApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> cancelUpgrading() {
+        systemService.cancelUpgrading();
+        return ResponseEntity.ok(Code.success.asResponse("Upgrading has been cancelled."));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion() {
         SystemVersionVo version = SystemVersionVo.builder()
                 .version(systemService.controllerVersion())

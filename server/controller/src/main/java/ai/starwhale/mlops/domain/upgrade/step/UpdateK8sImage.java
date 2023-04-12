@@ -47,11 +47,15 @@ public class UpdateK8sImage extends UpgradeStepBase {
     @Override
     protected void doStep(Upgrade upgrade) {
         log.info("Update image" + upgrade.getTo());
+        setControllerImage(upgrade.getTo().getImage());
+    }
+
+    private void setControllerImage(String image) {
         String patchJson = JSONUtil.toJsonStr(List.of(
                 Map.of(
                         "op", "replace",
                         "path", "/spec/template/spec/containers/0/image",
-                        "value", Objects.requireNonNull(upgrade.getTo().getImage())
+                        "value", Objects.requireNonNull(image)
                 )
         ));
         try {
@@ -84,4 +88,9 @@ public class UpdateK8sImage extends UpgradeStepBase {
     }
 
 
+    @Override
+    public void cancel(Upgrade upgrade) {
+        log.info("Restore image: " + upgrade.getCurrent());
+        setControllerImage(upgrade.getCurrent().getImage());
+    }
 }

@@ -27,4 +27,6 @@ public interface UpgradeStep {
     boolean isComplete();
 
     void complete();
+
+    void cancel(Upgrade upgrade);
 }

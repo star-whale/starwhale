@@ -32,18 +32,25 @@ public class UpgradeStepManager {
 
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
 
+    private StepTask stepTask = null;
+
 
     public UpgradeStepManager(List<UpgradeStep> steps, ThreadPoolTaskScheduler threadPoolTaskScheduler) {
         this.threadPoolTaskScheduler = threadPoolTaskScheduler;
         this.steps = steps;
     }
 
-    public void runSteps(Upgrade upgrade) {
+    public synchronized void runSteps(Upgrade upgrade) {
         log.info("Run upgrade steps.");
-        StepTask stepTask = new StepTask(upgrade, steps);
+        stepTask = new StepTask(upgrade, steps);
         ScheduledFuture<?> schedule = threadPoolTaskScheduler.schedule(stepTask, new PeriodicTrigger(3000));
         stepTask.setFuture(schedule);
     }
 
+    public synchronized void cancel() {
+        if (stepTask != null) {
+            stepTask.cancel();
+        }
+    }
 
 }
