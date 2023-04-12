@@ -13,23 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ALTER TABLE `model_version`
+    CHANGE eval_jobs jobs text NOT NULL;
 
-package ai.starwhale.mlops.domain.trash;
 
-import lombok.Builder;
-import lombok.Data;
-
-@Builder
-@Data
-public class Trash {
-
-    private Type type;
-
-    private Long objectId;
-
-    private Long projectId;
-
-    public enum Type {
-        MODEL, DATASET, RUNTIME, EVALUATION, TRAIN, FINE_TUNE
-    }
-}

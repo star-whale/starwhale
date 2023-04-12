@@ -1,7 +1,7 @@
-default:
+evaluation:
   - cls_name: ''
     concurrency: 1
-    job_name: default
+    job_name: evaluation
     needs: [ ]
     resources:
     - type: cpu
@@ -11,7 +11,7 @@ default:
     task_num: 2
   - cls_name: ''
     concurrency: 1
-    job_name: default
+    job_name: evaluation
     needs:
     - ppl
     resources:

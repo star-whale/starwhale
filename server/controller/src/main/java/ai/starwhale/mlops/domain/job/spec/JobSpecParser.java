@@ -21,8 +21,10 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -39,7 +41,7 @@ public class JobSpecParser {
             });
         } catch (JsonProcessingException e) {
             log.info("yaml in map format, {}", yamlContent);
-            return parseStepFromYaml(yamlContent, DEFAULT_JOB_NAME);
+            return parseAllStepFromYaml(yamlContent);
         }
     }
 
@@ -47,6 +49,16 @@ public class JobSpecParser {
         Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
         });
         List<StepSpec> specList = map.get(jobName);
+        if (CollectionUtils.isEmpty(specList)) {
+            log.error("step specification is empty for {}", yamlContent);
+            throw new SwValidationException(ValidSubject.MODEL);
+        }
+        return specList;
+    }
+
+    public List<StepSpec> parseAllStepFromYaml(String yamlContent) throws JsonProcessingException {
+        Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {});
+        List<StepSpec> specList = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(specList)) {
             log.error("step specification is empty for {}", yamlContent);
             throw new SwValidationException(ValidSubject.MODEL);

@@ -90,7 +90,11 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         List<StepSpec> stepSpecs;
         try {
             if (!StringUtils.hasText(job.getStepSpec())) {
-                stepSpecs = job.getModel().getStepSpecs();
+                stepSpecs = job.getModel().getStepSpecs().stream()
+                    // TODO support custom jobs use name
+                    .filter(stepSpec -> stepSpec.getJobName().equalsIgnoreCase(job.getType().name())
+                        || stepSpec.getJobName().equalsIgnoreCase(job.getComment()))
+                    .collect(Collectors.toList());
             } else {
                 stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
             }

@@ -30,10 +30,12 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_JOBS_FILE_NAME,
+    DEFAULT_FINETUNE_JOB_NAME,
     SW_EVALUATION_EXAMPLE_DIR,
+    DEFAULT_EVALUATION_JOB_NAME,
     DEFAULT_STARWHALE_API_VERSION,
     EVALUATION_SVC_META_FILE_NAME,
-    DEFAULT_EVALUATION_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
@@ -69,7 +71,6 @@ from starwhale.core.job.scheduler import Scheduler
 
 
 class ModelRunConfig(ASDictMixin):
-
     # TODO: use attr to tune class
     def __init__(
         self,
@@ -97,7 +98,6 @@ class ModelRunConfig(ASDictMixin):
 
 
 class ModelConfig(ASDictMixin):
-
     # TODO: use attr to tune class
     def __init__(
         self,
@@ -306,7 +306,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         workdir: Path,
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
-        job_name: str = "default",
+        job_name: str = DEFAULT_EVALUATION_JOB_NAME,
         step_name: str = "",
         task_index: t.Optional[int] = None,
         task_num: int = 0,
@@ -329,11 +329,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
         ensure_dir(_run_dir)
 
-        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
 
         if not yaml_path.exists():
             # do not auto generate eval_job.yaml in the user workdir
-            yaml_path = _run_dir / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
             generate_jobs_yaml(
                 run_handler=_model_config.run.handler,
                 workdir=workdir,
@@ -398,6 +397,73 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 f":{100 if _status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
 
+    @classmethod
+    def fine_tune(
+        cls,
+        project: str,
+        workdir: Path,
+        dataset_uris: t.List[str],
+        model_yaml_name: str = DefaultYAMLName.MODEL,
+        job_name: str = DEFAULT_FINETUNE_JOB_NAME,
+        step_name: str = "fine_tune",
+        task_index: int = 0,
+        task_num: int = 1,
+    ) -> None:
+        _model_config = cls.load_model_config(workdir / model_yaml_name, workdir)
+
+        _project_uri = URI(project, expected_type=URIType.PROJECT)
+
+        yaml_path = workdir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
+
+        if not yaml_path.exists():
+            # do not auto generate eval_job.yaml in the user workdir
+            generate_jobs_yaml(
+                run_handler=_model_config.run.handler,
+                workdir=workdir,
+                yaml_path=yaml_path,
+            )
+
+        logger.debug(f"parse fine-tune job from yaml:{yaml_path}")
+        version = gen_uniq_version()
+        console.print(
+            f":hourglass_not_done: start to run fine-tune[{job_name}:{version}]..."
+        )
+        _scheduler = Scheduler(
+            project=_project_uri.project,
+            version=version,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            steps=Step.get_steps_from_yaml(job_name, yaml_path),
+        )
+        _status = RunStatus.START
+        try:
+            _results = _scheduler.run(
+                step_name=step_name, task_index=task_index, task_num=task_num
+            )
+            _status = RunStatus.SUCCESS
+
+            exceptions: t.List[Exception] = []
+            for _r in _results:
+                for _tr in _r.task_results:
+                    if _tr.exception:
+                        exceptions.append(_tr.exception)
+            if exceptions:
+                raise Exception(*exceptions)
+
+            logger.debug(
+                f"-->[Finished] fine-tune[{job_name}:{version}] execute finished, results info:{_results}"
+            )
+        except Exception as e:
+            _status = RunStatus.FAILED
+            logger.error(
+                f"-->[Failed] fine-tune[{job_name}:{version}] execute failed, error info:{e}"
+            )
+            raise
+        finally:
+            console.print(
+                f":{100 if _status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {_status}!"
+            )
+
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         """
         - added: a node that exists in compare but not in base
@@ -452,7 +518,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest = self._get_bundle_info()
         _store = self.store
         _om = {}
-        yaml_path = _store.hidden_sw_dir / DEFAULT_EVALUATION_JOBS_FILE_NAME
+        yaml_path = _store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME
         if _store.snapshot_workdir.exists():
             if yaml_path.exists():
                 _om = load_yaml(yaml_path)
@@ -469,7 +535,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.List[t.Dict[str, t.Any]]:
-
         _r = []
         for _bf in self.store.iter_bundle_history():
             _manifest_path = _bf.path / DEFAULT_MANIFEST_NAME
@@ -570,7 +635,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     workdir=workdir,
                     yaml_path=self.store.src_dir
                     / SW_AUTO_DIRNAME
-                    / DEFAULT_EVALUATION_JOBS_FILE_NAME,
+                    / DEFAULT_JOBS_FILE_NAME,
                 ),
             ),
             (

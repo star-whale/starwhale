@@ -177,7 +177,7 @@ public class K8sTaskSchedulerTest {
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
                 Map<String, String> nodeSelectors) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
-            Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
+            Assertions.assertIterableEquals(worker.getCmds(), List.of("evaluation"));
             Assertions.assertEquals("imageRT", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());

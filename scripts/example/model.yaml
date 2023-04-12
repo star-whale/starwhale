@@ -1,5 +1,5 @@
 version: 1.0
-name: simple-test
+name: simple-test1
 
 run:
   handler: src.evaluator:SimplePipeline

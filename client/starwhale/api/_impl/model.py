@@ -11,6 +11,7 @@ import yaml
 from starwhale.utils import disable_progress_bar
 from starwhale.consts import DefaultYAMLName
 from starwhale.utils.fs import ensure_file
+from starwhale.consts.env import SWEnv
 
 _path_T = t.Union[str, Path]
 
@@ -21,6 +22,7 @@ def build(
     name: t.Optional[str] = None,
     project_uri: str = "",
     desc: str = "",
+    remote_project_uri: t.Optional[str] = None,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -33,6 +35,7 @@ def build(
         desc: (str, optional) The description of the Starwhale Model Package.
         project_uri: (str, optional) The project uri of the Starwhale Model Package. If the argument is not specified,
             the project_uri is the config value of `swcli project select` command.
+        remote_project_uri: (str, optional) The destination project uri(cloud://remote-instance/project/starwhale) of the Starwhale Model Package
 
     Examples:
     ```python
@@ -81,6 +84,21 @@ def build(
                 project=project_uri,
                 yaml_path=yaml_path,
             )
+
+            from starwhale import URI, URIType
+
+            if remote_project_uri:
+                remote_project_uri = URI(
+                    remote_project_uri, expected_type=URIType.PROJECT
+                ).full_uri
+            elif os.getenv(SWEnv.instance_uri) and os.getenv(SWEnv.project):
+                remote_project_uri = f"{os.getenv(SWEnv.instance_uri)}/project/{os.getenv(SWEnv.project)}"
+
+            if remote_project_uri:
+                ModelTermView.copy(
+                    src_uri=f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+                    dest_uri=remote_project_uri,
+                )
     finally:
         os.unlink(yaml_path)
 

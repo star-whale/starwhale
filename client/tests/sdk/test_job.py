@@ -9,6 +9,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.api._impl.job import (
     _jobs_global,
     pass_context,
+    AFTER_LOAD_HOOKS,
     _validate_jobs_dag,
     generate_jobs_yaml,
     _do_resource_transform,
@@ -233,11 +234,12 @@ def evaluate_handler(*args, **kwargs): ...
             f"{self.module_name}:predict_handler", self.workdir, yaml_path
         )
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
         assert jobs_info == {
-            "default": [
+            "evaluation": [
                 {
                     "cls_name": "",
                     "concurrency": 1,
@@ -250,7 +252,7 @@ def evaluate_handler(*args, **kwargs): ...
                         "ppl_batch_size": 1,
                     },
                     "func_name": "predict_handler",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "predict",
                     "needs": [],
@@ -263,7 +265,7 @@ def evaluate_handler(*args, **kwargs): ...
                     "extra_args": [],
                     "extra_kwargs": {"ppl_auto_log": True},
                     "func_name": "evaluate_handler",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "evaluate",
                     "needs": ["predict"],
@@ -273,7 +275,7 @@ def evaluate_handler(*args, **kwargs): ...
             ]
         }
 
-        steps = Step.get_steps_from_yaml("default", yaml_path)
+        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
         assert len(steps) == 2
         assert steps[0].name == "predict"
         assert steps[1].name == "evaluate"
@@ -305,18 +307,19 @@ class MockHandler(PipelineHandler):
         assert self.module_name not in sys.modules
         generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
         assert jobs_info == {
-            "default": [
+            "evaluation": [
                 {
                     "cls_name": "MockHandler",
                     "concurrency": 1,
                     "extra_args": [],
                     "extra_kwargs": {},
                     "func_name": "ppl",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "ppl",
                     "needs": [],
@@ -329,7 +332,7 @@ class MockHandler(PipelineHandler):
                     "extra_args": [],
                     "extra_kwargs": {},
                     "func_name": "cmp",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "cmp",
                     "needs": ["ppl"],
@@ -339,7 +342,7 @@ class MockHandler(PipelineHandler):
             ]
         }
 
-        steps = Step.get_steps_from_yaml("default", yaml_path)
+        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -373,11 +376,12 @@ class MockHandler:
         assert self.module_name not in sys.modules
         generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
         assert self.module_name in sys.modules
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
         assert jobs_info == {
-            "default": [
+            "evaluation": [
                 {
                     "cls_name": "MockHandler",
                     "concurrency": 1,
@@ -390,7 +394,7 @@ class MockHandler:
                         "ppl_batch_size": 1,
                     },
                     "func_name": "predict_handler",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "predict",
                     "needs": [],
@@ -403,7 +407,7 @@ class MockHandler:
                     "extra_args": [],
                     "extra_kwargs": {"ppl_auto_log": True},
                     "func_name": "evaluate_handler",
-                    "job_name": "default",
+                    "job_name": "evaluation",
                     "module_name": self.module_name,
                     "name": "evaluate",
                     "needs": ["predict"],
@@ -413,7 +417,7 @@ class MockHandler:
             ]
         }
 
-        steps = Step.get_steps_from_yaml("default", yaml_path)
+        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
         results = Scheduler(
             project="test",
             version="test",
@@ -452,6 +456,7 @@ class MockReport:
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
         generate_jobs_yaml(self.module_name, self.workdir, yaml_path)
+        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)

@@ -152,15 +152,15 @@ public class JobService {
     }
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
-        Long jobId = jobDao.getJobId(jobUrl);
+        var job = jobDao.findJob(jobUrl);
         Trash trash = Trash.builder()
                 .projectId(projectService.getProjectId(projectUrl))
-                .objectId(jobId)
-                .type(Type.EVALUATION)
+                .objectId(job.getId())
+                .type(Type.valueOf(job.getType().name()))
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
 
-        return jobDao.removeJob(jobId);
+        return jobDao.removeJob(job.getId());
     }
 
     public Boolean recoverJob(String projectUrl, String jobUrl) {
@@ -171,7 +171,7 @@ public class JobService {
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
-            String stepSpecOverWrites) {
+            String stepSpecOverWrites, JobType type) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
@@ -185,7 +185,7 @@ public class JobService {
 
         var pool = systemSettingService.queryResourcePool(resourcePool);
         if (pool != null) {
-            List<StepSpec> steps = null;
+            List<StepSpec> steps;
             try {
                 steps = jobSpecParser.parseStepFromYaml(stepSpecOverWrites);
             } catch (JsonProcessingException e) {
@@ -214,7 +214,7 @@ public class JobService {
                 .comment(comment)
                 .resultOutputPath(storagePathCoordinator.allocateResultMetricsPath(jobUuid))
                 .jobStatus(JobStatus.CREATED)
-                .type(JobType.EVALUATION)
+                .type(type)
                 .resourcePool(resourcePool)
                 .stepSpec(stepSpecOverWrites)
                 .createdTime(new Date())

@@ -77,7 +77,7 @@ public class JobBoConverterTest {
                 .type(JobType.EVALUATION)
                 .modelVersionId(1L)
                 .modelVersion(ModelVersionEntity.builder().id(1L).modelId(1L).versionName("modelvname")
-                        .storagePath("model_path").evalJobs("stepspec").build())
+                        .storagePath("model_path").jobs("stepspec").build())
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)

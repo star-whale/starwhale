@@ -1,0 +1,16 @@
+api_version: 1.1
+configs:
+  conda:
+    channels:
+      - conda-forge
+  docker:
+    image: ghcr.io/star-whale/runtime/pytorch
+dependencies:
+  - requirements.txt
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.4
+  python: 3.8 # must be same with model train env
+mode: venv
+name: image-net-for-finetune
