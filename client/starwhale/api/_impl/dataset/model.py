@@ -1005,7 +1005,7 @@ class Dataset:
         """Create a new dataset from a dict.
         Arguments:
             name: (str, required) The dataset name you would like to use.
-            data: (dict, required) The dict from which you would like to create this dataset
+            json_text: (str, required) The json text from which you would like to create this dataset
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the dict is an array contains all the items.
             Returns:
