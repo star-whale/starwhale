@@ -40,7 +40,7 @@
     "**/stories/**",
     "**/iconfont.js",
     "**/__generated__/**",
-    "**/__tests__/**",
+    // "**/__tests__/**",
     "**/build/**",
     "packages/starwhale-ui/src/base/**/*",
   ]

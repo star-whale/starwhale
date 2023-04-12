@@ -1,5 +1,5 @@
 import { SwType } from '../model'
-import { describe, expect, test } from '@jest/globals'
+import { describe, expect } from '@jest/globals'
 
 describe('SwType class', () => {
     it('should set name property correctly', () => {
@@ -35,6 +35,28 @@ describe('SwType class', () => {
             expect(SwType.decode_schema(schema)).toEqual(expectedSchema)
         })
 
+        it("should return a new schema with value 'LIST' for input schema.type 'LIST'", () => {
+            const schema = {
+                type: 'LIST',
+                value: [
+                    {
+                        type: 'INT64',
+                        value: '28',
+                    },
+                    {
+                        type: 'INT64',
+                        value: '28',
+                    },
+                    {
+                        type: 'INT64',
+                        value: '1',
+                    },
+                ],
+            }
+            const expectedSchema = { type: 'LIST', value: ['28', '28', '1'] }
+            expect(SwType.decode_schema(schema)).toEqual(expectedSchema)
+        })
+
         it("should return a new schema with value 'TUPLE' for input schema.type 'TUPLE'", () => {
             const schema = { type: 'TUPLE', value: 'test value' }
             const expectedSchema = { type: 'TUPLE', value: 'TUPLE' }
@@ -42,8 +64,73 @@ describe('SwType class', () => {
         })
 
         it("should return a new schema with value 'OBJECT' for input schema.type 'OBJECT'", () => {
-            const schema = { type: 'OBJECT', value: 'test value' }
-            const expectedSchema = { type: 'OBJECT', value: 'OBJECT' }
+            const schema = {
+                type: 'OBJECT',
+                value: {
+                    mask_uri: {
+                        type: 'STRING',
+                        value: '',
+                    },
+                    shape: {
+                        value: [
+                            {
+                                type: 'INT64',
+                                value: '28',
+                            },
+                            {
+                                type: 'INT64',
+                                value: '28',
+                            },
+                            {
+                                type: 'INT64',
+                                value: '1',
+                            },
+                        ],
+                        type: 'LIST',
+                    },
+                    link: {
+                        value: {
+                            owner: {
+                                value: null,
+                            },
+                            extra_info: {
+                                value: {
+                                    '{type=STRING, value=bin_size}': {
+                                        type: 'INT64',
+                                        value: '1024',
+                                    },
+                                    '{type=STRING, value=bin_offset}': {
+                                        type: 'INT64',
+                                        value: '9216',
+                                    },
+                                },
+                                type: 'MAP',
+                            },
+                        },
+                        type: 'OBJECT',
+                        pythonType: 'starwhale.core.dataset.type.Link',
+                    },
+                    as_mask: {
+                        type: 'BOOL',
+                        value: 'false',
+                    },
+                },
+            }
+            const expectedSchema = {
+                type: 'OBJECT',
+                value: {
+                    as_mask: 'false',
+                    link: {
+                        extra_info: {
+                            bin_offset: '9216',
+                            bin_size: '1024',
+                        },
+                        owner: null,
+                    },
+                    mask_uri: '',
+                    shape: ['28', '28', '1'],
+                },
+            }
             expect(SwType.decode_schema(schema)).toEqual(expectedSchema)
         })
 
