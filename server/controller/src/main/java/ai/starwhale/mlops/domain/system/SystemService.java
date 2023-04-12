@@ -45,6 +45,10 @@ public class SystemService {
         return upgradeService.upgrade(new Version(version, image)).getProgressId();
     }
 
+    public void cancelUpgrading() {
+        upgradeService.cancelUpgrade();
+    }
+
     public List<UpgradeLog> getUpgradeLog() {
         return upgradeService.getUpgradeLog();
     }

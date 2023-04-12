@@ -42,7 +42,6 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class BackupDatabase extends UpgradeStepBase {
 
-    private final DataSourceProperties dataSourceProperties;
     private final StorageAccessService accessService;
 
     private final StoragePathCoordinator storagePathCoordinator;
@@ -55,7 +54,6 @@ public class BackupDatabase extends UpgradeStepBase {
             StorageAccessService accessService,
             StoragePathCoordinator storagePathCoordinator) {
         super(upgradeAccess);
-        this.dataSourceProperties = dataSourceProperties;
         this.accessService = accessService;
         this.storagePathCoordinator = storagePathCoordinator;
         this.mysqlBackupService = MysqlBackupService.builder()
@@ -109,9 +107,8 @@ public class BackupDatabase extends UpgradeStepBase {
         return "";
     }
 
-    public static void main(String[] args) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        String now = LocalDateTime.now().format(formatter);
-        System.out.println(now);
+    @Override
+    public void cancel(Upgrade upgrade) {
+
     }
 }

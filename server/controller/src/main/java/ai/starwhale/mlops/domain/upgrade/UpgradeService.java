@@ -132,6 +132,8 @@ public class UpgradeService {
         checkIsCancelUpgradeAllowed();
 
         doCancel(upgradeAtomicReference.get());
+
+        upgradeAtomicReference.set(null);
         // 1. unlock requests
         controllerLock.unlock(ControllerLock.TYPE_WRITE_REQUEST, LOCK_OPERATOR);
 
@@ -198,7 +200,7 @@ public class UpgradeService {
 
     private String buildUuid() {
         // Build upgrade progress uuid. It Contains current server version.
-        return String.format("%s_%s", currentVersionNumber, IdUtil.simpleUUID());
+        return IdUtil.simpleUUID();
     }
 
     private void doUpgrade(Upgrade upgrade) {
@@ -216,7 +218,11 @@ public class UpgradeService {
         log.info("The upgrade progress is cancelled.");
 
         upgrade.setStatus(Status.CANCELLING);
+
+        upgradeStepManager.cancel();
+
         upgradeAccess.setStatusToNormal();
+
         upgrade.setStatus(Status.CANCELED);
     }
 }

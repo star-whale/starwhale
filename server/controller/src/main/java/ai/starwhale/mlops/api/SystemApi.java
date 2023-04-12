@@ -57,6 +57,14 @@ public interface SystemApi {
             @Valid @RequestBody UpgradeRequest upgradeRequest
     );
 
+    @Operation(summary = "Cancel upgrading")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/system/version/cancel",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> cancelUpgrading();
+
     @Operation(summary = "Get current version of the system")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
