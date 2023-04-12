@@ -78,7 +78,7 @@ const isValidValue = (str: string) => str !== '-'
 function val(r: any) {
     if (r === undefined) return ''
     if (typeof r === 'object' && 'value' in r) {
-        return JSON.stringify(r.value, null)
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
     }
 
     return r
