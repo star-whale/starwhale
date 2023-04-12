@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 
-from starwhale.core.model.model import ServeHandlerParser
+from starwhale.core.model.model import StandaloneModel
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -13,7 +13,7 @@ class ServiceTestCase(BaseTestCase):
         super().setUp()
 
     def test_custom_class(self):
-        svc = ServeHandlerParser.get_service("custom_class", self.root)
+        svc = StandaloneModel._get_service("custom_class", self.root)
         assert list(svc.apis.keys()) == ["foo", "bar"]
 
         for i in svc.apis.values():
@@ -26,15 +26,15 @@ class ServiceTestCase(BaseTestCase):
         assert len(spec["dependencies"]) == 2
 
     def test_default_class(self):
-        svc = ServeHandlerParser.get_service("default_class:MyDefaultClass", self.root)
+        svc = StandaloneModel._get_service("default_class:MyDefaultClass", self.root)
         assert list(svc.apis.keys()) == ["ppl", "handler_foo", "cmp"]
 
     def test_class_without_api(self):
-        svc = ServeHandlerParser.get_service("no_api:NoApi", self.root)
+        svc = StandaloneModel._get_service("no_api:NoApi", self.root)
         assert svc.get_spec() == {}
 
     def test_custom_service(self):
-        svc = ServeHandlerParser.get_service("custom_service", self.root)
+        svc = StandaloneModel._get_service("custom_service", self.root)
         assert list(svc.apis.keys()) == ["baz"]
 
         with self.assertRaises(Exception) as e:
