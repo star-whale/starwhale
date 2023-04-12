@@ -22,12 +22,19 @@ export class SwType implements ISwType {
     serialize(value: any) {
         return value
     }
-    static decode_schema(schema: any): any {
+    static decode_schema(schema: any, onlyValue = true): any {
         if (schema.type === 'MAP') {
-            const a = new SwMapType(new SwMapKeyType(), schema.value)
+            const t = new SwMapType(SwMapKeyType, schema.value)
             return {
                 ...schema,
-                value: a,
+                value: onlyValue ? t.value : t,
+            }
+        }
+        if (schema.type === 'LIST') {
+            const t = new SwListType(schema.value)
+            return {
+                ...schema,
+                value: onlyValue ? t.value : t,
             }
         }
         if (schema.type === 'BYTES') {
@@ -43,9 +50,10 @@ export class SwType implements ISwType {
             }
         }
         if (schema.type === 'OBJECT') {
+            const t = new SwObjectType(Object, schema.value)
             return {
                 ...schema,
-                value: 'OBJECT',
+                value: onlyValue ? t.value : t,
             }
         }
         return schema
@@ -65,42 +73,27 @@ export class SwCompositeType extends SwType {
     }
 }
 
-/**
- *  "sys/dataset_id_version_map": {
-        "value": {
-            "{type=INT64, value=1}": {
-                "type": "STRING",
-                "value": "bicm3c23utaujr5nvbgzwp3vmwlnhfgm3yzc2c3r"
-            }
-        },
-        "type": "MAP"
-    },
- */
-// export class SwListType extends SwCompositeType {
-//     constructor(public element_type: SwType) {}
+export class SwListType extends SwCompositeType {
+    constructor(public value_schema: any) {
+        super('list')
+        this.value_schema = value_schema
+    }
 
-//     get name(): string {
-//         return `list<${this.element_type.toString()}>`
-//     }
+    decode(value: any): any {
+        if (!Array.isArray(value)) {
+            throw new Error(`Value ${value} is not an array`)
+        }
+        return value.map((v) => SwType.decode_schema(v).value)
+    }
 
-//     encode(value: any): any {
-//         if (!Array.isArray(value)) {
-//             throw new Error(`Value ${value} is not an array`)
-//         }
-//         return value.map((v) => this.element_type.encode(v))
-//     }
+    get value(): any {
+        return this.decode(this.value_schema)
+    }
 
-//     decode(value: any): any {
-//         if (!Array.isArray(value)) {
-//             throw new Error(`Value ${value} is not an array`)
-//         }
-//         return value.map((v) => this.element_type.decode(v))
-//     }
-
-//     toString(): string {
-//         return `list<${this.element_type.toString()}>`
-//     }
-// }
+    toString(): string {
+        return JSON.stringify(this.decode(this.value_schema))
+    }
+}
 
 /**
      * 
@@ -133,9 +126,12 @@ export class SwMapKeyType extends SwType {
 }
 
 export class SwMapType extends SwCompositeType {
-    constructor(public key_type: SwMapKeyType, public value_schema: any) {
+    private key_type: SwMapKeyType
+    private value_schema: any
+
+    constructor(key_type: typeof SwMapKeyType, value_schema: any) {
         super('map')
-        this.key_type = key_type
+        this.key_type = new key_type()
         this.value_schema = value_schema
     }
 
@@ -159,6 +155,44 @@ export class SwMapType extends SwCompositeType {
     }
 }
 
+export class SwObjectType extends SwCompositeType {
+    private raw_type: any
+    private attrs: { [key: string]: SwType }
+
+    constructor(raw_type: any, attrs: { [key: string]: SwType }) {
+        super('object')
+        this.raw_type = raw_type
+        this.attrs = attrs
+    }
+
+    decode(value: any): any {
+        if (value === null || typeof value !== 'object') {
+            return null
+        }
+
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            const ret = new this.raw_type()
+            for (const k in value) {
+                const v = value[k]
+                const type = this.attrs[k]
+                if (type === undefined) {
+                    throw new Error(`invalid attribute ${k}`)
+                }
+                ret[k] = SwType.decode_schema(v).value
+            }
+            return ret
+        }
+        throw new Error(`value should be a object: ${value}`)
+    }
+
+    get value(): any {
+        return this.decode(this.attrs)
+    }
+
+    toString(): string {
+        return JSON.stringify(this.decode(this.attrs))
+    }
+}
 // interface SwTupleElementType {
 //     name: string
 //     type: SwType
@@ -218,68 +252,5 @@ export class SwMapType extends SwCompositeType {
 
 //     toString(): string {
 //         return `tuple<${this.element_type.map((et) => `${et.name}:${et.type.toString()}`).join(', ')}>`
-//     }
-// }
-
-// export class SwObjectType extends SwCompositeType {
-//     private raw_type: any
-//     private attrs: { [key: string]: SwType }
-
-//     constructor(raw_type: any, attrs: { [key: string]: SwType }) {
-//         super('object')
-//         this.raw_type = raw_type
-//         this.attrs = attrs
-//     }
-
-//     encode(value: any): any {
-//         if (value === null || typeof value !== 'object') {
-//             return null
-//         }
-//         if (value instanceof this.raw_type) {
-//             const ret: { [key: string]: any } = {}
-//             for (const k in value) {
-//                 const v = value[k]
-//                 const type = this.attrs[k]
-//                 if (type === undefined) {
-//                     throw new Error(`invalid attribute ${k}`)
-//                 }
-//                 ret[k] = type.encode(v)
-//             }
-//             return ret
-//         }
-//         throw new Error(`value should be of type ${this.raw_type.name}, but is ${value}`)
-//     }
-
-//     decode(value: any): any {
-//         if (value === null || typeof value !== 'object') {
-//             return null
-//         }
-//         if (typeof value === 'object' && !Array.isArray(value)) {
-//             const ret = new this.raw_type()
-//             for (const k in value) {
-//                 const v = value[k]
-//                 const type = this.attrs[k]
-//                 if (type === undefined) {
-//                     throw new Error(`invalid attribute ${k}`)
-//                 }
-//                 ret[k] = type.decode(v)
-//             }
-//             return ret
-//         }
-//         throw new Error(`value should be a dict: ${value}`)
-//     }
-
-//     toString(): string {
-//         const attrsStr = Object.entries(this.attrs)
-//             .map(([k, v]) => `${k}:${v}`)
-//             .join(',')
-//         return `${this.raw_type.name}{${attrsStr}}`
-//     }
-
-//     equals(other: any): boolean {
-//         if (other instanceof SwObjectType) {
-//             return this.attrs === other.attrs
-//         }
-//         return false
 //     }
 // }

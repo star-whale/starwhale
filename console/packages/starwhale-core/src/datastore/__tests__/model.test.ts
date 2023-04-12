@@ -1,4 +1,5 @@
 import { SwType } from '../model'
+import { describe, expect, test } from '@jest/globals'
 
 describe('SwType class', () => {
     it('should set name property correctly', () => {

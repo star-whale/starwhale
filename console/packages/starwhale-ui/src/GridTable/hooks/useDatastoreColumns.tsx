@@ -24,7 +24,9 @@ const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
 }
 
 function RenderMixedCell({ value, ...props }: RenderCellT<any>['props']) {
-    return <StringCell {...props} lineClamp={1} value={value && value.toString()} />
+    return (
+        <StringCell {...props} lineClamp={1} value={typeof value === 'object' ? JSON.stringify(value, null) : value} />
+    )
 }
 
 export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
