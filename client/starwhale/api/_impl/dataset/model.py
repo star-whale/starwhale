@@ -998,3 +998,52 @@ class Dataset:
         )
 
         return ds
+
+    @classmethod
+    def from_dict(
+        cls, name: str = "", data: dict = {}, field_selector: str = ""
+    ) -> Dataset:
+        """Create a new dataset from a dict.
+        Arguments:
+            name: (str, required) The dataset name you would like to use.
+            data: (dict, required) The dict from which you would like to create this dataset
+            field_selector: (str, optional) The filed from which you would like to extract dataset array items.
+                The default value is "" which indicates that the dict is an array contains all the items.
+            Returns:
+                A Dataset Object
+            Examples:
+            ```python
+            from starwhale import Dataset
+            myds = Dataset.from_dict("translation", [{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}])
+            print(myds[0].features.en)
+            ```
+            ```python
+            from starwhale import Dataset
+            myds = Dataset.from_dict("translation", {"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}},"content.child_content")
+            print(myds[0].features.zh-cn)
+            ```
+        """
+
+        data_items = data
+        if field_selector:
+            # Split field selector by dots
+            fields = field_selector.split(".")
+            # Iterate over selected fields
+            for field in fields:
+                if field in data_items:
+                    data_items = data_items[field]
+                else:
+                    raise ValueError(
+                        f"The field_selector {field_selector} isn't in data: {data}"
+                    )
+                    break
+        if not isinstance(data_items, list):
+            raise ValueError(
+                f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
+            )
+        ds = cls.dataset(name)
+        for item in data_items:
+            ds.append(item)
+        ds.commit()
+        ds.close()
+        return ds
