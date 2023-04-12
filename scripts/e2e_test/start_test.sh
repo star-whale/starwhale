@@ -224,6 +224,7 @@ api_test() {
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
   popd
+  source upgrade_test.sh
 }
 
 restore_env() {
@@ -268,7 +269,6 @@ publish_to_k8s() {
   bash pub.sh --config
   source pub.sh all -s --app $SWNAME --ns $SWNS
   popd
-  source upgrade_test.sh
 }
 
 main() {
