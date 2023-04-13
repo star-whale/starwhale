@@ -34,6 +34,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.settings.SettingsService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -72,6 +73,7 @@ public class K8sTaskSchedulerTest {
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", new Pypi("indexU", "extraU", "trustedH"));
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        SettingsService settingsService = mock(SettingsService.class);
         when(storageAccessService.list(eq("path_swmp"))).thenReturn(Stream.of("path_swmp"));
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
@@ -80,11 +82,9 @@ public class K8sTaskSchedulerTest {
                 taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
-                null,
-                null,
-                null, "http://instanceUri", 50,
+                "http://instanceUri", 50,
                 "OnFailure", 10,
-                storageAccessService);
+                storageAccessService, settingsService);
         return scheduler;
     }
 
@@ -109,14 +109,12 @@ public class K8sTaskSchedulerTest {
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
-                null,
-                null,
-                null, "",
+                "",
                 50,
                 "OnFailure",
                 10,
-                mock(StorageAccessService.class)
-        );
+                mock(StorageAccessService.class),
+                mock(SettingsService.class));
         var task = mockTask();
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);

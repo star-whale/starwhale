@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.settings.SettingsService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -103,6 +104,7 @@ public class ModelServingServiceTest {
                 new IdConverter(),
                 resourceEventHolder,
                 "inst",
+                mock(SettingsService.class),
                 3600,
                 1
         );

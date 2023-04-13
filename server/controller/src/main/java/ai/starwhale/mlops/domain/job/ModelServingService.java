@@ -35,6 +35,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.settings.SettingsService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -72,6 +73,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -91,6 +93,7 @@ public class ModelServingService {
     private final ModelServingTokenValidator modelServingTokenValidator;
     private final IdConverter idConverter;
     private final ResourceEventHolder resourceEventHolder;
+    private final SettingsService settingsService;
 
     private final long maxTtlSec;
     private final long minTtlSec;
@@ -115,7 +118,7 @@ public class ModelServingService {
             IdConverter idConverter,
             ResourceEventHolder resourceEventHolder,
             @Value("${sw.instance-uri}") String instanceUri,
-            @Value("${sw.online-eval.max-time-to-live-in-seconds}") long maxTtlSec,
+            SettingsService settingsService, @Value("${sw.online-eval.max-time-to-live-in-seconds}") long maxTtlSec,
             @Value("${sw.online-eval.min-time-to-live-in-seconds}") long minTtlSec
     ) {
         this.modelServingMapper = modelServingMapper;
@@ -133,6 +136,7 @@ public class ModelServingService {
         this.idConverter = idConverter;
         this.resourceEventHolder = resourceEventHolder;
         this.instanceUri = instanceUri;
+        this.settingsService = settingsService;
         this.maxTtlSec = maxTtlSec;
         this.minTtlSec = minTtlSec;
 
@@ -273,7 +277,13 @@ public class ModelServingService {
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());
 
-        var envs = Map.of(
+        var envs = new HashMap<String, String>();
+        // put user settings env
+        var userSettings = settingsService.queryUserSettings();
+        if (userSettings != null && !CollectionUtils.isEmpty(userSettings.getEnv())) {
+            envs.putAll(userSettings.getEnv());
+        }
+        envs.putAll(Map.of(
                 "SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()),
                 "SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()),
                 "SW_INSTANCE_URI", instanceUri,
@@ -285,7 +295,7 @@ public class ModelServingService {
                 "SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id),
                 // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
                 "SW_PRODUCTION", "1"
-        );
+        ));
 
         List<RuntimeResource> resources = null;
         // get the resources from user input
