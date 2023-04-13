@@ -38,7 +38,7 @@ public interface ModelVersionMapper {
             + " storage_path, created_time, modified_time, jobs, status, shared";
 
     String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, b.model_name, b.id as model_id,"
-            + " v.id, v.version_order, v.version_name, v.shared, v.created_time, v.modified_time";
+            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,

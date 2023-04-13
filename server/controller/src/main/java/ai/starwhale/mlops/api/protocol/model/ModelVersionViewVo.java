@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
+import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -34,6 +36,8 @@ public class ModelVersionViewVo {
     private String alias;
 
     private Integer shared;
+
+    private List<StepSpec> stepSpecs;
 
     private Long createdTime;
 }

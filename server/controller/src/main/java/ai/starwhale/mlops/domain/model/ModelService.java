@@ -42,6 +42,7 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -128,15 +129,18 @@ public class ModelService {
 
     private final TrashService trashService;
 
+    private final JobSpecParser jobSpecParser;
+
     @Setter
     private BundleManager bundleManager;
 
     public ModelService(ModelMapper modelMapper, ModelVersionMapper modelVersionMapper,
-            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, ModelVoConverter modelVoConverter,
-            ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
-            ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
-            UserService userService, ProjectService projectService, HotJobHolder jobHolder,
-            TrashService trashService) {
+                        IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
+                        ModelVoConverter modelVoConverter, ModelVersionVoConverter versionConvertor,
+                        StoragePathCoordinator storagePathCoordinator, ModelDao modelDao,
+                        StorageAccessService storageAccessService, StorageService storageService,
+                        UserService userService, ProjectService projectService, HotJobHolder jobHolder,
+                        TrashService trashService, JobSpecParser jobSpecParser) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -151,6 +155,7 @@ public class ModelService {
         this.projectService = projectService;
         this.jobHolder = jobHolder;
         this.trashService = trashService;
+        this.jobSpecParser = jobSpecParser;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -399,15 +404,21 @@ public class ModelService {
                             .build());
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
-            map.get(entity.getModelId())
-                    .getVersions()
-                    .add(ModelVersionViewVo.builder()
-                        .id(idConvertor.convert(entity.getId()))
-                        .versionName(entity.getVersionName())
-                        .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                        .createdTime(entity.getCreatedTime().getTime())
-                        .shared(toInt(entity.getShared()))
-                        .build());
+            try {
+                map.get(entity.getModelId())
+                        .getVersions()
+                        .add(ModelVersionViewVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(toInt(entity.getShared()))
+                            .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getJobs()))
+                            .build());
+            }  catch (JsonProcessingException e) {
+                log.error("parse step spec error for model version:{},error:{}", entity.getId(), e);
+                throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
+            }
         }
         return map.values();
     }

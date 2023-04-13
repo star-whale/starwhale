@@ -56,6 +56,7 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -115,6 +116,7 @@ public class ModelServiceTest {
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
     private TrashService trashService;
+    private JobSpecParser jobSpecParser;
 
     @SneakyThrows
     @BeforeEach
@@ -158,6 +160,7 @@ public class ModelServiceTest {
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
+        jobSpecParser = mock(JobSpecParser.class);
 
         service = new ModelService(
                 modelMapper,
@@ -173,7 +176,8 @@ public class ModelServiceTest {
                 userService,
                 projectService,
                 jobHolder,
-                trashService);
+                trashService,
+                jobSpecParser);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {

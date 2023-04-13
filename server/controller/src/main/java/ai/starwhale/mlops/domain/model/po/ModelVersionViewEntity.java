@@ -45,5 +45,7 @@ public class ModelVersionViewEntity extends BaseEntity implements HasId {
 
     private String versionName;
 
+    private String jobs;
+
     private Boolean shared;
 }
