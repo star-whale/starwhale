@@ -54,7 +54,7 @@ export interface IComposedSidebarProps {
 }
 
 export interface INavItem {
-    title: string
+    title: string | React.ReactNode
     icon?: React.ComponentType<IconBaseProps> | React.ReactNode
     path?: string
     children?: INavItem[]
