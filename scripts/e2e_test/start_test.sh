@@ -282,14 +282,11 @@ main() {
     publish_to_mini_k8s
   fi
   check_controller_service
-  if client_test; then
-    api_test
-    kubectl scale deployment controller -n $SWNS --replicas=0
-    kubectl scale deployment mysql -n $SWNS --replicas=0
-    kubectl scale deployment minio -n $SWNS --replicas=0
-  else
-    exit 1
-  fi
+  client_test
+  api_test
+  kubectl scale deployment controller -n $SWNS --replicas=0
+  kubectl scale deployment mysql -n $SWNS --replicas=0
+  kubectl scale deployment minio -n $SWNS --replicas=0
 
 }
 

@@ -57,20 +57,24 @@ Example:
 swcli model info mnist/version/hbtdenjxgm4ggnrtmftdgyjzm43tioi  # inspect model info, model name: mnist, version:hbtdenjxgm4ggnrtmftdgyjzm43tioi
 swcli model remove mnist/version/hbtdenj  # short version
 swcli model info mnist  # inspect mnist model info
-swcli job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # use version tag
+swcli model run mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest # use version tag
 ```
 
-## Evaluation URI {#evaluation}
+## Job URI {#job}
 
-- format: `[<Project URI>/eval/]<evaluation id>`.
+- format: `[<Project URI>/job/]<job id>`.
 - If the project URI is not specified, the [default project](#defaultProject) will be used.
 
 Example:
 
 ```bash
-swcli eval info mezdayjzge3w   # Inspect mezdayjzge3w version in default instance and default project
-swcli eval info local/project/self/eval/mezday # Inspect the local instance, self project, with short evaluation id:mezday
+swcli job info mezdayjzge3w   # Inspect mezdayjzge3w version in default instance and default project
+swcli job info local/project/self/job/mezday # Inspect the local instance, self project, with short job id:mezday
 ```
+
+## The default instance {#defaultInstance}
+
+When the instance part of a project URI is omitted, the default instance is used instead. The default instance is the one selected by the `swcli instance login` or `swcli instance use` command.
 
 ## The default project {#defaultProject}
 
