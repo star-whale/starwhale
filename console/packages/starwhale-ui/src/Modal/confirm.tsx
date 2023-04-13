@@ -4,6 +4,7 @@ import { Button, IButtonProps } from '../Button'
 import IconFont from '../IconFont'
 import { expandMargin, expandPadding } from '../utils'
 import { LabelMedium } from 'baseui/typography'
+import useTranslation from '@/hooks/useTranslation'
 
 export interface IConfirmCtxProviderProps {
     children?: React.ReactNode
@@ -25,6 +26,7 @@ const ConfirmCtx = React.createContext<IConfirmCtxProps>({
 })
 
 const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
+    const [t] = useTranslation()
     const [showModal, setShowModal] = useState(false)
     const [showProps, setShowProps] = useState<IShowProps>({})
     const resolver: React.MutableRefObject<(ok: boolean) => void> = useRef(() => {})
@@ -107,7 +109,7 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
                                 setShowModal(false)
                             }}
                         >
-                            No
+                            {t('remove.no')}
                         </Button>
                         <Button
                             size='default'
@@ -117,7 +119,7 @@ const ConfirmCtxProvider = ({ children }: IConfirmCtxProviderProps) => {
                                 setShowModal(false)
                             }}
                         >
-                            Yes
+                            {t('remove.yes')}
                         </Button>
                     </div>
                 </ModalFooter>

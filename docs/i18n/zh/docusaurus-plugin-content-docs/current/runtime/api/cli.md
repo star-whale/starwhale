@@ -28,17 +28,16 @@ runtime包含如下子命令：
 |quickstart|qs|✅|❌|
 |recover||✅|✅|
 |remove|rm|✅|✅|
-|restore||✅|❌|
 |tag||✅|❌|
 
 ## 激活Runtime
 
 ```bash
-swcli runtime activate [OPTIONS]
+swcli runtime activate [OPTIONS] URI
 ```
 
-`runtime activate` 命令支持bash/zsh/fish下直接激活Starwhale Runtime，起到类似virtualenv中 `source venv/bin/activate` 或 `conda activate xxx` 的作用。当关闭当前shell或切换到其他shell时，需要重新激活Runtime。`--uri` 和 `--path` 参数只能选择一个进行设置。
-**`runtime activate`命令目前只能在standalone instance下执行**。如果对某个Runtime URI进行激活，需要确保该Runtime已经被重建，一般通过执行 `swcli runtime restore` 命令实现。
+`runtime activate` 命令支持bash/zsh/fish下直接激活Starwhale Runtime，起到类似virtualenv中 `source venv/bin/activate` 或 `conda activate xxx` 的作用。当关闭当前shell或切换到其他shell时，需要重新激活Runtime。`URI` 参数为Runtime URI。
+**`runtime activate`命令目前只能在standalone instance下执行**。Activate命令激活环境时，会检测Runtime URI对应的环境是否在本地构建过，如果没有，则自动构建venv或conda环境，并下载Runtime对应的Python依赖包。
 
 对于已经激活的Runtime，如果想要退出该环境，需要在venv mode中执行 `deactivate` 命令或conda mode中执行`conda deactivate` 命令。
 
@@ -46,8 +45,7 @@ swcli runtime activate [OPTIONS]
 
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
-|`--uri`|`-u`|❌|String||Standalone Instance下Runtime URI|
-|`--path`|`-p`|❌|String||venv或conda目录路径|
+|`--force-restore`|`-f`|❌|Bool|False|对Runtime强制重新restore|
 
 ## 构建Runtime
 
@@ -301,16 +299,6 @@ swcli runtime recover [OPTIONS] RUNTIME
 |参数|参数别名|必要性|类型|默认值|说明|
 |------|--------|-------|-----------|-----|-----------|
 |`--force`|`-f`|❌|Boolean|False|强制恢复，处理类似恢复版本冲突的情况。|
-
-## 重建Runtime
-
-```bash
-swcli runtime restore [OPTIONS] TARGET
-```
-
-`runtime restore` 命令可以根据 `TARGET` 参数信息创建venv或conda的Python隔离环境，并下载和安装Runtime所描述的Python依赖。**该命令目前只能在standalone instance下执行**。restore操作用时取决于所在机器的网络情况，可以通过合理设置pip.conf或代理提升安装速度。
-
-`TARGET` 参数有两种形式，一种是表示某个 runtime uri的snapshot_workdir， 另一种是某个Standalone Instance下的Runtime URI。
 
 ## 标记Runtime
 

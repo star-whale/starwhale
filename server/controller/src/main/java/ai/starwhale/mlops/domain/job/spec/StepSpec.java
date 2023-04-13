@@ -41,8 +41,8 @@ public class StepSpec {
      */
     @JsonProperty("job_name")
     private String jobName;
-    @JsonProperty("step_name")
-    private String stepName;
+    @JsonProperty("name")
+    private String name;
     private Integer concurrency = 1;
     private List<String> needs;
 

@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
@@ -320,7 +321,7 @@ public interface RuntimeApi {
             produces = MediaType.APPLICATION_JSON_VALUE,
             method = RequestMethod.POST)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<?> buildRuntimeImage(
+    ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())

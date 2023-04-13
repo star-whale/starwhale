@@ -37,11 +37,10 @@ cd starwhale/example/runtime/pytorch
 swcli runtime build .
 ```
 
-- Restore Runtime：本地复原Runtime环境，并在当前shell中激活相应的Python环境
+- Activate Runtime：在当前shell中激活相应的Python环境
 
 ```shell
-swcli runtime restore pytorch/version/latest
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 ```
 
 ### 数据准备与模型训练
@@ -66,7 +65,7 @@ make train
 
 ```bash
 #如果已经激活该runtime环境，则忽略本行命令
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 # 根据dataset.yaml构建swds-bin格式in格式in格式in格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
@@ -108,15 +107,13 @@ def _iter_item(paths: t.List[Path]) -> t.Generator[t.Tuple[t.Any, t.Dict], None,
 ### 步骤2：Standalone Instance中评测模型
 
 ```bash
-#如果已经激活该runtime环境，则忽略本行命令
-swcli runtime activate --uri pytorch/version/latest
 # 根据model.yaml运行评测任务
-swcli model eval . --dataset  cifar10-test/version/latest
+swcli model eval . --dataset  cifar10-test/version/latest --runtime pytorch/version/latest
 # 展示评测结果
 swcli model info ${version}
 ```
 
-上面的`build`命令在`starwhale/example/cifar10`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
+上面的`build`命令在`starwhale/example/cifar10`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
 
 ### 步骤3：构建Starwhale Model
 

@@ -11,7 +11,7 @@ import Column from './column'
 import { COLUMNS, NUMERICAL_FORMATS, MAX_BIN_COUNT, HISTOGRAM_SIZE } from './constants'
 import FilterShell, { type ExcludeKind } from './filter-shell'
 import { ColumnT, FilterTypes, SharedColumnOptionsT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 // @ts-ignore
 import { bin, max as maxFunc, extent, scaleLinear, median, bisector } from 'd3'
 import { Slider } from 'baseui/slider'

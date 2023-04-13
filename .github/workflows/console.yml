@@ -77,6 +77,19 @@ jobs:
         working-directory: ./console
         run: make ci-lint
 
+      - name: Run Unittest
+        working-directory: ./console
+        run: make ut
+
+      - name: Publish coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          name: console
+          fail_ci_if_error: true
+          flags: unittests,console
+          verbose: true
+          directory: ./console/coverage
+
       # - name: E2E lint
       #   working-directory: ./console
       #   run: |

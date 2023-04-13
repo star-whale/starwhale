@@ -148,16 +148,21 @@ class DataLoader:
         session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
         cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
         num_workers: int = 2,
+        dataset_scan_revision: str = "",
     ):
         self.dataset_uri = dataset_uri
         self.logger = logger or _logger
         self.start = start
         self.end = end
+        self.dataset_scan_revision = dataset_scan_revision
 
         # TODO: refactor TabularDataset with dataset_uri
         # TODO: refactor dataset, tabular_dataset and standalone dataset module
         self.tabular_dataset = TabularDataset.from_uri(
-            dataset_uri, start=start, end=end
+            dataset_uri,
+            start=start,
+            end=end,
+            data_datastore_revision=self.dataset_scan_revision,
         )
         self.session_consumption = session_consumption
         self.last_processed_range: t.Optional[t.Tuple[t.Any, t.Any]] = None
@@ -341,6 +346,7 @@ def get_data_loader(
     logger: t.Optional[loguru.Logger] = None,
     cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
     num_workers: int = 2,
+    dataset_scan_revision: str = "",
 ) -> DataLoader:
 
     if session_consumption:
@@ -362,4 +368,5 @@ def get_data_loader(
         logger=logger or _logger,
         cache_size=cache_size,
         num_workers=num_workers,
+        dataset_scan_revision=dataset_scan_revision,
     )

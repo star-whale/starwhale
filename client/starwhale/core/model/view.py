@@ -184,6 +184,45 @@ class ModelTermView(BaseTermView):
             StandaloneModel.eval_user_handler(**kw)  # type: ignore
 
     @classmethod
+    @BaseTermView._only_standalone
+    def fine_tune(
+        cls,
+        project: str,
+        target: str,
+        dataset_uris: t.List[str],
+        yaml_name: str = DefaultYAMLName.MODEL,
+        runtime_uri: str = "",
+        model_uri: str = "",
+    ) -> None:
+        if target and model_uri:
+            console.print("workdir and model can not both set together")
+            sys.exit(1)
+        if not target and not model_uri:
+            console.print("workdir or model needs to be set")
+            sys.exit(1)
+
+        if target:
+            workdir = cls._get_workdir(target)
+        else:
+            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
+            workdir = _m.store.src_dir
+
+        kw = dict(
+            project=project,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            model_yaml_name=yaml_name,
+        )
+        if not in_production() and runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=StandaloneModel.fine_tune,
+                kwargs=kw,
+            ).run()
+        else:
+            StandaloneModel.fine_tune(**kw)  # type: ignore
+
+    @classmethod
     def _get_workdir(cls, target: str) -> Path:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)

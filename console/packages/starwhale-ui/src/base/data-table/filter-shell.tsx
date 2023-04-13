@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Checkbox, STYLE_TYPE } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { KIND, SIZE } from 'baseui/button'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 import Button from '../../Button'
 
 export type ExcludeKind = 'value' | 'range'

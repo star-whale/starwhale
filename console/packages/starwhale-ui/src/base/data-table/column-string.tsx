@@ -24,7 +24,7 @@ function StringFilter(props: any) {
     return <div>not implemented for string column</div>
 }
 
-function StringCell(props: any) {
+export function StringCell(props: any) {
     return (
         <div title={props.value} className='string-cell'>
             {props.textQuery ? <HighlightCellText text={props.value} query={props.textQuery} /> : props.value}

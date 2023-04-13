@@ -3,6 +3,7 @@ import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { createUseStyles } from 'react-jss'
+import clsx from 'clsx'
 
 const useMainStyles = createUseStyles({
     mainWrapper: {
@@ -39,6 +40,7 @@ export interface IBaseLayoutProps {
     sidebar?: React.ComponentType<IComposedSidebarProps>
     contentStyle?: React.CSSProperties
     style?: React.CSSProperties
+    className?: string
 }
 
 export default function BaseLayout({
@@ -48,13 +50,14 @@ export default function BaseLayout({
     sidebar: Sidebar,
     style,
     contentStyle,
+    className,
 }: IBaseLayoutProps) {
     const history = useHistory()
     const styles = useMainStyles()
 
     return (
         <main
-            className={styles.mainWrapper}
+            className={clsx(styles.mainWrapper, className)}
             style={{
                 ...style,
             }}

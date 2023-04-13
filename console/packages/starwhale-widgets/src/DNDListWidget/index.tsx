@@ -9,6 +9,7 @@ import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent } from '@starwhale/core/events/common'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import useTranslation from '@/hooks/useTranslation'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
@@ -118,6 +119,7 @@ function DNDListWidget(props: WidgetRendererProps) {
         eventBus.publish(new DragEndEvent())
         onLayoutOrderChange?.(state)
     }
+    const [t] = useTranslation()
 
     if (React.Children.count(children) === 0)
         return (
@@ -171,7 +173,7 @@ function DNDListWidget(props: WidgetRendererProps) {
             <div style={{ flex: 1 }} />
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <WithCurrentAuth id='evaluation.panel.save'>
-                    <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>Save</Button>
+                    <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>{t('panel.save')}</Button>
                 </WithCurrentAuth>
 
                 <Button
@@ -186,7 +188,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                         )
                     }
                 >
-                    Add Panel
+                    {t('panel.add')}
                 </Button>
             </div>
         </div>

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import copy
 import typing as t
+import tempfile
 from http import HTTPStatus
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
@@ -17,7 +18,7 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from starwhale.utils import console, now_str
+from starwhale.utils import console, now_str, load_yaml
 from starwhale.consts import (
     FileDesc,
     HTTPMethod,
@@ -34,7 +35,7 @@ from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.base.bundle_copy import BundleCopy, _UploadPhase
 from starwhale.core.dataset.store import DatasetStorage
 
-from .tabular import TabularDataset
+from .tabular import TabularDataset, DatastoreRevision
 
 # local storage scheme: no-scheme or file://
 _LOCAL_STORAGE_SCHEMES = ("", "file")
@@ -86,14 +87,12 @@ class DatasetCopy(BundleCopy):
         ) as progress:
             src = TabularDataset(
                 name=self.src_uri.object.name,
-                version=self.bundle_version,
                 project=self.src_uri.project,
                 instance_name=self.src_uri.instance,
             )
 
             dest = TabularDataset(
                 name=self.dest_uri.object.name or self.src_uri.object.name,
-                version=self.bundle_version,
                 project=self.dest_uri.project,
                 instance_name=self.dest_uri.instance,
             )
@@ -150,13 +149,16 @@ class DatasetCopy(BundleCopy):
         console.print(":kangaroo: update dataset info")
         dest._info = copy.deepcopy(src.info)
 
+        dataset_revision, info_revision = dest.flush()
         console.print(":tiger: make version for dest instance")
         if dest.instance_name == STANDALONE_INSTANCE:
-            self._make_standalone_version()
+            self._make_standalone_version(dataset_revision, info_revision)
         else:
-            self._make_cloud_version()
+            self._make_cloud_version(dataset_revision, info_revision)
 
-    def _make_standalone_version(self) -> None:
+    def _make_standalone_version(
+        self, dataset_revision: str, info_revision: str
+    ) -> None:
         r = self.do_http_request(
             path=f"/project/{self.src_uri.project}/dataset/{self.src_uri.object.name}",
             instance_uri=self.src_uri,
@@ -165,6 +167,9 @@ class DatasetCopy(BundleCopy):
 
         manifest = yaml.safe_load(r["data"]["versionMeta"])
         manifest[CREATED_AT_KEY] = now_str()
+        manifest.update(
+            DatastoreRevision(data=dataset_revision, info=info_revision).asdict()
+        )
 
         _dest_uri = URI.capsulate_uri(
             instance=STANDALONE_INSTANCE,
@@ -180,40 +185,50 @@ class DatasetCopy(BundleCopy):
 
         StandaloneTag(_dest_uri).add_fast_tag()
 
-    def _make_cloud_version(self) -> None:
+    def _make_cloud_version(self, dataset_revision: str, info_revision: str) -> None:
         dataset_name = self.dest_uri.object.name or self.src_uri.object.name
         params = {
             "swds": f"{dataset_name}:{self.bundle_name}",
             "project": self.dest_uri.project,
             "force": "1",  # use force=1 to make http retry happy, we check dataset existence in advance
         }
-        snapshot_dir = self._get_versioned_resource_path(self.src_uri)
-        manifest_path = snapshot_dir / DEFAULT_MANIFEST_NAME
         url_path = self._get_remote_bundle_api_url()
-        # TODO: use dataset create api
-        r = self.do_multipart_upload_file(
-            url_path=url_path,
-            file_path=manifest_path,
-            instance_uri=self.dest_uri,
-            params={
-                "phase": _UploadPhase.MANIFEST,
-                "desc": FileDesc.MANIFEST.name,
-                **params,
-            },
-            use_raise=True,
+        snapshot_dir = self._get_versioned_resource_path(self.src_uri)
+        manifest = load_yaml(snapshot_dir / DEFAULT_MANIFEST_NAME)
+        manifest[CREATED_AT_KEY] = now_str()
+        manifest.update(
+            DatastoreRevision(data=dataset_revision, info=info_revision).asdict()
         )
-        self.do_http_request(
-            path=url_path,
-            method=HTTPMethod.POST,
-            instance_uri=self.dest_uri,
-            data={
-                "phase": _UploadPhase.END,
-                "uploadId": r.json()["data"]["uploadId"],
-                **params,
-            },
-            use_raise=True,
-            disable_default_content_type=True,
-        )
+        _, tmp_path = tempfile.mkstemp()
+        try:
+            ensure_file(tmp_path, yaml.dump(manifest), parents=True)
+
+            # TODO: use dataset create api
+            r = self.do_multipart_upload_file(
+                url_path=url_path,
+                file_path=tmp_path,
+                instance_uri=self.dest_uri,
+                params={
+                    "phase": _UploadPhase.MANIFEST,
+                    "desc": FileDesc.MANIFEST.name,
+                    **params,
+                },
+                use_raise=True,
+            )
+            self.do_http_request(
+                path=url_path,
+                method=HTTPMethod.POST,
+                instance_uri=self.dest_uri,
+                data={
+                    "phase": _UploadPhase.END,
+                    "uploadId": r.json()["data"]["uploadId"],
+                    **params,
+                },
+                use_raise=True,
+                disable_default_content_type=True,
+            )
+        finally:
+            os.unlink(tmp_path)
 
     def _do_download_blobs(
         self,

@@ -1,8 +1,8 @@
-import { ColumnFilterModel, DataTypeT } from '@starwhale/core/datastore'
+import { DataTypeT } from '@starwhale/core/datastore'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useClickAway } from 'react-use'
 import AutosizeInput from '../base/select/autosize-input'
-import { FilterPropsT, ValueT } from './types'
+import { FilterPropsT, SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { dataStoreToFilter } from './utils'
 import { createUseStyles } from 'react-jss'
@@ -51,10 +51,10 @@ export default function FilterRenderer({
     isFocus = false,
     isEditing = false,
     style = {},
-    column = new ColumnFilterModel([]),
+    fields,
     ...rest
 }: FilterPropsT & {
-    column: ColumnFilterModel
+    fields: SearchFieldSchemaT[]
     style?: React.CSSProperties
     onClick?: () => void
     containerRef?: React.RefObject<HTMLDivElement>
@@ -68,10 +68,7 @@ export default function FilterRenderer({
     const styles = useStyles()
     const ref = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
-
-    const $columns = React.useMemo(() => {
-        return column.getSearchColumns()
-    }, [column])
+    const $columns = fields
 
     const $fieldOptions = React.useMemo(() => {
         return $columns

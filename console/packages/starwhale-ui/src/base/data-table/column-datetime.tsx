@@ -35,7 +35,7 @@ import Column from './column'
 import { COLUMNS, DATETIME_OPERATIONS } from './constants'
 import FilterShell from './filter-shell'
 import type { ColumnT, SharedColumnOptionsT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 
 type OptionsT = {
     formatString?: string

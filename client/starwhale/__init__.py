@@ -28,6 +28,7 @@ from starwhale.api.dataset import (
     COCOObjectAnnotation,
 )
 from starwhale.api.evaluation import PipelineHandler
+from starwhale.api.experiment import fine_tune
 from starwhale.core.job.context import Context
 
 dataset = Dataset.dataset
@@ -40,6 +41,7 @@ __all__ = [
     "Dataset",
     "dataset",
     "evaluation",
+    "fine_tune",
     "URI",
     "URIType",
     "step",

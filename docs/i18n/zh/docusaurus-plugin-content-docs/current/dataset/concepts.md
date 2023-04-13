@@ -88,7 +88,7 @@ title: 核心概念
 |project_uri|Project URI|`swcli project select`命令设定的project|String||
 |runtime_uri|Runtime URI，若设置，则表示数据集构建的时候会使用该Runtime提供的运行时环境；若不设置，则使用当前shell环境作为运行时|否|String||
 
-当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。Starwhale SDK会根据函数返回值判断首个元素为 `Starwhale.Link` 类型时，构建remote-link或user-raw格式的数据集，否则构建user-raw格式的数据集。不支持混合格式的数据集。
+当handler为一个函数时，需要该函数返回一个Generator（推荐做法）或一个可迭代的对象（比如一个列表）。
 
 ### 使用示例
 

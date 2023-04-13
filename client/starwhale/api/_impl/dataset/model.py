@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import typing as t
 import platform
 import tempfile
@@ -8,7 +9,7 @@ import threading
 from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
-from functools import wraps, partial
+from functools import wraps, partial, lru_cache
 from itertools import islice
 
 import yaml
@@ -43,6 +44,7 @@ from starwhale.core.dataset.store import DatasetStorage
 from starwhale.api._impl.data_store import TableEmptyException
 from starwhale.core.dataset.tabular import (
     TabularDataset,
+    DatastoreRevision,
     TabularDatasetInfo,
     DatastoreWrapperDataset,
     get_dataset_consumption,
@@ -63,6 +65,12 @@ _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
 
 _DEFAULT_LOADER_WORKERS = 2
 _DEFAULT_LOADER_CACHE_SIZE = 20
+
+
+class _DatasetCreateMode:
+    auto = "auto"
+    empty = "empty"
+    forbid = "forbid"
 
 
 class _Tags:
@@ -98,6 +106,7 @@ class Dataset:
         version: str,
         project_uri: URI,
         readonly: bool = False,
+        create: str = _DatasetCreateMode.auto,
     ) -> None:
         self.name = name
         self.project_uri = project_uri
@@ -112,13 +121,33 @@ class Dataset:
             obj_name=self.name,
         )
 
+        if create not in (
+            _DatasetCreateMode.auto,
+            _DatasetCreateMode.empty,
+            _DatasetCreateMode.forbid,
+        ):
+            raise ValueError(
+                f"the current create mode is not in the accept options: {create}"
+            )
+
         _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
+            if create == _DatasetCreateMode.empty:
+                raise RuntimeError(
+                    f"dataset already existed, failed to create by the {create} create mode: {self.name}"
+                )
+
             self._loading_version = self._auto_complete_version(
                 _origin_uri.object.version
             )
         else:
+            # TODO: call server or standalone api to create an empty dataset before committing.
+            if create == _DatasetCreateMode.forbid:
+                raise RuntimeError(
+                    "dataset doest not exist, we have already use {create} create mode to ensure dataset existence: {self.name}"
+                )
+
             if readonly:
                 raise ValueError(
                     f"no support to set a non-existed dataset to the readonly mode: {self.name}"
@@ -174,6 +203,9 @@ class Dataset:
         else:
             self._total_rows = 0
             self._total_blobs_size = 0
+
+        self._last_data_datastore_revision = ""
+        self._last_info_datastore_revision = ""
 
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
@@ -304,15 +336,43 @@ class Dataset:
                 else:
                     consumption = self._consumption
 
+                data_revision = self._last_data_datastore_revision
+                if data_revision == "":
+                    data_revision = self._get_datastore_revision(self.uri).data
+
                 _loader = get_data_loader(
                     self.uri,
                     session_consumption=consumption,
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
+                    dataset_scan_revision=data_revision,
                 )
                 self.__data_loaders[key] = _loader
 
         return _loader
+
+    @lru_cache(maxsize=32)
+    def _get_datastore_revision(self, uri: URI) -> DatastoreRevision:
+        if uri.object.typ != URIType.DATASET:
+            raise NoSupportError(
+                f"only support to fetch dataset datastore revision: {uri}"
+            )
+
+        if uri.object.version == "":
+            raise RuntimeError(f"cannot get version of uri: {uri}")
+
+        if uri.instance_type == InstanceType.CLOUD:
+            crm = CloudRequestMixed()
+            r = crm.do_http_request(
+                path=f"/project/{uri.project}/dataset/{uri.object.name}",
+                instance_uri=uri,
+                params={"versionUrl": uri.object.version},
+            ).json()
+            manifest = yaml.safe_load(r["data"]["versionMeta"])
+        else:
+            manifest = DatasetStorage(uri).manifest
+
+        return DatastoreRevision.from_manifest(manifest)
 
     def batch_iter(
         self, batch_size: int = 1, drop_not_full: bool = False
@@ -426,20 +486,30 @@ class Dataset:
 
     @property
     def info(self) -> TabularDatasetInfo:
-        if self.__info is not None:
+        with self._info_lock:
+            if self.__info is None:
+                info_revision = self._last_info_datastore_revision
+                if info_revision == "":
+                    info_revision = self._get_datastore_revision(self.uri).info
+
+                self._info_ds_wrapper = TabularDataset.from_uri(
+                    self.uri, info_datastore_revision=info_revision
+                )._info_ds_wrapper
+                self.__info = TabularDatasetInfo.load_from_datastore(
+                    self._info_ds_wrapper
+                )
+
             return self.__info
 
-        with self._info_lock:
-            # TODO: use uniform dataset table to store info
-            self._info_ds_wrapper = TabularDataset.from_uri(self.uri)._info_ds_wrapper
-            self.__info = TabularDatasetInfo.load_from_datastore(self._info_ds_wrapper)
-
-        return self.__info
-
     @_check_readonly
-    def flush(self, artifacts_flush: bool = False) -> None:
+    def flush(self, artifacts_flush: bool = False) -> str:
+        revision = ""
         if self._dataset_builder:
-            self._dataset_builder.flush(artifacts_flush)
+            revision = self._dataset_builder.flush(artifacts_flush)
+            self._last_data_datastore_revision = revision
+            self._clear_data_loader()
+
+        return revision
 
     @_check_readonly
     def rehash(self) -> None:
@@ -706,11 +776,14 @@ class Dataset:
             return self._commit(tags or [], message)
 
     def _commit(self, tags: t.List[str], message: str) -> str:
-        def _save_info() -> None:
+        def _save_info() -> str:
+            revision = ""
             if self.__info is not None and self._info_ds_wrapper is not None:
-                self.__info.save_to_datastore(self._info_ds_wrapper)
+                revision = self.__info.save_to_datastore(self._info_ds_wrapper)
+                self._last_info_datastore_revision = revision
+            return revision
 
-        def _dump_manifest() -> Path:
+        def _dump_manifest(dataset_revision: str, info_revision: str) -> Path:
             if self._dataset_builder is None:
                 raise RuntimeError("failed to commit, because dataset builder is None")
 
@@ -724,7 +797,6 @@ class Dataset:
                     "starwhale": STARWHALE_VERSION,
                 },
                 "version": self._pending_commit_version,
-                "related_datastore_timestamp": "",  # TODO: get timestamp from datastore
                 CREATED_AT_KEY: now_str(),
                 "dataset_summary": DatasetSummary(
                     rows=self._dataset_builder.calculate_rows_cnt(),  # maybe slow
@@ -735,6 +807,10 @@ class Dataset:
                 ).asdict(),
                 "message": message,
             }
+
+            _manifest.update(
+                DatastoreRevision(data=dataset_revision, info=info_revision).asdict()
+            )
 
             self._updated_rows_by_commit = 0
             self._deleted_rows_by_commit = 0
@@ -799,9 +875,13 @@ class Dataset:
         if self.__has_committed:
             raise RuntimeError("Dataset has already committed")
 
-        self.flush(artifacts_flush=True)
-        _save_info()
-        manifest_path = _dump_manifest()
+        dataset_revision = self.flush(artifacts_flush=True)
+        info_revision = _save_info()
+        manifest_path = _dump_manifest(dataset_revision, info_revision)
+
+        logger.debug(
+            f"dataset commit: revision-{dataset_revision}, info revision-{info_revision}"
+        )
         if self.project_uri.instance == STANDALONE_INSTANCE:
             _submit_standalone_version(manifest_path)
         else:
@@ -849,6 +929,7 @@ class Dataset:
     def dataset(
         cls,
         uri: t.Union[str, URI],
+        create: str = _DatasetCreateMode.auto,
         readonly: bool = False,
     ) -> Dataset:
         """Create or load a dataset from standalone instance or cloud instance.
@@ -858,6 +939,11 @@ class Dataset:
 
         Arguments:
             uri: (str, URI, required) The dataset uri.
+            create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
+                `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
+                `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
+                `forbid` mode: If the dataset already exists, nothing is done.If it does not exist, an Exception is raised. This mode ensures the existence of the dataset.
+                The default is `auto`.
             readonly: (bool, optional) For an existing dataset, you can specify the readonly=True argument to ensure
                 the dataset is in readonly mode. Default is False.
 
@@ -869,6 +955,7 @@ class Dataset:
         from starwhale import dataset, Image
 
         # create a new dataset named mnist, and add a row into the dataset
+        # dataset("mnist") is equal to dataset("mnist", create="auto")
         ds = dataset("mnist")
         ds.exists()  # return False, "mnist" dataset is not existing.
         ds.append({"img": Image(), "label": 1})
@@ -885,6 +972,12 @@ class Dataset:
         ds[0].features.label = 1
         ds.commit()
         ds.close()
+
+        # create an empty dataset
+        ds = dataset("mnist-empty", create="empty")
+
+        # ensure the dataset existence
+        ds = dataset("mnist-existed", create="forbid")
         ```
 
         """
@@ -902,6 +995,52 @@ class Dataset:
             version=_uri.object.version,
             project_uri=_uri,  # TODO: cut off dataset resource info?
             readonly=readonly,
+            create=create or _DatasetCreateMode.auto,
         )
 
+        return ds
+
+    @classmethod
+    def from_json(cls, name: str, json_text: str, field_selector: str = "") -> Dataset:
+        """Create a new dataset from a dict.
+        Arguments:
+            name: (str, required) The dataset name you would like to use.
+            json_text: (str, required) The json text from which you would like to create this dataset
+            field_selector: (str, optional) The filed from which you would like to extract dataset array items.
+                The default value is "" which indicates that the dict is an array contains all the items.
+            Returns:
+                A Dataset Object
+            Examples:
+            ```python
+            from starwhale import Dataset
+            myds = Dataset.from_json("translation", '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]')
+            print(myds[0].features.en)
+            ```
+            ```python
+            from starwhale import Dataset
+            myds = Dataset.from_json("translation", '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',"content.child_content")
+            print(myds[0].features["zh-cn"])
+            ```
+        """
+        data_items = json.loads(json_text)
+        if field_selector:
+            # Split field selector by dots
+            fields = field_selector.split(".")
+            # Iterate over selected fields
+            for field in fields:
+                if field in data_items:
+                    data_items = data_items[field]
+                else:
+                    raise ValueError(
+                        f"The field_selector {field_selector} isn't in json_text: {json_text}"
+                    )
+        if not isinstance(data_items, list):
+            raise ValueError(
+                f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
+            )
+        ds = cls.dataset(name)
+        for item in data_items:
+            ds.append(item)
+        ds.commit()
+        ds.close()
         return ds

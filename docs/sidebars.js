@@ -66,27 +66,6 @@ module.exports = {
         },
         {
             type: 'category',
-            label: "Starwhale Runtime",
-            link: {
-                type: "doc",
-                id: "runtime/index"
-            },
-            collapsed: true,
-            items: [
-                "runtime/getting_started",
-                "runtime/concepts",
-                {
-                    type: 'category',
-                    label: "API",
-                    collapsed: true,
-                    items: [
-                        "runtime/api/cli",
-                    ]
-                },
-            ]
-        },
-        {
-            type: 'category',
             label: "Starwhale Evaluation",
             link: {
                 type: "doc",
@@ -234,6 +213,7 @@ module.exports = {
             label: "User Guides",
             items: [
                 "userguide/model",
+                "userguide/runtime",
             ]
         },
         {
@@ -249,7 +229,7 @@ module.exports = {
                         "instances/standalone/api/instance_cli",
                         "instances/standalone/api/project_cli",
                         "reference/swcli/model",
-                        "runtime/api/cli",
+                        "reference/swcli/runtime",
                         "dataset/api/cli",
                         "evaluation/api/cli",
                         "instances/standalone/api/utilities_cli"

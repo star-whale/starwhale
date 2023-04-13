@@ -6,6 +6,7 @@ import typing as t
 import platform
 import tempfile
 from abc import ABCMeta
+from enum import Enum, unique
 from pathlib import Path
 from collections import defaultdict
 
@@ -14,6 +15,7 @@ import jinja2
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from fs.tarfs import TarFS
 from typing_extensions import Protocol
 
 from starwhale.utils import (
@@ -95,6 +97,7 @@ from starwhale.utils.venv import (
     check_valid_conda_prefix,
     get_python_version_by_bin,
     render_python_env_activate,
+    get_user_runtime_python_bin,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import (
@@ -105,7 +108,6 @@ from starwhale.utils.error import (
     ConfigFormatError,
     MissingFieldError,
     ExclusiveArgsError,
-    FieldTypeOrValueError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.progress import run_with_progress_bar
@@ -124,6 +126,15 @@ _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
 _SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
 _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
 _SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
+
+@unique
+class RuntimeInfoFilter(Enum):
+    basic = "basic"
+    runtime_yaml = "runtime_yaml"
+    manifest = "manifest"
+    lock = "lock"
+    all = "all"
 
 
 class DockerEnv(ASDictMixin):
@@ -652,14 +663,14 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         bc.do()
 
     @classmethod
-    def activate(cls, path: str = "", uri: str = "") -> None:
-        StandaloneRuntime.activate(path, uri)
+    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+        StandaloneRuntime.activate(uri, force_restore)
 
     @classmethod
     def lock(
         cls,
-        target_dir: t.Union[str, Path],
-        yaml_name: str = DefaultYAMLName.RUNTIME,
+        target_dir: str | Path,
+        yaml_path: str | Path,
         env_name: str = "",
         env_prefix_path: str = "",
         no_cache: bool = False,
@@ -668,10 +679,10 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
-    ) -> str:
+    ) -> t.Tuple[str, t.Optional[Path]]:
         return StandaloneRuntime.lock(
             target_dir,
-            yaml_name,
+            yaml_path,
             env_name,
             env_prefix_path,
             no_cache,
@@ -693,6 +704,40 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     ) -> None:
         raise NotImplementedError
 
+    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+        raise NotImplementedError
+
+    def build_from_python_env(
+        self,
+        runtime_name: str,
+        mode: str = "",
+        conda_name: str = "",
+        conda_prefix: str = "",
+        venv_prefix: str = "",
+        cuda: str = "",
+        cudnn: str = "",
+        arch: str = "",
+        download_all_deps: bool = False,
+        include_editable: bool = False,
+        include_local_wheel: bool = False,
+    ) -> None:
+        raise NotImplementedError
+
+    def build_from_runtime_yaml(
+        self,
+        workdir: str | Path,
+        yaml_path: str | Path,
+        download_all_deps: bool = False,
+        include_editable: bool = False,
+        include_local_wheel: bool = False,
+        no_cache: bool = False,
+        disable_env_lock: bool = False,
+        env_prefix_path: str = "",
+        env_name: str = "",
+        env_use_shell: bool = False,
+    ) -> None:
+        raise NotImplementedError
+
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def __init__(self, uri: URI) -> None:
@@ -705,7 +750,46 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._detected_sw_version: str = ""
 
     def info(self) -> t.Dict[str, t.Any]:
-        return self._get_bundle_info()
+        ret: t.Dict[str, t.Any] = {}
+        if not self.store.bundle_path.exists():
+            return ret
+
+        ret["basic"] = {
+            "name": self.uri.object.name,
+            "uri": self.uri.full_uri,
+            "project": self.uri.project,
+            "snapshot_workdir": str(self.store.snapshot_workdir),
+            "bundle_path": str(self.store.bundle_path),
+        }
+
+        ret["basic"]["version"] = self.uri.object.version
+        ret["basic"]["tags"] = StandaloneTag(self.uri).list()
+
+        if self.store.snapshot_workdir.exists():
+            ret["manifest"] = self.store.manifest
+            ret["runtime_yaml"] = (
+                self.store.snapshot_workdir / DefaultYAMLName.RUNTIME
+            ).read_text()
+            ret["lock"] = {}
+            for fname in ret["manifest"]["environment"]["lock"]["files"]:
+                ret["lock"][os.path.basename(fname)] = (
+                    self.store.snapshot_workdir / "dependencies" / fname
+                ).read_text()
+        else:
+            with TarFS(str(self.store.bundle_path)) as tar:
+                with tar.open(DEFAULT_MANIFEST_NAME) as f:
+                    ret["manifest"] = yaml.safe_load(f)
+
+                with tar.open(DefaultYAMLName.RUNTIME) as f:
+                    ret["runtime_yaml"] = f.read()
+
+                ret["lock"] = {}
+                for fname in ret["manifest"]["environment"]["lock"]["files"]:
+                    fpath = os.path.join("dependencies", fname)
+                    with tar.open(fpath) as f:
+                        ret["lock"][os.path.basename(fpath)] = f.read()
+
+        return ret
 
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
@@ -754,36 +838,116 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
         return _r
 
-    def build(  # type: ignore[override]
-        self,
-        workdir: Path,
-        **kw: t.Any,
-    ) -> None:
-        yaml_name = kw.get("yaml_name", DefaultYAMLName.RUNTIME)
-        disable_env_lock = kw.get("disable_env_lock", False)
-        no_cache = kw.get("no_cache", False)
-        env_name = kw.get("env_name", "")
-        env_prefix_path = kw.get("env_prefix_path", "")
-        env_use_shell = kw.get("env_use_shell", False)
-        include_editable = kw.get("include_editable", False)
-        include_local_wheel = kw.get("include_local_wheel", False)
-        # TODO: tune for no runtime.yaml file
-        swrt_config = self._load_runtime_config(workdir / yaml_name)
+    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+        # TODO: validate image format
+        workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
+        try:
+            config: t.Dict[str, t.Any] = dict(
+                name=runtime_name,
+                environment={
+                    "docker": {"image": image},
+                },
+            )
+            yaml_path = workdir / DefaultYAMLName.RUNTIME
+            ensure_file(yaml_path, yaml.dump(config))
+            self.build_from_runtime_yaml(
+                workdir=workdir,
+                yaml_path=yaml_path,
+                disable_env_lock=True,
+            )
+        finally:
+            empty_dir(workdir)
 
-        lock_files = []
+    def build_from_python_env(
+        self,
+        runtime_name: str,
+        mode: str = PythonRunEnv.VENV,
+        conda_name: str = "",
+        conda_prefix: str = "",
+        venv_prefix: str = "",
+        cuda: str = "",
+        cudnn: str = "",
+        arch: str = "",
+        download_all_deps: bool = False,
+        include_editable: bool = False,
+        include_local_wheel: bool = False,
+    ) -> None:
+        if conda_name or conda_prefix:
+            prefix_path = (
+                get_conda_prefix_path(conda_name) if conda_name else conda_prefix
+            )
+            if not check_valid_conda_prefix(prefix_path):
+                raise RuntimeError(f"Invalid conda prefix: {prefix_path}")
+
+            pybin = get_conda_pybin(prefix=prefix_path)
+            env_use_shell = False
+        elif venv_prefix:
+            if not check_valid_venv_prefix(venv_prefix):
+                raise RuntimeError(f"Invalid venv prefix: {venv_prefix}")
+            pybin = os.path.join(venv_prefix, "bin", "python3")
+            env_use_shell = False
+        else:
+            pybin = get_user_runtime_python_bin(mode)
+            env_use_shell = True
+
+        python_version = get_python_version_by_bin(pybin)
+        workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
+        try:
+            yaml_path = StandaloneRuntime.render_runtime_yaml(
+                workdir,
+                name=runtime_name,
+                mode=mode,
+                python_version=python_version,
+                cuda_version=cuda,
+                cudnn_version=cudnn,
+                arch=arch,
+            )
+
+            self.build_from_runtime_yaml(
+                workdir=workdir,
+                yaml_path=yaml_path,
+                download_all_deps=download_all_deps,
+                include_editable=include_editable,
+                include_local_wheel=include_local_wheel,
+                disable_env_lock=False,
+                env_name=conda_name,
+                env_prefix_path=conda_prefix or venv_prefix,
+                env_use_shell=env_use_shell,
+            )
+        finally:
+            empty_dir(workdir)
+
+    def build_from_runtime_yaml(
+        self,
+        workdir: str | Path,
+        yaml_path: str | Path,
+        download_all_deps: bool = False,
+        include_editable: bool = False,
+        include_local_wheel: bool = False,
+        no_cache: bool = False,
+        disable_env_lock: bool = False,
+        env_prefix_path: str = "",
+        env_name: str = "",
+        env_use_shell: bool = False,
+    ) -> None:
+        workdir = Path(workdir)
+        yaml_path = Path(yaml_path)
+        swrt_config = self._load_runtime_config(yaml_path)
+
+        lock_paths: t.List[Path] = []
         if not disable_env_lock:
             console.print(
-                f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
+                f":alien: try to lock environment dependencies to {workdir} ..."
             )
-            content = self.lock(
+            content, lock_fpath = self.lock(
                 target_dir=workdir,
-                yaml_name=yaml_name,
-                env_name=env_name,
-                env_prefix_path=env_prefix_path,
+                yaml_path=yaml_path,
                 no_cache=no_cache,
                 stdout=False,
                 include_editable=include_editable,
                 include_local_wheel=include_local_wheel,
+                env_name=env_name,
+                env_prefix_path=env_prefix_path,
                 env_use_shell=env_use_shell,
             )
             # try getting starwhale version
@@ -792,12 +956,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     self._detected_sw_version = line.split("==")[1].strip()
                     break
 
-            lock_fname = (
-                RuntimeLockFileType.CONDA
-                if swrt_config.mode == PythonRunEnv.CONDA
-                else RuntimeLockFileType.VENV
-            )
-            lock_files.append(f"{SW_AUTO_DIRNAME}/lock/{lock_fname}")
+            if lock_fpath is not None:
+                lock_paths.append(lock_fpath)
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -817,7 +977,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     env_prefix_path=env_prefix_path,
                     env_name=env_name,
                     env_use_shell=env_use_shell,
-                    lock_files=lock_files,
+                    lock_paths=lock_paths,
                 ),
             ),
             (
@@ -825,7 +985,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 50,
                 "dump python dependencies",
                 dict(
-                    gen_all_bundles=kw.get("gen_all_bundles", False),
+                    download_all_deps=download_all_deps,
                     deps=swrt_config.dependencies,
                     mode=swrt_config.mode,
                     include_editable=include_editable,
@@ -845,9 +1005,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "dump src files:wheel, native files",
                 dict(
                     config=swrt_config,
-                    workdir=workdir,
-                    yaml_name=yaml_name,
-                    lock_files=lock_files,
+                    yaml_path=yaml_path,
+                    lock_paths=lock_paths,
                 ),
             ),
             (
@@ -867,25 +1026,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _copy_src(
         self,
         config: RuntimeConfig,
-        workdir: Path,
-        yaml_name: str = DefaultYAMLName.RUNTIME,
-        lock_files: t.Optional[t.List[str]] = None,
+        yaml_path: Path,
+        lock_paths: t.Optional[t.List[Path]] = None,
     ) -> None:
-        lock_files = lock_files or []
-
-        conda_file_dups = set(config.dependencies._conda_files) & set(lock_files)
-        if conda_file_dups:
-            raise FieldTypeOrValueError(
-                f"conda files have used the auto-locked dependency files: {conda_file_dups}"
-            )
-
-        pip_file_dups = set(config.dependencies._pip_files) & set(lock_files)
-        if pip_file_dups:
-            raise FieldTypeOrValueError(
-                f"pip files have used the auto-locked dependency files:{pip_file_dups}"
-            )
-
-        workdir_fs = open_fs(str(workdir.resolve()))
+        workdir = yaml_path.parent.resolve()
+        yaml_name = yaml_path.name
+        workdir_fs = open_fs(str(workdir))
         snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
         copy_file(workdir_fs, yaml_name, snapshot_fs, yaml_name)
 
@@ -934,11 +1080,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         logger.info("[step:copy-deps]start to copy pip/conda requirement files")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
 
-        for _fname in (
-            config.dependencies._conda_files
-            + config.dependencies._pip_files
-            + lock_files
-        ):
+        for _fname in config.dependencies._conda_files + config.dependencies._pip_files:
             _fpath = workdir / _fname
             if not _fpath.exists():
                 logger.warning(f"not found dependencies: {_fpath}")
@@ -952,6 +1094,26 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 _fname,
                 snapshot_fs,
                 _dest,
+            )
+
+        lock_paths = lock_paths or []
+        for _fpath in lock_paths:
+            _fname = _fpath.name
+            _dest_name = f"{RuntimeArtifactType.DEPEND}/{SW_AUTO_DIRNAME}/lock/{_fname.lstrip('/')}"
+            _dest_path = self.store.snapshot_workdir / _dest_name
+            if _dest_path.exists():
+                raise RuntimeError(
+                    f"{_dest_name} has already been added into the runtime.yaml, failed to copy the auto-lock file"
+                )
+
+            ensure_dir(_dest_path.parent)
+            self._manifest["artifacts"][RuntimeArtifactType.DEPEND].append(_dest_name)
+
+            copy_file(
+                open_fs(str(_fpath.parent)),
+                _fname,
+                snapshot_fs,
+                _dest_name,
             )
 
     def _dump_base_image(self, config: RuntimeConfig) -> None:
@@ -985,12 +1147,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-        lock_files: t.Optional[t.List[str]] = None,
+        lock_paths: t.Optional[t.List[Path]] = None,
     ) -> None:
         console.print(":bee: dump environment info...")
         sh_py_env = guess_current_py_env()
         sh_py_ver = get_user_python_version(sh_py_env)
-        lock_files = lock_files or []
+        lock_paths = lock_paths or []
 
         self._manifest["environment"] = self._manifest.get("environment") or {}
 
@@ -1008,9 +1170,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     "env_prefix_path": env_prefix_path,
                     "env_name": env_name,
                     "env_use_shell": env_use_shell,
-                    "files": lock_files,
+                    "files": [f"{SW_AUTO_DIRNAME}/lock/{p.name}" for p in lock_paths],
                 },
-                "auto_lock_dependencies": bool(lock_files),
+                "auto_lock_dependencies": bool(lock_paths),
                 "python": swrt_config.environment.python,
                 "arch": swrt_config.environment.arch,
                 "mode": swrt_config.mode,
@@ -1020,13 +1182,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _dump_dependencies(
         self,
         mode: str = PythonRunEnv.AUTO,
-        gen_all_bundles: bool = False,
+        download_all_deps: bool = False,
         deps: t.Optional[Dependencies] = None,
         include_editable: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
     ) -> None:
-        console.print("dump dependencies info...")
+        console.print(":bagel: dump dependencies info...")
         deps = deps or Dependencies()
 
         self._manifest["dependencies"] = {
@@ -1041,7 +1203,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         logger.info("[step:dep]finish dump dep")
 
-        if gen_all_bundles:
+        if download_all_deps:
             packaged = package_python_env(
                 export_dir=self.store.export_dir,
                 mode=mode,
@@ -1242,24 +1404,23 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
     @classmethod
-    def activate(cls, path: str = "", uri: str = "") -> None:
-        if uri:
-            _uri = URI(uri, expected_type=URIType.RUNTIME)
-            if _uri.instance_type != InstanceType.STANDALONE:
-                raise NoSupportError(f"{uri} is not the standalone instance")
+    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+        if uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(f"{uri} is not the standalone instance")
 
-            _rt = StandaloneRuntime(_uri)
-            mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
-            prefix_path = _rt.store.export_dir / mode
-        elif path:
-            # TODO: support non-standard runtime.yaml name
-            _rf = Path(path) / DefaultYAMLName.RUNTIME
-            _config = RuntimeConfig.create_by_yaml(_rf)
-            mode = _config.mode
-            prefix_path = Path(path) / f".{mode}"
-        else:
-            raise Exception("No uri or path to activate")
+        _rt = StandaloneRuntime(uri)
+        workdir = _rt.store.snapshot_workdir
+        if not workdir.exists():
+            console.print(f":package: extract swrt into {workdir}")
+            _rt.extract(force=True, target=workdir)
 
+        mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
+        prefix_path = _rt.store.export_dir / mode
+        if not prefix_path.exists() or force_restore:
+            console.print(f":safety_vest: restore runtime into {workdir}")
+            cls.restore(workdir)
+
+        console.print(f":carrot: activate the current shell for the runtime uri: {uri}")
         activate_python_env(
             mode=mode, identity=str(prefix_path.resolve()), interactive=True
         )
@@ -1300,8 +1461,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def lock(
         cls,
-        target_dir: t.Union[str, Path],
-        yaml_name: str = DefaultYAMLName.RUNTIME,
+        target_dir: str | Path,
+        yaml_path: str | Path,
         env_name: str = "",
         env_prefix_path: str = "",
         no_cache: bool = False,
@@ -1310,26 +1471,29 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         env_use_shell: bool = False,
-    ) -> str:
+    ) -> t.Tuple[str, t.Optional[Path]]:
+        """Install dependencies and save or print lock file
+
+        Arguments:
+            workdir: runtime work directory which contains the configured runtime.yaml
+            yaml_name: runtime config file name
+            env_name: conda environment name (used by conda env)
+            env_prefix_path: python env prefix path (used by both venv and conda)
+            no_cache: invalid all pkgs installed
+            stdout: just print the lock info into stdout without saving lock file
+            include_editable: include the editable pkg (only for venv)
+            include_local_wheel: include local wheel pkg (only for venv)
+            emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
+            env_use_shell: automatically detect env in current shell session
+
+        Returns:
+            the lock file content(str) and the lock file path(Path)
         """
-        Install dependencies and save or print lock file
-        :param target_dir: runtime work directory which contains the configured runtime.yaml
-        :param yaml_name: runtime config file name
-        :param env_name: conda environment name (used by conda env)
-        :param env_prefix_path: python env prefix path (used by both venv and conda)
-        :param no_cache: invalid all pkgs installed
-        :param stdout: just print the lock info into stdout without saving lock file
-        :param include_editable: include the editable pkg (only for venv)
-        :param include_local_wheel: include local wheel pkg (only for venv)
-        :param emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
-        :param env_use_shell: automatically detect env in current shell session
-        :return: the lock file content
-        """
-        target_dir = Path(target_dir)
-        runtime_fpath = target_dir / yaml_name
-        if not runtime_fpath.exists():
-            raise NotFoundError(runtime_fpath)
-        runtime_yaml = load_yaml(runtime_fpath)
+        yaml_path = Path(yaml_path)
+        if not yaml_path.exists():
+            raise NotFoundError(yaml_path)
+        runtime_yaml = load_yaml(yaml_path)
+
         mode = runtime_yaml.get("mode", PythonRunEnv.VENV)
         expected_pyver = str(runtime_yaml.get("environment", {}).get("python", ""))
         _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
@@ -1352,14 +1516,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         elif env_prefix_path:
             prefix_path = env_prefix_path
         else:
-            _sw_auto_path = target_dir / SW_AUTO_DIRNAME / mode
+            _sw_auto_path = Path(target_dir) / SW_AUTO_DIRNAME / mode
             cls._ensure_isolated_python_env(
                 _sw_auto_path, expected_pyver, mode, no_cache
             )
             prefix_path = str(_sw_auto_path)
 
         cls._install_dependencies_with_runtime_yaml(
-            workdir=target_dir,
+            src_dir=yaml_path.parent,
             runtime_yaml=runtime_yaml,
             env_dir=prefix_path,
             skip_deps=[DependencyType.NATIVE_FILE],
@@ -1403,6 +1567,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.rule("dependencies lock")
             console.print(content)
             os.unlink(temp_lock_path)
+            return content, None
         else:
             dest_fname = (
                 RuntimeLockFileType.CONDA
@@ -1414,8 +1579,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             dest_fpath = lock_dir / dest_fname
             shutil.move(temp_lock_path, dest_fpath)
             console.print(f":mouse: dump lock file: {dest_fpath}")
-
-        return content
+            return content, dest_fpath
 
     @staticmethod
     def render_runtime_yaml(
@@ -1426,27 +1590,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         pkgs: t.Optional[t.List[str]] = None,
         force: bool = False,
         auto_inject_sw: bool = True,
-        cuda_version: t.Optional[str] = None,
-    ) -> None:
+        cuda_version: str = "",
+        cudnn_version: str = "",
+        arch: str = "",
+    ) -> Path:
         workdir = Path(workdir)
         _rm = workdir / DefaultYAMLName.RUNTIME
-
-        if python_version == "":
-            python_version = get_python_version()
-
         if _rm.exists() and not force:
             raise ExistedError(f"{_rm} was already existed")
-
-        if mode == PythonRunEnv.CONDA:
-            lock_fname = RuntimeLockFileType.CONDA
-            lock_content = f"name: {name}"
-        else:
-            lock_fname = RuntimeLockFileType.VENV
-            lock_content = ""
-
-        lock_fpath = workdir / lock_fname
-        if not lock_fpath.exists():
-            ensure_file(lock_fpath, content=lock_content)
 
         pkgs = pkgs or []
         if auto_inject_sw and not any(
@@ -1456,28 +1607,25 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             if STARWHALE_VERSION and STARWHALE_VERSION != SW_DEV_DUMMY_VERSION:
                 sw_pkg = f"{sw_pkg}=={STARWHALE_VERSION}"
             pkgs.append(sw_pkg)
-
         pkgs = [p.strip() for p in pkgs if p.strip()]
 
-        ensure_dir(workdir)
         config: t.Dict[str, t.Any] = dict(
             name=name,
             mode=mode,
             environment={
-                "python": python_version,
-                "arch": SupportArch.NOARCH,
+                "python": python_version or get_python_version(),
+                "arch": arch or SupportArch.NOARCH,
                 "os": SupportOS.UBUNTU,
+                "cuda": cuda_version,
+                "cudnn": cudnn_version,
             },
             dependencies=[
-                lock_fname,
                 {"pip": pkgs},
             ],
             api_version=RUNTIME_API_VERSION,
         )
-        if cuda_version is not None:
-            config["environment"]["cuda"] = cuda_version
-
-        ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
+        ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False), parents=True)
+        return _rm
 
     def dockerize(
         self,
@@ -1663,7 +1811,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @staticmethod
     def _install_dependencies_with_runtime_yaml(
-        workdir: Path,
+        src_dir: Path,
         runtime_yaml: t.Any,
         env_dir: t.Union[Path, str],
         skip_deps: t.Optional[t.List[DependencyType]] = None,
@@ -1685,7 +1833,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             _func = (
                 dep.conda_install if PythonRunEnv.CONDA == mode else dep.venv_install
             )
-            _func(workdir, env_dir, configs)
+            _func(src_dir, env_dir, configs)
 
     @staticmethod
     def _install_dependencies_within_restore(
@@ -1823,6 +1971,3 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         return crm._fetch_bundle_all_list(
             project_uri, URIType.RUNTIME, page, size, filter_dict
         )
-
-    def build(self, *args: t.Any, **kwargs: t.Any) -> None:
-        raise NoSupportError("no support build runtime in the cloud instance")

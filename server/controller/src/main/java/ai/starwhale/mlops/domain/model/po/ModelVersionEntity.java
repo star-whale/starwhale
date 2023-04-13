@@ -57,7 +57,7 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
     // use oss instead
     private String manifest;
 
-    private String evalJobs;
+    private String jobs;
 
     /**
      * 0 - unavailable 1 - available

@@ -111,7 +111,7 @@ public class JobServiceTest {
                 .willReturn(1L);
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
-                .willReturn(Job.builder().id(1L).build());
+                .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).build());
         given(jobDao.getJobId("1"))
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
@@ -180,7 +180,10 @@ public class JobServiceTest {
     public void testRemoveJob() {
         given(jobDao.removeJob(same(1L))).willReturn(true);
         given(jobDao.removeJobByUuid(same("uuid1"))).willReturn(true);
-        given(jobDao.getJobId(same("uuid1"))).willReturn(1L);
+        given(jobDao.findJob(same("uuid1"))).willReturn(
+                Job.builder().id(1L).uuid("uuid1").type(JobType.EVALUATION).build());
+        given(jobDao.findJob(same("2"))).willReturn(
+                Job.builder().id(2L).type(JobType.EVALUATION).build());
 
         var res = service.removeJob("", "1");
         assertThat(res, is(true));
@@ -218,11 +221,11 @@ public class JobServiceTest {
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", "stepSpec1");
+                 "", "1", "stepSpec1", JobType.EVALUATION);
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "stepSpec2");
+                "", "1", "stepSpec2", JobType.FINE_TUNE);
         assertThat(res, is(1L));
     }
 

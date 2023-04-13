@@ -3,7 +3,6 @@ import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDat
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
-import { getMetaRow } from '@/domain/dataset/utils'
 import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
@@ -21,6 +20,7 @@ import { StyledTab } from 'baseui/tabs'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
 import Preview from '@starwhale/ui/Dataset/Preview'
+import { getMeta } from '@/domain/dataset/utils'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -147,6 +147,9 @@ export default function DatasetVersionFiles() {
     const history = useHistory()
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
+    const { revision, rows: rowCount } = React.useMemo(() => {
+        return getMeta(datasetVersion?.versionMeta as string)
+    }, [datasetVersion?.versionMeta])
 
     const [preview, setPreview] = React.useState('')
     const [previewKey, setPreviewKey] = React.useState('')
@@ -157,18 +160,15 @@ export default function DatasetVersionFiles() {
             ...page,
             layout: layoutKey,
             filter: query.filter,
+            revision,
         }
-    }, [page, layoutKey, query.filter])
+    }, [page, layoutKey, query.filter, revision])
 
     React.useEffect(() => {
         setLayoutKey(layoutParam ?? '0')
     }, [layoutParam])
 
     const { records, columnTypes } = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
-
-    const rowCount = React.useMemo(() => {
-        return getMetaRow(datasetVersion?.versionMeta as string)
-    }, [datasetVersion])
 
     const paginationProps: IPaginationProps = React.useMemo(() => {
         return {
@@ -195,6 +195,7 @@ export default function DatasetVersionFiles() {
         }),
         [projectId, datasetVersion, token]
     )
+
     const { records: datasets } = useDatasets(records, columnTypes, options)
 
     const Records = React.useMemo(() => {
@@ -277,6 +278,11 @@ export default function DatasetVersionFiles() {
             })
         })
 
+        rowAction.sort((ca, cb) => {
+            if (ca.label === 'id') return -1
+            if (cb.label === 'id') return 1
+            return ca.label.localeCompare(cb.label)
+        })
         // if (layoutKey === LAYOUT.GRID) {
         //     return (
         //         <div

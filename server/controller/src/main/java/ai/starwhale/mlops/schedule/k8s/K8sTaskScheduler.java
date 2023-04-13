@@ -134,10 +134,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             }
 
             JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
+            var jobType = task.getStep().getJob().getType();
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
-                containerOverwriteSpec.setCmds(List.of("run"));
+                containerOverwriteSpec.setCmds(List.of(jobType.name().toLowerCase()));
                 containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
                 containerOverwriteSpec.setImage(jobRuntime.getImage());
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);

@@ -313,6 +313,22 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
+    def test_from_json(self) -> None:
+        from starwhale.api._impl.dataset import Dataset as SDKDataset
+
+        myds = SDKDataset.from_json(
+            "translation",
+            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+        )
+        assert myds[0].features.en == "hello"
+
+        myds = SDKDataset.from_json(
+            "translation",
+            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
+            "content.child_content",
+        )
+        assert myds[1].features["zh-cn"] == "最近怎么样"
+
 
 class TestJsonDict(TestCase):
     JSON_DICT = {
@@ -352,8 +368,6 @@ class TestJsonDict(TestCase):
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "data_type": data_store.UNKNOWN,
-                            "with_local_fs_data": data_store.BOOL,
-                            "_local_fs_uri": data_store.STRING,
                             "_signed_uri": data_store.STRING,
                             "extra_info": data_store.SwMapType(
                                 data_store.UNKNOWN, data_store.UNKNOWN

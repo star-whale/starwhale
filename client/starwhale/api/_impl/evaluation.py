@@ -4,6 +4,7 @@ import io
 import sys
 import time
 import typing as t
+import inspect
 import logging
 import threading
 from abc import ABCMeta, abstractmethod
@@ -14,14 +15,20 @@ from functools import wraps
 import jsonlines
 
 from starwhale.utils import now_str
-from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
+from starwhale.consts import (
+    RunStatus,
+    CURRENT_FNAME,
+    DecoratorInjectAttr,
+    DEFAULT_EVALUATION_JOB_NAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.api.service import Input, Output, Service
-from starwhale.utils.error import ParameterError, FieldTypeOrValueError
+from starwhale.utils.error import NoSupportError, ParameterError, FieldTypeOrValueError
+from starwhale.api._impl.job import step, AFTER_LOAD_HOOKS
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.core.job.context import Context
 from starwhale.api._impl.dataset import Dataset
@@ -39,6 +46,46 @@ class _LogType:
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
 )
+
+
+def default_handler_hook(run_handler: str, func_or_cls: t.Any) -> None:
+    module_name, _, func_or_cls_name = run_handler.partition(":")
+    from loguru import logger
+
+    # TODO: raise exception for @step, @predict or @evaluate in the Pipeline methods
+    # TODO: step decorate auto inject some flags into function builtin fields
+    # TODO: need to handle DecoratorInjectAttr.Evaluate ?
+    if inspect.isfunction(func_or_cls):
+        if getattr(func_or_cls, DecoratorInjectAttr.Predict, False) or getattr(
+            func_or_cls, DecoratorInjectAttr.Step, False
+        ):
+            logger.debug(
+                f"preload function-{func_or_cls_name} from module-{module_name}"
+            )
+        else:
+            # TODO remove(or log warning) this exception when support multi handlers
+            raise RuntimeError(
+                f"preload function-{func_or_cls_name} does not use step or predict decorator"
+            )
+    elif inspect.isclass(func_or_cls):
+        if issubclass(func_or_cls, PipelineHandler):
+            ppl_func = getattr(func_or_cls, "ppl")
+            cmp_func = getattr(func_or_cls, "cmp")
+            step(job_name=DEFAULT_EVALUATION_JOB_NAME, task_num=2, name="ppl")(ppl_func)
+            step(
+                job_name=DEFAULT_EVALUATION_JOB_NAME,
+                task_num=1,
+                needs=["ppl"],
+                name="cmp",
+            )(cmp_func)
+            logger.debug(f"preload class-{func_or_cls_name} from Pipeline")
+        else:
+            logger.debug(f"preload user custom class-{func_or_cls_name}")
+    else:
+        raise NoSupportError(f"failed to preload for {run_handler}")
+
+
+AFTER_LOAD_HOOKS.setdefault("default_hook", default_handler_hook)
 
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -513,6 +560,7 @@ def _register_predict(
         raise RuntimeError("predict function can only be called once")
 
     _registered_predict_func.value = step(
+        job_name=DEFAULT_EVALUATION_JOB_NAME,
         name="predict",
         resources=resources,
         concurrency=concurrency,
@@ -587,6 +635,7 @@ def _register_evaluate(
         raise RuntimeError("evaluate function can only be called once")
 
     _registered_evaluate_func.value = step(
+        job_name=DEFAULT_EVALUATION_JOB_NAME,
         name="evaluate",
         resources=resources,
         concurrency=1,

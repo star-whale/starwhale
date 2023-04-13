@@ -24,7 +24,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @Data
 @SuperBuilder
 @AllArgsConstructor

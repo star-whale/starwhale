@@ -3,6 +3,7 @@ import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/c
 import { WidgetPlugin } from '@starwhale/core/widget'
 import PanelTable from './component/Table'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
+import { useDatastore } from '@starwhale/core/datastore'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
@@ -17,7 +18,6 @@ export const CONFIG: WidgetConfig = {
 
 function PanelTableWidget(props: WidgetRendererProps<any, any>) {
     const { optionConfig, data = {}, id, onOptionChange } = props
-    const { columnTypes = [], records = [] } = data
     const storeRef = React.useRef<ITableState | null>(null)
 
     React.useEffect(() => {
@@ -31,6 +31,8 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
         },
         [onOptionChange]
     )
+
+    const { records, columnTypes } = useDatastore(data.records)
 
     return <PanelTable columnTypes={columnTypes} data={records} storeKey={id} onChange={onChange} storeRef={storeRef} />
 }

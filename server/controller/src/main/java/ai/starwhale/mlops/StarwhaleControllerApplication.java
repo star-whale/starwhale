@@ -17,6 +17,7 @@
 package ai.starwhale.mlops;
 
 import ai.starwhale.mlops.configuration.ControllerProperties;
+import ai.starwhale.mlops.configuration.DataSourceProperties;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import de.codecentric.boot.admin.server.config.EnableAdminServer;
@@ -30,7 +31,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableAdminServer
 @MapperScan({"ai.starwhale.mlops.domain.**.mapper"})
-@EnableConfigurationProperties({ControllerProperties.class, RunTimeProperties.class, DockerSetting.class})
+@EnableConfigurationProperties({ControllerProperties.class, RunTimeProperties.class, DockerSetting.class,
+        DataSourceProperties.class})
 public class StarwhaleControllerApplication {
 
     public static void main(String[] args) {

@@ -12,7 +12,7 @@ import { isFocusVisible } from '@/utils/focusVisible'
 import { COLUMNS } from './constants'
 import { matchesQuery } from './text-search'
 import type { ColumnT } from './types'
-import { LocaleContext } from './locales'
+import { LocaleContext } from 'baseui/locale'
 
 function ColumnIcon(props: { column: ColumnT }) {
     if (props.column.kind === COLUMNS.BOOLEAN) {

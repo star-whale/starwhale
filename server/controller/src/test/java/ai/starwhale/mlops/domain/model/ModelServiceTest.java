@@ -444,7 +444,7 @@ public class ModelServiceTest {
                 .willReturn(ModelVersionEntity.builder()
                         .id(1L)
                         .storagePath("path1")
-                        .evalJobs("job1")
+                        .jobs("job1")
                         .build());
         given(jobHolder.ofStatus(anySet()))
                 .willReturn(List.of(

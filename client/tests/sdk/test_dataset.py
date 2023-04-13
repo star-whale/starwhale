@@ -251,8 +251,6 @@ class TestDatasetCopy(BaseTestCase):
                                 {"name": "offset", "type": "INT64"},
                                 {"name": "size", "type": "INT64"},
                                 {"name": "data_type", "type": "UNKNOWN"},
-                                {"name": "with_local_fs_data", "type": "BOOL"},
-                                {"name": "_local_fs_uri", "type": "STRING"},
                                 {"name": "_signed_uri", "type": "STRING"},
                                 {
                                     "keyType": {"type": "UNKNOWN"},
@@ -416,7 +414,7 @@ class TestDatasetCopy(BaseTestCase):
         assert dataset_dir.exists()
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-        tdb = TabularDataset(name=dataset_name, version="_current", project="self")
+        tdb = TabularDataset(name=dataset_name, project="self")
         meta_list = list(tdb.scan())
         assert len(meta_list) == 1
         assert meta_list[0].id == "idx-0"
@@ -448,7 +446,6 @@ class TestDatasetType(TestCase):
             Text("test"),
             Link(
                 "path/to/file",
-                with_local_fs_data=True,
                 data_type=Image(display_name="image"),
             ),
             COCOObjectAnnotation(
@@ -1049,7 +1046,7 @@ class TestTabularDatasetInfo(BaseTestCase):
         assert isinstance(load_info["image"], Image)
 
     def test_tabular_dataset_property(self) -> None:
-        td = TabularDataset(name="test", version="123", project="self")
+        td = TabularDataset(name="test", project="self")
         assert td._info is None
         assert isinstance(td.info, TabularDatasetInfo)
         assert not bool(td.info)
@@ -1069,7 +1066,7 @@ class TestTabularDatasetInfo(BaseTestCase):
 
         td.close()
 
-        loaded_td = TabularDataset(name="test", version="123", project="self")
+        loaded_td = TabularDataset(name="test", project="self")
         assert loaded_td.info["a"] == 1
         assert list(loaded_td.info) == ["a", "b", "dict"]
         assert not loaded_td._info_changed
@@ -1122,10 +1119,10 @@ class TestTabularDataset(TestCase):
             assert isinstance(rs[0], TabularDatasetRow)
 
         with self.assertRaises(InvalidObjectName):
-            TabularDataset("", "", "")
+            TabularDataset(name="", project="")
 
-        with self.assertRaises(FieldTypeOrValueError):
-            TabularDataset("a123", "", "")
+        with self.assertRaisesRegex(RuntimeError, "project is not set"):
+            TabularDataset(name="a123", project="")
 
     def test_row(self) -> None:
         s_row = TabularDatasetRow(
@@ -1322,7 +1319,6 @@ class TestMappingDatasetBuilder(BaseTestCase):
 
         self.tdb = TabularDataset(
             name=self.dataset_name,
-            version=self.holder_dataset_version,
             project=self.project_name,
         )
 

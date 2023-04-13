@@ -86,8 +86,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [tableConfig])
         const inViewport = useIsInViewport(myRef as any)
-        const { columnInfo, recordInfo: info, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
-
+        const { recordInfo, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
         const inViewLoadRef = useRef(false)
         const tableNameRef = useRef('')
 
@@ -97,13 +96,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             if (!tableName || !inViewport) return
 
             if (tableNameRef.current !== tableName) {
-                columnInfo.refetch()
+                recordInfo.refetch()
                 tableNameRef.current = tableName
                 return
             }
 
             if (inViewLoadRef.current) return
-            columnInfo.refetch()
+            recordInfo.refetch()
 
             inViewLoadRef.current = true
             tableNameRef.current = tableName
@@ -126,15 +125,16 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 eventBus.getStream(PanelReloadEvent).subscribe({
                     next: async (evt) => {
                         if (evt.payload?.id === id) {
-                            info.refetch()
+                            recordInfo.refetch()
                         }
                     },
                 })
             )
             return () => subscription.unsubscribe()
-        }, [eventBus, id, info, query])
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [eventBus, id, query])
 
-        if (tableName && !info.isSuccess)
+        if (tableName && !recordInfo.isSuccess)
             return (
                 <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
                     <BusyPlaceholder style={{ minHeight: 'auto' }} />
@@ -147,13 +147,12 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 style={{
                     width: '100%',
                     height: '100%',
-                    // visibility: inViewport ? 'visible' : 'hidden'
                 }}
             >
                 <WrappedWidgetRender
                     {...props}
                     name={overrides?.name}
-                    data={info?.data}
+                    data={recordInfo?.data}
                     optionConfig={overrides?.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
                     fieldConfig={overrides?.fieldConfig}
@@ -161,7 +160,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                     onLayoutOrderChange={handleLayoutOrderChange}
                     onLayoutChildrenChange={handleLayoutChildrenChange}
                     onLayoutCurrentChange={handleLayoutCurrentChange}
-                    onDataReload={() => info.refetch()}
+                    onDataReload={() => recordInfo.refetch()}
                     onDataDownload={() => exportTable(query)}
                     eventBus={eventBus}
                 />

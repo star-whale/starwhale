@@ -6,6 +6,69 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "34901738",
+      "name": "global",
+      "font_class": "global",
+      "unicode": "e65f",
+      "unicode_decimal": 58975
+    },
+    {
+      "icon_id": "34824376",
+      "name": "library",
+      "font_class": "library",
+      "unicode": "e65e",
+      "unicode_decimal": 58974
+    },
+    {
+      "icon_id": "34341578",
+      "name": "group",
+      "font_class": "group",
+      "unicode": "e65d",
+      "unicode_decimal": 58973
+    },
+    {
+      "icon_id": "34125367",
+      "name": "loading",
+      "font_class": "loading",
+      "unicode": "e65c",
+      "unicode_decimal": 58972
+    },
+    {
+      "icon_id": "33793517",
+      "name": "experiment",
+      "font_class": "experiment",
+      "unicode": "e65b",
+      "unicode_decimal": 58971
+    },
+    {
+      "icon_id": "33548920",
+      "name": "download",
+      "font_class": "download",
+      "unicode": "e659",
+      "unicode_decimal": 58969
+    },
+    {
+      "icon_id": "33548921",
+      "name": "upload",
+      "font_class": "upload",
+      "unicode": "e65a",
+      "unicode_decimal": 58970
+    },
+    {
+      "icon_id": "33442844",
+      "name": "calendar",
+      "font_class": "calendar",
+      "unicode": "e658",
+      "unicode_decimal": 58968
+    },
+    {
+      "icon_id": "33295022",
+      "name": "file2",
+      "font_class": "file2",
+      "unicode": "e657",
+      "unicode_decimal": 58967
+    },
+    {
       "icon_id": "32592454",
       "name": "Add above",
       "font_class": "a-Addabove",

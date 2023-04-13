@@ -46,13 +46,11 @@ dump dependencies info...
 ### Use Starwhale Runtime in the shell
 
 ```console
-# Create a python environment base on the runtime
-swcli runtime restore pytorch
 # Activate the runtime
-swcli runtime activate --uri pytorch
+swcli runtime activate pytorch/version/latest
 ```
 
-`swcli runtime restore` will download all python dependencies of the runtime, which may take a long time.
+`swcli runtime activate` will download all python dependencies of the runtime, which may take a long time.
 
 All dependencies are ready in your python environment when the runtime is activated. It is similar to `source venv/bin/activate` of virtualenv or the `conda activate` command of conda. If you close the shell or switch to another shell, you need to reactivate the runtime.
 

@@ -1,22 +1,22 @@
-default:
+evaluation:
   - cls_name: ''
     concurrency: 1
-    job_name: default
+    job_name: evaluation
     needs: [ ]
     resources:
     - type: cpu
       request: 0.4
       limit: 0.4
-    step_name: ppl
+    name: ppl
     task_num: 2
   - cls_name: ''
     concurrency: 1
-    job_name: default
+    job_name: evaluation
     needs:
     - ppl
     resources:
     - type: cpu
       request: 0.4
       limit: 0.4
-    step_name: cmp
+    name: cmp
     task_num: 1

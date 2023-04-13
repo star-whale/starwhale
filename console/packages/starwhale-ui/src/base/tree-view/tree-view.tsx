@@ -78,11 +78,11 @@ export default function TreeView(props: TreeViewProps) {
                 break
             case 'ArrowUp':
                 e.preventDefault()
-                focusTreeItem(getPrevId(data, selectedNodeId, null, getId))
+                focusTreeItem(getPrevId(data, selectedNodeId, null, getId) ?? getId(data[0]))
                 break
             case 'ArrowDown':
                 e.preventDefault()
-                focusTreeItem(getNextId(data, selectedNodeId, null, getId))
+                focusTreeItem(getNextId(data, selectedNodeId, null, getId) ?? getId(data[0]))
                 break
             case ' ':
             case 'Enter':

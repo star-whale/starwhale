@@ -20,7 +20,8 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_EVALUATION_JOBS_FILE_NAME,
+    DEFAULT_JOBS_FILE_NAME,
+    DEFAULT_FINETUNE_JOB_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
@@ -77,7 +78,8 @@ class StandaloneModelTestCase(TestCase):
     ) -> None:
         from starwhale.api._impl.job import _jobs_global
 
-        _jobs_global["default"] = []
+        _jobs_global["default"] = [Step(name="ppl")]
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = [Step(name="ft")]
 
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
@@ -106,9 +108,7 @@ class StandaloneModelTestCase(TestCase):
 
         assert bundle_path.exists()
         assert (bundle_path / "src").exists()
-        assert (
-            bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_EVALUATION_JOBS_FILE_NAME
-        ).exists()
+        assert (bundle_path / "src" / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME).exists()
 
         _manifest = load_yaml(bundle_path / DEFAULT_MANIFEST_NAME)
         assert "name" not in _manifest
@@ -179,7 +179,8 @@ class StandaloneModelTestCase(TestCase):
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list[self.name]) == 0
 
-        _jobs_global["default"] = []
+        _jobs_global["default"] = [Step(name="ppl")]
+        _jobs_global[DEFAULT_FINETUNE_JOB_NAME] = [Step(name="ft")]
         ModelTermView.build(self.workdir, "self", Path(self.workdir) / "model.yaml")
 
     def test_get_file_desc(self):
@@ -305,6 +306,34 @@ class StandaloneModelTestCase(TestCase):
             dataset_uris=["mnist/version/latest"],
         )
         schedule_all_mock.assert_called_once()
+
+    @patch("starwhale.core.job.step.Step.get_steps_from_yaml")
+    @patch("starwhale.core.model.model.generate_jobs_yaml")
+    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_task")
+    def test_fine_tune(
+        self,
+        single_task_mock: MagicMock,
+        gen_yaml_mock: MagicMock,
+        gen_job_mock: MagicMock,
+    ):
+        gen_job_mock.return_value = [
+            Step(
+                job_name="fine_tune",
+                name="ft",
+                cls_name="",
+                resources=[{"type": "cpu", "limit": 1, "request": 1}],
+                concurrency=1,
+                task_num=1,
+                needs=[],
+            ),
+        ]
+        StandaloneModel.fine_tune(
+            project="test",
+            workdir=Path(self.workdir),
+            dataset_uris=["mnist/version/latest"],
+        )
+        gen_yaml_mock.assert_called_once()
+        single_task_mock.assert_called_once()
 
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")

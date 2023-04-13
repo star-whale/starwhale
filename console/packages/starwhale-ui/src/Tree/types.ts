@@ -3,7 +3,9 @@ import { TreeNodeData } from '../base/tree-view'
 export type TreeNodeDataT = TreeNodeData<TreeNodeInfoT> & TreeNodeDataExtendT
 
 export type TreeNodeInfoT = {
-    label: string
+    label?: React.ReactNode
+    labelView?: React.ReactNode
+    labelTitle?: string
 }
 
 export type TreeNodeDataExtendT = {

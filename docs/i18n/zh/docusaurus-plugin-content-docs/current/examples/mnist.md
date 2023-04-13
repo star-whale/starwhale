@@ -6,7 +6,7 @@ title: MNIST 数字手写体识别模型评测
 
 从该例中，我们能实践如下Starwhale功能：
 
-- 如何使用Image类型构建swds和user-raw格式的数据集。
+- 如何使用Image类型构建数据集。
 - 如何制作Link类型的数据集。
 - 如何使用 `starwhale.multi_classification` 自动处理多分类问题。
 
@@ -38,11 +38,10 @@ cd starwhale/example/runtime/pytorch
 swcli runtime build .
 ```
 
-- Restore Runtime：本地复原Runtime环境，并在当前shell中激活相应的Python环境
+- Activate Runtime：在当前shell中激活相应的Python环境
 
 ```shell
-swcli runtime restore pytorch/version/latest
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 ```
 
 ### 数据准备与模型训练
@@ -77,15 +76,13 @@ swcli dataset info mnist/version/latest
 ### 步骤2：Standalone Instance中评测模型
 
 ```bash
-#如果已经激活该runtime环境，则忽略本行命令
-swcli runtime activate --uri pytorch/version/latest
 # 根据model.yaml运行评测任务
-swcli model eval . --dataset mnist/version/latest
+swcli model eval . --dataset mnist/version/latest --runtime pytorch/version/latest
 # 展示评测结果
 swcli model info ${version}
 ```
 
-上面的`build`命令在`starwhale/example/mnist`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
+上面的`build`命令在`starwhale/example/mnist`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
 
 ![mnist-eval.png](../img/examples/mnist-eval.png)
 
@@ -179,41 +176,6 @@ class DatasetProcessExecutor(SWDSBinBuildExecutor):
 dataset.yaml中handler指向 `mnist.dataset:DatasetProcessExecutor`，执行 `swcli dataset build` 命令后会构建swds-bin格式的数据集，该格式是Starwhale提供的一种二进制数据集格式。上例中对原始MNIST文件进行读取然后通过yield方式输出data和annotations字段。data使用了 `starwhale.GrayscaleImage` 类型，是专门针对灰度图提供的一种数据类型，Cloud Instance的Web Dataset Viewer能自动展示该类型数据。
 
 ![mnist-viewer.gif](../img/examples/mnist-viewer.gif)
-
-### user-raw格式的数据集构建
-
-```python
-from starwhale import Link, S3LinkAuth, GrayscaleImage, UserRawBuildExecutor
-
-class RawDatasetProcessExecutor(UserRawBuildExecutor):
-    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
-        root_dir = Path(__file__).parent.parent / "data"
-        data_fpath = root_dir / "t10k-images-idx3-ubyte"
-        label_fpath = root_dir / "t10k-labels-idx1-ubyte"
-
-        with data_fpath.open("rb") as data_file, label_fpath.open("rb") as label_file:
-            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
-            _, label_number = struct.unpack(">II", label_file.read(8))
-
-            image_size = height * width
-            offset = 16
-
-            for i in range(0, min(data_number, label_number)):
-                _data = Link(
-                    uri=str(data_fpath.absolute()),
-                    offset=offset,
-                    size=image_size,
-                    data_type=GrayscaleImage(
-                        display_name=f"{i}", shape=(height, width, 1)
-                    ),
-                    with_local_fs_data=True,
-                )
-                _label = struct.unpack(">B", label_file.read(1))[0]
-                yield _data, {"label": _label}
-                offset += image_size
-```
-
-当用户构建数据集的类继承 `starwhale.UserRawBuildExecutor` 后，可以制作user-raw格式的数据集。此种格式，不会改变原始数据格式，只是在外部增加索引关系，数据类型用Link来表示，Link中的data_type类型为 `GrayscaleImage`，Cloud Instance的Web Dataset Viewer支持这种格式的可视化。当使用 `swcli dataset extract` 命令解压这种格式的数据集后，能看到原始的数据。
 
 ### remote-link格式的数据集构建
 

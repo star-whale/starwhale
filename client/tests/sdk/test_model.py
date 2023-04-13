@@ -59,6 +59,54 @@ class ModelBuildTestCase(BaseTestCase):
     @patch("os.unlink")
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
+    def test_build_with_copy(
+        self, m_model_view: MagicMock, m_check_python: MagicMock, m_unlink: MagicMock
+    ) -> None:
+        m_check_python.return_value = [True, None, None]
+        workdir = Path(self.local_storage) / "copy" / "workdir"
+        ensure_dir(workdir / "models")
+        model_fpath = workdir / "models" / "mnist_cnn.pt"
+        ensure_file(model_fpath, "")
+        ensure_file(workdir / "__init__.py", "")
+        evaluator_fpath = workdir / "evaluator_copy.py"
+        ensure_file(evaluator_fpath, "class Handler:...")
+
+        mock_handler = import_object(
+            workdir=workdir, handler_path="evaluator_copy:Handler", py_env="venv"
+        )
+
+        with patch.dict(
+            os.environ, {"SW_INSTANCE_URI": "cloud://server", "SW_PROJECT": "starwhale"}
+        ):
+            build(name="test", workdir=workdir, evaluation_handler=mock_handler)
+            assert (
+                m_model_view.copy.call_args[1]["src_uri"]
+                == "local/project/self/model/test/version/latest"
+            )
+            assert (
+                m_model_view.copy.call_args[1]["dest_uri"]
+                == "cloud://server/project/starwhale"
+            )
+
+        build(
+            name="test",
+            workdir=workdir,
+            project_uri="local/project/self",
+            evaluation_handler=mock_handler,
+            remote_project_uri="http://localhost:8080/project/starwhale",
+        )
+        assert (
+            m_model_view.copy.call_args[1]["src_uri"]
+            == "local/project/self/model/test/version/latest"
+        )
+        assert (
+            m_model_view.copy.call_args[1]["dest_uri"]
+            == "http://localhost:8080/project/starwhale"
+        )
+
+    @patch("os.unlink")
+    @patch("starwhale.utils.load.check_python_interpreter_consistency")
+    @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_workdir(
         self, m_model_view: MagicMock, m_check_python: MagicMock, m_unlink: MagicMock
     ) -> None:

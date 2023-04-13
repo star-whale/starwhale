@@ -24,6 +24,7 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
+import { useDatastore } from '@starwhale/core/datastore'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -76,22 +77,20 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreColumns(columnInfo?.data?.columnTypes)
+    const { records, columnTypes } = useDatastore(evaluationsInfo?.data?.records)
+    const $columns = useDatastoreColumns(columnTypes)
+
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (item: any) => item['sys/id'],
+                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        const { data } = props ?? {}
-                        if (!data) return <></>
-                        const id = data['sys/id']
-
+                    renderCell: ({ value: id }) => {
+                        if (!id) return <></>
                         return (
                             <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
                                 {id}
@@ -101,7 +100,6 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -116,36 +114,33 @@ export default function EvaluationListCard() {
                         return aNum - bNum
                     },
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        return <p title={props?.value}>{durationToStr(props?.value)}</p>
-                    },
-                    mapDataToValue: (data: any): string => data.duration,
+                    renderCell: ({ value }) => <p title={value}>{durationToStr(value)}</p>,
+                    mapDataToValue: (data: any): number => _.get(data, [column.key, 'value'], 0),
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     sortable: true,
                     fillWidth: false,
                     // @ts-ignore
-                    renderCell: (props: any) => {
-                        return (
-                            <div title={props?.value}>
-                                <JobStatus status={props?.value} />
-                            </div>
-                        )
-                    },
-                    mapDataToValue: (data: any): string => column.key && data?.[column.key],
+                    renderCell: ({ value }) => (
+                        <div title={value}>
+                            <JobStatus status={value} />
+                        </div>
+                    ),
+                    mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
-                    columnType: column.columnType,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
-                    mapDataToValue: (data: any) =>
-                        column.key && data[column.key] && formatTimestampDateTime(data[column.key]),
+                    // @ts-ignore
+                    renderCell: ({ value }) => {
+                        return <p title={value}>{formatTimestampDateTime(value)}</p>
+                    },
+                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
 
             return {
@@ -154,9 +149,11 @@ export default function EvaluationListCard() {
             }
         })
     }, [t, $columns, projectId])
+
     const $compareRows = React.useMemo(() => {
-        return evaluationsInfo.data?.records?.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
-    }, [store.rowSelectedIds, evaluationsInfo.data?.records])
+        return records.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
+    }, [store.rowSelectedIds, records])
+
     const $ready = React.useMemo(() => {
         return columnInfo.isSuccess && evaluationViewConfig.isSuccess
     }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
@@ -181,7 +178,7 @@ export default function EvaluationListCard() {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
         })
-        toaster.positive('Successfully saved', {})
+        toaster.positive(t('evaluation.save.success'), {})
         return {}
     }
 
@@ -286,7 +283,7 @@ export default function EvaluationListCard() {
                             selectable
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
-                            data={evaluationsInfo.data?.records ?? []}
+                            data={records}
                             onSave={doSave as any}
                             onChange={doChange}
                             emptyColumnMessage={
@@ -304,7 +301,7 @@ export default function EvaluationListCard() {
                             <EvaluationListCompare
                                 title={t('Compare Evaluations')}
                                 rows={$compareRows}
-                                attrs={evaluationsInfo?.data?.columnTypes}
+                                attrs={columnTypes}
                             />
                         </Card>
                     )

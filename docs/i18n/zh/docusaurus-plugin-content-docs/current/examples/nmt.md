@@ -39,11 +39,10 @@ cd starwhale/example/runtime/pytorch
 swcli runtime build .
 ```
 
-- Restore Runtime：本地复原Runtime环境，并在当前shell中激活相应的Python环境
+- Activate Runtime：在当前shell中激活相应的Python环境
 
 ```shell
-swcli runtime restore pytorch/version/latest
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 ```
 
 ### 数据准备与模型训练
@@ -81,15 +80,13 @@ swcli dataset info nmt-test/version/latest
 ### 步骤2：Standalone Instance中评测模型
 
 ```bash
-#如果已经激活该runtime环境，则忽略本行命令
-swcli runtime activate --uri pytorch/version/latest
 # 根据model.yaml运行评测任务
-swcli model eval . --dataset nmt-test/version/latest
+swcli model eval . --dataset nmt-test/version/latest --runtime pytorch/version/latest
 # 展示评测结果
 swcli model info ${version}
 ```
 
-上面的`build`命令在`starwhale/example/nmt`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate --uri pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
+上面的`build`命令在`starwhale/example/nmt`中执行，也可以在其他目录中执行，但要合理设置 `swcli model eval`命令的`WORKDIR`参数。如果不想每次执行`eval`命令都指定`--runtime`参数，则可以先执行`swcli runtime activate  pytorch/version/latest`命令激活当前shell环境，或在一个已经激活Pytorch Runtime环境shell中执行评测。
 
 nmt例子并不是多分类问题，无法使用 `starwhale.multi_classification` 修饰器，Starwhale SDK中也没有提供合适的修饰器自动处理cmp结果。本例中，我们使用 `self.evaluation_store.log_metrics` 函数，将report的结果存储到Starwhale Datastore中，这样在Standalone Instance 和 Cloud Instance中都能看到相关结果。用户可以使用 `evaluation` SDK上报各种评测结果数据。
 

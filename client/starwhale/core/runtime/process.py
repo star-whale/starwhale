@@ -24,7 +24,6 @@ from .model import StandaloneRuntime
 
 
 class Process:
-
     EnvInActivatedProcess = "SW_RUNTIME_ACTIVATED_PROCESS"
 
     def __init__(

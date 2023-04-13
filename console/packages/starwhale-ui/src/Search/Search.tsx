@@ -1,12 +1,13 @@
-import { ColumnFilterModel, ColumnSchemaDesc } from '@starwhale/core/datastore'
+import { RecordListSchemaT, RecordSchemaT, isBasicType, isSearchColumns, useDatastore } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
 import _ from 'lodash'
 import FilterRenderer from './FilterRenderer'
-import { ValueT } from './types'
+import { SearchFieldSchemaT, ValueT } from './types'
 import IconFont from '../IconFont'
 import { LabelSmall } from 'baseui/typography'
+import useTranslation from '@/hooks/useTranslation'
 
 export const useStyles = createUseStyles({
     searchBar: {
@@ -62,13 +63,34 @@ const isValueExist = (value: any) => {
 }
 
 export interface ISearchProps {
-    fields: ColumnSchemaDesc[]
+    fields: SearchFieldSchemaT[]
     value?: ValueT[]
     onChange?: (args: ValueT[]) => void
 }
 
-export default function Search({ value = [], onChange, ...props }: ISearchProps) {
+function useSearchColumns(columnTypes: { name: string; type: string }[]) {
+    const searchColumns = React.useMemo(() => {
+        const arr: SearchFieldSchemaT[] = []
+        const columns = columnTypes.filter((column) => isSearchColumns(column.name))
+        columns.forEach((column) => {
+            if (isBasicType(column.type)) {
+                arr.push({
+                    ...column,
+                    path: column.name,
+                    label: column.name,
+                })
+            }
+        })
+
+        return arr
+    }, [columnTypes])
+
+    return searchColumns
+}
+
+export default function Search({ value = [], onChange, fields }: ISearchProps) {
     const styles = useStyles()
+    const [t] = useTranslation()
     const ref = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [items, setItems] = useState<ValueT[]>(value)
@@ -85,10 +107,6 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
         setIsEditing(false)
     })
 
-    const column = React.useMemo(() => {
-        return new ColumnFilterModel(props.fields)
-    }, [props.fields])
-
     const count = React.useRef(100)
     const filters = React.useMemo(() => {
         count.current += 1
@@ -100,7 +118,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
                     isEditing={isEditing}
                     isDisabled={false}
                     isFocus={editingItem?.index === index}
-                    column={column}
+                    fields={fields}
                     onClick={() => {
                         if (editingItem?.index !== index) setEditingItem({ index, value: item })
                     }}
@@ -128,7 +146,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
                 isEditing={isEditing}
                 isDisabled={false}
                 isFocus={editingItem ? editingItem.index === -1 : false}
-                column={column}
+                fields={fields}
                 style={{ flex: 1 }}
                 onClick={() => {
                     if (editingItem?.index !== -1) setEditingItem({ index: -1, value: {} })
@@ -150,7 +168,7 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             />
         )
         return tmps
-    }, [items, isEditing, column, editingItem, onChange])
+    }, [items, isEditing, editingItem, onChange, fields])
 
     return (
         <div
@@ -174,11 +192,28 @@ export default function Search({ value = [], onChange, ...props }: ISearchProps)
             <div className={styles.placeholder}>
                 {!isEditing && items.length === 0 && (
                     <LabelSmall $style={{ color: 'rgba(2,16,43,0.40)', position: 'absolute' }}>
-                        Search and Filter
+                        {t('table.search.placeholder')}
                     </LabelSmall>
                 )}
             </div>
             <div className={styles.filters}>{filters}</div>
         </div>
     )
+}
+
+export function DatastoreMixedTypeRecordSearch({
+    records,
+    ...props
+}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
+    const { columnTypes } = useDatastore(records)
+    const searchColumns = useSearchColumns(columnTypes)
+    return <Search {...props} fields={searchColumns} />
+}
+
+export function DatastoreMixedTypeSearch({
+    fields,
+    ...props
+}: Omit<ISearchProps, 'fields'> & { fields: RecordSchemaT[] }) {
+    const searchColumns = useSearchColumns(fields)
+    return <Search {...props} fields={searchColumns} />
 }

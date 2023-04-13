@@ -125,7 +125,6 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     swcli runtime build example/runtime/pytorch
     swcli runtime list
     swcli runtime info pytorch/version/latest
-    swcli runtime restore pytorch/version/latest
     ```
 
 - 🍞 **STEP4**: Building a model

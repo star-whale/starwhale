@@ -313,7 +313,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                     }}
                                     startEnhancer={<IconFont type='add' kind='white' />}
                                 >
-                                    Add
+                                    {t('add')}
                                 </Button>
                             </FormItem>
                         </div>

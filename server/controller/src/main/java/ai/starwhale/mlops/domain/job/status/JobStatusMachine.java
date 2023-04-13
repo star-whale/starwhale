@@ -47,8 +47,8 @@ public class JobStatusMachine {
             CANCELED, Set.of(),
             UNKNOWN, Set.of(JobStatus.values()));
 
-    static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
-    static final Set<JobStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
+    public static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
+    public static final Set<JobStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
 
     public boolean couldTransfer(JobStatus statusNow, JobStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);

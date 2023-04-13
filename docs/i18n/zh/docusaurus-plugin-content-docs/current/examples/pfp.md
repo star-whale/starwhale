@@ -37,11 +37,10 @@ cd starwhale/example/runtime/pytorch
 swcli runtime build .
 ```
 
-- Restore Runtime：本地复原Runtime环境，并在当前shell中激活相应的Python环境
+- Activate Runtime：在当前shell中激活相应的Python环境
 
 ```shell
-swcli runtime restore pytorch/version/latest
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 ```
 
 ### 数据准备与模型训练
@@ -67,7 +66,7 @@ make train
 
 ```bash
 # 如果已经激活该runtime环境，则忽略本行命令
-swcli runtime activate --uri pytorch/version/latest
+swcli runtime activate pytorch/version/latest
 # 根据dataset.yaml构建swds-bin格式in格式的数据集
 swcli dataset build .
 # 查看最新构建的数据集详情
