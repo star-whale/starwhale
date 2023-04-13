@@ -720,8 +720,9 @@ class StandaloneRuntimeTestCase(TestCase):
                 {"conda": ["pkg"]},
             ]
         )
+        runtime_yaml_name = "non-runtime.yaml"
         self.fs.create_file(
-            os.path.join(workdir, DefaultYAMLName.RUNTIME),
+            os.path.join(workdir, runtime_yaml_name),
             contents=yaml.safe_dump(runtime_config),
         )
         self.fs.create_file(os.path.join(workdir, "prepare.sh"), contents="")
@@ -733,7 +734,7 @@ class StandaloneRuntimeTestCase(TestCase):
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
         sr.build_from_runtime_yaml(
-            workdir=workdir, yaml_path=os.path.join(workdir, "runtime.yaml")
+            workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
         )
 
         assert sr.uri.object.version != ""
@@ -761,6 +762,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(runtime_workdir)
         assert os.path.exists(os.path.join(runtime_workdir, "wheels", "dummy.whl"))
         assert os.path.exists(os.path.join(runtime_workdir, "files/prepare.sh"))
+        assert os.path.exists(os.path.join(runtime_workdir, DefaultYAMLName.RUNTIME))
 
         assert "latest" in sr.tag.list()
 
@@ -870,7 +872,7 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_term_view.list("myproject")
         RuntimeTermViewRich.list("myproject")
         runtime_term_view.build_from_runtime_yaml(
-            workdir=workdir, yaml_path=os.path.join(workdir, "runtime.yaml")
+            workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
         )
 
         rts = StandaloneRuntime.list(URI(""))
@@ -940,7 +942,7 @@ class StandaloneRuntimeTestCase(TestCase):
         sr = StandaloneRuntime(uri)
         sr.build_from_runtime_yaml(
             workdir=workdir,
-            yaml_path=os.path.join(workdir, "runtime.yaml"),
+            yaml_path=os.path.join(workdir, runtime_yaml_name),
             download_all_deps=True,
         )
         runtime_workdir = os.path.join(

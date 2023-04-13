@@ -1033,10 +1033,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         yaml_name = yaml_path.name
         workdir_fs = open_fs(str(workdir))
         snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
-        copy_file(workdir_fs, yaml_name, snapshot_fs, yaml_name)
+        copy_file(workdir_fs, yaml_name, snapshot_fs, DefaultYAMLName.RUNTIME)
 
         self._manifest["artifacts"] = {
-            RuntimeArtifactType.RUNTIME: yaml_name,
+            RuntimeArtifactType.RUNTIME: DefaultYAMLName.RUNTIME,
             RuntimeArtifactType.WHEELS: [],
             RuntimeArtifactType.DEPEND: [],
             RuntimeArtifactType.FILES: [],
