@@ -16,7 +16,7 @@ def request_link_text(index_link):
 
 
 def build_ds(ds_name: str) -> None:
-    ds = dataset(f"z_bench_{ds_name}", create="auto")
+    ds = dataset(f"z_bench_{ds_name}")
     csv_reader = csv.reader(
         StringIO(request_link_text(f"{PATH_ROOT}/{ds_name}.samples.csv")), delimiter=","
     )
