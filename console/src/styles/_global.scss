@@ -11,6 +11,11 @@
        url('../assets/fonts/SourceSansPro-Regular.ttf') format('truetype'), /* Safari, Android, iOS */
 }
 
+#root { 
+  position: relative;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-size: 14px;

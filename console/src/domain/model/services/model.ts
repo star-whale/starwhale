@@ -1,6 +1,12 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { ICreateModelSchema, IModelSchema, IModelDetailSchema, ICreateOnlineEvalSchema } from '../schemas/model'
+import {
+    ICreateModelSchema,
+    IModelSchema,
+    IModelDetailSchema,
+    ICreateOnlineEvalSchema,
+    IModelTreeSchema,
+} from '../schemas/model'
 
 export async function listModels(projectId: string, query: IListQuerySchema): Promise<IListSchema<IModelSchema>> {
     const resp = await axios.get<IListSchema<IModelSchema>>(`/api/v1/project/${projectId}/model`, {
@@ -36,5 +42,10 @@ export async function removeModel(projectId: string, modelId: string): Promise<a
 
 export async function createOnlineEval(projectId: string, data: ICreateOnlineEvalSchema): Promise<any> {
     const resp = await axios.post<any>(`/api/v1/project/${projectId}/serving`, data)
+    return resp.data
+}
+
+export async function fetchModelTree(projectId: string): Promise<IModelTreeSchema[]> {
+    const resp = await axios.get<IModelTreeSchema[]>(`/api/v1/project/${projectId}/model-tree`)
     return resp.data
 }
