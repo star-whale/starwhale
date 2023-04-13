@@ -392,8 +392,8 @@ public class ModelService {
                         ModelViewVo.builder()
                             .ownerName(entity.getUserName())
                             .projectName(entity.getProjectName())
-                            .id(idConvertor.convert(entity.getModelId()))
-                            .name(entity.getModelName())
+                            .modelId(idConvertor.convert(entity.getModelId()))
+                            .modelName(entity.getModelName())
                             .shared(toInt(shared))
                             .versions(new ArrayList<>())
                             .build());

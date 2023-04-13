@@ -31,9 +31,9 @@ public class ModelViewVo {
 
     private String projectName;
 
-    private String id;
+    private String modelId;
 
-    private String name;
+    private String modelName;
 
     private Integer shared;
 

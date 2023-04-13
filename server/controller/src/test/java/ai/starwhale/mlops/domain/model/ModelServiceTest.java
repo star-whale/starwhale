@@ -697,10 +697,10 @@ public class ModelServiceTest {
 
         var res = service.listModelVersionView("1");
         assertEquals(4, res.size());
-        assertEquals("model1", res.get(0).getName());
-        assertEquals("model3", res.get(1).getName());
-        assertEquals("model2", res.get(2).getName());
-        assertEquals("model4", res.get(3).getName());
+        assertEquals("model1", res.get(0).getModelName());
+        assertEquals("model3", res.get(1).getModelName());
+        assertEquals("model2", res.get(2).getModelName());
+        assertEquals("model4", res.get(3).getModelName());
         assertEquals(3, res.get(0).getVersions().size());
         assertEquals(2, res.get(1).getVersions().size());
         assertEquals(2, res.get(2).getVersions().size());
