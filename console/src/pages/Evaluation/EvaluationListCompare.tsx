@@ -55,6 +55,9 @@ const useStyles = createUseStyles({
         fontSize: '12px',
         marginLeft: '8px',
     },
+    tableWrapper: {
+        flexGrow: 1,
+    },
 })
 
 type RowT = {
@@ -189,6 +192,8 @@ export default function EvaluationListCompare({
         )
     }, [rows, comparePinnedKey])
 
+    console.log('comparePinnedKey', comparePinnedKey, comparePinnedRow, comparePinnedRowIndex)
+
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
 
@@ -248,7 +253,7 @@ export default function EvaluationListCompare({
                 CustomColumn({
                     minWidth: 200,
                     key: val(row.id),
-                    title: val(row.id),
+                    title: val(row['sys/model_name']),
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {
@@ -336,7 +341,9 @@ export default function EvaluationListCompare({
                     </Checkbox>
                 </div>
             </div>
-            <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+            <div className={styles.tableWrapper}>
+                <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+            </div>
         </>
     )
 }

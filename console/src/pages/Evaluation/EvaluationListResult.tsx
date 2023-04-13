@@ -25,22 +25,8 @@ import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { useDatastore } from '@starwhale/core/datastore'
-import { createUseStyles } from 'react-jss'
 
-const useStyles = createUseStyles({
-    showDetail: {
-        background: '#fff',
-        // boxShadow: '0px 2px 8px 0  rgba(0, 0, 0, 0.12)',
-        borderTop: '1px solid #e5e5e5',
-        height: '44px',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-    },
-})
-
-export default function EvaluationListCard() {
-    const styles = useStyles()
+export default function EvaluationListResult() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -259,11 +245,6 @@ export default function EvaluationListCard() {
                     width: '100%',
                     flex: 1,
                 }}
-                extra={
-                    <WithCurrentAuth id='evaluation.create'>
-                        <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
-                    </WithCurrentAuth>
-                }
             >
                 <BusyPlaceholder />
             </Card>
@@ -292,9 +273,9 @@ export default function EvaluationListCard() {
                         <GridTable
                             store={useEvaluationStore}
                             columnable
-                            viewable
-                            queryable
-                            selectable
+                            // viewable
+                            // queryable
+                            // selectable
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
                             data={records}
@@ -321,23 +302,6 @@ export default function EvaluationListCard() {
                     )
                 }}
             />
-            <div className={styles.showDetail}>
-                <Button
-                    kind='tertiary'
-                    onClick={() => {}}
-                    icon='unfold2'
-                    overrides={{
-                        BaseButton: {
-                            style: {
-                                paddingTop: '9px',
-                                paddingBottom: '9px',
-                            },
-                        },
-                    }}
-                >
-                    {t('compare.show.details')}
-                </Button>
-            </div>
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                 <ModalBody>
