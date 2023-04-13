@@ -11,14 +11,14 @@ import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
-import { RecordListSchemaT, useQueryDatasetList } from '@starwhale/core/datastore'
+import { RecordSchemaT, useQueryDatasetList } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { Button } from '@starwhale/ui'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
-import { DatastoreMixedTypeRecordSearch } from '@starwhale/ui/Search/Search'
+import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -155,8 +155,8 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 )}
                 {datasetVersionId && (
                     <div style={{ marginBottom: '10px' }}>
-                        <DatastoreMixedTypeRecordSearch
-                            records={datastore.data?.records as RecordListSchemaT}
+                        <DatastoreMixedTypeSearch
+                            fields={datastore.data?.columnTypes as RecordSchemaT[]}
                             value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
                             onChange={(items) => {
                                 updateQuery({ filter: items.filter((v) => v.value) as any })

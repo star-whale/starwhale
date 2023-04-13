@@ -3,12 +3,16 @@
 @import './_utils.scss';
 
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: "Roboto Mono";
   font-style: normal;
   font-weight: 400;
-  font-size: 14px;
-  src: local(''),
-       url('../assets/fonts/SourceSansPro-Regular.ttf') format('truetype'), /* Safari, Android, iOS */
+  font-size: 16px;
+  src: local(""), url("../assets/fonts/RobotoMono-Regular.ttf") format("truetype");
+}
+
+#root { 
+  position: relative;
+  overflow: hidden;
 }
 
 body {

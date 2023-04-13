@@ -34,6 +34,7 @@ function SelectorPopover({
                 Body: {
                     style: {
                         marginTop: `${(rows + 1) * 22 + 10}px`,
+                        bottom: 0,
                     },
                 },
                 Inner: {
@@ -42,6 +43,8 @@ function SelectorPopover({
                         backgroundColor: '#FFF',
                         minHeight: '200px',
                         minWidth: '410px',
+                        // maxHeight: '600px',
+                        overflow: 'auto',
                     },
                 },
             }}

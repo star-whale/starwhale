@@ -5,6 +5,7 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
 import { IRuntimeTreeSchema } from '../schemas/runtime'
 import { IRuntimeTreeVersionSchema } from '../schemas/runtimeVersion'
+import { MonoText } from '@/components/Text'
 
 export const RuntimeLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -37,7 +38,7 @@ export function RuntimeLabel({
     const alias = <Alias alias={version.alias} />
     const p = runtime ? [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/') : ''
     const name = version?.versionName ?? version?.name
-    const v = (name ?? '').substring(0, 8)
+    const v = <MonoText>{(name ?? '').substring(0, 8)}</MonoText>
     const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
         .join('/')

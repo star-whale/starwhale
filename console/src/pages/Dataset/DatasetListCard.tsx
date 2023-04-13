@@ -13,6 +13,7 @@ import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
 import Alias from '@/components/Alias'
+import { MonoText } from '@/components/Text'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -52,7 +53,7 @@ export default function DatasetListCard() {
                             >
                                 {dataset.name}
                             </TextLink>,
-                            dataset.version?.name ?? '-',
+                            <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
                             <Alias key='alias' alias={dataset.version?.alias} />,
                             // dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),

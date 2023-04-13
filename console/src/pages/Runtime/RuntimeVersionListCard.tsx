@@ -15,6 +15,7 @@ import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
+import { MonoText } from '@/components/Text'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -67,7 +68,7 @@ export default function RuntimeVersionListCard() {
                             key={runtime.id}
                             to={`/projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/overview`}
                         >
-                            {runtime.name}
+                            <MonoText>{runtime.name}</MonoText>
                         </TextLink>,
                         <Alias key='alias' alias={runtime.alias} />,
                         <Shared key='shared' shared={runtime.shared} isTextShow />,

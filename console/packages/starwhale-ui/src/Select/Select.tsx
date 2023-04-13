@@ -55,3 +55,36 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
     // eslint-disable-next-line  react/jsx-props-no-spreading
     return <BaseSelect size={size} {...props} overrides={overrides} />
 }
+
+export function FormSelect({
+    size = 'compact',
+    value,
+    onChange,
+    ...props
+}: Omit<ISelectProps, 'value' | 'onChange'> & {
+    value: string | number
+    onChange?: (value: string | number) => void
+}) {
+    return (
+        <Select
+            size={size}
+            {...props}
+            // eslint-disable-next-line
+            value={
+                value
+                    ? [
+                          {
+                              id: value,
+                          },
+                      ]
+                    : []
+            }
+            onChange={(params) => {
+                if (!params.option) {
+                    return
+                }
+                onChange?.(params.option.id as any)
+            }}
+        />
+    )
+}

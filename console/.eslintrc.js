@@ -5,7 +5,7 @@ module.exports = {
     parserOptions: {
         jsx: true,
         useJSXTextNode: true,
-        project: path.resolve(__dirname, './tsconfig.json'),
+        project: './tsconfig.json',
     },
     env: {
         browser: true,

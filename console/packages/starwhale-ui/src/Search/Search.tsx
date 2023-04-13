@@ -1,4 +1,4 @@
-import { RecordListSchemaT, RecordSchemaT, isBasicType, isSearchColumns, useDatastore } from '@starwhale/core/datastore'
+import { RecordListSchemaT, RecordSchemaT, isSearchColumns, useDatastore } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
@@ -70,16 +70,15 @@ export interface ISearchProps {
 
 function useSearchColumns(columnTypes: { name: string; type: string }[]) {
     const searchColumns = React.useMemo(() => {
+        if (!columnTypes) return []
         const arr: SearchFieldSchemaT[] = []
         const columns = columnTypes.filter((column) => isSearchColumns(column.name))
         columns.forEach((column) => {
-            if (isBasicType(column.type)) {
-                arr.push({
-                    ...column,
-                    path: column.name,
-                    label: column.name,
-                })
-            }
+            arr.push({
+                ...column,
+                path: column.name,
+                label: column.name,
+            })
         })
 
         return arr
