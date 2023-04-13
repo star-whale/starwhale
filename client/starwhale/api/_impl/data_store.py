@@ -864,7 +864,8 @@ class ZipCompressor(Compressor):
         return ".zip"
 
     def compress(self, source: Path) -> Path:
-        output = tempfile.mktemp()
+        # use the same dir as the source file
+        output = source.with_suffix(self.extension())
         with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(source, source.name)
         return Path(output)
