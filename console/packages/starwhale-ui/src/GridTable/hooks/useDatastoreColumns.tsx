@@ -5,7 +5,7 @@ import { ColumnT, RenderCellT } from '../../base/data-table/types'
 import { StringCell } from '../../base/data-table/column-string'
 import _ from 'lodash'
 
-const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
+export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
     if (cb.name === 'sys/id') return 1
     if (ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
@@ -34,7 +34,7 @@ export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
         columnTypes
             ?.filter((column) => !!column)
             .filter((column) => isSearchColumns(column.name))
-            .sort(sortSys)
+            .sort(sortColumn)
             .forEach((column) => {
                 return columnsWithAttrs.push(
                     CustomColumn({

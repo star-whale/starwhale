@@ -89,10 +89,8 @@ export function useQueryDatasetList(
     }, [options?.filter, limit, start, tableName, query, options?.revision, toQuery])
 
     const columnInfo = useQueryDatastore(columnQuery, enabled)
-
-    // useIfChanged({ filter: options?.filter, limit, start, tableName, query, revision: options?.revision, toQuery })
-
     const recordInfo = useQueryDatastore(recordQuery, enabled)
+
     const { records } = useDatastore(recordInfo?.data?.records)
 
     React.useEffect(() => {
@@ -112,7 +110,7 @@ export function useQueryDatasetList(
 
     // when table changed
     React.useEffect(() => {
-        if (recordQuery.tableName && !recordInfo.isLoading) {
+        if (recordQuery.tableName && enabled && !recordInfo.isSuccess) {
             recordInfo.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,9 +118,9 @@ export function useQueryDatasetList(
 
     return {
         recordQuery,
-        columnInfo: recordInfo,
+        columnInfo,
         recordInfo,
-        columnTypes: columnInfo.data?.columnTypes as RecordSchemaT[],
+        columnTypes: (columnInfo.data?.columnTypes as RecordSchemaT[]) ?? [],
         records,
     }
 }

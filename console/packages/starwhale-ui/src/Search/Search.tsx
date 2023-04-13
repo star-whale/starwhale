@@ -70,6 +70,7 @@ export interface ISearchProps {
 
 function useSearchColumns(columnTypes: { name: string; type: string }[]) {
     const searchColumns = React.useMemo(() => {
+        if (!columnTypes) return []
         const arr: SearchFieldSchemaT[] = []
         const columns = columnTypes.filter((column) => isSearchColumns(column.name))
         columns.forEach((column) => {
