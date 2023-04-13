@@ -33,6 +33,7 @@ public class TaskTokenValidator implements JwtClaimValidator {
 
     private static final String CLAIM_TASK_ID = "taskId";
     private static final Set<TaskStatus> TOKEN_VALID_STATUSES = Set.of(
+            TaskStatus.PREPARING,
             TaskStatus.RUNNING,
             TaskStatus.READY
     );
