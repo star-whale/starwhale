@@ -330,22 +330,15 @@ class Runtime(BaseArtifact):
         workdir: str,
         project: str = "",
         runtime_yaml: str = "runtime.yaml",
-        gen_all_bundles: bool = False,
+        download_all_deps: bool = False,
         include_editable: bool = False,
-        enable_lock: bool = False,
-        env_prefix_path: str = "",
-        env_name: str = "",
     ) -> t.Any:
-        return RuntimeTermView.build(
-            workdir,
-            project,
-            runtime_yaml,
-            gen_all_bundles,
-            include_editable,
-            enable_lock,
-            env_prefix_path,
-            env_name,
-            False,
+        return RuntimeTermView.build_from_runtime_yaml(
+            workdir=workdir,
+            yaml_path=Path(workdir) / runtime_yaml,
+            project=project,
+            download_all_deps=download_all_deps,
+            include_editable=include_editable,
         )
 
     def build(
@@ -353,7 +346,7 @@ class Runtime(BaseArtifact):
         workdir: str,
         project: str = "",
         runtime_yaml: str = "",
-        gen_all_bundles: bool = False,
+        download_all_deps: bool = False,
         include_editable: bool = False,
         enable_lock: bool = False,
         env_prefix_path: str = "",
@@ -369,7 +362,7 @@ class Runtime(BaseArtifact):
             _args.extend(["--env-prefix-path", env_prefix_path])
         if env_name:
             _args.extend(["--env-name", env_name])
-        if gen_all_bundles:
+        if download_all_deps:
             _args.append("--gen-all-bundles")
         if include_editable:
             _args.append("--include-editable")

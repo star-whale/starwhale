@@ -4,14 +4,12 @@ import os
 import typing as t
 from pathlib import Path
 
-import click
 from rich.pretty import Pretty
 from rich.syntax import Syntax
 
 from starwhale.utils import console, load_yaml, pretty_bytes, in_production
 from starwhale.consts import (
     PythonRunEnv,
-    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
@@ -19,17 +17,11 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
-from starwhale.utils.venv import get_python_version
-from starwhale.utils.error import NoSupportError
+from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
+from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
 
-from .model import (
-    Runtime,
-    _SUPPORT_CUDA,
-    RuntimeInfoFilter,
-    StandaloneRuntime,
-    _SUPPORT_PYTHON_VERSIONS,
-)
+from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
 
 
 class RuntimeTermView(BaseTermView):
@@ -127,8 +119,8 @@ class RuntimeTermView(BaseTermView):
     @BaseTermView._only_standalone
     def lock(
         cls,
-        target_dir: str,
-        yaml_name: str = DefaultYAMLName.RUNTIME,
+        target_dir: str | Path,
+        yaml_path: str | Path,
         env_name: str = "",
         env_prefix_path: str = "",
         no_cache: bool = False,
@@ -140,7 +132,7 @@ class RuntimeTermView(BaseTermView):
     ) -> None:
         Runtime.lock(
             target_dir=target_dir,
-            yaml_name=yaml_name,
+            yaml_path=yaml_path,
             env_name=env_name,
             env_prefix_path=env_prefix_path,
             stdout=stdout,
@@ -153,73 +145,100 @@ class RuntimeTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
-    def build(
+    def build_from_docker_image(
+        cls, image: str, runtime_name: str = "", project: str = ""
+    ) -> None:
+        runtime_name = runtime_name or image.split(":")[0].split("/")[-1]
+        runtime_uri = cls.prepare_build_bundle(
+            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
+        )
+
+        rt = Runtime.get_runtime(runtime_uri)
+        rt.build_from_docker_image(image=image, runtime_name=runtime_name)
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def build_from_python_env(
         cls,
-        workdir: t.Union[str, Path],
+        runtime_name: str = "",
+        conda_name: str = "",
+        conda_prefix: str = "",
+        venv_prefix: str = "",
         project: str = "",
-        yaml_name: str = DefaultYAMLName.RUNTIME,
-        gen_all_bundles: bool = False,
+        cuda: str = "",
+        cudnn: str = "",
+        arch: str = "",
+        download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        disable_env_lock: bool = False,
+    ) -> URI:
+        set_args = list(filter(bool, (conda_name, conda_prefix, venv_prefix)))
+        if len(set_args) >= 2:
+            raise ExclusiveArgsError(
+                f"conda_prefix({conda_prefix}), conda_name({conda_name}), venv_prefix({venv_prefix}) are the mutex args."
+            )
+
+        if conda_name:
+            mode = PythonRunEnv.CONDA
+            candidate_runtime_name = conda_name
+        elif conda_prefix:
+            mode = PythonRunEnv.CONDA
+            candidate_runtime_name = conda_prefix
+        elif venv_prefix:
+            mode = PythonRunEnv.VENV
+            candidate_runtime_name = venv_prefix
+        else:
+            mode = get_python_run_env()
+            candidate_runtime_name = (
+                get_conda_env() if mode == PythonRunEnv.CONDA else get_venv_env()
+            ) or "default"
+
+        if runtime_name == "":
+            runtime_name = candidate_runtime_name.strip("/").split("/")[-1]
+
+        runtime_uri = cls.prepare_build_bundle(
+            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
+        )
+        rt = Runtime.get_runtime(runtime_uri)
+        rt.build_from_python_env(
+            runtime_name=runtime_name,
+            mode=mode,
+            conda_name=conda_name,
+            conda_prefix=conda_prefix,
+            venv_prefix=venv_prefix,
+            cuda=cuda,
+            cudnn=cudnn,
+            arch=arch,
+            download_all_deps=download_all_deps,
+            include_editable=include_editable,
+            include_local_wheel=include_local_wheel,
+        )
+        return runtime_uri
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def build_from_runtime_yaml(
+        cls,
+        workdir: str | Path,
+        yaml_path: str | Path,
+        runtime_name: str = "",
+        project: str = "",
+        download_all_deps: bool = False,
+        include_editable: bool = False,
+        include_local_wheel: bool = False,
         no_cache: bool = False,
-        env_prefix_path: str = "",
-        env_name: str = "",
-        env_use_shell: bool = False,
+        disable_env_lock: bool = False,
     ) -> URI:
         workdir = Path(workdir)
-        yaml_fpath = workdir / yaml_name
-        if not yaml_fpath.exists():
-            click.confirm(
-                f"Do you want to render {yaml_name}@{workdir.absolute()}?",
-                abort=True,
-            )
-            mode = click.prompt(
-                "Choose python env:",
-                type=click.Choice([PythonRunEnv.VENV, PythonRunEnv.CONDA]),
-                default=PythonRunEnv.VENV,
-            )
-            _default_python_version = get_python_version()
-            python_version = click.prompt(
-                "Choose python version:",
-                type=click.Choice(_SUPPORT_PYTHON_VERSIONS),
-                default=_default_python_version,
-            )
+        yaml_path = Path(yaml_path)
 
-            pkgs_input = click.prompt(
-                "Input python dependencies, split by the comma",
-                type=str,
-                default="",
-            )
+        if not yaml_path.exists():
+            raise NotFoundError(f"not found runtime yaml:{yaml_path}")
+        _config = load_yaml(yaml_path)
+        runtime_name = runtime_name or _config["name"]
 
-            if click.confirm("Do you want to enable cuda?"):
-                cuda_version = click.prompt(
-                    "Choose cuda version:",
-                    type=click.Choice(_SUPPORT_CUDA),
-                    default="11.4",
-                )
-            else:
-                cuda_version = None
-
-            StandaloneRuntime.render_runtime_yaml(
-                workdir=workdir,
-                name=workdir.absolute().name,
-                mode=mode,
-                python_version=python_version,
-                pkgs=pkgs_input.split(","),
-                force=True,
-                auto_inject_sw=True,
-                cuda_version=cuda_version,
-            )
-
-            click.confirm(
-                f"{yaml_name} has been generated, do you want to continue build?",
-                abort=True,
-            )
-
-        _config = load_yaml(yaml_fpath)
         _runtime_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=_config.get("name"), typ=URIType.RUNTIME
+            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
         )
         if include_editable:
             console.print(
@@ -231,17 +250,14 @@ class RuntimeTermView(BaseTermView):
             )
 
         _rt = Runtime.get_runtime(_runtime_uri)
-        _rt.build(
-            workdir=Path(workdir),
-            yaml_name=yaml_name,
-            gen_all_bundles=gen_all_bundles,
+        _rt.build_from_runtime_yaml(
+            workdir=workdir,
+            yaml_path=yaml_path,
+            download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            disable_env_lock=disable_env_lock,
             no_cache=no_cache,
-            env_prefix_path=env_prefix_path,
-            env_name=env_name,
-            env_use_shell=env_use_shell,
+            disable_env_lock=disable_env_lock,
         )
         return _runtime_uri
 
