@@ -37,7 +37,7 @@ public interface ModelVersionMapper {
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
             + " storage_path, created_time, modified_time, jobs, status, shared";
 
-    String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, b.model_name, b.id as model_id,"
+    String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, m.model_name, m.id as model_id,"
             + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
@@ -61,25 +61,27 @@ public interface ModelVersionMapper {
     int updateShared(@Param("id") Long id, @Param("shared") Boolean shared);
 
     @Select("select " + VERSION_VIEW_COLUMNS
-            + " from model_version as v, model_info as b, project_info as p, user_info as u"
-            + " where v.model_id = b.id"
-            + " and b.project_id = p.id"
+            + " from model_info as m, model_version as v, project_info as p, user_info as u"
+            + " where v.model_id = m.id"
+            + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
+            + " and m.is_deleted = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
-            + " order by b.id desc, v.version_order desc")
+            + " order by m.id desc, v.version_order desc")
     List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
 
     @Select("select " + VERSION_VIEW_COLUMNS
-            + " from model_version as v, model_info as b, project_info as p, user_info as u"
-            + " where v.model_id = b.id"
-            + " and b.project_id = p.id"
+            + " from model_info as m, model_version as v, project_info as p, user_info as u"
+            + " where v.model_id = m.id"
+            + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and p.is_deleted = 0"
+            + " and m.is_deleted = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
             + " and p.id != #{excludeProjectId}"
-            + " order by b.id desc, v.version_order desc")
+            + " order by m.id desc, v.version_order desc")
     List<ModelVersionViewEntity> listModelVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
 
 
