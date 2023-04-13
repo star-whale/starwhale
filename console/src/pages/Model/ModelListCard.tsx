@@ -13,6 +13,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
+import { MonoText } from '@/components/Text'
 
 export default function ModelListCard() {
     const [page] = usePage()

@@ -5,6 +5,7 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
 import { IDatasetTreeSchema } from '../schemas/dataset'
 import { IDatasetTreeVersionSchema } from '../schemas/datasetVersion'
+import { MonoText } from '@/components/Text'
 
 export const DatasetLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -48,7 +49,7 @@ export function DatasetLabel({
     const alias = <Alias alias={version.alias} />
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
     const name = version?.versionName ?? version?.name
-    const v = (name ?? '').substring(0, 8)
+    const v = <MonoText>{(name ?? '').substring(0, 8)}</MonoText>
     const title = [p, v, version.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
         .join('/')

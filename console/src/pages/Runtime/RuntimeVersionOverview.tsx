@@ -8,6 +8,7 @@ import { Toggle } from '@starwhale/ui'
 import { toaster } from 'baseui/toast'
 import { fetchRuntimeVersion, updateRuntimeVersionShared } from '@/domain/runtime/services/runtimeVersion'
 import { useParams } from 'react-router-dom'
+import { MonoText } from '@/components/Text'
 
 export default function RuntimeVersionOverview() {
     const { projectId, runtimeId, runtimeVersionId } = useParams<{
@@ -26,7 +27,7 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: runtimeVersion?.versionName ?? '-',
+            value: <MonoText>{runtimeVersion?.versionName ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),

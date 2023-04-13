@@ -10,6 +10,7 @@ import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
 import Alias from '@/components/Alias'
+import { MonoText } from '@/components/Text'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -42,7 +43,7 @@ export default function RuntimeListCard() {
                             >
                                 {runtime.name}
                             </TextLink>,
-                            runtime.version?.name ?? '-',
+                            <MonoText key='name'>{runtime.version?.name ?? '-'}</MonoText>,
                             <Alias key='alias' alias={runtime.version?.alias} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
