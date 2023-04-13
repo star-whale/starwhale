@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
