@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.model.mapper;
 
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +35,10 @@ import org.apache.ibatis.jdbc.SQL;
 public interface ModelVersionMapper {
 
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, created_time, modified_time, jobs, status";
+            + " storage_path, created_time, modified_time, jobs, status, shared";
+
+    String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, m.model_name, m.id as model_id,"
+            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
@@ -52,6 +56,34 @@ public interface ModelVersionMapper {
             + " order by version_order desc"
             + " limit 1")
     ModelVersionEntity findByLatest(@Param("modelId") Long modelId);
+
+    @Update("update model_version set shared = #{shared} where id = #{id}")
+    int updateShared(@Param("id") Long id, @Param("shared") Boolean shared);
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from model_info as m, model_version as v, project_info as p, user_info as u"
+            + " where v.model_id = m.id"
+            + " and m.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and m.is_deleted = 0"
+            + " and p.is_deleted = 0"
+            + " and p.id = #{projectId}"
+            + " order by m.id desc, v.version_order desc")
+    List<ModelVersionViewEntity> listModelVersionViewByProject(@Param("projectId") Long projectId);
+
+    @Select("select " + VERSION_VIEW_COLUMNS
+            + " from model_info as m, model_version as v, project_info as p, user_info as u"
+            + " where v.model_id = m.id"
+            + " and m.project_id = p.id"
+            + " and p.owner_id = u.id"
+            + " and p.is_deleted = 0"
+            + " and m.is_deleted = 0"
+            + " and p.privacy = 1"
+            + " and v.shared = 1"
+            + " and p.id != #{excludeProjectId}"
+            + " order by m.id desc, v.version_order desc")
+    List<ModelVersionViewEntity> listModelVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
+
 
     @Select("select version_order from model_version where id = #{id} for update")
     Long selectVersionOrderForUpdate(@Param("id") Long id);

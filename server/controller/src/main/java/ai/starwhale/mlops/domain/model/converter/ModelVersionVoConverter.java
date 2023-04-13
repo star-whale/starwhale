@@ -52,7 +52,6 @@ public class ModelVersionVoConverter {
                     .meta(entity.getVersionMeta())
                     .manifest(manifest)
                     .createdTime(entity.getCreatedTime().getTime())
-                    // TODO add other job spec support
                     .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getJobs()))
                     .build();
         } catch (JsonProcessingException e) {

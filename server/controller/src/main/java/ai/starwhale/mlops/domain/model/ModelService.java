@@ -16,10 +16,14 @@
 
 package ai.starwhale.mlops.domain.model;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadResult;
+import ai.starwhale.mlops.api.protocol.model.ModelVersionViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
@@ -38,6 +42,7 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -48,6 +53,7 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.MetaInfo;
@@ -76,9 +82,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,6 +105,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+
 
 @Slf4j
 @Service
@@ -120,15 +129,18 @@ public class ModelService {
 
     private final TrashService trashService;
 
+    private final JobSpecParser jobSpecParser;
+
     @Setter
     private BundleManager bundleManager;
 
     public ModelService(ModelMapper modelMapper, ModelVersionMapper modelVersionMapper,
-            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, ModelVoConverter modelVoConverter,
-            ModelVersionVoConverter versionConvertor, StoragePathCoordinator storagePathCoordinator,
-            ModelDao modelDao, StorageAccessService storageAccessService, StorageService storageService,
-            UserService userService, ProjectService projectService, HotJobHolder jobHolder,
-            TrashService trashService) {
+                        IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
+                        ModelVoConverter modelVoConverter, ModelVersionVoConverter versionConvertor,
+                        StoragePathCoordinator storagePathCoordinator, ModelDao modelDao,
+                        StorageAccessService storageAccessService, StorageService storageService,
+                        UserService userService, ProjectService projectService, HotJobHolder jobHolder,
+                        TrashService trashService, JobSpecParser jobSpecParser) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -143,6 +155,7 @@ public class ModelService {
         this.projectService = projectService;
         this.jobHolder = jobHolder;
         this.trashService = trashService;
+        this.jobSpecParser = jobSpecParser;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -358,6 +371,56 @@ public class ModelService {
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
         });
+    }
+
+    public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl,
+                                    Boolean shared) {
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
+                .create(projectUrl, modelUrl, versionUrl));
+        modelVersionMapper.updateShared(versionId, shared);
+    }
+
+    public List<ModelViewVo> listModelVersionView(String projectUrl) {
+        Long projectId = projectService.getProjectId(projectUrl);
+        var versions = modelVersionMapper.listModelVersionViewByProject(projectId);
+        var shared = modelVersionMapper.listModelVersionViewByShared(projectId);
+        var list = new ArrayList<>(viewEntityToVo(versions, false));
+        list.addAll(viewEntityToVo(shared, true));
+        return list;
+    }
+
+    private Collection<ModelViewVo> viewEntityToVo(List<ModelVersionViewEntity> list, Boolean shared) {
+        Map<Long, ModelViewVo> map = new LinkedHashMap<>();
+        for (ModelVersionViewEntity entity : list) {
+            if (!map.containsKey(entity.getModelId())) {
+                map.put(entity.getModelId(),
+                        ModelViewVo.builder()
+                            .ownerName(entity.getUserName())
+                            .projectName(entity.getProjectName())
+                            .modelId(idConvertor.convert(entity.getModelId()))
+                            .modelName(entity.getModelName())
+                            .shared(toInt(shared))
+                            .versions(new ArrayList<>())
+                            .build());
+            }
+            ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
+            try {
+                map.get(entity.getModelId())
+                        .getVersions()
+                        .add(ModelVersionViewVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(toInt(entity.getShared()))
+                            .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getJobs()))
+                            .build());
+            }  catch (JsonProcessingException e) {
+                log.error("parse step spec error for model version:{},error:{}", entity.getId(), e);
+                throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
+            }
+        }
+        return map.values();
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
