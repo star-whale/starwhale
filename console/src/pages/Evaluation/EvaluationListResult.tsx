@@ -7,7 +7,7 @@ import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
-import { CustomColumn } from '@starwhale/ui/base/data-table'
+import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
@@ -25,22 +25,8 @@ import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { useDatastore } from '@starwhale/core/datastore'
-import { createUseStyles } from 'react-jss'
 
-const useStyles = createUseStyles({
-    showDetail: {
-        background: '#fff',
-        // boxShadow: '0px 2px 8px 0  rgba(0, 0, 0, 0.12)',
-        borderTop: '1px solid #e5e5e5',
-        height: '44px',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-    },
-})
-
-export default function EvaluationListCard() {
-    const styles = useStyles()
+export default function EvaluationListResult() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -77,7 +63,7 @@ export default function EvaluationListCard() {
         }
     }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
 
-    const { recordInfo: evaluationsInfo, columnTypes, records } = useQueryDatasetList(summaryTableName, options, true)
+    const { columnInfo, recordInfo: evaluationsInfo } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
@@ -91,13 +77,13 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreColumns(columnTypes as any)
+    const { records, columnTypes } = useDatastore(evaluationsInfo?.data?.records)
+    const $columns = useDatastoreColumns(columnTypes)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn({
-                    ...column,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
@@ -114,7 +100,6 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
-                    ...column,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -134,7 +119,6 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
-                    ...column,
                     key: column.key,
                     title: column.key,
                     sortable: true,
@@ -147,19 +131,18 @@ export default function EvaluationListCard() {
                     ),
                     mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
-            if (column.key?.endsWith('time')) {
-                return CustomColumn({
-                    ...column,
+            if (column.key?.endsWith('time'))
+                return StringColumn({
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: ({ value }) => {
-                        return <span title={value}>{formatTimestampDateTime(value)}</span>
+                        return <p title={value}>{formatTimestampDateTime(value)}</p>
                     },
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
-            }
+
             return {
                 ...column,
                 fillWidth: false,
@@ -172,8 +155,8 @@ export default function EvaluationListCard() {
     }, [store.rowSelectedIds, records])
 
     const $ready = React.useMemo(() => {
-        return evaluationViewConfig.isSuccess
-    }, [evaluationViewConfig.isSuccess])
+        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
+    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
 
     React.useEffect(() => {
         const unloadCallback = (event: any) => {
@@ -262,11 +245,6 @@ export default function EvaluationListCard() {
                     width: '100%',
                     flex: 1,
                 }}
-                extra={
-                    <WithCurrentAuth id='evaluation.create'>
-                        <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
-                    </WithCurrentAuth>
-                }
             >
                 <BusyPlaceholder />
             </Card>
@@ -295,9 +273,9 @@ export default function EvaluationListCard() {
                         <GridTable
                             store={useEvaluationStore}
                             columnable
-                            viewable
-                            queryable
-                            selectable
+                            // viewable
+                            // queryable
+                            // selectable
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
                             columns={$columnsWithSpecColumns}
                             data={records}
@@ -324,23 +302,6 @@ export default function EvaluationListCard() {
                     )
                 }}
             />
-            <div className={styles.showDetail}>
-                <Button
-                    kind='tertiary'
-                    onClick={() => {}}
-                    icon='unfold2'
-                    overrides={{
-                        BaseButton: {
-                            style: {
-                                paddingTop: '9px',
-                                paddingBottom: '9px',
-                            },
-                        },
-                    }}
-                >
-                    {t('compare.show.details')}
-                </Button>
-            </div>
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                 <ModalBody>

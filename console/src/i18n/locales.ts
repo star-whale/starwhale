@@ -264,6 +264,10 @@ const evaluation = {
         en: 'Rows with diff only',
         zh: '只显示不同内容',
     },
+    'compare.show.details': {
+        en: 'Show Details',
+        zh: '显示详情',
+    },
 }
 
 const table = {
