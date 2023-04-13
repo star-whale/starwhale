@@ -5,7 +5,7 @@ title: 概述
 ## 使用方式
 
 ```bash
-swcli [选项] COMMAND [参数]...
+swcli [选项] <COMMAND> [参数]...
 ```
 
 :::note
@@ -26,22 +26,10 @@ swcli [选项] COMMAND [参数]...
 
 ## 命令
 
+* [`swcli instance`](./instance.md)
+* [`swcli project`](./project.md)
+* [`swcli model`](./model.md)
 * [`swcli dataset`](./dataset.md)
 * [`swcli runtime`](./runtime.md)
-* [`swcli model`](./model.md)
-* [`swcli project`](./project.md)
-* [`swcli instance`](./instance.md)
 * [`swcli job`](./job.md)
-* [`swcli ui`](./utilities.md#ui)
 * [`swcli gc`](./utilities.md#gc)
-
-swcli支持命令的前缀简写输入，如果遇到冲突会有相关提示。
-
-```bash
-swcli r -h
-swcli ru -h
-swcli run -h
-swcli runt -h
-```
-
-上面四个命令等价于 `swcli runtime -h`。
