@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
@@ -35,6 +36,7 @@ import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.storage.FileDesc;
@@ -251,6 +253,26 @@ public class ModelControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.NOT_FOUND));
 
         resp = controller.headModel("p2", "m1", "v1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testListModelTree() {
+        given(modelService.listModelVersionView(anyString()))
+                .willReturn(List.of(ModelViewVo.builder().build()));
+
+        var resp = controller.listModelTree("1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        assertThat(resp.getBody().getData(), allOf(
+                notNullValue(),
+                is(iterableWithSize(1))
+        ));
+    }
+
+    @Test
+    public void testShareModelVersion() {
+        var resp = controller.shareModelVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }
