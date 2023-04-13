@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "Runtime")
+@Tag(name = "Settings")
 @Validated
 public interface SettingsApi {
 
