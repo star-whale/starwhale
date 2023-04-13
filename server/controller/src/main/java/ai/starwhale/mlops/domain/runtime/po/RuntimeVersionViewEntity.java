@@ -46,5 +46,5 @@ public class RuntimeVersionViewEntity extends BaseEntity implements HasId {
 
     private String versionName;
 
-    private Integer shared;
+    private Boolean shared;
 }

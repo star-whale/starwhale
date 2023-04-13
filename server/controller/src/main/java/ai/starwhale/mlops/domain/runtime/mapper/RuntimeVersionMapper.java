@@ -83,7 +83,7 @@ public interface RuntimeVersionMapper {
     int updateTag(@Param("id") Long id, @Param("tag") String tag);
 
     @Update("update runtime_version set shared = #{shared} where id = #{id}")
-    int updateShared(@Param("id") Long id, @Param("shared") Integer shared);
+    int updateShared(@Param("id") Long id, @Param("shared") Boolean shared);
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "findByNameAndRuntimeIdSql")
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("versionName") String versionName,

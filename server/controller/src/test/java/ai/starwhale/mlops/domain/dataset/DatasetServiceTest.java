@@ -238,10 +238,10 @@ public class DatasetServiceTest {
                 () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
 
         given(datasetVersionMapper.find(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         var res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
@@ -255,7 +255,7 @@ public class DatasetServiceTest {
         ));
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
         res = service.getDatasetInfo(DatasetQuery.builder()
                 .projectUrl("1")
@@ -332,7 +332,7 @@ public class DatasetServiceTest {
         given(datasetMapper.findByName(same("d1"), same(1L), any()))
                 .willReturn(DatasetEntity.builder().id(1L).build());
         given(datasetVersionMapper.list(same(1L), any(), any()))
-                .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).build()));
+                .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listDs("1", "d1");
         assertThat(res, hasItem(allOf(
@@ -403,10 +403,8 @@ public class DatasetServiceTest {
 
     @Test
     public void testShareDatasetVersion() {
-        service.shareDatasetVersion("1", "d1", "v1", 1);
-        service.shareDatasetVersion("1", "d1", "v1", 0);
-        assertThrows(SwValidationException.class, () ->
-                service.shareDatasetVersion("1", "d1", "v1", 2));
+        service.shareDatasetVersion("1", "d1", "v1", true);
+        service.shareDatasetVersion("1", "d1", "v1", false);
     }
 
     @Test
@@ -418,25 +416,25 @@ public class DatasetServiceTest {
         given(datasetVersionMapper.listDatasetVersionViewByProject(same(1L)))
                 .willReturn(List.of(
                         DatasetVersionViewEntity.builder().id(5L).datasetId(1L).versionOrder(4L).projectName("sw")
-                                .userName("sw").shared(0).datasetName("ds1").build(),
+                                .userName("sw").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(4L).datasetId(1L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(0).datasetName("ds1").build(),
+                                .userName("sw").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(3L).datasetId(1L).versionOrder(3L).projectName("sw")
-                                .userName("sw").shared(0).datasetName("ds1").build(),
+                                .userName("sw").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(2L).datasetId(3L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(0).datasetName("ds3").build(),
+                                .userName("sw").shared(false).datasetName("ds3").build(),
                         DatasetVersionViewEntity.builder().id(1L).datasetId(3L).versionOrder(1L).projectName("sw")
-                                .userName("sw").shared(0).datasetName("ds3").build()
+                                .userName("sw").shared(false).datasetName("ds3").build()
                 ));
 
         given(datasetVersionMapper.listDatasetVersionViewByShared(same(1L)))
                 .willReturn(List.of(
                         DatasetVersionViewEntity.builder().id(8L).datasetId(2L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(1).datasetName("ds2").build(),
+                                .userName("sw2").shared(true).datasetName("ds2").build(),
                         DatasetVersionViewEntity.builder().id(7L).datasetId(2L).versionOrder(2L).projectName("sw2")
-                                .userName("sw2").shared(1).datasetName("ds2").build(),
+                                .userName("sw2").shared(true).datasetName("ds2").build(),
                         DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(1).datasetName("ds4").build()
+                                .userName("sw2").shared(true).datasetName("ds4").build()
                 ));
 
         var res = service.listDatasetVersionView("1");

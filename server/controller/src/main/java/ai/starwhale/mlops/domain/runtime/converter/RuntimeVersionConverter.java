@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.runtime.converter;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -49,7 +51,7 @@ public class RuntimeVersionConverter {
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
                 .image(entity.getImage())
-                .shared(entity.getShared())
+                .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())
                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                 .build();

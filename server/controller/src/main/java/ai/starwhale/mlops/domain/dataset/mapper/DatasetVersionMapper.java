@@ -96,7 +96,7 @@ public interface DatasetVersionMapper {
     int updateTag(@Param("id") Long id, @Param("tag") String tag);
 
     @Update("update dataset_version set shared = #{shared} where id = #{id}")
-    int updateShared(@Param("id") Long id, @Param("shared") Integer shared);
+    int updateShared(@Param("id") Long id, @Param("shared") Boolean shared);
 
     //int updateFilesUploaded(@Param("version") DatasetVersionEntity version);
     @Update("update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}")

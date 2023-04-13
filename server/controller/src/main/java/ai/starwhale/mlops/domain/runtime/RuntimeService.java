@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -198,12 +200,12 @@ public class RuntimeService {
         Long projectId = projectService.getProjectId(projectUrl);
         var versions = runtimeVersionMapper.listRuntimeVersionViewByProject(projectId);
         var shared = runtimeVersionMapper.listRuntimeVersionViewByShared(projectId);
-        var list = new ArrayList<>(viewEntityToVo(versions, 0));
-        list.addAll(viewEntityToVo(shared, 1));
+        var list = new ArrayList<>(viewEntityToVo(versions, false));
+        list.addAll(viewEntityToVo(shared, true));
         return list;
     }
 
-    private Collection<RuntimeViewVo> viewEntityToVo(List<RuntimeVersionViewEntity> list, Integer shared) {
+    private Collection<RuntimeViewVo> viewEntityToVo(List<RuntimeVersionViewEntity> list, Boolean shared) {
         Map<Long, RuntimeViewVo> map = new LinkedHashMap<>();
         for (RuntimeVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getRuntimeId())) {
@@ -213,7 +215,7 @@ public class RuntimeService {
                                 .projectName(entity.getProjectName())
                                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))
                                 .runtimeName(entity.getRuntimeName())
-                                .shared(shared)
+                                .shared(toInt(shared))
                                 .versions(new ArrayList<>())
                                 .build());
             }
@@ -225,7 +227,7 @@ public class RuntimeService {
                             .versionName(entity.getVersionName())
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                             .createdTime(entity.getCreatedTime().getTime())
-                            .shared(entity.getShared())
+                            .shared(toInt(entity.getShared()))
                             .build());
         }
         return map.values();
@@ -297,7 +299,7 @@ public class RuntimeService {
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .shared(versionEntity.getShared())
+                    .shared(toInt(versionEntity.getShared()))
                     .createdTime(versionEntity.getCreatedTime().getTime())
                     .files(collect)
                     .build();
@@ -323,17 +325,10 @@ public class RuntimeService {
         return update > 0;
     }
 
-    public void shareRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, Integer shared) {
+    public void shareRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, Boolean shared) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, runtimeUrl, runtimeVersionUrl));
-        switch (shared) {
-            case 0:
-            case 1:
-                runtimeVersionMapper.updateShared(versionId, shared);
-                break;
-            default:
-                throw new SwValidationException(ValidSubject.RUNTIME, "Invalid shared value: " + shared);
-        }
+        runtimeVersionMapper.updateShared(versionId, shared);
     }
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
