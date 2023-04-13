@@ -275,6 +275,11 @@ class TestDatasetCopy(BaseTestCase):
         } in content["tableSchemaDesc"]["columnSchemaList"]
         assert len(content["records"]) > 0
 
+        for v in content["records"][0]["values"]:
+            if v["key"] != "features/text":
+                continue
+            assert v["value"]["fp"] == ""
+
     @patch("os.environ", {})
     @Mocker()
     def test_download(self, rm: Mocker) -> None:

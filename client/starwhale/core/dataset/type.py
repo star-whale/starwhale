@@ -240,7 +240,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
 
     def clear_bytes(self) -> None:
         self.clear_cache()
-        if isinstance(self.fp, (bytes, io.IOBase)):
+        if isinstance(self.fp, (bytes, io.IOBase, str)):
             self.fp = ""
 
     def clear_cache(self) -> None:
