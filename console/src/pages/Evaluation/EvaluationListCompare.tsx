@@ -251,7 +251,7 @@ export default function EvaluationListCompare({
                 CustomColumn({
                     minWidth: 200,
                     key: val(row.id),
-                    title: val(row['sys/model_name']),
+                    title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {
