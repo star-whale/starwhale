@@ -13,7 +13,7 @@ import _ from 'lodash'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
-import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
+import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
@@ -77,7 +77,11 @@ export default function EvaluationListCard() {
         }
     }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
 
-    const { recordInfo: evaluationsInfo, columnTypes, records } = useQueryDatasetList(summaryTableName, options, true)
+    const {
+        recordInfo: evaluationsInfo,
+        columnTypes,
+        records,
+    } = useFetchDatastoreByTable(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')

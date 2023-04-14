@@ -351,6 +351,14 @@ export const useEvaluationCompareStore = createCustomStore('compare', {
         compareShowDiffOnly: false,
     },
 })
+export const useEvaluationDetailStore = createCustomStore('evaluations-detail', {}, true)
+export const useEvaluationDetailCompareStore = createCustomStore('evaluations-detail-compare', {
+    compare: {
+        comparePinnedKey: '',
+        compareShowCellChanges: true,
+        compareShowDiffOnly: false,
+    },
+})
 
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []

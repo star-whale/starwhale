@@ -1,5 +1,4 @@
 import React from 'react'
-import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
@@ -21,6 +20,7 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
 import Preview from '@starwhale/ui/Dataset/Preview'
 import { getMeta } from '@/domain/dataset/utils'
+import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -168,7 +168,7 @@ export default function DatasetVersionFiles() {
         setLayoutKey(layoutParam ?? '0')
     }, [layoutParam])
 
-    const { records, columnTypes } = useQueryDatasetList(datasetVersion?.indexTable, $page, true)
+    const { records, columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, $page, true)
 
     const paginationProps: IPaginationProps = React.useMemo(() => {
         return {

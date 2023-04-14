@@ -6,7 +6,7 @@ import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import WidgetEditForm from './WidgetForm'
 import { StoreType, useEditorContext } from '../context/EditorContextProvider'
-import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
+import { useFetchDatastoreAllTables } from '../datastore/hooks/useFetchDatastoreAllTables'
 import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
@@ -53,7 +53,7 @@ export default function WidgetFormModal({
         }
     }, [formData?.tableName])
 
-    const { tables } = useDatastoreTablesByPrefix(prefix)
+    const { tables } = useFetchDatastoreAllTables(prefix)
     const info = useQueryDatastore(query)
 
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {

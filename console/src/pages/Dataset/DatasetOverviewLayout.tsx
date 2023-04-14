@@ -11,7 +11,7 @@ import { useFetchDataset } from '@/domain/dataset/hooks/useFetchDataset'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import qs from 'qs'
 import { usePage } from '@/hooks/usePage'
-import { RecordSchemaT, useQueryDatasetList } from '@starwhale/core/datastore'
+import { RecordSchemaT } from '@starwhale/core/datastore'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
 import { Button } from '@starwhale/ui'
 import { ConfirmButton } from '@starwhale/ui/Modal'
@@ -19,6 +19,7 @@ import { removeDataset } from '@/domain/dataset/services/dataset'
 import { toaster } from 'baseui/toast'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
+import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -60,7 +61,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const params = useMemo(() => {
         return { pageNum: 1, pageSize: 1 }
     }, [])
-    const { columnTypes } = useQueryDatasetList(datasetVersion?.indexTable, params, true)
+    const { columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, params, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
