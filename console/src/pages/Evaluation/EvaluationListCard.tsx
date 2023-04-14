@@ -138,8 +138,8 @@ export default function EvaluationListCard() {
                     ),
                     mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
-            if (column.key?.endsWith('time'))
-                return StringColumn({
+            if (column.key?.endsWith('time')) {
+                return CustomColumn({
                     ...column,
                     key: column.key,
                     title: column.key,
@@ -150,7 +150,7 @@ export default function EvaluationListCard() {
                     },
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
-
+            }
             return {
                 ...column,
                 fillWidth: false,
