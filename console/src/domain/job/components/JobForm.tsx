@@ -75,18 +75,15 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             if (values_.modelVersionHandler) setModelVersionHandler(values_.modelVersionHandler)
             let rawTypeTmp = values_.rawType
             if ('rawType' in _changes && !_changes.rawType) {
-                if (!_changes.rawType) {
-                    try {
-                        yaml.load(stepSpecOverWrites)
-                        rawTypeTmp = false
-                    } catch (e) {
-                        toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
-                        form.setFieldsValue({
-                            rawType: true,
-                        })
-                        rawTypeTmp = true
-                    }
-                } else {
+                try {
+                    yaml.load(stepSpecOverWrites)
+                    rawTypeTmp = false
+                } catch (e) {
+                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
+                    form.setFieldsValue({
+                        rawType: true,
+                    })
+                    rawTypeTmp = true
                 }
             }
             setRawType(rawTypeTmp)
