@@ -4,7 +4,6 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
 import { IModelVersionSchema } from '../schemas/modelVersion'
 import { IModelTreeSchema } from '../schemas/model'
-import { MonoText } from '@/components/Text'
 
 export const ModelLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -20,6 +19,7 @@ export const ModelLabelText = themedStyled('div', () => ({
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    fontFamily: 'Roboto Mono',
 }))
 
 export function ModelLabel({
@@ -38,7 +38,7 @@ export function ModelLabel({
     const alias = <Alias alias={version.alias} />
     const p = model ? [model.ownerName, model.projectName, model.modelName].join('/') : ''
     const name = version?.versionName ?? version?.name
-    const v = <MonoText>{(name ?? '').substring(0, 8)}</MonoText>
+    const v = (name ?? '').substring(0, 8)
     const title = [p, v, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
         .filter((tmp) => !!tmp)
         .join('/')
