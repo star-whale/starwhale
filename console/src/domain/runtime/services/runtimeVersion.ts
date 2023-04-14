@@ -6,7 +6,7 @@ import {
     IUpdateRuntimeVersionSchema,
     IRuntimeVersionDetailSchema,
     IRuntimeVersionListQuerySchema,
-    IRuntimeVersionSuggestionSchema,
+    IRuntimeVersionSuggestionSchema, IRuntimeVersionBuildImageResultSchema,
 } from '../schemas/runtimeVersion'
 
 export async function listRuntimeVersions(
@@ -89,6 +89,17 @@ export async function updateRuntimeVersionShared(
 ): Promise<IRuntimeVersionSchema> {
     const resp = await axios.put<IRuntimeVersionSchema>(
         `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/shared?shared=${shared ? 1 : 0}`
+    )
+    return resp.data
+}
+
+export async function buildImageForRuntimeVersion(
+    projectId: string,
+    runtimeId: string,
+    runtimeVersionId: string
+): Promise<IRuntimeVersionBuildImageResultSchema> {
+    const resp = await axios.post<IRuntimeVersionBuildImageResultSchema>(
+        `/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/image/build`
     )
     return resp.data
 }

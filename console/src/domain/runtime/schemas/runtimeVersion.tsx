@@ -8,6 +8,7 @@ export interface IRuntimeVersionSchema extends IResourceSchema {
     owner?: IUserSchema
     alias: string
     image: string
+    builtImage: string
     runtimeId: string
     shared?: number
 }
@@ -45,4 +46,9 @@ export interface IRuntimeVersionListQuerySchema extends IListQuerySchema {
 
 export interface IRuntimeVersionSuggestionSchema {
     runtimes: IRuntimeVersionSchema[]
+}
+
+export interface IRuntimeVersionBuildImageResultSchema {
+    success: boolean
+    message: string
 }
