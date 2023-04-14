@@ -44,29 +44,42 @@ class JobTestCase(TestCase):
             [
                 Step(
                     job_name="default",
-                    name="ppl-1",
+                    name="base",
                     resources=[],
                     needs=[],
                 ),
                 Step(
                     job_name="default",
+                    name="ppl-1",
+                    resources=[],
+                    needs=["base"],
+                ),
+                Step(
+                    job_name="default",
                     name="ppl-2",
                     resources=[],
-                    needs=["ppl-1"],
+                    needs=["base"],
                 ),
                 Step(
                     job_name="default",
                     name="cmp",
                     resources=[],
-                    needs=["ppl-2"],
+                    needs=["ppl-1", "ppl-2"],
                 ),
             ]
         )
         assert len(_dag.all_starts()) == 1
         assert len(_dag.all_terminals()) == 1
-        assert _dag.in_degree("ppl-1") == 0
-        assert _dag.in_degree("ppl-2") == 1
-        assert _dag.in_degree("cmp") == 1
+        expected_degrees = {
+            "base": {"in": 0, "out": 2},
+            "ppl-1": {"in": 1, "out": 1},
+            "ppl-2": {"in": 1, "out": 1},
+            "cmp": {"in": 2, "out": 0},
+        }
+
+        for k, v in expected_degrees.items():
+            assert _dag.in_degree(k) == v["in"]
+            assert _dag.out_degree(k) == v["out"]
 
     def test_step_result(self):
         _task_results = list(TaskResult(i, RunStatus.SUCCESS) for i in range(3))

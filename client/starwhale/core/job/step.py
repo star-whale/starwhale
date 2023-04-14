@@ -80,14 +80,13 @@ class Step(ASDictMixin):
     @staticmethod
     def generate_dag(steps: t.List[Step]) -> DAG:
         _vertices: t.List[str] = []
-        _edges: t.Dict[str, str] = {}
+        _edges: t.List[t.Tuple[str, str]] = []
         for step in steps:
             _vertices.append(step.name)
             if not step.needs:
                 continue
             for _pre in step.needs:
-                _edges[_pre] = step.name
-
+                _edges.append((_pre, step.name))
         return generate_dag(_vertices, _edges)
 
 
