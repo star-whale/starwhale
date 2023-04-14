@@ -106,8 +106,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             })
         )
         // @ts-ignore
-        return version?.stepSpecs ?? []
-    }, [modelTree, modelVersionId])
+        return _.merge([], version?.stepSpecs ?? [], yaml.load(stepSpecOverWrites) ?? [])
+    }, [modelTree, modelVersionId, stepSpecOverWrites])
 
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
@@ -139,9 +139,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     runtimeVersionUrl: values_.runtimeVersionUrl[0],
                     modelVersionUrl: values_.modelVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
-                    stepSpecOverWrites: values_.rawType
-                        ? stepSpecOverWrites
-                        : yaml.dump(_.merge([], stepSource, values_?.stepSpecOverWrites)),
+                    stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(stepSource),
                 })
                 history.goBack()
             } finally {
@@ -151,46 +149,21 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [onSubmit, history, stepSpecOverWrites, t, stepSource]
     )
 
-    const updateFormStepObj = ($newStep: StepSpec[]) => {
-        form.setFieldsValue({ stepSpecOverWrites: $newStep })
-        setValues({
-            ...(values as any),
-            stepSpecOverWrites: $newStep,
-        })
-    }
-
-    const rawRef = React.useRef(false)
-    React.useEffect(() => {
-        if (rawRef.current === rawType) return
-        if (!rawType) {
-            updateFormStepObj(yaml.load(stepSpecOverWrites) as StepSpec[])
-        } else {
-            setStepSpecOverWrites(yaml.dump(_.merge([], stepSource, form.getFieldValue('stepSpecOverWrites'))))
-        }
-        rawRef.current = rawType
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stepSource, form, setStepSpecOverWrites, rawType, modelVersionId, stepSpecOverWrites])
-
-    React.useEffect(() => {
-        if (!stepSource) return
-
-        setStepSpecOverWrites(yaml.dump(stepSource))
-        updateFormStepObj([...stepSource])
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stepSource, form, setStepSpecOverWrites])
-
-    const stepSpecOverWritesList: StepSpec[] = React.useMemo(() => {
-        if (!stepSource) return []
-
-        return _.merge([], stepSource)
-    }, [stepSource])
-
     const handleEditorChange = React.useCallback(
         (value: string) => {
             setStepSpecOverWrites(value)
         },
         [setStepSpecOverWrites]
     )
+
+    const rawRef = React.useRef(false)
+    React.useEffect(() => {
+        if (rawRef.current === rawType) return
+        if (rawType) {
+            setStepSpecOverWrites(yaml.dump(stepSource))
+        }
+        rawRef.current = rawType
+    }, [stepSource, setStepSpecOverWrites, rawType])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -230,9 +203,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 </FormItem>
             </div>
             <div style={{ paddingBottom: '16px' }}>
-                {stepSpecOverWritesList?.length > 0 &&
+                {stepSource &&
+                    stepSource?.length > 0 &&
                     !rawType &&
-                    stepSpecOverWritesList?.map((spec, i) => {
+                    stepSource?.map((spec, i) => {
                         return (
                             <div key={[spec?.name, i].join('')}>
                                 <div
@@ -254,10 +228,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                         }}
                                     >
                                         <span style={{ color: 'rgba(2,16,43,0.60)' }}>{t('Step')}:&nbsp;</span>
-                                        <span>{form.getFieldValue(['stepSpecOverWrites', i, 'name'])}</span>
+                                        <span>{spec?.name}</span>
                                         <div style={{ marginTop: '3px' }} />
                                         <span style={{ color: 'rgba(2,16,43,0.60)' }}>{t('Task Amount')}:&nbsp;</span>
-                                        <span>{form.getFieldValue(['stepSpecOverWrites', i, 'task_num'])}</span>
+                                        <span>{spec?.task_num}</span>
                                     </div>
                                     {spec.resources &&
                                         spec.resources?.length > 0 &&
