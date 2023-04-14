@@ -7,7 +7,7 @@ import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
-import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
+import { CustomColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
@@ -152,8 +152,8 @@ export default function EvaluationListCard() {
                     ),
                     mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
-            if (column.key?.endsWith('time'))
-                return StringColumn({
+            if (column.key?.endsWith('time')) {
+                return CustomColumn({
                     ...column,
                     key: column.key,
                     title: column.key,
@@ -164,7 +164,7 @@ export default function EvaluationListCard() {
                     },
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
-
+            }
             return {
                 ...column,
                 fillWidth: false,
