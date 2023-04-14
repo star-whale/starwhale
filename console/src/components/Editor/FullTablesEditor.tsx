@@ -3,7 +3,7 @@ import EditorContextProvider, { StoreType } from '@starwhale/core/context/Editor
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
-import { useDatastoreTablesByPrefix, WidgetStoreState } from '@starwhale/core'
+import { useFetchDatastoreAllTables, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { withEditorRegister } from '.'
@@ -11,7 +11,7 @@ import { withEditorRegister } from '.'
 function witEditorContext(EditorApp: React.FC) {
     return function EditorContexted(props: any) {
         const { prefix } = props.dynamicVars
-        const { isLoading, isSuccess, names } = useDatastoreTablesByPrefix(prefix)
+        const { isLoading, isSuccess, names } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
             return tranformState({

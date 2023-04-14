@@ -3,7 +3,8 @@ import { Subscription } from 'rxjs'
 import { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
-import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
+import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
+
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
@@ -86,7 +87,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [tableConfig])
         const inViewport = useIsInViewport(myRef as any)
-        const { recordInfo, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
+        const { recordInfo, recordQuery: query } = useFetchDatastoreByTable(tableName, tableOptions, false)
         const inViewLoadRef = useRef(false)
         const tableNameRef = useRef('')
 
