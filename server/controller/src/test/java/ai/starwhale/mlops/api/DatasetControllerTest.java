@@ -365,7 +365,7 @@ public class DatasetControllerTest {
     }
 
     @Test
-    public void testListRuntimeTree() {
+    public void testListDatasetTree() {
         given(datasetService.listDatasetVersionView(anyString()))
                 .willReturn(List.of(DatasetViewVo.builder().build()));
 
@@ -379,8 +379,8 @@ public class DatasetControllerTest {
     }
 
     @Test
-    public void testShareRuntimeVersion() {
-        var resp = controller.shareDatasetVersion("1", "1", "1", 1);
+    public void testShareDatasetVersion() {
+        var resp = controller.shareDatasetVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 }

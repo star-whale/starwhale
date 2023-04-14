@@ -20,6 +20,7 @@ export const DatasetLabelText = themedStyled('div', () => ({
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    fontFamily: 'Roboto Mono',
 }))
 
 export function getDatastLabel(version: IDatasetTreeVersionSchema, dataset?: IDatasetTreeSchema) {

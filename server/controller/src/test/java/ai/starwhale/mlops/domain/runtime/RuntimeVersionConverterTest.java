@@ -50,6 +50,7 @@ public class RuntimeVersionConverterTest {
                 .versionTag("tag1")
                 .versionMeta("meta1")
                 .image("image1")
+                .shared(true)
                 .build());
         assertThat(res, allOf(
                 notNullValue(),
@@ -57,6 +58,7 @@ public class RuntimeVersionConverterTest {
                 hasProperty("alias", is("v2")),
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is("meta1")),
+                hasProperty("shared", is(1)),
                 hasProperty("image", is("image1"))
         ));
     }

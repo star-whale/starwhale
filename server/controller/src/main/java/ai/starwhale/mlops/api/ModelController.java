@@ -22,6 +22,7 @@ import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.storage.FileDesc;
@@ -158,6 +159,18 @@ public class ModelController implements ModelApi {
                         .pageSize(pageSize)
                         .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> shareModelVersion(
+            String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
+        modelService.shareModelVersion(projectUrl, modelUrl, versionUrl, shared);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(String projectUrl) {
+        return ResponseEntity.ok(Code.success.asResponse(modelService.listModelVersionView(projectUrl)));
     }
 
     @Override

@@ -77,7 +77,11 @@ export default function EvaluationListCard() {
         }
     }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
 
-    const { columnInfo, recordInfo: evaluationsInfo } = useQueryDatasetList(summaryTableName, options, true)
+    const {
+        columnInfo,
+        recordInfo: evaluationsInfo,
+        columnTypes,
+    } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
@@ -91,13 +95,14 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const { records, columnTypes } = useDatastore(evaluationsInfo?.data?.records)
+    const { records } = useDatastore(evaluationsInfo?.data?.records)
     const $columns = useDatastoreColumns(columnTypes)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
                 return CustomColumn({
+                    ...column,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,
@@ -114,6 +119,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/duration')
                 return CustomColumn({
+                    ...column,
                     key: 'duration',
                     title: t('Elapsed Time'),
                     sortable: true,
@@ -133,6 +139,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key === 'sys/job_status')
                 return CustomColumn({
+                    ...column,
                     key: column.key,
                     title: column.key,
                     sortable: true,
@@ -147,6 +154,7 @@ export default function EvaluationListCard() {
                 })
             if (column.key?.endsWith('time'))
                 return StringColumn({
+                    ...column,
                     key: column.key,
                     title: column.key,
                     fillWidth: false,

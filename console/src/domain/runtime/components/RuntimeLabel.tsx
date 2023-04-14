@@ -20,6 +20,7 @@ export const RuntimeLabelText = themedStyled('div', () => ({
     minWidth: '0',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    fontFamily: 'Roboto Mono',
 }))
 
 export function RuntimeLabel({

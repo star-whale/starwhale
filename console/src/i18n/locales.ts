@@ -105,6 +105,14 @@ const model = {
         en: 'Target',
         zh: '目标',
     },
+    'model.selector.view': {
+        en: 'View',
+        zh: '查看',
+    },
+    'model.handler': {
+        en: 'Handler',
+        zh: 'Handler',
+    },
     'online eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
@@ -789,8 +797,8 @@ const locales0 = {
         zh: '输出结果路径',
     },
     'Resource Amount': {
-        en: 'Resource Amount',
-        zh: '资源数量',
+        en: 'Quantity',
+        zh: '数量',
     },
     'Resource Pool': {
         en: 'Resource Pool',
@@ -1323,15 +1331,15 @@ const locales0 = {
     },
     'Step': {
         en: 'Step',
-        zh: '步骤',
+        zh: 'Step',
     },
     'Task Amount': {
-        en: 'Task Amount',
-        zh: '任务总数',
+        en: 'Replica',
+        zh: '副本',
     },
     'Raw Type': {
-        en: 'Raw Type',
-        zh: '原始类型',
+        en: 'Edit',
+        zh: '修改',
     },
     'wrong yaml syntax': {
         en: 'wrong yaml syntax',

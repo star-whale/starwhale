@@ -15,6 +15,7 @@ import { ConfirmButton } from '@starwhale/ui/Modal'
 import { toaster } from 'baseui/toast'
 import { Button } from '@starwhale/ui'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
+import { MonoText } from '@/components/Text'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -75,7 +76,7 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
                 path: `/projects/${projectId}/runtimes`,
             },
             {
-                title: runtime?.name ?? '-',
+                title: <MonoText>{runtime?.name ?? '-'}</MonoText>,
                 path: `/projects/${projectId}/runtimes/${runtimeId}`,
             },
         ]

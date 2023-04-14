@@ -1,5 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
+import { IModelTreeVersionSchema } from './modelVersion'
 
 export interface IModelSchema extends IResourceSchema {
     name: string
@@ -37,4 +38,12 @@ export interface ICreateOnlineEvalSchema {
     runtimeVersionUrl: string
     resourcePool: string
     spec: string
+}
+
+export interface IModelTreeSchema {
+    ownerName: string
+    projectName: string
+    modelName: string
+    shared: number
+    versions: IModelTreeVersionSchema[]
 }

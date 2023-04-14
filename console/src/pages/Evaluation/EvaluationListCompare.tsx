@@ -10,8 +10,8 @@ import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { DataTypes, isBoolType, isComplexType, isNumbericType, isStringType } from '@starwhale/core'
-import { GridTable } from '@starwhale/ui/GridTable'
+import { DataTypes, isBoolType, isComplexType, isNumbericType, isSearchColumns, isStringType } from '@starwhale/core'
+import { GridTable, sortColumn } from '@starwhale/ui/GridTable'
 import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
@@ -63,6 +63,7 @@ const useStyles = createUseStyles({
 type RowT = {
     key: string
     title: string
+    name: string
     values: any[]
     value?: any
     renderValue?: (data: any) => any
@@ -133,6 +134,8 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
 }
 
 function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{ value: any; type: DataTypes }>) {
+    if (!comparedValue || !value) return NoneCompareCell({ value, comparedValue, renderedValue, data })
+
     if (isNumbericType(comparedValue.type) || isBoolType(comparedValue.type)) {
         return NumberCompareCell({ value, comparedValue, renderedValue, data })
     }
@@ -204,6 +207,7 @@ export default function EvaluationListCompare({
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
+                    name: attr.name,
                     values,
                     renderValue: (v: any) => (val(v) > 0 ? formatTimestampDateTime(val(v)) : '-'),
                 })
@@ -213,6 +217,7 @@ export default function EvaluationListCompare({
                 rowWithAttrs.push({
                     key: attr.name,
                     title: attr.name,
+                    name: attr.name,
                     values,
                     renderValue: (v: any) => (_.isNumber(val(v)) ? durationToStr(val(v)) : '-'),
                 })
@@ -221,14 +226,12 @@ export default function EvaluationListCompare({
             rowWithAttrs.push({
                 key: attr.name,
                 title: attr.name,
+                name: attr.name,
                 values,
             })
         })
 
-        return rowWithAttrs.sort((a: RowT, b: RowT) => {
-            if (a.key > b.key) return -1
-            return 1
-        })
+        return rowWithAttrs.sort(sortColumn).filter((r) => isSearchColumns(r.name))
     }, [attrs, rows])
 
     const $rowsWithDiffOnly = useMemo(() => {
@@ -253,7 +256,7 @@ export default function EvaluationListCompare({
                 CustomColumn({
                     minWidth: 200,
                     key: val(row.id),
-                    title: val(row['sys/model_name']),
+                    title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {

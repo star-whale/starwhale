@@ -148,7 +148,7 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(String projectUrl, String runtimeUrl,
-            String runtimeVersionUrl, Integer shared) {
+            String runtimeVersionUrl, Boolean shared) {
         runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }

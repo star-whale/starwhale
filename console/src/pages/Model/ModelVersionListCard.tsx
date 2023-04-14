@@ -16,6 +16,7 @@ import Button from '@starwhale/ui/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
+import { MonoText } from '@/components/Text'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -55,7 +56,7 @@ export default function ModelVersionListCard() {
                                 key={modelId}
                                 to={`/projects/${projectId}/models/${modelId}/versions/${model.id}/overview`}
                             >
-                                {model.name}
+                                <MonoText>{model.name}</MonoText>
                             </TextLink>,
                             model.alias,
                             model.meta,

@@ -45,5 +45,5 @@ public class DatasetVersionViewEntity extends BaseEntity implements HasId {
 
     private String versionName;
 
-    private Integer shared;
+    private Boolean shared;
 }

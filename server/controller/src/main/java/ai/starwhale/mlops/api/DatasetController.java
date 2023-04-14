@@ -274,7 +274,7 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> shareDatasetVersion(String projectUrl, String datasetUrl,
-            String versionUrl, Integer shared) {
+            String versionUrl, Boolean shared) {
         datasetService.shareDatasetVersion(projectUrl, datasetUrl, versionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }

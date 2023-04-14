@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -55,6 +56,7 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -64,6 +66,7 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
@@ -113,6 +116,7 @@ public class ModelServiceTest {
     private HotJobHolder jobHolder;
     private BundleManager bundleManager;
     private TrashService trashService;
+    private JobSpecParser jobSpecParser;
 
     @SneakyThrows
     @BeforeEach
@@ -156,6 +160,7 @@ public class ModelServiceTest {
         modelDao = mock(ModelDao.class);
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
+        jobSpecParser = mock(JobSpecParser.class);
 
         service = new ModelService(
                 modelMapper,
@@ -171,7 +176,8 @@ public class ModelServiceTest {
                 userService,
                 projectService,
                 jobHolder,
-                trashService);
+                trashService,
+                jobSpecParser);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -468,11 +474,11 @@ public class ModelServiceTest {
             request.setProject("1");
             request.setSwmp("m1:v1");
 
-            MultipartFile dsFile = new MockMultipartFile("dsFile", new byte[10]);
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(dsFile, request));
+            MultipartFile modelFile = new MockMultipartFile("modelFile", new byte[10]);
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(modelFile, request));
 
             request.setForce("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(dsFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(modelFile, request));
 
             request.setSwmp("m3:v3");
             var manifestContent = "build:\n"
@@ -487,14 +493,14 @@ public class ModelServiceTest {
             mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
                     .thenReturn(manifestContent);
 
-            service.uploadManifest(dsFile, request);
+            service.uploadManifest(modelFile, request);
 
             mockTarFileUtil.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
                     .thenReturn(manifestContent.getBytes());
-            service.uploadSrc(3L, dsFile, request);
+            service.uploadSrc(3L, modelFile, request);
             mockTarFileUtil.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
 
-            service.uploadModel(3L, "123456", dsFile, request);
+            service.uploadModel(3L, "123456", modelFile, request);
             verify(storageAccessService, times(1)).put(any(), any(InputStream.class));
 
             given(modelVersionMapper.find(3L))
@@ -504,8 +510,8 @@ public class ModelServiceTest {
                             .build()
                     );
             request.setProject("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, dsFile, request));
-            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", dsFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, modelFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", modelFile, request));
 
         }
     }
@@ -657,4 +663,55 @@ public class ModelServiceTest {
 
     }
 
+    @Test
+    public void testShareModelVersion() {
+        service.shareModelVersion("1", "d1", "v1", true);
+        service.shareModelVersion("1", "d1", "v1", false);
+    }
+
+    @Test
+    public void testListModelVersionView() {
+        given(modelVersionMapper.findByLatest(same(1L)))
+                .willReturn(ModelVersionEntity.builder().id(5L).build());
+        given(modelVersionMapper.findByLatest(same(3L)))
+                .willReturn(ModelVersionEntity.builder().id(2L).build());
+        given(modelVersionMapper.listModelVersionViewByProject(same(1L)))
+                .willReturn(List.of(
+                    ModelVersionViewEntity.builder().id(5L).modelId(1L).versionOrder(4L).projectName("sw")
+                        .userName("sw").shared(false).modelName("model1").build(),
+                    ModelVersionViewEntity.builder().id(4L).modelId(1L).versionOrder(2L).projectName("sw")
+                        .userName("sw").shared(false).modelName("model1").build(),
+                    ModelVersionViewEntity.builder().id(3L).modelId(1L).versionOrder(3L).projectName("sw")
+                        .userName("sw").shared(false).modelName("model1").build(),
+                    ModelVersionViewEntity.builder().id(2L).modelId(3L).versionOrder(2L).projectName("sw")
+                        .userName("sw").shared(false).modelName("model3").build(),
+                    ModelVersionViewEntity.builder().id(1L).modelId(3L).versionOrder(1L).projectName("sw")
+                        .userName("sw").shared(false).modelName("model3").build()
+                ));
+
+        given(modelVersionMapper.listModelVersionViewByShared(same(1L)))
+                .willReturn(List.of(
+                    ModelVersionViewEntity.builder().id(8L).modelId(2L).versionOrder(3L).projectName("sw2")
+                        .userName("sw2").shared(true).modelName("model2").build(),
+                    ModelVersionViewEntity.builder().id(7L).modelId(2L).versionOrder(2L).projectName("sw2")
+                        .userName("sw2").shared(true).modelName("model2").build(),
+                    ModelVersionViewEntity.builder().id(6L).modelId(4L).versionOrder(3L).projectName("sw2")
+                        .userName("sw2").shared(true).modelName("model4").build()
+                ));
+
+        var res = service.listModelVersionView("1");
+        assertEquals(4, res.size());
+        assertEquals("model1", res.get(0).getModelName());
+        assertEquals("model3", res.get(1).getModelName());
+        assertEquals("model2", res.get(2).getModelName());
+        assertEquals("model4", res.get(3).getModelName());
+        assertEquals(3, res.get(0).getVersions().size());
+        assertEquals(2, res.get(1).getVersions().size());
+        assertEquals(2, res.get(2).getVersions().size());
+        assertEquals(1, res.get(3).getVersions().size());
+        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
+        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
+        assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+    }
 }

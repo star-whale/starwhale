@@ -11,6 +11,11 @@ export interface IModelVersionSchema extends IResourceSchema {
     stepSpecs: StepSpec[]
 }
 
+export interface IModelTreeVersionSchema extends IModelVersionSchema {
+    versionName?: string
+    createdTime?: number
+}
+
 export interface IModelVersionListSchema extends IResourceSchema, IFileSchema {
     name: string
     versionName: string
@@ -35,8 +40,9 @@ export interface ICreateModelVersionSchema {
 }
 
 export interface RuntimeResource {
-    type?: string
-    num?: number
+    type: string
+    request: number
+    limit: number
 }
 
 export interface StepSpec {

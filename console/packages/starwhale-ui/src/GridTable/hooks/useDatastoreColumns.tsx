@@ -1,13 +1,11 @@
 import React from 'react'
-import { RecordSchemaT } from '@starwhale/core/datastore'
+import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { CustomColumn } from '../../base/data-table'
 import { ColumnT, RenderCellT } from '../../base/data-table/types'
 import { StringCell } from '../../base/data-table/column-string'
 import _ from 'lodash'
 
-const isPrivateSys = (str = '') => str.startsWith('sys/_')
-const isPrivate = (str = '') => str.startsWith('_')
-const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
+export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
     if (cb.name === 'sys/id') return 1
     if (ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
@@ -20,7 +18,7 @@ const sortSys = (ca: RecordSchemaT, cb: RecordSchemaT) => {
         return 1
     }
 
-    return 1
+    return ca.name.localeCompare(cb.name)
 }
 
 function RenderMixedCell({ value, ...props }: RenderCellT<any>['props']) {
@@ -35,8 +33,8 @@ export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
 
         columnTypes
             ?.filter((column) => !!column)
-            .filter((column) => !isPrivateSys(column.name) || !isPrivate(column.name))
-            .sort(sortSys)
+            .filter((column) => isSearchColumns(column.name))
+            .sort(sortColumn)
             .forEach((column) => {
                 return columnsWithAttrs.push(
                     CustomColumn({

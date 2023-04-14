@@ -2,6 +2,7 @@ import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
+import { MonoText } from '@/components/Text'
 
 export default function ModelVersionOverview() {
     const { modelVersion } = useModelVersion()
@@ -14,7 +15,7 @@ export default function ModelVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: modelVersion?.versionName ?? '-',
+            value: <MonoText>{modelVersion?.versionName ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),

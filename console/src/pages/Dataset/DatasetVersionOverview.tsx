@@ -8,6 +8,7 @@ import { toaster } from 'baseui/toast'
 import { useParams } from 'react-router-dom'
 import Shared from '@/components/Shared'
 import { Alias } from '@/components/Alias'
+import { MonoText } from '@/components/Text'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
@@ -26,7 +27,7 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: dataset?.versionName ?? '-',
+            value: <MonoText>{dataset?.versionName ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),
