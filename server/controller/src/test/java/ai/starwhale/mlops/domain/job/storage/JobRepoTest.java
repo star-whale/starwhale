@@ -129,7 +129,7 @@ public class JobRepoTest {
                 .thenReturn(ModelVersion.builder().id(1L).name("1z2x3c4v5b6n").build());
 
         Mockito.when(dataStore.query(any()))
-                .thenReturn(new RecordList(Map.of(), List.of(
+                .thenReturn(new RecordList(Map.of(), Map.of(), List.of(
                         Map.of(
                                 KeyColumn, "1q2w3e4r5t6y",
                                 LongIdColumn, "1",
@@ -149,7 +149,7 @@ public class JobRepoTest {
                                 JobStatusColumn, "RUNNING"
                         )
                 ), null, null))
-                .thenReturn(new RecordList(Map.of(), List.of(), null, null));
+                .thenReturn(new RecordList(Map.of(), Map.of(), List.of(), null, null));
 
         List<JobFlattenEntity> jobEntities = jobRepo.listJobs(1L, null);
         Assertions.assertEquals(2, jobEntities.size());
@@ -166,7 +166,7 @@ public class JobRepoTest {
                 .thenReturn(ModelVersion.builder().id(1L).name("1z2x3c4v5b6n").build());
 
         Mockito.when(dataStore.query(any()))
-                .thenReturn(new RecordList(Map.of(), List.of(
+                .thenReturn(new RecordList(Map.of(), Map.of(), List.of(
                         Map.of(
                                 KeyColumn, "1q2w3e4r5t6y",
                                 LongIdColumn, "1",
@@ -186,7 +186,7 @@ public class JobRepoTest {
                                 JobStatusColumn, "RUNNING"
                         )
                 ), null, null))
-                .thenReturn(new RecordList(Map.of(), List.of(), null, null));
+                .thenReturn(new RecordList(Map.of(), Map.of(), List.of(), null, null));
         ;
 
         List<JobFlattenEntity> jobEntities = jobRepo.findJobByStatusIn(List.of(JobStatus.PAUSED));

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
+import ai.starwhale.mlops.datastore.ColumnHintsDesc;
 import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnStatistics;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -148,6 +149,8 @@ public class MemoryTableImpl implements MemoryTable {
                             break;
                         }
                         var key = record.remove(this.schema.getKeyColumn());
+                        this.statisticsMap.computeIfAbsent(this.schema.getKeyColumn(), k -> new ColumnStatistics())
+                                .update(key);
                         var timestamp = (Int64Value) record.remove(TIMESTAMP_COLUMN_NAME);
                         var deletedFlag = (BoolValue) record.remove(DELETED_FLAG_COLUMN_NAME);
                         this.recordMap.computeIfAbsent(key, k -> new ArrayList<>())
@@ -156,6 +159,10 @@ public class MemoryTableImpl implements MemoryTable {
                                         .deleted(deletedFlag.isValue())
                                         .values(record)
                                         .build());
+                        for (var entry : record.entrySet()) {
+                            this.statisticsMap.computeIfAbsent(entry.getKey(), k -> new ColumnStatistics())
+                                    .update(entry.getValue());
+                        }
                     }
                 }
                 break;
@@ -167,7 +174,6 @@ public class MemoryTableImpl implements MemoryTable {
                 throw new SwProcessException(ErrorType.DATASTORE, "failed to load " + this.tableName, e);
             }
         }
-
     }
 
     @Override
@@ -637,4 +643,12 @@ public class MemoryTableImpl implements MemoryTable {
         }
         return new RecordResult(key, false, r);
     }
+
+    public Map<String, ColumnHintsDesc> getColumnHints(Map<String, String> columnMapping) {
+        return this.statisticsMap.entrySet().stream()
+                .filter(entry -> columnMapping.containsKey(entry.getKey()))
+                .collect(Collectors.toMap(entry -> columnMapping.get(entry.getKey()),
+                        entry -> entry.getValue().populate(ColumnHintsDesc.builder()).build()));
+    }
+
 }

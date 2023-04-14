@@ -125,7 +125,8 @@ public class DataStoreController implements DataStoreApi {
     public ResponseEntity<ResponseMessage<RecordListVo>> queryTable(QueryTableRequest request) {
         try {
             RecordList recordList = queryRecordList(request);
-            var vo = RecordListVo.builder().records(recordList.getRecords());
+            var vo = RecordListVo.builder().records(recordList.getRecords())
+                    .columnHints(recordList.getColumnHints());
             if (!request.isEncodeWithType()) {
                 vo.columnTypes(recordList.getColumnSchemaMap().values().stream()
                         .map(ColumnSchema::toColumnSchemaDesc)
@@ -179,6 +180,7 @@ public class DataStoreController implements DataStoreApi {
                     .build());
             var vo = RecordListVo.builder()
                     .records(recordList.getRecords())
+                    .columnHints(recordList.getColumnHints())
                     .lastKey(recordList.getLastKey());
             if (!request.isEncodeWithType()) {
                 vo.columnTypes(recordList.getColumnSchemaMap().values().stream()

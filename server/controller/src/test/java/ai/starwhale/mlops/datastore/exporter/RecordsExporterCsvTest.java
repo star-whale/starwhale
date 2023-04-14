@@ -31,6 +31,7 @@ public class RecordsExporterCsvTest {
 
     private static final RecordList RECORD_LIST = new RecordList(
             null,
+            null,
             List.of(
                     Map.of("ke1", "v1",
                             "ke2", Map.of("mk", "mv"),

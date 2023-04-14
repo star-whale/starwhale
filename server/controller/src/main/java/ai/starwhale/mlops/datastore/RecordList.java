@@ -30,6 +30,7 @@ import lombok.ToString;
 public class RecordList {
 
     private Map<String, ColumnSchema> columnSchemaMap;
+    private Map<String, ColumnHintsDesc> columnHints;
     private List<Map<String, Object>> records;
     private String lastKey;
     private String lastKeyType;

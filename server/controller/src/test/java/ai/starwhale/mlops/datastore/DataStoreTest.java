@@ -26,8 +26,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
+import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.BytesValue;
+import ai.starwhale.mlops.datastore.type.ListValue;
+import ai.starwhale.mlops.datastore.type.MapValue;
+import ai.starwhale.mlops.datastore.type.ObjectValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -41,9 +45,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -225,6 +231,8 @@ public class DataStoreTest {
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "00000003"),
                         Map.of("a", "00000004"))));
+        assertThat("test", recordList.getColumnHints(),
+                is(Map.of("a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
 
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
@@ -244,6 +252,9 @@ public class DataStoreTest {
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "2", "a", "00000003"),
                         Map.of("k", "1", "a", "00000004"))));
+        assertThat("all columns", recordList.getColumnHints(),
+                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
+                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
 
         desc.setColumnSchemaList(new ArrayList<>(desc.getColumnSchemaList()));
         desc.getColumnSchemaList().addAll(
@@ -274,6 +285,11 @@ public class DataStoreTest {
                         Map.of("k", "4", "a", "00000001"),
                         Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
+        assertThat("object type", recordList.getColumnHints(),
+                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
+                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
+                        "x:link/url", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
+                        "x:link/mime_type", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build())));
 
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
@@ -292,6 +308,10 @@ public class DataStoreTest {
                         Map.of(),
                         Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
                         Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
+        assertThat("object type alias", recordList.getColumnHints(),
+                is(Map.of("url", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
+                        "y:link/mime_type", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build())));
+
         // query non exist table
         final String tableNonExist = "tableNonExist";
         assertThrows(SwValidationException.class, () -> this.dataStore.query(DataStoreQueryRequest.builder()
@@ -592,6 +612,10 @@ public class DataStoreTest {
                         Map.of("k", "3", "a", "00000002"),
                         Map.of("k", "4", "a", "00000001", "b", "00000011"))));
         assertThat("test", recordList.getLastKey(), is("4"));
+        assertThat("test", recordList.getColumnHints(), is(
+                Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
+                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
+                        "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1027,6 +1051,73 @@ public class DataStoreTest {
         }
     }
 
+    private void updateHints(Map<String, ColumnHintsDesc> statisticsMap, Map<String, BaseValue> value) {
+        value.forEach((k, v) -> {
+            var statistics = statisticsMap.computeIfAbsent(k, key -> new ColumnHintsDesc());
+            this.updateHints(statistics, v);
+        });
+
+    }
+
+    private void updateHints(ColumnHintsDesc hints, BaseValue value) {
+        var type = BaseValue.getColumnType(value);
+        Set<String> typeHints;
+        if (hints.getTypeHints() == null) {
+            typeHints = new HashSet<>();
+            hints.setTypeHints(typeHints);
+        } else {
+            typeHints = hints.getTypeHints();
+        }
+        if (type != ColumnType.UNKNOWN) {
+            typeHints.add(type.name());
+        }
+        switch (type) {
+            case TUPLE:
+            case LIST:
+                ColumnHintsDesc elementHints;
+                if (hints.getElementHints() == null) {
+                    elementHints = new ColumnHintsDesc();
+                    hints.setElementHints(elementHints);
+                } else {
+                    elementHints = hints.getElementHints();
+                }
+                ((ListValue) value).forEach(e -> this.updateHints(elementHints, e));
+                break;
+            case MAP:
+                ColumnHintsDesc keyHints;
+                if (hints.getKeyHints() == null) {
+                    keyHints = new ColumnHintsDesc();
+                    hints.setKeyHints(keyHints);
+                } else {
+                    keyHints = hints.getKeyHints();
+                }
+                ColumnHintsDesc valueHints;
+                if (hints.getValueHints() == null) {
+                    valueHints = new ColumnHintsDesc();
+                    hints.setValueHints(valueHints);
+                } else {
+                    valueHints = hints.getValueHints();
+                }
+                ((MapValue) value).forEach((k, v) -> {
+                    this.updateHints(keyHints, k);
+                    this.updateHints(valueHints, v);
+                });
+                break;
+            case OBJECT:
+                Map<String, ColumnHintsDesc> attributesHints;
+                if (hints.getAttributesHints() == null) {
+                    attributesHints = new HashMap<>();
+                    hints.setAttributesHints(attributesHints);
+                } else {
+                    attributesHints = hints.getAttributesHints();
+                }
+                this.updateHints(attributesHints, (ObjectValue) value);
+                break;
+            default:
+                break;
+        }
+    }
+
     @Test
     public void testAllTypes() throws Exception {
         List<Map<String, Object>> records = List.of(
@@ -1155,13 +1246,17 @@ public class DataStoreTest {
                                                 .build())
                                         .build()))
                         .build());
+        var schema = new TableSchemaDesc("key", columnSchemaList);
         var expected = new RecordList(
                 columnSchemaList.stream()
                         .collect(Collectors.toMap(ColumnSchemaDesc::getName, col -> new ColumnSchema(col, 0))),
+                new HashMap<>(),
                 records,
                 "z",
                 "STRING");
-        this.dataStore.update("t", new TableSchemaDesc("key", columnSchemaList), records);
+        records.forEach(
+                r -> this.updateHints(expected.getColumnHints(), RecordDecoder.decodeRecord(schema, r)));
+        this.dataStore.update("t", schema, records);
         var result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
                         .tableName("t")
@@ -1169,9 +1264,8 @@ public class DataStoreTest {
                         .build()))
                 .keepNone(true)
                 .build());
-        result.getColumnSchemaMap().entrySet().forEach(entry -> {
-            entry.setValue(new ColumnSchema(entry.getValue().toColumnSchemaDesc(), 0));
-        });
+        result.getColumnSchemaMap().entrySet()
+                .forEach(entry -> entry.setValue(new ColumnSchema(entry.getValue().toColumnSchemaDesc(), 0)));
         assertThat(result, is(expected));
         result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1181,7 +1275,8 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
-        assertThat(result, is(encodeResultWithType(expected)));
+        var encoded = encodeResultWithType(expected);
+        assertThat(result, is(encoded));
 
         this.dataStore.update("t",
                 new TableSchemaDesc("key", List.of(ColumnSchemaDesc.builder().name("key").type("INT32").build())),
@@ -1199,7 +1294,7 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
-        var encoded = encodeResultWithType(expected);
+        this.updateHints(encoded.getColumnHints(), Map.of("key", BaseValue.valueOf(1)));
         encoded.getRecords().add(0, Map.of("key", Map.of("type", "INT32", "value", "00000001")));
         assertThat(result, is(encoded));
 
@@ -1237,6 +1332,7 @@ public class DataStoreTest {
 
     private static RecordList encodeResultWithType(RecordList records) {
         return new RecordList(null,
+                records.getColumnHints(),
                 records.getRecords().stream()
                         .map(r -> r.entrySet().stream()
                                 .collect(Collectors.toMap(Entry::getKey,

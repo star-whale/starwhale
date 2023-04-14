@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.datastore;
 
+import ai.starwhale.mlops.datastore.ColumnHintsDesc;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -34,6 +35,7 @@ import lombok.NoArgsConstructor;
 public class RecordListVo {
 
     private List<ColumnSchemaDesc> columnTypes;
+    private Map<String, ColumnHintsDesc> columnHints;
     private List<Map<String, Object>> records;
     private String lastKey;
 }

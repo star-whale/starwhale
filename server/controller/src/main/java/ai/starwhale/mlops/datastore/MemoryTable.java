@@ -57,4 +57,6 @@ public interface MemoryTable {
     long getFirstWalLogId();
 
     long getLastUpdateTime();
+
+    Map<String, ColumnHintsDesc> getColumnHints(Map<String, String> columnMapping);
 }

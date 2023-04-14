@@ -93,6 +93,7 @@ public class ReadRangeTest {
                         .build()
         )).willReturn(new RecordList(
                 Map.of(),
+                Map.of(),
                 List.of(Map.of("id", "0000-000"),
                         Map.of("id", "0000-001"),
                         Map.of("id", "0000-002"),
@@ -125,7 +126,7 @@ public class ReadRangeTest {
                         .limit(9)
                         .build()
         )).willReturn(new RecordList(
-                Map.of(), List.of(
+                Map.of(), Map.of(), List.of(
                 Map.of("id", "0000-009"),
                 Map.of("id", "0000-010"),
                 Map.of("id", "0000-011")
@@ -211,6 +212,7 @@ public class ReadRangeTest {
                         .limit(1000)
                         .build()
         )).willReturn(new RecordList(
+                Map.of(),
                 Map.of(),
                 List.of(Map.of("id", "0000-000"),
                         Map.of("id", "0000-001"),

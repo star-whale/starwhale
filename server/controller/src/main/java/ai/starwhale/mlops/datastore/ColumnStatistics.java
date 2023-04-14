@@ -22,7 +22,9 @@ import ai.starwhale.mlops.datastore.type.MapValue;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -36,10 +38,10 @@ import lombok.ToString;
 public class ColumnStatistics {
 
     private final Map<ColumnType, Long> columnTypeCounter = new HashMap<>();
-    private ColumnStatistics elementSchema;
-    private ColumnStatistics keySchema;
-    private ColumnStatistics valueSchema;
-    private Map<String, ColumnStatistics> attributesSchema;
+    private ColumnStatistics elementStatistics;
+    private ColumnStatistics keyStatistics;
+    private ColumnStatistics valueStatistics;
+    private Map<String, ColumnStatistics> attributesStatistics;
 
     public void update(BaseValue value) {
         var type = BaseValue.getColumnType(value);
@@ -50,29 +52,29 @@ public class ColumnStatistics {
             this.columnTypeCounter.put(type, count + 1);
         }
         if (value instanceof ListValue) {
-            if (this.elementSchema == null) {
-                this.elementSchema = new ColumnStatistics();
+            if (this.elementStatistics == null) {
+                this.elementStatistics = new ColumnStatistics();
             }
             for (var element : (ListValue) value) {
-                this.elementSchema.update(element);
+                this.elementStatistics.update(element);
             }
         } else if (value instanceof MapValue) {
-            if (this.keySchema == null) {
-                this.keySchema = new ColumnStatistics();
+            if (this.keyStatistics == null) {
+                this.keyStatistics = new ColumnStatistics();
             }
-            if (this.valueSchema == null) {
-                this.valueSchema = new ColumnStatistics();
+            if (this.valueStatistics == null) {
+                this.valueStatistics = new ColumnStatistics();
             }
             for (var entry : ((MapValue) value).entrySet()) {
-                this.keySchema.update(entry.getKey());
-                this.valueSchema.update(entry.getValue());
+                this.keyStatistics.update(entry.getKey());
+                this.valueStatistics.update(entry.getValue());
             }
         } else if (value instanceof ObjectValue) {
-            if (this.attributesSchema == null) {
-                this.attributesSchema = new HashMap<>();
+            if (this.attributesStatistics == null) {
+                this.attributesStatistics = new HashMap<>();
             }
             for (var entry : ((ObjectValue) value).entrySet()) {
-                this.attributesSchema.computeIfAbsent(entry.getKey(), k -> new ColumnStatistics())
+                this.attributesStatistics.computeIfAbsent(entry.getKey(), k -> new ColumnStatistics())
                         .update(entry.getValue());
             }
         }
@@ -95,18 +97,18 @@ public class ColumnStatistics {
         switch (ret.getType()) {
             case LIST:
             case TUPLE:
-                ret.setElementSchema(this.elementSchema.createSchema("element", 0));
+                ret.setElementSchema(this.elementStatistics.createSchema("element", 0));
                 break;
             case MAP:
-                ret.setKeySchema(this.keySchema.createSchema("key", 0));
-                ret.setValueSchema(this.valueSchema.createSchema("value", 1));
+                ret.setKeySchema(this.keyStatistics.createSchema("key", 0));
+                ret.setValueSchema(this.valueStatistics.createSchema("value", 1));
                 break;
             case OBJECT:
                 // pythonType is useless for parquet schema
                 ret.setPythonType("placeholder");
                 var attrSchema = new HashMap<String, ColumnSchema>();
                 int i = 0;
-                for (var entry : new TreeMap<>(this.attributesSchema).entrySet()) {
+                for (var entry : new TreeMap<>(this.attributesStatistics).entrySet()) {
                     attrSchema.put(entry.getKey(), entry.getValue().createSchema(entry.getKey(), i++));
                 }
                 ret.setAttributesSchema(attrSchema);
@@ -115,5 +117,29 @@ public class ColumnStatistics {
                 break;
         }
         return ret;
+    }
+
+    public ColumnHintsDesc.ColumnHintsDescBuilder populate(
+            ColumnHintsDesc.ColumnHintsDescBuilder builder) {
+        builder.typeHints(this.columnTypeCounter.keySet().stream()
+                .filter(x -> x != ColumnType.UNKNOWN)
+                .map(Enum::name)
+                .collect(Collectors.toSet()));
+        if (this.elementStatistics != null) {
+            builder.elementHints(this.elementStatistics.populate(ColumnHintsDesc.builder()).build());
+        }
+        if (this.keyStatistics != null) {
+            builder.keyHints(this.keyStatistics.populate(ColumnHintsDesc.builder()).build());
+        }
+        if (this.valueStatistics != null) {
+            builder.valueHints(this.valueStatistics.populate(ColumnHintsDesc.builder()).build());
+        }
+        if (this.attributesStatistics != null) {
+            builder.attributesHints(
+                    this.attributesStatistics.entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey,
+                                    entry -> entry.getValue().populate(ColumnHintsDesc.builder()).build())));
+        }
+        return builder;
     }
 }
