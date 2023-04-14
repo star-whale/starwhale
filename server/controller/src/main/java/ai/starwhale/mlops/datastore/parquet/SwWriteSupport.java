@@ -34,6 +34,7 @@ import ai.starwhale.mlops.datastore.type.StringValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -326,6 +327,7 @@ public class SwWriteSupport extends WriteSupport<Map<String, BaseValue>> {
             case OBJECT:
                 valueType = Types.optionalGroup()
                         .addFields(schema.getAttributesSchema().values().stream()
+                                .sorted(Comparator.comparing(ColumnSchema::getName))
                                 .map(SwWriteSupport::createParquetType)
                                 .toArray(Type[]::new))
                         .addField(Types.primitive(PrimitiveTypeName.BINARY, Repetition.OPTIONAL)

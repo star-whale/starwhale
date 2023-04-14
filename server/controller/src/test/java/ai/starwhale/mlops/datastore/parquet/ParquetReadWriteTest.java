@@ -80,7 +80,8 @@ public class ParquetReadWriteTest {
                         .type("OBJECT")
                         .pythonType("placeholder")
                         .attributes(List.of(ColumnSchemaDesc.builder().name("a").type("INT32").build(),
-                                ColumnSchemaDesc.builder().name("b").type("INT32").build()))
+                                ColumnSchemaDesc.builder().name("b").type("INT32").build(),
+                                ColumnSchemaDesc.builder().name("aa").type("STRING").build()))
                         .build(),
                 ColumnSchemaDesc.builder().name("l")
                         .type("LIST")
@@ -141,7 +142,7 @@ public class ParquetReadWriteTest {
                         put("i", null);
                         put("j", BaseValue.valueOf(List.of(10)));
                         put("jj", BaseValue.valueOf(Map.of("a", 0, "b", 1)));
-                        put("k", ObjectValue.valueOf("t", Map.of("b", 11, "a", 12)));
+                        put("k", ObjectValue.valueOf("t", Map.of("b", 11, "a", 12, "aa", "13")));
                         put("l", BaseValue.valueOf(List.of(List.of(
                                 ObjectValue.valueOf("v",
                                         Map.of("a", ObjectValue.valueOf("t", Map.of("b", 3, "a", 4)),
