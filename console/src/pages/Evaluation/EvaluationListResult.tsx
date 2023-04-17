@@ -173,25 +173,23 @@ export default function DatastoreDiffTables() {
             <GridResizer
                 left={() => {
                     return (
-                        <Card title='123'>
-                            <GridTable
-                                store={useEvaluationDetailStore}
-                                columnable
-                                // viewable
-                                // queryable
-                                selectable
-                                columns={$columnsWithSpecColumns}
-                                getId={getId}
-                                data={records}
-                                onSave={doSave as any}
-                                onChange={doChange}
-                                emptyColumnMessage={
-                                    <BusyPlaceholder type='notfound'>
-                                        Create a new evaluation or Config to add columns
-                                    </BusyPlaceholder>
-                                }
-                            />
-                        </Card>
+                        <GridTable
+                            store={useEvaluationDetailStore}
+                            columnable
+                            // viewable
+                            // queryable
+                            selectable
+                            columns={$columnsWithSpecColumns}
+                            getId={getId}
+                            data={records}
+                            onSave={doSave as any}
+                            onChange={doChange}
+                            emptyColumnMessage={
+                                <BusyPlaceholder type='notfound'>
+                                    Create a new evaluation or Config to add columns
+                                </BusyPlaceholder>
+                            }
+                        />
                     )
                 }}
                 isResizeable={$compareRows.length > 0}
