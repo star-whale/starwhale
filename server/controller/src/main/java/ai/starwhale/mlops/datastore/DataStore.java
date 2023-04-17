@@ -172,7 +172,7 @@ public class DataStore {
     public RecordList query(DataStoreQueryRequest req) {
         var table = this.getTable(req.getTableName(), req.isIgnoreNonExistingTable(), false);
         if (table == null) {
-            return new RecordList(Collections.emptyMap(), Collections.emptyList(), null, null);
+            return new RecordList(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(), null, null);
         }
         table.lock();
         try {
@@ -245,7 +245,7 @@ public class DataStore {
                         return RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType());
                     })
                     .collect(Collectors.toList());
-            return new RecordList(columnSchemaMap, records, lastKey, lastKeyType);
+            return new RecordList(columnSchemaMap, table.getColumnHints(columns), records, lastKey, lastKeyType);
         } finally {
             table.unlock();
         }
@@ -282,6 +282,7 @@ public class DataStore {
                 TableSchema schema;
                 Map<String, String> columns;
                 Map<String, ColumnSchema> columnSchemaMap;
+                Map<String, ColumnHintsDesc> columnHints;
                 boolean keepNone;
             }
 
@@ -316,11 +317,13 @@ public class DataStore {
                             return schema;
                         })
                         .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
+                ret.columnHints = ret.table.getColumnHints(ret.columns);
                 ret.keepNone = info.isKeepNone();
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
             if (tables.isEmpty()) {
-                return new RecordList(Map.of(), List.of(), null, null);
+                return new RecordList(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(),
+                        null, null);
             }
             Map<String, ColumnSchema> columnSchemaMap;
             if (req.isEncodeWithType()) {
@@ -430,7 +433,18 @@ public class DataStore {
                 }
                 records.removeIf(r -> r.record == null);
             }
+            var columnHints = new HashMap<String, ColumnHintsDesc>();
+            for (var table : tables) {
+                table.table.getColumnHints(table.columns).forEach((k, v) -> {
+                    if (columnHints.containsKey(k)) {
+                        columnHints.get(k).merge(v);
+                    } else {
+                        columnHints.put(k, v);
+                    }
+                });
+            }
             return new RecordList(columnSchemaMap,
+                    columnHints,
                     ret,
                     (String) BaseValue.encode(lastKey, false, false),
                     BaseValue.getColumnType(lastKey).name());
