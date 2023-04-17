@@ -6,11 +6,9 @@ from unittest.mock import patch, MagicMock
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import NoSupportError
-from starwhale.api._impl.job import Handler, pass_context, generate_jobs_yaml
-from starwhale.core.job.step import Step
-from starwhale.core.job.task import TaskExecutor
-from starwhale.core.job.context import Context
-from starwhale.core.job.scheduler import Scheduler
+from starwhale.base.context import Context, pass_context
+from starwhale.api._impl.job import Handler, generate_jobs_yaml
+from starwhale.base.scheduler import Step, Scheduler, TaskExecutor
 
 from .. import BaseTestCase
 

@@ -1,7 +1,6 @@
 import io
 import os
 import random
-import typing as t
 
 import torch
 import gradio
@@ -10,121 +9,121 @@ from PIL import ImageDraw
 from pycocotools.coco import COCO
 from torchvision.transforms import functional
 
-from starwhale import Image, PipelineHandler
+from starwhale import Image, MIMEType, evaluation
 from starwhale.api.service import api
-from starwhale.core.dataset.type import MIMEType
 
 from .model import pretrained_model
 from .utils import get_model_path
 from .utils.coco_eval import CocoEvaluator
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+IOU_TYPES = ["bbox", "segm"]
+mask_rcnn_global = None
 
-class MaskRCnn(PipelineHandler):
-    def __init__(self) -> None:
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = self._load_model(self.device)
-        self.iou_types = ["bbox", "segm"]
-        super().__init__()
 
-    @torch.no_grad()
-    def ppl(self, data: dict, index: t.Union[int, str], **kw):
-        if isinstance(index, str) and "_" in index and index.startswith("dataset-"):
-            # v0.3.2 SDK index contains dataset name-version prefix, such as: 'dataset-pfp-small-d2zbajpbvotc7g7qwbev7lhqwvvu4k33qj5pehkf_PNGImages/FudanPed00001.png'
-            # other versions index is the origin data row index
-            index = index.split("_")[-1]
+def get_mask_rcnn_model():
+    global mask_rcnn_global
+    if mask_rcnn_global is not None:
+        return mask_rcnn_global
 
-        _img = PILImage.open(io.BytesIO(data["image"].to_bytes())).convert("RGB")
-        _tensor = functional.to_tensor(_img).to(self.device)
-        output = self.model(torch.stack([_tensor]))
-        return index, self._post(index, output[0])
-
-    @api(
-        gradio.Image(type="filepath"),
-        [gradio.Image(type="pil"), gradio.Json()],
-        examples=[[os.path.join(os.path.dirname(__file__), "../FudanPed00001.png")]],
+    net = pretrained_model(
+        2,
+        model_local_dict=torch.load(get_model_path(), map_location=DEVICE),
     )
-    def handler(self, file: str):
-        with open(file, "rb") as f:
-            data = f.read()
-        img = Image(data, mime_type=MIMEType.PNG)
-        _, res = self.ppl({"image": img}, 0)
+    net = net.to(DEVICE)
+    net.eval()
+    print("mask rcnn model loaded, start to inference...")
+    mask_rcnn_global = net
+    return net
 
-        bbox = res["bbox"]
-        _img = PILImage.open(file)
-        draw = ImageDraw.ImageDraw(_img)
-        for box in bbox:
-            x, y, w, h = box["bbox"]
-            color = (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
-            )
-            draw.rectangle((x, y, x + w, y + h), outline=color)
-        return _img, bbox
 
-    def _post(
-        self, index: t.Union[int, str], pred: t.Dict[str, torch.Tensor]
-    ) -> t.Dict[str, t.Any]:
-        output = {}
-        pred = {k: v.cpu() for k, v in pred.items()}
-        for typ in self.iou_types:
-            output[typ] = CocoEvaluator.prepare_predictions({index: pred}, typ)
-        return output
+@torch.no_grad()
+@evaluation.predict(resources={"nvidia.com/gpu": 1})
+def predict_mask_rcnn(data, index, **kw):
+    if isinstance(index, str) and "_" in index and index.startswith("dataset-"):
+        # v0.3.2 SDK index contains dataset name-version prefix, such as: 'dataset-pfp-small-d2zbajpbvotc7g7qwbev7lhqwvvu4k33qj5pehkf_PNGImages/FudanPed00001.png'
+        # other versions index is the origin data row index
+        index = index.split("_")[-1]
 
-    def cmp(self, ppl_result):
-        pred_results, annotations = [], []
-        for _data in ppl_result:
-            annotations.append(_data["ds_data"])
-            pred_results.append(_data["result"])
+    _img = PILImage.open(io.BytesIO(data["image"].to_bytes())).convert("RGB")
+    _tensor = functional.to_tensor(_img).to(DEVICE)
+    output = get_mask_rcnn_model()(torch.stack([_tensor]))
 
-        evaluator = make_coco_evaluator(annotations, iou_types=self.iou_types)
-        for index, pred in pred_results:
-            evaluator.update({index: pred})
+    ret = {}
+    pred = {k: v.cpu() for k, v in output[0].items()}
+    for typ in IOU_TYPES:
+        ret[typ] = CocoEvaluator.prepare_predictions({index: pred}, typ)
+    return index, ret
 
-        evaluator.synchronize_between_processes()
-        evaluator.accumulate()
-        evaluator.summarize()
 
-        detector_metrics_map = [
-            "average_precision",
-            "average_precision_iou50",
-            "average_precision_iou75",
-            "ap_across_scales_small",
-            "ap_across_scales_medium",
-            "ap_across_scales_large",
-            "average_recall_max1",
-            "average_recall_max10",
-            "average_recall_max100",
-            "ar_across_scales_small",
-            "ar_across_scales_medium",
-            "ar_across_scales_large",
-        ]
+@evaluation.evaluate(needs=[predict_mask_rcnn])
+def cmp(ppl_result):
+    pred_results, annotations = [], []
+    for _data in ppl_result:
+        annotations.append(_data["ds_data"])
+        pred_results.append(_data["result"])
 
-        report = {"kind": "coco_object_detection", "bbox": {}, "segm": {}}
-        for _iou, _eval in evaluator.coco_eval.items():
-            if _iou not in report:
-                continue
+    evaluator = make_coco_evaluator(annotations, iou_types=IOU_TYPES)
+    for index, pred in pred_results:
+        evaluator.update({index: pred})
 
-            _stats = _eval.stats.tolist()
-            for _idx, _label in enumerate(detector_metrics_map):
-                report[_iou][_label] = _stats[_idx]
+    evaluator.synchronize_between_processes()
+    evaluator.accumulate()
+    evaluator.summarize()
 
-        self.evaluation_store.log_metrics(report)
+    detector_metrics_map = [
+        "average_precision",
+        "average_precision_iou50",
+        "average_precision_iou75",
+        "ap_across_scales_small",
+        "ap_across_scales_medium",
+        "ap_across_scales_large",
+        "average_recall_max1",
+        "average_recall_max10",
+        "average_recall_max100",
+        "ar_across_scales_small",
+        "ar_across_scales_medium",
+        "ar_across_scales_large",
+    ]
 
-    def _load_model(self, device):
-        net = pretrained_model(
-            2,
-            model_local_dict=torch.load(get_model_path(), map_location=device),
+    report = {"kind": "coco_object_detection", "bbox": {}, "segm": {}}
+    for _iou, _eval in evaluator.coco_eval.items():
+        if _iou not in report:
+            continue
+
+        _stats = _eval.stats.tolist()
+        for _idx, _label in enumerate(detector_metrics_map):
+            report[_iou][_label] = _stats[_idx]
+
+    evaluation.log_summary(report)
+
+
+@api(
+    gradio.Image(type="filepath"),
+    [gradio.Image(type="pil"), gradio.Json()],
+    examples=[[os.path.join(os.path.dirname(__file__), "../FudanPed00001.png")]],
+)
+def handler(file: str):
+    with open(file, "rb") as f:
+        data = f.read()
+    img = Image(data, mime_type=MIMEType.PNG)
+    _, res = predict_mask_rcnn({"image": img}, 0)
+
+    bbox = res["bbox"]
+    _img = PILImage.open(file)
+    draw = ImageDraw.ImageDraw(_img)
+    for box in bbox:
+        x, y, w, h = box["bbox"]
+        color = (
+            random.randint(0, 255),
+            random.randint(0, 255),
+            random.randint(0, 255),
         )
-        net = net.to(device)
-        net.eval()
-        print("mask rcnn model loaded, start to inference...")
-        return net
+        draw.rectangle((x, y, x + w, y + h), outline=color)
+    return _img, bbox
 
 
-def make_coco_evaluator(
-    ann_list: t.List[t.Dict], iou_types: t.List[str]
-) -> CocoEvaluator:
+def make_coco_evaluator(ann_list, iou_types) -> CocoEvaluator:
     images = []
     categories = set()
     annotations = []

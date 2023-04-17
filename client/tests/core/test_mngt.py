@@ -84,7 +84,7 @@ class GCTestCase(TestCase):
 
         job_path = (
             project_dir
-            / URIType.EVALUATION
+            / URIType.JOB
             / RECOVER_DIRNAME
             / "gi"
             / "giztgyldgmzggytegftdszlbof4dq3i"
@@ -161,16 +161,16 @@ class GCTestCase(TestCase):
                 ),
             },
             {
-                "type": URIType.EVALUATION,
+                "type": URIType.JOB,
                 "bundle_path": (
                     project_dir
-                    / URIType.EVALUATION
+                    / URIType.JOB
                     / ".recover/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
                 "result": (
                     project_dir
                     / "workdir"
-                    / URIType.EVALUATION
+                    / URIType.JOB
                     / "gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
             },

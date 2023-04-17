@@ -1,6 +1,7 @@
 version: 1.0
 name: speech_command
 run:
-  handler: sc.evaluator:M5Inference
+  modules:
+    - sc.evaluator
 
 desc: m5 by pytorch

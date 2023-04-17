@@ -1,5 +1,5 @@
 from starwhale.api import model, track, evaluation
-from starwhale.api.job import Handler, pass_context
+from starwhale.api.job import Handler
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.base.uri import URI, URIType
 from starwhale.api.metric import multi_classification
@@ -27,9 +27,9 @@ from starwhale.api.dataset import (
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
+from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import PipelineHandler
 from starwhale.api.experiment import fine_tune
-from starwhale.core.job.context import Context
 
 dataset = Dataset.dataset
 handler = Handler.register

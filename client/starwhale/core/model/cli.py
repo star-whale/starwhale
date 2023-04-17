@@ -12,6 +12,7 @@ from click_option_group import (
 
 from starwhale import URI, URIType
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.base.type import InstanceType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
@@ -328,6 +329,12 @@ def _recover(model: str, force: bool) -> None:
     is_flag=True,
     help="[ONLY Standalone]Use docker container to run model handler, the docker image or runtime uri must be set",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--resource-pool",
+    default="default",
+    type=str,
+    help="resource pool for server side",
+)
 @optgroup.group(
     "\n ** Runtime Environment Selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -381,6 +388,7 @@ def _run(
     step: str,
     task_index: int | None,
     override_task_num: int,
+    resource_pool: str,
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -408,6 +416,29 @@ def _run(
         swcli model run --workdir . --module mnist.evaluator --handler mnist.evaluator:MNISTInference.cmp
     """
     # TODO: support run model in cluster mode
+    run_project_uri = URI(run_project, expected_type=URIType.PROJECT)
+    in_server = run_project_uri.instance_type == InstanceType.CLOUD
+
+    if in_container and in_server:
+        raise RuntimeError("in-container and in-server are mutually exclusive")
+
+    if in_server:
+        if not runtime:
+            raise ValueError("runtime is required in server mode")
+
+        if not handler:
+            raise ValueError("handler is required in server mode")
+
+        ModelTermView.run_in_server(
+            project_uri=run_project_uri,
+            model_uri=uri,
+            dataset_uris=datasets,
+            runtime_uri=runtime,
+            resource_pool=resource_pool,
+            run_handler=handler,
+        )
+        return
+
     if uri:
         _uri = URI(uri, URIType.MODEL)
         model_src_dir = ModelStorage(_uri).src_dir
@@ -416,6 +447,10 @@ def _run(
             raise NoSupportError("module is not supported in model uri mode")
     else:
         model_src_dir = Path(workdir)
+        if in_server:
+            raise RuntimeError(
+                "model run in server mode does not support model src dir"
+            )
 
     if in_container:
         ModelTermView.run_in_container(

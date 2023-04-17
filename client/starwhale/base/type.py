@@ -14,17 +14,8 @@ class URIType:
     MODEL = "model"
     DATASET = "dataset"
     RUNTIME = "runtime"
-    EVALUATION = "evaluation"
+    JOB = "job"
     UNKNOWN = "unknown"
-
-
-class JobType:
-    EVAL = "evaluation"
-
-
-class EvalTaskType:
-    ALL = "all"
-    SINGLE = "single"
 
 
 class RunSubDirType:

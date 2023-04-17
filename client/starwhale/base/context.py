@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 import threading
 from pathlib import Path
+from functools import wraps
 
 from loguru import logger
 
@@ -71,3 +72,12 @@ class Context:
                 logger.warning(f"runtime context has already be set: {val}")
         except AttributeError:
             cls._context_holder.value = ctx
+
+
+def pass_context(func: t.Any) -> t.Any:
+    @wraps(func)
+    def wrap_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        kwargs["context"] = Context.get_runtime_context()
+        return func(*args, **kwargs)
+
+    return wrap_func

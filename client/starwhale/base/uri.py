@@ -146,7 +146,7 @@ class URI:
             URIType.DATASET,
             URIType.INSTANCE,
             URIType.MODEL,
-            URIType.EVALUATION,
+            URIType.JOB,
             URIType.RUNTIME,
         )
 

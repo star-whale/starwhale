@@ -5,9 +5,7 @@ from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import RunStatus
-from starwhale.core.job.step import Step, StepResult
-from starwhale.core.job.task import TaskResult
-from starwhale.core.job.scheduler import Scheduler
+from starwhale.base.scheduler import Step, Scheduler, StepResult, TaskResult
 
 
 class JobTestCase(TestCase):
@@ -106,7 +104,7 @@ class JobTestCase(TestCase):
                 ],
             )
 
-    @patch("starwhale.core.job.task.TaskExecutor.execute")
+    @patch("starwhale.base.scheduler.TaskExecutor.execute")
     def test_scheduler(self, m_task_execute: MagicMock):
         m_task_execute.return_value = TaskResult(
             id=random.randint(0, 10), status=RunStatus.SUCCESS

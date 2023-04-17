@@ -11,7 +11,14 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.console import Group
 
-from starwhale.utils import docker, console, process, pretty_bytes, in_production
+from starwhale.utils import (
+    docker,
+    console,
+    process,
+    pretty_bytes,
+    in_production,
+    gen_uniq_version,
+)
 from starwhale.consts import (
     FileFlag,
     DEFAULT_PAGE_IDX,
@@ -28,7 +35,7 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
-from .model import Model, ModelConfig, StandaloneModel
+from .model import Model, CloudModel, ModelConfig, StandaloneModel
 
 
 class ModelTermView(BaseTermView):
@@ -114,6 +121,37 @@ class ModelTermView(BaseTermView):
         )
 
     @classmethod
+    def run_in_server(
+        cls,
+        project_uri: URI,
+        model_uri: str,
+        dataset_uris: t.List[str],
+        runtime_uri: str,
+        resource_pool: str,
+        run_handler: str | int,
+    ) -> t.Tuple[bool, str]:
+        ok, version_or_reason = CloudModel.run(
+            project_uri=project_uri,
+            model_uri=model_uri,
+            dataset_uris=dataset_uris,
+            runtime_uri=runtime_uri,
+            resource_pool=resource_pool,
+            run_handler=run_handler,
+        )
+        if ok:
+            console.print(":clap: success to create job")
+            console.print(
+                f":bird: visit web: {project_uri.instance}/projects/{project_uri.project}/evaluations/{version_or_reason}"
+            )
+            console.print(
+                f":monkey: run command: [bold green]swcli job info {project_uri.full_uri}/job/{version_or_reason} [/]"
+            )
+        else:
+            console.print(f":bird: run failed: [bold red]{version_or_reason}[/]")
+
+        return ok, version_or_reason
+
+    @classmethod
     @BaseTermView._only_standalone
     def run_in_host(
         cls,
@@ -125,7 +163,8 @@ class ModelTermView(BaseTermView):
         dataset_uris: t.Optional[t.List[str]] = None,
         runtime_uri: str = "",
         scheduler_run_args: t.Optional[t.Dict] = None,
-    ) -> None:
+    ) -> str:
+        version = version or gen_uniq_version()
         kw = dict(
             model_src_dir=model_src_dir,
             model_config=model_config,
@@ -145,6 +184,8 @@ class ModelTermView(BaseTermView):
         else:
             StandaloneModel.run(**kw)  # type: ignore
 
+        return version
+
     @classmethod
     @BaseTermView._only_standalone
     def run_in_container(
@@ -153,6 +194,7 @@ class ModelTermView(BaseTermView):
         runtime_uri: str = "",
         docker_image: str = "",
     ) -> None:
+        # TODO: support to get job version for in container
         if not runtime_uri and not docker_image:
             raise FieldTypeOrValueError("runtime_uri and docker_image both are none")
 

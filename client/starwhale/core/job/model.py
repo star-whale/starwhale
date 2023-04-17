@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import json
 import typing as t
 import subprocess
 from abc import ABCMeta, abstractmethod
-from http import HTTPStatus
-from collections import defaultdict
 
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -23,44 +20,17 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
-from starwhale.core.eval.store import RunStorage
 from starwhale.api._impl.metric import MetricKind
-from starwhale.core.eval.executor import EvalExecutor
-from starwhale.core.runtime.process import Process as RuntimeProcess
 
-_device_id_map = {"cpu": 1, "gpu": 2}
+from .store import JobStorage
 
 
-class EvaluationJob(metaclass=ABCMeta):
+class Job(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.name = uri.object.name
         self.project_name = uri.project
         self.sw_config = SWCliConfigMixed()
-
-    @classmethod
-    def run(
-        cls,
-        project_uri: URI,
-        model_uri: str,
-        dataset_uris: t.List[str],
-        runtime_uri: str,
-        version: str = "",
-        name: str = "",
-        desc: str = "",
-        **kw: t.Any,
-    ) -> t.Tuple[bool, str]:
-        _cls = cls._get_job_cls(project_uri)
-        return _cls.run(
-            project_uri=project_uri,
-            model_uri=model_uri,
-            dataset_uris=dataset_uris,
-            runtime_uri=runtime_uri,
-            version=version,
-            name=name,
-            desc=desc,
-            **kw,
-        )
 
     @abstractmethod
     def info(
@@ -86,10 +56,6 @@ class EvaluationJob(metaclass=ABCMeta):
 
     @abstractmethod
     def pause(self, force: bool = False) -> t.Tuple[bool, str]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -121,13 +87,11 @@ class EvaluationJob(metaclass=ABCMeta):
         return ret
 
     @classmethod
-    def _get_job_cls(
-        cls, uri: URI
-    ) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
+    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
-            return StandaloneEvaluationJob
+            return StandaloneJob
         elif uri.instance_type == InstanceType.CLOUD:
-            return CloudEvaluationJob
+            return CloudJob
         else:
             raise NoSupportError(f"job uri:{uri}")
 
@@ -142,58 +106,15 @@ class EvaluationJob(metaclass=ABCMeta):
         return _cls.list(project_uri)
 
     @classmethod
-    def get_job(cls, job_uri: URI) -> EvaluationJob:
+    def get_job(cls, job_uri: URI) -> Job:
         _cls = cls._get_job_cls(job_uri)
         return _cls(job_uri)
 
 
-# TODO: Storage Class Mixed
-class StandaloneEvaluationJob(EvaluationJob):
+class StandaloneJob(Job):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
-        self.store = RunStorage(uri)
-
-    @classmethod
-    def run(
-        cls,
-        project_uri: URI,
-        model_uri: str,
-        dataset_uris: t.List[str],
-        runtime_uri: str,
-        version: str = "",
-        name: str = "",
-        desc: str = "",
-        **kw: t.Any,
-    ) -> t.Tuple[bool, str]:
-        use_docker = kw.get("use_docker", False)
-        step = kw.get("step", "")
-        task_index = kw.get("task_index", 0)
-        task_num = kw.get("task_num", 0)
-
-        ee = EvalExecutor(
-            model_uri=model_uri,
-            dataset_uris=dataset_uris,
-            project_uri=project_uri,
-            runtime_uri=runtime_uri,
-            version=version,
-            name=name,
-            desc=desc,
-            step=step,
-            task_index=task_index,
-            task_num=task_num,
-            gencmd=kw.get("gencmd", False),
-            use_docker=use_docker,
-        )
-        if runtime_uri and not use_docker:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=ee.run,
-                args=(),
-            ).run()
-        else:
-            ee.run()
-
-        return True, ee._version
+        self.store = JobStorage(uri)
 
     def _get_version(self) -> str:
         return self.store.id
@@ -211,52 +132,6 @@ class StandaloneEvaluationJob(EvaluationJob):
                     rt[_k] = _v
 
         _f(summary)
-        return rt
-
-    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
-        rt = {}
-        base_report = self._get_report()
-        compare_reports = [j._get_report() for j in jobs]
-
-        rt = {
-            "kind": base_report["kind"],
-            "base": {
-                "uri": self.uri.full_uri,
-                "version": self.uri.object.name,
-            },
-            "versions": [self.uri.object.name] + [j.uri.object.name for j in jobs],
-            "summary": defaultdict(list),
-            "charts": defaultdict(list),
-        }
-
-        _base_summary = {}
-        _number_types = (int, float, complex)
-
-        for _idx, _report in enumerate([base_report] + compare_reports):
-            _summary = _report.get("summary", {})
-            if "labels" in _report:
-                _summary["labels"] = _report["labels"]
-
-            _flat_summary = self._do_flatten_summary(_summary)
-            if _idx == 0:
-                _base_summary = _flat_summary
-
-            for _bk, _bv in _base_summary.items():
-                _cv = _flat_summary.get(_bk)
-
-                if isinstance(_cv, _number_types) and isinstance(_bv, _number_types):
-                    _delta = _cv - _bv
-                else:
-                    _delta = None
-                rt["summary"][_bk].append(
-                    {"value": _cv, "delta": _delta, "base": _idx == 0}
-                )
-
-            for _k, _v in _report.items():
-                if _k in ("kind", "labels", "summary"):
-                    continue
-                rt["charts"][_k].append(_v)
-
         return rt
 
     def info(
@@ -323,7 +198,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
-        for _path, _is_removed in RunStorage.iter_all_jobs(project_uri):
+        for _path, _is_removed in JobStorage.iter_all_jobs(project_uri):
             _manifest = load_yaml(_path)
             if not _manifest:
                 continue
@@ -338,45 +213,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         return _rt, {}
 
 
-class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
-    @classmethod
-    def run(
-        cls,
-        project_uri: URI,
-        model_uri: str,
-        dataset_uris: t.List[str],
-        runtime_uri: str,
-        version: str = "",
-        name: str = "",
-        desc: str = "",
-        **kw: t.Any,
-    ) -> t.Tuple[bool, str]:
-        _step_spec = kw.get("step_spec")
-        if _step_spec:
-            with open(_step_spec) as f:
-                _step_spec = f.read()
-        crm = CloudRequestMixed()
-        # TODO: use argument for uri
-        # FIXME: put version into the post fields?
-        r = crm.do_http_request(
-            f"/project/{project_uri.project}/job",
-            method=HTTPMethod.POST,
-            instance_uri=project_uri,
-            data=json.dumps(
-                {
-                    "modelVersionUrl": model_uri,
-                    "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
-                    "runtimeVersionUrl": runtime_uri,
-                    "stepSpecOverWrites": _step_spec,
-                    "resourcePool": kw.get("resource_pool") or "default",
-                }
-            ),
-        )
-        if r.status_code == HTTPStatus.OK:
-            return True, r.json()["data"]
-        else:
-            return False, r.json()["message"]
-
+class CloudJob(Job, CloudRequestMixed):
     def _get_version(self) -> str:
         # TODO:use full version id
         return self.uri.object.name
@@ -449,13 +286,6 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
 
         return jobs, crm.parse_pager(r)
 
-    @staticmethod
-    def parse_device(device: str) -> t.Tuple[int, float]:
-        _t = device.split(":")
-        _id = _device_id_map.get(_t[0].lower(), _device_id_map["cpu"])
-        _cnt = float(_t[1]) if len(_t) == 2 else 1
-        return _id, _cnt
-
     @ignore_error({})
     def _fetch_job_info(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
@@ -482,7 +312,3 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)
-
-    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
-        # TODO: need to implement it
-        return {}
