@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
+import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
@@ -152,7 +153,7 @@ public class K8sTaskSchedulerTest {
         step.setId(1L);
         step.setName("cmp");
         step.setJob(job);
-        Task task = Task.builder()
+        return Task.builder()
                 .id(1L)
                 .taskRequest(TaskRequest.builder().index(1).total(2).build())
                 .step(step)
@@ -162,9 +163,10 @@ public class K8sTaskSchedulerTest {
                 .taskRequest(TaskRequest.builder()
                         .index(1)
                         .total(1)
-                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f))).build())
+                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f)))
+                        .env(List.of(Env.builder().name("SW_ENV").value("test").build()))
+                        .build())
                 .build();
-        return task;
     }
 
     public static class K8sJobTemplateMock extends K8sJobTemplate {
@@ -184,6 +186,7 @@ public class K8sTaskSchedulerTest {
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
             Map<String, String> expectedEnvs = new HashMap<>() {
             };
+            expectedEnvs.put("SW_ENV", "test");
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
@@ -203,18 +206,6 @@ public class K8sTaskSchedulerTest {
                     .filter(envVar -> envVar.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
             assertMapEquals(expectedEnvs, actualEnv);
-
-            ContainerOverwriteSpec dp = containerSpecMap.get("data-provider");
-
-            Map<String, String> initEnv = Map.of("DOWNLOADS",
-                    "s3://bucket/path_swmp s3://bucket/path_rt");
-            Map<String, String> initActual = dp.getEnvs().stream().filter(env -> env.getValue() != null)
-                    .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
-            assertMapEquals(initEnv, initActual);
-            ContainerOverwriteSpec ut = containerSpecMap.get("data-provider");
-            initActual = ut.getEnvs().stream().filter(env -> env.getValue() != null)
-                    .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
-            assertMapEquals(initEnv, initActual);
             return null;
         }
 

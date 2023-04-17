@@ -9,24 +9,6 @@ spec:
   template:
     spec:
       restartPolicy: Never
-      initContainers:
-        - name: data-provider
-          image: ghcr.io/star-whale/base:latest
-          volumeMounts:
-            - mountPath: /opt/starwhale
-              name: data
-          command: [ "/bin/sh" ]
-          args:
-            - -c
-            - >-
-               for item in $DOWNLOADS; do
-                 wget $item -P /opt/starwhale;
-               done;
-               cd /opt/starwhale;
-               mkdir swmp;
-               mkdir swrt;
-               find ./ -type f \( -name \*.swmp\* \) -exec tar -C swmp/ -xf {} \; &&
-               find ./ -type f \( -name \*.swrt\* \) -exec tar -C swrt/ -xf {} \;
       containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'

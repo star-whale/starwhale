@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,11 +56,24 @@ public class JobParserTest {
                 + "  needs: []\n"
                 + "  resources: []\n"
                 + "  name: mnist.evaluator:MNISTInference.ppl\n"
-                + "  replicas: 1";
+                + "  replicas: 1"
+                + "  env:\n"
+                + "    - name: EVAL_MODE\n"
+                + "      value: 'test'\n"
+                + "    - name: EVAL_DATASET\n"
+                + "      value: 'imagenet'\n"
+                + "    - name: EVAL_MODEL\n"
+                + "      value: 'resnet50'";
         JobSpecParser jobSpecParser = new JobSpecParser();
         List<StepSpec> stepMetaDatas = jobSpecParser.parseAndFlattenStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 3);
         Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
         Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);
+        Assertions.assertEquals(stepMetaDatas.get(2).getEnv().size(), 3);
+        Assertions.assertEquals(stepMetaDatas.get(2).getEnv(), List.of(
+                new Env("EVAL_MODE", "test"),
+                new Env("EVAL_DATASET", "imagenet"),
+                new Env("EVAL_MODEL", "resnet50")
+            ));
     }
 }

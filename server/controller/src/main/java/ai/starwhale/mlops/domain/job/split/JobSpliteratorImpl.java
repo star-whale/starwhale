@@ -140,9 +140,10 @@ public class JobSpliteratorImpl implements JobSpliterator {
                                 TaskRequest.builder()
                                         .total(stepEntity.getTaskNum())
                                         .index(i)
+                                        .env(nameMapping.get(stepEntity.getName())._2().getEnv())
                                         .jobName(nameMapping.get(stepEntity.getName())._2().getJobName())
                                         .runtimeResources(
-                                                nameMapping.get(stepEntity.getName())._2.getResources())
+                                                nameMapping.get(stepEntity.getName())._2().getResources())
                                         .build()))
                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
                         .taskUuid(taskUuid)

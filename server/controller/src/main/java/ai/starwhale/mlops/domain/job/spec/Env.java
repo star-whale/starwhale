@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.bo;
+package ai.starwhale.mlops.domain.job.spec;
 
-import ai.starwhale.mlops.domain.job.spec.Env;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,14 +23,35 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class TaskRequest {
+@AllArgsConstructor
+public class Env {
+    private String name;
+    private String value;
 
-    Integer index;
-    Integer total;
-    String jobName;
-    List<RuntimeResource> runtimeResources;
-    @Builder.Default
-    List<Env> env = new ArrayList<>();
+    // TODO add valueFrom source
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return "Env{"
+            + "name='" + name + '\''
+            + ", value='" + value + '\''
+            + '}';
+    }
 }
