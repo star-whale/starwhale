@@ -43,8 +43,14 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     // }
 
     const WidgetComponent = widget.renderer
-    const optionsWithDefaults = _.merge({}, widget.defaults?.optionConfig ?? {}, optionConfig)
-    const fieldsWithDefaults = _.merge({}, widget.defaults?.fieldConfig ?? {}, fieldConfig)
+    const optionsWithDefaults = React.useMemo(
+        () => _.merge({}, widget.defaults?.optionConfig ?? {}, optionConfig),
+        [widget.defaults, optionConfig]
+    )
+    const fieldsWithDefaults = React.useMemo(
+        () => _.merge({}, widget.defaults?.fieldConfig ?? {}, fieldConfig),
+        [widget.defaults, fieldConfig]
+    )
 
     // console.log('WidgetComponent', optionsWithDefaults)
 

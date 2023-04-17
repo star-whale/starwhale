@@ -249,6 +249,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             queryinline={queryinline}
                             rawColumns={props.columns}
                             emptyMessage={props.emptyMessage}
+                            getId={props.getId}
                             filters={$filtersEnabled}
                             loading={props.loading}
                             loadingMessage={props.loadingMessage}

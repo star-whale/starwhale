@@ -49,6 +49,7 @@ export interface TableDesc {
     tableName?: string
     columns?: ColumnDesc[]
     keepNone?: boolean
+    columnPrefix?: string
 }
 
 export interface RecordListVO {

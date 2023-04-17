@@ -24,7 +24,7 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { useDatastore } from '@starwhale/core/datastore'
+import { useDatastoreMixedSchema } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles({
@@ -95,7 +95,7 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const { records } = useDatastore(evaluationsInfo?.data?.records)
+    const { records } = useDatastoreMixedSchema(evaluationsInfo?.data?.records)
     const $columns = useDatastoreColumns(columnTypes)
 
     const $columnsWithSpecColumns = useMemo(() => {

@@ -68,6 +68,7 @@ function GridTable({
     onChange = () => {},
     emptyMessage,
     emptyColumnMessage,
+    getId = (record: any) => record.id,
     storeRef,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -126,6 +127,7 @@ function GridTable({
                     columns={columns}
                     rows={$rows}
                     onSave={onSave}
+                    getId={getId}
                     loadingMessage={() => (
                         <Skeleton
                             overrides={{

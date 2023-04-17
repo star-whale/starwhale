@@ -33,7 +33,9 @@ export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
 
         columnTypes
             ?.filter((column) => !!column)
-            .filter((column) => isSearchColumns(column.name))
+            .filter((column) => {
+                return isSearchColumns(column.name)
+            })
             .sort(sortColumn)
             .forEach((column) => {
                 return columnsWithAttrs.push(

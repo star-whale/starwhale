@@ -10,12 +10,7 @@ import { useHistory, useParams, Prompt } from 'react-router-dom'
 import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
-import {
-    ITableState,
-    useEvaluationCompareStore,
-    useEvaluationDetailStore,
-    useEvaluationStore,
-} from '@starwhale/ui/base/data-table/store'
+import { ITableState, useEvaluationDetailStore, useEvaluationCompareStore } from '@starwhale/ui/base/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { tableNameOfResult, tableNameOfSummary } from '@starwhale/core/datastore/utils'
@@ -28,10 +23,9 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { useDatastore, useFetchDatastoreAllTables } from '@starwhale/core/datastore'
 import useFetchDatastoreByTables from '@starwhale/core/datastore/hooks/useFetchDatastoreByTables'
 
-export default function EvaluationListResult() {
+export default function DatastoreDiffTables() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -41,39 +35,24 @@ export default function EvaluationListResult() {
 
     const store = useEvaluationDetailStore()
 
-    const options = React.useMemo(() => {
-        const sorts = store.currentView?.sortBy
-            ? [
-                  {
-                      columnName: store.currentView?.sortBy,
-                      descending: store.currentView?.sortDirection === 'DESC',
-                  },
-              ]
-            : []
-
-        return {
-            pageNum: 1,
-            pageSize: 1000,
-            query: {
-                orderBy: sorts,
-            },
-            filter: store.currentView.queries,
-        }
-    }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
-
     const queries = React.useMemo(
         () =>
             new Array(10).fill(0).map((_, i) => {
                 return {
-                    tableName: tableNameOfResult(projectId, '9607791f26894b6eb1d117b7c50721f3'),
-                    prefix: `result-${i}-`,
-                    options,
+                    tableName: tableNameOfResult(projectId, 'cec3345ffd2a4748bac26def597f04a2'),
+                    columnPrefix: `result-${i}-`,
+                    // ,
                 }
             }),
-        [projectId, options]
+        [projectId]
     )
+    const getId = useCallback((record) => {
+        return record['result-0-id']?.value || record['result-0-id']
+    }, [])
 
-    const { records, columnTypes } = useFetchDatastoreByTables(queries)
+    const { records, columnTypes, columnInfo } = useFetchDatastoreByTables({
+        tables: queries,
+    })
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation-detail')
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
     const [changed, setChanged] = useState(false)
@@ -89,61 +68,49 @@ export default function EvaluationListResult() {
     }, [t, $columns, projectId])
 
     const $compareRows = React.useMemo(() => {
-        return records.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
-    }, [store.rowSelectedIds, records])
+        return records.filter((r) => store.rowSelectedIds.includes(getId(r))) ?? []
+    }, [store.rowSelectedIds, records, getId])
 
-    // const $ready = React.useMemo(() => {
-    //     return columnInfo.isSuccess && evaluationViewConfig.isSuccess
-    // }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
-    const $ready = true
+    const $ready = React.useMemo(() => {
+        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
+    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
 
-    console.log(store.rowSelectedIds, $compareRows)
+    console.log(store.rowSelectedIds, $compareRows, store)
 
-    React.useEffect(() => {
-        const unloadCallback = (event: any) => {
-            if (!changed) return ''
-            event.preventDefault()
-            // eslint-disable-next-line no-param-reassign
-            event.returnValue = 'Confirm Save Changes'
-            return ''
-        }
-
-        window.addEventListener('beforeunload', unloadCallback)
-        return () => {
-            window.removeEventListener('beforeunload', unloadCallback)
-        }
-    }, [changed])
-
-    const doSave = async () => {
-        await setEvaluationViewConfig(projectId, {
+    const doSave = useCallback(() => {
+        setEvaluationViewConfig(projectId, {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
+        }).then(() => {
+            toaster.positive(t('evaluation.save.success'), {})
         })
-        toaster.positive(t('evaluation.save.success'), {})
         return {}
-    }
+    }, [projectId, store.getRawConfigs, t])
 
-    const doChange = async (state: ITableState, prevState: ITableState) => {
-        if (!$ready) return
-        setChanged(state.currentView.updated ?? false)
-        setViewId(state.currentView.id)
+    const doChange = React.useCallback(
+        async (state: ITableState, prevState: ITableState) => {
+            if (!$ready) return
+            setChanged(state.currentView.updated ?? false)
+            setViewId(state.currentView.id)
 
-        if (!_.isEqual(state.views, prevState.views)) {
-            // auto save views
-            // eslint-disable-next-line no-console
-            console.log('saved views', state.views, prevState.views)
-            await setEvaluationViewConfig(projectId, {
-                name: 'evaluation',
-                content: JSON.stringify(
-                    {
-                        ...store.getRawConfigs(),
-                        views: state.views,
-                    },
-                    null
-                ),
-            })
-        }
-    }
+            if (!_.isEqual(state.views, prevState.views)) {
+                // auto save views
+                // eslint-disable-next-line no-console
+                console.log('saved views', state.views, prevState.views)
+                setEvaluationViewConfig(projectId, {
+                    name: 'evaluation',
+                    content: JSON.stringify(
+                        {
+                            ...store.getRawConfigs(),
+                            views: state.views,
+                        },
+                        null
+                    ),
+                })
+            }
+        },
+        [$ready, projectId, setViewId, store.getRawConfigs, t]
+    )
 
     // NOTICE: use isinit to make sure view config is loading into store
     const initRef = React.useRef(false)
@@ -206,22 +173,25 @@ export default function EvaluationListResult() {
             <GridResizer
                 left={() => {
                     return (
-                        <GridTable
-                            store={useEvaluationStore}
-                            columnable
-                            // viewable
-                            // queryable
-                            selectable
-                            columns={$columnsWithSpecColumns}
-                            data={records}
-                            onSave={doSave as any}
-                            onChange={doChange}
-                            emptyColumnMessage={
-                                <BusyPlaceholder type='notfound'>
-                                    Create a new evaluation or Config to add columns
-                                </BusyPlaceholder>
-                            }
-                        />
+                        <Card title='123'>
+                            <GridTable
+                                store={useEvaluationDetailStore}
+                                columnable
+                                // viewable
+                                // queryable
+                                selectable
+                                columns={$columnsWithSpecColumns}
+                                getId={getId}
+                                data={records}
+                                onSave={doSave as any}
+                                onChange={doChange}
+                                emptyColumnMessage={
+                                    <BusyPlaceholder type='notfound'>
+                                        Create a new evaluation or Config to add columns
+                                    </BusyPlaceholder>
+                                }
+                            />
+                        </Card>
                     )
                 }}
                 isResizeable={$compareRows.length > 0}
@@ -232,6 +202,7 @@ export default function EvaluationListResult() {
                                 title={t('Compare Evaluations')}
                                 rows={$compareRows}
                                 attrs={columnTypes}
+                                getId={getId}
                             />
                         </Card>
                     )

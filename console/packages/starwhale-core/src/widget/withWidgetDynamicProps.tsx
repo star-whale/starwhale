@@ -5,11 +5,12 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
 import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 
-import { useIsInViewport } from '../utils'
+import { useIfChanged, useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
+import { useEffectOnce } from 'react-use'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -61,8 +62,14 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
-        const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView ?? {}, [overrides])
+        const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
         const tableOptions = React.useMemo(() => {
+            if (!tableConfig)
+                return {
+                    pageNum: 1,
+                    pageSize: 1000,
+                }
+
             const sorts = tableConfig.sortBy
                 ? [
                       {
@@ -86,29 +93,46 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 filter: tableConfig.queries,
             }
         }, [tableConfig])
+
         const inViewport = useIsInViewport(myRef as any)
-        const { recordInfo, recordQuery: query } = useFetchDatastoreByTable(tableName, tableOptions, false)
-        const inViewLoadRef = useRef(false)
-        const tableNameRef = useRef('')
+        const [enableLoad, setEnableload] = React.useState(false)
+        const {
+            columnInfo,
+            recordInfo,
+            recordQuery: query,
+            columnTypes,
+        } = useFetchDatastoreByTable(tableName, tableOptions, enableLoad)
+        useEffect(() => {
+            if (enableLoad) return
+            if (inViewport) setEnableload(true)
+        }, [inViewport, enableLoad])
+
+        useIfChanged({
+            overrides,
+            tableConfig,
+            tableName,
+            inViewport,
+            enableLoad,
+        })
 
         // if in viewport, refetch data
         // if panel table changed, refetch data
-        useEffect(() => {
-            if (!tableName || !inViewport) return
+        // useEffect(() => {
+        //     if (!tableName || !inViewport) return
 
-            if (tableNameRef.current !== tableName) {
-                recordInfo.refetch()
-                tableNameRef.current = tableName
-                return
-            }
+        //     if (tableNameRef.current !== tableName) {
+        //         columnInfo.refetch()
+        //         tableNameRef.current = tableName
+        //         return
+        //     }
 
-            if (inViewLoadRef.current) return
-            recordInfo.refetch()
+        //     if (inViewLoadRef.current) return
+        //     columnInfo.refetch()
 
-            inViewLoadRef.current = true
-            tableNameRef.current = tableName
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [tableName, inViewport])
+        //     inViewLoadRef.current = true
+        //     tableNameRef.current = tableName
+        //     // eslint-disable-next-line react-hooks/exhaustive-deps
+        // }, [tableName, inViewport])
 
         useEffect(() => {
             // @FIXME better use scoped eventBus
@@ -135,6 +159,14 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [eventBus, id, query])
 
+        const $data = React.useMemo(() => {
+            if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
+            return {
+                records: recordInfo.data.records,
+                columnTypes,
+            }
+        }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
+
         if (tableName && !recordInfo.isSuccess)
             return (
                 <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
@@ -153,7 +185,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 <WrappedWidgetRender
                     {...props}
                     name={overrides?.name}
-                    data={recordInfo?.data}
+                    data={$data}
                     optionConfig={overrides?.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
                     fieldConfig={overrides?.fieldConfig}

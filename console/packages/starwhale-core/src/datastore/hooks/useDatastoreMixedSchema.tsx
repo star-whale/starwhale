@@ -66,7 +66,7 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
     }
 }
 
-export function useDatastore(records: RecordListSchemaT = []) {
+export function useDatastoreMixedSchema(records: RecordListSchemaT = []) {
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
     const getSchema = React.useCallback(
@@ -122,4 +122,4 @@ export function useDatastore(records: RecordListSchemaT = []) {
     }
 }
 
-export default useDatastore
+export default useDatastoreMixedSchema

@@ -65,6 +65,7 @@ export function DataTable({
     sortIndex,
     sortDirection,
     textQuery = '',
+    getId,
     controlRef,
     useStore,
 }: DataTablePropsT) {
@@ -346,9 +347,9 @@ export function DataTable({
         return !!selectedRowIds.size && selectedRowIds.size < rows.length
     }, [selectedRowIds, rows.length])
     const isRowSelected = React.useCallback(
-        (id) => {
+        (row) => {
             if (selectedRowIds) {
-                return selectedRowIds.has(id)
+                return selectedRowIds.has(getId(row.data))
             }
             return false
         },
@@ -356,7 +357,7 @@ export function DataTable({
     )
     const handleSelectMany = React.useCallback(() => {
         if (onSelectMany) {
-            onSelectMany(rows.map((v) => v.id))
+            onSelectMany(rows.map((v) => getId(v.data)))
         }
     }, [rows, onSelectMany])
     const handleSelectNone = React.useCallback(() => {
@@ -367,10 +368,10 @@ export function DataTable({
     const handleSelectOne = React.useCallback(
         (row) => {
             if (onSelectOne) {
-                onSelectOne(row.id)
+                onSelectOne(getId(row.data))
             }
         },
-        [onSelectOne]
+        [onSelectOne, getId]
     )
 
     const handleSort = React.useCallback(
@@ -439,6 +440,7 @@ export function DataTable({
             rows,
             textQuery,
             normalizedWidths,
+            getId,
         }
     }, [
         handleRowMouseEnter,
@@ -452,6 +454,7 @@ export function DataTable({
         handleSelectOne,
         textQuery,
         normalizedWidths,
+        getId,
     ])
 
     // console.log(rowHighlightIndex, resizeDeltas)
@@ -564,6 +567,7 @@ export function DataTable({
                             tableHeight: height,
                             widths: normalizedWidths,
                             onSelectOne: handleSelectOne,
+                            getId,
                         }}
                     >
                         <Headers width={width} />

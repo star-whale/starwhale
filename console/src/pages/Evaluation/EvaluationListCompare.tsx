@@ -15,21 +15,22 @@ import { GridTable, sortColumn } from '@starwhale/ui/GridTable'
 import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({
-    header: {},
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: {
-        fontWeight: 'bold',
+        fontWeight: '600',
         display: 'flex',
         alignItems: 'center',
+        fontSize: '14px',
+        color: 'rgba(2,16,43,0.60);',
     },
     headerBar: {
         gap: 20,
         height: '52px',
         lineHeight: '1',
-        marginTop: '35px',
         fontWeight: 'bold',
         display: 'flex',
         alignItems: 'center',
-        paddingBottom: '20px',
+        fontSize: '14px',
     },
     cellCompare: {
         position: 'absolute',
@@ -134,7 +135,9 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
 }
 
 function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{ value: any; type: DataTypes }>) {
-    if (!comparedValue || !value) return NoneCompareCell({ value, comparedValue, renderedValue, data })
+    // too long string not compare
+    if (!comparedValue || !value || val(value).length > 100)
+        return NoneCompareCell({ value, comparedValue, renderedValue, data })
 
     if (isNumbericType(comparedValue.type) || isBoolType(comparedValue.type)) {
         return NumberCompareCell({ value, comparedValue, renderedValue, data })
@@ -149,6 +152,7 @@ export default function EvaluationListCompare({
     rows = [],
     attrs,
     title = '',
+    getId,
 }: {
     title?: string
     rows: any[]
@@ -255,7 +259,7 @@ export default function EvaluationListCompare({
             ...rows.map((row: any, index) =>
                 CustomColumn({
                     minWidth: 200,
-                    key: val(row.id),
+                    key: val(getId(row)),
                     title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
                     fillWidth: false,
                     // @ts-ignore
@@ -321,6 +325,13 @@ export default function EvaluationListCompare({
                 </LabelSmall>
                 <div className={styles.headerBar}>
                     <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
+                                },
+                            },
+                        }}
                         checked={store.compare?.compareShowCellChanges}
                         onChange={(e) => {
                             store.onCompareUpdate({
@@ -332,6 +343,13 @@ export default function EvaluationListCompare({
                         {t('compare.config.show.changes')}
                     </Checkbox>
                     <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
+                                },
+                            },
+                        }}
                         checked={store.compare?.compareShowDiffOnly}
                         onChange={(e) => {
                             store.onCompareUpdate({
