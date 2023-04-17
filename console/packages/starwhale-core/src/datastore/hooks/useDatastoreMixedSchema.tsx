@@ -1,9 +1,8 @@
 import React from 'react'
-import { ColumnSchemaDesc, RecordListVo } from '../schemas/datastore'
+import { ColumnSchemaDesc } from '../schemas/datastore'
 import { RecordListSchemaT, RecordSchemaT } from '../types'
 import { SwType } from '../model'
 import _ from 'lodash'
-import { DataTypes } from '../constants'
 
 class LRUCache<Key, Value> {
     private maxSize: number
@@ -67,8 +66,7 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
     }
 }
 
-export function useDatastore(data?: RecordListVo) {
-    const { records, columnTypes, columnHints } = data ?? {}
+export function useDatastoreMixedSchema(records: RecordListSchemaT = []) {
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
     const getSchema = React.useCallback(
@@ -92,9 +90,9 @@ export function useDatastore(data?: RecordListVo) {
     )
 
     const $recordsWithSchema = React.useMemo(() => {
-        if (!records || records.length === 0) return []
+        if (records.length === 0) return []
 
-        return records?.map((record, index) => {
+        return records.map((record, index) => {
             const recordTmp: Record<string, any> = {}
             Object.keys(record).forEach((key) => {
                 const schema = getSchema(key, index)
@@ -105,15 +103,17 @@ export function useDatastore(data?: RecordListVo) {
     }, [records, getSchema])
 
     const $columnTypes = React.useMemo(() => {
-        if (columnTypes && columnTypes.length > 0) return columnTypes
+        if (records.length === 0) return []
 
-        return Object.entries(columnHints ?? {}).map(([name, hint]) => {
-            return {
-                name,
-                type: hint.typeHints?.[0] ?? DataTypes.STRING,
-            }
+        const columnTypes: RecordSchemaT[] = []
+        const rowIndex = 0
+        const record = records[rowIndex]
+        Object.keys(record).forEach((key) => {
+            const schema = getSchema(key, rowIndex)
+            if (schema) columnTypes.push(schema)
         })
-    }, [columnHints, columnTypes])
+        return columnTypes
+    }, [records, getSchema])
 
     return {
         records: $recordsWithSchema,
@@ -122,4 +122,4 @@ export function useDatastore(data?: RecordListVo) {
     }
 }
 
-export default useDatastore
+export default useDatastoreMixedSchema

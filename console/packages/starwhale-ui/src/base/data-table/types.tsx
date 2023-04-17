@@ -181,6 +181,7 @@ export type DataTablePropsT = {
     sortIndex?: number
     sortDirection?: SortDirectionsT
     textQuery?: string
+    getId?: (row: RowT) => string | number
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

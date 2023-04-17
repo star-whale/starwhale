@@ -3,6 +3,7 @@ import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/c
 import { WidgetPlugin } from '@starwhale/core/widget'
 import PanelTable from './component/Table'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
+import { useDatastoreMixedSchema } from '@starwhale/core/datastore'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
@@ -30,6 +31,8 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
         },
         [onOptionChange]
     )
+
+    const { records } = useDatastoreMixedSchema(data.records)
 
     return (
         <PanelTable

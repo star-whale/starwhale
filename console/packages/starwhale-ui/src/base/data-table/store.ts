@@ -265,6 +265,7 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => ({
         } else {
             selectedRowIds.add(id)
         }
+        console.log(Array.from(selectedRowIds), '---------')
         set({
             rowSelectedIds: Array.from(selectedRowIds),
         })
@@ -351,15 +352,17 @@ export const useEvaluationCompareStore = createCustomStore('compare', {
         compareShowDiffOnly: false,
     },
 })
-export const useEvaluationDetailStore = createCustomStore('evaluations-detail', {}, true)
-export const useEvaluationDetailCompareStore = createCustomStore('evaluations-detail-compare', {
-    compare: {
-        comparePinnedKey: '',
-        compareShowCellChanges: true,
-        compareShowDiffOnly: false,
+export const useEvaluationDetailStore = createCustomStore(
+    'evaluations-detail',
+    {
+        compare: {
+            comparePinnedKey: '',
+            compareShowCellChanges: true,
+            compareShowDiffOnly: false,
+        },
     },
-})
-
+    true
+)
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []
 const currentViewSelector = (state: ITableState) => state.currentView ?? {}

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import qs from 'qs'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest } from '../schemas/datastore'
-import useDatastore from './useDatastore'
+import useDatastoreMixedSchema from './useDatastoreMixedSchema'
 import { RecordSchemaT } from '../types'
 import { useQueryDatastore } from './useFetchDatastore'
 import { getQuery } from './useDatastoreQueryParams'
@@ -21,24 +21,24 @@ export function useFetchDatastoreByTable(
     }, [tableName, options])
 
     const recordInfo = useQueryDatastore(recordQuery, enabled)
+    const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
 
-    const { records, columnTypes } = useDatastore(recordInfo?.data)
+    // React.useEffect(() => {
+    //     // 1. when table changed
+    //     // 2. enabled false
+    //     if (recordQuery.tableName && !enabled && !recordInfo.isSuccess) {
+    //         recordInfo.refetch()
+    //     }
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [recordQuery, enabled, ])
 
-    // when fetch error
-    React.useEffect(() => {
-        if (tableName && enabled && recordInfo.isError) {
-            recordInfo.refetch()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tableName, enabled])
-
-    // when table changed
-    React.useEffect(() => {
-        if (recordQuery.tableName && enabled && !recordInfo.isSuccess) {
-            recordInfo.refetch()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recordQuery])
+    // // when table changed
+    // React.useEffect(() => {
+    //     if (columnQuery.tableName && !recordInfo.isSuccess) {
+    //         columnInfo.refetch()
+    //     }
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [columnQuery])
 
     return {
         recordQuery,

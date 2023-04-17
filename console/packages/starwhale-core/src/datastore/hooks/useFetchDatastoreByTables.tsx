@@ -1,16 +1,25 @@
-import React, { useMemo } from 'react'
-import { useQuery, useQueries } from 'react-query'
-import qs from 'qs'
+import React from 'react'
+import { useQueries } from 'react-query'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest } from '../schemas/datastore'
-import useDatastore from './useDatastore'
 import { RecordSchemaT } from '../types'
-import { useQueryDatastore } from './useFetchDatastore'
-import { ColumnDesc, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
-import { OPERATOR, DataTypes } from '../constants'
-import { useDatastoreQueryParams } from './useDatastoreQueryParams'
+import { useScanDatastore } from './useFetchDatastore'
+import { DataTypes } from '../constants'
+import { TableScanParamsT, useDatastoreQueryParams, useDatastoreScanParams } from './useDatastoreQueryParams'
 import { queryTable } from '../services/datastore'
 import { SwType } from '../model'
+
+export function useFetchDatastoreByTables(queries: TableScanParamsT) {
+    const { columnQuery, recordQuery } = useDatastoreScanParams(queries)
+    const columnInfo = useScanDatastore(columnQuery, true)
+    const recordInfo = useScanDatastore(recordQuery, true)
+    return {
+        columnInfo,
+        recordInfo,
+        records: recordInfo.data?.records ?? [],
+        columnTypes: columnInfo.data?.columnTypes ?? [],
+    }
+}
 
 type TableQueryParamsT = {
     tableName?: string
@@ -23,7 +32,7 @@ type TableQueryParamsT = {
     prefix?: string
 }
 
-export function useFetchDatastoreByTables(queries: TableQueryParamsT[]) {
+export function useFetchDatastoreByMergeTables(queries: TableQueryParamsT[]) {
     const { queries: $queries } = useDatastoreQueryParams(queries)
 
     const info = useQueries(

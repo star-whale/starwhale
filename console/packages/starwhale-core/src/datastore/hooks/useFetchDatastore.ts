@@ -2,9 +2,9 @@ import React, { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
 import { scanTable, queryTable, listTables, exportTable } from '../services/datastore'
-import { QueryTableRequest } from '../schemas/datastore'
+import { QueryTableRequest, ScanTableRequest } from '../schemas/datastore'
 
-export function useScanDatastore(query: any, enabled = false) {
+export function useScanDatastore(query: ScanTableRequest, enabled = false) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {
         refetchOnWindowFocus: false,
         enabled,
@@ -15,6 +15,7 @@ export function useScanDatastore(query: any, enabled = false) {
 export function useQueryDatastore(query?: QueryTableRequest, enable = true) {
     const info = useQuery(`queryDatastore:${qs.stringify(query)}`, () => queryTable(query as QueryTableRequest), {
         refetchOnWindowFocus: false,
+        retry: true,
         enabled: !!query?.tableName && enable,
     })
     return info
