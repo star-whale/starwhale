@@ -89,7 +89,7 @@ const runtime = {
     'runtime.image.build.button': {
         en: 'Build Image',
         zh: '构建镜像',
-    }
+    },
 }
 
 const model = {

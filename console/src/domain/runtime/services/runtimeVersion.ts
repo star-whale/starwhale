@@ -6,7 +6,8 @@ import {
     IUpdateRuntimeVersionSchema,
     IRuntimeVersionDetailSchema,
     IRuntimeVersionListQuerySchema,
-    IRuntimeVersionSuggestionSchema, IRuntimeVersionBuildImageResultSchema,
+    IRuntimeVersionSuggestionSchema,
+    IRuntimeVersionBuildImageResultSchema,
 } from '../schemas/runtimeVersion'
 
 export async function listRuntimeVersions(

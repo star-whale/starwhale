@@ -8,11 +8,11 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
 import { TextLink } from '@/components/Link'
-import {Button, ConfirmButton} from '@starwhale/ui'
+import { Button, ConfirmButton } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
-import {buildImageForRuntimeVersion} from "@runtime/services/runtimeVersion";
-import {toaster} from "baseui/toast";
+import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
+import { toaster } from 'baseui/toast'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -57,34 +57,32 @@ export default function RuntimeListCard() {
                                     onClick={() => history.push(`/projects/${projectId}/runtimes/${runtime.id}`)}
                                 >
                                     {t('Version History')}
-                                </Button>,
+                                </Button>
                                 &nbsp;&nbsp;
-                                {
-                                    runtime.version?.builtImage ? (
-                                        <ConfirmButton
-                                            as='positive'
-                                            title={t('runtime.image.build.confirm')}
-                                            onClick={async () => {
-                                                const result = await buildImageForRuntimeVersion(projectId, runtime.id, runtime.version.id);
-                                                if (result.success) {
-                                                    toaster.positive(result.message, {
-                                                        autoHideDuration: 1000,
-                                                    });
-                                                }else {
-                                                    toaster.negative(result.message, {
-                                                        autoHideDuration: 2000,
-                                                    });
-                                                }
-                                            }}
-                                        >
-                                            {t('runtime.image.build.button')}
-                                        </ConfirmButton>
-                                    ) : (
-                                        <span role="img" aria-label="runtime.image.built">
-                                          ⏩
-                                        </span>
-                                    )
-                                }
+                                {runtime.version?.builtImage ?? (
+                                    <ConfirmButton
+                                        as='positive'
+                                        title={t('runtime.image.build.confirm')}
+                                        onClick={async () => {
+                                            const result = await buildImageForRuntimeVersion(
+                                                projectId,
+                                                runtime.id,
+                                                runtime.version.id
+                                            )
+                                            if (result.success) {
+                                                toaster.positive(result.message, {
+                                                    autoHideDuration: 1000,
+                                                })
+                                            } else {
+                                                toaster.negative(result.message, {
+                                                    autoHideDuration: 2000,
+                                                })
+                                            }
+                                        }}
+                                    >
+                                        {t('runtime.image.build.button')}
+                                    </ConfirmButton>
+                                )}
                             </>,
                         ]
                     }) ?? []
