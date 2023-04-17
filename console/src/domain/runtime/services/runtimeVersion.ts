@@ -100,7 +100,7 @@ export async function buildImageForRuntimeVersion(
     runtimeVersionId: string
 ): Promise<IRuntimeVersionBuildImageResultSchema> {
     const resp = await axios.post<IRuntimeVersionBuildImageResultSchema>(
-        `/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/image/build`
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/image/build`
     )
     return resp.data
 }
