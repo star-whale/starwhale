@@ -95,7 +95,7 @@ export default function RuntimeVersionListCard() {
                             &nbsp;&nbsp;
                             {runtime.builtImage ?? (
                                 <ConfirmButton
-                                    as='negative'
+                                    as='transparent'
                                     title={t('runtime.image.build.confirm')}
                                     onClick={async () => {
                                         const result = await buildImageForRuntimeVersion(
