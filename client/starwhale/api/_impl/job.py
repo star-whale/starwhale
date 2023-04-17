@@ -126,12 +126,11 @@ def step(
 def _validate_jobs_dag(jobs: _T_JOBS) -> None:
     for steps in jobs.values():
         _vertices: t.List[str] = []
-        _edges: t.Dict[str, str] = {}
+        _edges: t.List[t.Tuple[str, str]] = []
         for _step in steps:
             _vertices.append(_step.name)
             for _pre in _step.needs:
-                if _pre:
-                    _edges[_pre] = _step.name
+                _edges.append((_pre, _step.name))
 
         dag.generate_dag(_vertices, _edges)
 

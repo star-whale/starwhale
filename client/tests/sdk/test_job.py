@@ -44,7 +44,7 @@ class JobTestCase(unittest.TestCase):
             _validate_jobs_dag(
                 {
                     "default": [
-                        Step(name="ppl", needs=[""]),
+                        Step(name="ppl", needs=[]),
                         Step(name="cmp", needs=["cmp"]),
                     ]
                 }
@@ -56,7 +56,7 @@ class JobTestCase(unittest.TestCase):
             _validate_jobs_dag(
                 {
                     "default": [
-                        Step(name="ppl", needs=[""]),
+                        Step(name="ppl", needs=[]),
                         Step(name="cmp", needs=["not_found"]),
                     ]
                 }

@@ -1,4 +1,4 @@
-from typing import Any, Set, Dict, List
+from typing import Any, Set, Dict, List, Tuple
 
 
 class _DAGData:
@@ -100,9 +100,9 @@ class DAG:
         return set(vtx for vtx in self.__data.vertices() if self.out_degree(vtx) == 0)
 
 
-def generate_dag(_vertices: List[str], _edges: Dict[str, str]) -> DAG:
+def generate_dag(_vertices: List[str], _edges: List[Tuple[str, str]]) -> DAG:
     _dag = DAG()
     _dag.add_vertex(*_vertices)
-    for _from, _to in _edges.items():
+    for _from, _to in _edges:
         _dag.add_edge(_from, _to)
     return _dag
