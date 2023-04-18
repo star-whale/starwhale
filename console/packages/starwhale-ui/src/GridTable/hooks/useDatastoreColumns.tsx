@@ -1,5 +1,5 @@
 import React from 'react'
-import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
+import { isSearchColumns } from '@starwhale/core/datastore'
 import { CustomColumn } from '../../base/data-table'
 import { ColumnT, RenderCellT } from '../../base/data-table/types'
 import { StringCell } from '../../base/data-table/column-string'

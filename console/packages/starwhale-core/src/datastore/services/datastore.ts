@@ -17,8 +17,8 @@ export async function scanTable(query: ScanTableRequest): Promise<RecordListVo> 
     return resp.data
 }
 
-export async function listTables(query: ListTablesRequest): Promise<TableNameListVO> {
-    const resp = await axios.post<TableNameListVO>('/api/v1/datastore/listTables', query)
+export async function listTables(query: ListTablesRequest): Promise<TableNameListVo> {
+    const resp = await axios.post<TableNameListVo>('/api/v1/datastore/listTables', query)
     return resp.data
 }
 

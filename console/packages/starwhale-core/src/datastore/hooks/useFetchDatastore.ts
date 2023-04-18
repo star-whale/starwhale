@@ -69,8 +69,8 @@ export function useQueryDatasetList(
             start,
             limit,
             rawResult: true,
-            ignoreNonExistingTable: false,
             encodeWithType: true,
+            ignoreNonExistingTable: true,
         }
         if (revision) {
             raw.revision = revision

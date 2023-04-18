@@ -109,7 +109,7 @@ export function useDatastore(data?: RecordListVo) {
 
         return Object.entries(columnHints ?? {}).map(([name, hint]) => {
             return {
-                name: name,
+                name,
                 type: hint.typeHints?.[0] ?? DataTypes.STRING,
             }
         })

@@ -24,7 +24,6 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { useDatastore } from '@starwhale/core/datastore'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -141,7 +140,7 @@ export default function EvaluationListCard() {
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: ({ value }) => {
-                        return <p title={value}>{formatTimestampDateTime(value)}</p>
+                        return <span title={value}>{formatTimestampDateTime(value)}</span>
                     },
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
