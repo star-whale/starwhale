@@ -2,8 +2,8 @@ import { useContext, useMemo } from 'react'
 import { useStore as useZustandStore } from 'zustand'
 import type { StoreApi } from 'zustand'
 
-import StoreContext from '../contexts/RFStoreContext'
-import type { ITableState } from '../store'
+import StoreContext from '../contexts/GridStoreContext'
+import type { ITableState } from '../../base/data-table/store'
 
 const zustandErrorMessage = 'Could not find zustand store context value.'
 

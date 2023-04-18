@@ -11,7 +11,8 @@ import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { DataTypes, isBoolType, isComplexType, isNumbericType, isSearchColumns, isStringType } from '@starwhale/core'
-import { GridTable, sortColumn } from '@starwhale/ui/GridTable'
+import { GridTable } from '@starwhale/ui/GridTable'
+import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import useTranslation from '@/hooks/useTranslation'
 
 const useStyles = createUseStyles({

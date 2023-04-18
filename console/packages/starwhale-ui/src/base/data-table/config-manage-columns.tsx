@@ -93,6 +93,9 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                     isOpen={isOpen}
                     autoFocus
                     onClose={() => setIsOpen(false)}
+                    mountNode={ref.current as any}
+                    showBackdrop={false}
+                    animate={false}
                     overrides={{
                         Root: {
                             style: {
@@ -160,9 +163,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                             },
                         },
                     }}
-                >
-                    {t('table.column.manage')}
-                </Button>
+                />
             )}
             <Wrapper>
                 <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>

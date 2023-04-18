@@ -5,11 +5,13 @@ import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { IContextGridTable, ITableProps } from './types'
-import { StoreProvider, useTableContext } from './StoreContext'
 import Pagination from './Pagination'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
 import { StatefulDataTable } from '../base/data-table'
 import { stateSelector } from '../base/data-table/store'
+import { useStore, useStoreApi } from './hooks/useStore'
+import { StoreProvider } from './store/StoreProvider'
+import StoreUpdater from './store/StoreUpdater'
 
 const useStyles = createUseStyles({
     table: {
@@ -70,38 +72,41 @@ function GridTable({
     emptyColumnMessage,
     getId = (record: any) => record.id,
     storeRef,
+    children,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
-    const api = useTableContext()
-    const store = api()
+    const store = useStoreApi()
     const $rows = useMemo(
         () =>
             data.map((raw, index) => {
                 return {
-                    id: raw.id ?? index.toFixed(),
+                    id: getId(raw) ?? index.toFixed(),
                     data: raw,
                 }
             }),
         [data]
     )
 
-    const $filters = useMemo(() => {
-        return store.currentView?.filters
-    }, [store])
+    // const $filters = useMemo(() => {
+    //     return store.currentView?.filters
+    // }, [store])
 
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
 
-    React.useEffect(() => {
-        const unsub = api.subscribe(stateSelector, onChange)
-        return unsub
-    }, [api, onChange])
+    // React.useEffect(() => {
+    //     const unsub = store.subscribe(stateSelector, onChange)
+    //     return unsub
+    // }, [store, onChange])
 
-    React.useEffect(() => {
-        if (!storeRef) return
-        // eslint-disable-next-line no-param-reassign
-        storeRef.current = store
-    }, [storeRef, store])
+    // React.useEffect(() => {
+    //     if (!storeRef) return
+    //     // eslint-disable-next-line no-param-reassign
+    //     storeRef.current = store
+    // }, [storeRef, store])
+
+    // const { columns: $columns, currentView, isAllRuns } = useCurrentView({ columns: props.columns })
+    console.log(store.getState().columns)
 
     return (
         <>
@@ -109,11 +114,9 @@ function GridTable({
                 className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
                 ref={wrapperRef}
             >
+                {children}
                 <StatefulDataTable
-                    store={store}
-                    useStore={api}
                     resizableColumnWidths
-                    initialFilters={$filters}
                     searchable={searchable}
                     queryinline={queryinline}
                     filterable={filterable}
@@ -145,6 +148,7 @@ function GridTable({
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                     emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
                 />
+                <StoreUpdater columns={columns} data={data} />
             </div>
             <Pagination {...paginationProps} />
         </>

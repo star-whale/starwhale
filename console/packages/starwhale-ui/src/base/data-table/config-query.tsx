@@ -7,6 +7,7 @@ import { StatefulPopover } from 'baseui/popover'
 import IconFont from '../../IconFont'
 import Button from '@starwhale/ui/Button'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
+import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
 
 type PropsT = {
     columns: ColumnT[]
@@ -72,11 +73,12 @@ function ConfigQueryInline(props: PropsT & { width: number }) {
     )
 }
 
-function useConfigQuery(store: IStore, { columns, queryable }: { columns: ColumnT[]; queryable: boolean | undefined }) {
-    const api = store()
-    const value = store(currentQueriesSelector)
+function useConfigQuery({ columns, queryable }: { columns: ColumnT[]; queryable: boolean | undefined }) {
+    const store = useStoreApi()
+    const value = useStore(currentQueriesSelector)
+    const { onCurrentViewQueriesChange } = store.getState()
 
-    const onChange = React.useCallback((items) => api.onCurrentViewQueriesChange(items), [api])
+    const onChange = React.useCallback((items) => onCurrentViewQueriesChange(items), [onCurrentViewQueriesChange])
 
     const renderConfigQuery = React.useCallback(() => {
         if (!queryable) return null

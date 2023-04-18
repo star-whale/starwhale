@@ -67,7 +67,6 @@ export function DataTable({
     textQuery = '',
     getId,
     controlRef,
-    useStore,
 }: DataTablePropsT) {
     const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
@@ -534,7 +533,6 @@ export function DataTable({
                 {({ height, width }) => (
                     <HeaderContext.Provider
                         value={{
-                            useStore,
                             columns,
                             columnHighlightIndex,
                             // @ts-ignore

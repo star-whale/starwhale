@@ -7,8 +7,14 @@ import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useConfigQuery } from '../config-query'
 import { useWhatChanged } from '@simbathesailor/use-what-changed'
+import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
+import { ITableState } from '@starwhale/ui/GridTable/store'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
+
+const selector = (s: ITableState) => ({
+    columns: s.columns,
+})
 
 export default function Headers({ width }: { width: number }) {
     // @FIXME css as dep will cause rerender ?
@@ -16,21 +22,21 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
+    const { columns } = useStore(selector)
+    const store = useStoreApi().getState()
 
     // useWhatChanged(Object.values(ctx), Object.keys(ctx).join(','))
 
     const $columns = React.useMemo(
         () =>
-            ctx.columns.map((v, index) => ({
+            columns.map((v, index) => ({
                 ...v,
                 index,
             })),
-        [ctx.columns]
+        [columns]
     )
 
-    const store = ctx.useStore()
-
-    const { renderConfigQueryInline } = useConfigQuery(ctx.useStore, {
+    const { renderConfigQueryInline } = useConfigQuery({
         columns: ctx.columns,
         queryable: ctx.isQueryInline,
     })

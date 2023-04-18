@@ -24,8 +24,6 @@ export enum FilterTypes {
     // date = 'date',
 }
 
-// These options are available on all column kinds. Most have additional
-// unique options depending on the data visualization requirements.
 export type SharedColumnOptionsT<ValueT> = {
     cellBlockAlign?: 'start' | 'center' | 'end'
     fillWidth?: boolean
@@ -62,9 +60,7 @@ export type RenderFilterT<ValueT, FilterParamsT> = React.Component<{
     setFilter: (args: FilterParamsT) => void
 }>
 
-// flowlint-next-line unclear-type:off
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
-    // @ts-ignore
     kind: ColumnsT
     sortable: boolean
     renderCell: RenderCellT<ValueT>
@@ -76,7 +72,6 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
 
 export type RowT = {
     id: number | string
-    // flowlint-next-line unclear-type:off
     data: any
 }
 
@@ -146,6 +141,7 @@ export type StatefulDataTablePropsT = {
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
     onSelectionChange?: (rows: RowT[]) => any
     onSave?: (view: ConfigT) => void
+    getId?: (row: RowT) => string | number
     resizableColumnWidths?: boolean
     rows: RowT[]
     rowActions?: RowActionT[] | ((row: RowT) => RowActionT[])

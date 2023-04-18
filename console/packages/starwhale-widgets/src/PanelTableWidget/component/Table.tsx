@@ -1,5 +1,6 @@
 import React from 'react'
-import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
+import { GridTable } from '@starwhale/ui/GridTable'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 
 // @ts-ignore
 export default function PanelTable({ columnTypes, data, storeKey, onChange, storeRef }) {
