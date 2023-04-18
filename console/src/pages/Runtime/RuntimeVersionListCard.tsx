@@ -114,7 +114,7 @@ export default function RuntimeVersionListCard() {
                                         }
                                     }}
                                 >
-                                    {t('runtime.image.build.button')}
+                                    {t('runtime.image.build')}
                                 </ConfirmButton>
                             )}
                         </>,

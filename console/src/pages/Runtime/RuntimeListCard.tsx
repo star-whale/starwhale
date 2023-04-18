@@ -80,7 +80,7 @@ export default function RuntimeListCard() {
                                             }
                                         }}
                                     >
-                                        {t('runtime.image.build.button')}
+                                        {t('runtime.image.build')}
                                     </ConfirmButton>
                                 )}
                             </>,
