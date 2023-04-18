@@ -644,7 +644,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         target_yaml_path = self.store.src_dir / DefaultYAMLName.MODEL
         ensure_file(
             target_yaml_path,
-            yaml.safe_dump(model_config.asdict(), default_flow_style=True),
+            yaml.safe_dump(model_config.asdict(), default_flow_style=False),
         )
 
         logger.info("[step:copy]finish copy files")
