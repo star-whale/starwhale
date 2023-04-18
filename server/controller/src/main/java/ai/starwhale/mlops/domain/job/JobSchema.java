@@ -30,6 +30,7 @@ public interface JobSchema {
 
     String KeyColumn = "id";
     String LongIdColumn = "sys/id";
+    String NameColumn = "sys/name";
     String ProjectIdColumn = "sys/project_id";
     String ModelVersionIdColumn = "sys/model_version_id";
     String ModelNameColumn = "sys/model_name";
@@ -37,7 +38,7 @@ public interface JobSchema {
     String RuntimeVersionIdColumn = "sys/runtime_version_id";
     String RuntimeNameColumn = "sys/runtime_name";
     String RuntimeVersionColumn = "sys/runtime_version";
-    String DataSetIdVersionMapColumn = "sys/dataset_id_version_map";
+    String DataSetIdVersionMapColumn = "sys/_dataset_id_version_map";
     String OwnerIdColumn = "sys/owner_id";
     String OwnerNameColumn = "sys/owner_name";
     String FinishTimeColumn = "sys/finished_time";
@@ -53,6 +54,7 @@ public interface JobSchema {
     String IsDeletedColumn = "sys/_is_deleted";
     TableSchemaDesc tableSchemaDesc = new TableSchemaDesc(KeyColumn, List.of(
             ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(NameColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(LongIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ProjectIdColumn).type(INT64).build(),
             ColumnSchemaDesc.builder().name(ModelVersionIdColumn).type(INT64).build(),

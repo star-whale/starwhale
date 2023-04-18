@@ -22,7 +22,7 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
+import ai.starwhale.mlops.domain.job.split.JobSpliteratorImpl;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
@@ -34,9 +34,9 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * test for {@link JobSpliteratorEvaluation}
+ * test for {@link JobSpliteratorImpl}
  */
-public class JobSpliteratorEvaluationTest {
+public class JobSpliteratorImplTest {
 
     @Test
     public void testJobSpliteratorEvaluation() {
@@ -49,35 +49,39 @@ public class JobSpliteratorEvaluationTest {
                         StepSpec.builder()
                             .jobName("default")
                             .name("a")
-                            .taskNum(1)
+                            .replicas(1)
                             .resources(List.of())
                             .build(),
                         StepSpec.builder()
                             .jobName("default")
                             .name("b")
-                            .taskNum(1)
+                            .replicas(1)
                             .resources(List.of())
                             .needs(List.of("a"))
                             .build(),
                         StepSpec.builder()
                             .jobName("fine_tune")
                             .name("m")
-                            .taskNum(1)
+                            .replicas(1)
                             .resources(List.of())
                             .build()
                 )
         );
-        mockJob.setStepSpec("");
         TaskMapper taskMapper = mock(TaskMapper.class);
         JobDao jobDao = mock(JobDao.class);
         StepMapper stepMapper = mock(StepMapper.class);
-        JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
+        JobSpliteratorImpl jobSpliteratorImpl = new JobSpliteratorImpl(
                 new StoragePathCoordinator("/test"), taskMapper, jobDao, stepMapper,
                 mock(JobSpecParser.class));
 
-        jobSpliteratorEvaluation.split(mockJob);
+        mockJob.setStepSpec("");
+        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorImpl.split(mockJob));
+
+        mockJob.setStepSpec("123");
+        jobSpliteratorImpl.split(mockJob);
+
         mockJob.setStatus(JobStatus.RUNNING);
-        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorEvaluation.split(mockJob));
+        Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorImpl.split(mockJob));
 
     }
 }

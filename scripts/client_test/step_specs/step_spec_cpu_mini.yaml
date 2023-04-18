@@ -1,22 +1,27 @@
-evaluation:
-  - cls_name: ''
+src.evaluator:SimplePipeline.cmp:
+  - cls_name: SimplePipeline
     concurrency: 1
-    job_name: evaluation
-    needs: [ ]
+    extra_args: []
+    extra_kwargs: {}
+    func_name: ppl
+    module_name: src.evaluator
+    name: src.evaluator:SimplePipeline.ppl
+    needs: []
+    replicas: 2
     resources:
-    - type: cpu
-      request: 0.4
-      limit: 0.4
-    name: ppl
-    task_num: 2
-  - cls_name: ''
+      - type: cpu
+        request: 0.4
+        limit: 0.4
+    show_name: ppl
+  - cls_name: SimplePipeline
     concurrency: 1
-    job_name: evaluation
+    extra_args: []
+    extra_kwargs: {}
+    func_name: cmp
+    module_name: src.evaluator
+    name: src.evaluator:SimplePipeline.cmp
     needs:
-    - ppl
-    resources:
-    - type: cpu
-      request: 0.4
-      limit: 0.4
-    name: cmp
-    task_num: 1
+    - src.evaluator:SimplePipeline.ppl
+    replicas: 1
+    resources: []
+    show_name: cmp

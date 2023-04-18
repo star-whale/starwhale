@@ -32,6 +32,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.NameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.OwnerIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
@@ -129,6 +130,7 @@ public class JobRepo {
         Map<String, Object> record = new HashMap<>();
         record.put(LongIdColumn, BaseValue.encode(new Int64Value(jobEntity.getId()), false, false));
         record.put(KeyColumn, jobEntity.getJobUuid());
+        record.put(NameColumn, jobEntity.getName());
         if (Objects.nonNull(jobEntity.getComment())) {
             record.put(CommentColumn, jobEntity.getComment());
         }

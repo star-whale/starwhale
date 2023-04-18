@@ -52,7 +52,7 @@ public class ModelVersionVoConverter {
                     .meta(entity.getVersionMeta())
                     .manifest(manifest)
                     .createdTime(entity.getCreatedTime().getTime())
-                    .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getJobs()))
+                    .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                     .build();
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);

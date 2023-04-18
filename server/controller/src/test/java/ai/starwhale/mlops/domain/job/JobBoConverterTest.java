@@ -110,7 +110,7 @@ public class JobBoConverterTest {
                 runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
         JobSpecParser jobSpecParser = mock(JobSpecParser.class);
-        when(jobSpecParser.parseStepFromYaml(any()))
+        when(jobSpecParser.parseAndFlattenStepFromYaml(any()))
                 .thenReturn(List.of(new StepSpec()));
         StepConverter stepConverter = mock(StepConverter.class);
         given(stepConverter.fromEntity(any()))

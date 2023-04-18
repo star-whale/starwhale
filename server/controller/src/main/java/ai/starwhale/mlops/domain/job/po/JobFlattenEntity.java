@@ -30,6 +30,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.ModelNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModifiedTimeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.NameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.OwnerIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.OwnerNameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
@@ -68,6 +69,9 @@ public class JobFlattenEntity {
 
     @JsonProperty(KeyColumn)
     private String jobUuid;
+
+    @JsonProperty(NameColumn)
+    private String name;
 
     @JsonProperty(ProjectIdColumn)
     private Long projectId;

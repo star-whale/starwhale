@@ -128,7 +128,7 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {sw.rootdir}:{sw.rootdir}",
                 f"-v {sw.object_store_dir}:{sw.object_store_dir}",
                 "-e SW_PROJECT=self",
-                f"-e SW_EVALUATION_VERSION={build_version}",
+                f"-e SW_JOB_VERSION={build_version}",
                 f"-e SW_MODEL_VERSION={model_version}",
                 f"-e SW_RUNTIME_VERSION={runtime_version}",
                 "-e SW_INSTANCE_URI=local",
