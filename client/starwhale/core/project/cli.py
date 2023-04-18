@@ -10,7 +10,7 @@ from .view import get_term_view, ProjectTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE
 @click.group(
     "project",
     cls=AliasedGroup,
-    help="Project management, for standalone and cloud instances",
+    help="Project management, for standalone and server instances",
 )
 @click.pass_context
 def project_cmd(ctx: click.Context) -> None:
