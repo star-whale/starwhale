@@ -21,6 +21,7 @@ import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
@@ -144,11 +145,19 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            Map<String, String> nodeSelector = null != task.getStep().getJob().getResourcePool()
-                    ? task.getStep().getJob().getResourcePool().getNodeSelector() : Map.of();
+            var pool = task.getStep().getJob().getResourcePool();
+            Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
+            List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
 
-            k8sJobTemplate.renderJob(k8sJob, task.getId().toString(),
-                    this.restartPolicy, this.backoffLimit, containerSpecMap, nodeSelector);
+            k8sJobTemplate.renderJob(
+                    k8sJob,
+                    task.getId().toString(),
+                    this.restartPolicy,
+                    this.backoffLimit,
+                    containerSpecMap,
+                    nodeSelector,
+                    tolerations
+            );
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             try {
                 k8sClient.deleteJob(task.getId().toString());

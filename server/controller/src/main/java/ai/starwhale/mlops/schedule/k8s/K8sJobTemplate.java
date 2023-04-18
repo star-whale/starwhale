@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
@@ -28,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
@@ -122,14 +124,36 @@ public class K8sJobTemplate {
             String restartPolicy,
             int backoffLimit,
             Map<String, ContainerOverwriteSpec> containerSpecMap,
-            Map<String, String> nodeSelectors
+            Map<String, String> nodeSelectors,
+            List<Toleration> tolerations
     ) {
         job.getMetadata().name(jobName);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
         jobSpec.backoffLimit(backoffLimit);
+
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
+
+        if (tolerations != null && !tolerations.isEmpty()) {
+            var originTolerations = podSpec.getTolerations();
+            if (originTolerations == null) {
+                originTolerations = new ArrayList<>();
+            }
+            originTolerations.addAll(
+                    tolerations.stream()
+                        .map(t -> new V1Toleration()
+                            .key(t.getKey())
+                            .operator(t.getOperator())
+                            .value(t.getValue())
+                            .effect(t.getEffect())
+                            .tolerationSeconds(t.getTolerationSeconds())
+                        )
+                        .collect(Collectors.toList())
+            );
+            podSpec.tolerations(originTolerations);
+        }
+
         updateLabels(job, starwhaleJobLabel);
         updateLabels(job, Map.of(JOB_IDENTITY_LABEL, jobName));
         patchPodSpec(restartPolicy, containerSpecMap, nodeSelectors, podSpec);
