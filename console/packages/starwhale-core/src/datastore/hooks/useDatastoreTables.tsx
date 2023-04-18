@@ -22,7 +22,7 @@ export function useDatastoreTablesByPrefix(prefix: string) {
         names: tables,
         tables: React.useMemo(
             () =>
-                tables.map((table) => {
+                tables.map((table: string) => {
                     return {
                         short: table.replace(`${prefix}`, ''),
                         name: table,

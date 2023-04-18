@@ -32,12 +32,10 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
         [onOptionChange]
     )
 
-    const { records } = useDatastore(data.records)
-
     return (
         <PanelTable
             columnTypes={data.columnTypes}
-            data={records}
+            data={data.records}
             storeKey={id}
             onChange={onChange}
             storeRef={storeRef}

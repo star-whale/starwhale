@@ -86,7 +86,12 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [tableConfig])
         const inViewport = useIsInViewport(myRef as any)
-        const { recordInfo, recordQuery: query } = useQueryDatasetList(tableName, tableOptions, false)
+        const {
+            recordInfo,
+            recordQuery: query,
+            columnTypes,
+            records,
+        } = useQueryDatasetList(tableName, tableOptions, false)
         const inViewLoadRef = useRef(false)
         const tableNameRef = useRef('')
 
@@ -152,7 +157,10 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 <WrappedWidgetRender
                     {...props}
                     name={overrides?.name}
-                    data={recordInfo?.data}
+                    data={{
+                        records,
+                        columnTypes,
+                    }}
                     optionConfig={overrides?.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
                     fieldConfig={overrides?.fieldConfig}

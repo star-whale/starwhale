@@ -27,7 +27,7 @@ function RenderMixedCell({ value, ...props }: RenderCellT<any>['props']) {
     )
 }
 
-export function useDatastoreColumns(columnTypes?: RecordSchemaT[]): ColumnT[] {
+export function useDatastoreColumns(columnTypes?: { name: string; type: string }[]): ColumnT[] {
     const columns = React.useMemo(() => {
         const columnsWithAttrs: ColumnT[] = []
 

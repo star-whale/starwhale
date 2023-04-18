@@ -1,8 +1,9 @@
 import React from 'react'
-import { ColumnSchemaDesc } from '../schemas/datastore'
+import { ColumnSchemaDesc, RecordListVo } from '../schemas/datastore'
 import { RecordListSchemaT, RecordSchemaT } from '../types'
 import { SwType } from '../model'
 import _ from 'lodash'
+import { DataTypes } from '../constants'
 
 class LRUCache<Key, Value> {
     private maxSize: number
@@ -66,7 +67,8 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
     }
 }
 
-export function useDatastore(records: RecordListSchemaT = []) {
+export function useDatastore(data?: RecordListVo) {
+    const { records, columnTypes, columnHints } = data ?? {}
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
     const getSchema = React.useCallback(
@@ -90,9 +92,9 @@ export function useDatastore(records: RecordListSchemaT = []) {
     )
 
     const $recordsWithSchema = React.useMemo(() => {
-        if (records.length === 0) return []
+        if (!records || records.length === 0) return []
 
-        return records.map((record, index) => {
+        return records?.map((record, index) => {
             const recordTmp: Record<string, any> = {}
             Object.keys(record).forEach((key) => {
                 const schema = getSchema(key, index)
@@ -103,17 +105,15 @@ export function useDatastore(records: RecordListSchemaT = []) {
     }, [records, getSchema])
 
     const $columnTypes = React.useMemo(() => {
-        if (records.length === 0) return []
+        if (columnTypes && columnTypes.length > 0) return columnTypes
 
-        const columnTypes: RecordSchemaT[] = []
-        const rowIndex = 0
-        const record = records[rowIndex]
-        Object.keys(record).forEach((key) => {
-            const schema = getSchema(key, rowIndex)
-            if (schema) columnTypes.push(schema)
+        return Object.entries(columnHints ?? {}).map(([name, hint]) => {
+            return {
+                name: name,
+                type: hint.typeHints?.[0] ?? DataTypes.STRING,
+            }
         })
-        return columnTypes
-    }, [records, getSchema])
+    }, [columnHints, columnTypes])
 
     return {
         records: $recordsWithSchema,
