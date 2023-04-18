@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -284,8 +283,14 @@ public class DataStoreControllerTest {
                                 "b", Map.of("type", "INT32", "value", "00000002")))));
         assertThat("test",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "b", ColumnHintsDesc.builder().typeHints(Set.of("STRING", "INT32")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("0", "1", "4"))
+                                .build(),
+                        "b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32", "STRING"))
+                                .columnValueHints(List.of("1", "2"))
+                                .build())));
         resp = this.controller.scanTable(new ScanTableRequest() {
             {
                 setTables(List.of(new TableDesc() {
@@ -315,8 +320,14 @@ public class DataStoreControllerTest {
                 is(List.of(Map.of("k", "00000003", "b", "00000002"))));
         assertThat("test",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("3"))
+                                .build(),
+                        "b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("2"))
+                                .build())));
 
         // scan with empty revision string will get the latest revision
         resp = this.controller.scanTable(new ScanTableRequest() {
@@ -349,8 +360,14 @@ public class DataStoreControllerTest {
                                 "a", Map.of("type", "INT32", "value", "00000002")))));
         assertThat("test",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "a", ColumnHintsDesc.builder().typeHints(Set.of("STRING", "INT32")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("0", "1", "4"))
+                                .build(),
+                        "a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32", "STRING"))
+                                .columnValueHints(List.of("1", "2"))
+                                .build())));
 
         // scan with revision
         resp = this.controller.scanTable(new ScanTableRequest() {
@@ -383,8 +400,14 @@ public class DataStoreControllerTest {
                                 "a", Map.of("type", "INT32", "value", "00000002")))));
         assertThat("test",
                 Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "a", ColumnHintsDesc.builder().typeHints(Set.of("STRING", "INT32")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("0", "1", "4"))
+                                .build(),
+                        "a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32", "STRING"))
+                                .columnValueHints(List.of("1", "2"))
+                                .build())));
     }
 
     @Nested
@@ -702,9 +725,18 @@ public class DataStoreControllerTest {
                             Map.of("k", "00000004", "a", "00000001"))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "x", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build(),
+                            "x", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("9"))
+                                    .build())));
         }
 
         @Test
@@ -721,8 +753,14 @@ public class DataStoreControllerTest {
                             Map.of("k", "00000000", "b", "00000005"))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build())));
 
             this.req.getOrderBy().get(0).setDescending(true);
             resp = DataStoreControllerTest.this.controller.queryTable(this.req);
@@ -732,8 +770,14 @@ public class DataStoreControllerTest {
                             Map.of("k", "00000004", "b", "00000001"))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build())));
 
             this.req.setLimit(1);
             resp = DataStoreControllerTest.this.controller.queryTable(this.req);
@@ -747,8 +791,14 @@ public class DataStoreControllerTest {
                     is(List.of(Map.of("k", "00000001", "b", "00000004"))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build())));
 
             this.req.setColumns(Lists.concat(this.req.getColumns(), List.of(new ColumnDesc() {
                 {
@@ -774,9 +824,18 @@ public class DataStoreControllerTest {
                     })));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "x", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build(),
+                            "x", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("9"))
+                                    .build())));
 
             this.req.setRawResult(true);
             resp = DataStoreControllerTest.this.controller.queryTable(this.req);
@@ -813,9 +872,18 @@ public class DataStoreControllerTest {
                             }))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "x", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build(),
+                            "x", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("9"))
+                                    .build())));
         }
 
         @Test
@@ -1314,8 +1382,14 @@ public class DataStoreControllerTest {
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000004"));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build())));
         }
 
         @Test
@@ -1340,9 +1414,18 @@ public class DataStoreControllerTest {
                             Map.of("b", "00000003", "a", "00000002"))));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5", "16"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build())));
 
             this.req.setLimit(1);
             resp = DataStoreControllerTest.this.controller.scanTable(this.req);
@@ -1358,9 +1441,18 @@ public class DataStoreControllerTest {
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5", "16"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build())));
 
             this.req.setRawResult(true);
             resp = DataStoreControllerTest.this.controller.scanTable(this.req);
@@ -1376,9 +1468,18 @@ public class DataStoreControllerTest {
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5", "16"))
+                                    .build(),
+                            "b", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build())));
 
             this.req.getTables().get(0).setColumnPrefix("x");
             resp = DataStoreControllerTest.this.controller.scanTable(this.req);
@@ -1395,10 +1496,23 @@ public class DataStoreControllerTest {
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("00000001"));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnHints(),
-                    is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "xa", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                            "xb", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                    is(Map.of("k", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2"))
+                                    .build(),
+                            "a", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("16"))
+                                    .build(),
+                            "xa", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                    .build(),
+                            "xb", ColumnHintsDesc.builder()
+                                    .typeHints(List.of("INT32"))
+                                    .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                    .build())));
+
         }
 
         @Test

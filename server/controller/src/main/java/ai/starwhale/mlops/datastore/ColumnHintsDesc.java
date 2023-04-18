@@ -18,9 +18,8 @@ package ai.starwhale.mlops.datastore;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,7 +35,9 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class ColumnHintsDesc {
 
-    private Set<String> typeHints;
+    private List<String> typeHints;
+
+    private List<String> columnValueHints;
 
     /**
      * This field represents the type of elements in the list. It is only used when type is LIST. The name field of
@@ -60,43 +61,4 @@ public class ColumnHintsDesc {
      * This field describes the attributes of object type.
      */
     private Map<String, ColumnHintsDesc> attributesHints;
-
-    public void merge(ColumnHintsDesc other) {
-        if (other == null) {
-            return;
-        }
-        if (other.typeHints != null) {
-            this.typeHints.addAll(other.typeHints);
-        }
-        if (other.elementHints != null) {
-            if (this.elementHints == null) {
-                this.elementHints = new ColumnHintsDesc();
-            }
-            this.elementHints.merge(other.elementHints);
-        }
-        if (other.keyHints != null) {
-            if (this.keyHints == null) {
-                this.keyHints = new ColumnHintsDesc();
-            }
-            this.keyHints.merge(other.keyHints);
-        }
-        if (other.valueHints != null) {
-            if (this.valueHints == null) {
-                this.valueHints = new ColumnHintsDesc();
-            }
-            this.valueHints.merge(other.valueHints);
-        }
-        if (other.attributesHints != null) {
-            if (this.attributesHints == null) {
-                this.attributesHints = new HashMap<>();
-            }
-            other.attributesHints.forEach((k, v) -> {
-                if (this.attributesHints.containsKey(k)) {
-                    this.attributesHints.get(k).merge(v);
-                } else {
-                    this.attributesHints.put(k, v);
-                }
-            });
-        }
-    }
 }

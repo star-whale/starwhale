@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.datastore.impl;
 
-import ai.starwhale.mlops.datastore.ColumnHintsDesc;
 import ai.starwhale.mlops.datastore.ColumnSchema;
 import ai.starwhale.mlops.datastore.ColumnStatistics;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -58,6 +57,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -644,11 +644,11 @@ public class MemoryTableImpl implements MemoryTable {
         return new RecordResult(key, false, r);
     }
 
-    public Map<String, ColumnHintsDesc> getColumnHints(Map<String, String> columnMapping) {
+    public Map<String, ColumnStatistics> getColumnStatistics(Map<String, String> columnMapping) {
         return this.statisticsMap.entrySet().stream()
                 .filter(entry -> columnMapping.containsKey(entry.getKey()))
                 .collect(Collectors.toMap(entry -> columnMapping.get(entry.getKey()),
-                        entry -> entry.getValue().populate(ColumnHintsDesc.builder()).build()));
+                        Entry::getValue));
     }
 
 }

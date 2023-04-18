@@ -245,7 +245,12 @@ public class DataStore {
                         return RecordEncoder.encodeRecord(r.getValues(), req.isRawResult(), req.isEncodeWithType());
                     })
                     .collect(Collectors.toList());
-            return new RecordList(columnSchemaMap, table.getColumnHints(columns), records, lastKey, lastKeyType);
+            return new RecordList(columnSchemaMap,
+                    table.getColumnStatistics(columns).entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().toColumnHintsDesc())),
+                    records,
+                    lastKey,
+                    lastKeyType);
         } finally {
             table.unlock();
         }
@@ -282,7 +287,6 @@ public class DataStore {
                 TableSchema schema;
                 Map<String, String> columns;
                 Map<String, ColumnSchema> columnSchemaMap;
-                Map<String, ColumnHintsDesc> columnHints;
                 boolean keepNone;
             }
 
@@ -317,7 +321,6 @@ public class DataStore {
                             return schema;
                         })
                         .collect(Collectors.toMap(ColumnSchema::getName, Function.identity()));
-                ret.columnHints = ret.table.getColumnHints(ret.columns);
                 ret.keepNone = info.isKeepNone();
                 return ret;
             }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -433,18 +436,14 @@ public class DataStore {
                 }
                 records.removeIf(r -> r.record == null);
             }
-            var columnHints = new HashMap<String, ColumnHintsDesc>();
+            var columnStatistics = new HashMap<String, ColumnStatistics>();
             for (var table : tables) {
-                table.table.getColumnHints(table.columns).forEach((k, v) -> {
-                    if (columnHints.containsKey(k)) {
-                        columnHints.get(k).merge(v);
-                    } else {
-                        columnHints.put(k, v);
-                    }
-                });
+                table.table.getColumnStatistics(table.columns)
+                        .forEach((k, v) -> columnStatistics.computeIfAbsent(k, x -> new ColumnStatistics()).merge(v));
             }
             return new RecordList(columnSchemaMap,
-                    columnHints,
+                    columnStatistics.entrySet().stream()
+                            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().toColumnHintsDesc())),
                     ret,
                     (String) BaseValue.encode(lastKey, false, false),
                     BaseValue.getColumnType(lastKey).name());

@@ -20,9 +20,11 @@ import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.ListValue;
 import ai.starwhale.mlops.datastore.type.MapValue;
 import ai.starwhale.mlops.datastore.type.ObjectValue;
+import ai.starwhale.mlops.datastore.type.ScalarValue;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
@@ -37,7 +39,11 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class ColumnStatistics {
 
+    private static final int MAX_COLUMN_VALUE_COUNT = 50;
+
     private final Map<ColumnType, Long> columnTypeCounter = new HashMap<>();
+    private final Map<BaseValue, Long> columnValueCounter = new HashMap<>();
+    private boolean columnValueCounterFull = false;
     private ColumnStatistics elementStatistics;
     private ColumnStatistics keyStatistics;
     private ColumnStatistics valueStatistics;
@@ -45,12 +51,15 @@ public class ColumnStatistics {
 
     public void update(BaseValue value) {
         var type = BaseValue.getColumnType(value);
-        var count = this.columnTypeCounter.get(type);
-        if (count == null) {
-            this.columnTypeCounter.put(type, 1L);
-        } else {
-            this.columnTypeCounter.put(type, count + 1);
+        this.columnTypeCounter.merge(type, 1L, Long::sum);
+        if (!this.columnValueCounterFull && value instanceof ScalarValue) {
+            this.columnValueCounter.merge(value, 1L, Long::sum);
+            if (this.columnValueCounter.size() >= MAX_COLUMN_VALUE_COUNT) {
+                this.columnValueCounterFull = true;
+                this.columnValueCounter.clear();
+            }
         }
+
         if (value instanceof ListValue) {
             if (this.elementStatistics == null) {
                 this.elementStatistics = new ColumnStatistics();
@@ -119,27 +128,71 @@ public class ColumnStatistics {
         return ret;
     }
 
-    public ColumnHintsDesc.ColumnHintsDescBuilder populate(
-            ColumnHintsDesc.ColumnHintsDescBuilder builder) {
+    public void merge(ColumnStatistics other) {
+        other.columnTypeCounter.forEach((k, v) -> this.columnTypeCounter.merge(k, v, Long::sum));
+        other.columnValueCounter.forEach((k, v) -> this.columnValueCounter.merge(k, v, Long::sum));
+
+        if (other.elementStatistics != null) {
+            if (this.elementStatistics == null) {
+                this.elementStatistics = new ColumnStatistics();
+            }
+            this.elementStatistics.merge(other.elementStatistics);
+        }
+
+        if (other.keyStatistics != null) {
+            if (this.keyStatistics == null) {
+                this.keyStatistics = new ColumnStatistics();
+            }
+            this.keyStatistics.merge(other.keyStatistics);
+        }
+
+        if (other.valueStatistics != null) {
+            if (this.valueStatistics == null) {
+                this.valueStatistics = new ColumnStatistics();
+            }
+            this.valueStatistics.merge(other.valueStatistics);
+        }
+
+        if (other.attributesStatistics != null) {
+            if (this.attributesStatistics == null) {
+                this.attributesStatistics = new HashMap<>();
+            }
+            other.attributesStatistics.forEach((k, v) -> {
+                this.attributesStatistics.computeIfAbsent(k, x -> new ColumnStatistics()).merge(v);
+            });
+        }
+    }
+
+    public ColumnHintsDesc toColumnHintsDesc() {
+        var builder = ColumnHintsDesc.builder();
         builder.typeHints(this.columnTypeCounter.keySet().stream()
                 .filter(x -> x != ColumnType.UNKNOWN)
                 .map(Enum::name)
-                .collect(Collectors.toSet()));
+                .sorted()
+                .collect(Collectors.toList()));
+        if (!this.columnValueCounterFull) {
+            builder.columnValueHints(this.columnValueCounter.keySet().stream()
+                    .filter(Objects::nonNull)
+                    .sorted()
+                    .map(value -> (String) value.encode(true, false))
+                    .distinct()
+                    .collect(Collectors.toList()));
+        }
         if (this.elementStatistics != null) {
-            builder.elementHints(this.elementStatistics.populate(ColumnHintsDesc.builder()).build());
+            builder.elementHints(this.elementStatistics.toColumnHintsDesc());
         }
         if (this.keyStatistics != null) {
-            builder.keyHints(this.keyStatistics.populate(ColumnHintsDesc.builder()).build());
+            builder.keyHints(this.keyStatistics.toColumnHintsDesc());
         }
         if (this.valueStatistics != null) {
-            builder.valueHints(this.valueStatistics.populate(ColumnHintsDesc.builder()).build());
+            builder.valueHints(this.valueStatistics.toColumnHintsDesc());
         }
         if (this.attributesStatistics != null) {
             builder.attributesHints(
                     this.attributesStatistics.entrySet().stream()
                             .collect(Collectors.toMap(Entry::getKey,
-                                    entry -> entry.getValue().populate(ColumnHintsDesc.builder()).build())));
+                                    entry -> entry.getValue().toColumnHintsDesc())));
         }
-        return builder;
+        return builder.build();
     }
 }

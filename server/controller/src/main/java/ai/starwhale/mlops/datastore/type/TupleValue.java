@@ -18,9 +18,11 @@ package ai.starwhale.mlops.datastore.type;
 
 import ai.starwhale.mlops.datastore.ColumnType;
 import java.util.List;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
+@EqualsAndHashCode(callSuper = true)
 public class TupleValue extends ListValue {
 
     @Override
