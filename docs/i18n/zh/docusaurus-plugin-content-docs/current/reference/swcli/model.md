@@ -91,7 +91,7 @@ swcli model info [选项] <MODEL>
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
-| `--fullname` | ❌ | Boolean | False | 显示完整的版本名称。如果没有使用该选项，则仅显示前 12 个字符。 |
+| `--output-filter` 或 `-of` | ❌ | Choice of [basic|model_yaml|manifest|files|handlers|all] | basic | 设置输出的过滤规则，比如只显示Model的model.yaml。目前该参数仅对Standalone Instance的Model生效。 |
 
 ## swcli model list {#list}
 

@@ -409,7 +409,7 @@ def _info(
     runtime: str,
     output_filter: str,
 ) -> None:
-    """Show runtime details
+    """Show runtime details.
 
     RUNTIME: argument use the `Runtime URI` format. Version is optional for the Runtime URI.
     If the version is not specified, the latest version will be used.
