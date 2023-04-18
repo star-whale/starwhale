@@ -6,7 +6,7 @@ import type { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/type
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
 
-type StoreUpdaterProps = Pick<StatefulDataTablePropsT, 'columns' | 'rows'> & { rfId: string }
+type StoreUpdaterProps = StatefulDataTablePropsT & { rfId: string }
 
 const selector = (s: ITableState) => ({
     // setNodes: s.setNodes,
@@ -36,7 +36,7 @@ function useDirectStoreUpdater(key: keyof ITableState, value: unknown, setState:
     }, [value])
 }
 
-const StoreUpdater = ({ columns, rows, data }: StoreUpdaterProps) => {
+const StoreUpdater = ({ columns, onColumnsChange, rows, data, isQueryInline }: StoreUpdaterProps) => {
     const {
         // setNodes,
         // setEdges,
@@ -59,8 +59,10 @@ const StoreUpdater = ({ columns, rows, data }: StoreUpdaterProps) => {
     // }, [])
 
     useDirectStoreUpdater('columns', columns, store.setState)
+    useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('data', data, store.setState)
+    useDirectStoreUpdater('isQueryInline', isQueryInline, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
 

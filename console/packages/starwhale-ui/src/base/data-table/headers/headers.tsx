@@ -14,6 +14,7 @@ const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
 const selector = (s: ITableState) => ({
     columns: s.columns,
+    isQueryInline: s.isQueryInline,
 })
 
 export default function Headers({ width }: { width: number }) {
@@ -22,10 +23,8 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-    const { columns } = useStore(selector)
+    const { columns, isQueryInline } = useStore(selector)
     const store = useStoreApi().getState()
-
-    // useWhatChanged(Object.values(ctx), Object.keys(ctx).join(','))
 
     const $columns = React.useMemo(
         () =>
@@ -37,8 +36,8 @@ export default function Headers({ width }: { width: number }) {
     )
 
     const { renderConfigQueryInline } = useConfigQuery({
-        columns: ctx.columns,
-        queryable: ctx.isQueryInline,
+        columns,
+        queryable: isQueryInline,
     })
 
     const headerRender = useCallback(
@@ -90,7 +89,7 @@ export default function Headers({ width }: { width: number }) {
                             isSelectable={ctx.isSelectable}
                             isSelectedAll={ctx.isSelectedAll}
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
-                            isQueryInline={ctx.isQueryInline}
+                            isQueryInline={isQueryInline}
                             querySlot={renderConfigQueryInline({ width })}
                             onMouseEnter={ctx.onMouseEnter}
                             onMouseLeave={ctx.onMouseLeave}
@@ -124,11 +123,10 @@ export default function Headers({ width }: { width: number }) {
             locale,
             theme,
             ctx.columnHighlightIndex,
-            ctx.columns,
             ctx.isSelectable,
             ctx.isSelectedAll,
             ctx.isSelectedIndeterminate,
-            ctx.isQueryInline,
+            isQueryInline,
             ctx.measuredWidths,
             ctx.onMouseEnter,
             ctx.onMouseLeave,

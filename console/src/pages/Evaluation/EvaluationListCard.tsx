@@ -27,6 +27,7 @@ import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { useDatastoreMixedSchema } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
+import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 
 const useStyles = createUseStyles({
     showDetail: {
@@ -299,8 +300,6 @@ export default function EvaluationListCard() {
                     return (
                         <GridTable
                             store={useEvaluationStore}
-                            columnable
-                            viewable
                             queryable
                             selectable
                             isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
@@ -313,7 +312,9 @@ export default function EvaluationListCard() {
                                     Create a new evaluation or Config to add columns
                                 </BusyPlaceholder>
                             }
-                        />
+                        >
+                            <ToolBar columnable viewable />
+                        </GridTable>
                     )
                 }}
                 isResizeable={$compareRows.length > 0}

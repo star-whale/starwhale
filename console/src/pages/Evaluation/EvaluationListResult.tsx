@@ -25,6 +25,7 @@ import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
 import useFetchDatastoreByTables from '@starwhale/core/datastore/hooks/useFetchDatastoreByTables'
+import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 
 export default function DatastoreDiffTables() {
     const { expandedWidth, expanded } = useDrawer()
@@ -190,7 +191,7 @@ export default function DatastoreDiffTables() {
                                     Create a new evaluation or Config to add columns
                                 </BusyPlaceholder>
                             }
-                        />
+                        ></GridTable>
                     )
                 }}
                 isResizeable={$compareRows.length > 0}

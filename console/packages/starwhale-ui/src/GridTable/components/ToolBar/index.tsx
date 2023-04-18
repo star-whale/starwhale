@@ -2,6 +2,8 @@ import { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/types'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import classNames from 'classnames'
 import ConfigViews from '../ConfigViews/ConfigViews'
+import ConfigColumns from '../ConfigColumns'
+import { useStore } from '../../hooks/useStore'
 
 type IToolBarProps = {
     columns: StatefulDataTablePropsT['columns']
@@ -14,6 +16,13 @@ type IToolBarProps = {
     headlineHeight?: number
 }
 
+const selector = (s: ITableState) => ({
+    columns: s.columns,
+    currentView: s.currentView,
+    rowSelectedIds: s.rowSelectedIds,
+    onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
+})
+
 function ToolBar({
     headlineRef,
     viewable,
@@ -24,6 +33,7 @@ function ToolBar({
     headlineHeight = 60,
 }: IToolBarProps) {
     const [css] = themedUseStyletron()
+    const { columns, currentView, rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
 
     return (
         <div
@@ -46,7 +56,7 @@ function ToolBar({
                         })
                     )}
                 >
-                    {viewable && <ConfigViews columns={props.columns} rows={props.rows} />}
+                    {/* {viewable && <ConfigViews columns={props.columns} rows={props.rows} />}
                     {filterable && (
                         <FilterOperateMenu
                             filters={store.currentView?.filters ?? []}
@@ -69,24 +79,27 @@ function ToolBar({
 
                             <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
                         </div>
-                    )}
+                    )} */}
                 </div>
                 <div
                     className={classNames(
                         css({
-                            gridTemplateColumns: 'minmax(200px,1fr) auto',
-                            display: 'grid',
+                            display: 'flex',
                             marginBottom: queryable || columnable ? '20px' : '0px',
                         })
                     )}
                 >
                     <div className='table-config-query' style={{ flex: 1 }}>
-                        {renderConfigQuery()}
+                        {/* {renderConfigQuery()} */}
                     </div>
 
-                    {columnable && !$rowSelectedIds.size && (
+                    {columnable && !rowSelectedIds.size && (
                         <div className='table-config-column flex-row-center'>
-                            <ConfigManageColumns view={currentView} columns={props.columns} onApply={handleApply} />
+                            <ConfigColumns
+                                view={currentView}
+                                columns={columns}
+                                onColumnsChange={onCurrentViewColumnsChange}
+                            />
                         </div>
                     )}
                 </div>

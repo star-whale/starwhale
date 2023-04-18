@@ -93,13 +93,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         return $filters?.filter((c) => !c.disable)
     }, [$filters])
 
-    const handleApply = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        (selectedIds, pinnedIds, ids) => {
-            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, ids)
-        },
-        [store]
-    )
     const handleSave = async (view: ConfigT) => {
         if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
         else {
@@ -159,7 +152,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 textQuery,
             }: StatefulContainerPropsT['children']) => (
                 <>
-                    <div
+                    {/* <div
                         data-type='table-toolbar'
                         className={css({
                             height: `${headlineHeight}px`,
@@ -167,7 +160,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         })}
                     >
                         <div ref={headlineRef} className='flex-row-left g-20' style={{ paddingBottom: '20px' }}></div>
-                    </div>
+                    </div> */}
 
                     <div
                         data-type='table-wrapper'
@@ -175,7 +168,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     >
                         {/* @ts-ignore */}
                         <DataTable
-                            useStore={props.useStore}
                             columns={$columns}
                             selectable={selectable}
                             compareable={compareable}

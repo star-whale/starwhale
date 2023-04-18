@@ -17,6 +17,7 @@ const useStyles = createUseStyles({
     table: {
         'width': '100%',
         'height': '100%',
+        'position': 'relative',
         '& .baseui-table-cell-content': {},
         '& .column-cell .string-cell': {
             overflow: 'hidden',
@@ -61,10 +62,8 @@ function GridTable({
     searchable = false,
     filterable = false,
     queryable = false,
-    columnable = false,
     compareable = false,
     selectable = false,
-    viewable = false,
     queryinline = false,
     onSave,
     onChange = () => {},
@@ -72,6 +71,7 @@ function GridTable({
     emptyColumnMessage,
     getId = (record: any) => record.id,
     storeRef,
+    onColumnsChange,
     children,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -106,7 +106,7 @@ function GridTable({
     // }, [storeRef, store])
 
     // const { columns: $columns, currentView, isAllRuns } = useCurrentView({ columns: props.columns })
-    console.log(store.getState().columns)
+    console.log(store.getState(), children)
 
     return (
         <>
@@ -121,10 +121,8 @@ function GridTable({
                     queryinline={queryinline}
                     filterable={filterable}
                     queryable={queryable}
-                    columnable={columnable}
                     compareable={compareable}
                     selectable={selectable}
-                    viewable={viewable}
                     loading={!!isLoading}
                     rowActions={rowActions}
                     columns={columns}
@@ -148,7 +146,12 @@ function GridTable({
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                     emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
                 />
-                <StoreUpdater columns={columns} data={data} />
+                <StoreUpdater
+                    columns={columns}
+                    onColumnsChange={onColumnsChange}
+                    data={data}
+                    isQueryInline={queryinline}
+                />
             </div>
             <Pagination {...paginationProps} />
         </>

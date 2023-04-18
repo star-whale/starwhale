@@ -155,14 +155,16 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
     const update = (updateAttrs: Partial<ConfigT>) => {
         const curr = get().currentView
         const version = _.isNumber(curr.version) ? curr.version + 1 : 1
-        set({
+        const currNew = {
             currentView: {
                 ...curr,
                 ...updateAttrs,
                 updated: true,
                 version,
             },
-        })
+        }
+        // get().onColumnsChange?.(currNew)
+        set(currNew)
     }
 
     return {
