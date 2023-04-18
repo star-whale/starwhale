@@ -70,6 +70,12 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                     pageSize: 1000,
                 }
 
+            if (!tableConfig)
+                return {
+                    pageNum: 1,
+                    pageSize: 1000,
+                }
+
             const sorts = tableConfig.sortBy
                 ? [
                       {
@@ -185,10 +191,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 <WrappedWidgetRender
                     {...props}
                     name={overrides?.name}
-                    data={{
-                        records,
-                        columnTypes,
-                    }}
+                    data={$data}
                     optionConfig={overrides?.optionConfig}
                     onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
                     fieldConfig={overrides?.fieldConfig}
