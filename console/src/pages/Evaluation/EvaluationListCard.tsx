@@ -95,7 +95,7 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const $columns = useDatastoreColumns(columnTypes)
+    const $columns = useDatastoreColumns(columnTypes as any)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
