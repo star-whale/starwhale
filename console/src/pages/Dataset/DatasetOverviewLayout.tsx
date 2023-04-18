@@ -60,7 +60,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const params = useMemo(() => {
         return { pageNum: 1, pageSize: 1 }
     }, [])
-    const { columnInfo: datastore } = useQueryDatasetList(datasetVersion?.indexTable, params, true)
+    const { columnTypes } = useQueryDatasetList(datasetVersion?.indexTable, params, true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -156,7 +156,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                 {datasetVersionId && (
                     <div style={{ marginBottom: '10px' }}>
                         <DatastoreMixedTypeSearch
-                            fields={datastore.data?.columnTypes as RecordSchemaT[]}
+                            fields={columnTypes as RecordSchemaT[]}
                             value={query.filter ? query.filter.filter((v: any) => v.value) : undefined}
                             onChange={(items) => {
                                 updateQuery({ filter: items.filter((v) => v.value) as any })

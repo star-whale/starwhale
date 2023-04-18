@@ -19,7 +19,7 @@ function PanelConfusionMatrixWidget(props: WidgetRendererProps<any, any>) {
     const title = formData?.chartTitle ?? ''
 
     const { labels, binarylabel } = useParseConfusionMatrix(data)
-    const heatmapData = getHeatmapConfig(title, labels, binarylabel)
+    const heatmapData = getHeatmapConfig(title, labels as any, binarylabel)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>

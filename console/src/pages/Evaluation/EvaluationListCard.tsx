@@ -24,7 +24,6 @@ import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { useDatastore } from '@starwhale/core/datastore'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -63,11 +62,7 @@ export default function EvaluationListCard() {
         }
     }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
 
-    const {
-        columnInfo,
-        recordInfo: evaluationsInfo,
-        columnTypes,
-    } = useQueryDatasetList(summaryTableName, options, true)
+    const { recordInfo: evaluationsInfo, columnTypes, records } = useQueryDatasetList(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
@@ -81,8 +76,7 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId]
     )
 
-    const { records } = useDatastore(evaluationsInfo?.data?.records)
-    const $columns = useDatastoreColumns(columnTypes)
+    const $columns = useDatastoreColumns(columnTypes as any)
 
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
@@ -146,7 +140,7 @@ export default function EvaluationListCard() {
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: ({ value }) => {
-                        return <p title={value}>{formatTimestampDateTime(value)}</p>
+                        return <span title={value}>{formatTimestampDateTime(value)}</span>
                     },
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
@@ -163,8 +157,8 @@ export default function EvaluationListCard() {
     }, [store.rowSelectedIds, records])
 
     const $ready = React.useMemo(() => {
-        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
-    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
+        return evaluationViewConfig.isSuccess
+    }, [evaluationViewConfig.isSuccess])
 
     React.useEffect(() => {
         const unloadCallback = (event: any) => {

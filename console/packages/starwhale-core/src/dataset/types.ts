@@ -1,4 +1,4 @@
-import { RecordListVO } from '../datastore'
+import { RecordListVo } from '../datastore'
 
 export type IBBox = [x: number, y: number, width: number, height: number]
 export type IShape = [height: number, width: number, channels: number]
@@ -119,7 +119,7 @@ export type DatasetT = {
     record: RecordT
     summary: Map<string, SummaryT>
     summaryTypes: Set<string>
-    columnTypes: RecordListVO['columnTypes']
+    columnTypes: RecordListVo['columnTypes']
 }
 export type DatasetsT = {
     records: DatasetT[]

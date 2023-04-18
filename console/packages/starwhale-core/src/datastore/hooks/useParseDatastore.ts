@@ -1,9 +1,9 @@
 import { isNaN } from 'lodash'
 import keyBy from 'lodash/keyBy'
 import React from 'react'
-import { RecordListVO } from '../schemas/datastore'
+import { RecordListVo } from '../schemas/datastore'
 
-export function useParseConfusionMatrix(data: RecordListVO = {}) {
+export function useParseConfusionMatrix(data: RecordListVo = {}) {
     const labels = React.useMemo(() => {
         const { columnTypes } = data
         const columnArr = columnTypes?.map((column) => column.name)?.filter((name) => name !== 'id') ?? []
@@ -11,6 +11,8 @@ export function useParseConfusionMatrix(data: RecordListVO = {}) {
             if (!isNaN(Number(a))) {
                 return Number(a) > Number(b) ? 1 : -1
             }
+            if (!a || !b) return 1
+
             return a > b ? 1 : -1
         })
     }, [data])
@@ -23,6 +25,7 @@ export function useParseConfusionMatrix(data: RecordListVO = {}) {
             labels.forEach((labelj, j) => {
                 if (!rtn[i]) rtn[i] = []
                 // Typer?.[columnTypes?.[labelj]]?.encode
+                // @ts-ignore
                 rtn[i][j] = recordMap?.[labeli]?.[labelj] ?? '' ?? ''
             })
         })

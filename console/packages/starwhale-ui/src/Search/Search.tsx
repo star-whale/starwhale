@@ -1,4 +1,4 @@
-import { RecordListSchemaT, RecordSchemaT, isSearchColumns, useDatastore } from '@starwhale/core/datastore'
+import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
@@ -198,15 +198,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
             <div className={styles.filters}>{filters}</div>
         </div>
     )
-}
-
-export function DatastoreMixedTypeRecordSearch({
-    records,
-    ...props
-}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
-    const { columnTypes } = useDatastore(records)
-    const searchColumns = useSearchColumns(columnTypes)
-    return <Search {...props} fields={searchColumns} />
 }
 
 export function DatastoreMixedTypeSearch({

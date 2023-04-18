@@ -1,11 +1,20 @@
 import React from 'react'
 import { RecordT, OptionsT, DatasetsT } from '../types'
-import { RecordListVO } from '@starwhale/core/datastore/schemas/datastore'
+import { RecordListVo } from '@starwhale/core/datastore/schemas/datastore'
 import { getSummary } from '../utils'
 
-export function useDatasets<T extends RecordListVO['records'] = RecordT[]>(
+function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+    }
+
+    return r
+}
+
+export function useDatasets<T extends RecordListVo['records'] = RecordT[]>(
     records: T,
-    columnTypes: RecordListVO['columnTypes'],
+    columnTypes: RecordListVo['columnTypes'],
     options: OptionsT
 ): DatasetsT {
     const recordsTmp = React.useMemo(() => {
@@ -14,7 +23,7 @@ export function useDatasets<T extends RecordListVO['records'] = RecordT[]>(
                 ?.map((record) => {
                     const tmp: Record<string, any> = {}
                     Object.entries(record).forEach(([key, v]) => {
-                        tmp[key] = v.value
+                        tmp[key] = val(v)
                     })
                     return tmp
                 })

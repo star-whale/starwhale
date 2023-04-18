@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://e2e-20221226.pre.intra.starwhale.ai",
+            "url": "http://jialei.pre.intra.starwhale.ai",
             "description": "Generated server url"
         }
     ],
@@ -25,9 +25,6 @@
         },
         {
             "name": "Log"
-        },
-        {
-            "name": "SWRuntime"
         },
         {
             "name": "User"
@@ -87,7 +84,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -129,7 +126,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -160,7 +157,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -189,7 +186,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -231,7 +228,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -271,7 +268,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -301,11 +298,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "ok.",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ProjectVo"
+                                    "$ref": "#/components/schemas/ResponseMessageProjectVo"
                                 }
                             }
                         }
@@ -342,7 +339,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -371,7 +368,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -386,7 +383,8 @@
                 "tags": [
                     "Trash"
                 ],
-                "summary": "Recover trash by id",
+                "summary": "Restore trash by id.",
+                "description": "Restore a trash to its original type and move it out of the recycle bin.",
                 "operationId": "recoverTrash",
                 "parameters": [
                     {
@@ -411,7 +409,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -424,7 +422,8 @@
                 "tags": [
                     "Trash"
                 ],
-                "summary": "Delete trash",
+                "summary": "Delete trash by id.",
+                "description": "Move a trash out of the recycle bin. This operation cannot be resumed.",
                 "operationId": "deleteTrash",
                 "parameters": [
                     {
@@ -449,7 +448,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -462,7 +461,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag": {
             "put": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Manage tag of the runtime version",
                 "operationId": "manageRuntimeTag",
@@ -507,7 +506,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -520,15 +519,15 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}": {
             "put": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
-                "summary": "Set tag of the model version",
+                "summary": "Set tag of the runtime version",
                 "operationId": "modifyRuntime",
                 "parameters": [
                     {
                         "name": "projectUrl",
                         "in": "path",
-                        "description": "Project Url",
+                        "description": "Project url",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -565,7 +564,64 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}/shared": {
+            "put": {
+                "tags": [
+                    "Runtime"
+                ],
+                "summary": "Share or unshare the runtime version",
+                "operationId": "shareRuntimeVersion",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeVersionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "shared",
+                        "in": "query",
+                        "description": "1 or true - shared, 0 or false - unshared",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -578,7 +634,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/recover": {
             "put": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Recover a runtime",
                 "operationId": "recoverRuntime",
@@ -586,7 +642,7 @@
                     {
                         "name": "projectUrl",
                         "in": "path",
-                        "description": "Project Url",
+                        "description": "Project url",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -652,7 +708,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -689,7 +745,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -747,7 +803,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -852,7 +908,64 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/shared": {
+            "put": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "Share or unshare the model version",
+                "operationId": "shareModelVersion",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "modelUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "shared",
+                        "in": "query",
+                        "description": "1 or true - shared, 0 or false - unshared",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -930,11 +1043,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/JobVo"
+                                    "$ref": "#/components/schemas/ResponseMessageJobVo"
                                 }
                             }
                         }
@@ -979,11 +1092,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -1016,11 +1129,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -1077,7 +1190,64 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/shared": {
+            "put": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "Share or unshare the dataset version",
+                "operationId": "shareDatasetVersion",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "shared",
+                        "in": "query",
+                        "description": "1 or true - shared, 0 or false - unshared",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1148,7 +1318,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1204,7 +1374,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoUserVo"
                                 }
                             }
                         }
@@ -1231,7 +1401,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1241,33 +1411,28 @@
                 }
             }
         },
-        "/api/v1/system/version/{action}": {
+        "/api/v1/system/version/upgrade": {
             "post": {
                 "tags": [
                     "System"
                 ],
-                "summary": "Upgrade system version or cancel upgrade",
-                "operationId": "systemVersionAction",
-                "parameters": [
-                    {
-                        "name": "action",
-                        "in": "path",
-                        "description": "Action: upgrade or cancel",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "upgrade",
-                                "cancel"
-                            ]
+                "summary": "Upgrade system version",
+                "operationId": "upgradeVersion",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpgradeRequest"
+                            }
                         }
-                    }
-                ],
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1291,7 +1456,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -1321,7 +1486,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -1340,9 +1505,9 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListSystemRoleVo"
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectMemberVo"
                                 }
                             }
                         }
@@ -1369,7 +1534,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1417,20 +1582,16 @@
                     },
                     {
                         "name": "sort",
-                        "in": "query",
-                        "required": false,
+                        "in": "path",
+                        "description": "The sort type of project list. (Default=visited)",
+                        "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "order",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int32",
-                            "default": 1
+                            "type": "string",
+                            "enum": [
+                                "visited",
+                                "latest",
+                                "oldest"
+                            ]
                         }
                     }
                 ],
@@ -1440,7 +1601,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoProjectVo"
                                 }
                             }
                         }
@@ -1467,7 +1628,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1509,9 +1670,58 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                    "$ref": "#/components/schemas/ResponseMessageModelServingVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/image/build": {
+            "post": {
+                "tags": [
+                    "Runtime"
+                ],
+                "summary": "build image for runtime",
+                "description": "build image for runtime",
+                "operationId": "buildRuntimeImage",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageBuildImageResult"
                                 }
                             }
                         }
@@ -1522,7 +1732,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/revert": {
             "post": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Revert Runtime version",
                 "description": "Select a historical version of the runtime and revert the latest version of the current runtime to this version",
@@ -1574,7 +1784,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file": {
             "post": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Create a new runtime version",
                 "description": "Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.",
@@ -1669,9 +1879,9 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVo"
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectMemberVo"
                                 }
                             }
                         }
@@ -1714,7 +1924,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1766,7 +1976,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1785,39 +1995,6 @@
                 "description": "Create a new version of the model. The data resources can be selected by uploading the file package or entering the server path.",
                 "operationId": "upload_1",
                 "parameters": [
-                    {
-                        "name": "X-SW-UPLOAD-TYPE",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "MANIFEST",
-                                "SRC_TAR",
-                                "SRC",
-                                "MODEL",
-                                "DATA",
-                                "UNKNOWN"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "X-SW-UPLOAD-OBJECT-HASH",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "X-SW-UPLOAD-ID",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
                     {
                         "name": "projectUrl",
                         "in": "path",
@@ -1935,7 +2112,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoJobVo"
                                 }
                             }
                         }
@@ -1973,7 +2150,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -2023,7 +2200,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -2060,11 +2237,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -2101,7 +2278,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageConfigVo"
                                 }
@@ -2140,7 +2317,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -2195,9 +2372,9 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageDataIndexDesc"
                                 }
@@ -2249,7 +2426,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -2268,22 +2445,6 @@
                 "description": "Create a new version of the dataset. The data resources can be selected by uploading the file package or entering the server path.",
                 "operationId": "uploadDs",
                 "parameters": [
-                    {
-                        "name": "X-SW-UPLOAD-ID",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "X-SW-UPLOAD-DATA-URI",
-                        "in": "header",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
                     {
                         "name": "projectUrl",
                         "in": "path",
@@ -2348,7 +2509,7 @@
                 }
             }
         },
-        "/api/v1/project/{projectName}/dataset/{datasetName}/version/{version}/sign-links": {
+        "/api/v1/project/{projectName}/dataset/{datasetName}/uri/sign-links": {
             "post": {
                 "tags": [
                     "Dataset"
@@ -2367,14 +2528,6 @@
                     },
                     {
                         "name": "datasetName",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "version",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -2413,6 +2566,120 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageMapObjectObject"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}": {
+            "post": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "Upload a hashed BLOB to dataset object store",
+                "description": "Upload a hashed BLOB to dataset object store, returns a uri of the main storage",
+                "operationId": "uploadHashedBlob",
+                "parameters": [
+                    {
+                        "name": "projectName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "description": "file content",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "Test if a hashed blob exists in this dataset",
+                "description": "404 if not exists; 200 if exists",
+                "operationId": "headHashedBlob",
+                "parameters": [
+                    {
+                        "name": "projectName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
                                 }
                             }
                         }
@@ -2749,7 +3016,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}": {
             "head": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "head for runtime info ",
                 "description": "head for runtime info",
@@ -2783,7 +3050,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2864,11 +3131,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "ok.",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserVo"
+                                    "$ref": "#/components/schemas/ResponseMessageUserVo"
                                 }
                             }
                         }
@@ -2902,7 +3169,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -2919,11 +3186,11 @@
                 "operationId": "getCurrentUser",
                 "responses": {
                     "200": {
-                        "description": "ok.",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserVo"
+                                    "$ref": "#/components/schemas/ResponseMessageUserVo"
                                 }
                             }
                         }
@@ -2942,7 +3209,7 @@
                     {
                         "name": "projectUrl",
                         "in": "query",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -2952,9 +3219,9 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVo"
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectMemberVo"
                                 }
                             }
                         }
@@ -2975,7 +3242,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SystemVersionVo"
+                                    "$ref": "#/components/schemas/ResponseMessageSystemVersionVo"
                                 }
                             }
                         }
@@ -2997,7 +3264,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UpgradeProgressVo"
+                                    "$ref": "#/components/schemas/ResponseMessageListUpgradeLog"
                                 }
                             }
                         }
@@ -3018,7 +3285,28 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/SystemVersionVo"
+                                    "$ref": "#/components/schemas/ResponseMessageLatestVersionVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/system/version/cancel": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Cancel upgrading",
+                "operationId": "cancelUpgrading",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -3039,7 +3327,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageListResourcePool"
                                 }
                             }
                         }
@@ -3060,7 +3348,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageListDeviceVo"
                                 }
                             }
                         }
@@ -3079,7 +3367,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageListRoleVo"
                                 }
@@ -3095,6 +3383,7 @@
                     "Trash"
                 ],
                 "summary": "Get the list of trash",
+                "description": "List all types of trashes, such as models datasets runtimes and evaluations",
                 "operationId": "listTrash",
                 "parameters": [
                     {
@@ -3156,7 +3445,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoTrashVo"
                                 }
                             }
                         }
@@ -3167,7 +3456,7 @@
         "/api/v1/project/{projectUrl}/runtime": {
             "get": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Get the list of runtimes",
                 "operationId": "listRuntime",
@@ -3182,9 +3471,17 @@
                         }
                     },
                     {
-                        "name": "runtimeName",
+                        "name": "name",
                         "in": "query",
                         "description": "Runtime name prefix to search for",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3219,7 +3516,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoRuntimeVo"
                                 }
                             }
                         }
@@ -3230,7 +3527,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}": {
             "get": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Get the information of a runtime",
                 "description": "Return the information of the latest version of the current runtime",
@@ -3239,7 +3536,7 @@
                     {
                         "name": "projectUrl",
                         "in": "path",
-                        "description": "Project Url",
+                        "description": "Project url",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -3264,7 +3561,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3277,7 +3574,7 @@
             },
             "delete": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Delete a runtime",
                 "operationId": "deleteRuntime",
@@ -3285,7 +3582,7 @@
                     {
                         "name": "projectUrl",
                         "in": "path",
-                        "description": "Project Url",
+                        "description": "Project url",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -3317,7 +3614,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version": {
             "get": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Get the list of the runtime versions",
                 "operationId": "listRuntimeVersion",
@@ -3383,7 +3680,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3398,7 +3695,7 @@
         "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file": {
             "get": {
                 "tags": [
-                    "SWRuntime"
+                    "Runtime"
                 ],
                 "summary": "Pull file of a runtime version",
                 "description": "Pull file of a runtime version. ",
@@ -3437,6 +3734,38 @@
                 }
             }
         },
+        "/api/v1/project/{projectUrl}/runtime-tree": {
+            "get": {
+                "tags": [
+                    "Runtime"
+                ],
+                "summary": "List runtime tree including global runtimes",
+                "operationId": "listRuntimeTree",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListRuntimeViewVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}/model": {
             "get": {
                 "tags": [
@@ -3464,9 +3793,17 @@
                         }
                     },
                     {
-                        "name": "modelName",
+                        "name": "name",
                         "in": "query",
                         "description": "Model name prefix to search for",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3501,7 +3838,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoModelVo"
                                 }
                             }
                         }
@@ -3547,11 +3884,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ModelInfoVo"
+                                    "$ref": "#/components/schemas/ResponseMessageModelInfoVo"
                                 }
                             }
                         }
@@ -3587,7 +3924,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -3670,7 +4007,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoModelVersionVo"
                                 }
                             }
                         }
@@ -3688,8 +4025,8 @@
                 "operationId": "pull_1",
                 "parameters": [
                     {
-                        "name": "X-SW-DOWNLOAD-TYPE",
-                        "in": "header",
+                        "name": "desc",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3704,24 +4041,24 @@
                         }
                     },
                     {
-                        "name": "X-SW-DOWNLOAD-OBJECT-NAME",
-                        "in": "header",
+                        "name": "partName",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "X-SW-DOWNLOAD-OBJECT-PATH",
-                        "in": "header",
+                        "name": "path",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "X-SW-DOWNLOAD-OBJECT-HASH",
-                        "in": "header",
+                        "name": "signature",
+                        "in": "query",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3807,11 +4144,43 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ModelInfoVo"
+                                    "$ref": "#/components/schemas/ResponseMessageMapStringListFileNode"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/model-tree": {
+            "get": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "List Model tree including global models",
+                "operationId": "listModelTree",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListModelViewVo"
                                 }
                             }
                         }
@@ -3872,7 +4241,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoTaskVo"
                                 }
                             }
                         }
@@ -3908,11 +4277,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ResponseMessageObject"
                                 }
                             }
                         }
@@ -3948,11 +4317,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Graph"
+                                    "$ref": "#/components/schemas/ResponseMessageGraph"
                                 }
                             }
                         }
@@ -4009,7 +4378,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessagePageInfoSummaryVo"
                                 }
@@ -4040,7 +4409,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageListAttributeVo"
                                 }
@@ -4077,6 +4446,23 @@
                         }
                     },
                     {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Dataset name prefix to search for",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "pageNum",
                         "in": "query",
                         "description": "Page number",
@@ -4105,7 +4491,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoDatasetVo"
                                 }
                             }
                         }
@@ -4151,11 +4537,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/DatasetInfoVo"
+                                    "$ref": "#/components/schemas/ResponseMessageDatasetInfoVo"
                                 }
                             }
                         }
@@ -4191,7 +4577,7 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "*/*": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -4274,80 +4660,10 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PageInfo"
+                                    "$ref": "#/components/schemas/ResponseMessagePageInfoDatasetVersionVo"
                                 }
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link": {
-            "get": {
-                "tags": [
-                    "Dataset"
-                ],
-                "summary": "Pull Dataset uri file contents",
-                "description": "Pull Dataset uri file contents ",
-                "operationId": "pullLinkContent",
-                "parameters": [
-                    {
-                        "name": "projectUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "datasetUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "versionUrl",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "uri",
-                        "in": "query",
-                        "description": "uri of the link",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "offset",
-                        "in": "query",
-                        "description": "offset in the content",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "size",
-                        "in": "query",
-                        "description": "data size",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok"
                     }
                 }
             }
@@ -4386,7 +4702,7 @@
                         }
                     },
                     {
-                        "name": "part_name",
+                        "name": "partName",
                         "in": "query",
                         "description": "optional, _manifest.yaml is used if not specified",
                         "required": false,
@@ -4398,6 +4714,143 @@
                 "responses": {
                     "200": {
                         "description": "ok"
+                    }
+                },
+                "deprecated": true
+            }
+        },
+        "/api/v1/project/{projectUrl}/dataset-tree": {
+            "get": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "List dataset tree including global datasets",
+                "operationId": "listDatasetTree",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListDatasetViewVo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectName}/dataset/{datasetName}/uri": {
+            "get": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "Pull Dataset uri file contents",
+                "description": "Pull Dataset uri file contents ",
+                "operationId": "pullUriContent",
+                "parameters": [
+                    {
+                        "name": "projectName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "uri",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "offset in the content",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "data size",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok"
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectId}/serving/{servingId}/status": {
+            "get": {
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Get the events of the model serving job",
+                "operationId": "getModelServingStatus",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "description": "Project Id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "servingId",
+                        "in": "path",
+                        "description": "Model Serving Id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageModelServingStatusVo"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -4427,7 +4880,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "$ref": "#/components/schemas/ResponseMessageListString"
                                 }
                             }
                         }
@@ -4467,9 +4920,50 @@
                     "200": {
                         "description": "ok",
                         "content": {
-                            "plain/text": {
+                            "text/plain": {
                                 "schema": {
                                     "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/job/suggestion/runtime": {
+            "get": {
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Get suggest runtime for eval or online eval",
+                "operationId": "getRuntimeSuggestion",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "modelVersionId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageRuntimeSuggestionVo"
                                 }
                             }
                         }
@@ -4669,6 +5163,21 @@
                     }
                 }
             },
+            "UpgradeRequest": {
+                "required": [
+                    "image",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string"
+                    }
+                }
+            },
             "UserRoleAddRequest": {
                 "required": [
                     "currentUserPwd",
@@ -4730,7 +5239,65 @@
                     },
                     "ttlInSeconds": {
                         "type": "integer",
-                        "format": "int64"
+                        "format": "int64",
+                        "deprecated": true
+                    },
+                    "spec": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ModelServingVo": {
+                "title": "Model Serving",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "baseUri": {
+                        "type": "string"
+                    }
+                },
+                "description": "Model Serving object"
+            },
+            "ResponseMessageModelServingVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ModelServingVo"
+                    }
+                }
+            },
+            "BuildImageResult": {
+                "title": "Runtime",
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "description": "Build runtime image result"
+            },
+            "ResponseMessageBuildImageResult": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/BuildImageResult"
                     }
                 }
             },
@@ -4779,6 +5346,30 @@
                 ],
                 "type": "object",
                 "properties": {
+                    "uploadId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "partName": {
+                        "type": "string"
+                    },
+                    "signature": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "desc": {
+                        "type": "string",
+                        "enum": [
+                            "MANIFEST",
+                            "SRC_TAR",
+                            "SRC",
+                            "MODEL",
+                            "DATA",
+                            "UNKNOWN"
+                        ]
+                    },
                     "phase": {
                         "type": "string",
                         "enum": [
@@ -4838,6 +5429,16 @@
                     },
                     "stepSpecOverWrites": {
                         "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "EVALUATION",
+                            "TRAIN",
+                            "FINE_TUNE",
+                            "SERVING",
+                            "CUSTOM"
+                        ]
                     }
                 }
             },
@@ -4934,6 +5535,30 @@
                 ],
                 "type": "object",
                 "properties": {
+                    "uploadId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "partName": {
+                        "type": "string"
+                    },
+                    "signature": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "desc": {
+                        "type": "string",
+                        "enum": [
+                            "MANIFEST",
+                            "SRC_TAR",
+                            "SRC",
+                            "MODEL",
+                            "DATA",
+                            "UNKNOWN"
+                        ]
+                    },
                     "phase": {
                         "type": "string",
                         "enum": [
@@ -4971,8 +5596,9 @@
             "UploadResult": {
                 "type": "object",
                 "properties": {
-                    "upload_id": {
-                        "type": "string"
+                    "uploadId": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -5098,10 +5724,16 @@
                     "start": {
                         "type": "string"
                     },
+                    "startType": {
+                        "type": "string"
+                    },
                     "startInclusive": {
                         "type": "boolean"
                     },
                     "end": {
+                        "type": "string"
+                    },
+                    "endType": {
                         "type": "string"
                     },
                     "endInclusive": {
@@ -5115,6 +5747,9 @@
                         "type": "boolean"
                     },
                     "rawResult": {
+                        "type": "boolean"
+                    },
+                    "encodeWithType": {
                         "type": "boolean"
                     },
                     "ignoreNonExistingTable": {
@@ -5139,6 +5774,30 @@
                     },
                     "keepNone": {
                         "type": "boolean"
+                    },
+                    "revision": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ColumnHintsDesc": {
+                "type": "object",
+                "properties": {
+                    "typeHints": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "elementHints": {
+                        "$ref": "#/components/schemas/ColumnHintsDesc"
+                    },
+                    "keyHints": {
+                        "$ref": "#/components/schemas/ColumnHintsDesc"
+                    },
+                    "valueHints": {
+                        "$ref": "#/components/schemas/ColumnHintsDesc"
                     }
                 }
             },
@@ -5149,6 +5808,12 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ColumnSchemaDesc"
+                        }
+                    },
+                    "columnHints": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/ColumnHintsDesc"
                         }
                     },
                     "records": {
@@ -5228,8 +5893,14 @@
                     "rawResult": {
                         "type": "boolean"
                     },
+                    "encodeWithType": {
+                        "type": "boolean"
+                    },
                     "ignoreNonExistingTable": {
                         "type": "boolean"
+                    },
+                    "revision": {
+                        "type": "string"
                     }
                 }
             },
@@ -5314,7 +5985,7 @@
             "FlushRequest": {
                 "type": "object"
             },
-            "PageInfo": {
+            "PageInfoUserVo": {
                 "type": "object",
                 "properties": {
                     "total": {
@@ -5324,7 +5995,7 @@
                     "list": {
                         "type": "array",
                         "items": {
-                            "type": "object"
+                            "$ref": "#/components/schemas/UserVo"
                         }
                     },
                     "pageNum": {
@@ -5392,6 +6063,20 @@
                     }
                 }
             },
+            "ResponseMessagePageInfoUserVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoUserVo"
+                    }
+                }
+            },
             "UserVo": {
                 "title": "User",
                 "type": "object",
@@ -5421,7 +6106,21 @@
                 },
                 "description": "User object"
             },
-            "ProjectRoleVo": {
+            "ResponseMessageUserVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/UserVo"
+                    }
+                }
+            },
+            "ProjectMemberVo": {
                 "title": "Role",
                 "type": "object",
                 "properties": {
@@ -5469,7 +6168,7 @@
                 },
                 "description": "Project object"
             },
-            "ResponseMessageListProjectRoleVo": {
+            "ResponseMessageListProjectMemberVo": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -5481,7 +6180,7 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/ProjectRoleVo"
+                            "$ref": "#/components/schemas/ProjectMemberVo"
                         }
                     }
                 }
@@ -5530,6 +6229,20 @@
                     }
                 }
             },
+            "ResponseMessageSystemVersionVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/SystemVersionVo"
+                    }
+                }
+            },
             "SystemVersionVo": {
                 "title": "Version",
                 "type": "object",
@@ -5543,25 +6256,7 @@
                 },
                 "description": "System verion"
             },
-            "UpgradeProgressVo": {
-                "title": "Progress",
-                "type": "object",
-                "properties": {
-                    "phase": {
-                        "type": "string",
-                        "enum": [
-                            "downloading",
-                            "upgrading"
-                        ]
-                    },
-                    "progress": {
-                        "type": "integer",
-                        "format": "int32"
-                    }
-                },
-                "description": "Upgrade progress object"
-            },
-            "ResponseMessageListSystemRoleVo": {
+            "ResponseMessageListUpgradeLog": {
                 "type": "object",
                 "properties": {
                     "code": {
@@ -5573,26 +6268,177 @@
                     "data": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/SystemRoleVo"
+                            "$ref": "#/components/schemas/UpgradeLog"
                         }
                     }
                 }
             },
-            "SystemRoleVo": {
-                "title": "Role",
+            "UpgradeLog": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "progressUuid": {
                         "type": "string"
                     },
-                    "user": {
-                        "$ref": "#/components/schemas/UserVo"
+                    "stepTotal": {
+                        "type": "integer",
+                        "format": "int32"
                     },
-                    "role": {
-                        "$ref": "#/components/schemas/RoleVo"
+                    "stepCurrent": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "LatestVersionVo": {
+                "title": "Version",
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string"
                     }
                 },
-                "description": "System Role object"
+                "description": "Latest verion"
+            },
+            "ResponseMessageLatestVersionVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/LatestVersionVo"
+                    }
+                }
+            },
+            "Resource": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "max": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "min": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "defaults": {
+                        "type": "number",
+                        "format": "float"
+                    }
+                }
+            },
+            "ResourcePool": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "nodeSelector": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Resource"
+                        }
+                    },
+                    "tolerations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Toleration"
+                        }
+                    }
+                }
+            },
+            "ResponseMessageListResourcePool": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ResourcePool"
+                        }
+                    }
+                }
+            },
+            "Toleration": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "operator": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    },
+                    "effect": {
+                        "type": "string"
+                    },
+                    "tolerationSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "DeviceVo": {
+                "title": "Device",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "description": "Device information"
+            },
+            "ResponseMessageListDeviceVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DeviceVo"
+                        }
+                    }
+                }
             },
             "ResponseMessageListRoleVo": {
                 "type": "object",
@@ -5610,6 +6456,391 @@
                         }
                     }
                 }
+            },
+            "PageInfoProjectVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoProjectVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoProjectVo"
+                    }
+                }
+            },
+            "ResponseMessageProjectVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ProjectVo"
+                    }
+                }
+            },
+            "PageInfoTrashVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TrashVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoTrashVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoTrashVo"
+                    }
+                }
+            },
+            "TrashVo": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "trashedTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "trashedBy": {
+                        "type": "string"
+                    },
+                    "lastUpdatedTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "retentionTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "PageInfoRuntimeVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoRuntimeVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoRuntimeVo"
+                    }
+                }
+            },
+            "RuntimeVersionVo": {
+                "title": "RuntimeVersion",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "runtimeId": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "meta": {
+                        "type": "object"
+                    },
+                    "image": {
+                        "type": "string"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVo"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                "description": "Runtime version object"
+            },
+            "RuntimeVo": {
+                "title": "Runtime",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVo"
+                    },
+                    "version": {
+                        "$ref": "#/components/schemas/RuntimeVersionVo"
+                    }
+                },
+                "description": "Runtime object"
             },
             "FlattenFileVo": {
                 "title": "StorageFile",
@@ -5662,6 +6893,10 @@
                     },
                     "manifest": {
                         "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
                     },
                     "createdTime": {
                         "type": "integer",
@@ -5768,26 +7003,84 @@
                     }
                 }
             },
-            "RuntimeVersionVo": {
-                "title": "RuntimeVersion",
+            "ResponseMessageListRuntimeViewVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeViewVo"
+                        }
+                    }
+                }
+            },
+            "RuntimeVersionViewVo": {
+                "title": "Runtime",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "versionName": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "description": "Runtime Version View object"
+            },
+            "RuntimeViewVo": {
+                "title": "Runtime",
+                "type": "object",
+                "properties": {
+                    "ownerName": {
+                        "type": "string"
+                    },
+                    "projectName": {
+                        "type": "string"
+                    },
+                    "runtimeId": {
+                        "type": "string"
+                    },
+                    "runtimeName": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "versions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeVersionViewVo"
+                        }
+                    }
+                },
+                "description": "Runtime View object"
+            },
+            "ModelVo": {
+                "title": "Model",
                 "type": "object",
                 "properties": {
                     "id": {
                         "type": "string"
                     },
                     "name": {
-                        "type": "string"
-                    },
-                    "tag": {
-                        "type": "string"
-                    },
-                    "alias": {
-                        "type": "string"
-                    },
-                    "meta": {
-                        "type": "object"
-                    },
-                    "image": {
                         "type": "string"
                     },
                     "createdTime": {
@@ -5798,7 +7091,99 @@
                         "$ref": "#/components/schemas/UserVo"
                     }
                 },
-                "description": "Runtime version object"
+                "description": "Model object"
+            },
+            "PageInfoModelVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ModelVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoModelVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoModelVo"
+                    }
+                }
             },
             "FileNode": {
                 "type": "object",
@@ -5880,6 +7265,297 @@
                 },
                 "description": "Model information object"
             },
+            "ResponseMessageModelInfoVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ModelInfoVo"
+                    }
+                }
+            },
+            "ModelVersionVo": {
+                "title": "ModelVersion",
+                "type": "object",
+                "properties": {
+                    "stepSpecs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StepSpec"
+                        }
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    },
+                    "meta": {
+                        "type": "object"
+                    },
+                    "manifest": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVo"
+                    }
+                },
+                "description": "Model version object"
+            },
+            "PageInfoModelVersionVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ModelVersionVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoModelVersionVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoModelVersionVo"
+                    }
+                }
+            },
+            "RuntimeResource": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "request": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "format": "float"
+                    }
+                }
+            },
+            "StepSpec": {
+                "type": "object",
+                "properties": {
+                    "concurrency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "needs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "resources": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeResource"
+                        }
+                    },
+                    "job_name": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "task_num": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessageMapStringListFileNode": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/FileNode"
+                            }
+                        }
+                    }
+                }
+            },
+            "ModelVersionViewVo": {
+                "title": "Model",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "versionName": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "stepSpecs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StepSpec"
+                        }
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "description": "Model Version View Object"
+            },
+            "ModelViewVo": {
+                "title": "Model View",
+                "type": "object",
+                "properties": {
+                    "ownerName": {
+                        "type": "string"
+                    },
+                    "projectName": {
+                        "type": "string"
+                    },
+                    "modelId": {
+                        "type": "string"
+                    },
+                    "modelName": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "versions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ModelVersionViewVo"
+                        }
+                    }
+                },
+                "description": "Model View Object"
+            },
+            "ResponseMessageListModelViewVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ModelViewVo"
+                        }
+                    }
+                }
+            },
             "JobVo": {
                 "title": "Job",
                 "type": "object",
@@ -5951,28 +7627,251 @@
                 },
                 "description": "Job object"
             },
-            "RuntimeVo": {
-                "title": "Runtime",
+            "PageInfoJobVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/JobVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoJobVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoJobVo"
+                    }
+                }
+            },
+            "ResponseMessageJobVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/JobVo"
+                    }
+                }
+            },
+            "PageInfoTaskVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TaskVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoTaskVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoTaskVo"
+                    }
+                }
+            },
+            "TaskVo": {
+                "title": "Task",
                 "type": "object",
                 "properties": {
                     "id": {
                         "type": "string"
                     },
-                    "name": {
+                    "uuid": {
                         "type": "string"
                     },
                     "createdTime": {
                         "type": "integer",
                         "format": "int64"
                     },
-                    "owner": {
-                        "$ref": "#/components/schemas/UserVo"
+                    "taskStatus": {
+                        "type": "string",
+                        "enum": [
+                            "CREATED",
+                            "READY",
+                            "ASSIGNING",
+                            "PAUSED",
+                            "PREPARING",
+                            "RUNNING",
+                            "SUCCESS",
+                            "TO_CANCEL",
+                            "CANCELLING",
+                            "CANCELED",
+                            "FAIL",
+                            "UNKNOWN"
+                        ]
                     },
-                    "version": {
-                        "$ref": "#/components/schemas/RuntimeVersionVo"
+                    "retryNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "resourcePool": {
+                        "type": "string"
+                    },
+                    "stepName": {
+                        "type": "string"
+                    },
+                    "stopTime": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 },
-                "description": "Runtime object"
+                "description": "Task object"
             },
             "Graph": {
                 "type": "object",
@@ -6033,6 +7932,20 @@
                     "entityId": {
                         "type": "integer",
                         "format": "int64"
+                    }
+                }
+            },
+            "ResponseMessageGraph": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Graph"
                     }
                 }
             },
@@ -6277,6 +8190,154 @@
                     }
                 }
             },
+            "DatasetVersionVo": {
+                "title": "DatasetVersion",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "meta": {
+                        "type": "object"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVo"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                "description": "Dataset version object"
+            },
+            "DatasetVo": {
+                "title": "Dataset",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVo"
+                    },
+                    "version": {
+                        "$ref": "#/components/schemas/DatasetVersionVo"
+                    }
+                },
+                "description": "Dataset object"
+            },
+            "PageInfoDatasetVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DatasetVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoDatasetVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoDatasetVo"
+                    }
+                }
+            },
             "DatasetInfoVo": {
                 "title": "DatasetInfo",
                 "type": "object",
@@ -6302,6 +8363,10 @@
                     "versionMeta": {
                         "type": "string"
                     },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
                     "createdTime": {
                         "type": "integer",
                         "format": "int64"
@@ -6314,6 +8379,241 @@
                     }
                 },
                 "description": "SWDataset information object"
+            },
+            "ResponseMessageDatasetInfoVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/DatasetInfoVo"
+                    }
+                }
+            },
+            "PageInfoDatasetVersionVo": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DatasetVersionVo"
+                        }
+                    },
+                    "pageNum": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pageSize": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "startRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "endRow": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "prePage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nextPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "isFirstPage": {
+                        "type": "boolean"
+                    },
+                    "isLastPage": {
+                        "type": "boolean"
+                    },
+                    "hasPreviousPage": {
+                        "type": "boolean"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean"
+                    },
+                    "navigatePages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigatepageNums": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    "navigateFirstPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "navigateLastPage": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ResponseMessagePageInfoDatasetVersionVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PageInfoDatasetVersionVo"
+                    }
+                }
+            },
+            "DatasetVersionViewVo": {
+                "title": "Dataset",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "versionName": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "description": "Dataset Version View object"
+            },
+            "DatasetViewVo": {
+                "title": "Dataset",
+                "type": "object",
+                "properties": {
+                    "ownerName": {
+                        "type": "string"
+                    },
+                    "projectName": {
+                        "type": "string"
+                    },
+                    "datasetId": {
+                        "type": "string"
+                    },
+                    "datasetName": {
+                        "type": "string"
+                    },
+                    "shared": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "versions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DatasetVersionViewVo"
+                        }
+                    }
+                },
+                "description": "Dataset View object"
+            },
+            "ResponseMessageListDatasetViewVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DatasetViewVo"
+                        }
+                    }
+                }
+            },
+            "Event": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "eventTimeInMs": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "object": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ModelServingStatusVo": {
+                "title": "Model Serving Status",
+                "type": "object",
+                "properties": {
+                    "progress": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Event"
+                        }
+                    }
+                },
+                "description": "Model Serving Status object"
+            },
+            "ResponseMessageModelServingStatusVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ModelServingStatusVo"
+                    }
+                }
             },
             "PageInfoPanelPluginVo": {
                 "type": "object",
@@ -6420,6 +8720,50 @@
                         "$ref": "#/components/schemas/PageInfoPanelPluginVo"
                     }
                 }
+            },
+            "ResponseMessageListString": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "ResponseMessageRuntimeSuggestionVo": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/RuntimeSuggestionVo"
+                    }
+                }
+            },
+            "RuntimeSuggestionVo": {
+                "title": "Model Serving",
+                "type": "object",
+                "properties": {
+                    "runtimes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RuntimeVersionVo"
+                        }
+                    }
+                },
+                "description": "Model Serving object"
             },
             "UserRoleDeleteRequest": {
                 "required": [

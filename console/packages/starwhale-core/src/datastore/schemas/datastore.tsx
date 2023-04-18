@@ -1,9 +1,10 @@
 export interface ColumnSchemaDesc {
-    name: string
-    type: string
+    name?: string
+    type?: string
     pythonType?: string
     elementType?: ColumnSchemaDesc
-    attributes?: ColumnSchemaDesc[]
+    keyType?: ColumnSchemaDesc
+    valueType?: ColumnSchemaDesc
 }
 
 export interface RecordDesc {
@@ -12,7 +13,7 @@ export interface RecordDesc {
 
 export interface RecordValueDesc {
     key: string
-    value?: string
+    value?: object
 }
 
 export interface TableSchemaDesc {
@@ -34,33 +35,45 @@ export interface ColumnDesc {
 export interface ScanTableRequest {
     tables?: TableDesc[]
     start?: string
+    startType?: string
     startInclusive?: boolean
     end?: string
+    endType?: string
     endInclusive?: boolean
-
     /** @format int32 */
     limit?: number
     keepNone?: boolean
-
+    rawResult?: boolean
+    encodeWithType?: boolean
     ignoreNonExistingTable?: boolean
 }
 
 export interface TableDesc {
     tableName?: string
+    columnPrefix?: string
     columns?: ColumnDesc[]
     keepNone?: boolean
+    revision?: string
 }
 
-export interface RecordListVO {
+export interface ColumnHintsDesc {
+    typeHints?: string[]
+    elementHints?: ColumnHintsDesc
+    keyHints?: ColumnHintsDesc
+    valueHints?: ColumnHintsDesc
+}
+
+export interface RecordListVo {
     columnTypes?: ColumnSchemaDesc[]
-    records?: Record<string, any>[]
+    columnHints?: Record<string, ColumnHintsDesc>
+    records?: Record<string, object>[]
     lastKey?: string
 }
 
-export interface ResponseMessageRecordListVO {
+export interface ResponseMessageRecordListVo {
     code?: string
     message?: string
-    data?: RecordListVO
+    data?: RecordListVo
 }
 
 export interface OrderByDesc {
@@ -74,17 +87,15 @@ export interface QueryTableRequest {
     orderBy?: OrderByDesc[]
     descending?: boolean
     filter?: TableQueryFilterDesc
-
     /** @format int32 */
     start?: number
-
     /** @format int32 */
     limit?: number
-
-    ignoreNonExistingTable?: boolean
-    encodeWithType?: boolean
     keepNone?: boolean
     rawResult?: boolean
+    encodeWithType?: boolean
+    ignoreNonExistingTable?: boolean
+    revision?: string
 }
 
 export interface TableQueryFilterDesc {
@@ -96,10 +107,8 @@ export interface TableQueryOperandDesc {
     filter?: TableQueryFilterDesc
     columnName?: string
     boolValue?: boolean
-
     /** @format int64 */
     intValue?: number
-
     /** @format double */
     floatValue?: number
     stringValue?: string
@@ -109,6 +118,13 @@ export interface TableQueryOperandDesc {
 export interface ListTablesRequest {
     prefix?: string
 }
-export interface TableNameListVO {
+
+export interface ResponseMessageTableNameListVo {
+    code?: string
+    message?: string
+    data?: TableNameListVo
+}
+
+export interface TableNameListVo {
     tables?: string[]
 }
