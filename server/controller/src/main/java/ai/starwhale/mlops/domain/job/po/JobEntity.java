@@ -40,6 +40,8 @@ public class JobEntity extends BaseEntity implements BundleEntity {
 
     private Long id;
 
+    private String name;
+
     private String jobUuid;
 
     private String modelName;

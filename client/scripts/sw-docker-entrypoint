@@ -11,6 +11,7 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
 VERBOSE="-vvvv"
+HANDLER=${SW_RUN_HANDLER:-""}
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
@@ -91,9 +92,9 @@ set_py_and_sw() {
 run() {
     echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        swcli ${VERBOSE} model run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
+        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
     else
-        swcli ${VERBOSE} model run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} || exit 1
+        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} || exit 1
     fi
 
 }

@@ -413,7 +413,7 @@ public class ModelService {
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                             .createdTime(entity.getCreatedTime().getTime())
                             .shared(toInt(entity.getShared()))
-                            .stepSpecs(jobSpecParser.parseStepFromYaml(entity.getJobs()))
+                            .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                             .build());
             }  catch (JsonProcessingException e) {
                 log.error("parse step spec error for model version:{},error:{}", entity.getId(), e);

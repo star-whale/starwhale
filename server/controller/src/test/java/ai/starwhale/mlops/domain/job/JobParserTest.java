@@ -26,19 +26,17 @@ import org.junit.jupiter.api.Test;
 public class JobParserTest {
     @Test
     public void testParseFromYamlContent() throws JsonProcessingException {
-        String yamlContent = "default:\n"
+        String yamlContent = "mnist.evaluator:MNISTInference.cmp:\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
-                + "  job_name: default\n"
                 + "  needs: []\n"
                 + "  resources: []\n"
-                + "  name: ppl\n"
-                + "  task_num: 1\n"
+                + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                + "  replicas: 1\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
-                + "  job_name: default\n"
                 + "  needs:\n"
-                + "  - ppl\n"
+                + "  - mnist.evaluator:MNISTInference.ppl\n"
                 + "  resources:\n"
                 + "  - type: cpu \n"
                 + "    request: 0.1\n"
@@ -49,18 +47,17 @@ public class JobParserTest {
                 + "  - type: memory \n"
                 + "    request: 1\n"
                 + "    limit: 1\n"
-                + "  name: cmp\n"
-                + "  task_num: 1\n"
-                + "evaluation:\n"
+                + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                + "  replicas: 1\n"
+                + "mnist.evaluator:MNISTInference.ppl:\n"
                 + "- cls_name: ''\n"
                 + "  concurrency: 1\n"
-                + "  job_name: evaluation\n"
                 + "  needs: []\n"
                 + "  resources: []\n"
-                + "  name: ft\n"
-                + "  task_num: 1";
+                + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                + "  replicas: 1";
         JobSpecParser jobSpecParser = new JobSpecParser();
-        List<StepSpec> stepMetaDatas = jobSpecParser.parseStepFromYaml(yamlContent);
+        List<StepSpec> stepMetaDatas = jobSpecParser.parseAndFlattenStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 3);
         Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
         Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);

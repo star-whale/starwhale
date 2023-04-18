@@ -53,7 +53,7 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Service
-public class JobSpliteratorEvaluation implements JobSpliterator {
+public class JobSpliteratorImpl implements JobSpliterator {
 
     /**
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
@@ -65,10 +65,10 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     private final StepMapper stepMapper;
     private final JobSpecParser jobSpecParser;
 
-    public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
-            TaskMapper taskMapper,
-            JobDao jobDao,
-            StepMapper stepMapper, JobSpecParser jobSpecParser) {
+    public JobSpliteratorImpl(StoragePathCoordinator storagePathCoordinator,
+                              TaskMapper taskMapper,
+                              JobDao jobDao,
+                              StepMapper stepMapper, JobSpecParser jobSpecParser) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.taskMapper = taskMapper;
         this.jobDao = jobDao;
@@ -90,13 +90,10 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         List<StepSpec> stepSpecs;
         try {
             if (!StringUtils.hasText(job.getStepSpec())) {
-                stepSpecs = job.getModel().getStepSpecs().stream()
-                    // TODO support custom jobs use name
-                    .filter(stepSpec -> stepSpec.getJobName().equalsIgnoreCase(job.getType().name())
-                        || stepSpec.getJobName().equalsIgnoreCase(job.getComment()))
-                    .collect(Collectors.toList());
+                log.error("job:{} don't have step specification", job.getId());
+                throw new SwValidationException(ValidSubject.JOB);
             } else {
-                stepSpecs = jobSpecParser.parseStepFromYaml(job.getStepSpec());
+                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(job.getStepSpec());
             }
         } catch (JsonProcessingException e) {
             log.error("parsing step specification error", e);
@@ -114,7 +111,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     .uuid(UUID.randomUUID().toString())
                     .jobId(job.getId())
                     .name(stepSpec.getName())
-                    .taskNum(stepSpec.getTaskNum())
+                    .taskNum(stepSpec.getReplicas())
                     .concurrency(stepSpec.getConcurrency())
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                     .build();
@@ -143,6 +140,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                                 TaskRequest.builder()
                                         .total(stepEntity.getTaskNum())
                                         .index(i)
+                                        .jobName(nameMapping.get(stepEntity.getName())._2().getJobName())
                                         .runtimeResources(
                                                 nameMapping.get(stepEntity.getName())._2.getResources())
                                         .build()))

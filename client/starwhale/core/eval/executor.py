@@ -225,7 +225,7 @@ class EvalExecutor:
         logger.debug(f"config:{self.sw_config._current_instance_obj}")
 
         cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
-        cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
+        cmd.extend(["-e", f"{SWEnv.job_version}={self._version}"])
         cmd.extend(["-e", f"{SWEnv.model_version}={self.model_uri}"])
         cmd.extend(["-e", f"{SWEnv.runtime_version}={self.runtime_uri}"])
         cmd.extend(

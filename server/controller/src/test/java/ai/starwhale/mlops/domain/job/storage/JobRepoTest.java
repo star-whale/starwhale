@@ -21,6 +21,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.KeyColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.LongIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ModelVersionIdColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.NameColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.ProjectIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -90,6 +91,7 @@ public class JobRepoTest {
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()
                 .id(1L)
+                .name("mnist:eval")
                 .jobUuid("1q2w3e4r5t6y")
                 .ownerId(1L)
                 .runtimeVersionId(1L)
@@ -132,6 +134,7 @@ public class JobRepoTest {
                 .thenReturn(new RecordList(Map.of(), Map.of(), List.of(
                         Map.of(
                                 KeyColumn, "1q2w3e4r5t6y",
+                                NameColumn, "mnist:ppl",
                                 LongIdColumn, "1",
                                 ProjectIdColumn, "0000000000000001",
                                 ModelVersionIdColumn, "0000000000000001",
@@ -141,6 +144,7 @@ public class JobRepoTest {
                         ),
                         Map.of(
                                 KeyColumn, "1a2s3d4f5g6h",
+                                NameColumn, "mnist:eval",
                                 LongIdColumn, "2",
                                 ProjectIdColumn, "0000000000000002",
                                 ModelVersionIdColumn, "0000000000000001",
@@ -169,6 +173,7 @@ public class JobRepoTest {
                 .thenReturn(new RecordList(Map.of(), Map.of(), List.of(
                         Map.of(
                                 KeyColumn, "1q2w3e4r5t6y",
+                                NameColumn, "mnist:ppl",
                                 LongIdColumn, "1",
                                 ProjectIdColumn, "0000000000000001",
                                 ModelVersionIdColumn, "0000000000000001",
@@ -178,6 +183,7 @@ public class JobRepoTest {
                         ),
                         Map.of(
                                 KeyColumn, "1a2s3d4f5g6h",
+                                NameColumn, "mnist:eval",
                                 LongIdColumn, "2",
                                 ProjectIdColumn, "0000000000000002",
                                 ModelVersionIdColumn, "0000000000000001",
