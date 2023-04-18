@@ -100,8 +100,67 @@ jobs:
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-      - name: run e2e
+
+      - name: Startup nexus service
         working-directory: ./scripts/e2e_test
-        env:
-          PYTHON_VERSION: ${{matrix.python-version}}
-        run: bash start_test.sh
+        run: bash start_test.sh start_nexus
+
+      - name: Startup minikube
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh start_minikube
+
+      - name: Overwrite configs
+        working-directory: ./scripts/e2e_test
+        run: |
+          bash start_test.sh overwrite_pip_config
+          bash start_test.sh overwrite_pypirc
+
+      - name: Build console ui package
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh build_console
+
+      - name: Build client python package
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh build_swcli
+
+      - name: Build server docker image
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh build_server_image
+
+      - name: Pending check for service and nexus
+        working-directory: ./scripts/e2e_test
+        run: |
+          bash start_test.sh create_service_check_file
+          bash start_test.sh check_nexus_service
+
+      - name: Prepare nexus repositories
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh create_repository_in_nexus
+
+      - name: Upload pypi into nexus
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh upload_pypi_to_nexus
+
+      - name: Build runtime image
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh build_runtime_image
+
+      - name: Push docker images into nexus
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh push_images_to_nexus
+
+      - name: Startup starwhale k8s service
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh start_starwhale
+
+      - name: Wait and check starwhale service
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh check_controller_service
+
+      - name: Test by client side
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh client_test
+
+      - name: Test by api side
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh api_test

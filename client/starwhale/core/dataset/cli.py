@@ -25,7 +25,7 @@ def dataset_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@dataset_cmd.command("build", help="[Only Standalone]Build swds with dataset.yaml")
+@dataset_cmd.command("build", help="[Only Standalone]Build Starwhale Dataset")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option(
     "-h",
