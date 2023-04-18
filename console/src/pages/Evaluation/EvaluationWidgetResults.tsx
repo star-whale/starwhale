@@ -182,7 +182,7 @@ function EvaluationViewer({ table, filter }: { table: string; filter?: Record<st
 
         return (
             info.data?.records?.map((item) => {
-                return columns.map((k) => item?.[k])
+                return columns.map((k) => (k ? item?.[k] : ''))
             }) ?? []
         )
     }, [info.data, columns])

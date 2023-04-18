@@ -5,7 +5,7 @@ import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
 import { useEvaluationCompareStore } from '@starwhale/ui/base/data-table/store'
 import { longestCommonSubstring } from '@/utils'
-import { RecordListVO } from '@starwhale/core/datastore/schemas/datastore'
+import { RecordListVo } from '@starwhale/core/datastore/schemas/datastore'
 import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
@@ -149,7 +149,7 @@ export default function EvaluationListCompare({
 }: {
     title?: string
     rows: any[]
-    attrs: RecordListVO['columnTypes']
+    attrs: RecordListVo['columnTypes']
 }) {
     const store = useEvaluationCompareStore()
     const [t] = useTranslation()
@@ -195,7 +195,7 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
 
-        attrs?.forEach((attr) => {
+        attrs?.forEach((attr: { name: string }) => {
             const values = rows.map((data: any) => _.get(data, [attr.name]))
 
             if (attr.name.endsWith('time')) {

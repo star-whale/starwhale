@@ -200,15 +200,6 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
     )
 }
 
-export function DatastoreMixedTypeRecordSearch({
-    records,
-    ...props
-}: Omit<ISearchProps, 'fields'> & { records: RecordListSchemaT }) {
-    const { columnTypes } = useDatastore(records)
-    const searchColumns = useSearchColumns(columnTypes)
-    return <Search {...props} fields={searchColumns} />
-}
-
 export function DatastoreMixedTypeSearch({
     fields,
     ...props
