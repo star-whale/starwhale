@@ -47,7 +47,7 @@ class Hijack:
 class Service:
     def __init__(self, hijack: t.Optional[Hijack] = None) -> None:
         self.apis: t.Dict[str, Api] = {}
-        self.api_instance: t.Any = None
+        self.api_within_instance_map: t.Dict[str, t.Any] = {}
         self.example_resources: t.List[str] = []
         self.hijack = hijack
 
@@ -95,7 +95,7 @@ class Service:
         server = self._gen_gradio_server()
         return server.app.openapi()
 
-    def _render_api(self, _api: Api) -> None:
+    def _render_api(self, _api: Api, _inst: t.Any) -> None:
         import gradio
         from gradio.components import File, Image, Video, IOComponent
 
@@ -104,7 +104,7 @@ class Service:
             js_func = "async(...x) => { typeof wait === 'function' && await wait(); return x; }"
         with gradio.Row():
             with gradio.Column():
-                fn = _api.view_func(self.api_instance)
+                fn = _api.view_func(_inst)
                 for i in _api.input:
                     gradio.components.get_component_instance(i, render=False).render()
                 submit = gradio.Button("Submit")
@@ -142,12 +142,11 @@ class Service:
     def _gen_gradio_server(self, title: t.Optional[str] = None) -> Blocks:
         import gradio
 
-        apis = self.apis.values()
         with gradio.Blocks() as app:
             with gradio.Tabs():
-                for _api in apis:
-                    with gradio.TabItem(label=_api.uri):
-                        self._render_api(_api)
+                for name, api in self.apis.items():
+                    with gradio.TabItem(label=api.uri):
+                        self._render_api(api, self.api_within_instance_map.get(name))
         app.title = title or "starwhale"
         return app
 

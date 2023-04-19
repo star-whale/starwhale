@@ -41,14 +41,20 @@ public class StepSpec {
      */
     @JsonProperty("job_name")
     private String jobName;
+
     @JsonProperty("name")
     private String name;
+
+    @JsonProperty("show_name")
+    private String showName;
+
     private Integer concurrency = 1;
+
     private List<String> needs;
 
     private List<RuntimeResource> resources;
-    @JsonProperty("task_num")
-    private Integer taskNum = 1;
+
+    private Integer replicas = 1;
 }
 
 

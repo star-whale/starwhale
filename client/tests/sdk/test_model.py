@@ -5,7 +5,6 @@ from unittest.mock import patch, MagicMock
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.load import import_object
 from starwhale.api._impl.model import build
-from starwhale.core.model.model import ModelConfig
 
 from .. import BaseTestCase
 
@@ -23,18 +22,17 @@ class ModelBuildTestCase(BaseTestCase):
             ValueError, "is not in the subpath of|does not start with"
         ):
             build(
-                ModelBuildTestCase,
+                [ModelBuildTestCase],
                 workdir="not_found",
             )
 
         with self.assertRaisesRegex(TypeError, "is a built-in class"):
-            build(evaluation_handler=list)
+            build([list])
 
-    @patch("os.unlink")
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_cwd(
-        self, m_model_view: MagicMock, m_check_python: MagicMock, m_unlink: MagicMock
+        self, m_model_view: MagicMock, m_check_python: MagicMock
     ) -> None:
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "user" / "workdir"
@@ -45,13 +43,11 @@ class ModelBuildTestCase(BaseTestCase):
             workdir=workdir, handler_path="cwd_evaluator:Handler", py_env="venv"
         )
         os.chdir(workdir)
-        build(mock_handler)
+        build([mock_handler])
 
-        assert m_unlink.call_count == 1
-        model_yaml_fpath = m_unlink.call_args[0][0]
-        model_config = ModelConfig.create_by_yaml(model_yaml_fpath)
+        model_config = m_model_view.build.call_args[1]["model_config"]
         assert model_config.name == "workdir"
-        assert model_config.run.handler == "cwd_evaluator:Handler"
+        assert model_config.run.modules == ["cwd_evaluator:Handler"]
         assert (
             m_model_view.build.call_args[1]["workdir"]
         ).resolve().absolute() == workdir.resolve().absolute()
@@ -78,7 +74,7 @@ class ModelBuildTestCase(BaseTestCase):
         with patch.dict(
             os.environ, {"SW_INSTANCE_URI": "cloud://server", "SW_PROJECT": "starwhale"}
         ):
-            build(name="test", workdir=workdir, evaluation_handler=mock_handler)
+            build(name="test", workdir=workdir, modules=[mock_handler])
             assert (
                 m_model_view.copy.call_args[1]["src_uri"]
                 == "local/project/self/model/test/version/latest"
@@ -89,10 +85,10 @@ class ModelBuildTestCase(BaseTestCase):
             )
 
         build(
+            modules=[mock_handler],
             name="test",
             workdir=workdir,
             project_uri="local/project/self",
-            evaluation_handler=mock_handler,
             remote_project_uri="http://localhost:8080/project/starwhale",
         )
         assert (
@@ -104,11 +100,10 @@ class ModelBuildTestCase(BaseTestCase):
             == "http://localhost:8080/project/starwhale"
         )
 
-    @patch("os.unlink")
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_workdir(
-        self, m_model_view: MagicMock, m_check_python: MagicMock, m_unlink: MagicMock
+        self, m_model_view: MagicMock, m_check_python: MagicMock
     ) -> None:
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "user" / "workdir"
@@ -124,21 +119,16 @@ class ModelBuildTestCase(BaseTestCase):
         )
 
         build(
-            mock_handler,
+            modules=[mock_handler],
             workdir=workdir,
             name="mnist",
         )
 
-        assert m_unlink.call_count == 1
-        model_yaml_fpath = m_unlink.call_args[0][0]
-        model_config = ModelConfig.create_by_yaml(model_yaml_fpath)
-        assert model_config.name == "mnist"
-        assert model_config.run.handler == "evaluator:Handler"
-
         kwargs = m_model_view.build.call_args[1]
         assert kwargs["project"] == ""
-        assert kwargs["yaml_path"] == model_yaml_fpath
         assert kwargs["workdir"] == workdir
+        assert kwargs["model_config"].run.modules == ["evaluator:Handler"]
+        assert kwargs["model_config"].name == "mnist"
 
         sub_dir = workdir / "sub"
         ensure_dir(sub_dir)
@@ -154,10 +144,12 @@ class ModelBuildTestCase(BaseTestCase):
 
         m_model_view.reset_mock()
         build(
-            sub_mock_handler,
+            [sub_mock_handler, mock_handler],
             workdir=workdir,
             name="mnist",
         )
-        model_yaml_fpath = m_unlink.call_args[0][0]
-        model_config = ModelConfig.create_by_yaml(model_yaml_fpath)
-        assert model_config.run.handler == "sub.sub_evaluator:SubHandler"
+        kwargs = m_model_view.build.call_args[1]
+        assert kwargs["model_config"].run.modules == [
+            "sub.sub_evaluator:SubHandler",
+            "evaluator:Handler",
+        ]

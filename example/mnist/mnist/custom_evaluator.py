@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from pathlib import Path
 
@@ -11,10 +13,10 @@ from torchvision import transforms
 
 from starwhale import (
     URI,
-    step,
     Image,
     Context,
     dataset,
+    handler,
     URIType,
     evaluation,
     pass_context,
@@ -33,7 +35,7 @@ class CustomPipelineHandler:
         self.model = self._load_model(self.device)
         self.batch_size = 5
 
-    @step(concurrency=2, task_num=2, name="ppl")
+    @handler(concurrency=2, replicas=2, name="ppl")
     @pass_context
     def run_ppl(self, context: Context) -> None:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
@@ -67,7 +69,7 @@ class CustomPipelineHandler:
                     logger.error(f"[{[r[0] for r in rows]}] data handle -> failed")
                     raise
 
-    @step(needs=["ppl"], name="cmp")
+    @handler(needs=[run_ppl], name="cmp")
     @multi_classification(
         confusion_matrix_normalize="all",
         show_hamming_loss=True,

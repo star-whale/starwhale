@@ -6,14 +6,7 @@ from unittest.mock import patch, MagicMock
 from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import NoSupportError
-from starwhale.api._impl.job import (
-    _jobs_global,
-    pass_context,
-    AFTER_LOAD_HOOKS,
-    _validate_jobs_dag,
-    generate_jobs_yaml,
-    _do_resource_transform,
-)
+from starwhale.api._impl.job import Handler, pass_context, generate_jobs_yaml
 from starwhale.core.job.step import Step
 from starwhale.core.job.task import TaskExecutor
 from starwhale.core.job.context import Context
@@ -38,38 +31,6 @@ class JobTestCase(unittest.TestCase):
             self.assertEqual(context, config_context)
 
         my_step()
-
-    def test_validate_jobs_dag(self):
-        with self.assertRaisesRegex(RuntimeError, "it will cause the graph to cycle"):
-            _validate_jobs_dag(
-                {
-                    "default": [
-                        Step(name="ppl", needs=[]),
-                        Step(name="cmp", needs=["cmp"]),
-                    ]
-                }
-            )
-
-        with self.assertRaisesRegex(
-            RuntimeError, "Vertex 'not_found' does not belong to DAG"
-        ):
-            _validate_jobs_dag(
-                {
-                    "default": [
-                        Step(name="ppl", needs=[]),
-                        Step(name="cmp", needs=["not_found"]),
-                    ]
-                }
-            )
-
-        _validate_jobs_dag(
-            {
-                "default": [
-                    Step(name="ppl"),
-                    Step(name="cmp", needs=["ppl"]),
-                ]
-            }
-        )
 
     def test_resource_transform(self):
         exception_cases = [
@@ -122,12 +83,13 @@ class JobTestCase(unittest.TestCase):
             ),
         ]
 
+        mock_handler = Handler("", "", "", "")
         for resource, exception_str in exception_cases:
             with self.assertRaisesRegex(RuntimeError, exception_str):
-                _do_resource_transform(resource)
+                mock_handler._transform_resource(resource)
 
         self.assertEqual(
-            _do_resource_transform(
+            mock_handler._transform_resource(
                 {
                     "cpu": 0.1,
                     "memory": 100,
@@ -153,7 +115,7 @@ class JobTestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            _do_resource_transform(
+            mock_handler._transform_resource(
                 {
                     "cpu": {
                         "request": 0.1,
@@ -194,9 +156,10 @@ class GenerateJobsTestCase(BaseTestCase):
         super().setUp()
         self.workdir = Path(self.local_storage) / "scripts"
         self.module_name = "mock_user_module"
-        global _jobs_global
-        if "default" in _jobs_global:
-            _jobs_global.__delitem__("default")
+
+        keys = list(Handler._registered_handlers.keys())
+        for k in keys:
+            Handler._registered_handlers.__delitem__(k)
 
     def tearDown(self) -> None:
         super().tearDown()
@@ -224,22 +187,21 @@ from starwhale import evaluation
 @evaluation.predict
 def predict_handler(*args, **kwargs): ...
 
-@evaluation.evaluate
+@evaluation.evaluate(needs=[predict_handler])
 def evaluate_handler(*args, **kwargs): ...
         """
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
         assert self.module_name not in sys.modules
         generate_jobs_yaml(
-            f"{self.module_name}:predict_handler", self.workdir, yaml_path
+            [f"{self.module_name}:predict_handler"], self.workdir, yaml_path
         )
         assert self.module_name in sys.modules
-        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
         assert jobs_info == {
-            "evaluation": [
+            "mock_user_module:evaluate_handler": [
                 {
                     "cls_name": "",
                     "concurrency": 1,
@@ -252,12 +214,12 @@ def evaluate_handler(*args, **kwargs): ...
                         "ppl_batch_size": 1,
                     },
                     "func_name": "predict_handler",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "predict",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:predict_handler",
                     "needs": [],
+                    "replicas": 2,
                     "resources": [],
-                    "task_num": 2,
+                    "show_name": "predict",
                 },
                 {
                     "cls_name": "",
@@ -265,20 +227,59 @@ def evaluate_handler(*args, **kwargs): ...
                     "extra_args": [],
                     "extra_kwargs": {"ppl_auto_log": True},
                     "func_name": "evaluate_handler",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "evaluate",
-                    "needs": ["predict"],
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:evaluate_handler",
+                    "needs": ["mock_user_module:predict_handler"],
+                    "replicas": 1,
                     "resources": [],
-                    "task_num": 1,
+                    "show_name": "evaluate",
                 },
-            ]
+            ],
+            "mock_user_module:predict_handler": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "extra_args": [],
+                    "extra_kwargs": {
+                        "dataset_uris": None,
+                        "ignore_dataset_data": False,
+                        "ignore_error": False,
+                        "ppl_auto_log": True,
+                        "ppl_batch_size": 1,
+                    },
+                    "func_name": "predict_handler",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:predict_handler",
+                    "needs": [],
+                    "replicas": 2,
+                    "resources": [],
+                    "show_name": "predict",
+                }
+            ],
         }
-
-        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
+        steps = Step.get_steps_from_yaml("mock_user_module:evaluate_handler", yaml_path)
         assert len(steps) == 2
-        assert steps[0].name == "predict"
-        assert steps[1].name == "evaluate"
+        assert steps[0].name == "mock_user_module:predict_handler"
+        assert steps[0].show_name == "predict"
+        assert steps[1].name == "mock_user_module:evaluate_handler"
+        assert steps[1].show_name == "evaluate"
+
+        steps = Step.get_steps_from_yaml("mock_user_module:predict_handler", yaml_path)
+        assert len(steps) == 1
+        assert steps[0].name == "mock_user_module:predict_handler"
+        assert steps[0].show_name == "predict"
+
+        steps = Step.get_steps_from_yaml("", yaml_path)
+        assert len(steps) == 2
+
+        steps = Step.get_steps_from_yaml("0", yaml_path)
+        assert len(steps) == 2
+
+        steps = Step.get_steps_from_yaml(1, yaml_path)
+        assert len(steps) == 1
+
+        with self.assertRaises(IndexError):
+            Step.get_steps_from_yaml(3, yaml_path)
 
         context = Context(
             workdir=self.workdir,
@@ -305,44 +306,55 @@ class MockHandler(PipelineHandler):
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
         assert self.module_name not in sys.modules
-        generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
+        generate_jobs_yaml([f"{self.module_name}:MockHandler"], self.workdir, yaml_path)
         assert self.module_name in sys.modules
-        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
-        assert jobs_info == {
-            "evaluation": [
-                {
-                    "cls_name": "MockHandler",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "ppl",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "ppl",
-                    "needs": [],
-                    "resources": [],
-                    "task_num": 2,
-                },
-                {
-                    "cls_name": "MockHandler",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "cmp",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "cmp",
-                    "needs": ["ppl"],
-                    "resources": [],
-                    "task_num": 1,
-                },
-            ]
-        }
-
-        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
+        assert jobs_info["mock_user_module:MockHandler.cmp"] == [
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "ppl",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.ppl",
+                "needs": [],
+                "replicas": 2,
+                "resources": [],
+                "show_name": "ppl",
+            },
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "cmp",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.cmp",
+                "needs": ["mock_user_module:MockHandler.ppl"],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "cmp",
+            },
+        ]
+        assert jobs_info["mock_user_module:MockHandler.ppl"] == [
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "ppl",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.ppl",
+                "needs": [],
+                "replicas": 2,
+                "resources": [],
+                "show_name": "ppl",
+            }
+        ]
+        steps = Step.get_steps_from_yaml("mock_user_module:MockHandler.cmp", yaml_path)
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -364,60 +376,83 @@ class MockHandler(PipelineHandler):
 from starwhale import evaluation
 
 class MockHandler:
-    @evaluation.predict(task_num=4)
+    @evaluation.predict(replicas=4)
     def predict_handler(self, *args, **kwargs): ...
 
-    @evaluation.evaluate(use_predict_auto_log=True)
+    @evaluation.evaluate(use_predict_auto_log=True, needs=[predict_handler])
     def evaluate_handler(self, *args, **kwargs): ...
         """
 
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
         assert self.module_name not in sys.modules
-        generate_jobs_yaml(f"{self.module_name}:MockHandler", self.workdir, yaml_path)
+        generate_jobs_yaml([f"{self.module_name}:MockHandler"], self.workdir, yaml_path)
         assert self.module_name in sys.modules
-        assert len(AFTER_LOAD_HOOKS) == 1
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
-        assert jobs_info == {
-            "evaluation": [
-                {
-                    "cls_name": "MockHandler",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {
-                        "dataset_uris": None,
-                        "ignore_dataset_data": False,
-                        "ignore_error": False,
-                        "ppl_auto_log": True,
-                        "ppl_batch_size": 1,
-                    },
-                    "func_name": "predict_handler",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "predict",
-                    "needs": [],
-                    "resources": [],
-                    "task_num": 4,
+        assert len(jobs_info) == 2
+        assert jobs_info["mock_user_module:MockHandler.predict_handler"] == [
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {
+                    "dataset_uris": None,
+                    "ignore_dataset_data": False,
+                    "ignore_error": False,
+                    "ppl_auto_log": True,
+                    "ppl_batch_size": 1,
                 },
-                {
-                    "cls_name": "MockHandler",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {"ppl_auto_log": True},
-                    "func_name": "evaluate_handler",
-                    "job_name": "evaluation",
-                    "module_name": self.module_name,
-                    "name": "evaluate",
-                    "needs": ["predict"],
-                    "resources": [],
-                    "task_num": 1,
-                },
-            ]
-        }
+                "func_name": "predict_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.predict_handler",
+                "needs": [],
+                "replicas": 4,
+                "resources": [],
+                "show_name": "predict",
+            }
+        ]
 
-        steps = Step.get_steps_from_yaml("evaluation", yaml_path)
+        assert jobs_info["mock_user_module:MockHandler.evaluate_handler"] == [
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {
+                    "dataset_uris": None,
+                    "ignore_dataset_data": False,
+                    "ignore_error": False,
+                    "ppl_auto_log": True,
+                    "ppl_batch_size": 1,
+                },
+                "func_name": "predict_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.predict_handler",
+                "needs": [],
+                "replicas": 4,
+                "resources": [],
+                "show_name": "predict",
+            },
+            {
+                "cls_name": "MockHandler",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {"ppl_auto_log": True},
+                "func_name": "evaluate_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:MockHandler.evaluate_handler",
+                "needs": ["mock_user_module:MockHandler.predict_handler"],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "evaluate",
+            },
+        ]
+
+        steps = Step.get_steps_from_yaml(
+            "mock_user_module:MockHandler.evaluate_handler", yaml_path
+        )
+        assert len(steps) == 2
         results = Scheduler(
             project="test",
             version="test",
@@ -429,95 +464,204 @@ class MockHandler:
         assert mock_ppl.call_count == 4
         assert mock_cmp.call_count == 1
 
-        assert results[0].name == "predict"
-        assert results[1].name == "evaluate"
+        assert results[0].name == "mock_user_module:MockHandler.predict_handler"
+        assert results[1].name == "mock_user_module:MockHandler.evaluate_handler"
 
         assert len(results[0].task_results) == 4
         assert len(results[1].task_results) == 1
 
-    def test_step_deco(self) -> None:
+    def test_no_needs(self) -> None:
         content = """
-from starwhale import step
+from starwhale import handler
 
-@step(name="prepare", task_num=1)
+@handler(name="run", replicas=10)
+def run(): ...
+        """
+
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
+        assert yaml_path.exists()
+        jobs_info = load_yaml(yaml_path)
+        assert jobs_info == {
+            "mock_user_module:run": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "extra_args": [],
+                    "extra_kwargs": {},
+                    "func_name": "run",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:run",
+                    "needs": [],
+                    "replicas": 10,
+                    "resources": [],
+                    "show_name": "run",
+                }
+            ]
+        }
+
+    def test_handler_deco(self) -> None:
+        content = """
+from starwhale import handler
+
+@handler(name="prepare", replicas=1)
 def prepare_handler(): ...
 
-@step(name="evaluate", task_num=1, needs=["predict"])
+@handler(name="evaluate", replicas=1, needs=[prepare_handler])
 def evaluate_handler(): ...
 
-@step(name="predict", task_num=10, needs=["prepare"])
+@handler(name="predict", replicas=10, needs=[prepare_handler])
 def predict_handler(): ...
 
 class MockReport:
-    @step(name="report", task_num=1, needs=["evaluate"])
+    @handler(name="report", replicas=1, needs=[evaluate_handler, predict_handler])
     def report_handler(self): ...
         """
 
         self._ensure_py_script(content)
         yaml_path = self.workdir / "job.yaml"
-        generate_jobs_yaml(self.module_name, self.workdir, yaml_path)
-        assert len(AFTER_LOAD_HOOKS) == 1
+        generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
-        assert jobs_info == {
-            "default": [
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "prepare_handler",
-                    "job_name": "default",
-                    "module_name": self.module_name,
-                    "name": "prepare",
-                    "needs": [],
-                    "resources": [],
-                    "task_num": 1,
-                },
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "evaluate_handler",
-                    "job_name": "default",
-                    "module_name": self.module_name,
-                    "name": "evaluate",
-                    "needs": ["predict"],
-                    "resources": [],
-                    "task_num": 1,
-                },
-                {
-                    "cls_name": "",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "predict_handler",
-                    "job_name": "default",
-                    "module_name": self.module_name,
-                    "name": "predict",
-                    "needs": ["prepare"],
-                    "resources": [],
-                    "task_num": 10,
-                },
-                {
-                    "cls_name": "MockReport",
-                    "concurrency": 1,
-                    "extra_args": [],
-                    "extra_kwargs": {},
-                    "func_name": "report_handler",
-                    "job_name": "default",
-                    "module_name": self.module_name,
-                    "name": "report",
-                    "needs": ["evaluate"],
-                    "resources": [],
-                    "task_num": 1,
-                },
-            ]
-        }
 
-        steps = Step.get_steps_from_yaml("default", yaml_path)
+        report_handler = jobs_info["mock_user_module:MockReport.report_handler"]
+        assert len(report_handler) == 4
+        assert {
+            "cls_name": "",
+            "concurrency": 1,
+            "extra_args": [],
+            "extra_kwargs": {},
+            "func_name": "prepare_handler",
+            "module_name": "mock_user_module",
+            "name": "mock_user_module:prepare_handler",
+            "needs": [],
+            "replicas": 1,
+            "resources": [],
+            "show_name": "prepare",
+        } in report_handler
+
+        assert {
+            "cls_name": "",
+            "concurrency": 1,
+            "extra_args": [],
+            "extra_kwargs": {},
+            "func_name": "evaluate_handler",
+            "module_name": "mock_user_module",
+            "name": "mock_user_module:evaluate_handler",
+            "needs": ["mock_user_module:prepare_handler"],
+            "replicas": 1,
+            "resources": [],
+            "show_name": "evaluate",
+        } in report_handler
+
+        assert {
+            "cls_name": "MockReport",
+            "concurrency": 1,
+            "extra_args": [],
+            "extra_kwargs": {},
+            "func_name": "report_handler",
+            "module_name": "mock_user_module",
+            "name": "mock_user_module:MockReport.report_handler",
+            "needs": [
+                "mock_user_module:evaluate_handler",
+                "mock_user_module:predict_handler",
+            ],
+            "replicas": 1,
+            "resources": [],
+            "show_name": "report",
+        } in report_handler
+
+        assert {
+            "cls_name": "",
+            "concurrency": 1,
+            "extra_args": [],
+            "extra_kwargs": {},
+            "func_name": "predict_handler",
+            "module_name": "mock_user_module",
+            "name": "mock_user_module:predict_handler",
+            "needs": ["mock_user_module:prepare_handler"],
+            "replicas": 10,
+            "resources": [],
+            "show_name": "predict",
+        } in report_handler
+
+        assert jobs_info["mock_user_module:evaluate_handler"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "prepare_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:prepare_handler",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "prepare",
+            },
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "evaluate_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:evaluate_handler",
+                "needs": ["mock_user_module:prepare_handler"],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "evaluate",
+            },
+        ]
+        assert jobs_info["mock_user_module:predict_handler"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "prepare_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:prepare_handler",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "prepare",
+            },
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "predict_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:predict_handler",
+                "needs": ["mock_user_module:prepare_handler"],
+                "replicas": 10,
+                "resources": [],
+                "show_name": "predict",
+            },
+        ]
+        assert jobs_info["mock_user_module:prepare_handler"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "prepare_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:prepare_handler",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "prepare",
+            }
+        ]
+
+        steps = Step.get_steps_from_yaml(
+            "mock_user_module:MockReport.report_handler", yaml_path
+        )
         results = Scheduler(
             project="test",
             version="test",
@@ -526,9 +670,29 @@ class MockReport:
             steps=steps,
         ).run()
 
-        assert ["prepare", "predict", "evaluate", "report"] == [r.name for r in results]
+        assert {
+            "mock_user_module:prepare_handler",
+            "mock_user_module:evaluate_handler",
+            "mock_user_module:predict_handler",
+            "mock_user_module:MockReport.report_handler",
+        } == {r.name for r in results}
         assert all([r.status == "success" for r in results])
-        assert [1, 10, 1, 1] == [len(r.task_results) for r in results]
+        assert {1, 1, 10, 1} == {len(r.task_results) for r in results}
+
+    def test_evaluator_needs(self) -> None:
+        content = """
+from starwhale import evaluation
+
+@evaluation.evaluate()
+def evaluate_handler(): ...
+        """
+
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        with self.assertRaisesRegex(
+            ValueError, "needs is required for evaluate function"
+        ):
+            generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
 
     def test_no_jobs(self) -> None:
         content = """
@@ -539,7 +703,7 @@ class MockCls: ...
         """
         self._ensure_py_script(content)
 
-        assert len(_jobs_global) == 0
+        assert len(Handler._registered_handlers) == 0
 
         handlers = (
             f"{self.module_name}:MockCls",
@@ -547,29 +711,19 @@ class MockCls: ...
         )
 
         for handler in handlers:
-            with self.assertRaisesRegex(RuntimeError, "not found any jobs"):
-                generate_jobs_yaml(handler, self.workdir, "not_found.yaml")
+            with self.assertRaisesRegex(RuntimeError, "not found any handlers"):
+                generate_jobs_yaml([handler], self.workdir, "not_found.yaml")
 
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "preload function-mock_func does not use step or predict decorator",
-        ):
+        with self.assertRaisesRegex(RuntimeError, "not found any handlers"):
             generate_jobs_yaml(
-                f"{self.module_name}:mock_func", self.workdir, "not_found.yaml"
-            )
-
-        with self.assertRaisesRegex(
-            NoSupportError, f"failed to preload for {self.module_name}:mock_var"
-        ):
-            generate_jobs_yaml(
-                f"{self.module_name}:mock_var", self.workdir, "not_found.yaml"
+                [f"{self.module_name}:mock_func"], self.workdir, "not_found.yaml"
             )
 
     def test_step_no_support_on_cls(self) -> None:
         content = """
-from starwhale import step
+from starwhale import handler
 
-@step()
+@handler()
 class MockHandler:
     def __call__(self, *args, **kwargs): ...
         """
@@ -579,22 +733,22 @@ class MockHandler:
 
         for hdl in handlers:
             with self.assertRaisesRegex(
-                NoSupportError, "step decorator no support class"
+                NoSupportError, "handler decorator only supports on function"
             ):
-                generate_jobs_yaml(hdl, self.workdir, "not_found.yaml")
+                generate_jobs_yaml([hdl], self.workdir, "not_found.yaml")
 
     def test_step_no_support_on_cls_inner_func(self) -> None:
         content = """
-from starwhale import step
+from starwhale import handler
 
 class MockCls:
     class _InnerCls:
-        @step()
+        @handler()
         def handler(self, *args, **kwargs): ...
         """
         self._ensure_py_script(content)
 
         with self.assertRaisesRegex(
-            NoSupportError, "step decorator no supports inner class method"
+            NoSupportError, "handler decorator no supports inner class method"
         ):
-            generate_jobs_yaml(self.module_name, self.workdir, "not_found.yaml")
+            generate_jobs_yaml([self.module_name], self.workdir, "not_found.yaml")

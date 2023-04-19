@@ -187,7 +187,7 @@ public class JobService {
         if (pool != null) {
             List<StepSpec> steps;
             try {
-                steps = jobSpecParser.parseStepFromYaml(stepSpecOverWrites);
+                steps = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites);
             } catch (JsonProcessingException e) {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.JOB, "failed to parse job step", e),

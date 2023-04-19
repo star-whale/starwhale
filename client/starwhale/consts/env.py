@@ -2,7 +2,7 @@ class SWEnv:
     instance_uri = "SW_INSTANCE_URI"
     project = "SW_PROJECT"
     task_id = "SW_TASK_ID"
-    eval_version = "SW_EVALUATION_VERSION"
+    job_version = "SW_JOB_VERSION"
     model_version = "SW_MODEL_VERSION"
     runtime_version = "SW_RUNTIME_VERSION"
     status_dir = "SW_TASK_STATUS_DIR"

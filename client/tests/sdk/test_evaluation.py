@@ -15,7 +15,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.error import ParameterError
-from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.store import RunStorage
 from starwhale.core.job.context import Context
 from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
@@ -107,7 +107,7 @@ class TestModelPipelineHandler(TestCase):
         m_eval_log_metrics: MagicMock,
         m_eval_get: MagicMock,
     ) -> None:
-        _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
+        _logdir = RunStorage.local_run_dir(self.project, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "cmp" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 
@@ -158,7 +158,7 @@ class TestModelPipelineHandler(TestCase):
         m_ds_info: MagicMock,
         m_scan_id: MagicMock,
     ) -> None:
-        _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
+        _logdir = RunStorage.local_run_dir(self.project, self.eval_id)
         _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
         _status_dir = _run_dir / RunSubDirType.STATUS
 

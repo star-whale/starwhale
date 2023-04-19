@@ -31,5 +31,6 @@ public class TaskRequest {
 
     Integer index;
     Integer total;
+    String jobName;
     List<RuntimeResource> runtimeResources;
 }

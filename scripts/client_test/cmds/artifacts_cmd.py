@@ -4,6 +4,7 @@ from pathlib import Path
 
 from starwhale.utils.load import import_object
 from starwhale.core.model.view import ModelTermView
+from starwhale.core.model.model import ModelConfig
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.runtime.view import RuntimeTermView
@@ -140,8 +141,14 @@ class Model(BaseArtifact):
         model_yaml: str = "",
         runtime_uri: str = "",
     ) -> t.Any:
-        yaml_path = model_yaml if model_yaml else Path(workdir) / "model.yaml"
-        return ModelTermView.build(workdir, project, yaml_path, runtime_uri)
+        yaml_path = Path(model_yaml) if model_yaml else Path(workdir) / "model.yaml"
+        config = ModelConfig.create_by_yaml(yaml_path)
+        return ModelTermView.build(
+            workdir=workdir,
+            project=project,
+            model_config=config,
+            runtime_uri=runtime_uri,
+        )
 
     def build(
         self,

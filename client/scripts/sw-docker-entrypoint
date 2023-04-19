@@ -11,6 +11,7 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
 VERBOSE="-vvvv"
+HANDLER=${SW_RUN_HANDLER:-""}
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
@@ -70,7 +71,8 @@ set_py_and_sw() {
     echo "**** DETECT RUNTIME: python version: ${_RUNTIME}, starwhale version: ${DETECTED_SW_VER}"
 
     # default python version
-    PY_VER="python3.8"
+    DEFAULT_PY_VER="python3.8"
+    PY_VER="$DEFAULT_PY_VER"
     if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] || [ "$_RUNTIME" = "python3.11" ] ; then
         PY_VER="$_RUNTIME"
     fi
@@ -78,7 +80,7 @@ set_py_and_sw() {
 
     set_pip_cache
 
-    if [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
+    if [ "$PY_VER" != "$DEFAULT_PY_VER" ] || [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
         # ignore the editable dev version
         if [ "$DETECTED_SW_VER" != "0.0.0.dev0" ]; then
           echo "-->[Preparing] start to install starwhale:${DETECTED_SW_VER}"
@@ -88,12 +90,12 @@ set_py_and_sw() {
     fi
 }
 
-eval() {
-    echo "-->[Running] start to run evaluation: ${STEP}, use $(which swcli) cli ..."
+run() {
+    echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
+        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} --runtime ${SW_RUNTIME_VERSION} || exit 1
     else
-        swcli ${VERBOSE} eval run --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --model ${SW_MODEL_VERSION} --version=${SW_EVALUATION_VERSION} || exit 1
+        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} || exit 1
     fi
 
 }
@@ -105,16 +107,6 @@ serve() {
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
     else
         swcli ${VERBOSE} model serve --model "${SW_MODEL_VERSION}" --host 0.0.0.0 || exit 1
-    fi
-}
-
-fine_tune() {
-    echo "-->[Fine-Tuning] start to fine-tune, use $(which swcli) cli ..."
-    export
-    if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        swcli ${VERBOSE} model ft --model "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" || exit 1
-    else
-        swcli ${VERBOSE} model ft --model "${SW_MODEL_VERSION}" || exit 1
     fi
 }
 
@@ -159,14 +151,11 @@ case "$1" in
     pre_config)
         pre_config
         ;;
-    run|evaluation)
-        prepare $1 && eval
+    run|evaluation|fine_tune)
+        prepare $1 && run
         ;;
     serve|serving)
         prepare $1 && serve
-        ;;
-    fine_tune)
-        prepare $1 && fine_tune
         ;;
     *)
         prepare "starwhale" && exec "$@"
