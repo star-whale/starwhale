@@ -44,14 +44,11 @@ function getPrefixId(row: any, prefix: string | number) {
 export default function DatastoreDiffTables({ rows }) {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
-    const history = useHistory()
     const { projectId: projectFromUri } = useParams<{ projectId: string }>()
     const { project } = useProject()
     const projectId = project?.id || projectFromUri
 
     const store = useEvaluationDetailStore()
-
-    console.log(rows)
 
     const queries = React.useMemo(
         () =>
@@ -173,7 +170,6 @@ export default function DatastoreDiffTables({ rows }) {
 
     return (
         <Card
-            title={t('Evaluations')}
             style={{
                 marginRight: expanded ? expandedWidth : '0',
                 flexShrink: 1,
@@ -184,27 +180,25 @@ export default function DatastoreDiffTables({ rows }) {
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
             <GridResizer
-                left={() => {
-                    return (
-                        <GridTable
-                            store={useEvaluationDetailStore}
-                            columnable
-                            // viewable
-                            // queryable
-                            selectable
-                            columns={$columnsWithSpecColumns}
-                            getId={getId}
-                            data={records}
-                            onSave={doSave as any}
-                            onChange={doChange}
-                            emptyColumnMessage={
-                                <BusyPlaceholder type='notfound'>
-                                    Create a new evaluation or Config to add columns
-                                </BusyPlaceholder>
-                            }
-                        ></GridTable>
-                    )
-                }}
+                left={() => (
+                    <GridTable
+                        store={useEvaluationDetailStore}
+                        columnable
+                        selectable
+                        columns={$columnsWithSpecColumns}
+                        getId={getId}
+                        data={records}
+                        onSave={doSave as any}
+                        onChange={doChange}
+                        emptyColumnMessage={
+                            <BusyPlaceholder type='notfound'>
+                                Create a new evaluation or Config to add columns
+                            </BusyPlaceholder>
+                        }
+                    >
+                        <ToolBar columnable />
+                    </GridTable>
+                )}
                 isResizeable={$compareRows.length > 0}
                 right={() => {
                     return (

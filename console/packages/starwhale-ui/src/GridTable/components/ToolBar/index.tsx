@@ -6,8 +6,6 @@ import ConfigColumns from '../ConfigColumns'
 import { useStore } from '../../hooks/useStore'
 
 type IToolBarProps = {
-    columns: StatefulDataTablePropsT['columns']
-    rows: StatefulDataTablePropsT['rows']
     viewable?: boolean
     filterable?: boolean
     searchable?: boolean

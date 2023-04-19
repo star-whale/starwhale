@@ -66,19 +66,6 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
     const [, theme] = useStyletron()
     const [t] = useTranslation()
     const [isOpen, setIsOpen] = React.useState(false)
-    const { expandedWidth, expanded, setExpanded } = useDrawer()
-
-    useEffect(() => {
-        if (props.isInline) {
-            return
-        }
-        if (isOpen && !expanded) {
-            setExpanded(true)
-        } else if (!isOpen && expanded) {
-            setExpanded(false)
-        }
-    }, [props.isInline, isOpen, expanded, setExpanded, expandedWidth])
-
     const ref = useRef(null)
     const { columns } = props
 

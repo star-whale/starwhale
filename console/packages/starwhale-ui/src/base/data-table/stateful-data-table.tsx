@@ -59,22 +59,12 @@ export function QueryInput(props: any) {
 }
 
 export function StatefulDataTable(props: StatefulDataTablePropsT) {
-    const [css] = themedUseStyletron()
     const headlineRef = React.useRef(null)
     const [headlineHeight, setHeadlineHeight] = React.useState(64)
     useResizeObserver(headlineRef, (entries) => {
         setHeadlineHeight(entries[0].contentRect.height)
     })
-
-    const filterable = props.filterable === undefined ? true : props.filterable
-    const searchable = props.searchable === undefined ? true : props.searchable
-    const columnable = props.columnable === undefined ? true : props.columnable
-    const viewable = props.viewable === undefined ? true : props.viewable
-    const compareable = props.viewable === undefined ? true : props.compareable
-    const queryable = props.viewable === undefined ? true : props.queryable
-    const selectable = props.selectable === undefined ? true : props.selectable
-    const queryinline = props.queryinline === undefined ? true : props.queryinline
-
+    const { filterable, searchable, columnable, viewable, compareable, queryable, selectable, queryinline } = props
     const { columns: $columns, currentView, isAllRuns } = useCurrentView({ columns: props.columns })
     const { renderConfigQuery } = useConfigQuery({ columns: props.columns, queryable })
 
