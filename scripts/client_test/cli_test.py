@@ -274,13 +274,13 @@ class TestCli:
                 if _remote_job
                 else next(iter(STATUS_FAIL))
             )
+            print(f"checking job {job_id} status: {_job_status}")
             if _job_status in STATUS_SUCCESS.union(STATUS_FAIL):
                 logger.info(
                     f"finish run evaluation at server for job {job_id}, status is:{_job_status}."
                 )
                 return job_id, _job_status
-            sleep(10)
-            logger.info(f"status for job {job_id} is:{_job_status}")
+            sleep(15)
 
     def test_simple(self) -> None:
         # use local instance
@@ -299,17 +299,19 @@ class TestCli:
         # 3.runtime build
         _rt_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
 
-        self.local_evl([_ds_uri], _model_uri)
+        remote_future_jobs = []
         if self.server_url:
-            _jss = self.remote_eval(
+            remote_future_jobs = self.remote_eval(
                 [_ds_uri], _model_uri, [_rt_uri], step_spec_f("step_spec_cpu_mini.yaml")
             )
-            for _js in _jss:
-                jid, status = _js.result()
-                assert status in STATUS_SUCCESS
+
+        self.local_evl([_ds_uri], _model_uri)
+
+        for job in remote_future_jobs:
+            _, status = job.result()
+            assert status in STATUS_SUCCESS
 
     def test_all(self) -> None:
-
         for name, expl in EXAMPLES.items():
             logger.info(f"preparing data for {expl}")
             rc = subprocess.call(

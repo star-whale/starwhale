@@ -3,6 +3,6 @@ name: simple-test
 
 run:
   modules:
-  - src.evaluator:SimplePipeline
+  - src.evaluator
 
 desc: simple model

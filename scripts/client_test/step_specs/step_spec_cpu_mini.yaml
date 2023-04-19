@@ -1,27 +1,33 @@
-src.evaluator:SimplePipeline.cmp:
-  - cls_name: SimplePipeline
+src.evaluator:evaluate:
+  - cls_name: ""
     concurrency: 1
     extra_args: []
-    extra_kwargs: {}
-    func_name: ppl
+    extra_kwargs:
+      dataset_uris: null
+      ignore_dataset_data: false
+      ignore_error: false
+      ppl_auto_log: true
+      ppl_batch_size: 1
+    func_name: predict
     module_name: src.evaluator
-    name: src.evaluator:SimplePipeline.ppl
+    name: src.evaluator:predict
     needs: []
-    replicas: 2
+    replicas: 1
     resources:
       - type: cpu
         request: 0.4
-        limit: 0.4
-    show_name: ppl
-  - cls_name: SimplePipeline
+        limit: 2
+    show_name: predict
+  - cls_name: ""
     concurrency: 1
     extra_args: []
-    extra_kwargs: {}
-    func_name: cmp
+    extra_kwargs:
+      ppl_auto_log: true
+    func_name: evaluate
     module_name: src.evaluator
-    name: src.evaluator:SimplePipeline.cmp
+    name: src.evaluator:evaluate
     needs:
-    - src.evaluator:SimplePipeline.ppl
+      - src.evaluator:predict
     replicas: 1
     resources: []
-    show_name: cmp
+    show_name: evaluate
