@@ -11,10 +11,6 @@ from starwhale.core.job.step import Step
 from starwhale.core.job.task import TaskExecutor
 from starwhale.core.job.context import Context
 from starwhale.core.job.scheduler import Scheduler
-from starwhale.api._impl.evaluation import (
-    _registered_predict_func,
-    _registered_evaluate_func,
-)
 
 from .. import BaseTestCase
 
@@ -171,13 +167,111 @@ class GenerateJobsTestCase(BaseTestCase):
         if path in sys.path:
             sys.path.remove(path)
 
-        _registered_predict_func.value = None
-        _registered_evaluate_func.value = None
-
     def _ensure_py_script(self, content: str) -> None:
         ensure_dir(self.workdir)
         ensure_file(self.workdir / "__init__.py", "")
         ensure_file(self.workdir / f"{self.module_name}.py", content)
+
+    def test_multi_predict_decorators(self) -> None:
+        content = """
+from starwhale import evaluation
+
+@evaluation.predict
+def img_predict_handler(*args, **kwargs): ...
+
+@evaluation.evaluate(needs=[img_predict_handler])
+def img_evaluate_handler(*args, **kwargs): ...
+
+@evaluation.predict
+def video_predict_handler(*args, **kwargs): ...
+
+@evaluation.evaluate(needs=[video_predict_handler])
+def video_evaluate_handler(*args, **kwargs): ...
+        """
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml([f"{self.module_name}"], self.workdir, yaml_path)
+
+        assert yaml_path.exists()
+        jobs_info = load_yaml(yaml_path)
+
+        assert set(
+            [
+                "mock_user_module:img_evaluate_handler",
+                "mock_user_module:img_predict_handler",
+                "mock_user_module:video_evaluate_handler",
+                "mock_user_module:video_predict_handler",
+            ]
+        ) == set(jobs_info.keys())
+        assert jobs_info["mock_user_module:img_evaluate_handler"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {
+                    "dataset_uris": None,
+                    "ignore_dataset_data": False,
+                    "ignore_error": False,
+                    "ppl_auto_log": True,
+                    "ppl_batch_size": 1,
+                },
+                "func_name": "img_predict_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:img_predict_handler",
+                "needs": [],
+                "replicas": 2,
+                "resources": [],
+                "show_name": "predict",
+            },
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {"ppl_auto_log": True},
+                "func_name": "img_evaluate_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:img_evaluate_handler",
+                "needs": ["mock_user_module:img_predict_handler"],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "evaluate",
+            },
+        ]
+
+        assert jobs_info["mock_user_module:video_evaluate_handler"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {
+                    "dataset_uris": None,
+                    "ignore_dataset_data": False,
+                    "ignore_error": False,
+                    "ppl_auto_log": True,
+                    "ppl_batch_size": 1,
+                },
+                "func_name": "video_predict_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:video_predict_handler",
+                "needs": [],
+                "replicas": 2,
+                "resources": [],
+                "show_name": "predict",
+            },
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {"ppl_auto_log": True},
+                "func_name": "video_evaluate_handler",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:video_evaluate_handler",
+                "needs": ["mock_user_module:video_predict_handler"],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "evaluate",
+            },
+        ]
 
     @patch("starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_ppl")
     def test_predict_deco_on_function(self, mock_ppl: MagicMock) -> None:
