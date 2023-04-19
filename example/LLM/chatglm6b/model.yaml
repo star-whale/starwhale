@@ -2,6 +2,6 @@ version: 1.0
 name: chatglm6b
 
 run:
-  handler: code.evaluator
+  handler: evaluator
 
 desc: chatglm6b by huggingface transformer THUDM/chatglm-6b

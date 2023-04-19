@@ -17,11 +17,11 @@ from starwhale import (
 from starwhale.api import model, experiment
 from starwhale.api.service import api
 
-ROOTDIR = Path(__file__).parent.parent
+ROOTDIR = Path(__file__).parent
 
 
 hstry = []
-@evaluation.predict()
+@evaluation.predict
 def ppl(data: dict, **kw):
     text = data["text"]
     tokenizer = AutoTokenizer.from_pretrained(
@@ -265,7 +265,7 @@ def fine_tune(
     model.build(
         workdir=ROOTDIR,
         name="chatglm6b",
-        evaluation_handler=fine_tune,
+        modules=[ppl],
     )
 
 def convert_dict(d:dict, key_selector: dict) -> dict:
