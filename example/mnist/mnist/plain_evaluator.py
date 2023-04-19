@@ -24,7 +24,7 @@ model: t.Optional[Net] = None
 @evaluation.predict(
     resources={"memory": 200},
     concurrency=2,
-    task_num=4,
+    replicas=4,
     batch_size=1,
     fail_on_error=False,
     auto_log=True,
@@ -49,9 +49,7 @@ def predict_image(data: t.Dict, **kw: t.Any) -> t.Any:
     return pred_value, probability_matrix[0]
 
 
-@evaluation.evaluate(
-    use_predict_auto_log=True,
-)
+@evaluation.evaluate(use_predict_auto_log=True, needs=[predict_image])
 @multi_classification(
     confusion_matrix_normalize="all",
     show_hamming_loss=True,

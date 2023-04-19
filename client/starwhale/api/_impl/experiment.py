@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Dict, List, Callable, Optional
 
-from starwhale.consts import DecoratorInjectAttr, DEFAULT_FINETUNE_JOB_NAME
+from starwhale.consts import DecoratorInjectAttr
 
 
 def fine_tune(*args: Any, **kw: Any) -> Any:
@@ -13,6 +13,8 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     Argument:
         resources: [Dict, optional] Resources for the predict task, such as memory, gpu etc. Current only supports
             the cloud instance.
+        needs: [List[Callable], optional] The list of functions that the fine-tune function depends on.
+
     Examples:
     ```python
     from starwhale import experiment
@@ -21,6 +23,9 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     def ft():
         ...
 
+    @experiment.fine_tune(resources={"gpu": 1}, needs=[prepare_handler])
+    def ft():
+        ...
     ```
 
     Returns:
@@ -45,8 +50,9 @@ _registered_ft_func = threading.local()
 def _register_ft(
     func: Callable,
     resources: Optional[Dict[str, Any]] = None,
+    needs: Optional[List[Callable]] = None,
 ) -> None:
-    from .job import step
+    from .job import Handler
 
     try:
         val = _registered_ft_func.value
@@ -56,10 +62,10 @@ def _register_ft(
     if val is not None:
         return
 
-    _registered_ft_func.value = step(
-        job_name=DEFAULT_FINETUNE_JOB_NAME,
+    _registered_ft_func.value = Handler.register(
         name="fine_tune",
         resources=resources,
         concurrency=1,
-        task_num=1,
+        replicas=1,
+        needs=needs,
     )(func)

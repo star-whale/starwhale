@@ -13,7 +13,7 @@ from starwhale.base.type import URIType
 from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.eval.view import JobTermView, JobTermViewRich
 from starwhale.core.eval.model import CloudEvaluationJob, StandaloneEvaluationJob
-from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.store import RunStorage
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
@@ -41,7 +41,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
 
     def test_store(self):
         uri = URI(self.job_name[:7], expected_type=URIType.EVALUATION)
-        store = EvaluationStorage(uri)
+        store = RunStorage(uri)
 
         assert store.project_dir == Path(self.root) / "self"
         assert store.loc == Path(self.job_dir)

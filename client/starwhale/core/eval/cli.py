@@ -66,9 +66,9 @@ def _list(
 )
 @click.option(
     "--version",
-    envvar=SWEnv.eval_version,
+    envvar=SWEnv.job_version,
     default=None,
-    help=f"Evaluation job version, env is {SWEnv.eval_version}",
+    help=f"Job version, env is {SWEnv.job_version}",
     hidden=True,
 )
 @click.option("--model", required=True, help="model uri or model.yaml dir path")

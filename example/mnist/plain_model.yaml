@@ -1,10 +1,9 @@
 version: 1.0
 name: mnist
 
-model:
-  - models/mnist_cnn.pt
-
 run:
-  handler: mnist.plain_evaluator
+  modules:
+    - mnist.plain_evaluator
+    - mnist.evaluator
 
 desc: mnist by pytorch

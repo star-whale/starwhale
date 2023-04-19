@@ -1,5 +1,5 @@
 from starwhale.api import model, track, evaluation
-from starwhale.api.job import step, pass_context
+from starwhale.api.job import Handler, pass_context
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.base.uri import URI, URIType
 from starwhale.api.metric import multi_classification
@@ -32,6 +32,7 @@ from starwhale.api.experiment import fine_tune
 from starwhale.core.job.context import Context
 
 dataset = Dataset.dataset
+handler = Handler.register
 
 __all__ = [
     "__version__",
@@ -44,7 +45,7 @@ __all__ = [
     "fine_tune",
     "URI",
     "URIType",
-    "step",
+    "handler",
     "pass_context",
     "Context",
     "Link",

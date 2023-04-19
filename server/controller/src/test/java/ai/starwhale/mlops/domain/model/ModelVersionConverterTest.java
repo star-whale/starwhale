@@ -62,7 +62,7 @@ public class ModelVersionConverterTest {
                 hasProperty("meta", is("meta1")),
                 hasProperty("manifest", is("manifest1")),
                 hasProperty("stepSpecs",
-                        is(List.of(StepSpec.builder().concurrency(2).taskNum(1).build())))
+                        is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
         ));
     }
 

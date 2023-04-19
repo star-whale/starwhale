@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
@@ -9,17 +11,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.console import Group
 
-from starwhale.utils import (
-    docker,
-    console,
-    process,
-    load_yaml,
-    pretty_bytes,
-    in_production,
-)
+from starwhale.utils import docker, console, process, pretty_bytes, in_production
 from starwhale.consts import (
     FileFlag,
-    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -34,7 +28,7 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
-from .model import Model, StandaloneModel
+from .model import Model, ModelConfig, StandaloneModel
 
 
 class ModelTermView(BaseTermView):
@@ -121,106 +115,61 @@ class ModelTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
-    def eval(
+    def run_in_host(
         cls,
-        project: str,
-        target: str,
-        dataset_uris: t.List[str],
+        model_src_dir: Path | str,
+        model_config: ModelConfig,
+        project: str = "",
         version: str = "",
-        yaml_name: str = DefaultYAMLName.MODEL,
-        step: str = "",
-        task_index: t.Optional[int] = None,
-        task_num: int = 0,
+        run_handler: str = "",
+        dataset_uris: t.Optional[t.List[str]] = None,
         runtime_uri: str = "",
-        use_docker: bool = False,
-        gencmd: bool = False,
-        image: str = "",
+        scheduler_run_args: t.Optional[t.Dict] = None,
     ) -> None:
-        if use_docker:
-            if not runtime_uri and not image:
-                raise FieldTypeOrValueError(
-                    "runtime_uri and image both are none when use_docker"
-                )
-            if runtime_uri:
-                runtime = StandaloneRuntime(
-                    URI(runtime_uri, expected_type=URIType.RUNTIME)
-                )
-                image = runtime.store.get_docker_base_image()
-            mnt_paths = (
-                [os.path.abspath(target)]
-                if in_production() or (os.path.exists(target) and os.path.isdir(target))
-                else []
-            )
-            env_vars = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
-            cmd = docker.gen_swcli_docker_cmd(
-                image,
-                env_vars=env_vars,
-                mnt_paths=mnt_paths,
-            )
-            console.rule(":elephant: docker cmd", align="left")
-            console.print(f"{cmd}\n")
-            if gencmd:
-                return
-            process.check_call(cmd, shell=True)
-            return
-
         kw = dict(
-            project=project,
+            model_src_dir=model_src_dir,
+            model_config=model_config,
+            project=URI(project, expected_type=URIType.PROJECT).project,
             version=version,
-            workdir=cls._get_workdir(target),
+            run_handler=run_handler,
             dataset_uris=dataset_uris,
-            step_name=step,
-            task_index=task_index,
-            task_num=task_num,
-            model_yaml_name=yaml_name,
+            scheduler_run_args=scheduler_run_args,
         )
-        if not in_production() and runtime_uri:
+
+        if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
-                target=StandaloneModel.eval_user_handler,
+                target=StandaloneModel.run,
                 kwargs=kw,
             ).run()
         else:
-            StandaloneModel.eval_user_handler(**kw)  # type: ignore
+            StandaloneModel.run(**kw)  # type: ignore
 
     @classmethod
     @BaseTermView._only_standalone
-    def fine_tune(
+    def run_in_container(
         cls,
-        project: str,
-        target: str,
-        dataset_uris: t.List[str],
-        yaml_name: str = DefaultYAMLName.MODEL,
+        model_src_dir: Path,
         runtime_uri: str = "",
-        model_uri: str = "",
+        docker_image: str = "",
     ) -> None:
-        if target and model_uri:
-            console.print("workdir and model can not both set together")
-            sys.exit(1)
-        if not target and not model_uri:
-            console.print("workdir or model needs to be set")
-            sys.exit(1)
+        if not runtime_uri and not docker_image:
+            raise FieldTypeOrValueError("runtime_uri and docker_image both are none")
 
-        if target:
-            workdir = cls._get_workdir(target)
-        else:
-            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
-            workdir = _m.store.src_dir
+        if runtime_uri:
+            runtime = StandaloneRuntime(URI(runtime_uri, expected_type=URIType.RUNTIME))
+            docker_image = runtime.store.get_docker_base_image()
 
-        kw = dict(
-            project=project,
-            workdir=workdir,
-            dataset_uris=dataset_uris,
-            model_yaml_name=yaml_name,
+        mounts = [str(model_src_dir.resolve().absolute())]
+        envs = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
+        cmd = docker.gen_swcli_docker_cmd(
+            docker_image,
+            envs=envs,
+            mounts=mounts,
         )
-        if not in_production() and runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=StandaloneModel.fine_tune,
-                kwargs=kw,
-            ).run()
-        else:
-            StandaloneModel.fine_tune(**kw)  # type: ignore
+        console.rule(":elephant: docker cmd", align="left")
+        console.print(f"{cmd}\n")
+        process.check_call(cmd, shell=True)
 
     @classmethod
     def _get_workdir(cls, target: str) -> Path:
@@ -256,16 +205,15 @@ class ModelTermView(BaseTermView):
         cls,
         workdir: t.Union[str, Path],
         project: str,
-        yaml_path: t.Union[str, Path],
+        model_config: ModelConfig,
         runtime_uri: str = "",
     ) -> URI:
         workdir = Path(workdir)
-        _config = load_yaml(yaml_path)
         _model_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
+            project=project, bundle_name=model_config.name, typ=URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
-        kwargs = {"yaml_path": yaml_path}
+        kwargs = {"model_config": model_config}
         if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,

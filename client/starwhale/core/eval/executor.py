@@ -7,7 +7,7 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
-from starwhale.consts import CNTR_DEFAULT_PIP_CACHE_DIR
+from starwhale.consts import DefaultYAMLName, CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
@@ -16,8 +16,8 @@ from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.model.model import StandaloneModel
+from starwhale.core.eval.store import RunStorage
+from starwhale.core.model.model import ModelConfig, StandaloneModel
 from starwhale.core.runtime.model import StandaloneRuntime
 
 
@@ -124,7 +124,7 @@ class EvalExecutor:
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         # TODO: fix _workdir sequence-dependency issue
-        self._workdir = EvaluationStorage.local_run_dir(
+        self._workdir = RunStorage.local_run_dir(
             self.project_uri.project, self._version
         )
 
@@ -147,16 +147,20 @@ class EvalExecutor:
             self._do_run_cmd_in_host()
 
     def _do_run_cmd_in_host(self) -> None:
-        StandaloneModel.eval_user_handler(
+        StandaloneModel.run(
+            model_src_dir=self._src_dir,
+            model_config=ModelConfig.create_by_yaml(
+                self._src_dir / DefaultYAMLName.MODEL,
+            ),
             project=self.project_uri.project,
             version=self._version,
-            workdir=self._src_dir,
             dataset_uris=[u.full_uri for u in self.dataset_uris],
-            step_name=self.step,
-            task_index=self.task_index,
-            task_num=self.task_num,
-            # other runtime info
-            base_info=dict(
+            scheduler_run_args=dict(
+                step_name=self.step,
+                task_index=self.task_index,
+                task_num=self.task_num,
+            ),
+            external_info=dict(
                 name=self.name,
                 desc=self.desc,
                 model=self.model_uri,
@@ -221,7 +225,7 @@ class EvalExecutor:
         logger.debug(f"config:{self.sw_config._current_instance_obj}")
 
         cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
-        cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
+        cmd.extend(["-e", f"{SWEnv.job_version}={self._version}"])
         cmd.extend(["-e", f"{SWEnv.model_version}={self.model_uri}"])
         cmd.extend(["-e", f"{SWEnv.runtime_version}={self.runtime_uri}"])
         cmd.extend(

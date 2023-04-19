@@ -9,7 +9,7 @@ from starwhale.base.store import BaseStorage
 from starwhale.utils.config import SWCliConfigMixed
 
 
-class EvaluationStorage(BaseStorage):
+class RunStorage(BaseStorage):
     @property
     def recover_loc(self) -> Path:
         return (

@@ -1,7 +1,8 @@
 version: 1.0
-name: simple-test1
+name: simple-test
 
 run:
-  handler: src.evaluator:SimplePipeline
+  modules:
+  - src.evaluator:SimplePipeline
 
 desc: simple model

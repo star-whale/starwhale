@@ -23,7 +23,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
-from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.store import RunStorage
 from starwhale.api._impl.metric import MetricKind
 from starwhale.core.eval.executor import EvalExecutor
 from starwhale.core.runtime.process import Process as RuntimeProcess
@@ -151,7 +151,7 @@ class EvaluationJob(metaclass=ABCMeta):
 class StandaloneEvaluationJob(EvaluationJob):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
-        self.store = EvaluationStorage(uri)
+        self.store = RunStorage(uri)
 
     @classmethod
     def run(
@@ -262,7 +262,6 @@ class StandaloneEvaluationJob(EvaluationJob):
     def info(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
     ) -> t.Dict[str, t.Any]:
-
         return {
             "manifest": self.store.manifest,
             "report": self._get_report(),
@@ -324,7 +323,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
-        for _path, _is_removed in EvaluationStorage.iter_all_jobs(project_uri):
+        for _path, _is_removed in RunStorage.iter_all_jobs(project_uri):
             _manifest = load_yaml(_path)
             if not _manifest:
                 continue

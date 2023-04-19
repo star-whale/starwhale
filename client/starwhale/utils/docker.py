@@ -156,11 +156,10 @@ def buildx(
 
 def gen_swcli_docker_cmd(
     image: str,
-    env_vars: t.Dict[str, str] = {},
-    mnt_paths: t.List[str] = [],
+    envs: t.Optional[t.Dict[str, str]] = None,
+    mounts: t.Optional[t.List[str]] = None,
     name: str = "",
 ) -> str:
-
     if not image:
         raise ValueError("image should have value")
     pwd = os.getcwd()
@@ -200,16 +199,16 @@ def gen_swcli_docker_cmd(
             f'"{name}"',
         ]
 
-    if mnt_paths:
-        for cp in mnt_paths:
-            cmd += [
-                "-v",
-                f"{cp}:{cp}",
-            ]
+    mounts = mounts or []
+    for mount in mounts:
+        cmd += [
+            "-v",
+            f"{mount}:{mount}",
+        ]
 
-    if env_vars:
-        for _k, _v in env_vars.items():
-            cmd.extend(["-e", f"{_k}={_v}"])
+    envs = envs or {}
+    for _k, _v in envs.items():
+        cmd.extend(["-e", f"{_k}={_v}"])
 
     cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
     host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
@@ -225,7 +224,7 @@ def gen_swcli_docker_cmd(
             continue
         cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
-    sw_cmd = " ".join([item for item in sys.argv[1:] if "use-docker" not in item])
+    sw_cmd = " ".join([item for item in sys.argv[1:] if "in-container" not in item])
 
     cmd.extend([image, f"swcli {sw_cmd}"])
     return " ".join(cmd)

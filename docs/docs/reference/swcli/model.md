@@ -34,8 +34,10 @@ swcli [GLOBAL OPTIONS] model build [OPTIONS] <WORKDIR>
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
 | `--project` or `-p` | ❌ | String | [the default project](../../swcli/uri.md#defaultProject) | the project URI |
-| `--module` | ❌ | String | | Python modules to be imported during the build process. Multiple modules are separated by commas. Starwhale will export model handlers from these modules to the model package. |
-| `--runtime` | ❌ | String | | the URI of the [Starwhale Runtime](../../runtime/index.md) to use when running this command. If this option is used, this command will run in an independent python environment specified by the Starwhale Runtime; otherwise, it will run directly in the swcli's current python environment. |
+| `--module` or `-m`| ❌ | String | | Python modules to be imported during the build process. Starwhale will export model handlers from these modules to the model package. This option supports set multiple times.|
+| `--runtime` or `-r` | ❌ | String | | the URI of the [Starwhale Runtime](../../runtime/index.md) to use when running this command. If this option is used, this command will run in an independent python environment specified by the Starwhale Runtime; otherwise, it will run directly in the swcli's current python environment. |
+| `--name` or `-n` | ❌ | String | | model package name |
+| `--desc` or `-d` | ❌ | String | | model package description |
 
 ## swcli model copy {#copy}
 
@@ -153,15 +155,18 @@ Removed Starwhale Models or versions can be listed by `swcli model list --show-r
 ## swcli model run {#run}
 
 ```bash
-swcli [GLOBAL OPTIONS] model run [OPTIONS] <MODEL> <HANDLER>
+swcli [GLOBAL OPTIONS] model run [OPTIONS]
 ```
 
-`model run` executes a model handler. `MODEL` can be either a [model URI](../../swcli/uri.md#model-dataset-runtime) or a python module. SWCLI will create a temporary Starwhale Model in the latter case.
+`model run` executes a model handler. Model run supports two modes to run: [model URI](../../swcli/uri.md#model-dataset-runtime) and local development. Model URI mode needs a pre-built Starwhale Model Package. Local development model only needs the model src dir.
 
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
+| `--workdir` or `-w` | ❌ | String | | For local development mode, the path of model src dir.|
+| `--uri` or `-u` | ❌ | String | | For model URI mode, the string of model uri.|
+| `--handler` or `-h` | ❌ | String | | Runnable handler index or name, default is None, will use the first handler |
 | `--runtime` | ❌ | String | | the [Starwhale Runtime](../../runtime/index.md) URI to use when running this command. If this option is used, this command will run in an independent python environment specified by the Starwhale Runtime; otherwise, it will run directly in the swcli's current python environment. |
-| `--use-docker` | ❌ | Boolean | False | Use docker to run the model. This option is only available for standalone instances. For server and cloud instances, a docker image is always used. If the runtime is a docker image, this option is always implied. |
+| `--in-container` | ❌ | Boolean | False | Use docker container to run the model. This option is only available for standalone instances. For server and cloud instances, a docker image is always used. If the runtime is a docker image, this option is always implied. |
 
 ## swcli model tag {#tag}
 

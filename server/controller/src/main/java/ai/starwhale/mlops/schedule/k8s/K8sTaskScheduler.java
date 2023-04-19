@@ -135,11 +135,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             }
 
             JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-            var jobType = task.getStep().getJob().getType();
+
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
-                containerOverwriteSpec.setCmds(List.of(jobType.name().toLowerCase()));
+                containerOverwriteSpec.setCmds(List.of("run"));
                 containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
                 containerOverwriteSpec.setImage(jobRuntime.getImage());
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
@@ -213,9 +213,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_RUNTIME_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,
                         runtime.getName(), runtime.getVersion()));
+        coreContainerEnvs.put("SW_RUN_HANDLER", task.getTaskRequest().getJobName());
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
+        coreContainerEnvs.put("SW_JOB_VERSION", swJob.getUuid());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
