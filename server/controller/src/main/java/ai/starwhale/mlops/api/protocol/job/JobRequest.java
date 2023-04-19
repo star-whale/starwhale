@@ -45,6 +45,9 @@ public class JobRequest implements Serializable {
     @JsonProperty("resourcePool")
     private String resourcePool;
 
+    @JsonProperty("handler")
+    private String handler;
+
     @JsonProperty("stepSpecOverWrites")
     private String stepSpecOverWrites;
 

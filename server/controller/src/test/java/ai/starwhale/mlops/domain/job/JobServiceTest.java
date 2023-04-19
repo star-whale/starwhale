@@ -121,7 +121,7 @@ public class JobServiceTest {
         runtimeService = mock(RuntimeService.class);
         trashService = mock(TrashService.class);
         systemSettingService = mock(SystemSettingService.class);
-        jobSpecParser = mock(JobSpecParser.class);
+        jobSpecParser = new JobSpecParser();
 
         service = new JobService(
                 taskMapper, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
@@ -197,6 +197,59 @@ public class JobServiceTest {
 
     @Test
     public void testCreateJob() {
+        String fullJobSpec = "mnist.evaluator:MNISTInference.cmp:\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  needs: []\n"
+                + "  resources: []\n"
+                + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                + "  replicas: 1\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  needs:\n"
+                + "  - mnist.evaluator:MNISTInference.ppl\n"
+                + "  resources:\n"
+                + "  - type: cpu \n"
+                + "    request: 0.1\n"
+                + "    limit: 0.1\n"
+                + "  - type: nvidia.com/gpu \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
+                + "  - type: memory \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
+                + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                + "  replicas: 1\n"
+                + "mnist.evaluator:MNISTInference.ppl:\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  needs: []\n"
+                + "  resources: []\n"
+                + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                + "  replicas: 1";
+        String overviewJobSpec = "mnist.evaluator:MNISTInference.cmp:\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  needs: []\n"
+                + "  resources: []\n"
+                + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                + "  replicas: 1\n"
+                + "- cls_name: ''\n"
+                + "  concurrency: 1\n"
+                + "  needs:\n"
+                + "  - mnist.evaluator:MNISTInference.ppl\n"
+                + "  resources:\n"
+                + "  - type: cpu \n"
+                + "    request: 0.1\n"
+                + "    limit: 0.1\n"
+                + "  - type: nvidia.com/gpu \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
+                + "  - type: memory \n"
+                + "    request: 1\n"
+                + "    limit: 1\n"
+                + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                + "  replicas: 1";
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());
         given(projectService.findProject(anyString()))
@@ -206,7 +259,7 @@ public class JobServiceTest {
         given(runtimeService.findRuntime(same(2L)))
                 .willReturn(Runtime.builder().id(2L).name("test-runtime").build());
         given(modelService.findModelVersion(same("3")))
-                .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").build());
+                .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").jobs(fullJobSpec).build());
         given(modelService.findModel(same(3L)))
                 .willReturn(Model.builder().id(3L).name("test-model").build());
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
@@ -220,12 +273,15 @@ public class JobServiceTest {
         given(datasetService.findDatasetVersion(anyString()))
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
+        assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
+                "", "1", "", "", JobType.EVALUATION));
+
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", "stepSpec1", JobType.EVALUATION);
+                 "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION);
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "stepSpec2", JobType.FINE_TUNE);
+                "", "1", "", overviewJobSpec, JobType.FINE_TUNE);
         assertThat(res, is(1L));
     }
 

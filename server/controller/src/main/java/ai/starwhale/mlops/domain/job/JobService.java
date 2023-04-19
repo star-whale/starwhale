@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -73,6 +74,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -171,7 +173,7 @@ public class JobService {
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
-            String stepSpecOverWrites, JobType type) {
+            String handler, String stepSpecOverWrites, JobType type) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
@@ -183,16 +185,30 @@ public class JobService {
                 .map(datasetService::findDatasetVersion)
                 .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
 
+        if (!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler)) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided at least one"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        List<StepSpec> steps;
+        try {
+            steps = StringUtils.hasText(stepSpecOverWrites)
+                    ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
+                    : jobSpecParser.parseStepFromYaml(modelVersion.getJobs(), handler);
+            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(steps);
+        } catch (JsonProcessingException e) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "failed to parse job step", e), HttpStatus.BAD_REQUEST);
+        }
+
+        if (CollectionUtils.isEmpty(steps)) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "no stepSpec is configured"), HttpStatus.BAD_REQUEST);
+        }
+
         var pool = systemSettingService.queryResourcePool(resourcePool);
         if (pool != null) {
-            List<StepSpec> steps;
-            try {
-                steps = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites);
-            } catch (JsonProcessingException e) {
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.JOB, "failed to parse job step", e),
-                        HttpStatus.BAD_REQUEST);
-            }
             for (var step : steps) {
                 pool.validateResources(step.getResources());
             }
