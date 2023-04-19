@@ -488,9 +488,6 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         return _wrap
 
 
-_registered_predict_func = threading.local()
-
-
 def _register_predict(
     func: t.Callable,
     datasets: t.Optional[t.List[str]] = None,
@@ -504,15 +501,7 @@ def _register_predict(
 ) -> None:
     from .job import Handler
 
-    try:
-        val = _registered_predict_func.value
-    except AttributeError:
-        val = None
-
-    if val is not None:
-        raise RuntimeError("predict function can only be called once")
-
-    _registered_predict_func.value = Handler.register(
+    Handler.register(
         name="predict",
         resources=resources,
         concurrency=concurrency,
@@ -569,9 +558,6 @@ def evaluate(*args: t.Any, **kw: t.Any) -> t.Any:
     return _wrap
 
 
-_registered_evaluate_func = threading.local()
-
-
 def _register_evaluate(
     func: t.Callable,
     needs: t.Optional[t.List[t.Callable]] = None,
@@ -580,18 +566,10 @@ def _register_evaluate(
 ) -> None:
     from .job import Handler
 
-    try:
-        val = _registered_evaluate_func.value
-    except AttributeError:
-        val = None
-
-    if val is not None:
-        raise RuntimeError("evaluate function can only be called once")
-
     if not needs:
         raise ValueError("needs is required for evaluate function")
 
-    _registered_evaluate_func.value = Handler.register(
+    Handler.register(
         name="evaluate",
         resources=resources,
         concurrency=1,
