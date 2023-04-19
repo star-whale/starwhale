@@ -1,8 +1,11 @@
+import { RecordListVo } from '@starwhale/core'
 import { Types } from '../base/data-table'
 import { IStore, ITableState } from '../base/data-table/store'
 import { RowT } from '../base/data-table/types'
 
 export interface ITableProps {
+    records: RecordListVo['records']
+    columnTypes: RecordListVo['columnTypes']
     batchActions?: Types.BatchActionT[]
     rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps

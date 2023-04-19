@@ -69,4 +69,6 @@ const StoreUpdater = ({ columns, onColumnsChange, rows, data, isQueryInline }: S
     return null
 }
 
+export { StoreUpdater }
+
 export default StoreUpdater

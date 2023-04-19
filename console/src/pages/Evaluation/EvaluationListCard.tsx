@@ -8,7 +8,6 @@ import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
-import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
@@ -31,6 +30,7 @@ import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
+import { useIfChanged } from '@starwhale/core'
 
 const useStyles = createUseStyles({
     showDetail: {
@@ -45,7 +45,6 @@ const useStyles = createUseStyles({
 })
 
 export default function EvaluationListCard() {
-    const styles = useStyles()
     const [t] = useTranslation()
     const history = useHistory()
     const { projectId: projectFromUri } = useParams<{ projectId: string }>()
@@ -243,21 +242,13 @@ export default function EvaluationListCard() {
         }
         // eslint-disable-next-line no-console
         console.log('init store')
-        store.initStore($rawConfig)
-        store.onCurrentViewIdChange(viewId)
+        // store.initStore($rawConfig)
+        // store.onCurrentViewIdChange(viewId)
 
         initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
-
-    React.useEffect(() => {
-        const unsub = useEvaluationCompareStore.subscribe(
-            (state: ITableState) => state.rowSelectedIds,
-            (state: any[]) => store.onSelectMany(state)
-        )
-        return unsub
-    }, [store])
 
     if (!$ready)
         return (
@@ -295,7 +286,13 @@ export default function EvaluationListCard() {
             }
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
-            <GridCombineTable store={useEvaluationStore} queryable selectable />
+            <GridCombineTable
+                store={useEvaluationStore}
+                queryable
+                selectable
+                records={records}
+                columnTypes={columnTypes}
+            />
             {/* <GridResizerVertical
                 top={() => (
                     <GridResizer

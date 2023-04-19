@@ -1,166 +1,379 @@
-import React, { useRef, useMemo } from 'react'
-import { Skeleton } from 'baseui/skeleton'
-import { areEqual } from 'react-window'
-import { useStyletron } from 'baseui'
+import React, { useMemo } from 'react'
+import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
+import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
+import _ from 'lodash'
+import IconFont from '@starwhale/ui/IconFont'
+import { useEvaluationCompareStore } from '@starwhale/ui/base/data-table/store'
+import { longestCommonSubstring } from '@/utils'
+import { RecordListVo } from '@starwhale/core/datastore/schemas/datastore'
+import { LabelSmall } from 'baseui/typography'
+import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { IContextGridTable, ITableProps } from './types'
-import Pagination from './Pagination'
-import { BusyPlaceholder } from '../BusyLoaderWrapper'
-import { StatefulDataTable } from '../base/data-table'
-import { stateSelector } from '../base/data-table/store'
-import { useStore, useStoreApi } from './hooks/useStore'
-import { StoreProvider } from './store/StoreProvider'
-import StoreUpdater from './store/StoreUpdater'
+import { DataTypes, isBoolType, isComplexType, isNumbericType, isSearchColumns, isStringType } from '@starwhale/core'
+import { GridTable } from '@starwhale/ui/GridTable'
+import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
+import useTranslation from '@/hooks/useTranslation'
+import { StoreProvider } from './store'
 
 const useStyles = createUseStyles({
-    table: {
-        'width': '100%',
-        'height': '100%',
-        'position': 'relative',
-        '& .baseui-table-cell-content': {},
-        '& .column-cell .string-cell': {
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-        },
-        '& .table-row': {
-            '&:hover': {},
-        },
-        '& .table-columns-pinned': {
-            backgroundColor: '#FFF',
-        },
-        '& .table-row--hovering': {
-            backgroundColor: '#EBF1FF',
-        },
-        '& .table-row--hovering .table-cell': {
-            backgroundColor: '#EBF1FF !important',
-        },
-        '& .table-row--hovering .column-cell > *': {
-            backgroundColor: '#EBF1FF !important',
-        },
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: {
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '14px',
+        color: 'rgba(2,16,43,0.60);',
     },
-    tableCompareable: {
-        '& .table-cell--last': {},
+    headerBar: {
+        gap: 20,
+        height: '52px',
+        lineHeight: '1',
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '14px',
     },
-    tablePinnable: {
-        '& .table-columns-pinned': {
-            borderRight: '1px solid rgb(207, 215, 230)',
-        },
-        '& .table-headers-pinned > div:last-child .header-cell': {
-            borderRight: '1px solid rgb(207, 215, 230)',
-        },
+    cellCompare: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        padding: '0 12px',
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%',
+        width: '100%',
+    },
+    cellPinned: { borderLeft: '1px dashed blue', borderRight: '1px dashed blue' },
+    cellNotEqual: { backgroundColor: '#FFFAF5' },
+    compareCount: {
+        display: 'inline-block',
+        borderRadius: '12px',
+        background: '#F0F5FF',
+        width: '26px',
+        height: '18px',
+        lineHeight: '18px',
+        textAlign: 'center',
+        color: 'rgba(2,16,43,0.60)',
+        fontSize: '12px',
+        marginLeft: '8px',
+    },
+    tableWrapper: {
+        flexGrow: 1,
     },
 })
 
-function GridTable({
-    isLoading,
-    columns = [],
-    data = [],
-    paginationProps,
-    rowActions,
-    searchable = false,
-    filterable = false,
-    queryable = false,
-    compareable = false,
-    selectable = false,
-    queryinline = false,
-    onSave,
-    onChange = () => {},
-    emptyMessage,
-    emptyColumnMessage,
-    getId = (record: any) => record.id,
-    storeRef,
-    onColumnsChange,
-    children,
-}: ITableProps) {
-    const wrapperRef = useRef<HTMLDivElement>(null)
-    const store = useStoreApi()
-    const $rows = useMemo(
-        () =>
-            data.map((raw, index) => {
-                return {
-                    id: getId(raw) ?? index.toFixed(),
-                    data: raw,
-                }
-            }),
-        [data]
+type RowT = {
+    key: string
+    title: string
+    name: string
+    values: any[]
+    value?: any
+    renderValue?: (data: any) => any
+    renderCompare?: (data: any) => any
+}
+
+type CellT<T> = {
+    value: T
+    renderedValue: any
+    comparedValue: T
+    data: any
+}
+
+const isValidValue = (str: string) => str !== '-'
+
+function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+    }
+
+    return r
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
+    return (
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {val(renderedValue)}
+        </div>
     )
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
+    const valueV = Number(val(value))
+    const comparedValueV = Number(val(comparedValue))
 
-    // const $filters = useMemo(() => {
-    //     return store.currentView?.filters
-    // }, [store])
+    return (
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {val(renderedValue)}{' '}
+            {isValidValue(val(renderedValue)) && valueV > comparedValueV && (
+                <IconFont type='rise' style={{ color: '#00B368' }} />
+            )}
+            {isValidValue(val(renderedValue)) && valueV < comparedValueV && (
+                <IconFont type='decline' style={{ color: '#CC3D3D' }} />
+            )}
+        </div>
+    )
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<{ value: any }>) => {
+    const longestCommonString = longestCommonSubstring(val(value), val(comparedValue))
+    const index = val(value).indexOf(longestCommonString)
+    const front = val(value).substring(0, index)
+    const end = val(value).substring(index + longestCommonString.length, val(value).length)
+    return (
+        <div title={val(renderedValue)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {front}
+            <span
+                style={{
+                    color: '#E67300 ',
+                }}
+            >
+                {longestCommonString}
+            </span>
+            {end}
+        </div>
+    )
+}
 
-    const [, theme] = useStyletron()
-    const styles = useStyles({ theme })
+function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{ value: any; type: DataTypes }>) {
+    // too long string not compare
+    if (!comparedValue || !value || val(value).length > 100)
+        return NoneCompareCell({ value, comparedValue, renderedValue, data })
 
-    // React.useEffect(() => {
-    //     const unsub = store.subscribe(stateSelector, onChange)
-    //     return unsub
-    // }, [store, onChange])
+    if (isNumbericType(comparedValue.type) || isBoolType(comparedValue.type)) {
+        return NumberCompareCell({ value, comparedValue, renderedValue, data })
+    }
+    if (isStringType(comparedValue.type) || isComplexType(comparedValue.type)) {
+        return StringCompareCell({ value, comparedValue, renderedValue, data })
+    }
+    return NoneCompareCell({ value, comparedValue, renderedValue, data })
+}
 
-    // React.useEffect(() => {
-    //     if (!storeRef) return
-    //     // eslint-disable-next-line no-param-reassign
-    //     storeRef.current = store
-    // }, [storeRef, store])
+export function BaseGridCompareTable({
+    rows = [],
+    columnTypes,
+    title = '',
+    getId = (r) => r.id,
+}: {
+    title?: string
+    rows: any[]
+    columnTypes: RecordListVo['columnTypes']
+}) {
+    const store = useEvaluationCompareStore()
+    const [t] = useTranslation()
+    const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
+    const styles = useStyles()
 
-    // const { columns: $columns, currentView, isAllRuns } = useCurrentView({ columns: props.columns })
-    console.log(store.getState(), children)
+    React.useEffect(() => {
+        const row = rows.find((r) => val(r.id) === store.compare?.comparePinnedKey)
+        const pinKey = row ? store.compare?.comparePinnedKey : val(rows[0].id)
+        if (
+            !_.isEqual(
+                store.rowSelectedIds,
+                rows.map((r) => val(r.id))
+            )
+        ) {
+            store.onSelectMany(rows.map((v) => val(v.id)))
+        }
+        if (!store.isInit) {
+            store.onCompareUpdate({
+                compareShowCellChanges: true,
+                compareShowDiffOnly: false,
+            })
+        }
+        if (pinKey !== store.compare?.comparePinnedKey) {
+            store.onCompareUpdate({
+                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(rows[0].id),
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows])
+
+    const comparePinnedRow: any = useMemo(() => {
+        return rows.find((r) => val(r.id) === comparePinnedKey) ?? rows[0]
+    }, [rows, comparePinnedKey])
+
+    const comparePinnedRowIndex = useMemo(() => {
+        return Math.max(
+            rows.findIndex((r) => val(r.id) === comparePinnedKey),
+            0
+        )
+    }, [rows, comparePinnedKey])
+
+    console.log('comparePinnedKey', comparePinnedKey, comparePinnedRow, comparePinnedRowIndex)
+
+    const $rowWithAttrs = useMemo(() => {
+        const rowWithAttrs: RowT[] = []
+
+        columnTypes?.forEach((attr: { name: string }) => {
+            const values = rows.map((data: any) => _.get(data, [attr.name]))
+
+            if (attr.name.endsWith('time')) {
+                rowWithAttrs.push({
+                    key: attr.name,
+                    title: attr.name,
+                    name: attr.name,
+                    values,
+                    renderValue: (v: any) => (val(v) > 0 ? formatTimestampDateTime(val(v)) : '-'),
+                })
+                return
+            }
+            if (attr.name.includes('duration')) {
+                rowWithAttrs.push({
+                    key: attr.name,
+                    title: attr.name,
+                    name: attr.name,
+                    values,
+                    renderValue: (v: any) => (_.isNumber(val(v)) ? durationToStr(val(v)) : '-'),
+                })
+                return
+            }
+            rowWithAttrs.push({
+                key: attr.name,
+                title: attr.name,
+                name: attr.name,
+                values,
+            })
+        })
+
+        return rowWithAttrs.sort(sortColumn).filter((r) => isSearchColumns(r.name))
+    }, [columnTypes, rows])
+
+    const $rowsWithDiffOnly = useMemo(() => {
+        if (!compareShowDiffOnly) return $rowWithAttrs
+        return $rowWithAttrs.filter(({ values }) => {
+            const firstValue = val(values[0])
+            return values.some((v) => val(v) !== firstValue)
+        })
+    }, [$rowWithAttrs, compareShowDiffOnly])
+
+    const $columns = useMemo(
+        () => [
+            StringColumn({
+                key: 'Metrics',
+                title: t('compare.column.metrics'),
+                pin: 'LEFT',
+                minWidth: 200,
+                fillWidth: false,
+                mapDataToValue: (item: any) => item.title,
+            }),
+            ...rows.map((row: any, index) =>
+                CustomColumn({
+                    minWidth: 200,
+                    key: val(getId(row)),
+                    title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
+                    fillWidth: false,
+                    // @ts-ignore
+                    renderCell: (props: any) => {
+                        const rowLength = $rowsWithDiffOnly?.length ?? 0
+                        const data = props.value || {}
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        const { value, renderValue, renderCompare } = data
+                        const renderedValue = renderValue ? renderValue(value) : value
+
+                        const newProps = {
+                            value,
+                            renderedValue,
+                            comparedValue: comparePinnedRow?.[data.key],
+                            data,
+                        }
+
+                        // console.log(newProps, comparePinnedRow, data.key, comparePinnedRow?.[data.key])
+
+                        if (comparePinnedRowIndex === index) {
+                            return (
+                                <div
+                                    className={cn('cell--pinned', styles.cellCompare, styles.cellPinned)}
+                                    style={{
+                                        borderBottom: props.y === rowLength - 1 ? '1px dashed blue' : undefined,
+                                    }}
+                                >
+                                    {NoneCompareCell(newProps)}
+                                </div>
+                            )
+                        }
+
+                        if (val(renderedValue) === val(newProps.comparedValue)) {
+                            return <div className={cn('cell--eq', styles.cellCompare)}>{NoneCompareCell(newProps)}</div>
+                        }
+
+                        if (compareShowCellChanges && comparePinnedRowIndex !== index) {
+                            return (
+                                <div className={cn('cell--neq', styles.cellCompare, styles.cellNotEqual)}>
+                                    {MixedCompareCell(newProps)}
+                                </div>
+                            )
+                        }
+                        return NoneCompareCell(newProps)
+                    },
+                    mapDataToValue: ({ values, ...item }: any) => ({
+                        ...item,
+                        values,
+                        index,
+                        value: values[index],
+                    }),
+                })
+            ),
+        ],
+        [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
+    )
 
     return (
         <>
-            <div
-                className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
-                ref={wrapperRef}
-            >
-                {children}
-                <StatefulDataTable
-                    resizableColumnWidths
-                    searchable={searchable}
-                    queryinline={queryinline}
-                    filterable={filterable}
-                    queryable={queryable}
-                    compareable={compareable}
-                    selectable={selectable}
-                    loading={!!isLoading}
-                    rowActions={rowActions}
-                    columns={columns}
-                    rows={$rows}
-                    onSave={onSave}
-                    getId={getId}
-                    loadingMessage={() => (
-                        <Skeleton
-                            overrides={{
-                                Root: {
-                                    style: {
-                                        paddingTop: '10px',
-                                    },
+            <div className={styles.header}>
+                <LabelSmall className={styles.headerTitle}>
+                    {title} <span className={styles.compareCount}>{$columns.length}</span>
+                </LabelSmall>
+                <div className={styles.headerBar}>
+                    <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
                                 },
-                            }}
-                            rows={10}
-                            width='100%'
-                            animation
-                        />
-                    )}
-                    emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
-                    emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
-                />
-                <StoreUpdater
-                    columns={columns}
-                    onColumnsChange={onColumnsChange}
-                    data={data}
-                    isQueryInline={queryinline}
-                />
+                            },
+                        }}
+                        checked={store.compare?.compareShowCellChanges}
+                        onChange={(e) => {
+                            store.onCompareUpdate({
+                                // @ts-ignore
+                                compareShowCellChanges: e.target.checked,
+                            })
+                        }}
+                    >
+                        {t('compare.config.show.changes')}
+                    </Checkbox>
+                    <Checkbox
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
+                                },
+                            },
+                        }}
+                        checked={store.compare?.compareShowDiffOnly}
+                        onChange={(e) => {
+                            store.onCompareUpdate({
+                                // @ts-ignore
+                                compareShowDiffOnly: e.target.checked,
+                            })
+                        }}
+                    >
+                        {t('compare.config.show.diff')}
+                    </Checkbox>
+                </div>
             </div>
-            <Pagination {...paginationProps} />
+            <div className={styles.tableWrapper}>
+                <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+            </div>
         </>
     )
 }
 
-export const MemoGridTable = React.memo(GridTable, areEqual)
+export const MemoGridCompareTable = React.memo(BaseGridCompareTable)
 
-export default function ContextGridTable({
+export default function ridCompareTable({
     storeKey = 'table',
     initState = {},
     store = undefined,
@@ -168,7 +381,7 @@ export default function ContextGridTable({
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridTable {...rest} />
+            <MemoGridCompareTable {...rest} />
         </StoreProvider>
     )
 }

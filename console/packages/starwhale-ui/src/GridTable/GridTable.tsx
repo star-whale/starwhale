@@ -75,6 +75,8 @@ function GridTable({
     children,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
+    const [, theme] = useStyletron()
+    const styles = useStyles({ theme })
     const store = useStoreApi()
     const $rows = useMemo(
         () =>
@@ -91,9 +93,6 @@ function GridTable({
     //     return store.currentView?.filters
     // }, [store])
 
-    const [, theme] = useStyletron()
-    const styles = useStyles({ theme })
-
     // React.useEffect(() => {
     //     const unsub = store.subscribe(stateSelector, onChange)
     //     return unsub
@@ -104,9 +103,6 @@ function GridTable({
     //     // eslint-disable-next-line no-param-reassign
     //     storeRef.current = store
     // }, [storeRef, store])
-
-    // const { columns: $columns, currentView, isAllRuns } = useCurrentView({ columns: props.columns })
-    console.log(store.getState(), children)
 
     return (
         <>
@@ -146,12 +142,6 @@ function GridTable({
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                     emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
                 />
-                <StoreUpdater
-                    columns={columns}
-                    onColumnsChange={onColumnsChange}
-                    data={data}
-                    isQueryInline={queryinline}
-                />
             </div>
             <Pagination {...paginationProps} />
         </>
@@ -169,6 +159,7 @@ export default function ContextGridTable({
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
             <MemoGridTable {...rest} />
+            <StoreUpdater {...rest} />
         </StoreProvider>
     )
 }

@@ -121,7 +121,19 @@ export function GridResizer({
                     onModeChange={handleResize}
                 />
             )}
-            {isResizeable && right()}
+            {isResizeable && (
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        width: '100%',
+                        flex: 1,
+                    }}
+                >
+                    {right()}
+                </div>
+            )}
         </div>
     )
 }

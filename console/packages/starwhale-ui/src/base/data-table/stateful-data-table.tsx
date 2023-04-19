@@ -17,7 +17,7 @@ import { useConfigQuery } from './config-query'
 import Button from '../../Button'
 import classNames from 'classnames'
 import { themedUseStyletron } from '../../theme/styletron'
-import useCurrentView from './view/useCurrentView'
+import useCurrentView from '../../GridTable/hooks/useGridCurrentView'
 import { BusyPlaceholder } from '@starwhale/ui'
 import { useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
 
@@ -70,54 +70,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const store = useStoreApi().getState()
 
-    const $filters = React.useMemo(() => {
-        return (
-            props.initialFilters?.map((v) => ({
-                ...v,
-                op: Operators[v.op?.key || 'default'],
-            })) || []
-        )
-    }, [props.initialFilters])
-
-    const $filtersEnabled = React.useMemo(() => {
-        return $filters?.filter((c) => !c.disable)
-    }, [$filters])
-
-    const handleSave = async (view: ConfigT) => {
-        if (!view.id || view.id === 'all') store.onShowViewModel(true, view)
-        else {
-            store.onViewUpdate(view)
-            await props.onSave?.(view)
-        }
-    }
-    const handleSaveAs = useCallback(
-        (view) => {
-            store.onShowViewModel(true, {
-                ...view,
-                id: undefined,
-                updated: false,
-            })
-        },
-        [store]
-    )
-
-    const handeFilterSet = useCallback(
-        (categories) => {
-            store.onCurrentViewFiltersChange(categories)
-        },
-        [store]
-    )
-
-    // changed status must be after all the store changes(after api success)
-    const changed = store.currentView.updated
-
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
-    const [$sortIndex, $sortDirection] = useMemo(() => {
-        const { sortBy, sortDirection } = store.currentView || {}
-        const sortIndex = $columns.findIndex((c) => c.key === sortBy)
-        return [sortIndex, sortDirection]
-    }, [store, $columns])
 
     return (
         <StatefulContainer

@@ -299,9 +299,7 @@ const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
         }),
 })
 
-export function createCustomStore(key: string, initState: Partial<ITableState> = {}, isPersist = false) {
-    let initialized = null
-    if (initialized) return initialized
+export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
     const name = `table/${key}`
     const useStore = create<ITableState>()(
         subscribeWithSelector(
@@ -342,9 +340,6 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
     )
     // eslint-disable-next-line
     // useStore.subscribe(console.log)
-    // TODO type define
-    // @ts-ignore
-    initialized = useStore
     return useStore
 }
 export type IStore = ReturnType<typeof createCustomStore>
