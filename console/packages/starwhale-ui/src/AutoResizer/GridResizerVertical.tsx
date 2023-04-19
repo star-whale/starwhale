@@ -13,16 +13,16 @@ const gridDefaultLayout = [
 ]
 const RESIZEBAR_WIDTH = 40
 export type GridResizerPropsT = {
-    left: () => React.ReactNode
-    right: () => React.ReactNode
+    top: () => React.ReactNode
+    bottom: () => React.ReactNode
     gridLayout?: string[]
     threshold?: number
     isResizeable?: boolean
 }
 
-export function GridResizer({
-    left,
-    right,
+export function GridResizerVertical({
+    top,
+    bottom,
     gridLayout = gridDefaultLayout,
     threshold = 200,
     isResizeable = true,
@@ -30,29 +30,29 @@ export function GridResizer({
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<any>(null)
     const gridRef = React.useRef<HTMLDivElement>(null)
-    const leftRef = React.useRef<HTMLDivElement | null>(null)
+    const topRef = React.useRef<HTMLDivElement | null>(null)
 
     const grdiModeRef = React.useRef(1)
     const resize = useCallback(
         (e: MouseEvent) => {
             window.requestAnimationFrame(() => {
-                if (resizeRef.current && leftRef.current) {
-                    const offset = resizeRef.current.getBoundingClientRect().left - e.clientX
-                    // leftRef.current!.style.width = `${leftRef.current?.getBoundingClientRect().width - offset}px`
-                    // leftRef.current!.style.flexBasis = `${leftRef.current?.getBoundingClientRect().width - offset}px`
-                    // console.log('resize', leftRef.current?.getBoundingClientRect(), e.clientX, offset)
-                    const newWidth = leftRef.current?.getBoundingClientRect().width - offset
+                if (resizeRef.current && topRef.current) {
+                    const offset = resizeRef.current.getBoundingClientRect().top - e.clientY
+                    // topRef.current!.style.width = `${topRef.current?.getBoundingClientRect().width - offset}px`
+                    // topRef.current!.style.flexBasis = `${topRef.current?.getBoundingClientRect().width - offset}px`
+                    // console.log('resize', topRef.current?.getBoundingClientRect(), e.clientX, offset)
+                    const newHeight = topRef.current?.getBoundingClientRect().height - offset
                     // eslint-disable-next-line
-                    if (newWidth + threshold > gridRef.current!.getBoundingClientRect().width) {
+                    if (newHeight + threshold > gridRef.current!.getBoundingClientRect().height) {
                         grdiModeRef.current = 2
                         setGridMode(2)
-                    } else if (newWidth < threshold) {
+                    } else if (newHeight < threshold) {
                         grdiModeRef.current = 0
                         setGridMode(0)
                     } else if (grdiModeRef.current === 1) {
                         // eslint-disable-next-line
-                        gridRef.current!.style.gridTemplateColumns = `${Math.max(
-                            newWidth,
+                        gridRef.current!.style.gridTemplateRows = `${Math.max(
+                            newHeight,
                             threshold
                         )}px ${RESIZEBAR_WIDTH}px minmax(${threshold}px, 1fr)`
                     }
@@ -94,7 +94,7 @@ export function GridResizer({
             ref={gridRef}
             style={{
                 display: 'grid',
-                gridTemplateColumns: isResizeable ? gridLayout[gridMode] : '1fr',
+                gridTemplateRows: isResizeable ? gridLayout[gridMode] : '1fr',
                 overflow: 'hidden',
                 width: '100%',
                 height: '100%',
@@ -102,7 +102,7 @@ export function GridResizer({
             }}
         >
             <div
-                ref={leftRef}
+                ref={topRef}
                 style={{
                     display: 'flex',
                     overflow: 'hidden',
@@ -110,7 +110,7 @@ export function GridResizer({
                     flex: 1,
                 }}
             >
-                {left()}
+                {top()}
             </div>
             {isResizeable && (
                 // eslint-disable-next-line  @typescript-eslint/no-use-before-define
@@ -121,7 +121,7 @@ export function GridResizer({
                     onModeChange={handleResize}
                 />
             )}
-            {isResizeable && right()}
+            {isResizeable && bottom()}
         </div>
     )
 }
@@ -140,11 +140,11 @@ function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef 
         <div
             ref={resizeRef}
             className={classNames(
-                'resize-bar',
+                'resize-bar-vertical',
                 css({
-                    width: `${RESIZEBAR_WIDTH}px`,
-                    flexBasis: `${RESIZEBAR_WIDTH}px`,
-                    cursor: 'col-resize',
+                    width: `100%`,
+                    flexBasis: `100%`,
+                    cursor: 'row-resize',
                     paddingTop: '25px',
                     zIndex: 20,
                     overflow: 'visible',
@@ -158,7 +158,15 @@ function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef 
             tabIndex={0}
             onMouseDown={onResizeStart}
         >
-            <i role='button' tabIndex={0} className='resize-left resize-left--hover' onClick={() => onModeChange(1)}>
+            <i
+                role='button'
+                tabIndex={0}
+                className='resize-top resize-top--hover'
+                onClick={() => onModeChange(1)}
+                style={{
+                    transform: 'rotate(90deg)',
+                }}
+            >
                 <IconFont
                     type='fold2'
                     size={12}
@@ -169,7 +177,15 @@ function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef 
                     }}
                 />
             </i>
-            <i role='button' tabIndex={0} className='resize-right resize-right--hover' onClick={() => onModeChange(-1)}>
+            <i
+                role='button'
+                tabIndex={0}
+                className='resize-bottom resize-bottom--hover'
+                onClick={() => onModeChange(-1)}
+                style={{
+                    transform: 'rotate(90deg)',
+                }}
+            >
                 <IconFont
                     type='unfold2'
                     size={12}

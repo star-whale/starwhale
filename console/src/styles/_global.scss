@@ -1,431 +1,521 @@
-
 @import './_reset.scss';
 @import './_utils.scss';
 
 @font-face {
-  font-family: "Roboto Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-size: 16px;
-  src: local(""), url("../assets/fonts/RobotoMono-Regular.ttf") format("truetype");
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    src: local(''), url('../assets/fonts/RobotoMono-Regular.ttf') format('truetype');
 }
 
-#root { 
-  position: relative;
-  overflow: hidden;
+#root {
+    position: relative;
+    overflow: hidden;
 }
 
 body {
-  margin: 0;
-  font-size: 14px;
-  font-family: 'Inter',"PingFang SC","Hiragino Sans GB","Heiti SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-weight: 400;
+    margin: 0;
+    font-size: 14px;
+    font-family: 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
 }
 
 a:-webkit-any-link {
-  color: -webkit-link;
-  cursor: pointer;
+    color: -webkit-link;
+    cursor: pointer;
 }
 
 ::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-  border-radius: 4px;
-  background: transparent;
+    height: 8px;
+    width: 8px;
+    border-radius: 4px;
+    background: transparent;
 }
- 
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
- 
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(2,16,43,0.12);
-  border-radius: 4px;
-  width: 8px;
-  cursor: pointer !important;
+    background: rgba(2, 16, 43, 0.12);
+    border-radius: 4px;
+    width: 8px;
+    cursor: pointer !important;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-
-[data-baseweb="toaster"],
-[data-baseweb="modal"],
-[data-baseweb="popover"] {
-  z-index: 1000;
+[data-baseweb='toaster'],
+[data-baseweb='modal'],
+[data-baseweb='popover'] {
+    z-index: 1000;
 }
 
 // iconfont of symbol
-// svg path {  
-//   fill: inherit;  
-// }   
+// svg path {
+//   fill: inherit;
+// }
 .icon-container {
-  position: relative; 
-  svg path {
-    fill: '#5181E0';
-    color: '#5181E0';
-  }
-  
-  .icon {
-    vertical-align: -0.15em;
-    fill: '#5181E0';
-    color: '#5181E0';
-    overflow: hidden;
-    position: absolute; 
-    height: 100%; 
-    width: 100%; 
-    left: 0; 
-    top: 0;
-  }
+    position: relative;
+    svg path {
+        fill: '#5181E0';
+        color: '#5181E0';
+    }
+
+    .icon {
+        vertical-align: -0.15em;
+        fill: '#5181E0';
+        color: '#5181E0';
+        overflow: hidden;
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        left: 0;
+        top: 0;
+    }
 }
 .icon-container-no-color {
-  position: relative; 
+    position: relative;
 
-  .icon {
-    fill: inherit;
-  }
- 
-  svg.icon path {
-    fill: inherit; 
-  }
+    .icon {
+        fill: inherit;
+    }
+
+    svg.icon path {
+        fill: inherit;
+    }
 }
 
 // for selected view log  in tasks
 .tr--selected {
-background: #5181E0 ;
-border-radius: 8px;
+    background: #5181e0;
+    border-radius: 8px;
 
- td {
-  color: #ffffff !important;
- }
- a {
-  color: #ffffff !important;
- }
- td::first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
- td::last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px;  }
+    td {
+        color: #ffffff !important;
+    }
+    a {
+        color: #ffffff !important;
+    }
+    td::first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+    td::last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
 
-
- &:hover {
-   td {
-    color: rgb(2, 16, 43) !important;
-   }
-   a {
-    color: #5181E0  !important;
-   }
-  
- }
+    &:hover {
+        td {
+            color: rgb(2, 16, 43) !important;
+        }
+        a {
+            color: #5181e0 !important;
+        }
+    }
 }
 
-table { border-collapse: separate; }
-
+table {
+    border-collapse: separate;
+}
 
 .line-clamp {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
 }
 
 .flex-column-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 .flex-column {
-  display: flex;
-  flex-direction: column;
-
+    display: flex;
+    flex-direction: column;
 }
-.flex-row{
-  display: flex;
-  justify-content: center;
+.flex-row {
+    display: flex;
+    justify-content: center;
 }
-.flex-row-center{
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.flex-row-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @keyframes logo-width {
-  0% { width: 0%; }
-  50% { width: 50%; }
-  100% { width: 100%; }
+    0% {
+        width: 0%;
+    }
+    50% {
+        width: 50%;
+    }
+    100% {
+        width: 100%;
+    }
 }
 
 .text-ellipsis {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .rtl {
-  direction: 'rtl';
-  text-overflow: 'ellipsis';
-  white-space: 'nowrap';
-  overflow: 'hidden';
+    direction: 'rtl';
+    text-overflow: 'ellipsis';
+    white-space: 'nowrap';
+    overflow: 'hidden';
 }
 
 .mb-20 {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .g-20 {
-  gap: 20px;
+    gap: 20px;
 }
 
 .resize-bar {
-  &::before {
-    content: ' ';
-    width: 1px;
-    height: 100%;
-    background: #E2E7F0;
-    left: 20px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-  }
+    &::before {
+        content: ' ';
+        width: 1px;
+        height: 100%;
+        background: #e2e7f0;
+        left: 20px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+    }
 }
 
 .resize-left {
-  width: 20px;
-  height: 44px;
-  background-image: url(../assets/left.svg);
-  background-size: 100% auto;
-  background-repeat: no-repeat;
-  background-position: center center;
-  cursor: pointer;
-  @extend .flex-column-center;
-  color: rgba(2,16,43,0.60);
-  &--hover {
-    background-image: url(../assets/left-shadow.png);
-  }
-  position: relative;
-  left: 10px;
+    width: 20px;
+    height: 44px;
+    background-image: url(../assets/left.svg);
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+    background-position: center center;
+    cursor: pointer;
+    @extend .flex-column-center;
+    color: rgba(2, 16, 43, 0.6);
+    &--hover {
+        background-image: url(../assets/left-shadow.png);
+    }
+    position: relative;
+    left: 10px;
 }
-
 
 .resize-right {
-  width: 20px;
-  height: 44px;
-  background-image: url(../assets/right.svg);
-  background-size: 100% auto;
-  background-repeat: no-repeat;
-  background-position: center center;
-  cursor: pointer;
-  @extend .flex-column-center;
-  color: rgba(2,16,43,0.60);
+    width: 20px;
+    height: 44px;
+    background-image: url(../assets/right.svg);
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+    background-position: center center;
+    cursor: pointer;
+    @extend .flex-column-center;
+    color: rgba(2, 16, 43, 0.6);
 
-  &--hover {
-    background-image: url(../assets/right-shadow.png);
-  }
-  position: relative;
-  top: -14px;
-  right: -10px;
-
+    &--hover {
+        background-image: url(../assets/right-shadow.png);
+    }
+    position: relative;
+    top: -14px;
+    right: -10px;
 }
 
+.resize-bar-vertical {
+    &::before {
+        content: ' ';
+        width: 100%;
+        height: 1px;
+        background: #e2e7f0;
+        left: 0px;
+        position: absolute;
+        top: 20px;
+        bottom: 0;
+    }
+}
+
+.resize-top {
+    width: 44px;
+    height: 44px;
+    background-image: url(../assets/left.svg);
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    background-position: center center;
+    cursor: pointer;
+    @extend .flex-column-center;
+    color: rgba(2, 16, 43, 0.6);
+    &--hover {
+        background-image: url(../assets/left-shadow.png);
+    }
+    position: relative;
+    top: -25px;
+    left: 17px;
+    margin: 0 auto;
+}
+
+.resize-bottom {
+    width: 44px;
+    height: 44px;
+    background-image: url(../assets/right.svg);
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    background-position: center center;
+    cursor: pointer;
+    @extend .flex-column-center;
+    color: rgba(2, 16, 43, 0.6);
+
+    &--hover {
+        background-image: url(../assets/right-shadow.png);
+    }
+    position: relative;
+    top: -72px;
+    left: -17px;
+    margin: 0 auto;
+}
 
 .fullsize {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top:0;
-  left:0;
-  right:0;
-  bottom:0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 .unselectable {
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .all {
-  -moz-user-select: all;
-  -webkit-user-select: all;
-  -ms-user-select: all;
-  user-select: all;
+    -moz-user-select: all;
+    -webkit-user-select: all;
+    -ms-user-select: all;
+    user-select: all;
 }
 
 // @FIXME use component style
 .rjsf {
+    fieldset {
+        border-width: 0;
+        display: flex;
+        gap: 20px;
+        flex-direction: column;
 
-  fieldset {
-    border-width: 0;
-    display: flex;
-    gap:20px;
-    flex-direction: column;
-  
-    .form-group {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
+        .form-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
 
-      .control-label {
-        width: 100px;
-        flex-basis: 100px;
-      }
-      >div{
-        width:280px
-      }
+            .control-label {
+                width: 100px;
+                flex-basis: 100px;
+            }
+            > div {
+                width: 280px;
+            }
+        }
     }
-  }
 }
 
 .inherit-height {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  flex-direction: column;
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
 }
 
 .demo-preview {
-  padding-top: 100px;
-  padding-bottom: 10px;
-  margin: auto;
-  width:50%;
-  text-align: center;
+    padding-top: 100px;
+    padding-bottom: 10px;
+    margin: auto;
+    width: 50%;
+    text-align: center;
 }
 
 // check https://codepen.io/uimax/pen/KgdgGa
-$brand-default: #A3BDF0;
-$brand-primary: #2B65D9;
+$brand-default: #a3bdf0;
+$brand-primary: #2b65d9;
 $brand-secondary: #323a45;
-$brand-success: #64DD17;
-$brand-warning: #FFD600;
-$brand-info:  #29B6F6;
+$brand-success: #64dd17;
+$brand-warning: #ffd600;
+$brand-info: #29b6f6;
 $brand-danger: #ef1c1c;
 $bg-light-gray: #f5f5f5;
 .progress {
-  background-color: $bg-light-gray;
-  border-radius: 3px;
-  box-shadow:none;
-  &.progress-xs {
-    height: 5px;
-    margin-top: 5px;
-  }
-  &.progress-sm {
-    height: 10px;
-    margin-top: 5px;
-  }
-  &.progress-lg {
-    height: 25px;
-  }
-  &.vertical {
-    position: relative;
-    width: 20px;
-    height: 200px;
-    display: inline-block;
-    margin-right: 10px;
-    > .progress-bar {
-      width: 100%!important;
-      position: absolute;
-      bottom: 0;
-    }
+    background-color: $bg-light-gray;
+    border-radius: 3px;
+    box-shadow: none;
     &.progress-xs {
-      width: 5px;
-      margin-top: 5px;
+        height: 5px;
+        margin-top: 5px;
     }
     &.progress-sm {
-      width: 10px;
-      margin-top: 5px;
+        height: 10px;
+        margin-top: 5px;
     }
     &.progress-lg {
-      width: 30px;
+        height: 25px;
     }
-  }
+    &.vertical {
+        position: relative;
+        width: 20px;
+        height: 200px;
+        display: inline-block;
+        margin-right: 10px;
+        > .progress-bar {
+            width: 100% !important;
+            position: absolute;
+            bottom: 0;
+        }
+        &.progress-xs {
+            width: 5px;
+            margin-top: 5px;
+        }
+        &.progress-sm {
+            width: 10px;
+            margin-top: 5px;
+        }
+        &.progress-lg {
+            width: 30px;
+        }
+    }
 }
 
 .progress-bar {
-  background-color: $brand-primary;
-  box-shadow:none;
-  &.text-left{
-    text-align: left;
-    span{
-      margin-left: 10px;
+    background-color: $brand-primary;
+    box-shadow: none;
+    &.text-left {
+        text-align: left;
+        span {
+            margin-left: 10px;
+        }
     }
-  }
-  &.text-right{
-    text-align: right;
-    span{
-      margin-right: 10px;
+    &.text-right {
+        text-align: right;
+        span {
+            margin-right: 10px;
+        }
     }
-  }
 }
-@mixin gradient-striped($color: rgba(255,255,255,.15), $angle: 45deg) {
-  background-image: -webkit-linear-gradient($angle, $color 25%, transparent 25%, transparent 50%, $color 50%, $color 75%, transparent 75%, transparent);
-  background-image: -o-linear-gradient($angle, $color 25%, transparent 25%, transparent 50%, $color 50%, $color 75%, transparent 75%, transparent);
-  background-image: linear-gradient($angle, $color 25%, transparent 25%, transparent 50%, $color 50%, $color 75%, transparent 75%, transparent);
+@mixin gradient-striped($color: rgba(255, 255, 255, 0.15), $angle: 45deg) {
+    background-image: -webkit-linear-gradient(
+        $angle,
+        $color 25%,
+        transparent 25%,
+        transparent 50%,
+        $color 50%,
+        $color 75%,
+        transparent 75%,
+        transparent
+    );
+    background-image: -o-linear-gradient(
+        $angle,
+        $color 25%,
+        transparent 25%,
+        transparent 50%,
+        $color 50%,
+        $color 75%,
+        transparent 75%,
+        transparent
+    );
+    background-image: linear-gradient(
+        $angle,
+        $color 25%,
+        transparent 25%,
+        transparent 50%,
+        $color 50%,
+        $color 75%,
+        transparent 75%,
+        transparent
+    );
 }
 
 @-webkit-keyframes progress-bar-stripes {
-  from  { background-position: 40px 0; }
-  to    { background-position: 0 0; }
+    from {
+        background-position: 40px 0;
+    }
+    to {
+        background-position: 0 0;
+    }
 }
 
 // Spec and IE10+
 @keyframes progress-bar-stripes {
-  from  { background-position: 40px 0; }
-  to    { background-position: 0 0; }
+    from {
+        background-position: 40px 0;
+    }
+    to {
+        background-position: 0 0;
+    }
 }
 
 @mixin animation($animation) {
-  -webkit-animation: $animation;
-       -o-animation: $animation;
-          animation: $animation;
+    -webkit-animation: $animation;
+    -o-animation: $animation;
+    animation: $animation;
 }
 .progress.active .progress-bar,
 .progress-bar.active {
-  @include animation(progress-bar-stripes 2s linear infinite);
+    @include animation(progress-bar-stripes 2s linear infinite);
 }
 .progress-striped .progress-bar,
 .progress-bar-striped {
-  @include gradient-striped;
-  background-size: 40px 40px;
+    @include gradient-striped;
+    background-size: 40px 40px;
 }
 @mixin progress-bar-variant($color) {
-  background-color: $color;
+    background-color: $color;
 }
 
 .progress-bar-secondary {
-  @include progress-bar-variant($brand-secondary);
+    @include progress-bar-variant($brand-secondary);
 }
 
 .progress-bar-default {
-   @include progress-bar-variant($brand-default);
+    @include progress-bar-variant($brand-default);
 }
 
 .progress-bar-success {
-   @include progress-bar-variant($brand-success);
+    @include progress-bar-variant($brand-success);
 }
 
 .progress-bar-info {
-   @include progress-bar-variant($brand-info);
+    @include progress-bar-variant($brand-info);
 }
 
 .progress-bar-warning {
-   @include progress-bar-variant($brand-warning);
+    @include progress-bar-variant($brand-warning);
 }
 
 .progress-bar-danger {
-   @include progress-bar-variant($brand-danger);
+    @include progress-bar-variant($brand-danger);
 }
 
 .login-bg {
-  background-image: url('../assets/bg-1920x1080.jpg');
-  background-size: cover;
-  
-  @media (min-width: 2560px) {
-    background-image: url('../assets/bg-2560x1440.jpg');
-  }
-  
-  @media (min-width: 3840px) {
-    background-image: url('../assets/bg-3840x2160.jpg');
-  }
+    background-image: url('../assets/bg-1920x1080.jpg');
+    background-size: cover;
+
+    @media (min-width: 2560px) {
+        background-image: url('../assets/bg-2560x1440.jpg');
+    }
+
+    @media (min-width: 3840px) {
+        background-image: url('../assets/bg-3840x2160.jpg');
+    }
 }

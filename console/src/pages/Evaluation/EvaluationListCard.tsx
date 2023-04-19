@@ -28,6 +28,8 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import { useDatastoreMixedSchema } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
+import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
+import EvaluationListResult from './EvaluationListResult'
 
 const useStyles = createUseStyles({
     showDetail: {
@@ -295,58 +297,49 @@ export default function EvaluationListCard() {
             }
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
-            <GridResizer
-                left={() => {
-                    return (
-                        <GridTable
-                            store={useEvaluationStore}
-                            queryable
-                            selectable
-                            isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
-                            columns={$columnsWithSpecColumns}
-                            data={records}
-                            onSave={doSave as any}
-                            onChange={doChange}
-                            emptyColumnMessage={
-                                <BusyPlaceholder type='notfound'>
-                                    Create a new evaluation or Config to add columns
-                                </BusyPlaceholder>
-                            }
-                        >
-                            <ToolBar columnable viewable />
-                        </GridTable>
-                    )
-                }}
+            <GridResizerVertical
+                top={() => (
+                    <GridResizer
+                        left={() => {
+                            return (
+                                <GridTable
+                                    store={useEvaluationStore}
+                                    queryable
+                                    selectable
+                                    isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
+                                    columns={$columnsWithSpecColumns}
+                                    data={records}
+                                    onSave={doSave as any}
+                                    onChange={doChange}
+                                    emptyColumnMessage={
+                                        <BusyPlaceholder type='notfound'>
+                                            Create a new evaluation or Config to add columns
+                                        </BusyPlaceholder>
+                                    }
+                                >
+                                    <ToolBar columnable viewable />
+                                </GridTable>
+                            )
+                        }}
+                        isResizeable={$compareRows.length > 0}
+                        right={() => {
+                            return (
+                                <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
+                                    <EvaluationListCompare
+                                        title={t('Compare Evaluations')}
+                                        rows={$compareRows}
+                                        attrs={columnTypes}
+                                    />
+                                </Card>
+                            )
+                        }}
+                    />
+                )}
                 isResizeable={$compareRows.length > 0}
-                right={() => {
-                    return (
-                        <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
-                            <EvaluationListCompare
-                                title={t('Compare Evaluations')}
-                                rows={$compareRows}
-                                attrs={columnTypes}
-                            />
-                        </Card>
-                    )
+                bottom={() => {
+                    return <EvaluationListResult title={t('Compare Evaluations')} rows={$compareRows} />
                 }}
             />
-            <div className={styles.showDetail}>
-                <Button
-                    kind='tertiary'
-                    onClick={() => {}}
-                    icon='unfold2'
-                    overrides={{
-                        BaseButton: {
-                            style: {
-                                paddingTop: '9px',
-                                paddingBottom: '9px',
-                            },
-                        },
-                    }}
-                >
-                    {t('compare.show.details')}
-                </Button>
-            </div>
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                 <ModalBody>

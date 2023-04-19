@@ -124,21 +124,14 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
 }
 
 export function getScanQuery(params: TableScanParamsT): {
-    columnQuery: ScanTableRequest
     recordQuery: ScanTableRequest
 } {
-    const columnQuery = {
-        ...params,
-        limit: 1,
-        encodeWithType: false,
-    }
     const recordQuery = {
         ...params,
         encodeWithType: true,
     }
 
     return {
-        columnQuery,
         recordQuery,
     }
 }
@@ -154,12 +147,11 @@ export function useDatastoreQueryParams(queries: TableQueryParamsT[]) {
 }
 
 export function useDatastoreScanParams(queries: TableScanParamsT) {
-    const { columnQuery, recordQuery } = React.useMemo(() => {
+    const { recordQuery } = React.useMemo(() => {
         return getScanQuery(queries)
     }, [queries])
 
     return {
-        columnQuery,
         recordQuery,
     }
 }

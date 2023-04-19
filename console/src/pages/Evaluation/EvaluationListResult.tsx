@@ -27,7 +27,21 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import useFetchDatastoreByTables from '@starwhale/core/datastore/hooks/useFetchDatastoreByTables'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 
-export default function DatastoreDiffTables() {
+function prefixColumn(row: any, prefix: string | number) {
+    return [row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('-') + '-'
+}
+
+function getPrefixAttr(row: any, prefix: string | number, attr: string) {
+    const key = `${prefixColumn(row, prefix)}${attr}`
+    return _.get(row, [key, 'value'], _.get(row, key, '')) as string
+}
+
+function getPrefixId(row: any, prefix: string | number) {
+    const key = `${prefix}id`
+    return _.get(row, [key, 'value'], _.get(row, key, '')) as string
+}
+
+export default function DatastoreDiffTables({ rows }) {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -37,22 +51,21 @@ export default function DatastoreDiffTables() {
 
     const store = useEvaluationDetailStore()
 
+    console.log(rows)
+
     const queries = React.useMemo(
         () =>
-            new Array(10).fill(0).map((_, i) => {
+            rows.map((row, i) => {
                 return {
-                    tableName: tableNameOfResult(projectId, 'cec3345ffd2a4748bac26def597f04a2'),
-                    columnPrefix: `result-${i}-`,
-                    // ,
+                    tableName: tableNameOfResult(projectId, row.id.value),
+                    columnPrefix: prefixColumn(row, i),
                 }
             }),
-        [projectId]
+        [rows]
     )
-    const getId = useCallback((record) => {
-        return record['result-0-id']?.value || record['result-0-id']
-    }, [])
+    const getId = useCallback((row) => getPrefixId(row, prefixColumn(rows[0], 0)), [])
 
-    const { records, columnTypes, columnInfo } = useFetchDatastoreByTables({
+    const { records, columnTypes } = useFetchDatastoreByTables({
         tables: queries,
     })
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation-detail')
@@ -73,9 +86,7 @@ export default function DatastoreDiffTables() {
         return records.filter((r) => store.rowSelectedIds.includes(getId(r))) ?? []
     }, [store.rowSelectedIds, records, getId])
 
-    const $ready = React.useMemo(() => {
-        return columnInfo.isSuccess && evaluationViewConfig.isSuccess
-    }, [columnInfo.isSuccess, evaluationViewConfig.isSuccess])
+    const $ready = evaluationViewConfig.isSuccess
 
     console.log(store.rowSelectedIds, $compareRows, store)
 

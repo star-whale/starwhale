@@ -153,7 +153,7 @@ export default function EvaluationListCompare({
     rows = [],
     attrs,
     title = '',
-    getId,
+    getId = (r) => r.id,
 }: {
     title?: string
     rows: any[]

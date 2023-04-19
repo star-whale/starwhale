@@ -8,16 +8,17 @@ import { DataTypes } from '../constants'
 import { TableScanParamsT, useDatastoreQueryParams, useDatastoreScanParams } from './useDatastoreQueryParams'
 import { queryTable } from '../services/datastore'
 import { SwType } from '../model'
+import useDatastoreMixedSchema from './useDatastoreMixedSchema'
 
 export function useFetchDatastoreByTables(queries: TableScanParamsT) {
-    const { columnQuery, recordQuery } = useDatastoreScanParams(queries)
-    const columnInfo = useScanDatastore(columnQuery, true)
+    const { recordQuery } = useDatastoreScanParams(queries)
     const recordInfo = useScanDatastore(recordQuery, true)
+    const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
+
     return {
-        columnInfo,
         recordInfo,
-        records: recordInfo.data?.records ?? [],
-        columnTypes: columnInfo.data?.columnTypes ?? [],
+        records,
+        columnTypes,
     }
 }
 
