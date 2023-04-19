@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+import tenacity
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pyfakefs.fake_filesystem_unittest import Patcher
@@ -111,6 +112,10 @@ class TestRetry(TestCase):
     def _do_urllib_raise(self):
         raise urllib.error.HTTPError("http://1.1.1.1", 500, "dummy", None, None)  # type: ignore
 
+    @http_retry(attempts=2, retry=tenacity.retry_always, wait=tenacity.wait_fixed(1))
+    def _do_raise(self):
+        raise Exception("dummy")
+
     @Mocker()
     def test_http_retry(self, request_mock: Mocker) -> None:
         _cases = [
@@ -135,3 +140,8 @@ class TestRetry(TestCase):
             self._do_urllib_raise()
 
         assert self._do_urllib_raise.retry.statistics["attempt_number"] == 6
+
+        with self.assertRaises(Exception):
+            self._do_raise()
+        assert self._do_raise.retry.statistics["attempt_number"] == 2
+        assert self._do_raise.retry.statistics["idle_for"] == 1.0

@@ -40,6 +40,7 @@ import dill
 import numpy as np
 import pyarrow as pa  # type: ignore
 import requests
+import tenacity
 import jsonlines
 from loguru import logger
 from filelock import FileLock
@@ -51,7 +52,11 @@ from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.dict import flatten as flatten_dict
 from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
-from starwhale.utils.retry import http_retry
+from starwhale.utils.retry import (
+    http_retry,
+    retry_if_http_exception,
+    _RETRY_HTTP_STATUS_CODES,
+)
 from starwhale.utils.config import SWCliConfigMixed
 
 datastore_table_file_ext = ".sw-datastore"
@@ -1278,7 +1283,14 @@ class RemoteDataStore:
 
     __repr__ = __str__
 
-    @http_retry
+    @http_retry(
+        attempts=5,
+        wait=tenacity.wait_fixed(1),
+        retry=(
+            tenacity.retry_if_exception_type(Exception)
+            | retry_if_http_exception(_RETRY_HTTP_STATUS_CODES)
+        ),
+    )
     def update_table(
         self,
         table_name: str,
