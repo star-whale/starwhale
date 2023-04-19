@@ -231,7 +231,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                                         <span>{spec?.name}</span>
                                         <div style={{ marginTop: '3px' }} />
                                         <span style={{ color: 'rgba(2,16,43,0.60)' }}>{t('Task Amount')}:&nbsp;</span>
-                                        <span>{spec?.task_num}</span>
+                                        <span>{spec?.replicas}</span>
                                     </div>
                                     {spec.resources &&
                                         spec.resources?.length > 0 &&

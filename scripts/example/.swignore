@@ -2,4 +2,6 @@
 .git
 .history
 .vscode
+.starwhale
+**/__pycache__/**
 .venv
