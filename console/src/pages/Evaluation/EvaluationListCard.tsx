@@ -30,6 +30,7 @@ import { createUseStyles } from 'react-jss'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
+import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 
 const useStyles = createUseStyles({
     showDetail: {
@@ -45,7 +46,6 @@ const useStyles = createUseStyles({
 
 export default function EvaluationListCard() {
     const styles = useStyles()
-    const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
     const { projectId: projectFromUri } = useParams<{ projectId: string }>()
@@ -264,7 +264,6 @@ export default function EvaluationListCard() {
             <Card
                 title={t('Evaluations')}
                 style={{
-                    marginRight: expanded ? expandedWidth : '0',
                     flexShrink: 1,
                     marginBottom: 0,
                     width: '100%',
@@ -284,7 +283,6 @@ export default function EvaluationListCard() {
         <Card
             title={t('Evaluations')}
             style={{
-                marginRight: expanded ? expandedWidth : '0',
                 flexShrink: 1,
                 marginBottom: 0,
                 width: '100%',
@@ -297,7 +295,8 @@ export default function EvaluationListCard() {
             }
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
-            <GridResizerVertical
+            <GridCombineTable store={useEvaluationStore} queryable selectable />
+            {/* <GridResizerVertical
                 top={() => (
                     <GridResizer
                         left={() => {
@@ -324,20 +323,18 @@ export default function EvaluationListCard() {
                         isResizeable={$compareRows.length > 0}
                         right={() => {
                             return (
-                                <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
-                                    <EvaluationListCompare
-                                        title={t('Compare Evaluations')}
-                                        rows={$compareRows}
-                                        attrs={columnTypes}
-                                    />
-                                </Card>
+                                <EvaluationListCompare
+                                    title={t('Compare Evaluations')}
+                                    rows={$compareRows}
+                                    attrs={columnTypes}
+                                />
                             )
                         }}
                     />
                 )}
                 isResizeable={$compareRows.length > 0}
                 bottom={() => <EvaluationListResult title={t('Compare Evaluations')} rows={$compareRows} />}
-            />
+            /> */}
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                 <ModalBody>
