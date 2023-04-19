@@ -38,13 +38,16 @@ def http_retry(*args: t.Any, **kw: t.Any) -> t.Any:
     else:
 
         def wrap(f: t.Callable) -> t.Any:
-            _attempts = kw.get("attempts", 3)
+            _attempts = kw.pop("attempts", 3)
             _cls = AsyncRetrying if iscoroutinefunction(f) else Retrying
             return _cls(
                 *args,
                 reraise=True,
-                stop=stop_after_attempt(_attempts),
-                retry=retry_if_http_exception(_RETRY_HTTP_STATUS_CODES),
+                stop=kw.pop("stop", stop_after_attempt(_attempts)),
+                retry=kw.pop(
+                    "retry", retry_if_http_exception(_RETRY_HTTP_STATUS_CODES)
+                ),
+                **kw,
             ).wraps(f)
 
         return wrap
