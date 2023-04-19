@@ -130,6 +130,7 @@ public class JobController implements JobApi {
                 jobRequest.getRuntimeVersionUrl(),
                 jobRequest.getComment(),
                 jobRequest.getResourcePool(),
+                jobRequest.getHandler(),
                 jobRequest.getStepSpecOverWrites(),
                 jobRequest.getType());
 
