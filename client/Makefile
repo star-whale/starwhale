@@ -10,8 +10,8 @@ clean:
 	rm -rf dist/*
 
 build-ui:
-	make -C ../console install-dev-tools
-	make -C ../console build-all
+	[ "${SKIP_UI_BUILD}" = "1" ] || make -C ../console install-dev-tools
+	[ "${SKIP_UI_BUILD}" = "1" ] || make -C ../console build-all
 
 build-wheel: check clean build-ui
 	python3 setup.py sdist bdist_wheel
