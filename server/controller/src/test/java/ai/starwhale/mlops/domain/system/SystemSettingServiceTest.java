@@ -42,7 +42,20 @@ public class SystemSettingServiceTest {
             + "  indexUrl: \"url1\"\n"
             + "  extraIndexUrl: \"url2\"\n"
             + "  trustedHost: \"host1\"\n"
-            + "resourcePoolSetting: []";
+            + "resourcePoolSetting:\n"
+            + "- name: \"default\"\n"
+            + "  nodeSelector: {}\n"
+            + "  resources:\n"
+            + "  - name: \"cpu\"\n"
+            + "    max: null\n"
+            + "    min: null\n"
+            + "    defaults: null\n"
+            + "  - name: \"memory\"\n"
+            + "    max: null\n"
+            + "    min: null\n"
+            + "    defaults: null\n"
+            + "  tolerations: null\n"
+            + "  metadata: null";
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd1.com\"\n"
@@ -106,7 +119,21 @@ public class SystemSettingServiceTest {
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
-                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
+                + "  trustedHost: \"\"\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: {}\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  - name: \"memory\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  tolerations: null\n"
+                + "  metadata: null", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
@@ -134,7 +161,21 @@ public class SystemSettingServiceTest {
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
-                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
+                + "  trustedHost: \"\"\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: {}\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  - name: \"memory\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  tolerations: null\n"
+                + "  metadata: null", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }

@@ -74,6 +74,9 @@ public class SystemSettingService implements CommandLineRunner {
             if (null == systemSetting.getDockerSetting()) {
                 systemSetting.setDockerSetting(DockerSetting.empty());
             }
+            if (CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
+                systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
+            }
             setting = Constants.yamlMapper.writeValueAsString(systemSetting);
         } catch (JsonProcessingException e) {
             log.error("invalid setting yaml {}", setting, e);

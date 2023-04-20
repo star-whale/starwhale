@@ -51,6 +51,10 @@ class ResourcePoolTest {
         rr.setRequest(6f);
         assertTrue(resourcePool.validateResource(rr));
 
+        rr.setType("gpu");
+        rr.setRequest(1f);
+        assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
+
         // memory more than max
         rr.setRequest(8f);
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
