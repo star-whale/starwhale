@@ -24,7 +24,7 @@ The `job` command includes the following subcommands:
 swcli [GLOBAL OPTIONS] job cancel [OPTIONS] <JOB>
 ```
 
-`job cacel` stops the specified job.
+`job cancel` stops the specified job.
 
 `JOB` is a [job URI](../../swcli/uri.md#job).
 

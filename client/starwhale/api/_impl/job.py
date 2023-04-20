@@ -6,7 +6,6 @@ import inspect
 import numbers
 import threading
 from pathlib import Path
-from functools import wraps
 from collections import defaultdict
 
 import yaml
@@ -17,7 +16,6 @@ from starwhale.utils.fs import ensure_file
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
-from starwhale.core.job.context import Context
 from starwhale.api._impl.evaluation import PipelineHandler
 
 
@@ -291,12 +289,3 @@ def generate_jobs_yaml(
         ),
         parents=True,
     )
-
-
-def pass_context(func: t.Any) -> t.Any:
-    @wraps(func)
-    def wrap_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
-        kwargs["context"] = Context.get_runtime_context()
-        return func(*args, **kwargs)
-
-    return wrap_func

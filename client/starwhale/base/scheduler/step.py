@@ -9,10 +9,10 @@ from loguru import logger
 from starwhale.utils import load_yaml
 from starwhale.consts import RunStatus
 from starwhale.base.mixin import ASDictMixin
+from starwhale.base.context import Context
 
 from .dag import DAG
 from .task import TaskResult, TaskExecutor
-from .context import Context
 
 
 class StepResult:

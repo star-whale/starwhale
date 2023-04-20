@@ -29,7 +29,6 @@ from starwhale.base.type import URIType, BundleType
 from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Handler
-from starwhale.core.job.step import Step
 from starwhale.core.model.cli import _list as list_cli
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import (
@@ -38,6 +37,7 @@ from starwhale.core.model.model import (
     resource_to_file_node,
 )
 from starwhale.core.instance.view import InstanceTermView
+from starwhale.base.scheduler.step import Step
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -307,11 +307,11 @@ class StandaloneModelTestCase(TestCase):
         )
         assert diff_info["compare_version"]["src/model.yaml"].flag == FileFlag.UNCHANGED
 
-    @patch("starwhale.core.job.step.Step.get_steps_from_yaml")
+    @patch("starwhale.base.scheduler.Step.get_steps_from_yaml")
     @patch("starwhale.core.model.model.generate_jobs_yaml")
-    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_task")
-    @patch("starwhale.core.job.scheduler.Scheduler._schedule_one_step")
-    @patch("starwhale.core.job.scheduler.Scheduler._schedule_all")
+    @patch("starwhale.base.scheduler.Scheduler._schedule_one_task")
+    @patch("starwhale.base.scheduler.Scheduler._schedule_one_step")
+    @patch("starwhale.base.scheduler.Scheduler._schedule_all")
     def test_run(
         self,
         schedule_all_mock: MagicMock,

@@ -5,8 +5,8 @@ from unittest.mock import patch, MagicMock
 import pytest
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale.base.context import Context
 from starwhale.api._impl.metric import multi_classification
-from starwhale.core.job.context import Context
 
 
 class TestMultiClassificationMetric(TestCase):
