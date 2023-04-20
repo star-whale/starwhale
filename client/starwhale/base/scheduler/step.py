@@ -176,7 +176,7 @@ class StepExecutor:
         with ThreadPoolExecutor(max_workers=self.step.concurrency) as executor:
             loop = asyncio.get_event_loop()
             future_tasks = [loop.run_in_executor(executor, _t.execute) for _t in tasks]
-            task_results = loop.run_until_complete(asyncio.gather(*future_tasks))
+            task_results = [loop.run_until_complete(ft) for ft in future_tasks]
 
         logger.info(f"finish to execute step:{self.step}")
         return StepResult(name=self.step.name, task_results=task_results)
