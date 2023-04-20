@@ -45,6 +45,12 @@ storageSetting:
     region: "local"
     hugeFileThreshold: "10485760"
     hugeFilePartSize: "5242880"
+resourcePoolSetting:
+- name: "default"
+  resources:
+    - name: "cpu"
+    - name: "memory"
+    - name: "nvidia.com/gpu"
 EOF
 
 ) || exit 1
