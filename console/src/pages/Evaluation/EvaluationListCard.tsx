@@ -9,28 +9,24 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
-import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
+import { ITableState, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { GridTable } from '@starwhale/ui/GridTable'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import { toaster } from 'baseui/toast'
-import EvaluationListCompare from './EvaluationListCompare'
-import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
+import { BusyPlaceholder, Button } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { useDatastoreMixedSchema } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
-import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
-import { useIfChanged } from '@starwhale/core'
+import { val } from '@starwhale/ui/GridTable/utils'
 
 const useStyles = createUseStyles({
     showDetail: {
@@ -174,10 +170,6 @@ export default function EvaluationListCard() {
         })
     }, [t, $columns, projectId])
 
-    const $compareRows = React.useMemo(() => {
-        return records.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
-    }, [store.rowSelectedIds, records])
-
     const $ready = React.useMemo(() => {
         return evaluationViewConfig.isSuccess
     }, [evaluationViewConfig.isSuccess])
@@ -250,6 +242,10 @@ export default function EvaluationListCard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
 
+    const $compareRows = React.useMemo(() => {
+        return records?.filter((r) => store.rowSelectedIds.includes(val(r.id))) ?? []
+    }, [store.rowSelectedIds, records])
+
     if (!$ready)
         return (
             <Card
@@ -269,7 +265,6 @@ export default function EvaluationListCard() {
                 <BusyPlaceholder />
             </Card>
         )
-
     return (
         <Card
             title={t('Evaluations')}
@@ -286,13 +281,20 @@ export default function EvaluationListCard() {
             }
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
-            <GridCombineTable
-                store={useEvaluationStore}
-                queryable
-                selectable
-                records={records}
-                columnTypes={columnTypes}
+            <GridResizerVertical
+                top={() => (
+                    <GridCombineTable
+                        store={useEvaluationStore}
+                        queryable
+                        selectable
+                        records={records}
+                        columnTypes={columnTypes}
+                    />
+                )}
+                isResizeable={$compareRows.length > 0}
+                bottom={() => <EvaluationListResult title='detail' rows={$compareRows} />}
             />
+
             {/* <GridResizerVertical
                 top={() => (
                     <GridResizer

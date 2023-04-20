@@ -11,7 +11,10 @@ import { StatefulDataTable } from '../base/data-table'
 import { stateSelector } from '../base/data-table/store'
 import { useStore, useStoreApi } from './hooks/useStore'
 import { StoreProvider } from './store/StoreProvider'
-import StoreUpdater from './store/StoreUpdater'
+import StoreUpdater, { useDirectStoreUpdater } from './store/StoreUpdater'
+import useGrid from './hooks/useGrid'
+import { DataTable } from '../base/data-table/data-custom-table'
+import { ITableState } from './store'
 
 const useStyles = createUseStyles({
     table: {
@@ -53,6 +56,34 @@ const useStyles = createUseStyles({
     },
 })
 
+const loadingMessage = () => (
+    <Skeleton
+        overrides={{
+            Root: {
+                style: {
+                    paddingTop: '10px',
+                },
+            },
+        }}
+        rows={10}
+        width='100%'
+        animation
+    />
+)
+
+const selector = (state: ITableState) => ({
+    onIncludedRowsChange: state.onIncludedRowsChange,
+    onRowHighlightChange: state.onRowHighlightChange,
+})
+function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+    }
+
+    return r
+}
+
 function GridTable({
     isLoading,
     columns = [],
@@ -69,25 +100,33 @@ function GridTable({
     onChange = () => {},
     emptyMessage,
     emptyColumnMessage,
-    getId = (record: any) => record.id,
+    // todo
+    getId = (record: any) => val(record.id),
+    resizableColumnWidths = false,
+    rowHighlightIndex = -1,
+    rowHeight = 44,
     storeRef,
     onColumnsChange,
+    headlineHeight = 60,
     children,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
+    const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
     const store = useStoreApi()
-    const $rows = useMemo(
+    const rows = useMemo(
         () =>
             data.map((raw, index) => {
                 return {
                     id: getId(raw) ?? index.toFixed(),
                     data: raw,
                 }
-            }),
+            }) ?? [],
         [data]
     )
+
+    useDirectStoreUpdater('rows', rows, store.setState)
 
     // const $filters = useMemo(() => {
     //     return store.currentView?.filters
@@ -104,47 +143,59 @@ function GridTable({
     //     storeRef.current = store
     // }, [storeRef, store])
 
+    const {
+        sortIndex,
+        sortDirection,
+        textQuery,
+        rowSelectedIds,
+        onSelectMany,
+        onSelectNone,
+        onSelectOne,
+        isRowSelected,
+        isSelectedAll,
+        isSelectedIndeterminate,
+    } = useGrid()
+
     return (
-        <>
-            <div
-                className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
-                ref={wrapperRef}
-            >
-                {children}
-                <StatefulDataTable
-                    resizableColumnWidths
-                    searchable={searchable}
-                    queryinline={queryinline}
-                    filterable={filterable}
-                    queryable={queryable}
-                    compareable={compareable}
-                    selectable={selectable}
-                    loading={!!isLoading}
-                    rowActions={rowActions}
+        <div
+            className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
+            ref={wrapperRef}
+        >
+            {children}
+            <div data-type='table-wrapper' style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
+                <DataTable
                     columns={columns}
-                    rows={$rows}
-                    onSave={onSave}
-                    getId={getId}
-                    loadingMessage={() => (
-                        <Skeleton
-                            overrides={{
-                                Root: {
-                                    style: {
-                                        paddingTop: '10px',
-                                    },
-                                },
-                            }}
-                            rows={10}
-                            width='100%'
-                            animation
-                        />
-                    )}
+                    selectable={selectable}
+                    compareable={compareable}
+                    queryinline={queryinline}
+                    rawColumns={columns}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
-                    emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
+                    getId={getId}
+                    // filters={$filtersEnabled}
+                    loading={isLoading}
+                    loadingMessage={emptyMessage ?? loadingMessage}
+                    onIncludedRowsChange={onIncludedRowsChange}
+                    onRowHighlightChange={onRowHighlightChange}
+                    isRowSelected={isRowSelected}
+                    isSelectedAll={isSelectedAll}
+                    isSelectedIndeterminate={isSelectedIndeterminate}
+                    onSelectMany={onSelectMany}
+                    onSelectNone={onSelectNone}
+                    onSelectOne={onSelectOne}
+                    resizableColumnWidths={resizableColumnWidths}
+                    rowHighlightIndex={rowHighlightIndex}
+                    rows={rows}
+                    rowActions={rowActions}
+                    rowHeight={rowHeight}
+                    selectedRowIds={rowSelectedIds}
+                    sortDirection={sortDirection}
+                    sortIndex={sortIndex}
+                    textQuery={textQuery}
+                    // controlRef={controlRef}
                 />
+                {columns.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
-            <Pagination {...paginationProps} />
-        </>
+        </div>
     )
 }
 
@@ -154,11 +205,12 @@ export default function ContextGridTable({
     storeKey = 'table',
     initState = {},
     store = undefined,
+    children,
     ...rest
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridTable {...rest} />
+            <MemoGridTable {...rest}>{children}</MemoGridTable>
             <StoreUpdater {...rest} />
         </StoreProvider>
     )

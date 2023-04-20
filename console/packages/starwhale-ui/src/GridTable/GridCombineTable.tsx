@@ -8,21 +8,29 @@ import EvaluationListResult from '@/pages/Evaluation/EvaluationListResult'
 import EvaluationListCompare from '@/pages/Evaluation/EvaluationListCompare'
 import { useStore, useStoreApi } from './hooks/useStore'
 import { ITableProps, IContextGridTable } from './types'
-import { StoreProvider, StoreUpdater } from './store'
+import { StoreProvider, StoreUpdater, useDirectStoreUpdater } from './store'
 import { MemoGridTable } from './GridTable'
-import { MemoGridCompareTable } from './GridCompareTable'
+import GridCompareTable, { MemoGridCompareTable } from './GridCompareTable'
 import { useDatastoreColumns } from '../GridDatastoreTable'
+import store from '@starwhale/core/store/store'
 
+function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+    }
+
+    return r
+}
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
+    columns: state.columns,
 })
 function BaseGridCombineTable({
     // datastore api
     isLoading = false,
     records,
     columnTypes,
-    // api rendered for table
-    columns = [],
     // table confi
     title = '',
     titleOfDetail = 'Detail',
@@ -44,47 +52,43 @@ function BaseGridCombineTable({
     emptyColumnMessage = (
         <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
     ),
-    getId = (record: any) => record.id,
+    getId = (record: any) => val(record.id),
     storeRef,
     onColumnsChange,
     children,
 }: ITableProps) {
-    const { rowSelectedIds } = useStore(selector)
+    const { rowSelectedIds, columns } = useStore(selector)
     const $compareRows = React.useMemo(() => {
-        return records?.filter((r) => rowSelectedIds.includes(r.id)) ?? []
+        return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
     }, [rowSelectedIds, records])
-    const $columns = useDatastoreColumns(columnTypes as any)
-
-    console.log($columns)
 
     return (
-        <GridResizerVertical
-            top={() => (
-                <GridResizer
-                    left={() => {
-                        return (
-                            <MemoGridTable
-                                queryable
-                                selectable
-                                isLoading={isLoading}
-                                columns={$columns}
-                                data={records}
-                                onSave={onSave}
-                                onChange={onChange}
-                                emptyColumnMessage={emptyColumnMessage}
-                            >
-                                <ToolBar columnable={columnable} viewable={viewable} />
-                            </MemoGridTable>
-                        )
-                    }}
-                    isResizeable={$compareRows.length > 0}
-                    right={() => (
-                        <MemoGridCompareTable title={titleOfCompare} rows={$compareRows} columnTypes={columnTypes} />
-                    )}
+        <GridResizer
+            left={() => {
+                return (
+                    <MemoGridTable
+                        queryable
+                        selectable
+                        isLoading={isLoading}
+                        columns={columns}
+                        data={records}
+                        onSave={onSave}
+                        onChange={onChange}
+                        emptyColumnMessage={emptyColumnMessage}
+                    >
+                        <ToolBar columnable={columnable} viewable={viewable} />
+                    </MemoGridTable>
+                )
+            }}
+            isResizeable={rowSelectedIds.length > 0}
+            right={() => (
+                <GridCompareTable
+                    rowSelectedIds={rowSelectedIds}
+                    title={titleOfCompare}
+                    rows={$compareRows}
+                    columnTypes={columnTypes}
                 />
             )}
-            isResizeable={$compareRows.length > 0}
-            bottom={() => <EvaluationListResult title={titleOfDetail} rows={$compareRows} />}
         />
     )
 }
@@ -95,11 +99,12 @@ export default function GridCombineTable({
     storeKey = 'table-combined',
     initState = {},
     store = undefined,
+    children,
     ...rest
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <BaseGridCombineTable {...rest} />
+            <BaseGridCombineTable {...rest}>{children}</BaseGridCombineTable>
             <StoreUpdater {...rest} />
         </StoreProvider>
     )

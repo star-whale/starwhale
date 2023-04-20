@@ -52,14 +52,14 @@ export function useFetchDatastoreByMergeTables(queries: TableQueryParamsT[]) {
 
     const recordColumnCombineById = React.useMemo(() => {
         const result: Record<string, any> = {}
-        let columns = new Set()
-        let columnTypes: RecordSchemaT[] = []
+        const columns = new Set()
+        const columnTypes: RecordSchemaT[] = []
 
         info.forEach(({ data }, i: number) => {
             if (!data) return
             const { records } = data
             Object.keys(records?.[0] ?? []).map((c) => columns.add(c))
-            const prefix = queries[i].prefix
+            const { prefix } = queries[i]
             records?.forEach((r: any) => {
                 const id = r.id.value
                 if (!result[id]) {
@@ -74,7 +74,6 @@ export function useFetchDatastoreByMergeTables(queries: TableQueryParamsT[]) {
                 columnTypes.push({
                     name: `${prefix}${c}`,
                     type: DataTypes.STRING,
-                    mixed: true,
                     value: '',
                 })
             })

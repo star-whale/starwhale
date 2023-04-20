@@ -11,10 +11,11 @@ import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { DataTypes, isBoolType, isComplexType, isNumbericType, isSearchColumns, isStringType } from '@starwhale/core'
-import { GridTable } from '@starwhale/ui/GridTable'
+import { GridTable, MemoGridTable } from '@starwhale/ui/GridTable'
 import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import useTranslation from '@/hooks/useTranslation'
-import { StoreProvider } from './store'
+import { StoreProvider, StoreUpdater } from './store'
+import { useStore, useStoreApi } from './hooks/useStore'
 
 const useStyles = createUseStyles({
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
@@ -149,7 +150,10 @@ function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{
     }
     return NoneCompareCell({ value, comparedValue, renderedValue, data })
 }
-
+const selector = (state: ITableState) => ({
+    rowSelectedIds: state.rowSelectedIds,
+    columns: state.columns ?? [],
+})
 export function BaseGridCompareTable({
     rows = [],
     columnTypes,
@@ -160,28 +164,18 @@ export function BaseGridCompareTable({
     rows: any[]
     columnTypes: RecordListVo['columnTypes']
 }) {
-    const store = useEvaluationCompareStore()
+    const store = useStoreApi().getState()
+    const { rowSelectedIds, columns } = useStore(selector)
     const [t] = useTranslation()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
     const styles = useStyles()
 
     React.useEffect(() => {
+        if (rows.length === 0) return
+
         const row = rows.find((r) => val(r.id) === store.compare?.comparePinnedKey)
         const pinKey = row ? store.compare?.comparePinnedKey : val(rows[0].id)
-        if (
-            !_.isEqual(
-                store.rowSelectedIds,
-                rows.map((r) => val(r.id))
-            )
-        ) {
-            store.onSelectMany(rows.map((v) => val(v.id)))
-        }
-        if (!store.isInit) {
-            store.onCompareUpdate({
-                compareShowCellChanges: true,
-                compareShowDiffOnly: false,
-            })
-        }
+
         if (pinKey !== store.compare?.comparePinnedKey) {
             store.onCompareUpdate({
                 comparePinnedKey: row ? store.compare?.comparePinnedKey : val(rows[0].id),
@@ -319,6 +313,8 @@ export function BaseGridCompareTable({
         [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
     )
 
+    if (!rows.length) return null
+
     return (
         <>
             <div className={styles.header}>
@@ -365,7 +361,7 @@ export function BaseGridCompareTable({
                 </div>
             </div>
             <div className={styles.tableWrapper}>
-                <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+                <MemoGridTable compareable columns={$columns} data={$rowsWithDiffOnly} />
             </div>
         </>
     )
@@ -373,15 +369,24 @@ export function BaseGridCompareTable({
 
 export const MemoGridCompareTable = React.memo(BaseGridCompareTable)
 
-export default function ridCompareTable({
+export default function GridCompareTable({
     storeKey = 'table',
-    initState = {},
+    initState = {
+        compare: {
+            comparePinnedKey: '',
+            compareShowCellChanges: true,
+            compareShowDiffOnly: false,
+        },
+    },
     store = undefined,
+    children,
     ...rest
 }: IContextGridTable) {
+    console.log('GridCompareTable', rest)
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridCompareTable {...rest} />
+            <MemoGridCompareTable {...rest}>{children}</MemoGridCompareTable>
+            <StoreUpdater {...rest} />
         </StoreProvider>
     )
 }

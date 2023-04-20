@@ -82,7 +82,6 @@ export function useDatastoreMixedSchema(data?: RecordListVo) {
                 schema = {
                     ...schema,
                     name,
-                    mixed: true,
                 }
                 cached.current.put(key, schema)
             }

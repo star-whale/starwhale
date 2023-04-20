@@ -272,7 +272,6 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => ({
         } else {
             selectedRowIds.add(id)
         }
-        console.log(Array.from(selectedRowIds), '---------')
         set({
             rowSelectedIds: Array.from(selectedRowIds),
         })

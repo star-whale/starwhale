@@ -7,7 +7,7 @@ import { ITableState } from '../store'
 const selector = (state: ITableState) => ({
     currentView: state.currentView,
     views: state.views,
-    columns: state.columns,
+    columns: state.columns ?? [],
 })
 
 function useGridCurrentView() {

@@ -44,6 +44,7 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
                         key: column.name,
                         title: column.name,
                         renderCell: RenderMixedCell as any,
+                        fillWidth: false,
                         mapDataToValue: (data: any): string => _.get(data, [column.name, 'value']),
                     })
                 )

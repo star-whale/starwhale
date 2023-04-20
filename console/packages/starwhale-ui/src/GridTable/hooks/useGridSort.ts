@@ -10,7 +10,7 @@ function useGridSave() {
     const { currentView, columns } = useStoreApi(selector)
     const [$sortIndex, $sortDirection] = useMemo(() => {
         const { sortBy, sortDirection } = currentView || {}
-        const sortIndex = columns.findIndex((c) => c.key === sortBy)
+        const sortIndex = columns?.findIndex((c) => c.key === sortBy)
         return [sortIndex, sortDirection]
     }, [currentView, columns])
 

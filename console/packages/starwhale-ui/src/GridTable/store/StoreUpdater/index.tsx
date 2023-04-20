@@ -5,6 +5,7 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import type { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/types'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 
 type StoreUpdaterProps = StatefulDataTablePropsT & { rfId: string }
 
@@ -19,7 +20,7 @@ const selector = (s: ITableState) => ({
     // reset: s.reset,
 })
 
-function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
+export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
     useEffect(() => {
         if (typeof value !== 'undefined') {
             setStoreState(value)
@@ -28,7 +29,11 @@ function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => v
 }
 
 // updates with values in store that don't have a dedicated setter function
-function useDirectStoreUpdater(key: keyof ITableState, value: unknown, setState: StoreApi<ITableState>['setState']) {
+export function useDirectStoreUpdater(
+    key: keyof ITableState,
+    value: unknown,
+    setState: StoreApi<ITableState>['setState']
+) {
     useEffect(() => {
         if (typeof value !== 'undefined') {
             setState({ [key]: value })
@@ -36,7 +41,16 @@ function useDirectStoreUpdater(key: keyof ITableState, value: unknown, setState:
     }, [value])
 }
 
-const StoreUpdater = ({ columns, onColumnsChange, rows, data, isQueryInline }: StoreUpdaterProps) => {
+const StoreUpdater = ({
+    rowSelectedIds,
+    onColumnsChange,
+    rows,
+    data,
+    isQueryInline,
+    onIncludedRowsChange,
+    onRowHighlightChange,
+    columnTypes,
+}: StoreUpdaterProps) => {
     const {
         // setNodes,
         // setEdges,
@@ -48,6 +62,9 @@ const StoreUpdater = ({ columns, onColumnsChange, rows, data, isQueryInline }: S
         // reset,
     } = useStore(selector, shallow)
     const store = useStoreApi()
+    const $columns = useDatastoreColumns(columnTypes as any)
+
+    console.log('StoreUpdater', rowSelectedIds, $columns)
 
     // useEffect(() => {
     //     const edgesWithDefaults = defaultEdges?.map((e) => ({ ...e, ...defaultEdgeOptions }))
@@ -58,13 +75,18 @@ const StoreUpdater = ({ columns, onColumnsChange, rows, data, isQueryInline }: S
     //     }
     // }, [])
 
-    useDirectStoreUpdater('columns', columns, store.setState)
+    useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
+    useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
+    useDirectStoreUpdater('columns', $columns, store.setState)
     useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('data', data, store.setState)
     useDirectStoreUpdater('isQueryInline', isQueryInline, store.setState)
+    useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
+    useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
+    // useStoreUpdater(columns, store.setColumns)
 
     return null
 }

@@ -3,7 +3,7 @@ import { Types } from '../base/data-table'
 import { IStore, ITableState } from '../base/data-table/store'
 import { RowT } from '../base/data-table/types'
 
-export interface ITableProps {
+export interface ITableProps extends IToolBarProps, IPaginationProps {
     records: RecordListVo['records']
     columnTypes: RecordListVo['columnTypes']
     batchActions?: Types.BatchActionT[]
@@ -15,10 +15,8 @@ export interface ITableProps {
     onSelectionChange?: (rows: RowT[]) => void
     filterable?: boolean
     searchable?: boolean
-    columnable?: boolean
     compareable?: boolean
     isLoading?: boolean
-    viewable?: boolean
     queryable?: boolean
     selectable?: boolean
     queryinline?: boolean
@@ -28,6 +26,11 @@ export interface ITableProps {
     storeRef?: React.MutableRefObject<ITableState | undefined>
     emptyMessage?: React.ReactNode
     emptyColumnMessage?: React.ReactNode
+}
+
+export interface IToolBarProps {
+    columnable?: boolean
+    viewable?: boolean
 }
 
 export interface IPaginationProps {

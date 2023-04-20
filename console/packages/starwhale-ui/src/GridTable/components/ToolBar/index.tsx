@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import ConfigViews from '../ConfigViews/ConfigViews'
 import ConfigColumns from '../ConfigColumns'
 import { useStore } from '../../hooks/useStore'
+import { useResizeObserver } from '@starwhale/ui/utils/useResizeObserver'
+import React from 'react'
 
 type IToolBarProps = {
     viewable?: boolean
@@ -21,17 +23,16 @@ const selector = (s: ITableState) => ({
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
 })
 
-function ToolBar({
-    headlineRef,
-    viewable,
-    filterable,
-    searchable,
-    queryable,
-    columnable,
-    headlineHeight = 60,
-}: IToolBarProps) {
+function ToolBar({ viewable, filterable, searchable, queryable, columnable, headlineHeight = 60 }: IToolBarProps) {
     const [css] = themedUseStyletron()
     const { columns, currentView, rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
+    // const { renderConfigQuery } = useConfigQuery({ columns: props.columns, queryable })
+    const headlineRef = React.useRef(null)
+    // const [headlineHeight, setHeadlineHeight] = React.useState(64)
+
+    // useResizeObserver(headlineRef, (entries) => {
+    //     setHeadlineHeight(entries[0].contentRect.height)
+    // })
 
     return (
         <div
