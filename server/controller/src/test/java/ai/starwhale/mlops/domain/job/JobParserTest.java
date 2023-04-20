@@ -68,7 +68,9 @@ public class JobParserTest {
         List<StepSpec> stepMetaDatas = jobSpecParser.parseAndFlattenStepFromYaml(yamlContent);
         Assertions.assertEquals(stepMetaDatas.size(), 3);
         Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
+        Assertions.assertNull(stepMetaDatas.get(0).getEnv());
         Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);
+        Assertions.assertNull(stepMetaDatas.get(1).getEnv());
         Assertions.assertEquals(stepMetaDatas.get(2).getEnv().size(), 3);
         Assertions.assertEquals(stepMetaDatas.get(2).getEnv(), List.of(
                 new Env("EVAL_MODE", "test"),
