@@ -35,13 +35,10 @@ public class Resource {
         this.name = name;
     }
 
-    public void validate(RuntimeResource runtimeResource) {
-        if (runtimeResource == null) {
-            return;
-        }
+    public boolean validate(RuntimeResource runtimeResource) {
         var req = runtimeResource.getRequest();
         if (req == null) {
-            return;
+            return true;
         }
         if (max != null && req > max) {
             throw new IllegalArgumentException(String.format("request value is too large, max is %.1f", max));
@@ -49,6 +46,7 @@ public class Resource {
         if (min != null && req < min) {
             throw new IllegalArgumentException(String.format("value is too small, min is %.1f", min));
         }
+        return true;
     }
 
     public void patch(RuntimeResource runtimeResource) {

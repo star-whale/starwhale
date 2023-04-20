@@ -58,10 +58,7 @@ public class ResourcePool {
                 .build();
     }
 
-    public void validateResource(RuntimeResource resource) {
-        if (resources == null || resources.isEmpty()) {
-            return;
-        }
+    public boolean validateResource(RuntimeResource resource) {
         var type = resource.getType();
         if (!StringUtils.hasText(type)) {
             throw new IllegalArgumentException("resource type is empty");
@@ -69,12 +66,15 @@ public class ResourcePool {
         if (!ResourceOverwriteSpec.SUPPORTED_DEVICES.contains(type)) {
             throw new IllegalArgumentException("unsupported resource type: " + type);
         }
+        if (resources == null || resources.isEmpty()) {
+            return false;
+        }
         var rc = resources.stream().filter(r -> r.getName().equals(type)).findFirst().orElse(null);
         // no rules for the resource
         if (rc == null) {
-            return;
+            return false;
         }
-        rc.validate(resource);
+        return rc.validate(resource);
     }
 
     public void validateResources(List<RuntimeResource> runtimeResources) {
@@ -82,7 +82,9 @@ public class ResourcePool {
             return;
         }
         for (var r : runtimeResources) {
-            validateResource(r);
+            if (!validateResource(r)) {
+                throw new IllegalArgumentException("resource validation failed: " + r);
+            }
         }
     }
 
@@ -112,7 +114,7 @@ public class ResourcePool {
             rc.patch(rr);
             // no request update, ignore
             if (rr.getRequest() == null) {
-                log.warn("no request update for {}", rr.getType());
+                log.error("no request update for {}", rr.getType());
                 continue;
             }
             ret.add(rr);

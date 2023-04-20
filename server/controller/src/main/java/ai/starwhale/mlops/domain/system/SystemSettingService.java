@@ -84,20 +84,6 @@ public class SystemSettingService implements CommandLineRunner {
         return querySetting();
     }
 
-    public void updateResourcePool(List<ResourcePool> resourcePools) {
-        // merge these with original
-        resourcePools.forEach(rp -> {
-            ResourcePool original = queryResourcePool(rp.getName());
-            if (null == original) {
-                systemSetting.getResourcePoolSetting().add(rp);
-            } else {
-                systemSetting.getResourcePoolSetting().remove(original);
-                systemSetting.getResourcePoolSetting().add(rp);
-            }
-        };
-        // TODO: is necessary to run listeners?
-    }
-
     public ResourcePool queryResourcePool(String rpName) {
         return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? ResourcePool.defaults() :
                 this.systemSetting.getResourcePoolSetting().stream().filter(rp -> rp.getName().equals(rpName)).findAny()
@@ -123,7 +109,7 @@ public class SystemSettingService implements CommandLineRunner {
                     systemSetting.setDockerSetting(dockerSetting);
                 }
                 if (CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
-                    systemSetting.setResourcePoolSetting(ResourcePool.defaults());
+                    systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
                 }
                 listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
@@ -134,7 +120,7 @@ public class SystemSettingService implements CommandLineRunner {
             systemSetting = new SystemSetting();
             systemSetting.setPypiSetting(runTimeProperties.getPypi());
             systemSetting.setDockerSetting(dockerSetting);
-            systemSetting.setResourcePoolSetting(ResourcePool.defaults());
+            systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
         }
 
     }
