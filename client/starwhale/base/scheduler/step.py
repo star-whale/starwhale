@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import typing as t
+import asyncio
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
@@ -180,7 +180,9 @@ class StepExecutor:
                 logger.warning(f"get event loop in error, try to new one", ex)
                 loop = asyncio.new_event_loop()
             try:
-                future_tasks = [loop.run_in_executor(executor, _t.execute) for _t in tasks]
+                future_tasks = [
+                    loop.run_in_executor(executor, _t.execute) for _t in tasks
+                ]
                 task_results = [loop.run_until_complete(ft) for ft in future_tasks]
             finally:
                 loop.close()
