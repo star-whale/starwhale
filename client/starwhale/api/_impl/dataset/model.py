@@ -289,7 +289,7 @@ class Dataset:
                 "translation",
                 '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
             )
-            myds = dataset("translation").with_loader_config(key_transformer={"en": "en-us"})
+            myds = dataset("translation").with_loader_config(field_transformer={"en": "en-us"})
             assert myds[0].features["en-us"] == myds[0].features["en"]
             ```
             ```python
@@ -298,7 +298,7 @@ class Dataset:
                 "translation2",
                 '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]'
             )
-            myds = dataset("translation2").with_loader_config(key_transformer={"content.child_content[0].en": "en-us"})
+            myds = dataset("translation2").with_loader_config(field_transformer={"content.child_content[0].en": "en-us"})
             assert myds[0].features["en-us"] == myds[0].features["content"]["child_content"][0]["en"]
             ```
 
