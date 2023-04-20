@@ -581,8 +581,8 @@ public class RuntimeService {
                     String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
-            // record image to labels
-            k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
+            // record image to annotations
+            k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("image", image.toString()));
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             List<V1EnvVar> envVars = List.of(
@@ -618,7 +618,7 @@ public class RuntimeService {
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null, List.of());
+            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null, null, null);
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);

@@ -64,7 +64,9 @@ public class K8sJobTemplateTest {
         Map<String, String> nodeSelectors = Map.of("label.pool.bj01", "true");
         var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
         var toleration = new Toleration("key1", "Equal", "value1", "NoSchedule", 100L);
-        k8sJobTemplate.renderJob(job, "yxz", "OnFailure", 10, containerSpecMap, nodeSelectors, List.of(toleration));
+        var annotations = Map.of("annotation1", "value1", "annotation2", "value2");
+        k8sJobTemplate.renderJob(job, "yxz", "OnFailure", 10, containerSpecMap,
+                nodeSelectors, List.of(toleration), annotations);
         Assertions.assertEquals(10, Objects.requireNonNull(job.getSpec()).getBackoffLimit());
         V1PodSpec v1PodSpec = job.getSpec().getTemplate().getSpec();
         Assertions.assertEquals("true", v1PodSpec.getNodeSelector().get("label.pool.bj01"));
@@ -96,6 +98,11 @@ public class K8sJobTemplateTest {
         Assertions.assertEquals("value1", tolerationInJob.getValue());
         Assertions.assertEquals("NoSchedule", tolerationInJob.getEffect());
         Assertions.assertEquals(100L, tolerationInJob.getTolerationSeconds());
+
+        var podMeta = job.getSpec().getTemplate().getMetadata();
+        Assertions.assertEquals(2, podMeta.getAnnotations().size());
+        assertThat(podMeta.getAnnotations(), hasEntry("annotation1", "value1"));
+        assertThat(podMeta.getAnnotations(), hasEntry("annotation2", "value2"));
     }
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
@@ -121,7 +128,7 @@ public class K8sJobTemplateTest {
     public void testPipCache() throws IOException {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), List.of());
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         var volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertEquals(volume.getHostPath().getPath(), "/path");
@@ -129,7 +136,7 @@ public class K8sJobTemplateTest {
         // empty host path
         var template = new K8sJobTemplate("", "", "", "");
         job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
-        template.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), List.of());
+        template.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         volume = job.getSpec().getTemplate().getSpec().getVolumes().stream()
                 .filter(v -> v.getName().equals(K8sJobTemplate.PIP_CACHE_VOLUME_NAME)).findFirst().orElse(null);
         Assertions.assertNull(volume.getHostPath());
@@ -140,7 +147,7 @@ public class K8sJobTemplateTest {
     public void testDevInfoLabel() {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), List.of());
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, containerSpecMap, Map.of(), null, null);
         var labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, hasEntry(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true"));
 
@@ -156,7 +163,7 @@ public class K8sJobTemplateTest {
         specs.put("baz", cpuSpec);
 
         job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
-        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), List.of());
+        k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), null, null);
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
         assertThat(labels, is(Map.of(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
                 K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true")));

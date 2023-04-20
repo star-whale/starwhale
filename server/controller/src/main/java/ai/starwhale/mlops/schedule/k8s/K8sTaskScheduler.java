@@ -156,7 +156,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     this.backoffLimit,
                     containerSpecMap,
                     nodeSelector,
-                    tolerations
+                    tolerations,
+                    pool != null ? pool.getMetadata() : null
             );
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             try {
