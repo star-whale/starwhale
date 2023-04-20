@@ -17,7 +17,7 @@ import torch.utils.data as tdata
 from PIL import Image as PILImage
 from requests_mock import Mocker
 
-from starwhale import dataset
+from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
@@ -897,9 +897,35 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._loader_cache_size == 30
         assert ds._loader_num_workers == 3
 
+        ds.with_loader_config(field_transformer={"label": "lbl"})
+
         consumption_loader = ds._get_data_loader(disable_consumption=False)
         assert consumption_loader._cache_size == 30
         assert consumption_loader._num_workers == 3
+        for item in ds:
+            assert "lbl" in item.features
+            assert "label" in item.features
+            assert item.features["lbl"] == item.features["label"]
+            assert "data" in item.features
+        Dataset.from_json(
+            "translation",
+            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+        )
+        myds = dataset("translation").with_loader_config(
+            field_transformer={"en": "en-us"}
+        )
+        assert myds[0].features["en-us"] == myds[0].features["en"]
+        Dataset.from_json(
+            "translation2",
+            '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]',
+        )
+        myds = dataset("translation2").with_loader_config(
+            field_transformer={"content.child_content[0].en": "en-us"}
+        )
+        assert (
+            myds[0].features["en-us"]
+            == myds[0].features["content"]["child_content"][0]["en"]
+        )
 
     def test_loader_config_exception(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()

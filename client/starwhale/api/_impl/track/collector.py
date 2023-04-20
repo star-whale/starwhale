@@ -11,9 +11,9 @@ import psutil
 from loguru import logger
 
 from starwhale.consts import FMT_DATETIME
-from starwhale.utils.dict import flatten
 from starwhale.utils.venv import guess_current_py_env
 from starwhale.utils.error import NotFoundError
+from starwhale.utils.dict_util import flatten
 
 from .base import _TrackSource
 from .tracker import Tracker

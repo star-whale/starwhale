@@ -618,20 +618,24 @@ class TestDataLoader(TestCase):
         )
 
         loader = get_data_loader(
-            dataset_uri, start="a", end="d", session_consumption=tdsc
+            dataset_uri,
+            start="a",
+            end="d",
+            session_consumption=tdsc,
+            field_transformer={"image": "img"},
         )
         _label_uris_map = {}
         for _, data in loader:
-            self.assertEqual(raw_content, data["image"].to_bytes())
+            self.assertEqual(raw_content, data["img"].to_bytes())
             _label_uris_map[data["label"].link.uri] = data["label"].link._signed_uri
-            _label_uris_map[data["image"].link.uri] = data["image"].link._signed_uri
+            _label_uris_map[data["img"].link.uri] = data["img"].link._signed_uri
             self.assertEqual(
                 data["label"].link._signed_uri,
                 _uri_dict.get(data["label"].link.uri),
             )
             self.assertEqual(
-                data["image"].link._signed_uri,
-                _uri_dict.get(data["image"].link.uri),
+                data["img"].link._signed_uri,
+                _uri_dict.get(data["img"].link.uri),
             )
 
         self.assertEqual(req_get_file.call_count, 8)
