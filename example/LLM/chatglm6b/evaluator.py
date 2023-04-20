@@ -19,20 +19,33 @@ from starwhale.api.service import api
 
 ROOTDIR = Path(__file__).parent
 
+chatglm = None
+tokenizer = None
+
 
 hstry = []
+
+
 @evaluation.predict
 def ppl(data: dict, **kw):
     text = data["text"]
-    tokenizer = AutoTokenizer.from_pretrained(
-        str(ROOTDIR / "models"), trust_remote_code=True
-    )
-    model = AutoModel.from_pretrained(str(ROOTDIR / "models"), trust_remote_code=True)
-    if os.path.exists(ROOTDIR / "models"/ "chatglm-6b-lora.pt"):
-        model = load_lora_config(model)
-        model.load_state_dict(torch.load(ROOTDIR / "models"/ "chatglm-6b-lora.pt"), strict=False)
-    model.half().cuda().eval()
-    response, h = model.chat(tokenizer, text, history=hstry)
+    global tokenizer
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained(
+            str(ROOTDIR / "models"), trust_remote_code=True
+        )
+    global chatglm
+    if chatglm is None:
+        chatglm = AutoModel.from_pretrained(
+            str(ROOTDIR / "models"), trust_remote_code=True
+        )
+        if os.path.exists(ROOTDIR / "models" / "chatglm-6b-lora.pt"):
+            chatglm = load_lora_config(chatglm)
+            chatglm.load_state_dict(
+                torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
+            )
+    chatglm.half().cuda().eval()
+    response, h = chatglm.chat(tokenizer, text, history=hstry)
     hstry.clear()
     hstry.extend(h)
     print(f"dataset: {text}\n chatglm6b: {response} \n")
@@ -46,11 +59,11 @@ def load_lora_config(model):
         r=8,
         lora_alpha=32,
         lora_dropout=0.1,
-        target_modules=["query_key_value"])
+        target_modules=["query_key_value"],
+    )
     model = get_peft_model(model, config)
     model.print_trainable_parameters()
     return model
-
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -68,17 +81,14 @@ def create_prompt(question):
 
 def create_prompt_ids(tokenizer, question, max_src_length):
     prompt, sep = create_prompt(question)
-    sep_ids = tokenizer.encode(
-        sep,
-        add_special_tokens=True
-    )
+    sep_ids = tokenizer.encode(sep, add_special_tokens=True)
     sep_len = len(sep_ids)
     special_tokens_num = 2
     prompt_ids = tokenizer.encode(
         prompt,
         max_length=max_src_length - (sep_len - special_tokens_num),
         truncation=True,
-        add_special_tokens=False
+        add_special_tokens=False,
     )
 
     return prompt_ids + sep_ids
@@ -87,10 +97,7 @@ def create_prompt_ids(tokenizer, question, max_src_length):
 def create_inputs_and_labels(tokenizer, question, answer, device):
     prompt = create_prompt_ids(tokenizer, question, max_src_length)
     completion = tokenizer.encode(
-        answer,
-        max_length=max_dst_length,
-        truncation=True,
-        add_special_tokens=False
+        answer, max_length=max_dst_length, truncation=True, add_special_tokens=False
     )
     eop = tokenizer.eos_token_id
     inputs = prompt + completion + [eop]
@@ -129,10 +136,13 @@ def get_position_ids(tokenizer, input_ids, device, position_encoding_2d=True):
         position_ids = torch.arange(seq_len, dtype=torch.long, device=device)
         if not use_gmask:
             position_ids[context_len:] = mask_position
-        block_position_ids = torch.cat((
-            torch.zeros(context_len, dtype=torch.long, device=device),
-            torch.arange(seq_len - context_len, dtype=torch.long, device=device) + 1
-        ))
+        block_position_ids = torch.cat(
+            (
+                torch.zeros(context_len, dtype=torch.long, device=device),
+                torch.arange(seq_len - context_len, dtype=torch.long, device=device)
+                + 1,
+            )
+        )
         position_ids = torch.stack((position_ids, block_position_ids), dim=0)
     else:
         position_ids = torch.arange(seq_len, dtype=torch.long, device=device)
@@ -153,14 +163,12 @@ class QADataset(Dataset):
         self.key_selector = key_selector
 
     def __getitem__(self, index):
-        item_data = convert_dict(self.sw_dataset[index].features,self.key_selector)
+        item_data = convert_dict(self.sw_dataset[index].features, self.key_selector)
         if not item_data.get("answer"):
-            item_data["answer"]=''
+            item_data["answer"] = ""
         tokenizer = self.tokenizer
         input_ids, labels = create_inputs_and_labels(
-            tokenizer,
-            device=device,
-            **item_data
+            tokenizer, device=device, **item_data
         )
 
         attention_mask = get_attention_mask(tokenizer, input_ids, device)
@@ -170,7 +178,7 @@ class QADataset(Dataset):
             "input_ids": input_ids,
             "labels": labels,
             "attention_mask": attention_mask,
-            "position_ids": position_ids
+            "position_ids": position_ids,
         }
 
     def __len__(self):
@@ -184,16 +192,16 @@ def collate_fn(batch):
     position_ids = []
 
     for obj in batch:
-        input_ids.append(obj['input_ids'])
-        labels.append(obj['labels'])
-        attention_mask.append(obj['attention_mask'])
-        position_ids.append(obj['position_ids'])
+        input_ids.append(obj["input_ids"])
+        labels.append(obj["labels"])
+        attention_mask.append(obj["attention_mask"])
+        position_ids.append(obj["position_ids"])
 
     return {
-        'input_ids': torch.stack(input_ids),
-        'attention_mask': torch.stack(attention_mask),
-        'labels': torch.stack(labels),
-        'position_ids': torch.stack(position_ids)
+        "input_ids": torch.stack(input_ids),
+        "attention_mask": torch.stack(attention_mask),
+        "labels": torch.stack(labels),
+        "position_ids": torch.stack(position_ids),
     }
 
 
@@ -214,12 +222,11 @@ training_args = TrainingArguments(
     seed=0,
     data_seed=0,
     group_by_length=False,
-    dataloader_pin_memory=False
+    dataloader_pin_memory=False,
 )
 
 
 class ModifiedTrainer(Trainer):
-
     def compute_loss(self, model, inputs, return_outputs=False):
         return model(
             input_ids=inputs["input_ids"],
@@ -231,56 +238,64 @@ class ModifiedTrainer(Trainer):
 
 def save_tuned_parameters(model, path):
     saved_params = {
-        k: v.to(device)
-        for k, v in model.named_parameters()
-        if v.requires_grad
+        k: v.to(device) for k, v in model.named_parameters() if v.requires_grad
     }
     torch.save(saved_params, path)
 
-ds_key_selectors={
-    "webqsp":{"rawquestion":"question","parses[0].Answers[0].EntityName":"answer"},
+
+ds_key_selectors = {
+    "webqsp": {"rawquestion": "question", "parses[0].Answers[0].EntityName": "answer"},
 }
 
-# @pass_context
-# @experiment.fine_tune()
+
+@pass_context
+@experiment.fine_tune()
 def fine_tune(
     context: Context,
 ) -> None:
+    tokenizer = AutoTokenizer.from_pretrained(
+        str(ROOTDIR / "models"), trust_remote_code=True
+    )
     chatglm = AutoModel.from_pretrained(str(ROOTDIR / "models"), trust_remote_code=True)
-    tokenizer = AutoTokenizer.from_pretrained(str(ROOTDIR / "models"), trust_remote_code=True)
     chatglm = load_lora_config(chatglm)
-    if os.path.exists(ROOTDIR / "models"/ "chatglm-6b-lora.pt"):
-        chatglm.load_state_dict(torch.load(ROOTDIR / "models"/ "chatglm-6b-lora.pt"), strict=False)
+    if os.path.exists(ROOTDIR / "models" / "chatglm-6b-lora.pt"):
+        chatglm.load_state_dict(
+            torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
+        )
     sw_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
-    train_dataset = QADataset(sw_dataset, tokenizer=tokenizer, key_selector=ds_key_selectors.get(sw_dataset.name))
+    train_dataset = QADataset(
+        sw_dataset,
+        tokenizer=tokenizer,
+        key_selector=ds_key_selectors.get(sw_dataset.name),
+    )
     trainer = ModifiedTrainer(
         model=chatglm,
         train_dataset=train_dataset,
         args=training_args,
         data_collator=collate_fn,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
     )
-    # trainer.train()
-    # save_tuned_parameters(chatglm, ROOTDIR / "models"/ "chatglm-6b-lora.pt")
+    trainer.train()
+    save_tuned_parameters(chatglm, ROOTDIR / "models" / "chatglm-6b-lora.pt")
     model.build(
         workdir=ROOTDIR,
         name="chatglm6b",
         modules=[ppl],
     )
 
-def convert_dict(d:dict, key_selector: dict) -> dict:
-    
+
+def convert_dict(d: dict, key_selector: dict) -> dict:
     _r = {}
-    for field_selector,v in key_selector.items():
+    for field_selector, v in key_selector.items():
         data = d
         fields = field_selector.split(".")
         field_found = False
         for field in fields:
             if "[" in field and "]" in field:
                 # Parse array index
-                index = int(field[field.find("[") + 1:field.find("]")])
+                index = int(field[field.find("[") + 1 : field.find("]")])
                 # Get field name
-                field = field[:field.find("[")]
+                field = field[: field.find("[")]
                 # Check if field exists and is an array
                 if field in data and isinstance(data[field], list):
                     # Check if array index is within bounds
@@ -304,18 +319,16 @@ def convert_dict(d:dict, key_selector: dict) -> dict:
                     print(f"Field {field} not found in data")
                     break
         if field_found:
-            _r.update({v:data})
+            _r.update({v: data})
     return _r
+
 
 @api(gradio.Text(), gradio.Text())
 def online_eval(question: str) -> str:
     return ppl({"text": question})
 
+
 if __name__ == "__main__":
-    Context = namedtuple('Context', ['dataset_uris'])
+    Context = namedtuple("Context", ["dataset_uris"])
     context = Context(["webqsp/version/latest"])
     fine_tune(context)
-    # print(convert_dict({"a":[{"c":{"d":"e"}},{"c":4}]},{"a[0].d":"b"}))
-    # print(convert_dict({"a":1},{"a":"b"}))
-    # print(convert_dict({"a":[{"c":{"d":"e"}},{"c":4}]},{"a[0].c.d":"b"}))
-
