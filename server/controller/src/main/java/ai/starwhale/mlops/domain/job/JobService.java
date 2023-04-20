@@ -185,9 +185,10 @@ public class JobService {
                 .map(datasetService::findDatasetVersion)
                 .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
 
-        if (!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler)) {
+        if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
+                || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided at least one"),
+                    new SwValidationException(ValidSubject.JOB, "handler or stepSpec must be provided only one"),
                     HttpStatus.BAD_REQUEST);
         }
 
