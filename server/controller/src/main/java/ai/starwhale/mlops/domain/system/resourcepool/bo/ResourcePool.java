@@ -114,7 +114,7 @@ public class ResourcePool {
             rc.patch(rr);
             // no request update, ignore
             if (rr.getRequest() == null) {
-                log.error("no request update for {}", rr.getType());
+                log.warn("no request update for {}", rr.getType());
                 continue;
             }
             ret.add(rr);
