@@ -177,7 +177,7 @@ class StepExecutor:
             try:
                 loop = asyncio.get_event_loop()
             except RuntimeError as ex:
-                logger.warning(f"get event loop in error, try to new one", ex)
+                logger.warning("get event loop in error, try to new one", ex)
                 loop = asyncio.new_event_loop()
             try:
                 future_tasks = [
