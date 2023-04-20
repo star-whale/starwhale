@@ -56,7 +56,7 @@ public class JobParserTest {
                 + "  needs: []\n"
                 + "  resources: []\n"
                 + "  name: mnist.evaluator:MNISTInference.ppl\n"
-                + "  replicas: 1"
+                + "  replicas: 1\n"
                 + "  env:\n"
                 + "    - name: EVAL_MODE\n"
                 + "      value: 'test'\n"
