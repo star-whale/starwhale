@@ -1,17 +1,18 @@
 import React from 'react'
 import { useStoreApi } from './useStore'
 import { ITableState } from '../store'
+import useGridData from './useGridData'
 
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
-    rows: state.rows,
     onSelectMany: state.onSelectMany,
     onSelectNone: state.onSelectNone,
     onSelectOne: state.onSelectOne,
 })
 
 function useGridSelection() {
-    const { rowSelectedIds, rows, onSelectMany, onSelectNone, onSelectOne } = useStoreApi(selector).getState()
+    const { rows } = useGridData()
+    const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = useStoreApi(selector).getState()
 
     const selectedRowIds = React.useMemo(() => {
         if (rowSelectedIds) {
@@ -56,6 +57,7 @@ function useGridSelection() {
     const handleSelectOne = React.useCallback(
         (row) => {
             if (onSelectOne) {
+                console.log('onSelectOne', row)
                 onSelectOne(row.id)
             }
         },

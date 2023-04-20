@@ -24,8 +24,8 @@ function val(r: any) {
 }
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
-    columns: state.columns,
 })
+
 function BaseGridCombineTable({
     // datastore api
     isLoading = false,
@@ -52,12 +52,11 @@ function BaseGridCombineTable({
     emptyColumnMessage = (
         <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
     ),
-    getId = (record: any) => val(record.id),
     storeRef,
     onColumnsChange,
     children,
 }: ITableProps) {
-    const { rowSelectedIds, columns } = useStore(selector)
+    const { rowSelectedIds } = useStore(selector)
     const $compareRows = React.useMemo(() => {
         return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
     }, [rowSelectedIds, records])
@@ -70,8 +69,6 @@ function BaseGridCombineTable({
                         queryable
                         selectable
                         isLoading={isLoading}
-                        columns={columns}
-                        data={records}
                         onSave={onSave}
                         onChange={onChange}
                         emptyColumnMessage={emptyColumnMessage}
@@ -82,10 +79,11 @@ function BaseGridCombineTable({
             }}
             isResizeable={rowSelectedIds.length > 0}
             right={() => (
+                // <></>
                 <GridCompareTable
                     rowSelectedIds={rowSelectedIds}
                     title={titleOfCompare}
-                    rows={$compareRows}
+                    records={$compareRows}
                     columnTypes={columnTypes}
                 />
             )}
@@ -104,8 +102,9 @@ export default function GridCombineTable({
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <BaseGridCombineTable {...rest}>{children}</BaseGridCombineTable>
-            <StoreUpdater {...rest} />
+            <StoreUpdater {...rest}>
+                <BaseGridCombineTable {...rest}>{children}</BaseGridCombineTable>
+            </StoreUpdater>
         </StoreProvider>
     )
 }

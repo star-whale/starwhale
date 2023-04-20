@@ -9,11 +9,11 @@ import { useConfigQuery } from '../config-query'
 import { useWhatChanged } from '@simbathesailor/use-what-changed'
 import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
 import { ITableState } from '@starwhale/ui/GridTable/store'
+import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
 const selector = (s: ITableState) => ({
-    columns: s.columns,
     isQueryInline: s.isQueryInline,
 })
 
@@ -23,8 +23,9 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-    const { columns, isQueryInline } = useStore(selector)
+    const { isQueryInline } = useStore(selector)
     const store = useStoreApi().getState()
+    const columns = store.columns
 
     const $columns = React.useMemo(
         () =>

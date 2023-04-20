@@ -315,7 +315,7 @@ export default function EvaluationListCompare({
                 })
             ),
         ],
-        [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
+        [getId, t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
     )
 
     return (

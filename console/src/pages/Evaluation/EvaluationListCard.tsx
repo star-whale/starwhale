@@ -285,6 +285,7 @@ export default function EvaluationListCard() {
                 top={() => (
                     <GridCombineTable
                         store={useEvaluationStore}
+                        compareable
                         queryable
                         selectable
                         records={records}
@@ -292,48 +293,9 @@ export default function EvaluationListCard() {
                     />
                 )}
                 isResizeable={$compareRows.length > 0}
+                // bottom={() => <></>}
                 bottom={() => <EvaluationListResult title='detail' rows={$compareRows} />}
             />
-
-            {/* <GridResizerVertical
-                top={() => (
-                    <GridResizer
-                        left={() => {
-                            return (
-                                <GridTable
-                                    store={useEvaluationStore}
-                                    queryable
-                                    selectable
-                                    isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
-                                    columns={$columnsWithSpecColumns}
-                                    data={records}
-                                    onSave={doSave as any}
-                                    onChange={doChange}
-                                    emptyColumnMessage={
-                                        <BusyPlaceholder type='notfound'>
-                                            Create a new evaluation or Config to add columns
-                                        </BusyPlaceholder>
-                                    }
-                                >
-                                    <ToolBar columnable viewable />
-                                </GridTable>
-                            )
-                        }}
-                        isResizeable={$compareRows.length > 0}
-                        right={() => {
-                            return (
-                                <EvaluationListCompare
-                                    title={t('Compare Evaluations')}
-                                    rows={$compareRows}
-                                    attrs={columnTypes}
-                                />
-                            )
-                        }}
-                    />
-                )}
-                isResizeable={$compareRows.length > 0}
-                bottom={() => <EvaluationListResult title={t('Compare Evaluations')} rows={$compareRows} />}
-            /> */}
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                 <ModalBody>

@@ -86,7 +86,8 @@ function val(r: any) {
 
 function GridTable({
     isLoading,
-    columns = [],
+    columns,
+    rows,
     data = [],
     paginationProps,
     rowActions,
@@ -115,35 +116,10 @@ function GridTable({
     const styles = useStyles({ theme })
     const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
     const store = useStoreApi()
-    const rows = useMemo(
-        () =>
-            data.map((raw, index) => {
-                return {
-                    id: getId(raw) ?? index.toFixed(),
-                    data: raw,
-                }
-            }) ?? [],
-        [data]
-    )
-
-    useDirectStoreUpdater('rows', rows, store.setState)
-
-    // const $filters = useMemo(() => {
-    //     return store.currentView?.filters
-    // }, [store])
-
-    // React.useEffect(() => {
-    //     const unsub = store.subscribe(stateSelector, onChange)
-    //     return unsub
-    // }, [store, onChange])
-
-    // React.useEffect(() => {
-    //     if (!storeRef) return
-    //     // eslint-disable-next-line no-param-reassign
-    //     storeRef.current = store
-    // }, [storeRef, store])
 
     const {
+        columns: defaultColumns,
+        rows: defaultRows,
         sortIndex,
         sortDirection,
         textQuery,
@@ -156,6 +132,17 @@ function GridTable({
         isSelectedIndeterminate,
     } = useGrid()
 
+    const $columns = useMemo(() => {
+        return columns ?? defaultColumns ?? []
+    }, [columns, defaultColumns])
+    const $rows = useMemo(() => {
+        return rows ?? defaultRows ?? []
+    }, [rows, defaultRows])
+
+    // @FIXME
+    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('rows', $rows, store.setState)
+
     return (
         <div
             className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
@@ -164,13 +151,12 @@ function GridTable({
             {children}
             <div data-type='table-wrapper' style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
                 <DataTable
-                    columns={columns}
+                    columns={$columns}
                     selectable={selectable}
                     compareable={compareable}
                     queryinline={queryinline}
-                    rawColumns={columns}
+                    rawColumns={$columns}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
-                    getId={getId}
                     // filters={$filtersEnabled}
                     loading={isLoading}
                     loadingMessage={emptyMessage ?? loadingMessage}
@@ -184,7 +170,7 @@ function GridTable({
                     onSelectOne={onSelectOne}
                     resizableColumnWidths={resizableColumnWidths}
                     rowHighlightIndex={rowHighlightIndex}
-                    rows={rows}
+                    rows={$rows}
                     rowActions={rowActions}
                     rowHeight={rowHeight}
                     selectedRowIds={rowSelectedIds}
@@ -193,7 +179,7 @@ function GridTable({
                     textQuery={textQuery}
                     // controlRef={controlRef}
                 />
-                {columns.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
+                {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
         </div>
     )
@@ -210,8 +196,9 @@ export default function ContextGridTable({
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridTable {...rest}>{children}</MemoGridTable>
-            <StoreUpdater {...rest} />
+            <StoreUpdater {...rest}>
+                <MemoGridTable {...rest}>{children}</MemoGridTable>
+            </StoreUpdater>
         </StoreProvider>
     )
 }

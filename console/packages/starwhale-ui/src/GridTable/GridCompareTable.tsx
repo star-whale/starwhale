@@ -16,6 +16,7 @@ import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import useTranslation from '@/hooks/useTranslation'
 import { StoreProvider, StoreUpdater } from './store'
 import { useStore, useStoreApi } from './hooks/useStore'
+import useGrid from './hooks/useGrid'
 
 const useStyles = createUseStyles({
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
@@ -152,56 +153,52 @@ function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{
 }
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
-    columns: state.columns ?? [],
 })
 export function BaseGridCompareTable({
-    rows = [],
+    records = [],
     columnTypes,
     title = '',
     getId = (r) => r.id,
 }: {
     title?: string
-    rows: any[]
+    records: any[]
     columnTypes: RecordListVo['columnTypes']
 }) {
     const store = useStoreApi().getState()
-    const { rowSelectedIds, columns } = useStore(selector)
     const [t] = useTranslation()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
     const styles = useStyles()
 
     React.useEffect(() => {
-        if (rows.length === 0) return
+        if (records.length === 0) return
 
-        const row = rows.find((r) => val(r.id) === store.compare?.comparePinnedKey)
-        const pinKey = row ? store.compare?.comparePinnedKey : val(rows[0].id)
+        const row = records.find((r) => val(r.id) === store.compare?.comparePinnedKey)
+        const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
 
         if (pinKey !== store.compare?.comparePinnedKey) {
             store.onCompareUpdate({
-                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(rows[0].id),
+                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(records[0].id),
             })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows])
+    }, [records])
 
     const comparePinnedRow: any = useMemo(() => {
-        return rows.find((r) => val(r.id) === comparePinnedKey) ?? rows[0]
-    }, [rows, comparePinnedKey])
+        return records.find((r) => val(r.id) === comparePinnedKey) ?? records[0]
+    }, [records, comparePinnedKey])
 
     const comparePinnedRowIndex = useMemo(() => {
         return Math.max(
-            rows.findIndex((r) => val(r.id) === comparePinnedKey),
+            records.findIndex((r) => val(r.id) === comparePinnedKey),
             0
         )
-    }, [rows, comparePinnedKey])
-
-    console.log('comparePinnedKey', comparePinnedKey, comparePinnedRow, comparePinnedRowIndex)
+    }, [records, comparePinnedKey])
 
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
 
         columnTypes?.forEach((attr: { name: string }) => {
-            const values = rows.map((data: any) => _.get(data, [attr.name]))
+            const values = records.map((data: any) => _.get(data, [attr.name]))
 
             if (attr.name.endsWith('time')) {
                 rowWithAttrs.push({
@@ -232,7 +229,7 @@ export function BaseGridCompareTable({
         })
 
         return rowWithAttrs.sort(sortColumn).filter((r) => isSearchColumns(r.name))
-    }, [columnTypes, rows])
+    }, [columnTypes, records])
 
     const $rowsWithDiffOnly = useMemo(() => {
         if (!compareShowDiffOnly) return $rowWithAttrs
@@ -250,9 +247,11 @@ export function BaseGridCompareTable({
                 pin: 'LEFT',
                 minWidth: 200,
                 fillWidth: false,
-                mapDataToValue: (item: any) => item.title,
+                mapDataToValue: (item: any) => {
+                    return item.title
+                },
             }),
-            ...rows.map((row: any, index) =>
+            ...records.map((row: any, index) =>
                 CustomColumn({
                     minWidth: 200,
                     key: val(getId(row)),
@@ -301,19 +300,32 @@ export function BaseGridCompareTable({
                         }
                         return NoneCompareCell(newProps)
                     },
-                    mapDataToValue: ({ values, ...item }: any) => ({
-                        ...item,
-                        values,
-                        index,
-                        value: values[index],
-                    }),
+                    mapDataToValue: ({ values, ...item }: any) => {
+                        return {
+                            ...item,
+                            values,
+                            index,
+                            value: values?.[index],
+                        }
+                    },
                 })
             ),
         ],
-        [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
+        [records, $rowsWithDiffOnly, comparePinnedRowIndex, comparePinnedRow, compareShowCellChanges, t]
     )
 
-    if (!rows.length) return null
+    const $rowsWithData = useMemo(
+        () =>
+            $rowsWithDiffOnly?.map((raw, index) => {
+                return {
+                    id: index.toFixed(),
+                    data: raw,
+                }
+            }) ?? [],
+        [$rowsWithDiffOnly]
+    )
+
+    if (!records.length) return null
 
     return (
         <>
@@ -361,7 +373,7 @@ export function BaseGridCompareTable({
                 </div>
             </div>
             <div className={styles.tableWrapper}>
-                <MemoGridTable compareable columns={$columns} data={$rowsWithDiffOnly} />
+                <MemoGridTable compareable columns={$columns} rows={$rowsWithData} />
             </div>
         </>
     )
@@ -382,11 +394,11 @@ export default function GridCompareTable({
     children,
     ...rest
 }: IContextGridTable) {
-    console.log('GridCompareTable', rest)
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridCompareTable {...rest}>{children}</MemoGridCompareTable>
-            <StoreUpdater {...rest} />
+            <StoreUpdater {...rest}>
+                <MemoGridCompareTable {...rest}>{children}</MemoGridCompareTable>
+            </StoreUpdater>
         </StoreProvider>
     )
 }

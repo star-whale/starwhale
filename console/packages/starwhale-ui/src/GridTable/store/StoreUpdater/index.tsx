@@ -6,6 +6,7 @@ import type { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/type
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
+import { val } from '../../utils'
 
 type StoreUpdaterProps = StatefulDataTablePropsT & { rfId: string }
 
@@ -41,6 +42,8 @@ export function useDirectStoreUpdater(
     }, [value])
 }
 
+const globalGetId = (record: any) => val(record.id)
+
 const StoreUpdater = ({
     rowSelectedIds,
     onColumnsChange,
@@ -50,6 +53,10 @@ const StoreUpdater = ({
     onIncludedRowsChange,
     onRowHighlightChange,
     columnTypes,
+    records,
+    getId = globalGetId,
+    queryable,
+    children,
 }: StoreUpdaterProps) => {
     const {
         // setNodes,
@@ -62,9 +69,6 @@ const StoreUpdater = ({
         // reset,
     } = useStore(selector, shallow)
     const store = useStoreApi()
-    const $columns = useDatastoreColumns(columnTypes as any)
-
-    console.log('StoreUpdater', rowSelectedIds, $columns)
 
     // useEffect(() => {
     //     const edgesWithDefaults = defaultEdges?.map((e) => ({ ...e, ...defaultEdgeOptions }))
@@ -74,21 +78,23 @@ const StoreUpdater = ({
     //         reset()
     //     }
     // }, [])
+    useDirectStoreUpdater('queryable', queryable, store.setState)
 
     useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
-    useDirectStoreUpdater('columns', $columns, store.setState)
+    useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('data', data, store.setState)
     useDirectStoreUpdater('isQueryInline', isQueryInline, store.setState)
     useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
     useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
+    useDirectStoreUpdater('getId', getId, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
     // useStoreUpdater(columns, store.setColumns)
 
-    return null
+    return children
 }
 
 export { StoreUpdater }

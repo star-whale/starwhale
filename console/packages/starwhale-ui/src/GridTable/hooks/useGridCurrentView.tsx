@@ -7,11 +7,10 @@ import { ITableState } from '../store'
 const selector = (state: ITableState) => ({
     currentView: state.currentView,
     views: state.views,
-    columns: state.columns ?? [],
 })
 
-function useGridCurrentView() {
-    const { currentView: view, columns } = useStore(selector)
+function useGridCurrentView(columns) {
+    const { currentView: view } = useStore(selector)
 
     const columnIds = React.useMemo(() => {
         return columns.map((c) => c.key)

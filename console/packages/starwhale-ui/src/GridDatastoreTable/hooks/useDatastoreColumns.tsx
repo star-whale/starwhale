@@ -38,7 +38,7 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
             })
             .sort(sortColumn)
             .forEach((column) => {
-                return columnsWithAttrs.push(
+                columnsWithAttrs.push(
                     CustomColumn({
                         columnType: column,
                         key: column.name,
