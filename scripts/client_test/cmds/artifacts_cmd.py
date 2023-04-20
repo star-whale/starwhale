@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import typing as t
 from pathlib import Path
@@ -157,7 +159,7 @@ class Model(BaseArtifact):
         self,
         model_uri: str,
         dataset_uris: t.List[str],
-        runtime_uri: str,
+        runtime_uri: t.Optional[URI],
         run_handler: str,
     ) -> str:
         uri = URI(model_uri, URIType.MODEL)

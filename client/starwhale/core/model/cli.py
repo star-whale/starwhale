@@ -60,12 +60,20 @@ def model_cmd(ctx: click.Context) -> None:
 )
 @click.option("-n", "--name", default="", help="model name")
 @click.option("-d", "--desc", default="", help="Dataset description")
+@click.option(
+    "--package-runtime/--no-package-runtime",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Package Starwhale Runtime into the model.",
+)
 def _build(
     workdir: str,
     project: str,
     model_yaml: str,
     runtime: str,
     modules: t.List[str],
+    package_runtime: bool,
     name: str,
     desc: str,
 ) -> None:
@@ -83,6 +91,8 @@ def _build(
         swcli model build . --module mnist.evaluate --module mnist.train --module mnist.predict
         # build model package in the Starwhale Runtime environment.
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1
+        # forbid to package Starwhale Runtime into the model.
+        swcli model build . --module mnist.evaluate --runtime pytorch/version/v1 --no-package-runtime
     """
     if model_yaml is None:
         yaml_path = Path(workdir) / DefaultYAMLName.MODEL
@@ -100,7 +110,11 @@ def _build(
     config.do_validate()
 
     ModelTermView.build(
-        workdir=workdir, project=project, model_config=config, runtime_uri=runtime
+        workdir=workdir,
+        project=project,
+        model_config=config,
+        runtime_uri=runtime,
+        package_runtime=package_runtime,
     )
 
 
@@ -402,6 +416,13 @@ def _recover(model: str, force: bool) -> None:
     help="Total num of tasks in the current step",
     hidden=True,
 )
+@click.option(
+    "-fpr",
+    "--forbid-packaged-runtime",
+    is_flag=True,
+    help="[ONLY STANDALONE]Forbid to use packaged runtime in the model",
+    hidden=True,
+)
 def _run(
     workdir: str,
     uri: str,
@@ -418,11 +439,10 @@ def _run(
     task_index: int | None,
     override_task_num: int,
     resource_pool: str,
+    forbid_packaged_runtime: bool,
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
-
-    TARGET: model uri or the working directory.
 
     Examples:
 
@@ -458,6 +478,9 @@ def _run(
         if not handler:
             raise ValueError("handler is required in server mode")
 
+        if not uri:
+            raise ValueError("uri is required in server mode")
+
         ModelTermView.run_in_server(
             project_uri=run_project_uri,
             model_uri=uri,
@@ -468,47 +491,30 @@ def _run(
         )
         return
 
-    if uri:
-        _uri = URI(uri, URIType.MODEL)
-        model_src_dir = ModelStorage(_uri).src_dir
-
-        if modules:
-            raise NoSupportError("module is not supported in model uri mode")
-    else:
-        model_src_dir = Path(workdir)
-        if in_server:
-            raise RuntimeError(
-                "model run in server mode does not support model src dir"
-            )
+    model_src_dir, model_config, runtime_uri = _prepare_model_run_args(
+        model=uri,
+        runtime=runtime,
+        workdir=workdir,
+        modules=modules,
+        model_yaml=model_yaml,
+        forbid_packaged_runtime=forbid_packaged_runtime,
+    )
 
     if in_container:
         ModelTermView.run_in_container(
             workdir=model_src_dir,
-            runtime_uri=runtime,
+            runtime_uri=runtime_uri,
             docker_image=image,
         )
     else:
-        if model_yaml is None:
-            yaml_path = model_src_dir / DefaultYAMLName.MODEL
-        else:
-            yaml_path = Path(model_yaml)
-
-        if yaml_path.exists():
-            config = ModelConfig.create_by_yaml(yaml_path)
-        else:
-            config = ModelConfig()
-
-        config.run.modules = modules or config.run.modules
-        config.do_validate()
-
         ModelTermView.run_in_host(
             model_src_dir=model_src_dir,
-            model_config=config,
+            model_config=model_config,
             project=run_project,
             version=version,
             run_handler=handler,
             dataset_uris=datasets,
-            runtime_uri=runtime,
+            runtime_uri=runtime_uri,
             scheduler_run_args={
                 "step_name": step,
                 "task_index": task_index,
@@ -518,23 +524,121 @@ def _run(
 
 
 @model_cmd.command("serve")
-@click.argument("target", required=False, default="")
-@click.option(
+@optgroup.group(
+    "\n ** Model Selectors",
+    cls=RequiredMutuallyExclusiveOptionGroup,
+    help="model uri or model source code dir",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-w",
+    "--workdir",
+    type=click.Path(exists=True, file_okay=False),
+    help="Model source dir",
+)
+@optgroup.option("-u", "--uri", help="Model URI")  # type: ignore[no-untyped-call]
+@click.option(  # type: ignore[no-untyped-call]
     "-f",
     "--model-yaml",
     default=DefaultYAMLName.MODEL,
-    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
+    help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option("-r", "--runtime", default="", help="runtime uri")
-@click.option("-m", "--model", default="", help="model uri")
 @click.option("--host", default="", help="The host to listen on")
 @click.option("--port", default=8080, help="The port of the server")
+@click.option(
+    "-fpr",
+    "--forbid-packaged-runtime",
+    is_flag=True,
+    help="[ONLY STANDALONE]Forbid to use packaged runtime in the model",
+    hidden=True,
+)
+@click.option(
+    "modules",
+    "-m",
+    "--module",
+    multiple=True,
+    help="Python modules to be imported during the build process. The format is python module import path. The option supports set multiple times.",
+)
 def _serve(
-    target: str,
+    workdir: str,
+    uri: str,
     model_yaml: str,
     runtime: str,
-    model: str,
     host: str,
     port: int,
+    forbid_packaged_runtime: bool,
+    modules: t.List[str],
 ) -> None:
-    ModelTermView.serve(target, model_yaml, runtime, model, host, port)
+    """Serve Model.
+
+    Examples:
+
+        \b
+        swcli model serve -u mnist/version/latest
+        swcli model serve --uri mnist/version/latest --runtime pytorch/version/latest
+
+        \b
+        swcli model serve --workdir . --runtime pytorch/version/latest
+        swcli model serve --workdir . --runtime pytorch/version/latest --host 0.0.0.0 --port 8080
+        swcli model serve --workdir . --runtime pytorch/version/latest --module mnist.evaluator
+    """
+    model_src_dir, config, runtime_uri = _prepare_model_run_args(
+        model=uri,
+        runtime=runtime,
+        workdir=workdir,
+        modules=modules,
+        model_yaml=model_yaml,
+        forbid_packaged_runtime=forbid_packaged_runtime,
+    )
+
+    ModelTermView.serve(
+        model_src_dir=model_src_dir,
+        model_config=config,
+        host=host,
+        port=port,
+        runtime_uri=runtime_uri,
+    )
+
+
+def _prepare_model_run_args(
+    model: str,
+    runtime: str,
+    workdir: str,
+    modules: t.List[str],
+    model_yaml: t.Optional[str],
+    forbid_packaged_runtime: bool,
+) -> t.Tuple[Path, ModelConfig, t.Optional[URI]]:
+    runtime_uri = URI.guess(runtime, fallback_type=URIType.RUNTIME) if runtime else None
+
+    if model:
+        model_uri = URI(model, expected_type=URIType.MODEL)
+        model_store = ModelStorage(model_uri)
+        model_src_dir = model_store.src_dir
+
+        if modules:
+            raise NoSupportError("module is not supported in model uri mode")
+
+        if (
+            model_store.manifest.get("packaged_runtime")
+            and not forbid_packaged_runtime
+            and runtime_uri is None
+        ):
+            runtime_uri = model_uri
+    else:
+        model_src_dir = Path(workdir)
+
+    if model_yaml is None:
+        yaml_path = model_src_dir / DefaultYAMLName.MODEL
+    else:
+        yaml_path = Path(model_yaml)
+
+    if yaml_path.exists():
+        config = ModelConfig.create_by_yaml(yaml_path)
+    else:
+        config = ModelConfig()
+
+    config.name = config.name or model_src_dir.name
+    config.run.modules = modules or config.run.modules
+    config.do_validate()
+
+    return model_src_dir, config, runtime_uri

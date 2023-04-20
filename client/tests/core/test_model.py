@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+import yaml
 from click.testing import CliRunner
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -24,12 +25,15 @@ from starwhale.consts import (
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
 from starwhale.base.uri import URI
-from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file, blake2b_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.api.service import Service
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Handler
 from starwhale.core.model.cli import _list as list_cli
+from starwhale.core.model.cli import _serve as serve_cli
+from starwhale.core.model.cli import _prepare_model_run_args
 from starwhale.core.model.view import ModelTermView, ModelTermViewJson
 from starwhale.core.model.model import (
     ModelConfig,
@@ -37,6 +41,7 @@ from starwhale.core.model.model import (
     StandaloneModel,
     resource_to_file_node,
 )
+from starwhale.core.model.store import ModelStorage
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
 
@@ -234,6 +239,127 @@ class StandaloneModelTestCase(TestCase):
             workdir=self.workdir, project="self", model_config=model_config
         )
 
+    @patch("starwhale.core.model.model.StandaloneModel._make_meta_tar")
+    @patch("starwhale.core.model.model.StandaloneModel._gen_model_serving")
+    @patch("starwhale.core.model.model.generate_jobs_yaml")
+    @patch("starwhale.core.runtime.process.Process.run", autospec=True)
+    @patch("starwhale.core.runtime.process.guess_python_env_mode")
+    @patch("starwhale.core.runtime.process.StandaloneRuntime.restore")
+    @patch("starwhale.core.runtime.process.extract_tar")
+    @patch("starwhale.core.model.model.ModelConfig.do_validate")
+    def test_build_with_package_runtime(
+        self,
+        m_do_validate: MagicMock,
+        m_extract: MagicMock,
+        m_restore: MagicMock,
+        m_env_mode: MagicMock,
+        m_process_run: MagicMock,
+        m_generate_jobs_yaml: MagicMock,
+        m_gen_model_serving: MagicMock,
+        m_make_meta_tar: MagicMock,
+    ) -> None:
+        workdir = Path("/home/test/workdir")
+        ensure_dir(workdir)
+        model_config = ModelConfig(name="test", run={"modules": ["x.y.z"]})
+
+        runtime_snapshot = self.sw.rootdir / "self/workdir/runtime/pytorch/12/1234"
+        ensure_file(
+            runtime_snapshot / "_manifest.yaml",
+            yaml.safe_dump({"name": "pytorch"}),
+            parents=True,
+        )
+        swrt_path = self.sw.rootdir / "self/runtime/pytorch/12/1234.swrt"
+        ensure_file(swrt_path, content="1", parents=True)
+
+        swrt_hash = blake2b_file(swrt_path)
+
+        venv_prefix = runtime_snapshot / "export/venv"
+        m_env_mode.return_value = "venv"
+        ensure_dir(venv_prefix)
+
+        def _run(obj: t.Any) -> None:
+            obj._target(*obj._args, **obj._kwargs)
+
+        m_process_run.side_effect = _run
+
+        packaged_uri = ModelTermView.build(
+            workdir=workdir,
+            project="self",
+            model_config=model_config,
+            runtime_uri="pytorch/version/1234",
+            package_runtime=True,
+        )
+
+        assert not m_extract.called
+        assert m_restore.called
+        assert m_restore.call_args[0][0] == runtime_snapshot
+
+        built_model_store = ModelStorage(packaged_uri)
+        assert built_model_store.bundle_path.exists()
+        assert built_model_store.manifest["packaged_runtime"] == {
+            "hash": swrt_hash,
+            "manifest": {"name": "pytorch"},
+            "name": "pytorch",
+            "path": "src/.starwhale/runtime/packaged.swrt",
+        }
+        runtime_bundle_path = built_model_store.packaged_runtime_bundle_path
+        assert runtime_bundle_path.exists()
+        assert runtime_bundle_path.read_text() == "1"
+
+        no_packaged_uri = ModelTermView.build(
+            workdir=workdir,
+            project="self",
+            model_config=model_config,
+            runtime_uri="pytorch/version/1234",
+            package_runtime=False,
+        )
+
+        built_model_store = ModelStorage(no_packaged_uri)
+        assert built_model_store.bundle_path.exists()
+        assert built_model_store.manifest.get("packaged_runtime") is None
+        assert not built_model_store.packaged_runtime_bundle_path.exists()
+
+        m_restore.reset_mock()
+
+        m_env_mode.return_value = "conda"
+
+        def _restore(workdir: Path, verbose: bool = False) -> None:
+            ensure_dir(workdir / "export/conda")
+
+        m_restore.side_effect = _restore
+
+        use_model_uri = ModelTermView.build(
+            workdir=workdir,
+            project="self",
+            model_config=model_config,
+            runtime_uri=packaged_uri,
+            package_runtime=True,
+        )
+
+        built_model_store = ModelStorage(use_model_uri)
+        assert built_model_store.bundle_path.exists()
+
+        assert built_model_store.manifest["packaged_runtime"] == {
+            "hash": swrt_hash,
+            "manifest": {"name": "pytorch"},
+            "name": "pytorch",
+            "path": "src/.starwhale/runtime/packaged.swrt",
+        }
+        runtime_bundle_path = built_model_store.packaged_runtime_bundle_path
+        assert runtime_bundle_path.exists()
+        assert runtime_bundle_path.read_text() == "1"
+
+        with self.assertRaisesRegex(
+            FieldTypeOrValueError, "is not a valid uri, only support model"
+        ):
+            ModelTermView.build(
+                workdir=workdir,
+                project="self",
+                model_config=model_config,
+                runtime_uri="dataset/test/version/123",
+                package_runtime=True,
+            )
+
     def test_get_file_desc(self):
         _file = Path("tmp/file.txt")
         ensure_dir("tmp")
@@ -412,6 +538,143 @@ class StandaloneModelTestCase(TestCase):
             m_gencmd.assert_called_once_with("img1", envs={}, mounts=[d])
             m_call.assert_called_once_with("hi", shell=True)
 
+    @patch("starwhale.core.model.model.ModelConfig.do_validate")
+    def test_prepare_model_run_args(self, *args: t.Any) -> None:
+        user_workdir = Path("/home/user/workdir")
+
+        ensure_file(
+            user_workdir / "model.yaml",
+            content=yaml.safe_dump(
+                ModelConfig(name="default", run={"handler": "a.b.c"}).asdict()
+            ),
+            parents=True,
+        )
+
+        ensure_file(
+            user_workdir / "custom_model.yaml",
+            content=yaml.safe_dump(
+                ModelConfig(name="custom", run={"modules": ["a.b.c", "d.e.f"]}).asdict()
+            ),
+            parents=True,
+        )
+
+        model_snapshot_dir = self.sw.rootdir / "self/model/model-test/12/1234.swmp"
+        model_snapshot_src_dir = model_snapshot_dir / "src"
+        model_snapshot_manifest_path = model_snapshot_dir / "_manifest.yaml"
+        model_snapshot_model_yaml_path = model_snapshot_src_dir / "model.yaml"
+
+        ensure_file(
+            model_snapshot_model_yaml_path,
+            content=yaml.safe_dump(
+                ModelConfig(name="built-model", run={"modules": ["x.y.z"]}).asdict()
+            ),
+            parents=True,
+        )
+
+        ensure_file(
+            model_snapshot_manifest_path,
+            content=yaml.safe_dump({"packaged_runtime": {"name": "packaged-runtime"}}),
+            parents=True,
+        )
+
+        cases = [
+            (
+                {
+                    "model": "",
+                    "runtime": "",
+                    "workdir": user_workdir,
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": False,
+                },
+                {
+                    "model_src_dir": user_workdir,
+                    "config_name": "default",
+                    "config_modules": ["a.b.c"],
+                    "runtime_uri": None,
+                },
+            ),
+            (
+                {
+                    "model": "",
+                    "runtime": "",
+                    "workdir": user_workdir,
+                    "modules": "",
+                    "model_yaml": "/home/user/workdir/custom_model.yaml",
+                    "forbid_packaged_runtime": False,
+                },
+                {
+                    "model_src_dir": user_workdir,
+                    "config_name": "custom",
+                    "config_modules": ["a.b.c", "d.e.f"],
+                    "runtime_uri": None,
+                },
+            ),
+            (
+                {
+                    "model": "model-test/version/1234",
+                    "runtime": "",
+                    "workdir": "",
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": False,
+                },
+                {
+                    "model_src_dir": model_snapshot_src_dir,
+                    "config_name": "built-model",
+                    "config_modules": ["x.y.z"],
+                    "runtime_uri": URI(
+                        "model-test/version/1234", expected_type=URIType.MODEL
+                    ),
+                },
+            ),
+            (
+                {
+                    "model": "model-test/version/1234",
+                    "runtime": "runtime-test/version/1234",
+                    "workdir": "",
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": False,
+                },
+                {
+                    "model_src_dir": model_snapshot_src_dir,
+                    "config_name": "built-model",
+                    "config_modules": ["x.y.z"],
+                    "runtime_uri": URI(
+                        "runtime-test/version/1234", expected_type=URIType.RUNTIME
+                    ),
+                },
+            ),
+            (
+                {
+                    "model": "model-test/version/1234",
+                    "runtime": "",
+                    "workdir": "",
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": True,
+                },
+                {
+                    "model_src_dir": model_snapshot_src_dir,
+                    "config_name": "built-model",
+                    "config_modules": ["x.y.z"],
+                    "runtime_uri": None,
+                },
+            ),
+        ]
+
+        for case, expect in cases:
+            model_src_dir, config, runtime_uri = _prepare_model_run_args(**case)
+            assert expect["model_src_dir"] == model_src_dir
+            assert expect["config_name"] == config.name
+            assert expect["config_modules"] == config.run.modules
+            if runtime_uri is None:
+                assert expect["runtime_uri"] is None
+            else:
+                assert expect["runtime_uri"].full_uri == runtime_uri.full_uri  # type: ignore
+
+    @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch("starwhale.core.model.model.StandaloneModel")
     @patch("starwhale.core.model.model.StandaloneModel.serve")
     @patch("starwhale.core.runtime.process.Process.from_runtime_uri")
@@ -420,15 +683,69 @@ class StandaloneModelTestCase(TestCase):
         port = 80
         yaml_name = "model.yaml"
         runtime = "pytorch/version/latest"
-        ModelTermView.serve("", yaml_name, runtime, "mnist/version/latest", host, port)
-        ModelTermView.serve(".", yaml_name, runtime, "", host, port)
-        ModelTermView.serve(".", yaml_name, "", "", host, port)
 
-        with self.assertRaises(SystemExit):
-            ModelTermView.serve("", yaml_name, runtime, "", host, port)
+        cases = [
+            (
+                [
+                    "--uri=mnist/version/latest",
+                    f"--runtime={runtime}",
+                    f"--host={host}",
+                    f"--port={port}",
+                ],
+                0,
+            ),
+            (
+                [
+                    "--uri=mnist/version/latest",
+                    f"--host={host}",
+                    f"--port={port}",
+                ],
+                0,
+            ),
+            (
+                [
+                    "--workdir=.",
+                    f"--runtime={runtime}",
+                    f"--host={host}",
+                    f"--port={port}",
+                    f"--model-yaml={yaml_name}",
+                ],
+                0,
+            ),
+            (
+                [
+                    "--workdir=.",
+                    f"--host={host}",
+                    f"--port={port}",
+                    f"--model-yaml={yaml_name}",
+                ],
+                0,
+            ),
+            (
+                [
+                    "--uri=mnist/version/latest",
+                    "--workdir=.",
+                    f"--runtime={runtime}",
+                    f"--host={host}",
+                    f"--port={port}",
+                ],
+                2,
+            ),
+            (
+                [
+                    f"--runtime={runtime}",
+                    f"--host={host}",
+                    f"--port={port}",
+                ],
+                2,
+            ),
+        ]
 
-        with self.assertRaises(SystemExit):
-            ModelTermView.serve("set", yaml_name, runtime, "set", host, port)
+        for args, exit_code in cases:
+            mock_obj = MagicMock()
+            runner = CliRunner()
+            result = runner.invoke(serve_cli, args, obj=mock_obj)
+            assert result.exit_code == exit_code
 
 
 class CloudModelTest(TestCase):

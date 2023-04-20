@@ -51,6 +51,7 @@ from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
+    copy_file,
     file_stat,
     ensure_dir,
     ensure_file,
@@ -73,6 +74,7 @@ from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
+from starwhale.core.runtime.model import StandaloneRuntime
 
 
 @unique
@@ -474,6 +476,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             _manifest = load_yaml(_manifest_path)
 
+            packaged_runtime = _manifest.get("packaged_runtime")
+            if packaged_runtime:
+                runtime = f"{packaged_runtime['name']}/version/{packaged_runtime['manifest']['version'][:SHORT_VERSION_CNT]}"
+            else:
+                runtime = ""
+
             _r.append(
                 dict(
                     name=self.name,
@@ -482,6 +490,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     tags=_bf.tags,
                     created_at=_manifest[CREATED_AT_KEY],
                     size=_bf.path.stat().st_size,
+                    runtime=runtime,
                 )
             )
         return _r
@@ -555,6 +564,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "copy src",
                 dict(workdir=workdir, model_config=model_config),
             ),
+        ]
+        package_runtime_uri = kw.get("package_runtime_uri")
+        if package_runtime_uri:
+            operations.append(
+                (
+                    self._package_runtime,
+                    10,
+                    "package runtime",
+                    dict(runtime_uri=package_runtime_uri),
+                )
+            )
+
+        operations += [
             (
                 generate_jobs_yaml,
                 5,
@@ -591,7 +613,54 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ),
             (self._make_auto_tags, 5, "make auto tags"),
         ]
+
         run_with_progress_bar("model bundle building...", operations)
+
+    def _package_runtime(self, runtime_uri: URI | str) -> None:
+        if isinstance(runtime_uri, str):
+            uri = URI.guess(runtime_uri, fallback_type=URIType.RUNTIME)
+        else:
+            uri = runtime_uri
+
+        # TODO: support runtime uri in the cloud instance
+        if uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(
+                f"runtime type {uri.instance_type} not support in package runtime"
+            )
+
+        info: t.Dict[str, t.Any] = {
+            "name": uri.object.name,
+        }
+
+        if uri.object.typ == URIType.RUNTIME:
+            runtime = StandaloneRuntime(uri)
+            bundle_path = runtime.store.bundle_path
+            info = {
+                "name": runtime.name,
+                "manifest": runtime.store.manifest,
+                "hash": blake2b_file(bundle_path),
+            }
+        elif uri.object.typ == URIType.MODEL:
+            model = StandaloneModel(uri)
+            bundle_path = model.store.packaged_runtime_bundle_path
+            packaged_runtime = model.store.manifest.get("packaged_runtime")
+            if not packaged_runtime or not bundle_path.exists():
+                raise RuntimeError(f"model {uri} not packaged runtime")
+
+            info = packaged_runtime
+        else:
+            raise NoSupportError(
+                f"uri type {uri.object.typ} not support to package runtime"
+            )
+
+        dest = self.store.packaged_runtime_bundle_path
+        console.print(f":optical_disk: package runtime({uri}) to {dest}")
+        copy_file(bundle_path, dest)
+
+        self._manifest["packaged_runtime"] = {
+            **info,
+            "path": str(dest.relative_to(self.store.snapshot_workdir)),
+        }
 
     def _make_meta_tar(
         self, size_th_to_tar: int = DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL
@@ -646,10 +715,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
 
     def _copy_src(self, workdir: Path, model_config: ModelConfig) -> None:
-        logger.info(
-            f"[step:copy]start to copy src {workdir} -> {self.store.src_dir} ..."
+        console.print(
+            f":thumbs_up: try to copy source code files: {workdir} -> {self.store.src_dir}"
         )
-        console.print(":thumbs_up: try to copy source code files...")
 
         excludes = None
         ignore = workdir / SW_IGNORE_FILE_NAME
@@ -687,14 +755,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def serve(
         cls,
-        model_yaml: str,
-        workdir: Path,
+        model_config: ModelConfig,
+        model_src_dir: Path,
         host: str,
         port: int,
     ) -> None:
-        _model_config = cls.load_model_config(workdir / model_yaml, workdir)
-        svc = cls._get_service(_model_config.run.modules, workdir)
-        svc.serve(host, port, _model_config.name)
+        svc = cls._get_service(model_config.run.modules, model_src_dir)
+        svc.serve(host, port, model_config.name)
 
 
 class CloudModel(CloudBundleModelMixin, Model):

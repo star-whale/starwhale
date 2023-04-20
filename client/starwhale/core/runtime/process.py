@@ -9,16 +9,18 @@ from functools import partial
 import dill
 
 from starwhale.utils import console
-from starwhale.consts import PythonRunEnv, ENV_LOG_VERBOSE_COUNT
+from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME, ENV_LOG_VERBOSE_COUNT
 from starwhale.base.uri import URI
+from starwhale.utils.fs import extract_tar
 from starwhale.base.type import URIType, InstanceType
 from starwhale.utils.venv import (
     guess_python_env_mode,
     check_valid_venv_prefix,
     check_valid_conda_prefix,
 )
-from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
+from starwhale.core.model.model import StandaloneModel
 
 from .model import StandaloneRuntime
 
@@ -94,32 +96,56 @@ class Process:
     ) -> Process:
         _uri: URI
         if isinstance(uri, str):
-            _uri = URI(uri, expected_type=URIType.RUNTIME)
+            _uri = URI.guess(uri, fallback_type=URIType.RUNTIME)
         else:
             _uri = uri
+
+        console.print(
+            f":owl: start to run in the new process with runtime environment: {_uri}"
+        )
         # TODO: support cloud runtime uri
         if _uri.instance_type != InstanceType.STANDALONE:
             raise NoSupportError("run process with cloud instance uri")
 
-        runtime = StandaloneRuntime(_uri)
-        venv_prefix = runtime.store.export_dir / PythonRunEnv.VENV
-        conda_prefix = runtime.store.export_dir / PythonRunEnv.CONDA
+        if _uri.object.typ == URIType.RUNTIME:
+            runtime = StandaloneRuntime(_uri)
+            snapshot_workdir = runtime.store.snapshot_workdir
+            bundle_path = runtime.store.bundle_path
+        elif _uri.object.typ == URIType.MODEL:
+            model = StandaloneModel(_uri)
+            snapshot_workdir = model.store.packaged_runtime_snapshot_workdir
+            bundle_path = model.store.packaged_runtime_bundle_path
+        else:
+            raise FieldTypeOrValueError(
+                f"{_uri} is not a valid uri, only support model(packaged runtime) or runtime uri"
+            )
+
+        venv_prefix = snapshot_workdir / "export" / PythonRunEnv.VENV
+        conda_prefix = snapshot_workdir / "export" / PythonRunEnv.CONDA
         has_restored_runtime = check_valid_venv_prefix(
             venv_prefix
         ) or check_valid_conda_prefix(conda_prefix)
 
         if force_restore or not has_restored_runtime:
-            console.print(f":snail: start to restore runtime: {uri}")
-            if not runtime.store.manifest_path.exists():
-                runtime.extract(force=True)
-            StandaloneRuntime.restore(runtime.store.snapshot_workdir, verbose=False)
+            console.print(f":snail: start to restore runtime: {_uri}")
+
+            if not (snapshot_workdir / DEFAULT_MANIFEST_NAME).exists():
+                extract_tar(
+                    tar_path=bundle_path,
+                    dest_dir=snapshot_workdir,
+                    force=True,
+                )
+
+            StandaloneRuntime.restore(snapshot_workdir, verbose=False)
 
         if venv_prefix.exists():
             prefix = venv_prefix
         elif conda_prefix.exists():
             prefix = conda_prefix
         else:
-            raise NotFoundError(f"{runtime.store.export_dir} cannot find valid env dir")
+            raise RuntimeError(
+                f"venv_prefix({venv_prefix}) and conda_prefix({conda_prefix}) are both not existed"
+            )
 
         return cls(
             prefix_path=prefix,
