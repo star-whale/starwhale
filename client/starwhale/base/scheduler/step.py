@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import typing as t
 from pathlib import Path
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from loguru import logger
 
@@ -174,9 +174,16 @@ class StepExecutor:
         ]
 
         with ThreadPoolExecutor(max_workers=self.step.concurrency) as executor:
-            loop = asyncio.get_event_loop()
-            future_tasks = [loop.run_in_executor(executor, _t.execute) for _t in tasks]
-            task_results = [loop.run_until_complete(ft) for ft in future_tasks]
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError as ex:
+                logger.warning(f"get event loop in error, try to new one", ex)
+                loop = asyncio.new_event_loop()
+            try:
+                future_tasks = [loop.run_in_executor(executor, _t.execute) for _t in tasks]
+                task_results = [loop.run_until_complete(ft) for ft in future_tasks]
+            finally:
+                loop.close()
 
         logger.info(f"finish to execute step:{self.step}")
         return StepResult(name=self.step.name, task_results=task_results)
