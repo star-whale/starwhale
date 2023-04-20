@@ -55,7 +55,7 @@ class Scheduler:
         while prepared_vertices:
             vertices_to_run = prepared_vertices - vertices_running
 
-            tasks = [
+            steps = [
                 StepExecutor(
                     self._steps[v],
                     project=self.project,
@@ -66,8 +66,8 @@ class Scheduler:
                 for v in vertices_to_run
             ]
             with ThreadPoolExecutor(max_workers=len(vertices_to_run)) as pool:
-                future_tasks = [pool.submit(t.execute) for t in tasks]
-                step_results = [t.result() for t in as_completed(future_tasks)]
+                future_tasks = [pool.submit(s.execute) for s in steps]
+                step_results = [ft.result() for ft in as_completed(future_tasks)]
 
             vertices_running |= set(vertices_to_run)
             _results += step_results

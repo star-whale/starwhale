@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import typing as t
 from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
@@ -128,6 +129,18 @@ class Step(ASDictMixin):
         return dag
 
 
+def asyncio_wrapper(func: t.Callable) -> None:
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as ex:
+        logger.warning(f"get event loop in error, try to new one", ex)
+        loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(func())
+    finally:
+        loop.close()
+
+
 class StepExecutor:
     def __init__(
         self,
@@ -173,8 +186,8 @@ class StepExecutor:
         ]
 
         with ThreadPoolExecutor(max_workers=self.step.concurrency) as pool:
-            future_tasks = [pool.submit(t.execute) for t in tasks]
-            task_results = [t.result() for t in as_completed(future_tasks)]
+            future_tasks = [pool.submit(asyncio_wrapper(_t.execute)) for _t in tasks]
+            task_results = [ft.result() for ft in as_completed(future_tasks)]
 
         logger.info(f"finish to execute step:{self.step}")
         return StepResult(name=self.step.name, task_results=task_results)
