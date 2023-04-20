@@ -26,7 +26,7 @@ class TestDict(unittest.TestCase):
             assert flatten(in_data) == out_data
 
     def test_transform(self) -> None:
-        cases = [
+        cases_good = [
             (
                 {"a": [{"c": {"d": "e"}}, {"c": 4}]},
                 {"a": "b"},
@@ -38,7 +38,13 @@ class TestDict(unittest.TestCase):
                 {"a[0].c.d": "b", "a[1].c": "c1"},
                 {"b": "e", "c1": 4},
             ),
-            ({"a": [{"c": {"d": "e"}}, {"c": 4}]}, {"a[0].d": "b"}, {}),
         ]
-        for ori_dict, key_selector, expected_dict in cases:
+        cases_bad = [
+            ({"a": [{"c": {"d": "e"}}, {"c": 4}]}, {"a[0].d": "b"}),
+            ({"a": [{"c": {"d": "e"}}, {"c": 4}]}, {"a.c": "b"}),
+        ]
+        for ori_dict, key_selector, expected_dict in cases_good:
             assert transform_dict(ori_dict, key_selector) == expected_dict
+        for ori_dict, key_selector in cases_bad:
+            with self.assertRaises(ValueError):
+                transform_dict(ori_dict, key_selector)

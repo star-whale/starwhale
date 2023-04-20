@@ -39,7 +39,6 @@ def transform_dict(d: dict, key_selector: dict) -> dict:
     for field_selector, v in key_selector.items():
         data = d
         fields = field_selector.split(".")
-        field_found = False
         for field in fields:
             if "[" in field and "]" in field:
                 # Parse array index
@@ -50,24 +49,16 @@ def transform_dict(d: dict, key_selector: dict) -> dict:
                 if field in data and isinstance(data[field], list):
                     # Check if array index is within bounds
                     if 0 <= index < len(data[field]):
-                        field_found = True
                         data = data[field][index]
                     else:
-                        field_found = False
-                        print(f"Array index {index} out of bounds for field {field}")
-                        break
+                        raise ValueError(f"Array index {index} out of bounds for field {field}")
                 else:
-                    print(f"Field {field} not found or not an array")
-                    break
+                    raise ValueError(f"Field {field} not found or not an array")
             else:
                 # Check if field exists
                 if field in data:
                     data = data[field]
-                    field_found = True
                 else:
-                    field_found = False
-                    print(f"Field {field} not found in data")
-                    break
-        if field_found:
-            _r.update({v: data})
+                    raise ValueError(f"Field {field} not found in data")
+        _r.update({v: data})
     return _r

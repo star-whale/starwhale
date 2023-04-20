@@ -280,28 +280,27 @@ class Dataset:
             cache_size: (int, optional)
             field_transformer: (dict, optional) transform the dataset fields to what you would like.
                 a possible key_transformer: {"k1.k2.k3[2].k4":"k5"}
-            Returns:
-                A Dataset Object
-            Examples:
-            ```python
-            from starwhale import Dataset, dataset
-            Dataset.from_json(
-                "translation",
-                '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
-            )
-            myds = dataset("translation").with_loader_config(field_transformer={"en": "en-us"})
-            assert myds[0].features["en-us"] == myds[0].features["en"]
-            ```
-            ```python
-            from starwhale import Dataset, dataset
-            Dataset.from_json(
-                "translation2",
-                '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]'
-            )
-            myds = dataset("translation2").with_loader_config(field_transformer={"content.child_content[0].en": "en-us"})
-            assert myds[0].features["en-us"] == myds[0].features["content"]["child_content"][0]["en"]
-            ```
-
+        Returns:
+            A Dataset Object
+        Examples:
+        ```python
+        from starwhale import Dataset, dataset
+        Dataset.from_json(
+            "translation",
+            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+        )
+        myds = dataset("translation").with_loader_config(field_transformer={"en": "en-us"})
+        assert myds[0].features["en-us"] == myds[0].features["en"]
+        ```
+        ```python
+        from starwhale import Dataset, dataset
+        Dataset.from_json(
+            "translation2",
+            '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]'
+        )
+        myds = dataset("translation2").with_loader_config(field_transformer={"content.child_content[0].en": "en-us"})
+        assert myds[0].features["en-us"] == myds[0].features["content"]["child_content"][0]["en"]
+        ```
         """
         with self._loader_lock:
             if len(self.__data_loaders) != 0:
