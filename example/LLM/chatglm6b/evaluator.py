@@ -1,19 +1,14 @@
-from collections import namedtuple
-from starwhale import evaluation
-import torch
 import os
-from gradio import gradio
-from transformers import AutoTokenizer, AutoModel
 from pathlib import Path
-from peft import LoraConfig, get_peft_model, TaskType
-from starwhale import (
-    Image,
-    Context,
-    dataset,
-    pass_context,
-    PipelineHandler,
-    multi_classification,
-)
+from collections import namedtuple
+
+import torch
+from peft import TaskType, LoraConfig, get_peft_model
+from gradio import gradio
+from transformers import Trainer, AutoModel, AutoTokenizer, TrainingArguments
+from torch.utils.data import Dataset
+
+from starwhale import Context, dataset, evaluation, pass_context
 from starwhale.api import model, experiment
 from starwhale.api.service import api
 
@@ -152,9 +147,6 @@ def get_position_ids(tokenizer, input_ids, device, position_encoding_2d=True):
     return position_ids
 
 
-from torch.utils.data import Dataset
-
-
 class QADataset(Dataset):
     def __init__(self, sw_dataset, tokenizer, key_selector) -> None:
         super().__init__()
@@ -203,9 +195,6 @@ def collate_fn(batch):
         "labels": torch.stack(labels),
         "position_ids": torch.stack(position_ids),
     }
-
-
-from transformers import TrainingArguments, Trainer
 
 
 training_args = TrainingArguments(
