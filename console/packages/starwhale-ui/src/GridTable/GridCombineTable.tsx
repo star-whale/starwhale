@@ -1,18 +1,13 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import _ from 'lodash'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import { BusyPlaceholder, GridResizer } from '@starwhale/ui'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
-import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
-import EvaluationListResult from '@/pages/Evaluation/EvaluationListResult'
-import EvaluationListCompare from '@/pages/Evaluation/EvaluationListCompare'
-import { useStore, useStoreApi } from './hooks/useStore'
+import { useStore } from './hooks/useStore'
 import { ITableProps, IContextGridTable } from './types'
-import { StoreProvider, StoreUpdater, useDirectStoreUpdater } from './store'
+import { StoreProvider, StoreUpdater } from './store'
 import { MemoGridTable } from './GridTable'
-import GridCompareTable, { MemoGridCompareTable } from './GridCompareTable'
-import { useDatastoreColumns } from '../GridDatastoreTable'
-import store from '@starwhale/core/store/store'
+import GridCompareTable from './GridCompareTable'
 import { LabelSmall } from 'baseui/typography'
 import { createUseStyles } from 'react-jss'
 import { val } from './utils'
@@ -117,7 +112,7 @@ export { BaseGridCombineTable }
 export default function GridCombineTable({
     storeKey = 'table-combined',
     initState = {},
-    store = undefined,
+    store,
     children,
     ...rest
 }: IContextGridTable) {

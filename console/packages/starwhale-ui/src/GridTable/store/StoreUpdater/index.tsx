@@ -1,14 +1,12 @@
 import { useEffect } from 'react'
 import { StoreApi } from 'zustand'
-
 import { useStore, useStoreApi } from '../../hooks/useStore'
-import type { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/types'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
-import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import { val } from '../../utils'
+import { ITableProps } from '../../types'
 
-type StoreUpdaterProps = StatefulDataTablePropsT & { rfId: string }
+type StoreUpdaterProps = ITableState & { rfId: string }
 
 const selector = (s: ITableState) => ({
     // setNodes: s.setNodes,
@@ -26,6 +24,7 @@ export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: 
         if (typeof value !== 'undefined') {
             setStoreState(value)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value])
 }
 
@@ -39,6 +38,7 @@ export function useDirectStoreUpdater(
         if (typeof value !== 'undefined') {
             setState({ [key]: value })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value])
 }
 

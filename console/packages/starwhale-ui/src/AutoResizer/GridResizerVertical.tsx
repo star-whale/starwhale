@@ -142,8 +142,8 @@ function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef 
             className={classNames(
                 'resize-bar-vertical',
                 css({
-                    width: `100%`,
-                    flexBasis: `100%`,
+                    width: '100%',
+                    flexBasis: '100%',
                     cursor: 'row-resize',
                     paddingTop: '25px',
                     zIndex: 20,

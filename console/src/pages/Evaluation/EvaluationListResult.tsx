@@ -9,6 +9,7 @@ import { useProject } from '@project/hooks/useProject'
 import useFetchDatastoreByTables from '@starwhale/core/datastore/hooks/useFetchDatastoreByTables'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
+import { ITableProps } from '@starwhale/ui/GridTable/types'
 
 function prefixColumn(row: any, prefix: string | number) {
     return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('-')}-`
@@ -19,7 +20,7 @@ function getPrefixId(row: any, prefix: string | number) {
     return _.get(row, [key, 'value'], _.get(row, key, '')) as string
 }
 
-export default function DatastoreDiffTables({ rows }) {
+export default function DatastoreDiffTables({ rows }: { rows: ITableProps['records'] }) {
     const { expandedWidth, expanded } = useDrawer()
     const { projectId: projectFromUri } = useParams<{ projectId: string }>()
     const { project } = useProject()
@@ -27,17 +28,17 @@ export default function DatastoreDiffTables({ rows }) {
 
     const queries = React.useMemo(
         () =>
-            rows.map((row, i) => {
+            rows?.map((row, i) => {
                 return {
                     tableName: tableNameOfResult(projectId, val(row.id)),
                     columnPrefix: prefixColumn(row, i),
                 }
-            }),
-        [rows]
+            }) ?? [],
+        [rows, projectId]
     )
     const getId = useCallback(
         (row) => {
-            return rows.map((v, i) => getPrefixId(row, prefixColumn(rows[i], i))).filter((v) => !!v)[0]
+            return rows?.map((v, i) => getPrefixId(row, prefixColumn(rows[i], i))).filter((v) => !!v)[0]
         },
         [rows]
     )

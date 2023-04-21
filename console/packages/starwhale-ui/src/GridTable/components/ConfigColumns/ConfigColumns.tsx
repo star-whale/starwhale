@@ -70,8 +70,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
     const { columns } = props
 
     const Wrapper = React.useCallback(
-        // eslint-disable-next-line react/no-unused-prop-types
-        ({ children }: { children: React.ReactNode }) => {
+        ({ children }) => {
             return props.isInline ? (
                 <div className={`${styles.transfer} inherit-height`}>{children}</div>
             ) : (
@@ -116,7 +115,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                 </Drawer>
             )
         },
-        [props.isInline, isOpen]
+        [props.isInline, isOpen, styles]
     )
 
     const [value, setValue] = useState<any>(props.view)

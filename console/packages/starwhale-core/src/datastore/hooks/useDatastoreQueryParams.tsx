@@ -1,8 +1,7 @@
 import React from 'react'
 import qs from 'qs'
 import { IListQuerySchema } from '../../server/schemas/list'
-import { QueryTableRequest, ScanTableRequest } from '../schemas/datastore'
-import { TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
+import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
 
 export type TableQueryParamsT = {

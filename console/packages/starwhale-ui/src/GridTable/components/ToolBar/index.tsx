@@ -36,6 +36,8 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable, head
     const { columns, rows } = useStoreApi().getState()
     const { isAllRuns, changed, renderConfigQuery } = useGrid()
 
+    console.log(columns)
+
     return (
         <div
             data-type='table-toolbar'

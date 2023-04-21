@@ -5,13 +5,10 @@ import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ColumnT, ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
+import { ITableProps } from '../types'
 
 // eslint-disable-next-line prefer-template
 const getId = (str: string) => str + '-' + uuid().substring(0, 8)
-
-export type ITableProps = {
-    columns: ColumnT[]
-}
 
 export interface ITableStateInitState {
     isInit: boolean
