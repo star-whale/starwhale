@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import java.util.List;
@@ -49,7 +48,7 @@ class ResourcePoolTest {
 
         rr.setType("memory");
         rr.setRequest(6f);
-        assertTrue(resourcePool.validateResource(rr));
+        resourcePool.validateResource(rr);
 
         rr.setType("gpu");
         rr.setRequest(1f);

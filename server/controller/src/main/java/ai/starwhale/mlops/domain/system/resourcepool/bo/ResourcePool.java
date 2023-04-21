@@ -58,7 +58,7 @@ public class ResourcePool {
                 .build();
     }
 
-    public boolean validateResource(RuntimeResource resource) {
+    public void validateResource(RuntimeResource resource) {
         var type = resource.getType();
         if (!StringUtils.hasText(type)) {
             throw new IllegalArgumentException("resource type is empty");
@@ -67,14 +67,14 @@ public class ResourcePool {
             throw new IllegalArgumentException("unsupported resource type: " + type);
         }
         if (resources == null || resources.isEmpty()) {
-            return false;
+            throw new IllegalArgumentException("resource pool is empty");
         }
         var rc = resources.stream().filter(r -> r.getName().equals(type)).findFirst().orElse(null);
         // no rules for the resource
         if (rc == null) {
-            return false;
+            throw new IllegalArgumentException("resource pool has no rules for resource type: " + type);
         }
-        return rc.validate(resource);
+        rc.validate(resource);
     }
 
     public void validateResources(List<RuntimeResource> runtimeResources) {
@@ -82,9 +82,7 @@ public class ResourcePool {
             return;
         }
         for (var r : runtimeResources) {
-            if (!validateResource(r)) {
-                throw new IllegalArgumentException("resource validation failed: " + r);
-            }
+            validateResource(r);
         }
     }
 
