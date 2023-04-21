@@ -50,7 +50,6 @@ from typing_extensions import Protocol
 from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
-from starwhale.utils.dict import flatten as flatten_dict
 from starwhale.utils.error import MissingFieldError, FieldTypeOrValueError
 from starwhale.utils.retry import (
     http_retry,
@@ -58,6 +57,7 @@ from starwhale.utils.retry import (
     _RETRY_HTTP_STATUS_CODES,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.dict_util import flatten as flatten_dict
 
 datastore_table_file_ext = ".sw-datastore"
 
