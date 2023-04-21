@@ -51,7 +51,9 @@ def transform_dict(d: dict, key_selector: dict) -> dict:
                     if 0 <= index < len(data[field]):
                         data = data[field][index]
                     else:
-                        raise ValueError(f"Array index {index} out of bounds for field {field}")
+                        raise ValueError(
+                            f"Array index {index} out of bounds for field {field}"
+                        )
                 else:
                     raise ValueError(f"Field {field} not found or not an array")
             else:
