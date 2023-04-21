@@ -37,6 +37,7 @@ function BaseGridCombineTable({
     isLoading = false,
     records,
     columnTypes,
+    columns,
     // table confi
     title = '',
     titleOfDetail = 'Detail',
@@ -54,6 +55,7 @@ function BaseGridCombineTable({
     // actions
     onSave,
     onChange = () => {},
+    onViewsChange = () => {},
     emptyMessage,
     emptyColumnMessage = (
         <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
@@ -77,6 +79,7 @@ function BaseGridCombineTable({
                         <MemoGridTable
                             queryable
                             selectable
+                            columns={columns}
                             isLoading={isLoading}
                             onSave={onSave}
                             onChange={onChange}

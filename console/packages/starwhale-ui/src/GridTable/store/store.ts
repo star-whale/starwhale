@@ -5,7 +5,6 @@ import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
 import { ColumnT, ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
-import { ITableProps } from '../types'
 
 // eslint-disable-next-line prefer-template
 const getId = (str: string) => str + '-' + uuid().substring(0, 8)
@@ -42,8 +41,7 @@ export interface IViewInteractiveState {
     viewModelShow: boolean
     onShowViewModel: (viewModelShow: boolean, viewEditing: ConfigT | null) => void
 }
-export type ITableState = ITableProps &
-    IViewState &
+export type ITableState = IViewState &
     ICurrentViewState &
     IViewInteractiveState &
     ITableStateInitState &
@@ -72,70 +70,79 @@ const rawIfChangedInitialState: Partial<ITableState> = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
-    views: [],
-    defaultView: {},
-    setViews: (views) =>
-        set(
-            produce((state) => {
-                // eslint-disable-next-line no-param-reassign
-                state.views = views
-                // eslint-disable-next-line no-param-reassign
-                state.currentView = views.find((view) => view.def) || {}
-            })
-        ),
-    onViewAdd: (view) => set({ views: [...get().views, view] }),
-    onViewUpdate: (view) => {
-        //
-        view.updated = false
-        view.updateColumn = false
-        view.version = 0
-        //
-        const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
+const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
+    const update = (updateAttrs: any) => {
+        const state = get()
+        set(updateAttrs)
+        store.getState().onViewsChange?.(get(), state)
+    }
 
-        // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
-        // create
-        if ($oldViewIndex > -1) {
-            set(
-                produce((state) => {
+    return {
+        views: [],
+        defaultView: {},
+        setViews: (views) => {
+            update(
+                produce((state: ITableState) => {
                     // eslint-disable-next-line no-param-reassign
-                    state.views[$oldViewIndex] = view
+                    state.views = views
+                    // eslint-disable-next-line no-param-reassign
+                    state.currentView = views.find((view) => view.def) || {}
+                })
+            )
+        },
+        onViewAdd: (view) => update({ views: [...get().views, view] }),
+        onViewUpdate: (view) => {
+            //
+            view.updated = false
+            view.updateColumn = false
+            view.version = 0
+            //
+            const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
 
-                    // edit default view and default == current so replace it && view.def === true
-                    if (get().currentView?.id === view.id) {
+            // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
+            // create
+            if ($oldViewIndex > -1) {
+                update(
+                    produce((state: ITableState) => {
                         // eslint-disable-next-line no-param-reassign
-                        state.currentView = view
-                    }
-                })
-            )
-        } else {
-            const $views = get().views?.map((v) => ({
-                ...v,
-                def: false,
-            }))
-            set(
-                produce((state) => {
-                    const newView = {
-                        ...view,
-                        def: true,
-                        isShow: true,
-                        id: getId('view'),
-                    }
-                    // eslint-disable-next-line no-param-reassign
-                    state.views = [...$views, newView]
-                    // eslint-disable-next-line no-param-reassign
-                    state.currentView = newView
-                })
-            )
-        }
-    },
-    checkDuplicateViewName: (name: string, viewId: string) => {
-        return get()
-            .views.filter((view) => view.id !== viewId)
-            .some((view) => view.name === name)
-    },
-    getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
-})
+                        state.views[$oldViewIndex] = view
+
+                        // edit default view and default == current so replace it && view.def === true
+                        if (get().currentView?.id === view.id) {
+                            // eslint-disable-next-line no-param-reassign
+                            state.currentView = view
+                        }
+                    })
+                )
+            } else {
+                const $views = get().views?.map((v) => ({
+                    ...v,
+                    def: false,
+                }))
+                update(
+                    produce((state: ITableState) => {
+                        const newView = {
+                            ...view,
+                            def: true,
+                            isShow: true,
+                            id: getId('view'),
+                        }
+                        // eslint-disable-next-line no-param-reassign
+                        state.views = [...$views, newView]
+                        // eslint-disable-next-line no-param-reassign
+                        state.currentView = newView
+                    })
+                )
+            }
+        },
+        checkDuplicateViewName: (name: string, viewId: string) => {
+            return get()
+                .views.filter((view) => view.id !== viewId)
+                .some((view) => view.name === name)
+        },
+        getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
+    }
+}
 
 const rawCurrentView = {
     filters: [],
@@ -152,16 +159,14 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
     const update = (updateAttrs: Partial<ConfigT>) => {
         const curr = get().currentView
         const version = _.isNumber(curr.version) ? curr.version + 1 : 1
-        const currNew = {
+        set({
             currentView: {
                 ...curr,
                 ...updateAttrs,
                 updated: true,
                 version,
             },
-        }
-        // get().onColumnsChange?.(currNew)
-        set(currNew)
+        })
     }
 
     return {
@@ -234,6 +239,7 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
         }),
     getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
     getRawIfChangedConfigs: (state) => _.pick(state ?? get(), Object.keys(rawIfChangedInitialState)),
+    reset: () => set(rawInitialState),
 })
 
 export interface IRowState {
@@ -297,46 +303,28 @@ const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
 
 export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
     const name = `table/${key}`
-    const useStore = create<ITableState>()(
-        subscribeWithSelector(
-            devtools(
-                isPersist
-                    ? persist(
-                          (...a) => ({
-                              //   @ts-ignore
-                              ...createTableStateInitSlice(...a),
-                              //   @ts-ignore
-                              ...createViewSlice(...a),
-                              //   @ts-ignore
-                              ...createCurrentViewSlice(...a),
-                              //   @ts-ignore
-                              ...createViewInteractiveSlice(...a),
-                              //   @ts-ignore
-                              ...createRowSlice(...a),
-                              //   @ts-ignore
-                              ...createCompareSlice(...a),
-                              ...initState,
-                              key: name,
-                          }),
-                          { name }
-                      )
-                    : (...a) => ({
-                          ...createTableStateInitSlice(...a),
-                          ...createViewSlice(...a),
-                          ...createCurrentViewSlice(...a),
-                          ...createViewInteractiveSlice(...a),
-                          ...createRowSlice(...a),
-                          ...createCompareSlice(...a),
-                          ...initState,
-                          key: name,
-                      }),
-                { name }
-            )
-        )
-    )
-    // eslint-disable-next-line
-    // useStore.subscribe(console.log)
-    return useStore
+    //
+    const actions: StateCreator<ITableState> = (...a: any) => ({
+        // @ts-ignore
+        ...createTableStateInitSlice(...a),
+        // @ts-ignore
+        ...createViewSlice(...a),
+        // @ts-ignore
+        ...createCurrentViewSlice(...a),
+        // @ts-ignore
+        ...createViewInteractiveSlice(...a),
+        // @ts-ignore
+        ...createRowSlice(...a),
+        // @ts-ignore
+        ...createCompareSlice(...a),
+        ...initState,
+        key: name,
+    })
+    if (isPersist) {
+        return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any), { name })))
+    }
+    const useStore = create<ITableState>()(actions)
+    return useStore as UseBoundStore<StoreApi<ITableState>>
 }
 export type IStore = ReturnType<typeof createCustomStore>
 

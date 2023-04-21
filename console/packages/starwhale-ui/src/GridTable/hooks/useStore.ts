@@ -3,7 +3,7 @@ import { useStore as useZustandStore } from 'zustand'
 import type { StoreApi } from 'zustand'
 
 import StoreContext from '../contexts/GridStoreContext'
-import type { ITableState } from '../../base/data-table/store'
+import { ITableState } from '../store/store'
 
 const zustandErrorMessage = 'Could not find zustand store context value.'
 

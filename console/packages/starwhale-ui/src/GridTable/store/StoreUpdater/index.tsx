@@ -4,20 +4,8 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
 import { val } from '../../utils'
-import { ITableProps } from '../../types'
 
 type StoreUpdaterProps = ITableState & { rfId: string }
-
-const selector = (s: ITableState) => ({
-    // setNodes: s.setNodes,
-    // setEdges: s.setEdges,
-    // setDefaultNodesAndEdges: s.setDefaultNodesAndEdges,
-    // setMinZoom: s.setMinZoom,
-    // setMaxZoom: s.setMaxZoom,
-    // setTranslateExtent: s.setTranslateExtent,
-    // setNodeExtent: s.setNodeExtent,
-    // reset: s.reset,
-})
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
     useEffect(() => {
@@ -36,6 +24,8 @@ export function useDirectStoreUpdater(
 ) {
     useEffect(() => {
         if (typeof value !== 'undefined') {
+            // eslint-disable-next-line no-console
+            console.log('set state', key)
             setState({ [key]: value })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -44,51 +34,45 @@ export function useDirectStoreUpdater(
 
 const globalGetId = (record: any) => val(record.id)
 
+const selector = (s: ITableState) => ({
+    reset: s.reset,
+})
+
 const StoreUpdater = ({
     rowSelectedIds,
     onColumnsChange,
     rows,
     data,
     isQueryInline,
-    onIncludedRowsChange,
-    onRowHighlightChange,
+    // onIncludedRowsChange,
+    // onRowHighlightChange,
+    onViewsChange,
+    onSave,
     columnTypes,
     records,
     getId = globalGetId,
     queryable,
     children,
 }: StoreUpdaterProps) => {
-    const {
-        // setNodes,
-        // setEdges,
-        // setDefaultNodesAndEdges,
-        // setMinZoom,
-        // setMaxZoom,
-        // setTranslateExtent,
-        // setNodeExtent,
-        // reset,
-    } = useStore(selector, shallow)
+    const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
 
-    // useEffect(() => {
-    //     const edgesWithDefaults = defaultEdges?.map((e) => ({ ...e, ...defaultEdgeOptions }))
-    //     setDefaultNodesAndEdges(defaultNodes, edgesWithDefaults)
+    useEffect(() => {
+        return () => {
+            // reset()
+        }
+    }, [reset])
 
-    //     return () => {
-    //         reset()
-    //     }
-    // }, [])
     useDirectStoreUpdater('queryable', queryable, store.setState)
-
+    useDirectStoreUpdater('onViewsChange', onViewsChange, store.setState)
+    useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
+    useDirectStoreUpdater('onSave', onSave, store.setState)
     useDirectStoreUpdater('rowSelectedIds', rowSelectedIds, store.setState)
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
     useDirectStoreUpdater('records', records, store.setState)
-    useDirectStoreUpdater('onColumnsChange', onColumnsChange, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('data', data, store.setState)
     useDirectStoreUpdater('isQueryInline', isQueryInline, store.setState)
-    useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
-    useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
     useDirectStoreUpdater('getId', getId, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)

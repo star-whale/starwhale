@@ -16,6 +16,7 @@ export interface ITableStateInitState {
     setRawConfigs: (obj: Record<string, any>) => void
     getRawConfigs: (state?: ITableState) => typeof rawInitialState
     getRawIfChangedConfigs: (state?: ITableState) => typeof rawIfChangedInitialState
+    reset: () => void
 }
 export interface IViewState {
     views: ConfigT[]
@@ -70,70 +71,79 @@ const rawIfChangedInitialState: Partial<ITableState> = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
-    views: [],
-    defaultView: {},
-    setViews: (views) =>
-        set(
-            produce((state) => {
-                // eslint-disable-next-line no-param-reassign
-                state.views = views
-                // eslint-disable-next-line no-param-reassign
-                state.currentView = views.find((view) => view.def) || {}
-            })
-        ),
-    onViewAdd: (view) => set({ views: [...get().views, view] }),
-    onViewUpdate: (view) => {
-        //
-        view.updated = false
-        view.updateColumn = false
-        view.version = 0
-        //
-        const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
+const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
+    const update = (updateAttrs: any) => {
+        const state = get()
+        set(updateAttrs)
+        store.getState().onViewsChange?.(get(), state)
+    }
 
-        // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
-        // create
-        if ($oldViewIndex > -1) {
-            set(
-                produce((state) => {
+    return {
+        views: [],
+        defaultView: {},
+        setViews: (views) => {
+            update(
+                produce((state: ITableState) => {
                     // eslint-disable-next-line no-param-reassign
-                    state.views[$oldViewIndex] = view
+                    state.views = views
+                    // eslint-disable-next-line no-param-reassign
+                    state.currentView = views.find((view) => view.def) || {}
+                })
+            )
+        },
+        onViewAdd: (view) => update({ views: [...get().views, view] }),
+        onViewUpdate: (view) => {
+            //
+            view.updated = false
+            view.updateColumn = false
+            view.version = 0
+            //
+            const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
 
-                    // edit default view and default == current so replace it && view.def === true
-                    if (get().currentView?.id === view.id) {
+            // console.log($oldViewIndex, get().currentView.id, view.id, view.def)
+            // create
+            if ($oldViewIndex > -1) {
+                update(
+                    produce((state: ITableState) => {
                         // eslint-disable-next-line no-param-reassign
-                        state.currentView = view
-                    }
-                })
-            )
-        } else {
-            const $views = get().views?.map((v) => ({
-                ...v,
-                def: false,
-            }))
-            set(
-                produce((state) => {
-                    const newView = {
-                        ...view,
-                        def: true,
-                        isShow: true,
-                        id: getId('view'),
-                    }
-                    // eslint-disable-next-line no-param-reassign
-                    state.views = [...$views, newView]
-                    // eslint-disable-next-line no-param-reassign
-                    state.currentView = newView
-                })
-            )
-        }
-    },
-    checkDuplicateViewName: (name: string, viewId: string) => {
-        return get()
-            .views.filter((view) => view.id !== viewId)
-            .some((view) => view.name === name)
-    },
-    getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
-})
+                        state.views[$oldViewIndex] = view
+
+                        // edit default view and default == current so replace it && view.def === true
+                        if (get().currentView?.id === view.id) {
+                            // eslint-disable-next-line no-param-reassign
+                            state.currentView = view
+                        }
+                    })
+                )
+            } else {
+                const $views = get().views?.map((v) => ({
+                    ...v,
+                    def: false,
+                }))
+                update(
+                    produce((state: ITableState) => {
+                        const newView = {
+                            ...view,
+                            def: true,
+                            isShow: true,
+                            id: getId('view'),
+                        }
+                        // eslint-disable-next-line no-param-reassign
+                        state.views = [...$views, newView]
+                        // eslint-disable-next-line no-param-reassign
+                        state.currentView = newView
+                    })
+                )
+            }
+        },
+        checkDuplicateViewName: (name: string, viewId: string) => {
+            return get()
+                .views.filter((view) => view.id !== viewId)
+                .some((view) => view.name === name)
+        },
+        getDefaultViewId: () => get().views?.find((view) => view.def)?.id ?? '',
+    }
+}
 
 const rawCurrentView = {
     filters: [],
@@ -230,6 +240,7 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
         }),
     getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
     getRawIfChangedConfigs: (state) => _.pick(state ?? get(), Object.keys(rawIfChangedInitialState)),
+    reset: () => set(rawInitialState),
 })
 
 export interface IRowState {
@@ -265,7 +276,6 @@ const createRowSlice: IStateCreator<IRowState> = (set, get, store) => ({
         } else {
             selectedRowIds.add(id)
         }
-        console.log(Array.from(selectedRowIds), '---------')
         set({
             rowSelectedIds: Array.from(selectedRowIds),
         })

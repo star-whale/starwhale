@@ -1163,7 +1163,7 @@ const locales0 = {
     },
     'All runs': {
         en: 'All runs',
-        zh: '所有运行',
+        zh: '展示所有',
     },
     'Edit': {
         en: 'Edit',

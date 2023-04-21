@@ -22,22 +22,19 @@ import { BusyPlaceholder, Button } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
-import { createUseStyles } from 'react-jss'
 import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
+import { useIfChanged } from '@starwhale/core'
+import shallow from 'zustand/shallow'
 
-const useStyles = createUseStyles({
-    showDetail: {
-        background: '#fff',
-        // boxShadow: '0px 2px 8px 0  rgba(0, 0, 0, 0.12)',
-        borderTop: '1px solid #e5e5e5',
-        height: '44px',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-    },
+const selector = (s: ITableState) => ({
+    rowSelectedIds: s.rowSelectedIds,
+    currentView: s.currentView,
+    initStore: s.initStore,
+    getRawConfigs: s.getRawConfigs,
+    onCurrentViewIdChange: s.onCurrentViewIdChange,
 })
 
 export default function EvaluationListCard() {
@@ -49,7 +46,7 @@ export default function EvaluationListCard() {
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
-    const store = useEvaluationStore()
+    const store = useEvaluationStore(selector, shallow)
 
     const options = React.useMemo(() => {
         const sorts = store.currentView?.sortBy
@@ -189,36 +186,35 @@ export default function EvaluationListCard() {
         }
     }, [changed])
 
-    const doSave = async () => {
-        await setEvaluationViewConfig(projectId, {
+    const doSave = React.useCallback(() => {
+        setEvaluationViewConfig(projectId, {
             name: 'evaluation',
             content: JSON.stringify(store.getRawConfigs(), null),
+        }).then(() => {
+            toaster.positive(t('evaluation.save.success'), {})
         })
-        toaster.positive(t('evaluation.save.success'), {})
-        return {}
-    }
+    }, [projectId, store, t])
 
-    const doChange = async (state: ITableState, prevState: ITableState) => {
-        if (!$ready) return
-        setChanged(state.currentView.updated ?? false)
-        setViewId(state.currentView.id)
-
-        if (!_.isEqual(state.views, prevState.views)) {
-            // auto save views
-            // eslint-disable-next-line no-console
-            console.log('saved views', state.views, prevState.views)
-            await setEvaluationViewConfig(projectId, {
-                name: 'evaluation',
-                content: JSON.stringify(
-                    {
-                        ...store.getRawConfigs(),
-                        views: state.views,
-                    },
-                    null
-                ),
-            })
-        }
-    }
+    const onViewsChange = React.useCallback(
+        (state: ITableState, prevState: ITableState) => {
+            console.log('onViewsChange', state)
+            setChanged(state.currentView.updated ?? false)
+            setViewId(state.currentView.id)
+            if (!_.isEqual(state.views, prevState.views)) {
+                setEvaluationViewConfig(projectId, {
+                    name: 'evaluation',
+                    content: JSON.stringify(
+                        {
+                            ...store.getRawConfigs(),
+                            views: state.views,
+                        },
+                        null
+                    ),
+                })
+            }
+        },
+        [projectId, setEvaluationViewConfig, setViewId, store]
+    )
 
     // NOTICE: use isinit to make sure view config is loading into store
     const initRef = React.useRef(false)
@@ -234,8 +230,8 @@ export default function EvaluationListCard() {
         }
         // eslint-disable-next-line no-console
         console.log('init store')
-        // store.initStore($rawConfig)
-        // store.onCurrentViewIdChange(viewId)
+        store.initStore($rawConfig)
+        store.onCurrentViewIdChange(viewId)
 
         initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render
@@ -297,10 +293,13 @@ export default function EvaluationListCard() {
                         selectable
                         records={records}
                         columnTypes={columnTypes}
+                        columns={$columnsWithSpecColumns}
+                        onSave={doSave}
+                        onViewsChange={onViewsChange}
                     />
                 )}
                 isResizeable={$compareRows.length > 0}
-                // bottom={() => <></>}
+                initGridMode={2}
                 bottom={() => <EvaluationListResult rows={$compareRows} />}
             />
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>

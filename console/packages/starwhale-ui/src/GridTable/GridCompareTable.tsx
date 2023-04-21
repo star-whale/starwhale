@@ -170,14 +170,14 @@ export function BaseGridCompareTable({
     React.useEffect(() => {
         if (records.length === 0) return
 
-        const row = records.find((r) => val(r.id) === store.compare?.comparePinnedKey)
+        const row = records.find((r) => val(getId(r)) === store.compare?.comparePinnedKey)
         const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
 
-        if (pinKey !== store.compare?.comparePinnedKey) {
-            store.onCompareUpdate({
-                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(records[0].id),
-            })
-        }
+        // console.log(row, pinKey, store.compare?.comparePinnedKey, val(records[0].id))
+
+        store.onCompareUpdate({
+            comparePinnedKey: row ? store.compare?.comparePinnedKey : val(records[0].id),
+        })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [records])
 

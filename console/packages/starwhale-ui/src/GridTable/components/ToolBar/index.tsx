@@ -20,13 +20,11 @@ const selector = (s: ITableState) => ({
     currentView: s.currentView,
     rowSelectedIds: s.rowSelectedIds,
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
-    onSave: s.onSave,
-    onSaveAs: s.onSaveAs,
 })
 
 function ToolBar({ viewable, filterable, searchable, queryable, columnable, headlineHeight = 60 }: IToolBarProps) {
     const [css] = themedUseStyletron()
-    const { currentView, rowSelectedIds, onCurrentViewColumnsChange, onSave, onSaveAs } = useStore(selector)
+    const { rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
     const headlineRef = React.useRef(null)
     // const [headlineHeight, setHeadlineHeight] = React.useState(64)
     // useResizeObserver(headlineRef, (entries) => {
@@ -34,9 +32,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable, head
     // })
 
     const { columns, rows } = useStoreApi().getState()
-    const { isAllRuns, changed, renderConfigQuery } = useGrid()
-
-    console.log(columns)
+    const { isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs } = useGrid()
 
     return (
         <div

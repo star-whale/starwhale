@@ -15,6 +15,7 @@ const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
 const selector = (s: ITableState) => ({
     isQueryInline: s.isQueryInline,
+    compare: s.compare,
 })
 
 export default function Headers({ width }: { width: number }) {

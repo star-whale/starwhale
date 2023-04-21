@@ -57,7 +57,6 @@ function useGridSelection() {
     const handleSelectOne = React.useCallback(
         (row) => {
             if (onSelectOne) {
-                console.log('onSelectOne', row)
                 onSelectOne(row.id)
             }
         },

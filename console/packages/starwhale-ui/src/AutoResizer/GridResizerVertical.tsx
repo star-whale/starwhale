@@ -18,6 +18,7 @@ export type GridResizerPropsT = {
     gridLayout?: string[]
     threshold?: number
     isResizeable?: boolean
+    initGridMode?: number
 }
 
 export function GridResizerVertical({
@@ -26,13 +27,14 @@ export function GridResizerVertical({
     gridLayout = gridDefaultLayout,
     threshold = 200,
     isResizeable = true,
+    initGridMode = 1,
 }: GridResizerPropsT) {
-    const [gridMode, setGridMode] = useState(1)
+    const [gridMode, setGridMode] = useState(initGridMode)
     const resizeRef = React.useRef<any>(null)
     const gridRef = React.useRef<HTMLDivElement>(null)
     const topRef = React.useRef<HTMLDivElement | null>(null)
 
-    const grdiModeRef = React.useRef(1)
+    const grdiModeRef = React.useRef(initGridMode)
     const resize = useCallback(
         (e: MouseEvent) => {
             window.requestAnimationFrame(() => {
