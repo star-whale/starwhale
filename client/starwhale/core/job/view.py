@@ -16,11 +16,12 @@ from starwhale.consts import (
     DEFAULT_REPORT_COLS,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, JobOperationType
+from starwhale.base.type import JobOperationType
 from starwhale.base.view import BaseTermView
 from starwhale.api._impl.metric import MetricKind
+from starwhale.base.uricomponents.project import Project
 from starwhale.base.uricomponents.instance import Instance
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Job
 
@@ -29,7 +30,7 @@ class JobTermView(BaseTermView):
     def __init__(self, job_uri: str) -> None:
         super().__init__()
         self.raw_uri = job_uri
-        self.uri = URI(job_uri, expected_type=URIType.JOB)
+        self.uri = Resource(job_uri, typ=ResourceType.job)
         self.job = Job.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,
@@ -233,7 +234,7 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        _uri = Project(project_uri)
         cls.must_have_project(_uri)
         jobs, pager = Job.list(_uri, page, size)
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])

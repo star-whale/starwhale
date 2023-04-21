@@ -7,6 +7,7 @@ import sys
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import yaml
@@ -20,8 +21,6 @@ from requests_mock import Mocker
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.dataset.type import (
@@ -38,6 +37,7 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -54,7 +54,7 @@ class _DatasetSDKTestBase(BaseTestCase):
             os.chdir(self._original_cwd)
         super().tearDown()
 
-    def _init_simple_dataset(self) -> URI:
+    def _init_simple_dataset(self) -> Resource:
         with dataset("mnist") as ds:
             for i in range(0, 10):
                 ds.append(
@@ -66,7 +66,7 @@ class _DatasetSDKTestBase(BaseTestCase):
             ds.commit()
         return ds.uri
 
-    def _init_simple_dataset_with_str_id(self) -> URI:
+    def _init_simple_dataset_with_str_id(self) -> Resource:
         with dataset("mnist") as ds:
             for i in range(0, 10):
                 ds.append(
@@ -88,17 +88,21 @@ class _DatasetSDKTestBase(BaseTestCase):
         return (Path(ROOT_DIR) / "data" / "simple.wav").read_bytes()
 
 
+@patch(
+    "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info", MagicMock()
+)
 class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
         ds = dataset("mnist")
         assert not ds.exists()
         assert ds.loading_version == ds.pending_commit_version != ""
-        assert ds.project_uri.full_uri == "local/project/self/dataset/mnist"
-        assert ds.uri.object.name == ds.name == "mnist"
-        assert ds.uri.object.typ == URIType.DATASET
-        assert ds.uri.object.version == ds.pending_commit_version
-        assert ds.uri.project == "self"
-        assert ds.uri.instance == "local"
+        assert ds.uri.project.name == "self"
+        assert ds.uri.project.path == ""
+        assert ds.uri.name == "mnist"
+        assert ds.uri.typ == ResourceType.dataset
+        assert ds.uri.version == ds.pending_commit_version
+        assert ds.uri.project.name == "self"
+        assert ds.uri.instance.alias == "local"
 
         assert not ds.readonly
         assert len(ds) == 0
@@ -212,7 +216,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         assert len(ds) == 2
         assert ds._dataset_builder is not None
-        assert ds._dataset_builder.dataset_name == ds.name
+        assert ds._dataset_builder.dataset_uri.name == ds.uri.name
 
         ds["index-4"] = "index-4", {"data": Binary(), "label": 4}
         ds["index-3"] = {"data": Binary(), "label": 3}
@@ -363,11 +367,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
 
-        assert (
-            ds.loading_version == existed_ds_uri.object.version == ds.uri.object.version
-        )
-        assert ds.name == existed_ds_uri.object.name
-        assert ds.project_uri.project == existed_ds_uri.project
+        assert ds.loading_version == existed_ds_uri.version == ds.uri.version
+        assert ds.uri.name == existed_ds_uri.name
+        assert ds.uri.project == existed_ds_uri.project
         assert not ds.readonly
         assert ds.exists()
         assert len(ds) == 10
@@ -381,7 +383,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         version = ds.commit()
         ds.close()
 
-        load_ds = dataset(f"{ds.name}/version/{version}")
+        load_ds = dataset(f"{ds.uri.name}/version/{version}")
         assert load_ds[1].features["label"] == 101  # type: ignore
         assert {d.index for d in load_ds} == set(list(range(0, 10)) + [100, 101])
         assert len(load_ds) == 12
@@ -389,11 +391,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_load_from_existed(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
         ds = dataset(existed_ds_uri)
-        assert (
-            ds.loading_version == ds.uri.object.version == existed_ds_uri.object.version
-        )
+        assert ds.loading_version == ds.uri.version == existed_ds_uri.version
         assert not ds.readonly
-        assert ds.name == existed_ds_uri.object.name
+        assert ds.uri.name == existed_ds_uri.name
 
         _d = ds[0]
         assert isinstance(_d, DataRow)
@@ -403,18 +403,18 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
     def test_load_with_tag(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
-        name = existed_ds_uri.object.name
+        name = existed_ds_uri.name
         ds = dataset(f"{name}/version/latest")
         assert ds.exists()
-        assert ds.loading_version == existed_ds_uri.object.version
+        assert ds.loading_version == existed_ds_uri.version
 
     def test_load_with_short_version(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
-        name = existed_ds_uri.object.name
-        version = existed_ds_uri.object.version
+        name = existed_ds_uri.name
+        version = existed_ds_uri.version
         ds = dataset(f"{name}/version/{version[:7]}")
         assert ds.exists()
-        assert ds.loading_version == existed_ds_uri.object.version
+        assert ds.loading_version == existed_ds_uri.version
 
     def test_iter(self) -> None:
         existed_ds_uri = self._init_simple_dataset()
@@ -691,7 +691,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds.tags.add(["new_tag2", "new_tag3"])
 
         tags = list(ds.tags)
-        assert set(tags) == set(["latest", "v0", "new_tag1", "new_tag2", "new_tag3"])
+        assert set(tags) == {"latest", "v0", "new_tag1", "new_tag2", "new_tag3"}
 
         ds.tags.remove("new_tag1")
         ds.tags.remove(["new_tag3", "new_tag2"])
@@ -818,7 +818,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             status_code=HTTPStatus.NOT_FOUND,
         )
 
-        ds = dataset("http://1.1.1.1/project/self/dataset/mnist")
+        ds = dataset("http://1.1.1.1/projects/self/datasets/mnist/versions/latest")
         assert version_req.call_count == 1
 
         file_request = rm.request(
@@ -983,10 +983,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         m = ds.manifest()
         assert isinstance(m, dict)
-        assert m["name"] == ds.name
+        assert m["name"] == ds.uri.name
         assert m["version"] == ds.loading_version
         assert m["tags"] == ["latest", "v0"]
-        assert m["project"] == ds.project_uri.project
+        assert m["project"] == ds.uri.project.name
 
         empty_ds = dataset("mnist_new")
         m = empty_ds.manifest()
@@ -1009,7 +1009,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_dataset(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
 
-        name = existed_ds_uri.object.name
+        name = existed_ds_uri.name
         new_ds_name = f"{name}-new"
 
         with self.assertRaisesRegex(
@@ -1024,14 +1024,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             _ = dataset(f"{new_ds_name}/version/123")
 
         new_ds = dataset(new_ds_name)
-        assert new_ds.name == new_ds_name
+        assert new_ds.uri.name == new_ds_name
 
     def test_remove_recover(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
-        list_info, _ = ds.list(ds.project_uri, fullname=True)
+        list_info, _ = ds.list(ds.uri.project, fullname=True)
         assert isinstance(list_info, list)
-        assert list_info[0]["name"] == ds.name
+        assert list_info[0]["name"] == ds.uri.name
         assert list_info[0]["version"] == ds.loading_version
         assert list_info[0]["tags"] == ["latest", "v0"]
 
@@ -1039,14 +1039,14 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(RuntimeError, "failed to remove dataset"):
             ds.remove()
 
-        list_info, _ = ds.list(ds.project_uri, fullname=True)
+        list_info, _ = ds.list(ds.uri.project, fullname=True)
         assert list_info == []
 
         ds.recover()
         with self.assertRaisesRegex(RuntimeError, "failed to recover dataset"):
             ds.recover()
 
-        list_info, _ = ds.list(ds.project_uri, fullname=True)
+        list_info, _ = ds.list(ds.uri.project, fullname=True)
         assert list_info[0]["version"] == ds.loading_version
 
     def test_history(self) -> None:
@@ -1056,7 +1056,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         history = int_ds.history()
         assert len(history) == 1
-        assert history[0]["name"] == int_ds.name
+        assert history[0]["name"] == int_ds.uri.name
         assert history[0]["version"] == int_ds.loading_version
 
     @pytest.mark.skip("enable this test when datastore supports diff")
@@ -1201,19 +1201,19 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         existed_ds_uri = self._init_simple_dataset_with_str_id()
         ds = dataset(existed_ds_uri)
         ds.append(DataRow(index="100", features={"data": Binary(b"100"), "label": 100}))
-        assert ds.uri.object.version == existed_ds_uri.object.version
+        assert ds.uri.version == existed_ds_uri.version
         version = ds.commit()
-        assert version != existed_ds_uri.object.version
-        assert ds.uri.object.version == version
+        assert version != existed_ds_uri.version
+        assert ds.uri.version == version
         ds.close()
 
         assert version == ds.pending_commit_version
-        assert existed_ds_uri.object.version == ds.loading_version
+        assert existed_ds_uri.version == ds.loading_version
         assert version != ds.loading_version
 
-        dataset_dir = Path(self.local_storage) / "self" / "dataset" / ds.name
+        dataset_dir = Path(self.local_storage) / "self" / "dataset" / ds.uri.name
 
-        v0 = existed_ds_uri.object.version
+        v0 = existed_ds_uri.version
         v1 = version
         v0_path = dataset_dir / v0[:2] / f"{v0}.swds" / "_manifest.yaml"
         v1_path = dataset_dir / v1[:2] / f"{v1}.swds" / "_manifest.yaml"
@@ -1317,6 +1317,12 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._dataset_builder.signature_bins_meta[0].size == 48
 
 
+@patch(
+    "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info", MagicMock()
+)
+@patch(
+    "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info", MagicMock()
+)
 class TestPytorch(_DatasetSDKTestBase):
     def test_skip_default_transform_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -1471,6 +1477,14 @@ class TestPytorch(_DatasetSDKTestBase):
         assert item["img"].dtype == torch.uint8
         assert list(item["img"].size()) == [2, 2, 2, 3]
 
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
     def test_audio_transform(self) -> None:
         with dataset("mnist") as ds:
             _audio = self._create_real_audio()
@@ -1607,6 +1621,14 @@ class TestTensorflow(_DatasetSDKTestBase):
         with self.assertRaisesRegex(NoSupportError, "Can't handle the compound type"):
             tf_dataset._inspect_spec([{"a": 1}, {"a": 2}])
 
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
     def test_tf_dataset_drop_index(self) -> None:
         import tensorflow as tf
 
@@ -1624,6 +1646,14 @@ class TestTensorflow(_DatasetSDKTestBase):
         assert items[0]["label"].dtype == tf.int64
         assert len(items) == len(ds)
 
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
     def test_tf_dataset_with_index(self) -> None:
         import tensorflow as tf
 

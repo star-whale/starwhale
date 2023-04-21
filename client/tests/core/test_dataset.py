@@ -17,7 +17,6 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
 from starwhale.base.type import URIType, BundleType
@@ -37,6 +36,8 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
@@ -47,13 +48,14 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
     @patch("starwhale.api._impl.dataset.model.Dataset.commit")
     @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
     def test_function_handler_make_swds(
-        self, m_setitem: MagicMock, m_commit: MagicMock
+        self, m_setitem: MagicMock, m_commit: MagicMock, *args: t.Any
     ) -> None:
         name = "mnist"
-        dataset_uri = URI(name, expected_type=URIType.DATASET)
+        dataset_uri = Resource(name, typ=ResourceType.dataset)
         sd = StandaloneDataset(dataset_uri)
         sd._version = "112233"
         swds_config = DatasetConfig(name=name, handler=lambda: 1)
@@ -171,9 +173,8 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args[1].handler == handler_func
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
-    def test_build_workflow(
-        self,
-    ) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_build_workflow(self, *args: t.Any) -> None:
         class _MockBuildExecutor:
             def __iter__(self) -> t.Generator:
                 yield {"data": b"", "label": 1}
@@ -188,10 +189,10 @@ class StandaloneDatasetTestCase(TestCase):
 
         config = DatasetConfig(**yaml.safe_load(_dataset_yaml))
         config.handler = _MockBuildExecutor
-        dataset_uri = URI(name, expected_type=URIType.DATASET)
+        dataset_uri = Resource(name, typ=ResourceType.dataset)
         sd = StandaloneDataset(dataset_uri)
         sd.build(workdir=Path(workdir), config=config)
-        build_version = sd.uri.object.version
+        build_version = sd.uri.version
 
         snapshot_workdir = (
             sw.rootdir
@@ -208,8 +209,8 @@ class StandaloneDatasetTestCase(TestCase):
         assert _manifest["version"] == build_version
         assert "name" not in _manifest
 
-        dataset_uri = URI(
-            f"mnist/version/{build_version}", expected_type=URIType.DATASET
+        dataset_uri = Resource(
+            f"mnist/version/{build_version}", typ=ResourceType.dataset
         )
         sd = StandaloneDataset(dataset_uri)
         _info = sd.info()
@@ -218,22 +219,22 @@ class StandaloneDatasetTestCase(TestCase):
         assert _info["name"] == name
         assert _info["bundle_path"] == str(snapshot_workdir.resolve())
 
-        _list, _ = StandaloneDataset.list(URI(""))
+        _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list) == 1
         assert not _list[name][0]["is_removed"]
 
-        dataset_uri = URI(
-            f"mnist/version/{build_version}", expected_type=URIType.DATASET
+        dataset_uri = Resource(
+            f"mnist/version/{build_version}", typ=ResourceType.dataset
         )
         sd = StandaloneDataset(dataset_uri)
         _ok, _ = sd.remove(False)
         assert _ok
 
-        _list, _ = StandaloneDataset.list(URI(""))
+        _list, _ = StandaloneDataset.list(Project(""))
         assert _list[name][0]["is_removed"]
 
         _ok, _ = sd.recover(True)
-        _list, _ = StandaloneDataset.list(URI(""))
+        _list, _ = StandaloneDataset.list(Project(""))
         assert not _list[name][0]["is_removed"]
 
         DatasetTermView(name).info()
@@ -248,7 +249,7 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView.list()
 
         sd.remove(True)
-        _list, _ = StandaloneDataset.list(URI(""))
+        _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list[name]) == 0
 
         config.project_uri = "self"
@@ -257,7 +258,8 @@ class StandaloneDatasetTestCase(TestCase):
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
-    def test_head(self) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_head(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
         sds = SDKDataset.dataset("mnist-head-test")
@@ -283,7 +285,7 @@ class StandaloneDatasetTestCase(TestCase):
         sds.close()
 
         dataset_uri = "mnist-head-test/version/latest"
-        ds = Dataset.get_dataset(URI(dataset_uri, expected_type=URIType.DATASET))
+        ds = Dataset.get_dataset(Resource(dataset_uri, typ=ResourceType.dataset))
 
         results = ds.head(0)
         assert len(results) == 0
@@ -303,7 +305,8 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
-    def test_from_json(self) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_from_json(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
         myds = SDKDataset.from_json(

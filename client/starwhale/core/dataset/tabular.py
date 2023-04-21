@@ -16,23 +16,19 @@ import requests
 from typing_extensions import Protocol
 
 from starwhale.utils import console, validate_obj_name
-from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
+from starwhale.consts import ENV_POD_NAME
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
-from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
-    FormatError,
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
 )
 from starwhale.utils.retry import http_retry
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
 from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
 from starwhale.api._impl.data_store import TableEmptyException
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
 
@@ -313,18 +309,18 @@ class TabularDataset:
     @classmethod
     def from_uri(
         cls: t.Type[_TDType],
-        uri: URI,
+        uri: Resource,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         data_datastore_revision: str = "",
         info_datastore_revision: str = "",
     ) -> _TDType:
         return cls(
-            name=uri.object.name,
-            project=uri.project,
+            name=uri.name,
+            project=uri.project.name,
             start=start,
             end=end,
-            instance_name=uri.instance,
+            instance_name=uri.instance.url,
             data_datastore_revision=data_datastore_revision,
             info_datastore_revision=info_datastore_revision,
         )
@@ -374,19 +370,14 @@ lock_s_tdsc = threading.Lock()
 
 
 def get_dataset_consumption(
-    dataset_uri: t.Union[str, URI],
+    dataset_uri: t.Union[str, Resource],
     session_id: str,
     batch_size: t.Optional[int] = None,
     session_start: t.Optional[t.Any] = None,
     session_end: t.Optional[t.Any] = None,
-    instance_uri: str = "",
-    instance_token: str = "",
 ) -> TabularDatasetSessionConsumption:
-    # TODO: tune factory class arguments
-    _uri = instance_uri or os.environ.get(SWEnv.instance_uri)
-
     if isinstance(dataset_uri, str):
-        dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
+        dataset_uri = Resource(dataset_uri, typ=ResourceType.dataset)
 
     batch_size = batch_size or int(
         os.environ.get(
@@ -394,7 +385,7 @@ def get_dataset_consumption(
             DEFAULT_CONSUMPTION_BATCH_SIZE,
         )
     )
-    if _uri is None or _uri == STANDALONE_INSTANCE:
+    if dataset_uri.instance.is_local:
         global local_standalone_tdsc
         key = f"{dataset_uri}-{session_id}-{session_start}-{session_end}-{batch_size}"
         with lock_s_tdsc:
@@ -410,19 +401,12 @@ def get_dataset_consumption(
                 local_standalone_tdsc[key] = _obj
             return _obj
     else:
-        _token = (
-            instance_token
-            or SWCliConfigMixed().get_sw_token(instance=_uri)
-            or os.getenv(SWEnv.instance_token, "")
-        )
         return CloudTDSC(
-            instance_uri=_uri,
             dataset_uri=dataset_uri,
             session_id=session_id,
             batch_size=batch_size,
             session_start=session_start,
             session_end=session_end,
-            instance_token=_token,
         )
 
 
@@ -434,20 +418,20 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
 
     def __init__(
         self,
-        dataset_uri: URI,
+        dataset_uri: Resource,
         session_id: str,
         batch_size: int = DEFAULT_CONSUMPTION_BATCH_SIZE,
         session_start: t.Optional[t.Any] = None,
         session_end: t.Optional[t.Any] = None,
     ) -> None:
-        if dataset_uri.instance_type != InstanceType.STANDALONE:
+        if not dataset_uri.instance.is_local:
             raise NoSupportError(
                 f"StandaloneTDSC only supports standalone dataset: {dataset_uri}"
             )
 
         self.project = dataset_uri.project
-        self.dataset_name = dataset_uri.object.name
-        self.dataset_version = dataset_uri.object.version
+        self.dataset_name = dataset_uri.name
+        self.dataset_version = dataset_uri.version
 
         self.session_id = session_id
         if batch_size <= 0:
@@ -468,7 +452,7 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
         # TODO: support datastore revision
         wrapper = DatastoreWrapperDataset(
             dataset_name=self.dataset_name,
-            project=self.project,
+            project=self.project.name,
         )
         ids = [i["id"] for i in wrapper.scan_id(self.session_start, self.session_end)]
         id_cnt = len(ids)
@@ -527,16 +511,14 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
 class CloudTDSC(TabularDatasetSessionConsumption):
     def __init__(
         self,
-        instance_uri: str,
-        dataset_uri: URI,
+        dataset_uri: Resource,
         session_id: str,
         batch_size: int = DEFAULT_CONSUMPTION_BATCH_SIZE,
         session_start: t.Optional[t.Any] = None,
         session_end: t.Optional[t.Any] = None,
-        instance_token: str = "",
     ) -> None:
-        self.instance_uri = instance_uri
-        self.instance_token = instance_token
+        self.instance_uri = dataset_uri.instance.url
+        self.instance_token = dataset_uri.instance.token
         self.session_id = session_id
         self.batch_size = batch_size
         self.session_start = session_start
@@ -548,16 +530,6 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if not self.instance_token:
-            raise FieldTypeOrValueError("instance token is empty")
-
-        if (
-            not self.dataset_uri.project
-            or not self.dataset_uri.object.name
-            or not self.dataset_uri.object.version
-        ):
-            raise FormatError(f"wrong dataset uri format: {self.dataset_uri}")
-
         if not self.consumer_id:
             raise RuntimeError("failed to get pod name")
 
@@ -584,7 +556,7 @@ class CloudTDSC(TabularDatasetSessionConsumption):
         resp = requests.post(
             urllib.parse.urljoin(
                 self.instance_uri,
-                f"api/v1/project/{self.dataset_uri.project}/dataset/{self.dataset_uri.object.name}/version/{self.dataset_uri.object.version}/consume",
+                f"api/v1/project/{self.dataset_uri.project.name}/dataset/{self.dataset_uri.name}/version/{self.dataset_uri.version}/consume",
             ),
             data=json.dumps(post_data),
             headers={

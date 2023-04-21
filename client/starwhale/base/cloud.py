@@ -20,11 +20,13 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.retry import http_retry
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.instance import Instance
+from starwhale.base.uricomponents.resource import Resource
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -42,14 +44,14 @@ class CloudRequestMixed:
         self,
         url_path: str,
         dest_path: Path,
-        instance_uri: URI,
+        instance: Instance,
         progress: t.Optional[Progress] = None,
         task_id: TaskID = TaskID(0),
         **kw: t.Any,
     ) -> None:
         r = self.do_http_request(
             path=url_path,
-            instance_uri=instance_uri,
+            instance=instance,
             method=HTTPMethod.GET,
             use_raise=True,
             **kw,
@@ -68,7 +70,7 @@ class CloudRequestMixed:
     def do_multipart_upload_file(
         self,
         url_path: str,
-        instance_uri: URI,
+        instance: Instance,
         file_path: t.Union[str, Path],
         fields: t.Optional[t.Dict[str, t.Any]] = None,
         headers: t.Optional[t.Dict[str, t.Any]] = None,
@@ -98,7 +100,7 @@ class CloudRequestMixed:
             _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
             return self.do_http_request(  # type: ignore
                 url_path,
-                instance_uri=instance_uri,
+                instance=instance,
                 method=HTTPMethod.POST,
                 timeout=1200,
                 data=_monitor,
@@ -109,11 +111,11 @@ class CloudRequestMixed:
     def do_http_request_simple_ret(
         self,
         path: str,
-        instance_uri: URI,
+        instance: Instance,
         method: str = HTTPMethod.GET,
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        r = self.do_http_request(path, instance_uri, method, **kw)
+        r = self.do_http_request(path, instance, method, **kw)
         status = r.status_code == HTTPStatus.OK
 
         try:
@@ -127,16 +129,16 @@ class CloudRequestMixed:
     @http_retry
     def do_http_request(
         path: str,
-        instance_uri: URI,
+        instance: Instance,
         method: str = HTTPMethod.GET,
         timeout: int = _DEFAULT_TIMEOUT_SECS,
         headers: t.Optional[t.Dict[str, t.Any]] = None,
         disable_default_content_type: bool = False,
         **kw: t.Any,
     ) -> requests.Response:
-        _url = f"{instance_uri.instance}/api/{SW_API_VERSION}/{path.lstrip('/')}"
+        _url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         _headers = {
-            "Authorization": instance_uri.sw_token,
+            "Authorization": instance.token,
         }
         if not disable_default_content_type:
             _headers["Content-Type"] = "application/json"
@@ -172,47 +174,47 @@ class CloudRequestMixed:
             remain=_d["total"] - _d["size"],
         )
 
-    def _fetch_bundle_info(self, uri: URI, typ: str) -> t.Dict[str, t.Any]:
+    def _fetch_bundle_info(self, uri: Resource, typ: str) -> t.Dict[str, t.Any]:
         _manifest: t.Dict[str, t.Any] = {
-            "uri": uri.full_uri,
+            "uri": uri.to_uri().full_uri,
             "project": uri.project,
-            "name": uri.object.name,
+            "name": uri.name,
         }
 
-        if uri.object.version:
+        if uri.version:
             # TODO: add manifest, lock(runtime), model/dataset/runtime yaml info by controller api
-            _manifest["version"] = uri.object.version
+            _manifest["version"] = uri.version
             _info = self._fetch_bundle_version_info(uri, typ)
             _manifest[CREATED_AT_KEY] = self.fmt_timestamp(_info["createdTime"])
             _manifest["size"] = _info["files"][0]["size"]
         else:
             _manifest["history"] = self._fetch_bundle_history(
-                name=uri.object.name,
-                project_uri=uri,
+                name=uri.name,
+                project_uri=uri.project,
                 typ=typ,
             )[0]
         return _manifest
 
-    def _fetch_bundle_version_info(self, uri: URI, typ: str) -> t.Dict[str, t.Any]:
+    def _fetch_bundle_version_info(self, uri: Resource, typ: str) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
-            f"/project/{uri.project}/{typ}/{uri.object.name}",
+            f"/project/{uri.project}/{typ}/{uri.name}",
             method=HTTPMethod.GET,
-            instance_uri=uri,
-            params={"versionName": uri.object.version},
+            instance=uri,
+            params={"versionName": uri.version},
         ).json()
         return r["data"]  # type: ignore
 
     def _fetch_bundle_history(
         self,
         name: str,
-        project_uri: URI,
+        project_uri: Project,
         typ: str,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         r = self.do_http_request(
-            f"/project/{project_uri.project}/{typ}/{name}/version",
-            instance_uri=project_uri,
+            f"/project/{project_uri.name}/{typ}/{name}/version",
+            instance=project_uri.instance,
             method=HTTPMethod.GET,
             params={"pageNum": page, "pageSize": size},
         ).json()
@@ -235,7 +237,7 @@ class CloudRequestMixed:
 
     def _fetch_bundle_all_list(
         self,
-        project_uri: URI,
+        project_uri: Project,
         uri_typ: str,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
@@ -245,9 +247,9 @@ class CloudRequestMixed:
         _params = {"pageNum": page, "pageSize": size}
         _params.update(filter_dict)
         r = self.do_http_request(
-            f"/project/{project_uri.project}/{uri_typ}",
+            f"/project/{project_uri.name}/{uri_typ}",
             params=_params,
-            instance_uri=project_uri,
+            instance=project_uri.instance,
         ).json()
         objects = {}
 
@@ -295,18 +297,18 @@ class CloudRequestMixed:
 
 class CloudBundleModelMixin(CloudRequestMixed):
     def info(self) -> t.Dict[str, t.Any]:
-        uri: URI = self.uri  # type: ignore
-        return self._fetch_bundle_info(uri, uri.object.typ)
+        uri: Resource = self.uri  # type: ignore
+        return self._fetch_bundle_info(uri, uri.typ.value)
 
     @ignore_error(({}, {}))
     def history(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        uri: URI = self.uri  # type: ignore
+        uri: Resource = self.uri  # type: ignore
         return self._fetch_bundle_history(
-            name=uri.object.name,
-            project_uri=uri,
-            typ=uri.object.typ,
+            name=uri.name,
+            project_uri=uri.project,
+            typ=uri.typ.value,
             page=page,
             size=size,
         )
@@ -314,21 +316,21 @@ class CloudBundleModelMixin(CloudRequestMixed):
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove specific version
         # TODO: add force flag
-        uri: URI = self.uri  # type: ignore
+        uri: Resource = self.uri  # type: ignore
         return self.do_http_request_simple_ret(
-            f"/project/{uri.project}/{uri.object.typ}/{uri.object.name}",
+            f"/project/{uri.project}/{uri.typ}/{uri.name}",
             method=HTTPMethod.DELETE,
-            instance_uri=uri,
+            instance=uri.instance,
         )
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: recover specific version
         # TODO: add force flag
-        uri: URI = self.uri  # type: ignore
+        uri: Resource = self.uri  # type: ignore
         return self.do_http_request_simple_ret(
-            f"/project/{uri.project}/{uri.object.typ}/{uri.object.name}/recover",
+            f"/project/{uri.project}/{uri.typ}/{uri.name}/recover",
             method=HTTPMethod.PUT,
-            instance_uri=uri,
+            instance=uri.instance,
         )
 
     def list_tags(self) -> t.List[str]:

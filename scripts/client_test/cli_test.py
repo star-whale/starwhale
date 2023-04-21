@@ -262,7 +262,7 @@ class TestCli:
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
             _remote_job = self.job_api.info(
-                f"{self.server_url}/project/{self.server_project}/job/{job_id}"
+                f"{self.server_url}/projects/{self.server_project}/jobs/{job_id}"
             )
             _job_status = (
                 _remote_job["manifest"]["jobStatus"]

@@ -10,7 +10,6 @@ from unittest.mock import patch, MagicMock
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import patchfs
 
-from starwhale import URI, URIType
 from starwhale.utils import config
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
@@ -26,14 +25,29 @@ from starwhale.core.dataset.store import (
     HttpBufferedFileLike,
     LocalFSStorageBackend,
 )
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class TestDatasetBackend(TestCase):
     @Mocker()
+    @patch("starwhale.utils.config.load_swcli_config")
     def test_signed_url_backend(
         self,
         rm: Mocker,
+        mock_conf: MagicMock,
     ):
+        mock_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "foo"},
+                "foo": {
+                    "uri": "http://127.0.0.1:1234",
+                    "current_project": "self",
+                    "sw_token": "token",
+                },
+            },
+            "storage": {"root": "/tmp"},
+        }
         signed_url = "http://minio-io/path/to/signed/file"
         raw_content = string.ascii_lowercase.encode()
         data_uri = "12345678abcdefg"
@@ -46,9 +60,10 @@ class TestDatasetBackend(TestCase):
             content=raw_content,
         )
 
-        dataset_uri = URI(
+        dataset_uri = Resource(
             "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
-            expected_type=URIType.DATASET,
+            typ=ResourceType.dataset,
+            _skip_refine=True,
         )
         obj = SignedUrlBackend(dataset_uri)._make_file((Link(data_uri), 0, -1))
         assert obj.read(1) == b"a"

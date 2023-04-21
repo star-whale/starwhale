@@ -5,10 +5,10 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import HTTPMethod
-from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.project import Project
 
 
 class TestCloudRequestMixed(TestCase):
@@ -119,7 +119,7 @@ class TestCloudRequestMixed(TestCase):
         )
 
         cbm = CloudBundleModelMixin()
-        _uri = URI("http://1.1.1.1/project/sw", expected_type=URIType.PROJECT)
+        _uri = Project("http://1.1.1.1/project/sw")
         _models, _pager = cbm._fetch_bundle_all_list(_uri, uri_typ=URIType.MODEL)
 
         assert len(_models.items()) == 2
@@ -129,7 +129,7 @@ class TestCloudRequestMixed(TestCase):
         assert _pager["remain"] == 0
 
         cbm = CloudBundleModelMixin()
-        _uri = URI("http://1.1.1.1/project/sw", expected_type=URIType.PROJECT)
+        _uri = Project("http://1.1.1.1/project/sw")
         _models, _pager = cbm._fetch_bundle_all_list(
             _uri, uri_typ=URIType.MODEL, filter_dict={"name": "mnist"}
         )
@@ -140,7 +140,7 @@ class TestCloudRequestMixed(TestCase):
         assert _pager["remain"] == 0
 
         cbm = CloudBundleModelMixin()
-        _uri = URI("http://1.1.1.1/project/sw", expected_type=URIType.PROJECT)
+        _uri = Project("http://1.1.1.1/project/sw")
         _models, _pager = cbm._fetch_bundle_all_list(
             _uri, uri_typ=URIType.MODEL, filter_dict={"name": "mnist", "latest": True}
         )

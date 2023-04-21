@@ -12,13 +12,14 @@ from click_option_group import (
 
 from starwhale import URI, URIType
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.type import InstanceType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
 from starwhale.core.model.model import ModelConfig, ModelInfoFilter
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 @click.group(
@@ -215,10 +216,7 @@ def _info(view: t.Type[ModelTermView], model: str, output_filter: str) -> None:
         swcli model info mnist -of files # show model package files tree
         swcli -o json model info mnist -of all # show all info in json format
     """
-    uri = URI(model, expected_type=URIType.MODEL)
-    if not uri.object.version:
-        uri.object.version = "latest"
-
+    uri = Resource(model, typ=ResourceType.model)
     view(uri).info(ModelInfoFilter(output_filter))
 
 
@@ -479,8 +477,8 @@ def _run(
         swcli model run --workdir . --module mnist.evaluator --handler mnist.evaluator:MNISTInference.cmp
     """
     # TODO: support run model in cluster mode
-    run_project_uri = URI(run_project, expected_type=URIType.PROJECT)
-    in_server = run_project_uri.instance_type == InstanceType.CLOUD
+    run_project_uri = Project(run_project)
+    in_server = run_project_uri.instance.is_cloud
 
     if in_container and in_server:
         raise RuntimeError("in-container and in-server are mutually exclusive")
@@ -622,11 +620,16 @@ def _prepare_model_run_args(
     modules: t.List[str],
     model_yaml: t.Optional[str],
     forbid_packaged_runtime: bool,
-) -> t.Tuple[Path, ModelConfig, t.Optional[URI]]:
-    runtime_uri = URI.guess(runtime, fallback_type=URIType.RUNTIME) if runtime else None
+) -> t.Tuple[Path, ModelConfig, t.Optional[Resource]]:
+    runtime_uri: Resource | None = None
+    if runtime:
+        try:
+            runtime_uri = Resource(runtime, typ=ResourceType.runtime)
+        except Exception:
+            pass
 
     if model:
-        model_uri = URI(model, expected_type=URIType.MODEL)
+        model_uri = Resource(model, typ=ResourceType.model)
         model_store = ModelStorage(model_uri)
         model_src_dir = model_store.src_dir
 

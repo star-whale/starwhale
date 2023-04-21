@@ -50,7 +50,6 @@ from starwhale.consts import (
     DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     copy_dir,
     move_dir,
@@ -79,6 +78,8 @@ from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
 from starwhale.core.runtime.model import StandaloneRuntime
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 @unique
@@ -155,15 +156,15 @@ class Model(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Model: {self.uri}"
 
     @classmethod
-    def get_model(cls, uri: URI) -> Model:
+    def get_model(cls, uri: Resource) -> Model:
         _cls = cls._get_cls(uri)
         return _cls(uri)
 
     @classmethod
-    def _get_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneModel], t.Type[CloudModel]]:  # type: ignore
-        if uri.instance_type == InstanceType.STANDALONE:
+    def _get_cls(cls, uri: Resource) -> t.Union[t.Type[StandaloneModel], t.Type[CloudModel]]:  # type: ignore
+        if uri.instance.is_local:
             return StandaloneModel
-        elif uri.instance_type == InstanceType.CLOUD:
+        elif uri.instance.is_cloud:
             return CloudModel
         else:
             raise NoSupportError(f"model uri:{uri}")
@@ -171,7 +172,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def copy(
         cls,
-        src_uri: str,
+        src_uri: Resource,
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
@@ -185,7 +186,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         )
         bc.do()
 
-    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+    def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
 
@@ -205,7 +206,7 @@ def resource_to_file_node(
 
 
 class StandaloneModel(Model, LocalStorageBundleMixin):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = ModelStorage(uri)
@@ -214,7 +215,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.models: t.List[t.Dict[str, t.Any]] = []
         self.sources: t.List[t.Dict[str, t.Any]] = []
         self.yaml_name = DefaultYAMLName.MODEL
-        self._version = uri.object.version
+        self._version = uri.version
         self._object_store = LocalFileStore()
 
     def list_tags(self) -> t.List[str]:
@@ -396,7 +397,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not forbid_snapshot and cleanup_snapshot:
                 empty_dir(snapshot_dir, ignore_errors=True)
 
-    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+    def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         """
         - added: a node that exists in compare but not in base
         - deleted: a node that not exists in compare but in base
@@ -406,11 +407,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         :return: diff info
         """
         # TODO use remote get model info for cloud
-        if compare_uri.instance_type != InstanceType.STANDALONE:
+        if not compare_uri.instance.is_local:
             raise NoSupportError(
                 f"only support standalone uri, but compare_uri({compare_uri}) is for cloud instance"
             )
-        if self.uri.object.name != compare_uri.object.name:
+        if self.uri.name != compare_uri.name:
             raise NoSupportError(
                 f"only support two versions diff in one model, base model:{self.uri}, compare model:{compare_uri}"
             )
@@ -455,9 +456,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         ret["basic"] = copy.deepcopy(self.store.digest)
         ret["basic"].update(
             {
-                "name": self.uri.object.name,
-                "version": self.uri.object.version,
-                "project": self.uri.project,
+                "name": self.uri.name,
+                "version": self.uri.version,
+                "project": self.uri.project.name,
                 "path": str(self.store.bundle_path),
                 "tags": StandaloneTag(self.uri).list(),
                 "handlers": sorted(job_yaml.keys()),
@@ -512,9 +513,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support short version to recover, today only support full-version
-        dest_path = (
-            self.store.bundle_dir / f"{self.uri.object.version}{BundleType.MODEL}"
-        )
+        dest_path = self.store.bundle_dir / f"{self.uri.version}{BundleType.MODEL}"
         _ok, _reason = move_dir(self.store.recover_loc, dest_path, force)
         _ok2, _reason2 = True, ""
         if self.store.recover_snapshot_workdir.exists():
@@ -526,7 +525,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def list(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
@@ -625,23 +624,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         run_with_progress_bar("model bundle building...", operations)
 
-    def _package_runtime(self, runtime_uri: URI | str) -> None:
+    def _package_runtime(self, runtime_uri: Resource | str) -> None:
         if isinstance(runtime_uri, str):
-            uri = URI.guess(runtime_uri, fallback_type=URIType.RUNTIME)
+            uri = Resource(runtime_uri, typ=ResourceType.runtime)
         else:
             uri = runtime_uri
 
         # TODO: support runtime uri in the cloud instance
-        if uri.instance_type != InstanceType.STANDALONE:
+        if not uri.instance.is_local:
             raise NoSupportError(
-                f"runtime type {uri.instance_type} not support in package runtime"
+                f"runtime type {uri.instance.type} not support in package runtime"
             )
 
-        info: t.Dict[str, t.Any] = {
-            "name": uri.object.name,
-        }
-
-        if uri.object.typ == URIType.RUNTIME:
+        if uri.typ == ResourceType.runtime:
             runtime = StandaloneRuntime(uri)
             bundle_path = runtime.store.bundle_path
             info = {
@@ -649,7 +644,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "manifest": runtime.store.manifest,
                 "hash": blake2b_file(bundle_path),
             }
-        elif uri.object.typ == URIType.MODEL:
+        elif uri.typ == ResourceType.model:
             model = StandaloneModel(uri)
             bundle_path = model.store.packaged_runtime_bundle_path
             packaged_runtime = model.store.digest.get("packaged_runtime")
@@ -658,9 +653,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             info = packaged_runtime
         else:
-            raise NoSupportError(
-                f"uri type {uri.object.typ} not support to package runtime"
-            )
+            raise NoSupportError(f"uri type {uri.typ} not support to package runtime")
 
         dest = self.store.packaged_runtime_bundle_path
         console.print(f":optical_disk: package runtime({uri}) to {dest}")
@@ -805,7 +798,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
 
 class CloudModel(CloudBundleModelMixin, Model):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
 
@@ -813,7 +806,7 @@ class CloudModel(CloudBundleModelMixin, Model):
     @ignore_error(({}, {}))
     def list(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
@@ -827,13 +820,13 @@ class CloudModel(CloudBundleModelMixin, Model):
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         raise NoSupportError("no support build model in the cloud instance")
 
-    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+    def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         raise NoSupportError("no support model diff in the cloud instance")
 
     @classmethod
     def run(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -843,9 +836,9 @@ class CloudModel(CloudBundleModelMixin, Model):
         crm = CloudRequestMixed()
 
         r = crm.do_http_request(
-            f"/project/{project_uri.project}/job",
+            f"/project/{project_uri.name}/job",
             method=HTTPMethod.POST,
-            instance_uri=project_uri,
+            instance=project_uri.instance,
             data=json.dumps(
                 {
                     "modelVersionUrl": model_uri,

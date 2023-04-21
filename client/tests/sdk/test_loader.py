@@ -10,9 +10,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import ROOT_DIR
 from starwhale.utils import config
 from starwhale.consts import HTTPMethod, SWDSBackendType
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
 from starwhale.core.dataset.type import Link, Image, DatasetSummary, GrayscaleImage
@@ -30,12 +28,17 @@ from starwhale.core.dataset.tabular import (
     get_dataset_consumption,
 )
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class TestDataLoader(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
-        self.dataset_uri = URI("mnist/version/1122334455667788", URIType.DATASET)
+        self.dataset_uri = Resource(
+            "mnist/version/1122334455667788",
+            typ=ResourceType.dataset,
+            _skip_refine=True,
+        )
         self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
 
@@ -302,6 +305,7 @@ class TestDataLoader(TestCase):
             assert len(list(loader)) == 4
 
     @Mocker()
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.wrapper.Dataset.scan_id")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
@@ -311,7 +315,15 @@ class TestDataLoader(TestCase):
         m_scan: MagicMock,
         m_scan_id: MagicMock,
         m_summary: MagicMock,
+        m_conf: MagicMock,
     ) -> None:
+        m_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "http://127.0.0.1:1234", "sw_token": "token"},
+                "local": {"uri": "local"},
+            },
+            "storage": {"root": tempfile.gettempdir()},
+        }
         rm.get(
             "http://127.0.0.1:1234/api/v1/project/self",
             json={"data": {"id": 1, "name": "project"}},
@@ -319,9 +331,10 @@ class TestDataLoader(TestCase):
         m_summary.return_value = DatasetSummary(rows=1)
         m_scan_id.return_value = [{"id": 0}]
         version = "1122334455667788"
-        dataset_uri = URI(
+        dataset_uri = Resource(
             f"http://127.0.0.1:1234/project/self/dataset/mnist/version/{version}",
-            expected_type=URIType.DATASET,
+            typ=ResourceType.dataset,
+            _skip_refine=True,
         )
 
         os.environ[SWEnv.instance_token] = "123"
@@ -476,6 +489,7 @@ class TestDataLoader(TestCase):
 
     @Mocker()
     @patch.dict(os.environ, {"SW_TOKEN": "a", "SW_POD_NAME": "b"})
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan_batch")
     @patch("starwhale.core.dataset.tabular.TabularDatasetSessionConsumption")
@@ -485,16 +499,24 @@ class TestDataLoader(TestCase):
         m_sc: MagicMock,
         m_scan_batch: MagicMock,
         m_summary: MagicMock,
+        m_conf: MagicMock,
     ) -> None:
+        m_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "http://localhost", "sw_token": "token"},
+                "local": {"uri": "local"},
+            },
+        }
         m_summary.return_value = DatasetSummary(rows=4)
         tdsc = m_sc()
         tdsc.get_scan_range.side_effect = [["a", "d"], None]
         tdsc.batch_size = 20
         tdsc.session_start = "a"
         tdsc.session_end = "d"
-        dataset_uri = URI(
-            "http://localhost/project/x/dataset/mnist/version/1122",
-            URIType.DATASET,
+        dataset_uri = Resource(
+            "http://localhost/projects/x/datasets/mnist/versions/1122",
+            typ=ResourceType.dataset,
+            _skip_refine=True,
         )
         m_scan_batch.return_value = [
             [

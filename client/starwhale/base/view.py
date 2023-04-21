@@ -25,10 +25,10 @@ from starwhale.consts import (
     STANDALONE_INSTANCE,
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 if t.TYPE_CHECKING:
     from rich.console import RenderableType
@@ -134,9 +134,9 @@ class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def prepare_build_bundle(
         project: str, bundle_name: str, typ: str, auto_gen_version: bool = True
-    ) -> URI:
+    ) -> Resource:
         console.print(f":construction: start to build {typ} bundle...")
-        _project_uri = URI(project, expected_type=URIType.PROJECT)
+        project_uri = Project(project)
         if not bundle_name:
             raise FieldTypeOrValueError("no bundle_name")
 
@@ -147,12 +147,11 @@ class BaseTermView(SWCliConfigMixed):
                 or gen_uniq_version()
             )
 
-        _uri = URI.capsulate_uri(
-            instance=_project_uri.instance,
-            project=_project_uri.project,
-            obj_type=typ,
-            obj_name=bundle_name,
-            obj_ver=obj_ver,
+        _uri = Resource(
+            f"{bundle_name}/version/{obj_ver}",
+            project=project_uri,
+            typ=ResourceType(typ),
+            _skip_refine=True,
         )
         console.print(f":construction_worker: uri {_uri}")
         return _uri
@@ -320,8 +319,8 @@ class BaseTermView(SWCliConfigMixed):
         return result
 
     @staticmethod
-    def must_have_project(uri: URI) -> None:
-        if uri.project:
+    def must_have_project(uri: Project) -> None:
+        if uri.name:
             return
         console.print(
             "Please specify the project uri with --project or set the default project for current instance"

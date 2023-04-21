@@ -5,33 +5,33 @@ import yaml
 
 from starwhale.utils import now_str, load_yaml, validate_obj_name
 from starwhale.consts import LATEST_TAG, DEFAULT_MANIFEST_NAME
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import InstanceType
 from starwhale.utils.error import (
     FormatError,
     NotFoundError,
     NoSupportError,
     MissingFieldError,
 )
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.resource import Resource
 
 
 class StandaloneTag:
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if self.uri.instance_type != InstanceType.STANDALONE:
-            raise NoSupportError(self.uri.instance_type)
+        if not self.uri.instance.is_local:
+            raise NoSupportError(self.uri.instance.type)
 
     @property
     def _manifest_path(self) -> Path:
         return (
-            self.uri._sw_config.rootdir
-            / self.uri.project
-            / self.uri.object.typ
-            / self.uri.object.name
+            SWCliConfigMixed().rootdir
+            / self.uri.project.name
+            / self.uri.typ.value
+            / self.uri.name
             / DEFAULT_MANIFEST_NAME
         )
 
@@ -50,8 +50,8 @@ class StandaloneTag:
 
     def _save_manifest(self, _manifest: t.Dict[str, t.Any]) -> None:
         _manifest["updated_at"] = now_str()
-        _manifest["name"] = self.uri.object.name
-        _manifest["typ"] = self.uri.object.typ
+        _manifest["name"] = self.uri.name
+        _manifest["typ"] = self.uri.typ.value
 
         ensure_dir(self._manifest_path.parent)
         ensure_file(
@@ -78,7 +78,7 @@ class StandaloneTag:
         manifest: t.Optional[t.Dict] = None,
     ) -> None:
         _manifest = manifest or self._get_manifest()
-        _version = self.uri.object.version
+        _version = self.uri.version
 
         if not _version and not ignore_errors:
             raise MissingFieldError(f"uri version, {self.uri}")
@@ -132,7 +132,7 @@ class StandaloneTag:
 
     def list(self) -> t.List[str]:
         _manifest = self._get_manifest()
-        _version = self.uri.object.version
+        _version = self.uri.version
 
         if _version:
             _tags = _manifest["versions"].get(_version, {}).keys()

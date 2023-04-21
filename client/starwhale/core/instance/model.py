@@ -24,7 +24,7 @@ class CloudInstance(Instance, CloudRequestMixed):
 
     @ignore_error("--")
     def _fetch_version(self) -> str:
-        return self.do_http_request("/system/version", instance_uri=self.uri).json()[  # type: ignore
+        return self.do_http_request("/system/version", instance=self.uri.instance).json()[  # type: ignore
             "data"
         ][
             "version"
@@ -36,10 +36,12 @@ class CloudInstance(Instance, CloudRequestMixed):
         return self.do_http_request(  # type: ignore
             "/system/agent",
             params={"pageSize": DEFAULT_PAGE_SIZE, "pageNum": DEFAULT_PAGE_IDX},
-            instance_uri=self.uri,
+            instance=self.uri.instance,
         ).json()["data"]["list"]
 
     @ignore_error({})
     def _fetch_current_user(self) -> t.Dict[str, t.Any]:
-        r = self.do_http_request("/user/current", instance_uri=self.uri).json()["data"]
+        r = self.do_http_request("/user/current", instance=self.uri.instance).json()[
+            "data"
+        ]
         return dict(name=r["name"], role=r["role"]["roleName"])

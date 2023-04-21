@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 from dataclasses import dataclass
 
 from starwhale.base.uri import URI
@@ -6,7 +6,7 @@ from starwhale.base.uricomponents.instance import Instance
 from starwhale.base.uricomponents.exceptions import UriTooShortException
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Project:
     name: str
     instance: Instance
@@ -17,7 +17,6 @@ class Project:
         name: str = "",
         uri: Optional[str] = None,
         instance: Optional[Instance] = None,
-        **kwargs: Any,
     ) -> None:
         if name and uri:
             raise Exception("name and uri can not both set")
@@ -25,7 +24,7 @@ class Project:
         if "/" in name:
             uri = name
             name = ""
-        self.instance = instance or Instance(uri=uri or "", **kwargs)
+        self.instance = instance or Instance(uri=uri or "")
 
         if not name:
             # use project name in path, the path must at least contain project/{name}
@@ -76,3 +75,7 @@ class Project:
 
     def to_uri(self) -> URI:
         return URI.capsulate_uri(instance=str(self.instance), project=self.name)
+
+    @property
+    def full_uri(self) -> str:
+        return "/".join([self.instance.url, "project", self.name])

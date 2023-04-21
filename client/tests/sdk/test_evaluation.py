@@ -11,9 +11,8 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import DEFAULT_PROJECT
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, RunSubDirType
+from starwhale.base.type import RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
@@ -22,6 +21,7 @@ from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -93,7 +93,9 @@ class TestModelPipelineHandler(TestCase):
         ObjectStore._stores = {}
 
         _loader = get_data_loader(
-            dataset_uri=URI("mnist/version/latest", URIType.DATASET),
+            dataset_uri=Resource(
+                "mnist/version/latest", typ=ResourceType.dataset, _skip_refine=True
+            ),
         )
         assert isinstance(_loader, DataLoader)
         assert not ObjectStore._stores
@@ -150,6 +152,14 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.dataset.Dataset.batch_iter")
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def test_ppl(
         self,
         m_summary: MagicMock,
@@ -173,7 +183,9 @@ class TestModelPipelineHandler(TestCase):
         ]
         m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
 
-        datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
+        datastore_dir = DatasetStorage(
+            Resource(self.dataset_uri_raw, typ=ResourceType.dataset, _skip_refine=True)
+        )
         data_dir = datastore_dir.data_dir
         ensure_dir(data_dir)
         shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
@@ -202,6 +214,14 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def test_deserializer(
         self, m_summary: MagicMock, m_scan: MagicMock, m_scan_id: MagicMock
     ) -> None:
@@ -264,7 +284,9 @@ class TestModelPipelineHandler(TestCase):
         ]
         m_scan_id.return_value = [{"id": 0}]
 
-        datastore_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET))
+        datastore_dir = DatasetStorage(
+            Resource(self.dataset_uri_raw, typ=ResourceType.dataset, _skip_refine=True)
+        )
         ensure_file(datastore_dir.manifest_path, "", parents=True)
 
         context = Context(

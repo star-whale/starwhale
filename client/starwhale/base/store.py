@@ -14,9 +14,10 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, guess_real_path
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource
 
 
 class BundleField(t.NamedTuple):
@@ -28,10 +29,10 @@ class BundleField(t.NamedTuple):
 
 
 class BaseStorage(metaclass=ABCMeta):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self.sw_config = SWCliConfigMixed()
-        self.project_dir = self.sw_config.rootdir / self.uri.project
+        self.project_dir = self.sw_config.rootdir / self.uri.project.name
         self.loc, self.id = self._guess()
 
         self.building = False
@@ -63,18 +64,18 @@ class BaseStorage(metaclass=ABCMeta):
 
     @property
     def bundle_dir(self) -> Path:
-        version = self.uri.object.version
+        version = self.uri.version
         return (
             self.project_dir
             / self.uri_type
-            / self.uri.object.name
+            / self.uri.name
             / version[:VERSION_PREFIX_CNT]
         )
 
     @property
     def bundle_path(self) -> Path:
-        if self.uri.object.version:
-            return self.bundle_dir / f"{self.uri.object.version}{self.bundle_type}"
+        if self.uri.version:
+            return self.bundle_dir / f"{self.uri.version}{self.bundle_type}"
         else:
             return self.bundle_dir
 
@@ -86,13 +87,13 @@ class BaseStorage(metaclass=ABCMeta):
             return load_yaml(self.manifest_path)  # type: ignore
 
     def _get_recover_snapshot_workdir_for_bundle(self) -> Path:
-        version = self.uri.object.version
+        version = self.uri.version
         return (
             self.project_dir
             / "workdir"
             / self.uri_type
             / RECOVER_DIRNAME
-            / self.uri.object.name
+            / self.uri.name
             / version[:VERSION_PREFIX_CNT]
             / version
         )
@@ -108,28 +109,28 @@ class BaseStorage(metaclass=ABCMeta):
     def _get_snapshot_workdir_for_bundle(self) -> Path:
         if self.building:
             return self.tmp_dir
-        version = self.uri.object.version
+        version = self.uri.version
         return (
             self.project_dir
             / "workdir"
             / self.uri_type
-            / self.uri.object.name
+            / self.uri.name
             / version[:VERSION_PREFIX_CNT]
             / version
         )
 
     def _get_recover_loc_for_bundle(self) -> Path:
-        loc = self.project_dir / self.uri_type / RECOVER_DIRNAME / self.uri.object.name
+        loc = self.project_dir / self.uri_type / RECOVER_DIRNAME / self.uri.name
 
-        version = self.uri.object.version
+        version = self.uri.version
         if version:
             loc = loc / version[:VERSION_PREFIX_CNT] / f"{version}{self.bundle_type}"
 
         return loc
 
     def _guess_for_bundle(self) -> t.Tuple[Path, str]:
-        name = self.uri.object.name
-        version = self.uri.object.version
+        name = self.uri.name
+        version = self.uri.version
         rootdir = self.project_dir / self.uri_type / name
         if version:
             _p, _v, _ok = guess_real_path(
@@ -148,13 +149,13 @@ class BaseStorage(metaclass=ABCMeta):
             if _v.endswith(self.bundle_type):
                 _v = _v.split(self.bundle_type)[0]
 
-            self.uri.object.version = _v
+            self.uri.version = _v
             return _p, _v
         else:
             return self.project_dir / self.uri_type / name, name
 
     def iter_bundle_history(self) -> t.Generator[BundleField, None, None]:
-        rootdir = self.project_dir / self.uri_type / self.uri.object.name
+        rootdir = self.project_dir / self.uri_type / self.uri.name
         _manifest = StandaloneTag.get_manifest_by_dir(rootdir)
         tags_map: t.Dict[str, t.Any] = _manifest.get("versions", {})
 
@@ -174,12 +175,12 @@ class BaseStorage(metaclass=ABCMeta):
     @classmethod
     def iter_all_bundles(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         bundle_type: str,
         uri_type: str,
     ) -> t.Generator[BundleField, None, None]:
         sw = SWCliConfigMixed()
-        _obj_dir = sw.rootdir / project_uri.project / uri_type
+        _obj_dir = sw.rootdir / project_uri.name / uri_type
         _tags_map = {}
         for _path in _obj_dir.glob(f"**/*{bundle_type}"):
             if not _path.name.endswith(bundle_type):

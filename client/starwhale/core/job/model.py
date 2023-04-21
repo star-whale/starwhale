@@ -11,25 +11,26 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.api._impl import wrapper
-from starwhale.base.type import InstanceType, JobOperationType
+from starwhale.base.type import JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.api._impl.metric import MetricKind
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource
 
 from .store import JobStorage
 
 
 class Job(metaclass=ABCMeta):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         self.uri = uri
-        self.name = uri.object.name
-        self.project_name = uri.project
+        self.name = uri.name
+        self.project_name = uri.project.name
         self.sw_config = SWCliConfigMixed()
 
     @abstractmethod
@@ -65,8 +66,8 @@ class Job(metaclass=ABCMeta):
     def _get_report(self) -> t.Dict[str, t.Any]:
         evaluation = wrapper.Evaluation(
             eval_id=self._get_version(),
-            project=self.uri.project,
-            instance=self.uri.instance,
+            project=self.uri.project.name,
+            instance=self.uri.instance.url,
         )
         summary = evaluation.get_metrics()
         kind = summary.get("kind", "")
@@ -87,10 +88,12 @@ class Job(metaclass=ABCMeta):
         return ret
 
     @classmethod
-    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
-        if uri.instance_type == InstanceType.STANDALONE:
+    def _get_job_cls(
+        cls, uri: Project
+    ) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
+        if uri.instance.is_local:
             return StandaloneJob
-        elif uri.instance_type == InstanceType.CLOUD:
+        elif uri.instance.is_cloud:
             return CloudJob
         else:
             raise NoSupportError(f"job uri:{uri}")
@@ -98,7 +101,7 @@ class Job(metaclass=ABCMeta):
     @classmethod
     def list(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
@@ -106,13 +109,13 @@ class Job(metaclass=ABCMeta):
         return _cls.list(project_uri)
 
     @classmethod
-    def get_job(cls, job_uri: URI) -> Job:
-        _cls = cls._get_job_cls(job_uri)
+    def get_job(cls, job_uri: Resource) -> Job:
+        _cls = cls._get_job_cls(job_uri.project)
         return _cls(job_uri)
 
 
 class StandaloneJob(Job):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.store = JobStorage(uri)
 
@@ -193,7 +196,7 @@ class StandaloneJob(Job):
     @classmethod
     def list(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
@@ -216,7 +219,7 @@ class StandaloneJob(Job):
 class CloudJob(Job, CloudRequestMixed):
     def _get_version(self) -> str:
         # TODO:use full version id
-        return self.uri.object.name
+        return self.uri.name
 
     @ignore_error({})
     def info(
@@ -235,7 +238,7 @@ class CloudJob(Job, CloudRequestMixed):
         return self.do_http_request_simple_ret(
             f"/project/{self.uri.project}/job/{self.name}",
             method=HTTPMethod.DELETE,
-            instance_uri=self.uri,
+            instance=self.uri.instance,
         )
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -253,27 +256,27 @@ class CloudJob(Job, CloudRequestMixed):
     def _do_job_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support force action
         return self.do_http_request_simple_ret(
-            f"/project/{self.uri.project}/job/{self.name}/{action}",
+            f"/project/{self.uri.project.name}/job/{self.name}/{action}",
             method=HTTPMethod.POST,
-            instance_uri=self.uri,
+            instance=self.uri.instance,
         )
 
     @classmethod
     @ignore_error(([], {}))
     def list(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        if not project_uri.project:
+        if not project_uri:
             raise NotFoundError("no selected project")
         crm = CloudRequestMixed()
 
         r = crm.do_http_request(
-            f"/project/{project_uri.project}/job",
+            f"/project/{project_uri.name}/job",
             params={"pageNum": page, "pageSize": size},
-            instance_uri=project_uri,
+            instance=project_uri.instance,
         ).json()
 
         jobs = []
@@ -290,7 +293,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _fetch_job_info(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}",
-            instance_uri=self.uri,
+            instance=self.uri.instance,
         ).json()
         return r["data"]  # type: ignore
 
@@ -303,7 +306,7 @@ class CloudJob(Job, CloudRequestMixed):
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}/task",
             params={"pageNum": page, "pageSize": size},
-            instance_uri=self.uri,
+            instance=self.uri.instance,
         ).json()
 
         tasks = []

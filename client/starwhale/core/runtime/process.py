@@ -9,9 +9,7 @@ from functools import partial
 
 from starwhale.utils import console
 from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME
-from starwhale.base.uri import URI
 from starwhale.utils.fs import extract_tar
-from starwhale.base.type import URIType, InstanceType
 from starwhale.utils.venv import (
     get_conda_bin,
     guess_python_env_mode,
@@ -21,6 +19,7 @@ from starwhale.utils.venv import (
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.core.model.model import StandaloneModel
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import StandaloneRuntime
 
@@ -31,10 +30,10 @@ class Process:
 
     def __init__(
         self,
-        uri: t.Union[URI, str],
+        uri: t.Union[Resource, str],
         force_restore: bool = False,
     ) -> None:
-        self._uri = uri
+        self._uri = uri if isinstance(uri, Resource) else Resource(uri)
         self._prefix_path = self._restore_runtime(force_restore=force_restore)
         self._mode = guess_python_env_mode(self._prefix_path)
 
@@ -99,23 +98,20 @@ class Process:
         self,
         force_restore: bool = False,
     ) -> Path:
-        if isinstance(self._uri, str):
-            _uri = URI.guess(self._uri, fallback_type=URIType.RUNTIME)
-        else:
-            _uri = self._uri
+        _uri = self._uri
 
         console.print(
             f":owl: start to run in the new process with runtime environment: {_uri}"
         )
         # TODO: support cloud runtime uri
-        if _uri.instance_type != InstanceType.STANDALONE:
+        if _uri.instance.is_cloud:
             raise NoSupportError("run process with cloud instance uri")
 
-        if _uri.object.typ == URIType.RUNTIME:
+        if _uri.typ == ResourceType.runtime:
             runtime = StandaloneRuntime(_uri)
             snapshot_workdir = runtime.store.snapshot_workdir
             bundle_path = runtime.store.bundle_path
-        elif _uri.object.typ == URIType.MODEL:
+        elif _uri.typ == ResourceType.model:
             model = StandaloneModel(_uri)
             snapshot_workdir = model.store.packaged_runtime_snapshot_workdir
             bundle_path = model.store.packaged_runtime_bundle_path

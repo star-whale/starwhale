@@ -6,7 +6,6 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.consts import DEFAULT_PROJECT
-from starwhale.base.uri import URI
 from starwhale.utils.config import (
     SWCliConfigMixed,
     load_swcli_config,
@@ -15,6 +14,7 @@ from starwhale.utils.config import (
 from starwhale.core.project.view import ProjectTermView
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import StandaloneProject
+from starwhale.base.uricomponents.project import Project
 
 _existed_config_contents = get_predefined_config_yaml()
 
@@ -32,12 +32,12 @@ class ProjectTestCase(TestCase):
     def test_standalone_model(self):
         _config = load_swcli_config()
 
-        sp = StandaloneProject(uri=URI("local/project/self"))
+        sp = StandaloneProject(uri=Project("local/project/self"))
         ok, reason = sp.create()
         assert not ok
         assert "existed" in reason
 
-        sp = StandaloneProject(uri=URI("local/project/test"))
+        sp = StandaloneProject(uri=Project("local/project/test"))
         ok, reason = sp.create()
         assert ok
         assert "created" in reason

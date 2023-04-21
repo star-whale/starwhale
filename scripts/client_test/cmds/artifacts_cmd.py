@@ -11,6 +11,7 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, DatasetChangeMode
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.runtime.model import RuntimeConfig
+from starwhale.base.uricomponents.project import Project
 
 from . import CLI
 from .base.invoke import invoke
@@ -100,7 +101,7 @@ class Model(BaseArtifact):
         run_handler: str,
     ) -> t.Tuple[bool, str]:
         return ModelTermView.run_in_server(
-            project_uri=URI(project, expected_type=URIType.PROJECT),
+            project_uri=Project(project),
             model_uri=model_uri,
             dataset_uris=dataset_uris,
             runtime_uri=runtime_uri,

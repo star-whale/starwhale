@@ -11,10 +11,10 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, RuntimeLockFileType
+from starwhale.base.type import RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .view import get_term_view, RuntimeTermView
 from .model import RuntimeInfoFilter
@@ -66,7 +66,7 @@ def _quickstart_from_uri(
     """
     p_workdir = Path(workdir).absolute()
     name = name or p_workdir.name
-    _uri = URI(uri, expected_type=URIType.RUNTIME)
+    _uri = Resource(uri, typ=ResourceType.runtime)
     RuntimeTermView.quickstart_from_uri(
         workdir=p_workdir,
         name=name,
@@ -425,10 +425,7 @@ def _info(
           swcli runtime info pytorch/version/v1 -of manifest # show _manifest.yaml content
           swcli runtime info pytorch/version/v1 -of all # show all info of the runtime
     """
-    uri = URI(runtime, expected_type=URIType.RUNTIME)
-    if not uri.object.version:
-        uri.object.version = "latest"
-
+    uri = Resource(runtime, ResourceType.runtime)
     view(uri).info(RuntimeInfoFilter(output_filter))
 
 
@@ -602,7 +599,7 @@ def _activate(uri: str, force_restore: bool) -> None:
 
     URI: Runtime uri in the standalone instance
     """
-    _uri = URI(uri, expected_type=URIType.RUNTIME)
+    _uri = Resource(uri, typ=ResourceType.runtime)
     RuntimeTermView.activate(_uri, force_restore)
 
 

@@ -32,7 +32,7 @@ class RuntimeStorage(BaseStorage):
 
     @property
     def runtime_dir(self) -> Path:
-        return self.project_dir / URIType.RUNTIME / self.uri.object.name
+        return self.project_dir / URIType.RUNTIME / self.uri.name
 
     @property
     def manifest_path(self) -> Path:
