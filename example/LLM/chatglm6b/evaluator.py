@@ -89,7 +89,7 @@ def create_prompt_ids(tokenizer, question, max_src_length):
     return prompt_ids + sep_ids
 
 
-def create_inputs_and_labels(tokenizer, question, answer, device):
+def create_inputs_and_labels(tokenizer, question, answer, device, **kwargs):
     prompt = create_prompt_ids(tokenizer, question, max_src_length)
     completion = tokenizer.encode(
         answer, max_length=max_dst_length, truncation=True, add_special_tokens=False
@@ -148,16 +148,16 @@ def get_position_ids(tokenizer, input_ids, device, position_encoding_2d=True):
 
 
 class QADataset(Dataset):
-    def __init__(self, sw_dataset, tokenizer, key_selector) -> None:
+    def __init__(self, sw_dataset, tokenizer) -> None:
         super().__init__()
         self.sw_dataset = sw_dataset
         self.tokenizer = tokenizer
-        self.key_selector = key_selector
 
     def __getitem__(self, index):
-        item_data = convert_dict(self.sw_dataset[index].features, self.key_selector)
-        if not item_data.get("answer"):
-            item_data["answer"] = ""
+        try:
+            item_data = self.sw_dataset[index].features
+        except ValueError:
+            item_data = {"question":"","answer":""}
         tokenizer = self.tokenizer
         input_ids, labels = create_inputs_and_labels(
             tokenizer, device=device, **item_data
@@ -234,11 +234,15 @@ def save_tuned_parameters(model, path):
 
 ds_key_selectors = {
     "webqsp": {"rawquestion": "question", "parses[0].Answers[0].EntityName": "answer"},
+    "grailqav1": {"answer[0].entity_name": "answer"},
+    "graph_questions_testing": {"answer[0]": "answer"},
+    "z_bench_common": {"prompt": "question" , "gpt4":"answer"},
+    "mkqa": {"query": "question", "answers.en[0].text": "answer"},
 }
 
 
-@pass_context
-@experiment.fine_tune()
+# @pass_context
+# @experiment.fine_tune()
 def fine_tune(
     context: Context,
 ) -> None:
@@ -252,10 +256,10 @@ def fine_tune(
             torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
         )
     sw_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
+    sw_dataset=sw_dataset.with_loader_config(field_transformer=ds_key_selectors.get(sw_dataset.name, None))
     train_dataset = QADataset(
         sw_dataset,
         tokenizer=tokenizer,
-        key_selector=ds_key_selectors.get(sw_dataset.name),
     )
     trainer = ModifiedTrainer(
         model=chatglm,
@@ -273,45 +277,6 @@ def fine_tune(
     )
 
 
-def convert_dict(d: dict, key_selector: dict) -> dict:
-    _r = {}
-    for field_selector, v in key_selector.items():
-        data = d
-        fields = field_selector.split(".")
-        field_found = False
-        for field in fields:
-            if "[" in field and "]" in field:
-                # Parse array index
-                index = int(field[field.find("[") + 1 : field.find("]")])
-                # Get field name
-                field = field[: field.find("[")]
-                # Check if field exists and is an array
-                if field in data and isinstance(data[field], list):
-                    # Check if array index is within bounds
-                    if index >= 0 and index < len(data[field]):
-                        field_found = True
-                        data = data[field][index]
-                    else:
-                        field_found = False
-                        print(f"Array index {index} out of bounds for field {field}")
-                        break
-                else:
-                    print(f"Field {field} not found or not an array")
-                    break
-            else:
-                # Check if field exists
-                if field in data:
-                    data = data[field]
-                    field_found = True
-                else:
-                    field_found = False
-                    print(f"Field {field} not found in data")
-                    break
-        if field_found:
-            _r.update({v: data})
-    return _r
-
-
 @api(gradio.Text(), gradio.Text())
 def online_eval(question: str) -> str:
     return ppl({"text": question})
@@ -319,5 +284,5 @@ def online_eval(question: str) -> str:
 
 if __name__ == "__main__":
     Context = namedtuple("Context", ["dataset_uris"])
-    context = Context(["webqsp/version/latest"])
+    context = Context(["z_bench_common/version/latest"])
     fine_tune(context)
