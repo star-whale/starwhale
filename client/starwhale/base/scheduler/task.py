@@ -147,7 +147,7 @@ class TaskExecutor:
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError as ex:
-            logger.warning("get event loop in error, try to new one", ex)
+            logger.warning("get event loop error, try to new one", ex)
             loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
