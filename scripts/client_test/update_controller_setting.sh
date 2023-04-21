@@ -49,6 +49,7 @@ resourcePoolSetting:
 - name: "default"
   resources:
     - name: "cpu"
+      defaults: 1.0
     - name: "memory"
     - name: "nvidia.com/gpu"
 EOF
