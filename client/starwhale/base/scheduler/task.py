@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import asyncio
 from pathlib import Path
 from functools import wraps
 
@@ -143,7 +144,12 @@ class TaskExecutor:
 
     def execute(self) -> TaskResult:
         logger.info(f"start to execute task with context({self.context}) ...")
-
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError as ex:
+            logger.warning("get event loop in error, try to new one", ex)
+            loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         try:
             self.__status = RunStatus.RUNNING
             Context.set_runtime_context(self.context)
