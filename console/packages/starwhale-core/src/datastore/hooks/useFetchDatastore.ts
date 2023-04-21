@@ -1,4 +1,3 @@
-import React, { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
 import { scanTable, queryTable, listTables, exportTable } from '../services/datastore'

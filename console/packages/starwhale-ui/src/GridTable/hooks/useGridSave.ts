@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { useStoreApi } from './useStore'
 import { ConfigT } from '@starwhale/ui/base/data-table/types'
 

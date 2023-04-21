@@ -26,7 +26,6 @@ import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertic
 import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
-import { useIfChanged } from '@starwhale/core'
 import shallow from 'zustand/shallow'
 
 const selector = (s: ITableState) => ({
@@ -197,7 +196,7 @@ export default function EvaluationListCard() {
 
     const onViewsChange = React.useCallback(
         (state: ITableState, prevState: ITableState) => {
-            console.log('onViewsChange', state)
+            // console.log('onViewsChange', state)
             setChanged(state.currentView.updated ?? false)
             setViewId(state.currentView.id)
             if (!_.isEqual(state.views, prevState.views)) {
@@ -213,7 +212,7 @@ export default function EvaluationListCard() {
                 })
             }
         },
-        [projectId, setEvaluationViewConfig, setViewId, store]
+        [projectId, setViewId, store]
     )
 
     // NOTICE: use isinit to make sure view config is loading into store

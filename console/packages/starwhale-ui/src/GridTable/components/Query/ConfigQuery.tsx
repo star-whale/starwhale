@@ -3,10 +3,11 @@ import { StatefulPopover } from 'baseui/popover'
 import Button from '@starwhale/ui/Button'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import IconFont from '@starwhale/ui/IconFont'
-import { ColumnT, QueryT } from '@starwhale/ui/base/data-table/types'
+import { QueryT } from '@starwhale/ui/base/data-table/types'
+import { ColumnSchemaDesc } from '@starwhale/core'
 
 type PropsT = {
-    columns: ColumnT[]
+    columnTypes?: ColumnSchemaDesc[]
     value: QueryT[]
     onChange: (args: QueryT[]) => void
 }

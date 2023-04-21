@@ -4,16 +4,17 @@ import { LabelSmall } from 'baseui/typography'
 import { SORT_DIRECTIONS } from '@starwhale/ui/base/data-table/constants'
 import { RadioGroup, Radio, ALIGN } from '../../../Radio'
 import { ColumnT, ConfigT } from '../../../base/data-table/types'
-import ConfigManageColumns from '../../../base/data-table/config-manage-columns'
 import Input from '../../../Input'
 import Select from '../../../Select'
-import ConfigQuery from '../../../base/data-table/config-query'
 import useTranslation from '@/hooks/useTranslation'
+import ConfigColumns from '../ConfigColumns'
+import { ConfigQuery } from '../Query'
+import { ColumnSchemaDesc } from '@starwhale/core'
 
 type ViewListPropsT = {
     view: ConfigT
     columns: ColumnT[]
-    rows: any[]
+    columnTypes?: ColumnSchemaDesc[]
 }
 function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     const [css] = useStyletron()
@@ -31,7 +32,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
     }, [props.columns])
     const [sortDirection, setSortDirection] = React.useState(props.view?.sortDirection ?? SORT_DIRECTIONS.ASC)
 
-    const filterRef = React.useRef(null)
+    // const filterRef = React.useRef(null)
     const columnRef = React.useRef(null)
 
     React.useImperativeHandle(
@@ -49,7 +50,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 }
             },
         }),
-        [name, filterRef, columnRef, sortBy, sortDirection, props.view, queries]
+        [name, columnRef, sortBy, sortDirection, props.view, queries]
     )
 
     return (
@@ -86,10 +87,10 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                 })}
             >
                 <LabelSmall>{t('table.filter.add')}</LabelSmall>
-                <ConfigQuery value={queries} columns={props.columns} onChange={setQueries} />
+                <ConfigQuery value={queries} columnTypes={props.columnTypes} onChange={setQueries} />
             </div>
             <div className='inherit-height' style={{ minHeight: '300px' }}>
-                <ConfigManageColumns
+                <ConfigColumns
                     ref={columnRef}
                     isInline
                     view={

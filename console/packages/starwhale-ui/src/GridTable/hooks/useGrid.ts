@@ -2,7 +2,6 @@ import useGridQueryText from './useGridQueryText'
 import useGridSave from './useGridSave'
 import useGridSelection from './useGridSelection'
 import useGridSort from './useGridSort'
-import React, { useMemo } from 'react'
 import useGirdData from './useGridData'
 import useGridQuery from './useGridQuery'
 

@@ -155,7 +155,6 @@ export type StatefulDataTablePropsT = {
     selectable?: boolean
     queryinline?: boolean
     controlRef?: ControlRefT
-    useStore: IStore
     store?: ITableState
 }
 
@@ -178,6 +177,9 @@ export type DataTablePropsT = {
     sortDirection?: SortDirectionsT
     textQuery?: string
     getId?: (row: RowT) => string | number
+    isRowSelected?: (row: RowT) => boolean
+    isSelectedAll?: boolean
+    isSelectedIndeterminate?: boolean
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

@@ -1,8 +1,6 @@
 import React, { useRef, useEffect, useImperativeHandle, useState } from 'react'
-import { SHAPE, SIZE } from 'baseui/button'
 import { useStyletron } from 'baseui'
 import { Drawer } from 'baseui/drawer'
-import { useDrawer } from '@/hooks/useDrawer'
 import { expandBorderRadius } from '@/utils'
 import type { ColumnT, ConfigT } from '../../../base/data-table/types'
 import { createUseStyles } from 'react-jss'

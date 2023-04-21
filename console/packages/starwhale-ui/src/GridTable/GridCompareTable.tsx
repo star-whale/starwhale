@@ -149,18 +149,17 @@ function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{
     }
     return NoneCompareCell({ value, comparedValue, renderedValue, data })
 }
-const selector = (state: ITableState) => ({
-    rowSelectedIds: state.rowSelectedIds,
-})
+
 export function BaseGridCompareTable({
     records = [],
     columnTypes,
     title = '',
-    getId = (r) => r.id,
+    getId = (r: any) => r.id,
 }: {
     title?: string
     records: any[]
     columnTypes: RecordListVo['columnTypes']
+    getId?: (r: any) => string
 }) {
     const store = useStoreApi().getState()
     const [t] = useTranslation()
@@ -171,7 +170,7 @@ export function BaseGridCompareTable({
         if (records.length === 0) return
 
         const row = records.find((r) => val(getId(r)) === store.compare?.comparePinnedKey)
-        const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
+        // const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
 
         // console.log(row, pinKey, store.compare?.comparePinnedKey, val(records[0].id))
 
@@ -309,7 +308,7 @@ export function BaseGridCompareTable({
                 })
             ),
         ],
-        [records, $rowsWithDiffOnly, comparePinnedRowIndex, comparePinnedRow, compareShowCellChanges, t]
+        [records, $rowsWithDiffOnly, comparePinnedRowIndex, compareShowCellChanges, t, comparePinnedRow, styles, getId]
     )
 
     const $rowsWithData = useMemo(

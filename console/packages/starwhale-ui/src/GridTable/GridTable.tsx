@@ -4,17 +4,13 @@ import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { IContextGridTable, ITableProps } from './types'
-import Pagination from './Pagination'
+import { IContextGridTable, IGridState, ITableProps } from './types'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
-import { StatefulDataTable } from '../base/data-table'
-import { stateSelector } from '../base/data-table/store'
 import { useStore, useStoreApi } from './hooks/useStore'
 import { StoreProvider } from './store/StoreProvider'
 import StoreUpdater, { useDirectStoreUpdater } from './store/StoreUpdater'
 import useGrid from './hooks/useGrid'
 import { DataTable } from '../base/data-table/data-custom-table'
-import { ITableState } from './store'
 
 const useStyles = createUseStyles({
     table: {
@@ -71,43 +67,24 @@ const loadingMessage = () => (
     />
 )
 
-const selector = (state: ITableState) => ({
+const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,
     onRowHighlightChange: state.onRowHighlightChange,
 })
-function val(r: any) {
-    if (r === undefined) return ''
-    if (typeof r === 'object' && 'value' in r) {
-        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
-    }
-
-    return r
-}
 
 function GridTable({
     isLoading,
     columns,
     rows,
-    data = [],
-    paginationProps,
     rowActions,
-    searchable = false,
-    filterable = false,
-    queryable = false,
     compareable = false,
     selectable = false,
     queryinline = false,
-    onSave,
-    onChange = () => {},
     emptyMessage,
     emptyColumnMessage,
-    // todo
-    getId = (record: any) => val(record.id),
     resizableColumnWidths = false,
     rowHighlightIndex = -1,
     rowHeight = 44,
-    storeRef,
-    onColumnsChange,
     headlineHeight = 0,
     children,
 }: ITableProps) {

@@ -10,7 +10,6 @@ import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
-import { useEffectOnce } from 'react-use'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -106,7 +105,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             recordInfo,
             recordQuery: query,
             columnTypes,
-            records,
         } = useFetchDatastoreByTable(tableName, tableOptions, enableLoad)
         useEffect(() => {
             if (enableLoad) return

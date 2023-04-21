@@ -3,7 +3,7 @@ import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
-import { ColumnT, ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
+import { ConfigT, QueryT, SortDirectionsT } from '../../base/data-table/types'
 import { FilterOperateSelectorValueT } from '../../base/data-table/filter-operate-selector'
 
 // eslint-disable-next-line prefer-template
@@ -74,6 +74,8 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
     const update = (updateAttrs: any) => {
         const state = get()
         set(updateAttrs)
+        // @FIXME state type for onViewsChange
+        // @ts-ignore
         store.getState().onViewsChange?.(get(), state)
     }
 
@@ -92,9 +94,11 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
         },
         onViewAdd: (view) => update({ views: [...get().views, view] }),
         onViewUpdate: (view) => {
-            //
+            // eslint-disable-next-line no-param-reassign
             view.updated = false
+            // eslint-disable-next-line no-param-reassign
             view.updateColumn = false
+            // eslint-disable-next-line no-param-reassign
             view.version = 0
             //
             const $oldViewIndex = get().views?.findIndex((v) => v.id === view.id)
@@ -177,9 +181,9 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
                 set({ currentView: rawCurrentView })
                 return
             }
-            let view = get().views.find((view) => view.id === viewId)
+            let view = get().views.find((v) => v.id === viewId)
             if (!view) {
-                view = get().views.find((view) => view.def)
+                view = get().views.find((v) => v.def)
             }
             if (!view) {
                 view = rawCurrentView

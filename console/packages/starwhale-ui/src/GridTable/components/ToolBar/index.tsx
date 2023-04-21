@@ -6,6 +6,7 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import React from 'react'
 import useGrid from '../../hooks/useGrid'
 import Button from '@starwhale/ui/Button'
+import { IGridState } from '../../types'
 
 type IToolBarProps = {
     viewable?: boolean
@@ -13,16 +14,16 @@ type IToolBarProps = {
     searchable?: boolean
     queryable?: boolean
     columnable?: boolean
-    headlineHeight?: number
+    // headlineHeight?: number
 }
 
-const selector = (s: ITableState) => ({
+const selector = (s: IGridState) => ({
     currentView: s.currentView,
     rowSelectedIds: s.rowSelectedIds,
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
 })
 
-function ToolBar({ viewable, filterable, searchable, queryable, columnable, headlineHeight = 60 }: IToolBarProps) {
+function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IToolBarProps) {
     const [css] = themedUseStyletron()
     const { rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
     const headlineRef = React.useRef(null)

@@ -4,8 +4,9 @@ import { useStore, useStoreApi } from '../../hooks/useStore'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
 import { val } from '../../utils'
+import { IGridState, ITableProps } from '../../types'
 
-type StoreUpdaterProps = ITableState & { rfId: string }
+type StoreUpdaterProps = ITableState & ITableProps & { rfId: string }
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
     useEffect(() => {
@@ -18,9 +19,9 @@ export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: 
 
 // updates with values in store that don't have a dedicated setter function
 export function useDirectStoreUpdater(
-    key: keyof ITableState,
+    key: keyof IGridState,
     value: unknown,
-    setState: StoreApi<ITableState>['setState']
+    setState: StoreApi<IGridState>['setState']
 ) {
     useEffect(() => {
         if (typeof value !== 'undefined') {
@@ -43,9 +44,7 @@ const StoreUpdater = ({
     onColumnsChange,
     rows,
     data,
-    isQueryInline,
-    // onIncludedRowsChange,
-    // onRowHighlightChange,
+    queryinline,
     onViewsChange,
     onSave,
     columnTypes,
@@ -53,6 +52,8 @@ const StoreUpdater = ({
     getId = globalGetId,
     queryable,
     children,
+    onIncludedRowsChange,
+    onRowHighlightChange,
 }: StoreUpdaterProps) => {
     const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -72,8 +73,10 @@ const StoreUpdater = ({
     useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
     useDirectStoreUpdater('data', data, store.setState)
-    useDirectStoreUpdater('isQueryInline', isQueryInline, store.setState)
+    useDirectStoreUpdater('queryinline', queryinline, store.setState)
     useDirectStoreUpdater('getId', getId, store.setState)
+    useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
+    useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
     // useStoreUpdater(columns, store.setColumns)

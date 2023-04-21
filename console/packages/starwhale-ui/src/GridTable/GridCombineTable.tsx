@@ -1,5 +1,4 @@
 import React from 'react'
-import _ from 'lodash'
 import { ITableState } from '@starwhale/ui/base/data-table/store'
 import { BusyPlaceholder, GridResizer } from '@starwhale/ui'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
@@ -40,28 +39,18 @@ function BaseGridCombineTable({
     columns,
     // table confi
     title = '',
-    titleOfDetail = 'Detail',
     titleOfCompare = 'Compare',
-    paginationProps,
-    rowActions,
-    searchable = false,
-    filterable = false,
     queryable = false,
-    compareable = false,
-    selectable = false,
     queryinline = false,
     columnable = false,
     viewable = false,
     // actions
     onSave,
     onChange = () => {},
-    onViewsChange = () => {},
     emptyMessage,
     emptyColumnMessage = (
         <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
     ),
-    storeRef,
-    children,
     getId = (record: any) => val(record.id),
 }: ITableProps) {
     const styles = useStyles()

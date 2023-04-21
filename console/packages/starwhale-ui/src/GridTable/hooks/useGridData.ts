@@ -1,7 +1,7 @@
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import useGridCurrentView from './useGridCurrentView'
 import { useStore, useStoreApi } from './useStore'
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { ITableState } from '../store'
 import shallow from 'zustand/shallow'
 

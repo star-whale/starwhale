@@ -8,15 +8,14 @@ import _ from 'lodash'
 import { toaster } from 'baseui/toast'
 import ViewList from './ConfigViewList'
 import ViewsEdit from './ConfigViewEdit'
-import { ITableState, IStore } from '../../store'
+import { ITableState } from '../../store'
 import classNames from 'classnames'
 import { useStore, useStoreApi } from '../../hooks/useStore'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import Button from '../../../Button'
-import { ColumnT } from '../../../base/data-table/types'
+import shallow from 'zustand/shallow'
 
 type PropsT = {
-    columns: ColumnT[]
     rows: any[]
 }
 
@@ -31,8 +30,9 @@ const selector = (s: ITableState) => ({
 
 function ConfigViews(props: PropsT) {
     const store = useStoreApi()
-    const { currentView, views, viewModelShow, viewEditing } = useStore(selector)
-    const { onShowViewModel, onCurrentViewIdChange, checkDuplicateViewName, onViewUpdate, setViews } = store.getState()
+    const { currentView, views, viewModelShow, viewEditing } = useStore(selector, shallow)
+    const { onShowViewModel, onCurrentViewIdChange, checkDuplicateViewName, onViewUpdate, setViews, columnTypes } =
+        store.getState()
     const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
@@ -65,7 +65,7 @@ function ConfigViews(props: PropsT) {
         (view) => {
             onShowViewModel(true, view)
         },
-        [store]
+        [onShowViewModel]
     )
 
     return (
@@ -133,7 +133,7 @@ function ConfigViews(props: PropsT) {
                         paddingRight: '12px',
                     }}
                 >
-                    <ViewsEdit ref={viewRef} view={viewEditing} columns={props.columns ?? []} rows={props.rows ?? []} />
+                    <ViewsEdit ref={viewRef} view={viewEditing} columnTypes={columnTypes} rows={props.rows ?? []} />
                 </ModalBody>
                 <ModalFooter>
                     <Button
@@ -145,12 +145,12 @@ function ConfigViews(props: PropsT) {
                             if (!newView.name) return toaster.negative('name required', { autoHideDuration: 2000 })
 
                             if (checkDuplicateViewName(newView.name, newView.id)) {
-                                toaster.negative(t('table.view.name.exsts'), { autoHideDuration: 2000 })
-                                return
+                                return toaster.negative(t('table.view.name.exsts'), { autoHideDuration: 2000 })
                             }
 
                             onViewUpdate(newView)
                             onShowViewModel(false, null)
+                            return false
                         }}
                     >
                         Save

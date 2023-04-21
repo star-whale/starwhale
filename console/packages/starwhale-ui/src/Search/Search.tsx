@@ -1,4 +1,4 @@
-import { RecordListSchemaT, RecordSchemaT, isSearchColumns, useDatastoreMixedSchema } from '@starwhale/core/datastore'
+import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { createUseStyles } from 'react-jss'
 import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'

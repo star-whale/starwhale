@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest } from '../schemas/datastore'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'

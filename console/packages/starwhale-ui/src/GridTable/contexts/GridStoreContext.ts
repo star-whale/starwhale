@@ -1,8 +1,9 @@
 import { createContext } from 'react'
 
-import { createCustomStore } from '../../base/data-table/store'
+import { IGridState } from '../types'
+import { UseBoundStore, StoreApi } from 'zustand'
 
-const StoreContext = createContext<ReturnType<typeof createCustomStore> | null>(null)
+const StoreContext = createContext<UseBoundStore<StoreApi<IGridState>> | null>(null)
 
 export const { Provider } = StoreContext
 

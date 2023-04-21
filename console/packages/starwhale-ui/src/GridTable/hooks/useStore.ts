@@ -3,14 +3,14 @@ import { useStore as useZustandStore } from 'zustand'
 import type { StoreApi } from 'zustand'
 
 import StoreContext from '../contexts/GridStoreContext'
-import { ITableState } from '../store/store'
+import { IGridState } from '../types'
 
 const zustandErrorMessage = 'Could not find zustand store context value.'
 
-type ExtractState = StoreApi<ITableState> extends { getState: () => infer T } ? T : never
+type ExtractState = StoreApi<IGridState> extends { getState: () => infer T } ? T : never
 
 function useStore<StateSlice = ExtractState>(
-    selector: (state: ITableState) => StateSlice,
+    selector: (state: IGridState) => StateSlice,
     equalityFn?: (a: StateSlice, b: StateSlice) => boolean
 ) {
     const store = useContext(StoreContext)
