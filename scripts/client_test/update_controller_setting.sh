@@ -51,6 +51,7 @@ resourcePoolSetting:
     - name: "cpu"
       defaults: 5.0
     - name: "memory"
+      defaults: 3145728
     - name: "nvidia.com/gpu"
 EOF
 
