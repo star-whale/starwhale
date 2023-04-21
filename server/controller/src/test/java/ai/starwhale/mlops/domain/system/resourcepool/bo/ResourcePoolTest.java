@@ -50,7 +50,8 @@ class ResourcePoolTest {
         rr.setRequest(6f);
         resourcePool.validateResource(rr);
 
-        rr.setType("gpu");
+        // resource type is empty
+        rr.setType("");
         rr.setRequest(1f);
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
 
@@ -65,6 +66,10 @@ class ResourcePoolTest {
         rr.setType("foo");
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
         rr.setType("gpu");
+        assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
+
+        // resource pool has no rules for resource type
+        rr.setType("nvidia.com/gpu");
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
     }
 
