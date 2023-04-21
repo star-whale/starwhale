@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Card from '@/components/Card'
 import { createModelVersion, revertModelVersion } from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
@@ -17,6 +17,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
+import axios from 'axios'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -34,6 +35,16 @@ export default function ModelVersionListCard() {
         [modelsInfo, projectId, modelId]
     )
     const [t] = useTranslation()
+    const cliMateUrl = 'http://127.0.0.1:8007'
+    const [hasCliMate, setHasCliMate] = useState(false)
+    useEffect(() => {
+        axios
+            .get(`${cliMateUrl}/alive`)
+            .then(() => {
+                setHasCliMate(true)
+            })
+            .catch(() => {})
+    })
 
     const handleAction = useCallback(
         async (modelVersionId) => {
@@ -85,6 +96,26 @@ export default function ModelVersionListCard() {
                                         </Button>
                                     </WithCurrentAuth>
                                 ) : null}
+                                &nbsp;&nbsp;
+                                {hasCliMate && (
+                                    <Button
+                                        kind='tertiary'
+                                        onClick={() =>
+                                            axios
+                                                .post(`${cliMateUrl}/resource`, {
+                                                    url: `${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`,
+                                                    token: localStorage.getItem('token'),
+                                                })
+                                                .then((res) => {
+                                                    const { data } = res
+                                                    toaster.positive(data.message, { autoHideDuration: 2000 })
+                                                })
+                                                .catch((e) => toaster.negative(e.message, { autoHideDuration: 2000 }))
+                                        }
+                                    >
+                                        To Local
+                                    </Button>
+                                )}
                             </>,
                         ]
                     }) ?? []

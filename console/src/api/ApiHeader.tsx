@@ -37,6 +37,10 @@ function ApiHeader() {
                 // eslint-disable-next-line prefer-destructuring
                 const winLocation = window.location
 
+                const reqUrl = error.config.url
+                // ignore cli mate detection error
+                if (reqUrl?.includes('127.0.0.1:8007/alive')) return Promise.reject(error)
+
                 if (error.response?.status === 401) {
                     setToken(undefined)
                 }
