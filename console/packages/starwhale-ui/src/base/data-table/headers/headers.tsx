@@ -5,16 +5,14 @@ import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
-import { useConfigQuery } from '../config-query'
-import { useWhatChanged } from '@simbathesailor/use-what-changed'
 import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
-import { ITableState } from '@starwhale/ui/GridTable/store'
-import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
+import { IGridState } from '@starwhale/ui/GridTable/types'
+import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
-const selector = (s: ITableState) => ({
-    isQueryInline: s.isQueryInline,
+const selector = (s: IGridState) => ({
+    queryinline: s.queryinline,
     compare: s.compare,
 })
 
@@ -24,9 +22,9 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-    const { isQueryInline } = useStore(selector)
+    const { queryinline } = useStore(selector)
     const store = useStoreApi().getState()
-    const columns = store.columns
+    const columns = store.columns as ColumnT[]
 
     const $columns = React.useMemo(
         () =>
@@ -37,9 +35,8 @@ export default function Headers({ width }: { width: number }) {
         [columns]
     )
 
-    const { renderConfigQueryInline } = useConfigQuery({
+    const { renderConfigQueryInline } = useGridQuery({
         columns,
-        queryable: isQueryInline,
     })
 
     const headerRender = useCallback(
@@ -91,8 +88,8 @@ export default function Headers({ width }: { width: number }) {
                             isSelectable={ctx.isSelectable}
                             isSelectedAll={ctx.isSelectedAll}
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
-                            isQueryInline={isQueryInline}
-                            querySlot={renderConfigQueryInline({ width })}
+                            isQueryInline={queryinline}
+                            querySlot={queryinline && renderConfigQueryInline({ width })}
                             onMouseEnter={ctx.onMouseEnter}
                             onMouseLeave={ctx.onMouseLeave}
                             onResize={ctx.onResize}
@@ -128,7 +125,7 @@ export default function Headers({ width }: { width: number }) {
             ctx.isSelectable,
             ctx.isSelectedAll,
             ctx.isSelectedIndeterminate,
-            isQueryInline,
+            queryinline,
             ctx.measuredWidths,
             ctx.onMouseEnter,
             ctx.onMouseLeave,

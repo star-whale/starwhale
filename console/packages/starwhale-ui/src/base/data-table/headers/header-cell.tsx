@@ -20,13 +20,13 @@ type HeaderCellPropsT = {
     isHovered: boolean
     isMeasured?: boolean
     isSelectable: boolean
-    isSelectedAll: boolean
-    isQueryInline: boolean
-    isSelectedIndeterminate: boolean
+    isSelectedAll?: boolean
+    isQueryInline?: boolean
+    isSelectedIndeterminate?: boolean
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
-    onSelectAll: () => void
-    onSelectNone: () => void
+    onSelectAll?: () => void
+    onSelectNone?: () => void
     onNoSelect?: (id: any) => void
     isFocus?: boolean
     isPin?: boolean
@@ -134,9 +134,9 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     <Checkbox
                         onChange={() => {
                             if (props.isSelectedAll || props.isSelectedIndeterminate) {
-                                props.onSelectNone()
+                                props.onSelectNone?.()
                             } else {
-                                props.onSelectAll()
+                                props.onSelectAll?.()
                             }
                         }}
                         checked={props.isSelectedAll || props.isSelectedIndeterminate}

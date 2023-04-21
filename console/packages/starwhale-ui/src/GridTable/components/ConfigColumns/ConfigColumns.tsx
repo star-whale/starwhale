@@ -54,7 +54,7 @@ const useStyles = createUseStyles({
 type PropsT = {
     isInline?: boolean
     view: ConfigT
-    columns: ColumnT[]
+    columns?: ColumnT[]
     onColumnsChange?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
 }
 
@@ -172,6 +172,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
 
 ConfigColumns.defaultProps = {
     isInline: false,
+    columns: [],
     onColumnsChange: () => {},
 }
 export { ConfigColumns }

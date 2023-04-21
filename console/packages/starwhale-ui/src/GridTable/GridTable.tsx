@@ -70,6 +70,7 @@ const loadingMessage = () => (
 const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,
     onRowHighlightChange: state.onRowHighlightChange,
+    rowSelectedIds: state.rowSelectedIds,
 })
 
 function GridTable({
@@ -95,12 +96,12 @@ function GridTable({
     const store = useStoreApi()
 
     const {
+        selectedRowIds,
         columns: defaultColumns,
         rows: defaultRows,
         sortIndex,
         sortDirection,
         textQuery,
-        rowSelectedIds,
         onSelectMany,
         onSelectNone,
         onSelectOne,
@@ -150,7 +151,7 @@ function GridTable({
                     rows={$rows}
                     rowActions={rowActions}
                     rowHeight={rowHeight}
-                    selectedRowIds={rowSelectedIds}
+                    selectedRowIds={selectedRowIds as Set<string | number>}
                     sortDirection={sortDirection}
                     sortIndex={sortIndex}
                     textQuery={textQuery}

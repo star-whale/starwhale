@@ -2,12 +2,12 @@ import { Operators } from '@starwhale/ui/base/data-table/filter-operate-selector
 import React, { useCallback } from 'react'
 import { useStoreApi } from './useStore'
 
-function useGridFilter(props) {
+function useGridFilter(props: any) {
     const store = useStoreApi().getState()
 
     const $filters = React.useMemo(() => {
         return (
-            props.initialFilters?.map((v) => ({
+            props.initialFilters?.map((v: any) => ({
                 ...v,
                 op: Operators[v.op?.key || 'default'],
             })) || []
@@ -15,7 +15,7 @@ function useGridFilter(props) {
     }, [props.initialFilters])
 
     const $filtersEnabled = React.useMemo(() => {
-        return $filters?.filter((c) => !c.disable)
+        return $filters?.filter((c: any) => !c.disable)
     }, [$filters])
 
     const handeFilterSet = useCallback(

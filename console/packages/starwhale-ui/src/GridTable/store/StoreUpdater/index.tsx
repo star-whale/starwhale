@@ -1,12 +1,12 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { StoreApi } from 'zustand'
 import { useStore, useStoreApi } from '../../hooks/useStore'
-import { ITableState } from '@starwhale/ui/base/data-table/store'
 import shallow from 'zustand/shallow'
 import { val } from '../../utils'
 import { IGridState, ITableProps } from '../../types'
+import { ITableState } from '../store'
 
-type StoreUpdaterProps = ITableState & ITableProps & { rfId: string }
+type StoreUpdaterProps = ITableProps & { children: React.ReactElement }
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
     useEffect(() => {
@@ -43,7 +43,6 @@ const StoreUpdater = ({
     rowSelectedIds,
     onColumnsChange,
     rows,
-    data,
     queryinline,
     onViewsChange,
     onSave,
@@ -72,7 +71,6 @@ const StoreUpdater = ({
     useDirectStoreUpdater('columnTypes', columnTypes, store.setState)
     useDirectStoreUpdater('records', records, store.setState)
     useDirectStoreUpdater('rows', rows, store.setState)
-    useDirectStoreUpdater('data', data, store.setState)
     useDirectStoreUpdater('queryinline', queryinline, store.setState)
     useDirectStoreUpdater('getId', getId, store.setState)
     useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)

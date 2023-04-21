@@ -9,7 +9,7 @@ const selector = (state: ITableState) => ({
     views: state.views,
 })
 
-function useGridCurrentView(columns) {
+function useGridCurrentView(columns: ColumnT[]) {
     const { currentView: view } = useStore(selector)
 
     const columnIds = React.useMemo(() => {

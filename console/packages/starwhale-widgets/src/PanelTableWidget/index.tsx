@@ -2,7 +2,7 @@ import React from 'react'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import PanelTable from './component/Table'
-import { ITableState } from '@starwhale/ui/base/data-table/store'
+import { ITableState } from '@starwhale/ui/GridTable/store/store'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',

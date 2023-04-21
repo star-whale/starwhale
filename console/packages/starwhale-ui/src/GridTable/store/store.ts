@@ -16,6 +16,7 @@ export interface ITableStateInitState {
     setRawConfigs: (obj: Record<string, any>) => void
     getRawConfigs: (state?: ITableState) => typeof rawInitialState
     getRawIfChangedConfigs: (state?: ITableState) => typeof rawIfChangedInitialState
+    reset: () => void
 }
 export interface IViewState {
     views: ConfigT[]

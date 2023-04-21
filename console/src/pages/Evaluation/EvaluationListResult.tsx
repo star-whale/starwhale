@@ -3,13 +3,13 @@ import Card from '@/components/Card'
 import { useParams } from 'react-router-dom'
 import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
-import { useEvaluationDetailStore } from '@starwhale/ui/base/data-table/store'
 import { tableNameOfResult } from '@starwhale/core/datastore/utils'
 import { useProject } from '@project/hooks/useProject'
 import useFetchDatastoreByTables from '@starwhale/core/datastore/hooks/useFetchDatastoreByTables'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
 import { ITableProps } from '@starwhale/ui/GridTable/types'
+import { useEvaluationDetailStore } from '@starwhale/ui/GridTable/store'
 
 function prefixColumn(row: any, prefix: string | number) {
     return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('-')}-`

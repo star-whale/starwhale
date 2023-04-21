@@ -25,15 +25,15 @@ const selector = (s: IGridState) => ({
 
 function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IToolBarProps) {
     const [css] = themedUseStyletron()
-    const { rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
+    const { onCurrentViewColumnsChange } = useStore(selector)
     const headlineRef = React.useRef(null)
     // const [headlineHeight, setHeadlineHeight] = React.useState(64)
     // useResizeObserver(headlineRef, (entries) => {
     //     setHeadlineHeight(entries[0].contentRect.height)
     // })
 
-    const { columns, rows } = useStoreApi().getState()
-    const { isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs } = useGrid()
+    const { columns } = useStoreApi().getState()
+    const { isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } = useGrid()
 
     return (
         <div
@@ -56,8 +56,8 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                         })
                     )}
                 >
-                    {viewable && <ConfigViews columns={columns} rows={rows} />}
-                    {viewable && changed && !rowSelectedIds.size && (
+                    {viewable && <ConfigViews />}
+                    {viewable && changed && !selectedRowIds.size && (
                         <div>
                             {!isAllRuns && (
                                 <>
@@ -92,7 +92,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                         {queryable && renderConfigQuery()}
                     </div>
 
-                    {columnable && !rowSelectedIds.size && (
+                    {columnable && !selectedRowIds.size && (
                         <div className='table-config-column flex-row-center'>
                             <ConfigColumns
                                 view={currentView}

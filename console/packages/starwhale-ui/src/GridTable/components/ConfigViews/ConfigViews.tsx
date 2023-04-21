@@ -15,10 +15,6 @@ import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import Button from '../../../Button'
 import shallow from 'zustand/shallow'
 
-type PropsT = {
-    rows: any[]
-}
-
 const ALLRUNS = 'all'
 
 const selector = (s: ITableState) => ({
@@ -28,11 +24,18 @@ const selector = (s: ITableState) => ({
     viewModelShow: s.viewModelShow,
 })
 
-function ConfigViews(props: PropsT) {
+function ConfigViews() {
     const store = useStoreApi()
     const { currentView, views, viewModelShow, viewEditing } = useStore(selector, shallow)
-    const { onShowViewModel, onCurrentViewIdChange, checkDuplicateViewName, onViewUpdate, setViews, columnTypes } =
-        store.getState()
+    const {
+        columns,
+        onShowViewModel,
+        onCurrentViewIdChange,
+        checkDuplicateViewName,
+        onViewUpdate,
+        setViews,
+        columnTypes,
+    } = store.getState()
     const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
@@ -133,7 +136,7 @@ function ConfigViews(props: PropsT) {
                         paddingRight: '12px',
                     }}
                 >
-                    <ViewsEdit ref={viewRef} view={viewEditing} columnTypes={columnTypes} rows={props.rows ?? []} />
+                    <ViewsEdit ref={viewRef} columns={columns as any} view={viewEditing} columnTypes={columnTypes} />
                 </ModalBody>
                 <ModalFooter>
                     <Button

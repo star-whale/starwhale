@@ -2,10 +2,10 @@ import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import useGridCurrentView from './useGridCurrentView'
 import { useStore, useStoreApi } from './useStore'
 import { useMemo } from 'react'
-import { ITableState } from '../store'
+import { IGridState } from '../types'
 import shallow from 'zustand/shallow'
 
-const selector = (state: ITableState) => ({
+const selector = (state: IGridState) => ({
     columnTypes: state.columnTypes,
     records: state.records,
 })

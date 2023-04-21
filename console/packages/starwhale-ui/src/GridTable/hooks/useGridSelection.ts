@@ -1,7 +1,8 @@
 import React from 'react'
-import { useStoreApi } from './useStore'
 import { ITableState } from '../store'
 import useGridData from './useGridData'
+import shallow from 'zustand/shallow'
+import { useStore } from './useStore'
 
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
@@ -12,7 +13,7 @@ const selector = (state: ITableState) => ({
 
 function useGridSelection() {
     const { rows } = useGridData()
-    const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = useStoreApi(selector).getState()
+    const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = useStore(selector, shallow)
 
     const selectedRowIds = React.useMemo(() => {
         if (rowSelectedIds) {
@@ -70,6 +71,7 @@ function useGridSelection() {
         onSelectMany: handleSelectMany,
         onSelectNone: handleSelectNone,
         onSelectOne: handleSelectOne,
+        selectedRowIds,
     }
 }
 

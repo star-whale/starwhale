@@ -9,8 +9,15 @@ function useGrid() {
     const { onSave, onSaveAs, changed } = useGridSave()
     const { sortIndex, sortDirection } = useGridSort()
     const { textQuery, setTextQuery } = useGridQueryText()
-    const { onSelectMany, onSelectNone, onSelectOne, isSelectedAll, isSelectedIndeterminate, isRowSelected } =
-        useGridSelection()
+    const {
+        selectedRowIds,
+        onSelectMany,
+        onSelectNone,
+        onSelectOne,
+        isSelectedAll,
+        isSelectedIndeterminate,
+        isRowSelected,
+    } = useGridSelection()
     const { ids, isAllRuns, columns, currentView, rows } = useGirdData()
     const { renderConfigQuery } = useGridQuery({ columns })
 
@@ -29,6 +36,7 @@ function useGrid() {
         isAllRuns,
         currentView,
         // selection
+        selectedRowIds,
         onSelectMany,
         onSelectNone,
         onSelectOne,

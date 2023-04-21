@@ -8,7 +8,7 @@ export default function PanelTable({ columnTypes, data, storeKey, onChange, stor
     return (
         <GridTable
             columns={$columns}
-            data={data}
+            records={data}
             storeKey={storeKey}
             queryinline
             onChange={onChange}

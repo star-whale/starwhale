@@ -1,9 +1,8 @@
 import React from 'react'
-import { ITableState } from '@starwhale/ui/base/data-table/store'
 import { BusyPlaceholder, GridResizer } from '@starwhale/ui'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import { useStore } from './hooks/useStore'
-import { ITableProps, IContextGridTable } from './types'
+import { ITableProps, IContextGridTable, IGridState } from './types'
 import { StoreProvider, StoreUpdater } from './store'
 import { MemoGridTable } from './GridTable'
 import GridCompareTable from './GridCompareTable'
@@ -27,7 +26,7 @@ const useStyles = createUseStyles({
     },
 })
 
-const selector = (state: ITableState) => ({
+const selector = (state: IGridState) => ({
     rowSelectedIds: state.rowSelectedIds,
 })
 

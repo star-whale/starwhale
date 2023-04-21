@@ -4,7 +4,6 @@ import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
 import { longestCommonSubstring } from '@/utils'
-import { RecordListVo } from '@starwhale/core/datastore/schemas/datastore'
 import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
@@ -15,6 +14,7 @@ import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import useTranslation from '@/hooks/useTranslation'
 import { StoreProvider, StoreUpdater } from './store'
 import { useStoreApi } from './hooks/useStore'
+import { IContextGridTable, ITableProps } from './types'
 
 const useStyles = createUseStyles({
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
@@ -156,10 +156,10 @@ export function BaseGridCompareTable({
     title = '',
     getId = (r: any) => r.id,
 }: {
-    title?: string
-    records: any[]
-    columnTypes: RecordListVo['columnTypes']
-    getId?: (r: any) => string
+    title?: React.ReactNode | string
+    records?: ITableProps['records']
+    columnTypes?: ITableProps['columnTypes']
+    getId?: (r: any) => any
 }) {
     const store = useStoreApi().getState()
     const [t] = useTranslation()
@@ -376,7 +376,7 @@ export function BaseGridCompareTable({
     )
 }
 
-export const MemoGridCompareTable = React.memo(BaseGridCompareTable)
+const MemoGridCompareTable = React.memo(BaseGridCompareTable)
 
 export default function GridCompareTable({
     storeKey = 'table',

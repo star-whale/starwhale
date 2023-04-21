@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
-import { IStore, ITableState } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -155,7 +154,6 @@ export type StatefulDataTablePropsT = {
     selectable?: boolean
     queryinline?: boolean
     controlRef?: ControlRefT
-    store?: ITableState
 }
 
 export type DataTablePropsT = {
@@ -166,7 +164,7 @@ export type DataTablePropsT = {
     loadingMessage?: React.ReactNode
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
-    onSelectMany?: (rows: RowT[]) => void
+    onSelectMany?: () => void
     onSelectNone?: () => void
     onSelectOne?: (row: RowT) => void
     onSort?: (columnIndex: number) => void
