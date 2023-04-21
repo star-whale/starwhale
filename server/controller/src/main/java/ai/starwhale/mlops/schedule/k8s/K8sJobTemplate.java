@@ -125,7 +125,8 @@ public class K8sJobTemplate {
             int backoffLimit,
             Map<String, ContainerOverwriteSpec> containerSpecMap,
             Map<String, String> nodeSelectors,
-            List<Toleration> tolerations
+            List<Toleration> tolerations,
+            Map<String, String> annotations
     ) {
         job.getMetadata().name(jobName);
         V1JobSpec jobSpec = job.getSpec();
@@ -154,6 +155,11 @@ public class K8sJobTemplate {
             podSpec.tolerations(originTolerations);
         }
 
+        // ensure the pod meta exists
+        if (jobSpec.getTemplate().getMetadata() == null) {
+            jobSpec.getTemplate().metadata(new V1ObjectMeta());
+        }
+        updateAnnotations(jobSpec.getTemplate().getMetadata(), annotations);
         updateLabels(job, starwhaleJobLabel);
         updateLabels(job, Map.of(JOB_IDENTITY_LABEL, jobName));
         patchPodSpec(restartPolicy, containerSpecMap, nodeSelectors, podSpec);
@@ -170,11 +176,14 @@ public class K8sJobTemplate {
         job.getMetadata().labels(originLabels);
     }
 
-    public void updateAnnotations(V1Job job, Map<String, String> annotations) {
-        var origin = job.getMetadata().getAnnotations();
+    public void updateAnnotations(V1ObjectMeta meta, Map<String, String> annotations) {
+        if (meta == null || annotations == null) {
+            return;
+        }
+        var origin = meta.getAnnotations();
         origin = origin == null ? new HashMap<>() : origin;
         origin.putAll(annotations);
-        job.getMetadata().annotations(annotations);
+        meta.annotations(annotations);
     }
 
     public V1StatefulSet renderModelServingOrch(

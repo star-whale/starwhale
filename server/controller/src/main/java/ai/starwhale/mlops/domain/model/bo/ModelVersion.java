@@ -40,6 +40,8 @@ public class ModelVersion {
 
     private String meta;
 
+    private String jobs;
+
     private String storagePath;
 
     public static ModelVersion fromEntity(ModelVersionEntity entity) {
@@ -50,6 +52,7 @@ public class ModelVersion {
                 .ownerId(entity.getOwnerId())
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
+                .jobs(entity.getJobs())
                 .storagePath(entity.getStoragePath())
                 .build();
     }

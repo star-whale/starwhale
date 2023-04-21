@@ -24,7 +24,7 @@ swcli [全局选项] job [选项] <子命令> [参数]...
 swcli [全局选项] job cancel [选项] <JOB>
 ```
 
-`job cacel`停止指定的作业。
+`job cancel`停止指定的作业。
 
 `JOB`是一个[作业URI](../../swcli/uri.md#job)。
 

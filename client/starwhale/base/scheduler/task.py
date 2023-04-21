@@ -9,8 +9,7 @@ from loguru import logger
 from starwhale.consts import RunStatus, DecoratorInjectAttr
 from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
-
-from .context import Context
+from starwhale.base.context import Context
 
 if t.TYPE_CHECKING:
     from .step import Step

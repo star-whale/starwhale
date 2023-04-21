@@ -43,6 +43,8 @@ public class ResourcePool {
     Map<String, String> nodeSelector;
     List<Resource> resources;
     List<Toleration> tolerations;
+    // currently used for k8s annotations
+    Map<String, String> metadata;
 
     public static ResourcePool defaults() {
         return ResourcePool

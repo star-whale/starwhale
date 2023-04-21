@@ -18,20 +18,21 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType, JobOperationType
+from starwhale.base.type import URIType, JobOperationType
 from starwhale.base.view import BaseTermView
-from starwhale.core.eval.model import EvaluationJob
 from starwhale.api._impl.metric import MetricKind
 from starwhale.base.uricomponents.instance import Instance
+
+from .model import Job
 
 
 class JobTermView(BaseTermView):
     def __init__(self, job_uri: str) -> None:
         super().__init__()
         self.raw_uri = job_uri
-        self.uri = URI(job_uri, expected_type=URIType.EVALUATION)
+        self.uri = URI(job_uri, expected_type=URIType.JOB)
         logger.debug(f"eval job:{self.raw_uri}")
-        self.job = EvaluationJob.get_job(self.uri)
+        self.job = Job.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,
             JobOperationType.RESUME: self.job.resume,
@@ -58,61 +59,6 @@ class JobTermView(BaseTermView):
     @BaseTermView._simple_action_print
     def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         return self._action_run_map[action](force)
-
-    @BaseTermView._only_standalone
-    @BaseTermView._header
-    def compare(self, job_uris: t.List[str]) -> None:
-        if self.uri.instance_type != InstanceType.STANDALONE:
-            console.print(
-                ":dragon_face: Today job compare only works for standalone instance"
-            )
-            sys.exit(1)
-
-        jobs = []
-        for _u in job_uris:
-            _uri = URI(_u, expected_type=URIType.EVALUATION)
-            jobs.append(EvaluationJob.get_job(_uri))
-
-        rt = self.job.compare(jobs)
-        table = Table(
-            box=box.ASCII,
-            title=f":leafy_green: {rt['kind'].upper()} Job Compare Summary",
-            caption=f":cactus: base job:{rt['base']['uri']}",
-            expand=True,
-        )
-        table.add_column("", justify="left", no_wrap=True, style="cyan")
-        for _v in rt["versions"]:
-            table.add_column(_v[:SHORT_VERSION_CNT])
-
-        for _k, _vs in rt["summary"].items():
-            _ts = [_k]
-
-            _is_empty = all([_v["value"] is None for _v in _vs])
-            if _is_empty:
-                continue
-
-            for _v in _vs:
-                if _v["base"]:
-                    _ts.append(f":triangular_flag: {_v['value']}")
-                else:
-                    if _v["delta"] is None:
-                        _ts.append(_v["value"])
-                    else:
-                        if _v["delta"] > 0:
-                            _text = (
-                                f":chart_with_upwards_trend: [green]{_v['value']}[/]"
-                            )
-                        elif _v["delta"] < 0:
-                            _text = (
-                                f":chart_with_downwards_trend: [red]{_v['value']}[/]"
-                            )
-                        else:
-                            _text = f":white_circle: {_v['value']}"
-                        _ts.append(_text)
-
-            table.add_row(*([str(_t) for _t in _ts]))
-
-        console.print(table)
 
     @BaseTermView._header
     def info(
@@ -161,7 +107,7 @@ class JobTermView(BaseTermView):
             console.print(Pretty(_rt["manifest"], expand_all=True))
 
         if "location" in _rt:
-            console.rule("Evaluation process dirs")
+            console.rule("Process dirs")
             console.print(f":cactus: ppl: {_rt['location']['ppl']}")
             console.print(f":camel: cmp: {_rt['location']['cmp']}")
 
@@ -281,63 +227,6 @@ class JobTermView(BaseTermView):
         _print_confusion_matrix()
 
     @classmethod
-    def run(
-        cls,
-        project_uri: str,
-        model_uri: str,
-        dataset_uris: t.List[str],
-        runtime_uri: str,
-        version: str = "",
-        name: str = "",
-        desc: str = "",
-        step_spec: str = "",
-        resource_pool: str = "",
-        gencmd: bool = False,
-        use_docker: bool = False,
-        step: str = "",
-        task_index: int = 0,
-        task_num: int = 0,
-    ) -> str:
-        _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
-        ok, version = EvaluationJob.run(
-            _project_uri,
-            model_uri,
-            dataset_uris,
-            runtime_uri,
-            version=version,
-            name=name,
-            desc=desc,
-            step_spec=step_spec,
-            resource_pool=resource_pool,
-            gencmd=gencmd,
-            use_docker=use_docker,
-            step=step,
-            task_index=task_index,
-            task_num=task_num,
-        )
-
-        # TODO: show report in standalone mode directly
-
-        if ok:
-            console.print(
-                f":clap: success to create job(project id: [red]{_project_uri.full_uri}[/])"
-            )
-            if _project_uri.instance_type == InstanceType.CLOUD:
-                _job_uri = f"{_project_uri.full_uri}/evaluation/{version}"
-            else:
-                _job_uri = f"{version[:SHORT_VERSION_CNT]}"
-
-            console.print(
-                f":bird: run cmd to fetch eval info: [bold green]swcli eval info {_job_uri}[/]"
-            )
-            return version
-        else:
-            console.print(
-                f":collision: failed to create eval job, notice: [red]{version}[/]"
-            )
-            return ""
-
-    @classmethod
     def list(
         cls,
         project_uri: str = "",
@@ -348,7 +237,7 @@ class JobTermView(BaseTermView):
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         cls.must_have_project(_uri)
-        jobs, pager = EvaluationJob.list(_uri, page, size)
+        jobs, pager = Job.list(_uri, page, size)
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
         return (jobs, pager)
 
@@ -452,9 +341,6 @@ class JobTermViewJson(JobTermView):
         web: bool = False,
     ) -> None:
         _rt = self.job.info(page, size)
-        if not _rt:
-            console.print(":tea: not found info")
-            return
         self.pretty_json(_rt)
 
 

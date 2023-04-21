@@ -22,8 +22,8 @@ from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
-from starwhale.core.eval.store import RunStorage
-from starwhale.core.job.context import Context
+from starwhale.base.context import Context
+from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.core.dataset.tabular import TabularDatasetRow
 
@@ -63,7 +63,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.flush_result = flush_result
         self.ppl_auto_log = ppl_auto_log
 
-        _logdir = RunStorage.local_run_dir(self.context.project, self.context.version)
+        _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
         _run_dir = (
             _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
         )

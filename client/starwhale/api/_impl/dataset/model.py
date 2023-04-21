@@ -175,6 +175,7 @@ class Dataset:
         self.__data_loaders: t.Dict[str, DataLoader] = {}
         self._loader_cache_size = _DEFAULT_LOADER_CACHE_SIZE
         self._loader_num_workers = _DEFAULT_LOADER_WORKERS
+        self._loader_field_transformer: t.Optional[t.Dict] = None
 
         self._builder_blob_alignment_size = D_ALIGNMENT_SIZE
         self._builder_blob_volume_size = D_FILE_VOLUME_SIZE
@@ -268,8 +269,39 @@ class Dataset:
             self.__data_loaders = {}
 
     def with_loader_config(
-        self, num_workers: t.Optional[int] = None, cache_size: t.Optional[int] = None
+        self,
+        num_workers: t.Optional[int] = None,
+        cache_size: t.Optional[int] = None,
+        field_transformer: t.Optional[t.Dict] = None,
     ) -> Dataset:
+        """Modify the default configurations when loading a dataset.
+        Arguments:
+            num_workers: (int, optional)
+            cache_size: (int, optional)
+            field_transformer: (dict, optional) transform the dataset fields to what you would like.
+                a possible key_transformer: {"k1.k2.k3[2].k4":"k5"}
+        Returns:
+            A Dataset Object
+        Examples:
+        ```python
+        from starwhale import Dataset, dataset
+        Dataset.from_json(
+            "translation",
+            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+        )
+        myds = dataset("translation").with_loader_config(field_transformer={"en": "en-us"})
+        assert myds[0].features["en-us"] == myds[0].features["en"]
+        ```
+        ```python
+        from starwhale import Dataset, dataset
+        Dataset.from_json(
+            "translation2",
+            '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]'
+        )
+        myds = dataset("translation2").with_loader_config(field_transformer={"content.child_content[0].en": "en-us"})
+        assert myds[0].features["en-us"] == myds[0].features["content"]["child_content"][0]["en"]
+        ```
+        """
         with self._loader_lock:
             if len(self.__data_loaders) != 0:
                 raise RuntimeError(
@@ -281,6 +313,9 @@ class Dataset:
 
             if cache_size is not None:
                 self._loader_cache_size = cache_size
+
+            if field_transformer is not None:
+                self._loader_field_transformer = field_transformer
 
         return self
 
@@ -346,6 +381,7 @@ class Dataset:
                     cache_size=self._loader_cache_size,
                     num_workers=self._loader_num_workers,
                     dataset_scan_revision=data_revision,
+                    field_transformer=self._loader_field_transformer,
                 )
                 self.__data_loaders[key] = _loader
 

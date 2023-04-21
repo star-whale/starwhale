@@ -15,7 +15,7 @@ from sklearn.metrics import (  # type: ignore
 )
 
 from starwhale.api import evaluation
-from starwhale.utils.dict import flatten as flatten_dict
+from starwhale.utils.dict_util import flatten as flatten_dict
 
 
 @unique

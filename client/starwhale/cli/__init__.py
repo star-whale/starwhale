@@ -6,8 +6,8 @@ import click
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.debug import init_logger
+from starwhale.core.job.cli import job_cmd
 from starwhale.utils.config import load_swcli_config
-from starwhale.core.eval.cli import eval_job_cmd
 from starwhale.core.model.cli import model_cmd
 from starwhale.cli.board.board import open_board
 from starwhale.core.dataset.cli import dataset_cmd
@@ -42,7 +42,7 @@ def create_sw_cli() -> click.core.Group:
 
     cli.add_command(instance_cmd)
     cli.add_command(project_cmd, aliases=["prj"])  # type: ignore
-    cli.add_command(eval_job_cmd)
+    cli.add_command(job_cmd)
     cli.add_command(runtime_cmd, aliases=["rt"])  # type: ignore
     cli.add_command(model_cmd, aliases=["mp"])  # type: ignore
     cli.add_command(dataset_cmd, aliases=["ds"])  # type: ignore

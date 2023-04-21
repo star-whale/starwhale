@@ -43,6 +43,19 @@ public class JobSpecParser {
         }
     }
 
+    public List<StepSpec> parseStepFromYaml(String yamlContent, String jobName) throws JsonProcessingException {
+        Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
+        });
+        List<StepSpec> specList = map.get(jobName);
+        // update job name for each step spec
+        specList.forEach(stepSpec -> stepSpec.setJobName(jobName));
+        if (CollectionUtils.isEmpty(specList)) {
+            log.error("step specification is empty for {}", yamlContent);
+            throw new SwValidationException(ValidSubject.MODEL);
+        }
+        return specList;
+    }
+
     public List<StepSpec> parseAllStepFromYaml(String yamlContent) throws JsonProcessingException {
         Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {});
         // update job name for each step spec

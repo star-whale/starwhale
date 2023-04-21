@@ -212,7 +212,7 @@ check_controller_service() {
               kubectl -n $SWNS describe deployments/controller || true
               kubectl -n $SWNS logs --tail 500 deployments/controller || true
             fi
-            sleep 15
+            sleep 5
     done
     nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER &
 }

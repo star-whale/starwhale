@@ -7,6 +7,7 @@ import shutil
 import typing as t
 import tarfile
 from abc import ABCMeta
+from http import HTTPStatus
 from pathlib import Path
 from collections import defaultdict
 
@@ -27,6 +28,7 @@ from starwhale.consts import (
     FileFlag,
     FileNode,
     RunStatus,
+    HTTPMethod,
     CREATED_AT_KEY,
     SWMP_SRC_FNAME,
     DefaultYAMLName,
@@ -61,16 +63,15 @@ from starwhale.utils.load import load_module
 from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
+from starwhale.base.context import Context
 from starwhale.api._impl.job import generate_jobs_yaml
-from starwhale.core.job.step import Step
+from starwhale.base.scheduler import Step, Scheduler
+from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore
-from starwhale.core.eval.store import RunStorage
 from starwhale.core.model.copy import ModelCopy
-from starwhale.core.job.context import Context
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
-from starwhale.core.job.scheduler import Scheduler
 
 
 class ModelRunConfig(ASDictMixin):
@@ -363,7 +364,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 **external_info,
             }
 
-            _dir = RunStorage.local_run_dir(project, version)
+            _dir = JobStorage.local_run_dir(project, version)
             ensure_file(
                 _dir / DEFAULT_MANIFEST_NAME,
                 yaml.safe_dump(_manifest, default_flow_style=False),
@@ -699,3 +700,34 @@ class CloudModel(CloudBundleModelMixin, Model):
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         raise NoSupportError("no support model diff in the cloud instance")
+
+    @classmethod
+    def run(
+        cls,
+        project_uri: URI,
+        model_uri: str,
+        dataset_uris: t.List[str],
+        runtime_uri: str,
+        run_handler: str | int,
+        resource_pool: str = "default",
+    ) -> t.Tuple[bool, str]:
+        crm = CloudRequestMixed()
+
+        r = crm.do_http_request(
+            f"/project/{project_uri.project}/job",
+            method=HTTPMethod.POST,
+            instance_uri=project_uri,
+            data=json.dumps(
+                {
+                    "modelVersionUrl": model_uri,
+                    "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
+                    "runtimeVersionUrl": runtime_uri,
+                    "resourcePool": resource_pool,
+                    "handler": run_handler,
+                }
+            ),
+        )
+        if r.status_code == HTTPStatus.OK:
+            return True, r.json()["data"]
+        else:
+            return False, r.json()["message"]

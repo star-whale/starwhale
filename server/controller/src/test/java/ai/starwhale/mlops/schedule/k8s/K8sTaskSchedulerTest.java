@@ -176,7 +176,7 @@ public class K8sTaskSchedulerTest {
         @Override
         public V1Job renderJob(V1Job job, String jobName, String restartPolicy, int backoffLimit,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
-                Map<String, String> nodeSelectors, List<Toleration> tolerations) {
+                Map<String, String> nodeSelectors, List<Toleration> tolerations, Map<String, String> annotations) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
             Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
             Assertions.assertEquals("imageRT", worker.getImage());

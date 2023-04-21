@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import typing as t
 from pathlib import Path
@@ -6,12 +8,11 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from loguru import logger
 
 from starwhale.consts import RunStatus
-from starwhale.core.job.dag import DAG
-from starwhale.core.job.step import Step
+from starwhale.base.context import Context
 
-from .step import StepResult, StepExecutor
+from .dag import DAG
+from .step import Step, StepResult, StepExecutor
 from .task import TaskResult, TaskExecutor
-from .context import Context
 
 
 class Scheduler:

@@ -19,7 +19,7 @@ from starwhale.utils import (
     snake_to_camel,
 )
 from starwhale.consts import CREATED_AT_KEY, DEFAULT_PROJECT, STANDALONE_INSTANCE
-from starwhale.core.eval.view import JobTermView
+from starwhale.core.job.view import JobTermView
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.runtime.view import RuntimeTermView

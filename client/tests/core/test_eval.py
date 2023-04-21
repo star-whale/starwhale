@@ -11,9 +11,9 @@ from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.config import load_swcli_config, get_swcli_config_path
-from starwhale.core.eval.view import JobTermView, JobTermViewRich
-from starwhale.core.eval.model import CloudEvaluationJob, StandaloneEvaluationJob
-from starwhale.core.eval.store import RunStorage
+from starwhale.core.job.view import JobTermView, JobTermViewRich
+from starwhale.core.job.model import CloudJob, StandaloneJob
+from starwhale.core.job.store import JobStorage
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
@@ -30,9 +30,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
         _config = load_swcli_config()
         self.job_name = "mjrtonlfmi3gkmzxme4gkzldnz3ws4a"
         self.root = _config["storage"]["root"]
-        self.job_dir = os.path.join(
-            self.root, "self", URIType.EVALUATION, "mj", self.job_name
-        )
+        self.job_dir = os.path.join(self.root, "self", URIType.JOB, "mj", self.job_name)
 
         self.fs.create_dir(self.job_dir)
         self.fs.create_file(
@@ -40,9 +38,8 @@ class StandaloneEvaluationJobTestCase(TestCase):
         )
 
     def test_store(self):
-        uri = URI(self.job_name[:7], expected_type=URIType.EVALUATION)
-        store = RunStorage(uri)
-
+        uri = URI(self.job_name[:7], expected_type=URIType.JOB)
+        store = JobStorage(uri)
         assert store.project_dir == Path(self.root) / "self"
         assert store.loc == Path(self.job_dir)
         assert store.id == self.job_name
@@ -51,7 +48,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
             == (
                 Path(self.root)
                 / "self"
-                / URIType.EVALUATION
+                / URIType.JOB
                 / RECOVER_DIRNAME
                 / self.job_name[:2]
                 / self.job_name
@@ -68,7 +65,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
 
     def test_list(self):
         uri = URI("")
-        jobs, _ = StandaloneEvaluationJob.list(uri)
+        jobs, _ = StandaloneJob.list(uri)
         assert len(jobs) == 1
         assert jobs[0]["location"] == os.path.join(self.job_dir, DEFAULT_MANIFEST_NAME)
         assert jobs[0]["manifest"]["version"] == self.job_name
@@ -83,16 +80,16 @@ class StandaloneEvaluationJobTestCase(TestCase):
         m_get.return_value = {}
         m_get_metrics.return_value = {"kind": "multi_classification"}
 
-        uri = URI(self.job_name[:5], expected_type=URIType.EVALUATION)
-        job = StandaloneEvaluationJob(uri)
+        uri = URI(self.job_name[:5], expected_type=URIType.JOB)
+        job = StandaloneJob(uri)
         info = job.info()
 
         assert info["manifest"]["version"] == self.job_name
         assert info["manifest"]["model"] == "mnist:meydczbrmi2g"
         assert info["report"]["kind"] == "multi_classification"
 
-    @patch("starwhale.core.eval.view.console.print")
-    @patch("starwhale.core.eval.view.Table.add_column")
+    @patch("starwhale.core.job.view.console.print")
+    @patch("starwhale.core.job.view.Table.add_column")
     def test_render_with_limit(self, m_table_add_col: MagicMock, m_console: MagicMock):
         report = {
             "kind": "multi_classification",
@@ -111,8 +108,8 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert m_table_add_col.call_count == 4
 
     def test_remove(self):
-        uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name[:6]}")
-        job = StandaloneEvaluationJob(uri)
+        uri = URI(f"local/project/self/{URIType.JOB}/{self.job_name[:6]}")
+        job = StandaloneJob(uri)
 
         ok, _ = job.remove()
         assert ok
@@ -120,7 +117,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert (
             Path(self.root)
             / "self"
-            / URIType.EVALUATION
+            / URIType.JOB
             / RECOVER_DIRNAME
             / self.job_name[:2]
             / self.job_name
@@ -133,7 +130,7 @@ class StandaloneEvaluationJobTestCase(TestCase):
             Path(self.root)
             / "self"
             / RECOVER_DIRNAME
-            / URIType.EVALUATION
+            / URIType.JOB
             / self.job_name[:2]
             / self.job_name
         ).exists()
@@ -143,17 +140,17 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert not (
             Path(self.root)
             / "self"
-            / URIType.EVALUATION
+            / URIType.JOB
             / RECOVER_DIRNAME
             / self.job_name[:2]
             / self.job_name
         ).exists()
 
-    @patch("starwhale.core.eval.model.subprocess.check_output")
-    @patch("starwhale.core.eval.model.check_call")
+    @patch("starwhale.core.job.model.subprocess.check_output")
+    @patch("starwhale.core.job.model.check_call")
     def test_actions(self, m_call: MagicMock, m_call_output: MagicMock):
-        uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name}")
-        job = StandaloneEvaluationJob(uri)
+        uri = URI(f"local/project/self/{URIType.JOB}/{self.job_name}")
+        job = StandaloneJob(uri)
 
         ok, _ = job.cancel()
         assert ok
@@ -180,40 +177,10 @@ class CloudJobTestCase(TestCase):
         self.instance_uri = "http://1.1.1.1:8182"
         self.project_uri = f"{self.instance_uri}/project/self"
         self.job_name = "15"
-        self.job_uri = f"{self.project_uri}/{URIType.EVALUATION}/{self.job_name}"
+        self.job_uri = f"{self.project_uri}/{URIType.JOB}/{self.job_name}"
 
     @Mocker()
-    @patch("starwhale.core.eval.view.console.print")
-    def test_create(self, rm: Mocker, m_console: MagicMock):
-        rm.request(
-            HTTPMethod.POST,
-            f"{self.instance_uri}/api/v1/project/self/job",
-            json={"code": 1, "message": "ok", "data": "11"},
-        )
-
-        ok, reason = CloudEvaluationJob.run(
-            project_uri=URI(self.project_uri),
-            model_uri="1",
-            dataset_uris=["1", "2"],
-            runtime_uri="2",
-            step_spec="",
-        )
-
-        assert ok
-        assert reason == "11"
-
-        JobTermView.run(
-            self.project_uri,
-            model_uri="1",
-            dataset_uris=["1", "2"],
-            runtime_uri="2",
-            step_spec="",
-        )
-        assert m_console.call_count == 2
-        assert "project/self/evaluation/11" in m_console.call_args[0][0]
-
-    @Mocker()
-    @patch("starwhale.core.eval.view.console.print")
+    @patch("starwhale.core.job.view.console.print")
     def test_list(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.GET,
@@ -221,7 +188,7 @@ class CloudJobTestCase(TestCase):
             text=_job_list,
         )
 
-        jobs, pager = CloudEvaluationJob.list(
+        jobs, pager = CloudJob.list(
             project_uri=URI(self.project_uri),
         )
 
@@ -245,7 +212,7 @@ class CloudJobTestCase(TestCase):
     @Mocker()
     @patch("starwhale.api._impl.wrapper.Evaluation.get")
     @patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
-    @patch("starwhale.core.eval.view.console.print")
+    @patch("starwhale.core.job.view.console.print")
     def test_info(
         self,
         rm: Mocker,
@@ -273,7 +240,7 @@ class CloudJobTestCase(TestCase):
             text=_task_list,
         )
 
-        info = CloudEvaluationJob(URI(self.job_uri)).info()
+        info = CloudJob(URI(self.job_uri)).info()
         print(f"info oo :{info}")
         assert len(info["tasks"][0]) == 3
         assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
@@ -286,7 +253,7 @@ class CloudJobTestCase(TestCase):
         JobTermView(self.job_uri).info()
 
     @Mocker()
-    @patch("starwhale.core.eval.view.console.print")
+    @patch("starwhale.core.job.view.console.print")
     def test_actions(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.POST,
@@ -307,10 +274,3 @@ class CloudJobTestCase(TestCase):
         JobTermView(self.job_uri).pause()
         JobTermView(self.job_uri).cancel()
         JobTermView(self.job_uri).resume()
-
-    def test_utils(self):
-        assert (1, 1) == CloudEvaluationJob.parse_device("cpu:1")
-        assert (2, 1) == CloudEvaluationJob.parse_device("gpu:1")
-        assert (1, 10) == CloudEvaluationJob.parse_device("xxx:10")
-        assert (1, 1) == CloudEvaluationJob.parse_device("cpu")
-        assert (2, 1) == CloudEvaluationJob.parse_device("gpu")
