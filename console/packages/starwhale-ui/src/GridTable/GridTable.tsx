@@ -108,7 +108,7 @@ function GridTable({
     rowHeight = 44,
     storeRef,
     onColumnsChange,
-    headlineHeight = 60,
+    headlineHeight = 0,
     children,
 }: ITableProps) {
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -159,7 +159,7 @@ function GridTable({
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                     // filters={$filtersEnabled}
                     loading={isLoading}
-                    loadingMessage={emptyMessage ?? loadingMessage}
+                    loadingMessage={loadingMessage}
                     onIncludedRowsChange={onIncludedRowsChange}
                     onRowHighlightChange={onRowHighlightChange}
                     isRowSelected={isRowSelected}

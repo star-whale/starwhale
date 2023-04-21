@@ -17,6 +17,7 @@ function useGirdData() {
     const rows = useMemo(
         () =>
             records?.map((raw, index) => {
+                // console.log(raw, getId)
                 return {
                     id: getId?.(raw) ?? index.toFixed(),
                     data: raw,

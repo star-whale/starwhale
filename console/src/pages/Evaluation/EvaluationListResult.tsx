@@ -37,12 +37,10 @@ export default function DatastoreDiffTables({ rows }) {
     )
     const getId = useCallback(
         (row) => {
-            return getPrefixId(row, prefixColumn(rows[0], 0))
+            return rows.map((v, i) => getPrefixId(row, prefixColumn(rows[i], i))).filter((v) => !!v)[0]
         },
         [rows]
     )
-
-    // console.log(queries, rows, prefixColumn(rows[0], 0))
 
     const { records, columnTypes, recordInfo } = useFetchDatastoreByTables({
         tables: queries,

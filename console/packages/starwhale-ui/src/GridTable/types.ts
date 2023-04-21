@@ -26,6 +26,9 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     storeRef?: React.MutableRefObject<ITableState | undefined>
     emptyMessage?: React.ReactNode
     emptyColumnMessage?: React.ReactNode
+    title?: React.ReactNode
+    titleOfCompare?: React.ReactNode
+    children?: React.ReactNode
 }
 
 export interface IToolBarProps {

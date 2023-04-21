@@ -284,6 +284,8 @@ export default function EvaluationListCard() {
             <GridResizerVertical
                 top={() => (
                     <GridCombineTable
+                        title={t('Evaluations')}
+                        titleOfCompare={t('Compare Evaluations')}
                         store={useEvaluationStore}
                         compareable
                         queryable

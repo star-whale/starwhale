@@ -13,15 +13,21 @@ import { MemoGridTable } from './GridTable'
 import GridCompareTable, { MemoGridCompareTable } from './GridCompareTable'
 import { useDatastoreColumns } from '../GridDatastoreTable'
 import store from '@starwhale/core/store/store'
+import { LabelSmall } from 'baseui/typography'
+import { createUseStyles } from 'react-jss'
+import { val } from './utils'
 
-function val(r: any) {
-    if (r === undefined) return ''
-    if (typeof r === 'object' && 'value' in r) {
-        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
-    }
+const useStyles = createUseStyles({
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: {
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '14px',
+        color: 'rgba(2,16,43,0.60);',
+    },
+})
 
-    return r
-}
 const selector = (state: ITableState) => ({
     rowSelectedIds: state.rowSelectedIds,
 })
@@ -53,41 +59,51 @@ function BaseGridCombineTable({
         <BusyPlaceholder type='notfound'>Create a new evaluation or Config to add columns</BusyPlaceholder>
     ),
     storeRef,
-    onColumnsChange,
     children,
+    getId = (record: any) => val(record.id),
 }: ITableProps) {
+    const styles = useStyles()
     const { rowSelectedIds } = useStore(selector)
     const $compareRows = React.useMemo(() => {
-        return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
-    }, [rowSelectedIds, records])
+        return records?.filter((r) => rowSelectedIds.includes(getId(r))) ?? []
+    }, [rowSelectedIds, records, getId])
 
     return (
-        <GridResizer
-            left={() => {
-                return (
-                    <MemoGridTable
-                        queryable
-                        selectable
-                        isLoading={isLoading}
-                        onSave={onSave}
-                        onChange={onChange}
-                        emptyColumnMessage={emptyColumnMessage}
-                    >
-                        <ToolBar columnable={columnable} viewable={viewable} />
-                    </MemoGridTable>
-                )
-            }}
-            isResizeable={rowSelectedIds.length > 0}
-            right={() => (
-                // <></>
-                <GridCompareTable
-                    rowSelectedIds={rowSelectedIds}
-                    title={titleOfCompare}
-                    records={$compareRows}
-                    columnTypes={columnTypes}
-                />
-            )}
-        />
+        <>
+            <ToolBar columnable={columnable} viewable={viewable} />
+            <GridResizer
+                left={() => {
+                    return (
+                        <MemoGridTable
+                            queryable
+                            selectable
+                            isLoading={isLoading}
+                            onSave={onSave}
+                            onChange={onChange}
+                            queryinline={queryinline}
+                            emptyMessage={emptyMessage}
+                            emptyColumnMessage={emptyColumnMessage}
+                        >
+                            {title && (
+                                <LabelSmall style={{ height: '52px' }} className={styles.headerTitle}>
+                                    {title}
+                                </LabelSmall>
+                            )}
+                        </MemoGridTable>
+                    )
+                }}
+                isResizeable={rowSelectedIds.length > 0}
+                right={() => (
+                    <GridCompareTable
+                        rowSelectedIds={rowSelectedIds}
+                        title={titleOfCompare}
+                        records={$compareRows}
+                        columnTypes={columnTypes}
+                        getId={getId}
+                    />
+                )}
+            />
+        </>
     )
 }
 
