@@ -274,6 +274,9 @@ export default function EvaluationListCard() {
                 width: '100%',
                 flex: 1,
             }}
+            bodyStyle={{
+                flexDirection: 'column',
+            }}
             extra={
                 <WithCurrentAuth id='evaluation.create'>
                     <Button onClick={() => history.push('new_job')}>{t('create')}</Button>
@@ -288,6 +291,8 @@ export default function EvaluationListCard() {
                         titleOfCompare={t('Compare Evaluations')}
                         store={useEvaluationStore}
                         compareable
+                        columnable
+                        viewable
                         queryable
                         selectable
                         records={records}
@@ -296,7 +301,7 @@ export default function EvaluationListCard() {
                 )}
                 isResizeable={$compareRows.length > 0}
                 // bottom={() => <></>}
-                bottom={() => <EvaluationListResult title='detail' rows={$compareRows} />}
+                bottom={() => <EvaluationListResult rows={$compareRows} />}
             />
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>

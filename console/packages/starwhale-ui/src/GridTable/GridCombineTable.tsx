@@ -18,6 +18,11 @@ import { createUseStyles } from 'react-jss'
 import { val } from './utils'
 
 const useStyles = createUseStyles({
+    gridComineTable: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+    },
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: {
         fontWeight: '600',
@@ -69,8 +74,8 @@ function BaseGridCombineTable({
     }, [rowSelectedIds, records, getId])
 
     return (
-        <>
-            <ToolBar columnable={columnable} viewable={viewable} />
+        <div data-type='grid-combine-table' className={styles.gridComineTable}>
+            <ToolBar columnable={columnable} viewable={viewable} queryable={queryable} />
             <GridResizer
                 left={() => {
                     return (
@@ -103,7 +108,7 @@ function BaseGridCombineTable({
                     />
                 )}
             />
-        </>
+        </div>
     )
 }
 

@@ -4,6 +4,7 @@ import useGridSelection from './useGridSelection'
 import useGridSort from './useGridSort'
 import React, { useMemo } from 'react'
 import useGirdData from './useGridData'
+import useGridQuery from './useGridQuery'
 
 function useGrid() {
     const { onSave, onSaveAs, changed } = useGridSave()
@@ -12,6 +13,7 @@ function useGrid() {
     const { onSelectMany, onSelectNone, onSelectOne, isSelectedAll, isSelectedIndeterminate, isRowSelected } =
         useGridSelection()
     const { ids, isAllRuns, columns, currentView, rows } = useGirdData()
+    const { renderConfigQuery } = useGridQuery({ columns })
 
     return {
         onSave,
@@ -34,8 +36,11 @@ function useGrid() {
         isSelectedAll,
         isSelectedIndeterminate,
         isRowSelected,
+        // data
         columns,
         rows,
+        // query
+        renderConfigQuery,
     }
 }
 

@@ -91,6 +91,7 @@ export function GridResizer({
     )
     return (
         <div
+            data-type='grid-resizer'
             ref={gridRef}
             style={{
                 display: 'grid',
@@ -102,6 +103,7 @@ export function GridResizer({
             }}
         >
             <div
+                data-type='grid-resizer-left'
                 ref={leftRef}
                 style={{
                     display: 'flex',
@@ -123,6 +125,7 @@ export function GridResizer({
             )}
             {isResizeable && (
                 <div
+                    data-type='grid-resizer-right'
                     style={{
                         display: 'flex',
                         flexDirection: 'column',

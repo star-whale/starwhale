@@ -1,12 +1,11 @@
-import { StatefulDataTablePropsT } from '@starwhale/ui/base/data-table/types'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import classNames from 'classnames'
 import ConfigViews from '../ConfigViews/ConfigViews'
 import ConfigColumns from '../ConfigColumns'
 import { useStore, useStoreApi } from '../../hooks/useStore'
-import { useResizeObserver } from '@starwhale/ui/utils/useResizeObserver'
 import React from 'react'
 import useGrid from '../../hooks/useGrid'
+import Button from '@starwhale/ui/Button'
 
 type IToolBarProps = {
     viewable?: boolean
@@ -21,25 +20,27 @@ const selector = (s: ITableState) => ({
     currentView: s.currentView,
     rowSelectedIds: s.rowSelectedIds,
     onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
+    onSave: s.onSave,
+    onSaveAs: s.onSaveAs,
 })
 
 function ToolBar({ viewable, filterable, searchable, queryable, columnable, headlineHeight = 60 }: IToolBarProps) {
     const [css] = themedUseStyletron()
-    const { currentView, rowSelectedIds, onCurrentViewColumnsChange } = useStore(selector)
-    // const { renderConfigQuery } = useConfigQuery({ columns: props.columns, queryable })
+    const { currentView, rowSelectedIds, onCurrentViewColumnsChange, onSave, onSaveAs } = useStore(selector)
     const headlineRef = React.useRef(null)
     // const [headlineHeight, setHeadlineHeight] = React.useState(64)
-
     // useResizeObserver(headlineRef, (entries) => {
     //     setHeadlineHeight(entries[0].contentRect.height)
     // })
-    const { columns } = useStoreApi().getState()
+
+    const { columns, rows } = useStoreApi().getState()
+    const { isAllRuns, changed, renderConfigQuery } = useGrid()
 
     return (
         <div
             data-type='table-toolbar'
             className={css({
-                height: `${headlineHeight}px`,
+                // height: `${headlineHeight}px`,
                 display: viewable || filterable || searchable || queryable || columnable ? 'block' : 'none',
             })}
         >
@@ -56,7 +57,21 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable, head
                         })
                     )}
                 >
-                    {/* {viewable && <ConfigViews columns={props.columns} rows={props.rows} />}
+                    {viewable && <ConfigViews columns={columns} rows={rows} />}
+                    {viewable && changed && !rowSelectedIds.size && (
+                        <div>
+                            {!isAllRuns && (
+                                <>
+                                    <Button onClick={() => onSave?.(currentView)}>Save</Button>
+                                    &nbsp;&nbsp;
+                                </>
+                            )}
+
+                            <Button onClick={() => onSaveAs?.(currentView)}>Save As</Button>
+                        </div>
+                    )}
+                    {/* {searchable && <QueryInput onChange={onTextQueryChange} />} */}
+                    {/* 
                     {filterable && (
                         <FilterOperateMenu
                             filters={store.currentView?.filters ?? []}
@@ -64,33 +79,18 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable, head
                             rows={props.rows}
                             onFilterSet={handeFilterSet}
                         />
-                    )}
-
-                    {searchable && <QueryInput onChange={onTextQueryChange} />}
-
-                    {viewable && changed && !$rowSelectedIds.size && (
-                        <div>
-                            {!isAllRuns && (
-                                <>
-                                    <Button onClick={() => handleSave(store.currentView)}>Save</Button>
-                                    &nbsp;&nbsp;
-                                </>
-                            )}
-
-                            <Button onClick={() => handleSaveAs(store.currentView)}>Save As</Button>
-                        </div>
                     )} */}
                 </div>
                 <div
                     className={classNames(
                         css({
                             display: 'flex',
-                            marginBottom: queryable || columnable ? '20px' : '0px',
+                            // marginBottom: queryable || columnable ? '20px' : '0px',
                         })
                     )}
                 >
                     <div className='table-config-query' style={{ flex: 1 }}>
-                        {/* {renderConfigQuery()} */}
+                        {queryable && renderConfigQuery()}
                     </div>
 
                     {columnable && !rowSelectedIds.size && (
