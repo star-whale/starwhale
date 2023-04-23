@@ -92,7 +92,7 @@ def create_prompt_ids(tokenizer, question, max_src_length):
 def create_inputs_and_labels(tokenizer, question, answer, device, **kwargs):
     prompt = create_prompt_ids(tokenizer, question, max_src_length)
     completion = tokenizer.encode(
-        answer, max_length=max_dst_length, truncation=True, add_special_tokens=False
+        answer if answer else "", max_length=max_dst_length, truncation=True, add_special_tokens=False
     )
     eop = tokenizer.eos_token_id
     inputs = prompt + completion + [eop]
@@ -154,13 +154,15 @@ class QADataset(Dataset):
         self.tokenizer = tokenizer
 
     def __getitem__(self, index):
+        data={"question":"","answer":""}
         try:
             item_data = self.sw_dataset[index].features
         except ValueError:
-            item_data = {"question":"","answer":""}
+            item_data = {}
+        data.update(item_data)
         tokenizer = self.tokenizer
         input_ids, labels = create_inputs_and_labels(
-            tokenizer, device=device, **item_data
+            tokenizer, device=device, **data
         )
 
         attention_mask = get_attention_mask(tokenizer, input_ids, device)
@@ -284,5 +286,5 @@ def online_eval(question: str) -> str:
 
 if __name__ == "__main__":
     Context = namedtuple("Context", ["dataset_uris"])
-    context = Context(["z_bench_common/version/latest"])
+    context = Context(["webqsp/version/latest"])
     fine_tune(context)
