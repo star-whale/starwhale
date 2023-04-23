@@ -86,6 +86,10 @@ public class RuntimeRegistryListener implements SystemSettingListener {
                 var status = k8sClient.deleteSecret(DOCKER_REGISTRY_SECRET);
                 log.info("secret:{} delete success, info:{}", DOCKER_REGISTRY_SECRET, status);
             } catch (ApiException e) {
+                if (e.getCode() == HttpServletResponse.SC_NOT_FOUND) {
+                    log.info("secret:{} not found", DOCKER_REGISTRY_SECRET);
+                    return;
+                }
                 log.error("secret:{} delete error:{}", DOCKER_REGISTRY_SECRET, e.getResponseBody(), e);
             }
         }
