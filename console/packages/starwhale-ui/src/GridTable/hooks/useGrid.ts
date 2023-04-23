@@ -4,8 +4,16 @@ import useGridSelection from './useGridSelection'
 import useGridSort from './useGridSort'
 import useGirdData from './useGridData'
 import useGridQuery from './useGridQuery'
+import { IGridState } from '../types'
+import { useStore } from './useStore'
+import shallow from 'zustand/shallow'
+
+const selector = (s: IGridState) => ({
+    initStore: s.initStore,
+})
 
 function useGrid() {
+    const { initStore } = useStore(selector, shallow)
     const { onSave, onSaveAs, changed } = useGridSave()
     const { sortIndex, sortDirection } = useGridSort()
     const { textQuery, setTextQuery } = useGridQueryText()
@@ -48,6 +56,8 @@ function useGrid() {
         rows,
         // query
         renderConfigQuery,
+        // store
+        initStore,
     }
 }
 

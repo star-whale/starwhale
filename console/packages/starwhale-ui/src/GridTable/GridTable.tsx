@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef } from 'react'
 import { Skeleton } from 'baseui/skeleton'
 import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
@@ -11,6 +11,7 @@ import { StoreProvider } from './store/StoreProvider'
 import StoreUpdater, { useDirectStoreUpdater } from './store/StoreUpdater'
 import useGrid from './hooks/useGrid'
 import { DataTable } from '../base/data-table/data-custom-table'
+import useOnInitHandler from './hooks/useOnInitHandler'
 
 const useStyles = createUseStyles({
     table: {
@@ -83,22 +84,28 @@ function GridTable({
     queryinline = false,
     emptyMessage,
     emptyColumnMessage,
-    resizableColumnWidths = false,
+    resizableColumnWidths = true,
     rowHighlightIndex = -1,
     rowHeight = 44,
     headlineHeight = 0,
+    onInit,
     children,
 }: ITableProps) {
+    useOnInitHandler(onInit)
+
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
     const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
     const store = useStoreApi()
+    // @FIXME
+    useDirectStoreUpdater('columns', columns, store.setState)
+    useDirectStoreUpdater('rows', rows, store.setState)
 
     const {
         selectedRowIds,
-        columns: defaultColumns,
-        rows: defaultRows,
+        columns: $columns,
+        rows: $rows,
         sortIndex,
         sortDirection,
         textQuery,
@@ -109,17 +116,6 @@ function GridTable({
         isSelectedAll,
         isSelectedIndeterminate,
     } = useGrid()
-
-    const $columns = useMemo(() => {
-        return columns ?? defaultColumns ?? []
-    }, [columns, defaultColumns])
-    const $rows = useMemo(() => {
-        return rows ?? defaultRows ?? []
-    }, [rows, defaultRows])
-
-    // @FIXME
-    useDirectStoreUpdater('columns', $columns, store.setState)
-    useDirectStoreUpdater('rows', $rows, store.setState)
 
     return (
         <div
@@ -174,9 +170,8 @@ export default function ContextGridTable({
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <StoreUpdater {...rest}>
-                <MemoGridTable {...rest}>{children}</MemoGridTable>
-            </StoreUpdater>
+            <StoreUpdater {...rest} />
+            <MemoGridTable {...rest}>{children}</MemoGridTable>
         </StoreProvider>
     )
 }

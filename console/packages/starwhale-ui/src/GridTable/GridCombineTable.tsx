@@ -28,6 +28,7 @@ const useStyles = createUseStyles({
 
 const selector = (state: IGridState) => ({
     rowSelectedIds: state.rowSelectedIds,
+    setRowSelectedIds: state.setRowSelectedIds,
 })
 
 function BaseGridCombineTable({
@@ -53,7 +54,7 @@ function BaseGridCombineTable({
     getId = (record: any) => val(record.id),
 }: ITableProps) {
     const styles = useStyles()
-    const { rowSelectedIds } = useStore(selector)
+    const { rowSelectedIds, setRowSelectedIds } = useStore(selector)
     const $compareRows = React.useMemo(() => {
         return records?.filter((r) => rowSelectedIds.includes(getId(r))) ?? []
     }, [rowSelectedIds, records, getId])
@@ -87,6 +88,7 @@ function BaseGridCombineTable({
                 right={() => (
                     <GridCompareTable
                         rowSelectedIds={rowSelectedIds}
+                        onRowSelectedChange={setRowSelectedIds}
                         title={titleOfCompare}
                         records={$compareRows}
                         columnTypes={columnTypes}
@@ -98,7 +100,7 @@ function BaseGridCombineTable({
     )
 }
 
-export { BaseGridCombineTable }
+export const MemoGridCombineTable = React.memo(BaseGridCombineTable)
 
 export default function GridCombineTable({
     storeKey = 'table-combined',
@@ -109,9 +111,8 @@ export default function GridCombineTable({
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <StoreUpdater {...rest}>
-                <BaseGridCombineTable {...rest}>{children}</BaseGridCombineTable>
-            </StoreUpdater>
+            <StoreUpdater {...rest} />
+            <MemoGridCombineTable {...rest}>{children}</MemoGridCombineTable>
         </StoreProvider>
     )
 }

@@ -72,9 +72,9 @@ const rawIfChangedInitialState: Partial<ITableState> = {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
-    const update = (updateAttrs: any) => {
+    const update = (updateAttrs: any, name?: string) => {
         const state = get()
-        set(updateAttrs)
+        set(updateAttrs, undefined, name)
         // @FIXME state type for onViewsChange
         // @ts-ignore
         store.getState().onViewsChange?.(get(), state)
@@ -93,7 +93,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
                 })
             )
         },
-        onViewAdd: (view) => update({ views: [...get().views, view] }),
+        onViewAdd: (view) => update({ views: [...get().views, view] }, 'onViewAdd'),
         onViewUpdate: (view) => {
             // eslint-disable-next-line no-param-reassign
             view.updated = false
@@ -117,7 +117,8 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
                             // eslint-disable-next-line no-param-reassign
                             state.currentView = view
                         }
-                    })
+                    }),
+                    'onViewUpdate'
                 )
             } else {
                 const $views = get().views?.map((v) => ({
@@ -136,7 +137,8 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
                         state.views = [...$views, newView]
                         // eslint-disable-next-line no-param-reassign
                         state.currentView = newView
-                    })
+                    }),
+                    'onViewUpdate'
                 )
             }
         },
@@ -160,26 +162,33 @@ const rawCurrentView = {
     updateColumn: false,
     id: 'all',
 }
-const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
-    const update = (updateAttrs: Partial<ConfigT>) => {
+const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, store) => {
+    const update = (updateAttrs: Partial<ConfigT>, name?: string) => {
+        const prev = get()
         const curr = get().currentView
         const version = _.isNumber(curr.version) ? curr.version + 1 : 1
-        set({
-            currentView: {
-                ...curr,
-                ...updateAttrs,
-                updated: true,
-                version,
+        set(
+            {
+                currentView: {
+                    ...curr,
+                    ...updateAttrs,
+                    updated: true,
+                    version,
+                },
             },
-        })
+            undefined,
+            name
+        )
+        // @ts-ignore
+        store.getState().onCurrentViewChange?.(get(), prev)
     }
 
     return {
         currentView: rawCurrentView,
-        onCurrentViewSaved: () => update({ updated: false }),
+        onCurrentViewSaved: () => update({ updated: false }, 'onCurrentViewSaved'),
         onCurrentViewIdChange: (viewId) => {
             if (viewId === 'all') {
-                set({ currentView: rawCurrentView })
+                update(rawCurrentView, 'onCurrentViewIdChange')
                 return
             }
             let view = get().views.find((v) => v.id === viewId)
@@ -189,7 +198,7 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
             if (!view) {
                 view = rawCurrentView
             }
-            set({ currentView: view })
+            update(view, 'onCurrentViewIdChange')
         },
         onCurrentViewFiltersChange: (filters) => update({ filters }),
         onCurrentViewQueriesChange: (queries) => update({ queries }),
@@ -208,9 +217,9 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get) => {
                 const index2 = $pinnedIds.has(v2) ? 1 : -1
                 return index2 - index1
             })
-            update({ pinnedIds: Array.from($pinnedIds), ids: sortedMergeSelectedIds })
+            update({ pinnedIds: Array.from($pinnedIds), ids: sortedMergeSelectedIds }, 'onCurrentViewColumnsPin')
         },
-        onCurrentViewSort: (key, direction) => update({ sortBy: key, sortDirection: direction }),
+        onCurrentViewSort: (key, direction) => update({ sortBy: key, sortDirection: direction }, 'onCurrentViewSort'),
     }
 }
 
@@ -225,7 +234,9 @@ const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, g
                 state.viewEditing = viewEditing
                 // eslint-disable-next-line no-param-reassign
                 state.viewModelShow = viewModelShow
-            })
+            }),
+            undefined,
+            'onShowViewModel'
         ),
 })
 
@@ -234,17 +245,25 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
     isInit: false,
     key: 'table',
     initStore: (obj?: Record<string, any>) =>
-        set({
-            ...(obj ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
-            isInit: true,
-        }),
+        set(
+            {
+                ...(obj ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
+                isInit: true,
+            },
+            undefined,
+            'initStore'
+        ),
     setRawConfigs: (obj: Record<string, any>) =>
-        set({
-            ..._.pick(obj, Object.keys(rawInitialState)),
-        }),
+        set(
+            {
+                ..._.pick(obj, Object.keys(rawInitialState)),
+            },
+            undefined,
+            'setRawConfigs'
+        ),
     getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
     getRawIfChangedConfigs: (state) => _.pick(state ?? get(), Object.keys(rawIfChangedInitialState)),
-    reset: () => set(rawInitialState),
+    reset: () => set(rawInitialState, undefined, 'reset'),
 })
 
 export interface IRowState {
@@ -253,38 +272,67 @@ export interface IRowState {
     onSelectNone: () => void
     onSelectOne: (id: any) => void
     onNoSelect: (id: any) => void
+    setRowSelectedIds: (ids: any[]) => void
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const createRowSlice: IStateCreator<IRowState> = (set, get, store) => ({
-    rowSelectedIds: [],
-    onSelectMany: (incomingRows: any[]) =>
-        set({
-            rowSelectedIds: [...incomingRows],
-        }),
-    onSelectNone: () =>
-        set({
-            rowSelectedIds: [],
-        }),
-    onNoSelect: (id: any) => {
-        const selectedRowIds = new Set(get().rowSelectedIds)
-        selectedRowIds.delete(id)
-        set({
-            rowSelectedIds: Array.from(selectedRowIds),
-        })
-    },
-    onSelectOne: (id: any) => {
-        const selectedRowIds = new Set(get().rowSelectedIds)
-        if (selectedRowIds.has(id)) {
+const createRowSlice: IStateCreator<IRowState> = (set, get, store) => {
+    const update = (updateAttrs: Partial<IRowState>, name?: string) => {
+        set(updateAttrs, undefined, name)
+        // @FIXME state type for onViewsChange
+        // @ts-ignore
+        store.getState().onRowSelectedChange?.(updateAttrs.rowSelectedIds)
+    }
+
+    return {
+        rowSelectedIds: [],
+        onSelectMany: (incomingRows: any[]) =>
+            update(
+                {
+                    rowSelectedIds: [...incomingRows],
+                },
+                'onSelectMany'
+            ),
+        onSelectNone: () =>
+            update(
+                {
+                    rowSelectedIds: [],
+                },
+                'onSelectNone'
+            ),
+        onNoSelect: (id: any) => {
+            const selectedRowIds = new Set(get().rowSelectedIds)
             selectedRowIds.delete(id)
-        } else {
-            selectedRowIds.add(id)
-        }
-        set({
-            rowSelectedIds: Array.from(selectedRowIds),
-        })
-    },
-})
+            update(
+                {
+                    rowSelectedIds: Array.from(selectedRowIds),
+                },
+                'onNoSelect'
+            )
+        },
+        onSelectOne: (id: any) => {
+            const selectedRowIds = new Set(get().rowSelectedIds)
+            if (selectedRowIds.has(id)) {
+                selectedRowIds.delete(id)
+            } else {
+                selectedRowIds.add(id)
+            }
+            update(
+                {
+                    rowSelectedIds: Array.from(selectedRowIds),
+                },
+                'onSelectOne'
+            )
+        },
+        setRowSelectedIds: (rowSelectedIds: any[]) =>
+            update(
+                {
+                    rowSelectedIds,
+                },
+                'setRowSelectedIds'
+            ),
+    }
+}
 
 export interface ICompareState {
     compare?: {
@@ -298,12 +346,16 @@ export interface ICompareState {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createCompareSlice: IStateCreator<ICompareState> = (set, get, store) => ({
     onCompareUpdate: (args) =>
-        set({
-            compare: {
-                ...get().compare,
-                ...args,
+        set(
+            {
+                compare: {
+                    ...get().compare,
+                    ...args,
+                },
             },
-        }),
+            false,
+            'onCompareUpdate'
+        ),
 })
 
 export function createCustomStore(key: string, initState: Partial<ITableState> = rawInitialState, isPersist = false) {
@@ -326,7 +378,7 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
         key: name,
     })
     if (isPersist) {
-        return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any), { name })))
+        return create<ITableState>()(subscribeWithSelector(devtools(persist(actions as any, { name }))))
     }
     const useStore = create<ITableState>()(actions)
     return useStore as UseBoundStore<StoreApi<ITableState>>
@@ -352,7 +404,7 @@ export const useEvaluationDetailStore = createCustomStore(
             compareShowDiffOnly: false,
         },
     },
-    true
+    false
 )
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []

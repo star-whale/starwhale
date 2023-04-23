@@ -111,32 +111,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             if (inViewport) setEnableload(true)
         }, [inViewport, enableLoad])
 
-        useIfChanged({
-            overrides,
-            tableConfig,
-            tableName,
-            inViewport,
-            enableLoad,
-        })
-
-        // if in viewport, refetch data
-        // if panel table changed, refetch data
-        // useEffect(() => {
-        //     if (!tableName || !inViewport) return
-
-        //     if (tableNameRef.current !== tableName) {
-        //         columnInfo.refetch()
-        //         tableNameRef.current = tableName
-        //         return
-        //     }
-
-        //     if (inViewLoadRef.current) return
-        //     columnInfo.refetch()
-
-        //     inViewLoadRef.current = true
-        //     tableNameRef.current = tableName
-        //     // eslint-disable-next-line react-hooks/exhaustive-deps
-        // }, [tableName, inViewport])
+        // useIfChanged({
+        //     overrides,
+        //     tableConfig,
+        //     tableName,
+        //     inViewport,
+        //     enableLoad,
+        // })
 
         useEffect(() => {
             // @FIXME better use scoped eventBus
@@ -171,13 +152,6 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             }
         }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
 
-        if (tableName && !recordInfo.isSuccess)
-            return (
-                <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
-                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
-                </div>
-            )
-
         return (
             <div
                 ref={myRef as any}
@@ -186,21 +160,25 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                     height: '100%',
                 }}
             >
-                <WrappedWidgetRender
-                    {...props}
-                    name={overrides?.name}
-                    data={$data}
-                    optionConfig={overrides?.optionConfig}
-                    onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
-                    fieldConfig={overrides?.fieldConfig}
-                    onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
-                    onLayoutOrderChange={handleLayoutOrderChange}
-                    onLayoutChildrenChange={handleLayoutChildrenChange}
-                    onLayoutCurrentChange={handleLayoutCurrentChange}
-                    onDataReload={() => recordInfo.refetch()}
-                    onDataDownload={() => exportTable(query)}
-                    eventBus={eventBus}
-                />
+                {tableName && !recordInfo.isSuccess ? (
+                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
+                ) : (
+                    <WrappedWidgetRender
+                        {...props}
+                        name={overrides?.name}
+                        data={$data}
+                        optionConfig={overrides?.optionConfig}
+                        onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
+                        fieldConfig={overrides?.fieldConfig}
+                        onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
+                        onLayoutOrderChange={handleLayoutOrderChange}
+                        onLayoutChildrenChange={handleLayoutChildrenChange}
+                        onLayoutCurrentChange={handleLayoutCurrentChange}
+                        onDataReload={() => recordInfo.refetch()}
+                        onDataDownload={() => exportTable(query)}
+                        eventBus={eventBus}
+                    />
+                )}
             </div>
         )
     }

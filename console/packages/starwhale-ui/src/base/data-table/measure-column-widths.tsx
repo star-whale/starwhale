@@ -52,6 +52,8 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 isSelectable={isSelectable}
             />
             {sampleIndexes.map((rowIndex: number, i: number) => {
+                // incase of column from local store, func was parsed to string
+                if (typeof column.renderCell !== 'function') return null
                 const Cell = column.renderCell
                 return (
                     <Cell

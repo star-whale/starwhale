@@ -8,6 +8,7 @@ import { themedUseStyletron } from '../../../theme/styletron'
 import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
 import { IGridState } from '@starwhale/ui/GridTable/types'
 import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
+import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
 
@@ -23,8 +24,9 @@ export default function Headers({ width }: { width: number }) {
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
     const { queryinline } = useStore(selector)
-    const store = useStoreApi().getState()
-    const columns = store.columns as ColumnT[]
+    const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
+        useStoreApi().getState()
+    const { columns } = useGrid()
 
     const $columns = React.useMemo(
         () =>
@@ -44,24 +46,25 @@ export default function Headers({ width }: { width: number }) {
             const columnIndex = column.index
 
             const handleNoSelect = () => {
-                store.onNoSelect(column.key as string)
+                console.log('handleNoSelect', column.key, onNoSelect)
+                onNoSelect(column.key as string)
             }
 
             const handleFocus = () => {
-                store.onCompareUpdate({
+                onCompareUpdate({
                     comparePinnedKey: column.key as string,
                 })
             }
             const handlePin = (index: number, bool: boolean) => {
-                store.onCurrentViewColumnsPin(column.key as string, bool)
+                onCurrentViewColumnsPin(column.key as string, bool)
             }
 
             // @ts-ignore
             const handleSort = (index: number, direction: SortDirectionsT) => {
-                store.onCurrentViewSort(column.key as string, direction)
+                onCurrentViewSort(column.key as string, direction)
             }
 
-            const isFoucs = column.key === store.compare?.comparePinnedKey
+            const isFoucs = column.key === compare?.comparePinnedKey
             const isPin = !!column.pin
 
             return (
@@ -116,7 +119,11 @@ export default function Headers({ width }: { width: number }) {
             )
         },
         [
-            store,
+            onNoSelect,
+            onCompareUpdate,
+            onCurrentViewColumnsPin,
+            onCurrentViewSort,
+            compare,
             setResizeIndex,
             resizeIndex,
             locale,

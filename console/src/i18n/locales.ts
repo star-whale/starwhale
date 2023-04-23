@@ -248,9 +248,17 @@ const job = {
 }
 
 const evaluation = {
+    'evaluation.title': {
+        en: 'Evaluation',
+        zh: '评测',
+    },
     'evaluation.save.success': {
         en: 'Save Evaluation Success',
         zh: '保存成功',
+    },
+    'compare.title': {
+        en: 'Compare',
+        zh: '评测对比',
     },
     'compare.column.metrics': {
         en: 'Metrics',
@@ -267,6 +275,14 @@ const evaluation = {
     'compare.show.details': {
         en: 'Show Details',
         zh: '显示详情',
+    },
+    'evaluation.detail.title': {
+        en: 'Evaluation Detail',
+        zh: '评测详情',
+    },
+    'evaluation.detail.compare': {
+        en: 'Compare',
+        zh: '评测对比',
     },
 }
 

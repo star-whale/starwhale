@@ -37,10 +37,14 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     onColumnSave?: (props: any) => void
     onColumnsChange?: (props: any) => void
     onViewsChange?: (state: any, nextState: any) => void
+    onCurrentViewChange?: (state: any, nextState: any) => void
     onSelectionChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (index: number) => void
     onIncludedRowsChange?: (rows: RowT[]) => void
+    onRowSelectedChange?: (rows: RowT[]) => void
     getId?: (record: any) => string | undefined
+    // @FIXME type
+    onInit?: (state: Partial<IGridState>) => void
 }
 
 export interface IToolBarProps {

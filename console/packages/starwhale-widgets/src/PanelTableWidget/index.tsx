@@ -1,8 +1,8 @@
 import React from 'react'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
-import PanelTable from './component/Table'
-import { ITableState } from '@starwhale/ui/GridTable/store/store'
+import { GridTable } from '@starwhale/ui/GridTable'
+import { ITableState } from '@starwhale/ui/GridTable/store'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
@@ -17,27 +17,29 @@ export const CONFIG: WidgetConfig = {
 
 function PanelTableWidget(props: WidgetRendererProps<any, any>) {
     const { optionConfig, data = {}, id, onOptionChange } = props
-    const storeRef = React.useRef<ITableState | null>(null)
 
-    React.useEffect(() => {
-        if (storeRef.current?.isInit || !storeRef.current) return
-        storeRef.current.initStore(optionConfig as ITableState)
-    }, [optionConfig, storeRef])
-
-    const onChange = React.useCallback(
+    const onCurrentViewChange = React.useCallback(
         (newState: ITableState) => {
             onOptionChange?.(newState.getRawConfigs())
         },
         [onOptionChange]
     )
 
+    const onInit = React.useCallback(
+        ({ initStore }) => {
+            initStore?.(optionConfig)
+        },
+        [optionConfig]
+    )
+
     return (
-        <PanelTable
+        <GridTable
             columnTypes={data.columnTypes}
-            data={data.records}
+            records={data.records}
             storeKey={id}
-            onChange={onChange}
-            storeRef={storeRef}
+            queryinline
+            onCurrentViewChange={onCurrentViewChange}
+            onInit={onInit}
         />
     )
 }

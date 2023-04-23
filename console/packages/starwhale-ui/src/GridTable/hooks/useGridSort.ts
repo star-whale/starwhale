@@ -1,15 +1,9 @@
 import { useMemo } from 'react'
-import { useStore } from './useStore'
-import { IGridState } from '../types'
-import shallow from 'zustand/shallow'
-
-const selector = (state: IGridState) => ({
-    currentView: state.currentView,
-    columns: state.columns,
-})
+import useGridData from './useGridData'
 
 function useGridSave() {
-    const { currentView, columns } = useStore(selector, shallow)
+    const { columns, currentView } = useGridData()
+
     const [$sortIndex, $sortDirection] = useMemo(() => {
         const { sortBy, sortDirection } = currentView || {}
         const sortIndex = columns?.findIndex((c) => c.key === sortBy)

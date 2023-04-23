@@ -2,7 +2,7 @@ import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import classNames from 'classnames'
 import ConfigViews from '../ConfigViews/ConfigViews'
 import ConfigColumns from '../ConfigColumns'
-import { useStore, useStoreApi } from '../../hooks/useStore'
+import { useStore } from '../../hooks/useStore'
 import React from 'react'
 import useGrid from '../../hooks/useGrid'
 import Button from '@starwhale/ui/Button'
@@ -32,8 +32,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
     //     setHeadlineHeight(entries[0].contentRect.height)
     // })
 
-    const { columns } = useStoreApi().getState()
-    const { isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } = useGrid()
+    const { columns, isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } = useGrid()
 
     return (
         <div

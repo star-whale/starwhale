@@ -45,14 +45,17 @@ export default function EvaluationListCard() {
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
-    const store = useEvaluationStore(selector, shallow)
+    const { rowSelectedIds, currentView, initStore, getRawConfigs, onCurrentViewIdChange } = useEvaluationStore(
+        selector,
+        shallow
+    )
 
     const options = React.useMemo(() => {
-        const sorts = store.currentView?.sortBy
+        const sorts = currentView?.sortBy
             ? [
                   {
-                      columnName: store.currentView?.sortBy,
-                      descending: store.currentView?.sortDirection === 'DESC',
+                      columnName: currentView?.sortBy,
+                      descending: currentView?.sortDirection === 'DESC',
                   },
               ]
             : []
@@ -68,9 +71,9 @@ export default function EvaluationListCard() {
             query: {
                 orderBy: sorts,
             },
-            filter: store.currentView.queries,
+            filter: currentView.queries,
         }
-    }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
+    }, [currentView.queries, currentView.sortBy, currentView.sortDirection])
 
     const {
         recordInfo: evaluationsInfo,
@@ -188,11 +191,11 @@ export default function EvaluationListCard() {
     const doSave = React.useCallback(() => {
         setEvaluationViewConfig(projectId, {
             name: 'evaluation',
-            content: JSON.stringify(store.getRawConfigs(), null),
+            content: JSON.stringify(getRawConfigs(), null),
         }).then(() => {
             toaster.positive(t('evaluation.save.success'), {})
         })
-    }, [projectId, store, t])
+    }, [projectId, getRawConfigs, t])
 
     const onViewsChange = React.useCallback(
         (state: ITableState, prevState: ITableState) => {
@@ -204,7 +207,7 @@ export default function EvaluationListCard() {
                     name: 'evaluation',
                     content: JSON.stringify(
                         {
-                            ...store.getRawConfigs(),
+                            ...getRawConfigs(),
                             views: state.views,
                         },
                         null
@@ -212,7 +215,7 @@ export default function EvaluationListCard() {
                 })
             }
         },
-        [projectId, setViewId, store]
+        [projectId, setViewId, getRawConfigs]
     )
 
     // NOTICE: use isinit to make sure view config is loading into store
@@ -229,8 +232,8 @@ export default function EvaluationListCard() {
         }
         // eslint-disable-next-line no-console
         console.log('init store')
-        store.initStore($rawConfig)
-        store.onCurrentViewIdChange(viewId)
+        initStore($rawConfig)
+        onCurrentViewIdChange(viewId)
 
         initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render
@@ -238,8 +241,8 @@ export default function EvaluationListCard() {
     }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
 
     const $compareRows = React.useMemo(() => {
-        return records?.filter((r) => store.rowSelectedIds.includes(val(r.id))) ?? []
-    }, [store.rowSelectedIds, records])
+        return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
+    }, [rowSelectedIds, records])
 
     if (!$ready)
         return (
@@ -282,8 +285,8 @@ export default function EvaluationListCard() {
             <GridResizerVertical
                 top={() => (
                     <GridCombineTable
-                        title={t('Evaluations')}
-                        titleOfCompare={t('Compare Evaluations')}
+                        title={t('evaluation.title')}
+                        titleOfCompare={t('compare.title')}
                         store={useEvaluationStore}
                         compareable
                         columnable
