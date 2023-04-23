@@ -157,7 +157,7 @@ class QADataset(Dataset):
         try:
             item_data = self.sw_dataset[index].features
         except ValueError:
-            item_data = {"question":"","answer":""}
+            item_data = {"question": "", "answer": ""}
         tokenizer = self.tokenizer
         input_ids, labels = create_inputs_and_labels(
             tokenizer, device=device, **item_data
@@ -236,13 +236,13 @@ ds_key_selectors = {
     "webqsp": {"rawquestion": "question", "parses[0].Answers[0].EntityName": "answer"},
     "grailqav1": {"answer[0].entity_name": "answer"},
     "graph_questions_testing": {"answer[0]": "answer"},
-    "z_bench_common": {"prompt": "question" , "gpt4":"answer"},
+    "z_bench_common": {"prompt": "question", "gpt4": "answer"},
     "mkqa": {"query": "question", "answers.en[0].text": "answer"},
 }
 
 
-# @pass_context
-# @experiment.fine_tune()
+@pass_context
+@experiment.fine_tune()
 def fine_tune(
     context: Context,
 ) -> None:
@@ -256,7 +256,9 @@ def fine_tune(
             torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
         )
     sw_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
-    sw_dataset=sw_dataset.with_loader_config(field_transformer=ds_key_selectors.get(sw_dataset.name, None))
+    sw_dataset = sw_dataset.with_loader_config(
+        field_transformer=ds_key_selectors.get(sw_dataset.name, None)
+    )
     train_dataset = QADataset(
         sw_dataset,
         tokenizer=tokenizer,
