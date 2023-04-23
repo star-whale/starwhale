@@ -198,7 +198,8 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             if (!view) {
                 view = rawCurrentView
             }
-            update(view, 'onCurrentViewIdChange')
+            // view id change will not tiggered changed status, current view only saved in local,
+            set({ currentView: view }, false, 'onCurrentViewIdChange')
         },
         onCurrentViewFiltersChange: (filters) => update({ filters }),
         onCurrentViewQueriesChange: (queries) => update({ queries }),

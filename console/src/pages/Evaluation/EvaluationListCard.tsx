@@ -34,6 +34,7 @@ const selector = (s: ITableState) => ({
     initStore: s.initStore,
     getRawConfigs: s.getRawConfigs,
     onCurrentViewIdChange: s.onCurrentViewIdChange,
+    getRawIfChangedConfigs: s.getRawIfChangedConfigs,
 })
 
 export default function EvaluationListCard() {
@@ -45,7 +46,7 @@ export default function EvaluationListCard() {
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
-    const { rowSelectedIds, currentView, initStore, getRawConfigs, onCurrentViewIdChange } = useEvaluationStore(
+    const { rowSelectedIds, currentView, initStore, getRawConfigs, getRawIfChangedConfigs } = useEvaluationStore(
         selector,
         shallow
     )
@@ -191,11 +192,11 @@ export default function EvaluationListCard() {
     const doSave = React.useCallback(() => {
         setEvaluationViewConfig(projectId, {
             name: 'evaluation',
-            content: JSON.stringify(getRawConfigs(), null),
+            content: JSON.stringify(getRawIfChangedConfigs(), null),
         }).then(() => {
             toaster.positive(t('evaluation.save.success'), {})
         })
-    }, [projectId, getRawConfigs, t])
+    }, [projectId, t, getRawIfChangedConfigs])
 
     const onViewsChange = React.useCallback(
         (state: ITableState, prevState: ITableState) => {
@@ -207,7 +208,7 @@ export default function EvaluationListCard() {
                     name: 'evaluation',
                     content: JSON.stringify(
                         {
-                            ...getRawConfigs(),
+                            ...getRawIfChangedConfigs(),
                             views: state.views,
                         },
                         null
@@ -215,7 +216,7 @@ export default function EvaluationListCard() {
                 })
             }
         },
-        [projectId, setViewId, getRawConfigs]
+        [projectId, setViewId, getRawIfChangedConfigs]
     )
 
     // NOTICE: use isinit to make sure view config is loading into store
@@ -231,9 +232,11 @@ export default function EvaluationListCard() {
             // console.log(e)
         }
         // eslint-disable-next-line no-console
-        console.log('init store')
-        initStore($rawConfig)
-        onCurrentViewIdChange(viewId)
+        console.log('init store', getRawConfigs(), $rawConfig)
+        initStore({
+            ...getRawConfigs(),
+            ...$rawConfig,
+        })
 
         initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render

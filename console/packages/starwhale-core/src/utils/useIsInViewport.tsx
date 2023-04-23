@@ -7,7 +7,6 @@ export function useIsInViewport(ref: React.MutableRefObject<HTMLElement>) {
         () =>
             new IntersectionObserver(([entry]) => {
                 setIsIntersecting(entry.isIntersecting)
-                console.log(entry, ref.current)
             }),
         []
     )

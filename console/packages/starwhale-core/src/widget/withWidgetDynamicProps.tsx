@@ -5,7 +5,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
 import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 
-import { useIfChanged, useIsInViewport } from '../utils'
+import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'

@@ -46,7 +46,6 @@ export default function Headers({ width }: { width: number }) {
             const columnIndex = column.index
 
             const handleNoSelect = () => {
-                console.log('handleNoSelect', column.key, onNoSelect)
                 onNoSelect(column.key as string)
             }
 

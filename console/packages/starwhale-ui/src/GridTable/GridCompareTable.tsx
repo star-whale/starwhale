@@ -163,14 +163,7 @@ export function BaseGridCompareTable({
     getId = (r: any) => r.id,
     rowSelectedIds,
     onRowSelectedChange,
-}: {
-    title?: React.ReactNode | string
-    records?: ITableProps['records']
-    columnTypes?: ITableProps['columnTypes']
-    getId?: (r: any) => any
-    rowSelectedIds: any[]
-    onRowSelectedChange: (ids: any[]) => void
-}) {
+}: Partial<ITableProps>) {
     const { compare, onCompareUpdate } = useStore(selector, shallow)
     const [t] = useTranslation()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = compare ?? {}
