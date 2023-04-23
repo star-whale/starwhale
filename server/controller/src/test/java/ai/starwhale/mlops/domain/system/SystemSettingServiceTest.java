@@ -42,13 +42,32 @@ public class SystemSettingServiceTest {
             + "  indexUrl: \"url1\"\n"
             + "  extraIndexUrl: \"url2\"\n"
             + "  trustedHost: \"host1\"\n"
-            + "resourcePoolSetting: []";
+            + "resourcePoolSetting:\n"
+            + "- name: \"default\"\n"
+            + "  nodeSelector: {}\n"
+            + "  resources:\n"
+            + "  - name: \"cpu\"\n"
+            + "    max: null\n"
+            + "    min: null\n"
+            + "    defaults: null\n"
+            + "  - name: \"memory\"\n"
+            + "    max: null\n"
+            + "    min: null\n"
+            + "    defaults: null\n"
+            + "  tolerations: null\n"
+            + "  metadata: null";
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd1.com\"\n"
             + "  userName: \"admin\"\n"
             + "  password: \"admin123\"\n"
-            + "resourcePoolSetting: []";
+            + "resourcePoolSetting:\n"
+            + "- name: \"custom\"\n"
+            + "  nodeSelector: {}\n"
+            + "  resources:\n"
+            + "  - name: \"cpu\"\n"
+            + "  - name: \"memory\"\n"
+            + "  - name: \"nvidia.com/gpu\"";
     SystemSettingMapper systemSettingMapper;
     SystemSettingListener listener;
     private SystemSettingService systemSettingService;
@@ -83,6 +102,12 @@ public class SystemSettingServiceTest {
                 systemSettingService.getSystemSetting().getDockerSetting().getUserName());
         Assertions.assertEquals("admin123",
                 systemSettingService.getSystemSetting().getDockerSetting().getPassword());
+        // get the custom resource pool
+        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(3, systemSettingService.queryResourcePool("custom").getResources().size());
+        // get the default resource pool
+        Assertions.assertEquals(ResourcePool.defaults(), systemSettingService.queryResourcePool("not_exists"));
+        Assertions.assertEquals(2, systemSettingService.queryResourcePool("not_exists").getResources().size());
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
@@ -106,7 +131,21 @@ public class SystemSettingServiceTest {
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
-                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
+                + "  trustedHost: \"\"\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: {}\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  - name: \"memory\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  tolerations: null\n"
+                + "  metadata: null", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
@@ -134,7 +173,21 @@ public class SystemSettingServiceTest {
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
-                + "  trustedHost: \"\"", systemSettingService.querySetting().trim());
+                + "  trustedHost: \"\"\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: {}\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  - name: \"memory\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: null\n"
+                + "  tolerations: null\n"
+                + "  metadata: null", systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }

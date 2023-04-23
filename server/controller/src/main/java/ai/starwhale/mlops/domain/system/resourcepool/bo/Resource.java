@@ -36,9 +36,6 @@ public class Resource {
     }
 
     public void validate(RuntimeResource runtimeResource) {
-        if (runtimeResource == null) {
-            return;
-        }
         var req = runtimeResource.getRequest();
         if (req == null) {
             return;

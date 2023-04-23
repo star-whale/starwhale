@@ -59,9 +59,6 @@ public class ResourcePool {
     }
 
     public void validateResource(RuntimeResource resource) {
-        if (resources == null || resources.isEmpty()) {
-            return;
-        }
         var type = resource.getType();
         if (!StringUtils.hasText(type)) {
             throw new IllegalArgumentException("resource type is empty");
@@ -69,10 +66,13 @@ public class ResourcePool {
         if (!ResourceOverwriteSpec.SUPPORTED_DEVICES.contains(type)) {
             throw new IllegalArgumentException("unsupported resource type: " + type);
         }
+        if (resources == null || resources.isEmpty()) {
+            throw new IllegalArgumentException("resource pool is empty");
+        }
         var rc = resources.stream().filter(r -> r.getName().equals(type)).findFirst().orElse(null);
         // no rules for the resource
         if (rc == null) {
-            return;
+            throw new IllegalArgumentException("resource pool has no rules for resource type: " + type);
         }
         rc.validate(resource);
     }

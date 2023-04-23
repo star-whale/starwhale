@@ -50,6 +50,11 @@ class ResourcePoolTest {
         rr.setRequest(6f);
         resourcePool.validateResource(rr);
 
+        // resource type is empty
+        rr.setType("");
+        rr.setRequest(1f);
+        assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
+
         // memory more than max
         rr.setRequest(8f);
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
@@ -62,26 +67,30 @@ class ResourcePoolTest {
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
         rr.setType("gpu");
         assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
+
+        // resource pool has no rules for resource type
+        rr.setType("nvidia.com/gpu");
+        assertThrows(IllegalArgumentException.class, () -> resourcePool.validateResource(rr));
     }
 
     @Test
     void patchResources() {
-        var rr = RuntimeResource.builder().type("cpu").request(2f).build();
-        var resources = List.of(rr);
+        var cpu = RuntimeResource.builder().type("cpu").request(2f).build();
+        var cpuResources = List.of(cpu);
 
         // request set (what ever it is) should not be patched
-        var ret = resourcePool.patchResources(resources);
+        var ret = resourcePool.patchResources(cpuResources);
         Assertions.assertEquals(List.of(RuntimeResource.builder().type("cpu").request(2f).build(),
                 RuntimeResource.builder().type("memory").request(6f).build()), ret);
-        rr.setRequest(4f);
-        ret = resourcePool.patchResources(resources);
+        cpu.setRequest(4f);
+        ret = resourcePool.patchResources(cpuResources);
         Assertions.assertEquals(List.of(RuntimeResource.builder().type("cpu").request(4f).build(),
                 RuntimeResource.builder().type("memory").request(6f).build()), ret);
 
         // request not set should be patched with default value
-        rr.setRequest(null);
-        ret = resourcePool.patchResources(resources);
-        Assertions.assertNull(rr.getRequest());
+        cpu.setRequest(null);
+        ret = resourcePool.patchResources(cpuResources);
+        Assertions.assertNull(cpu.getRequest());
         Assertions.assertEquals(List.of(RuntimeResource.builder().type("cpu").request(2f).build(),
                 RuntimeResource.builder().type("memory").request(6f).build()), ret);
 
@@ -94,5 +103,11 @@ class ResourcePoolTest {
         resourcePool = ResourcePool.builder().resources(List.of(new Resource("cpu"))).build();
         ret = resourcePool.patchResources(null);
         Assertions.assertTrue(ret.isEmpty());
+
+        var gpu = RuntimeResource.builder().type("gpu").request(2f).build();
+        var gpuResources = List.of(gpu);
+        // request gpu, but pool does not have gpu, should not be patched
+        ret = resourcePool.patchResources(gpuResources);
+        Assertions.assertEquals(List.of(), ret);
     }
 }

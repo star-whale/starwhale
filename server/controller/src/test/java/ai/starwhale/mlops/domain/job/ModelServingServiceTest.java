@@ -43,6 +43,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -149,7 +150,11 @@ public class ModelServingServiceTest {
         var modelVer = ModelVersionEntity.builder().id(9L).versionName("mp-9").build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
         when(systemSettingService.queryResourcePool("default")).thenReturn(
-                ResourcePool.builder().nodeSelector(Map.of("foo", "bar")).build());
+                ResourcePool.builder()
+                    .name("default")
+                    .nodeSelector(Map.of("foo", "bar"))
+                    .resources(List.of(new Resource("cpu")))
+                    .build());
 
         var spec = "---\n"
                 + "resources:\n"

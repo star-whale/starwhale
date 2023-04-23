@@ -74,6 +74,9 @@ public class SystemSettingService implements CommandLineRunner {
             if (null == systemSetting.getDockerSetting()) {
                 systemSetting.setDockerSetting(DockerSetting.empty());
             }
+            if (CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
+                systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
+            }
             setting = Constants.yamlMapper.writeValueAsString(systemSetting);
         } catch (JsonProcessingException e) {
             log.error("invalid setting yaml {}", setting, e);
@@ -108,6 +111,9 @@ public class SystemSettingService implements CommandLineRunner {
                 if (null == systemSetting.getDockerSetting()) {
                     systemSetting.setDockerSetting(dockerSetting);
                 }
+                if (CollectionUtils.isEmpty(systemSetting.getResourcePoolSetting())) {
+                    systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
+                }
                 listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
                 log.error("corrupted system setting yaml");
@@ -117,6 +123,7 @@ public class SystemSettingService implements CommandLineRunner {
             systemSetting = new SystemSetting();
             systemSetting.setPypiSetting(runTimeProperties.getPypi());
             systemSetting.setDockerSetting(dockerSetting);
+            systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
         }
 
     }
