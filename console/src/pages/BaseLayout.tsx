@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { createUseStyles } from 'react-jss'
 import clsx from 'clsx'
+import { headerHeight } from '@/consts'
 
 const useMainStyles = createUseStyles({
     mainWrapper: {
@@ -12,7 +13,7 @@ const useMainStyles = createUseStyles({
         justifyContent: 'space-between',
         position: 'relative',
         flex: '1',
-        height: '100vh',
+        height: `calc(100vh - ${headerHeight}px)`,
     },
     mainContentWrapper: {
         overflowY: 'auto',

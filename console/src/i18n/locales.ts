@@ -245,6 +245,10 @@ const job = {
         en: 'Failed',
         zh: '失败',
     },
+    'job.status.ready': {
+        en: 'Ready',
+        zh: '已就绪',
+    },
 }
 
 const evaluation = {
@@ -835,6 +839,10 @@ const locales0 = {
     'View Results': {
         en: 'View Results',
         zh: '查看结果',
+    },
+    'View Tasks': {
+        en: 'View Tasks',
+        zh: '查看任务',
     },
     'job action done': {
         en: 'job action done',

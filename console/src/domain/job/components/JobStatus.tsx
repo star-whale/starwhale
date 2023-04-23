@@ -3,11 +3,7 @@ import { JobStatusType } from '../schemas/job'
 import useTranslation from '@/hooks/useTranslation'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
-function JobStatus({
-    status,
-}: {
-    status: Exclude<JobStatusType, 'TO_CANCEL' | 'CANCELING' | 'TO_COLLECT_RESULT' | 'COLLECTING_RESULT' | 'UNKNOWN'>
-}) {
+function JobStatus({ status }: { status: Exclude<JobStatusType, 'TO_CANCEL' | 'CANCELING' | 'UNKNOWN'> }) {
     const [t] = useTranslation()
     const [css] = themedUseStyletron()
 
@@ -55,9 +51,21 @@ function JobStatus({
                 {t('job.status.fail')}
             </p>
         ),
+        [JobStatusType.READY]: (
+            <p className={cls} style={{ color: '#00B368', backgroundColor: '#FFEDED' }}>
+                {t('job.status.ready')}
+            </p>
+        ),
     }
 
-    if (!status || !JOB_STATUS[status]) return null
+    if (!status) return null
+
+    if (!JOB_STATUS[status])
+        return (
+            <p className={cls} style={{ color: '#4D576A', backgroundColor: '#EBF1FF' }}>
+                {status}
+            </p>
+        )
 
     return JOB_STATUS[status]
 }

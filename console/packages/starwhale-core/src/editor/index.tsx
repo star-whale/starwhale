@@ -32,9 +32,10 @@ import { WidgetTreeNode } from '../types'
 //     console.log('Widget registration took: ', performance.now() - start, 'ms')
 // }
 // log.enableAll()
-registerWidgets()
 
 export function withEditorRegister(EditorApp: React.FC) {
+    registerWidgets()
+
     return function EditorLoader(props: any) {
         // const [registred, setRegistred] = React.useState(false)
         useEffect(() => {

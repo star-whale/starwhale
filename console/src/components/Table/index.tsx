@@ -67,6 +67,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             textOverflow: 'ellipsis',
                             overflow: 'hidden',
                             borderBottomColor: '#EEF1F6',
+                            verticalAlign: 'middle',
                         },
                     },
                     ...overrides,
