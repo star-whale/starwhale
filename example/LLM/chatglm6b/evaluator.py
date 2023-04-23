@@ -92,7 +92,10 @@ def create_prompt_ids(tokenizer, question, max_src_length):
 def create_inputs_and_labels(tokenizer, question, answer, device, **kwargs):
     prompt = create_prompt_ids(tokenizer, question, max_src_length)
     completion = tokenizer.encode(
-        answer if answer else "", max_length=max_dst_length, truncation=True, add_special_tokens=False
+        answer if answer else "",
+        max_length=max_dst_length,
+        truncation=True,
+        add_special_tokens=False,
     )
     eop = tokenizer.eos_token_id
     inputs = prompt + completion + [eop]
@@ -154,16 +157,14 @@ class QADataset(Dataset):
         self.tokenizer = tokenizer
 
     def __getitem__(self, index):
-        data={"question":"","answer":""}
+        data = {"question": "", "answer": ""}
         try:
             item_data = self.sw_dataset[index].features
         except ValueError:
             item_data = {}
         data.update(item_data)
         tokenizer = self.tokenizer
-        input_ids, labels = create_inputs_and_labels(
-            tokenizer, device=device, **data
-        )
+        input_ids, labels = create_inputs_and_labels(tokenizer, device=device, **data)
 
         attention_mask = get_attention_mask(tokenizer, input_ids, device)
         position_ids = get_position_ids(tokenizer, input_ids, device)
