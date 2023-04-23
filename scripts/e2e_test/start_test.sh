@@ -53,6 +53,7 @@ show_minikube_jobs_log() {
     echo "--> show pods events:"
     kubectl -n $SWNS get jobs -o wide
     kubectl -n $SWNS describe jobs
+    kubectl -n $SWNS logs --tail 10000 -l job-name --all-containers --prefix
 }
 
 start_nexus() {
@@ -214,7 +215,7 @@ check_controller_service() {
             fi
             sleep 5
     done
-    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER &
+    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER > /dev/null 2>&1 &
 }
 
 client_test() {
@@ -230,9 +231,7 @@ client_test() {
     unset https_proxy
     bash scripts/client_test/cli_test.sh all
   else
-    if ! bash scripts/client_test/cli_test.sh simple; then
-      scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER || exit 1
-    fi
+    timeout 15m bash scripts/client_test/cli_test.sh simple || exit 1
   fi
   popd
   popd

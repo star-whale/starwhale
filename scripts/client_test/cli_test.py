@@ -9,7 +9,9 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures._base import Future
 
 from cmds import DatasetExpl
+from tenacity import retry
 from cmds.job_cmd import Job
+from tenacity.stop import stop_after_attempt
 from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
@@ -256,10 +258,11 @@ class TestCli:
             )
             assert ok
             job_status_checkers.append(
-                executor.submit(self.get_remote_job_status, remote_jid)
+                self.executor.submit(self.get_remote_job_status, remote_jid)
             )
         return job_status_checkers
 
+    @retry(stop=stop_after_attempt(10))
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
             _remote_job = self.job_api.info(
@@ -270,7 +273,6 @@ class TestCli:
                 if _remote_job
                 else next(iter(STATUS_FAIL))
             )
-            print(f"checking job {job_id} status: {_job_status}")
             if _job_status in STATUS_SUCCESS.union(STATUS_FAIL):
                 logger.info(
                     f"finish run evaluation at server for job {job_id}, status is:{_job_status}."
@@ -340,11 +342,18 @@ class TestCli:
         for name, example in CPU_EXAMPLES.items():
             self.run_example(name, example["run_handler"], in_standalone=True)
 
+        failed_jobs = []
         for _js in status_checkers:
             jid, status = _js.result()
             if status not in STATUS_SUCCESS:
-                logger.error(f"job {jid} failed!")
-                exit(1)
+                failed_jobs.append((jid, status))
+
+        if failed_jobs:
+            msg = f"failed jobs: {failed_jobs}"
+            logger.error(msg)
+            raise RuntimeError(msg)
+        else:
+            logger.info("all jobs finished successfully")
 
     def test_example(self, name: str, run_handler: str) -> None:
         rt_ = RUNTIMES.get(name) or RUNTIMES.get("pytorch")
