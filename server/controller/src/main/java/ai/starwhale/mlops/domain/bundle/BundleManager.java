@@ -52,6 +52,14 @@ public class BundleManager {
     }
 
     private Long getBundleId(String bundleUrl, String projectUrl) throws BundleException {
+        return getBundle(bundleUrl, projectUrl).getId();
+    }
+
+    public BundleEntity getBundle(BundleUrl bundleUrl) throws BundleException {
+        return getBundle(bundleUrl.getBundleUrl(), bundleUrl.getProjectUrl());
+    }
+
+    private BundleEntity getBundle(String bundleUrl, String projectUrl) throws BundleException {
         BundleEntity entity;
         if (idConvertor.isId(bundleUrl)) {
             entity = bundleAccessor.findById(idConvertor.revert(bundleUrl));
@@ -62,7 +70,7 @@ public class BundleManager {
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE, String.format("Unable to find %s", bundleUrl));
         }
-        return entity.getId();
+        return entity;
     }
 
     public Long getBundleVersionId(BundleVersionUrl bundleVersionUrl) {

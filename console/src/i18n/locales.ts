@@ -78,6 +78,14 @@ const runtime = {
         en: 'View',
         zh: '查看',
     },
+    'runtime.image.build.confirm': {
+        en: 'Confirm Build Image For Runtime?',
+        zh: '确认为Runtime构建镜像？',
+    },
+    'runtime.image.build': {
+        en: 'Build Image',
+        zh: '构建镜像',
+    },
 }
 
 const model = {

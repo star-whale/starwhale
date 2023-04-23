@@ -8,7 +8,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
 import Button from '@starwhale/ui/Button'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
-import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
+import { buildImageForRuntimeVersion, revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
@@ -16,6 +16,7 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
+import { ConfirmButton } from '@starwhale/ui'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -91,6 +92,31 @@ export default function RuntimeVersionListCard() {
                                     </Button>
                                 </WithCurrentAuth>
                             ) : null}
+                            &nbsp;&nbsp;
+                            {runtime.builtImage ?? (
+                                <ConfirmButton
+                                    as='transparent'
+                                    title={t('runtime.image.build.confirm')}
+                                    onClick={async () => {
+                                        const result = await buildImageForRuntimeVersion(
+                                            projectId,
+                                            runtime.runtimeId,
+                                            runtime.id
+                                        )
+                                        if (result.success) {
+                                            toaster.positive(result.message, {
+                                                autoHideDuration: 1000,
+                                            })
+                                        } else {
+                                            toaster.negative(result.message, {
+                                                autoHideDuration: 2000,
+                                            })
+                                        }
+                                    }}
+                                >
+                                    {t('runtime.image.build')}
+                                </ConfirmButton>
+                            )}
                         </>,
                     ]
                 }) ?? []
