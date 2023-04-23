@@ -162,16 +162,20 @@ jobs:
           eval $(minikube docker-env)
           bash start_test.sh build_runtime_image
 
-      - name: List minikube images
-        run: minikube image ls --format table
-
       - name: Wait and check starwhale service
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh check_controller_service
 
       - name: Test by client side
         working-directory: ./scripts/e2e_test
-        run: bash start_test.sh client_test || (bash start_test.sh show_minikube_jobs_log ; exit 1)
+        run: bash start_test.sh client_test
+
+      - name: Post output client-side test logs
+        if: failure()
+        working-directory: ./scripts/e2e_test
+        run: |
+          minikube image ls --format table
+          bash start_test.sh show_minikube_jobs_log
 
       - name: Test by api side
         working-directory: ./scripts/e2e_test
