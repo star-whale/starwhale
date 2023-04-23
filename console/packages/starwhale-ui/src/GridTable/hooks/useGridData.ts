@@ -1,10 +1,12 @@
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import useGridCurrentView from './useGridCurrentView'
 import { useStoreApi } from './useStore'
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 
 function useGirdData() {
     const { getId, columns, columnTypes, records } = useStoreApi().getState()
+
+    const $rawColumns = React.useMemo(() => columns?.getColumns?.() ?? [], [columns])
 
     const $columns = useDatastoreColumns(columnTypes as any)
 
@@ -13,7 +15,7 @@ function useGirdData() {
         isAllRuns,
         columns: columnsComputed,
         currentView,
-    } = useGridCurrentView(columns && columns.length > 0 ? columns : $columns)
+    } = useGridCurrentView($rawColumns && $rawColumns.length > 0 ? $rawColumns : $columns)
 
     const rows = useMemo(
         () =>
