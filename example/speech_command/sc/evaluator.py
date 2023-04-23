@@ -86,7 +86,7 @@ def predict_speech(data, **kw):
         [waveform.t()], batch_first=True, padding_value=0.0
     )
     waveform = waveform.permute(0, 2, 1)
-    tensor = sample_transform(waveform.to())
+    tensor = sample_transform(waveform.to(DEVICE))
     output = get_m5_model()(tensor)
     output = output.squeeze()
     pred_value = output.argmax(-1).item()
