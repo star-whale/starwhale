@@ -1,30 +1,55 @@
-import { Types } from '../base/data-table'
-import { IStore, ITableState } from '../base/data-table/store'
+import { RecordListVo } from '@starwhale/core'
 import { RowT } from '../base/data-table/types'
+import { Types } from '../base/data-table'
+import { IStore, ITableState } from './store/store'
 
-export interface ITableProps {
+export type IGridState = ITableState & ITableProps
+
+export interface ITableProps extends IToolBarProps, IPaginationProps {
+    records?: RecordListVo['records']
+    columnTypes?: RecordListVo['columnTypes']
+    rows?: RowT[]
     batchActions?: Types.BatchActionT[]
     rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps
-    onSave?: (props: any) => void
-    onChange?: (state: ITableState, prevState: ITableState) => void
-    onColumnSave?: (props: any) => void
-    onSelectionChange?: (rows: RowT[]) => void
+    rowSelectedIds?: string[]
     filterable?: boolean
     searchable?: boolean
-    columnable?: boolean
     compareable?: boolean
     isLoading?: boolean
-    viewable?: boolean
     queryable?: boolean
     selectable?: boolean
     queryinline?: boolean
     id?: string
-    data: any[]
-    columns: any[]
+    columns?: any[]
     storeRef?: React.MutableRefObject<ITableState | undefined>
     emptyMessage?: React.ReactNode
     emptyColumnMessage?: React.ReactNode
+    title?: React.ReactNode | string
+    titleOfCompare?: React.ReactNode | string
+    children?: React.ReactNode
+    resizableColumnWidths?: boolean
+    rowHighlightIndex?: number
+    rowHeight?: number
+    headlineHeight?: number
+    onSave?: (props: any) => void
+    onChange?: (state: ITableState, prevState: ITableState) => void
+    onColumnSave?: (props: any) => void
+    onColumnsChange?: (props: any) => void
+    onViewsChange?: (state: any, nextState: any) => void
+    onCurrentViewChange?: (state: any, nextState: any) => void
+    onSelectionChange?: (rows: RowT[]) => void
+    onRowHighlightChange?: (index: number) => void
+    onIncludedRowsChange?: (rows: RowT[]) => void
+    onRowSelectedChange?: (rows: RowT[]) => void
+    getId?: (record: any) => string | undefined
+    // @FIXME type
+    onInit?: (state: Partial<IGridState>) => void
+}
+
+export interface IToolBarProps {
+    columnable?: boolean
+    viewable?: boolean
 }
 
 export interface IPaginationProps {

@@ -135,5 +135,5 @@ module.exports = {
             },
         },
     ],
-    ignorePatterns: ['.eslintrc.js', 'craco.config.js', '__generated__', 'vite.config.ts'],
+    ignorePatterns: ['.eslintrc.js', 'craco.config.js', '__generated__', 'vite.config.ts', '**/*.css', '**/*.scss'],
 }

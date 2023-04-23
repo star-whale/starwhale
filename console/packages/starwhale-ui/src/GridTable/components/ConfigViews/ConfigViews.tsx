@@ -6,39 +6,49 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'
 import _ from 'lodash'
 import { toaster } from 'baseui/toast'
-import type { ColumnT } from './types'
-import ViewList from './config-views-list'
-import ViewsEdit from './config-views-edit'
-import { ITableState, IStore } from './store'
-import Button from '../../Button'
-import { themedUseStyletron } from '../../theme/styletron'
+import ViewList from './ConfigViewList'
+import ViewsEdit from './ConfigViewEdit'
+import { ITableState } from '../../store'
 import classNames from 'classnames'
-
-type PropsT = {
-    columns: ColumnT[]
-    rows: any[]
-    store: ITableState
-    useStore: IStore
-}
+import { useStore, useStoreApi } from '../../hooks/useStore'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import Button from '../../../Button'
+import shallow from 'zustand/shallow'
 
 const ALLRUNS = 'all'
 
-function ConfigViews(props: PropsT) {
-    const [t] = useTranslation()
+const selector = (s: ITableState) => ({
+    currentView: s.currentView,
+    views: s.views,
+    viewEditing: s.viewEditing,
+    viewModelShow: s.viewModelShow,
+})
 
-    const { store } = props
+function ConfigViews() {
+    const store = useStoreApi()
+    const { currentView, views, viewModelShow, viewEditing } = useStore(selector, shallow)
+    const {
+        columns,
+        onShowViewModel,
+        onCurrentViewIdChange,
+        checkDuplicateViewName,
+        onViewUpdate,
+        setViews,
+        columnTypes,
+    } = store.getState()
+    const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
-    const [selectId, setSelectId] = React.useState(store.currentView?.id ?? '')
+    const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
 
     useEffect(() => {
-        if (store.currentView) {
-            setSelectId(store.currentView?.id ?? '')
+        if (currentView) {
+            setSelectId(currentView?.id ?? '')
         }
-    }, [store.currentView])
+    }, [currentView])
 
     const $options: any = useMemo(() => {
         return [
-            ...store.views
+            ...views
                 .filter((v) => v.isShow)
                 .map((v) => ({
                     id: v.id,
@@ -49,16 +59,16 @@ function ConfigViews(props: PropsT) {
                 label: t('All runs'),
             },
         ]
-    }, [store.views, t])
+    }, [views, t])
 
     const viewListRef = useRef(null)
     const viewRef = useRef(null)
 
     const handleEdit = useCallback(
         (view) => {
-            store.onShowViewModel(true, view)
+            onShowViewModel(true, view)
         },
-        [store]
+        [onShowViewModel]
     )
 
     return (
@@ -76,7 +86,7 @@ function ConfigViews(props: PropsT) {
                     },
                     Dropdown: {
                         props: {
-                            setIsAddViewOpen: () => store.onShowViewModel(true, null),
+                            setIsAddViewOpen: () => onShowViewModel(true, null),
                             setIsManageViewOpen: () => setIsManageViewOpen(true),
                         },
                         // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -86,13 +96,13 @@ function ConfigViews(props: PropsT) {
                 onChange={(params) => {
                     const id = params.option?.id as string
                     setSelectId(id)
-                    store.onCurrentViewIdChange(id)
+                    onCurrentViewIdChange(id)
                 }}
                 value={selectId ? [{ id: selectId }] : []}
             />
             <Modal
-                isOpen={store.viewModelShow}
-                onClose={() => store.onShowViewModel(false, null)}
+                isOpen={viewModelShow}
+                onClose={() => onShowViewModel(false, null)}
                 closeable
                 animate
                 autoFocus
@@ -114,7 +124,7 @@ function ConfigViews(props: PropsT) {
                     },
                 }}
             >
-                <ModalHeader>{!store.viewEditing?.id ? t('Add a New View') : t('Edit View')}</ModalHeader>
+                <ModalHeader>{!viewEditing?.id ? t('Add a New View') : t('Edit View')}</ModalHeader>
                 <ModalBody
                     className='inherit-height'
                     style={{
@@ -126,12 +136,7 @@ function ConfigViews(props: PropsT) {
                         paddingRight: '12px',
                     }}
                 >
-                    <ViewsEdit
-                        ref={viewRef}
-                        view={store.viewEditing}
-                        columns={props.columns ?? []}
-                        rows={props.rows ?? []}
-                    />
+                    <ViewsEdit ref={viewRef} columns={columns as any} view={viewEditing} columnTypes={columnTypes} />
                 </ModalBody>
                 <ModalFooter>
                     <Button
@@ -142,13 +147,13 @@ function ConfigViews(props: PropsT) {
 
                             if (!newView.name) return toaster.negative('name required', { autoHideDuration: 2000 })
 
-                            if (store.checkDuplicateViewName(newView.name, newView.id)) {
-                                toaster.negative(t('table.view.name.exsts'), { autoHideDuration: 2000 })
-                                return
+                            if (checkDuplicateViewName(newView.name, newView.id)) {
+                                return toaster.negative(t('table.view.name.exsts'), { autoHideDuration: 2000 })
                             }
 
-                            store.onViewUpdate(newView)
-                            store.onShowViewModel(false, null)
+                            onViewUpdate(newView)
+                            onShowViewModel(false, null)
+                            return false
                         }}
                     >
                         Save
@@ -174,13 +179,13 @@ function ConfigViews(props: PropsT) {
             >
                 <ModalHeader>{t('Manage Views')}</ModalHeader>
                 <ModalBody>
-                    <ViewList ref={viewListRef} views={store.views} onEdit={handleEdit} />
+                    <ViewList ref={viewListRef} views={views} onEdit={handleEdit} />
                 </ModalBody>
                 <ModalFooter>
                     <Button
                         type='submit'
                         onClick={() => {
-                            store.setViews?.((viewListRef.current as any).getViews())
+                            setViews?.((viewListRef.current as any).getViews())
                             setIsManageViewOpen(false)
                         }}
                     >

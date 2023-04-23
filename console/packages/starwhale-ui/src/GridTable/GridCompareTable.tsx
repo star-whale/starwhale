@@ -3,33 +3,37 @@ import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import { CustomColumn, StringColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
-import { useEvaluationCompareStore } from '@starwhale/ui/base/data-table/store'
 import { longestCommonSubstring } from '@/utils'
-import { RecordListVo } from '@starwhale/core/datastore/schemas/datastore'
 import { LabelSmall } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { DataTypes, isBoolType, isComplexType, isNumbericType, isSearchColumns, isStringType } from '@starwhale/core'
-import { GridTable, sortColumn } from '@starwhale/ui/GridTable'
+import { MemoGridTable } from '@starwhale/ui/GridTable'
+import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 import useTranslation from '@/hooks/useTranslation'
+import { StoreProvider, StoreUpdater } from './store'
+import { useStore } from './hooks/useStore'
+import { IContextGridTable, IGridState, ITableProps } from './types'
+import shallow from 'zustand/shallow'
 
 const useStyles = createUseStyles({
-    header: {},
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: {
-        fontWeight: 'bold',
+        fontWeight: '600',
         display: 'flex',
         alignItems: 'center',
+        fontSize: '14px',
+        color: 'rgba(2,16,43,0.60);',
     },
     headerBar: {
         gap: 20,
         height: '52px',
         lineHeight: '1',
-        marginTop: '35px',
         fontWeight: 'bold',
         display: 'flex',
         alignItems: 'center',
-        paddingBottom: '20px',
+        fontSize: '14px',
     },
     cellCompare: {
         position: 'absolute',
@@ -54,6 +58,9 @@ const useStyles = createUseStyles({
         color: 'rgba(2,16,43,0.60)',
         fontSize: '12px',
         marginLeft: '8px',
+    },
+    tableWrapper: {
+        flexGrow: 1,
     },
 })
 
@@ -131,7 +138,9 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
 }
 
 function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{ value: any; type: DataTypes }>) {
-    if (!comparedValue || !value) return NoneCompareCell({ value, comparedValue, renderedValue, data })
+    // too long string not compare
+    if (!comparedValue || !value || val(value).length > 100)
+        return NoneCompareCell({ value, comparedValue, renderedValue, data })
 
     if (isNumbericType(comparedValue.type) || isBoolType(comparedValue.type)) {
         return NumberCompareCell({ value, comparedValue, renderedValue, data })
@@ -142,61 +151,54 @@ function MixedCompareCell({ value, comparedValue, renderedValue, data }: CellT<{
     return NoneCompareCell({ value, comparedValue, renderedValue, data })
 }
 
-export default function EvaluationListCompare({
-    rows = [],
-    attrs,
+const selector = (s: IGridState) => ({
+    compare: s.compare,
+    onCompareUpdate: s.onCompareUpdate,
+})
+
+export function BaseGridCompareTable({
+    records = [],
+    columnTypes,
     title = '',
-}: {
-    title?: string
-    rows: any[]
-    attrs: RecordListVo['columnTypes']
-}) {
-    const store = useEvaluationCompareStore()
+    getId = (r: any) => r.id,
+    rowSelectedIds,
+    onRowSelectedChange,
+}: Partial<ITableProps>) {
+    const { compare, onCompareUpdate } = useStore(selector, shallow)
     const [t] = useTranslation()
-    const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
+    const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = compare ?? {}
     const styles = useStyles()
 
     React.useEffect(() => {
-        const row = rows.find((r) => val(r.id) === store.compare?.comparePinnedKey)
-        const pinKey = row ? store.compare?.comparePinnedKey : val(rows[0].id)
-        if (
-            !_.isEqual(
-                store.rowSelectedIds,
-                rows.map((r) => val(r.id))
-            )
-        ) {
-            store.onSelectMany(rows.map((v) => val(v.id)))
-        }
-        if (!store.isInit) {
-            store.onCompareUpdate({
-                compareShowCellChanges: true,
-                compareShowDiffOnly: false,
-            })
-        }
-        if (pinKey !== store.compare?.comparePinnedKey) {
-            store.onCompareUpdate({
-                comparePinnedKey: row ? store.compare?.comparePinnedKey : val(rows[0].id),
-            })
-        }
+        if (records.length === 0) return
+
+        const row = records.find((r) => val(getId(r)) === comparePinnedKey)
+        // const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
+
+        // console.log(row, pinKey, store.compare?.comparePinnedKey, val(records[0].id))
+
+        onCompareUpdate({
+            comparePinnedKey: row ? comparePinnedKey : val(records[0].id),
+        })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows])
+    }, [records, onCompareUpdate])
 
     const comparePinnedRow: any = useMemo(() => {
-        return rows.find((r) => val(r.id) === comparePinnedKey) ?? rows[0]
-    }, [rows, comparePinnedKey])
+        return records.find((r) => val(r.id) === comparePinnedKey) ?? records[0]
+    }, [records, comparePinnedKey])
 
     const comparePinnedRowIndex = useMemo(() => {
         return Math.max(
-            rows.findIndex((r) => val(r.id) === comparePinnedKey),
+            records.findIndex((r) => val(r.id) === comparePinnedKey),
             0
         )
-    }, [rows, comparePinnedKey])
+    }, [records, comparePinnedKey])
 
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
 
-        attrs?.forEach((attr: { name: string }) => {
-            const values = rows.map((data: any) => _.get(data, [attr.name]))
+        columnTypes?.forEach((attr: { name: string }) => {
+            const values = records.map((data: any) => _.get(data, [attr.name]))
 
             if (attr.name.endsWith('time')) {
                 rowWithAttrs.push({
@@ -227,7 +229,7 @@ export default function EvaluationListCompare({
         })
 
         return rowWithAttrs.sort(sortColumn).filter((r) => isSearchColumns(r.name))
-    }, [attrs, rows])
+    }, [columnTypes, records])
 
     const $rowsWithDiffOnly = useMemo(() => {
         if (!compareShowDiffOnly) return $rowWithAttrs
@@ -245,12 +247,14 @@ export default function EvaluationListCompare({
                 pin: 'LEFT',
                 minWidth: 200,
                 fillWidth: false,
-                mapDataToValue: (item: any) => item.title,
+                mapDataToValue: (item: any) => {
+                    return item.title
+                },
             }),
-            ...rows.map((row: any, index) =>
+            ...records.map((row: any, index) =>
                 CustomColumn({
                     minWidth: 200,
-                    key: val(row.id),
+                    key: val(getId(row)),
                     title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
                     fillWidth: false,
                     // @ts-ignore
@@ -296,17 +300,21 @@ export default function EvaluationListCompare({
                         }
                         return NoneCompareCell(newProps)
                     },
-                    mapDataToValue: ({ values, ...item }: any) => ({
-                        ...item,
-                        values,
-                        index,
-                        value: values[index],
-                    }),
+                    mapDataToValue: ({ values, ...item }: any) => {
+                        return {
+                            ...item,
+                            values,
+                            index,
+                            value: values?.[index],
+                        }
+                    },
                 })
             ),
         ],
-        [t, styles, rows, comparePinnedRow, comparePinnedRowIndex, compareShowCellChanges, $rowsWithDiffOnly]
+        [records, $rowsWithDiffOnly, comparePinnedRowIndex, compareShowCellChanges, t, comparePinnedRow, styles, getId]
     )
+
+    if (!records.length) return null
 
     return (
         <>
@@ -316,9 +324,16 @@ export default function EvaluationListCompare({
                 </LabelSmall>
                 <div className={styles.headerBar}>
                     <Checkbox
-                        checked={store.compare?.compareShowCellChanges}
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
+                                },
+                            },
+                        }}
+                        checked={compareShowCellChanges}
                         onChange={(e) => {
-                            store.onCompareUpdate({
+                            onCompareUpdate({
                                 // @ts-ignore
                                 compareShowCellChanges: e.target.checked,
                             })
@@ -327,9 +342,16 @@ export default function EvaluationListCompare({
                         {t('compare.config.show.changes')}
                     </Checkbox>
                     <Checkbox
-                        checked={store.compare?.compareShowDiffOnly}
+                        overrides={{
+                            Label: {
+                                style: {
+                                    fontSize: 'inherit',
+                                },
+                            },
+                        }}
+                        checked={compareShowDiffOnly}
                         onChange={(e) => {
-                            store.onCompareUpdate({
+                            onCompareUpdate({
                                 // @ts-ignore
                                 compareShowDiffOnly: e.target.checked,
                             })
@@ -339,7 +361,39 @@ export default function EvaluationListCompare({
                     </Checkbox>
                 </div>
             </div>
-            <GridTable store={useEvaluationCompareStore} compareable columns={$columns} data={$rowsWithDiffOnly} />
+            <div className={styles.tableWrapper}>
+                <StoreUpdater
+                    compareable
+                    rowSelectedIds={rowSelectedIds}
+                    onRowSelectedChange={onRowSelectedChange}
+                    columns={$columns}
+                    records={$rowsWithDiffOnly as any}
+                    columnTypes={columnTypes}
+                    getId={getId}
+                />
+                <MemoGridTable compareable columns={$columns} records={$rowsWithDiffOnly as any} />
+            </div>
         </>
+    )
+}
+
+export const MemoGridCompareTable = React.memo(BaseGridCompareTable)
+export default function GridCompareTable({
+    storeKey = 'table',
+    initState = {
+        compare: {
+            comparePinnedKey: '',
+            compareShowCellChanges: true,
+            compareShowDiffOnly: false,
+        },
+    },
+    store = undefined,
+    children,
+    ...rest
+}: IContextGridTable) {
+    return (
+        <StoreProvider initState={initState} storeKey={storeKey} store={store}>
+            <MemoGridCompareTable {...rest}>{children}</MemoGridCompareTable>
+        </StoreProvider>
     )
 }

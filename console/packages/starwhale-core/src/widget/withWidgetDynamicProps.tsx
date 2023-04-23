@@ -3,7 +3,8 @@ import { Subscription } from 'rxjs'
 import { getWidget } from '../store/hooks/useSelector'
 import { useEditorContext } from '../context/EditorContextProvider'
 import { WidgetRendererType, WidgetStoreState } from '../types'
-import { useQueryDatasetList } from '../datastore/hooks/useFetchDatastore'
+import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
+
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
@@ -60,8 +61,20 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
-        const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView ?? {}, [overrides])
+        const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
         const tableOptions = React.useMemo(() => {
+            if (!tableConfig)
+                return {
+                    pageNum: 1,
+                    pageSize: 1000,
+                }
+
+            if (!tableConfig)
+                return {
+                    pageNum: 1,
+                    pageSize: 1000,
+                }
+
             const sorts = tableConfig.sortBy
                 ? [
                       {
@@ -85,34 +98,26 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 filter: tableConfig.queries,
             }
         }, [tableConfig])
+
         const inViewport = useIsInViewport(myRef as any)
+        const [enableLoad, setEnableload] = React.useState(false)
         const {
             recordInfo,
             recordQuery: query,
             columnTypes,
-            records,
-        } = useQueryDatasetList(tableName, tableOptions, false)
-        const inViewLoadRef = useRef(false)
-        const tableNameRef = useRef('')
-
-        // if in viewport, refetch data
-        // if panel table changed, refetch data
+        } = useFetchDatastoreByTable(tableName, tableOptions, enableLoad)
         useEffect(() => {
-            if (!tableName || !inViewport) return
+            if (enableLoad) return
+            if (inViewport) setEnableload(true)
+        }, [inViewport, enableLoad])
 
-            if (tableNameRef.current !== tableName) {
-                recordInfo.refetch()
-                tableNameRef.current = tableName
-                return
-            }
-
-            if (inViewLoadRef.current) return
-            recordInfo.refetch()
-
-            inViewLoadRef.current = true
-            tableNameRef.current = tableName
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [tableName, inViewport])
+        // useIfChanged({
+        //     overrides,
+        //     tableConfig,
+        //     tableName,
+        //     inViewport,
+        //     enableLoad,
+        // })
 
         useEffect(() => {
             // @FIXME better use scoped eventBus
@@ -139,12 +144,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [eventBus, id, query])
 
-        if (tableName && !recordInfo.isSuccess)
-            return (
-                <div ref={myRef as any} style={{ width: '100%', height: '100%' }}>
-                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
-                </div>
-            )
+        const $data = React.useMemo(() => {
+            if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
+            return {
+                records: recordInfo.data.records,
+                columnTypes,
+            }
+        }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
 
         return (
             <div
@@ -154,24 +160,25 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                     height: '100%',
                 }}
             >
-                <WrappedWidgetRender
-                    {...props}
-                    name={overrides?.name}
-                    data={{
-                        records,
-                        columnTypes,
-                    }}
-                    optionConfig={overrides?.optionConfig}
-                    onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
-                    fieldConfig={overrides?.fieldConfig}
-                    onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
-                    onLayoutOrderChange={handleLayoutOrderChange}
-                    onLayoutChildrenChange={handleLayoutChildrenChange}
-                    onLayoutCurrentChange={handleLayoutCurrentChange}
-                    onDataReload={() => recordInfo.refetch()}
-                    onDataDownload={() => exportTable(query)}
-                    eventBus={eventBus}
-                />
+                {tableName && !recordInfo.isSuccess ? (
+                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
+                ) : (
+                    <WrappedWidgetRender
+                        {...props}
+                        name={overrides?.name}
+                        data={$data}
+                        optionConfig={overrides?.optionConfig}
+                        onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
+                        fieldConfig={overrides?.fieldConfig}
+                        onFieldChange={(config) => api.onConfigChange(['widgets', id, 'fieldConfig'], config)}
+                        onLayoutOrderChange={handleLayoutOrderChange}
+                        onLayoutChildrenChange={handleLayoutChildrenChange}
+                        onLayoutCurrentChange={handleLayoutCurrentChange}
+                        onDataReload={() => recordInfo.refetch()}
+                        onDataDownload={() => exportTable(query)}
+                        eventBus={eventBus}
+                    />
+                )}
             </div>
         )
     }

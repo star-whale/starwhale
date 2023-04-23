@@ -1,7 +1,6 @@
 import React from 'react'
 import HeaderCell from './header-cell'
 import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from '../types'
-import { IStore } from '../store'
 import { themedUseStyletron } from '../../../theme/styletron'
 import _ from 'lodash'
 
@@ -17,14 +16,14 @@ export type HeaderContextT = {
     isScrollingX: boolean
     isSelectable: boolean
     isQueryInline: boolean
-    isSelectedAll: boolean
-    isSelectedIndeterminate: boolean
+    isSelectedAll?: boolean
+    isSelectedIndeterminate?: boolean
     measuredWidths: Map<any, any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
-    onSelectMany: () => void
-    onSelectNone: () => void
+    onSelectMany?: () => void
+    onSelectNone?: () => void
     onNoSelect: (id: any) => void
     onSort: (num: number) => void
     resizableColumnWidths: boolean
@@ -38,7 +37,6 @@ export type HeaderContextT = {
     sortDirection: SortDirectionsT
     tableHeight: number
     widths: number[]
-    useStore: IStore
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -72,7 +70,6 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     sortDirection: null,
     tableHeight: 0,
     widths: [],
-    useStore: {} as IStore,
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {
@@ -82,15 +79,15 @@ type HeaderProps = {
     isSortable: boolean
     querySlot: React.ReactNode
     isSelectable: boolean
-    isQueryInline: boolean
-    isSelectedAll: boolean
-    isSelectedIndeterminate: boolean
+    isQueryInline?: boolean
+    isSelectedAll?: boolean
+    isSelectedIndeterminate?: boolean
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
     onResizeIndexChange: (columnIndex: number) => void
-    onSelectMany: () => void
-    onSelectNone: () => void
+    onSelectMany?: () => void
+    onSelectNone?: () => void
     onNoSelect: (id: any) => void
     onPin: (id: any, bool: boolean) => void
     onSort: (index: number, sortBy: SortDirectionsT) => void

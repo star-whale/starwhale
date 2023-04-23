@@ -3,22 +3,26 @@ import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { StyledLink } from 'baseui/link'
 import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
-import { ConfigT } from './types'
-import { Toggle } from '../../Select'
-import { themedUseStyletron } from '../../theme/styletron'
+import { ConfigT } from '../../../base/data-table/types'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { Toggle } from '@starwhale/ui/Select'
+import { useEventCallback } from '@starwhale/core'
 
 type ViewListPropsT = {
     views: ConfigT[]
     onEdit: (view: ConfigT, index: number) => void
 }
+
 function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
     const [t] = useTranslation()
     const [, theme] = themedUseStyletron()
+
     const [views, setViews] = React.useState(
         props.views.map((v) => ({
             ...v,
         }))
     )
+
     useDeepEffect(() => {
         setViews(
             props.views.map((v) => ({
@@ -27,44 +31,37 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
         )
     }, [props.views])
 
-    const handleDefault = React.useCallback(
-        (view, rowIndex, value) => {
-            const $views = views.map((v) => ({
-                ...v,
-                def: false,
-            }))
-            $views[rowIndex] = {
-                ...view,
-                def: value,
+    const handleDefault = useEventCallback((view, rowIndex, value) => {
+        const $views = views.map((v) => ({
+            ...v,
+            def: false,
+        }))
+        $views[rowIndex] = {
+            ...view,
+            def: value,
+        }
+        setViews([...$views])
+    })
+
+    const handleShow = useEventCallback((view, rowIndex, value) => {
+        const $views = views.map((v) => v)
+        $views[rowIndex] = {
+            ...view,
+            isShow: value,
+        }
+        setViews([...$views])
+    })
+
+    const handleDelete = useEventCallback((view, rowIndex) => {
+        const isDeleteDefault = view.def
+        views.splice(rowIndex, 1)
+        if (isDeleteDefault)
+            views[views.length - 1] = {
+                ...views[views.length - 1],
+                def: true,
             }
-            setViews([...$views])
-        },
-        [views, setViews]
-    )
-    const handleShow = React.useCallback(
-        (view, rowIndex, value) => {
-            const $views = views.map((v) => v)
-            $views[rowIndex] = {
-                ...view,
-                isShow: value,
-            }
-            setViews([...$views])
-        },
-        [views, setViews]
-    )
-    const handleDelete = React.useCallback(
-        (view, rowIndex) => {
-            const isDeleteDefault = view.def
-            views.splice(rowIndex, 1)
-            if (isDeleteDefault)
-                views[views.length - 1] = {
-                    ...views[views.length - 1],
-                    def: true,
-                }
-            setViews([...views])
-        },
-        [views, setViews]
-    )
+        setViews([...views])
+    })
 
     React.useImperativeHandle(
         ref,

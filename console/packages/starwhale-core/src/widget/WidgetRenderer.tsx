@@ -25,6 +25,14 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
 
     const { widget } = useWidget(type)
     const [error] = useState<string | undefined>()
+    const optionsWithDefaults = React.useMemo(
+        () => _.merge({}, widget?.defaults?.optionConfig ?? {}, optionConfig),
+        [widget?.defaults, optionConfig]
+    )
+    const fieldsWithDefaults = React.useMemo(
+        () => _.merge({}, widget?.defaults?.fieldConfig ?? {}, fieldConfig),
+        [widget?.defaults, fieldConfig]
+    )
 
     if (error) {
         return <div>Failed to load widget: {error}</div>
@@ -37,14 +45,11 @@ export function WidgetRenderer<P extends object = any, F extends object = any>(p
     if (!widget.renderer) {
         return <div>Seems like the widget you are trying to load does not have a renderer component.</div>
     }
+    const WidgetComponent = widget.renderer
 
     // if (!data) {
     //     return <div>No datastore data</div>
     // }
-
-    const WidgetComponent = widget.renderer
-    const optionsWithDefaults = _.merge({}, widget.defaults?.optionConfig ?? {}, optionConfig)
-    const fieldsWithDefaults = _.merge({}, widget.defaults?.fieldConfig ?? {}, fieldConfig)
 
     // console.log('WidgetComponent', optionsWithDefaults)
 

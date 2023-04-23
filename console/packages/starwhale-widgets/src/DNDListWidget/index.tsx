@@ -131,11 +131,16 @@ function DNDListWidget(props: WidgetRendererProps) {
     return (
         <div
             ref={ref}
+            data-type='dndlist-widget'
             style={{
                 width: '100%',
                 height: isDragging ? `${dragContentRect.parent?.height}px` : '100%',
                 display: 'flex',
                 flexDirection: 'column',
+                flex: 1,
+                minWidth: 0,
+                overflow: 'auto',
+                paddingBottom: '30px',
             }}
         >
             <div style={{ flexBasis: isDragging ? dragContentRect.top : 0 }} />

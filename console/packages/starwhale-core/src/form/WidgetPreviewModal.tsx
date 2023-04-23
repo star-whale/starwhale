@@ -1,9 +1,9 @@
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import React, { useEffect } from 'react'
-import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import { StoreType } from '../context/EditorContextProvider'
+import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -18,7 +18,8 @@ export default function WidgetPreviewModal({
     setIsShow?: any
     id?: string
 }) {
-    const config = store(getWidget(editWidgetId)) ?? {}
+    const widgetIdSelector = React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId])
+    const config = store(widgetIdSelector)
     const [formData, setFormData] = React.useState<Record<string, any>>({})
 
     const type = formData?.chartType
@@ -34,12 +35,19 @@ export default function WidgetPreviewModal({
         }
     }, [formData?.tableName])
 
-    const info = useQueryDatastore(query)
+    const { recordInfo, columnTypes } = useFetchDatastoreByTable(query.tableName, undefined, true)
+    const $data = React.useMemo(() => {
+        if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
+        return {
+            records: recordInfo.data.records,
+            columnTypes,
+        }
+    }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
 
     useEffect(() => {
-        setFormData(config.fieldConfig?.data ?? {})
+        if (config) setFormData(config.fieldConfig?.data ?? {})
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editWidgetId])
+    }, [config])
 
     return (
         <Modal
@@ -91,7 +99,7 @@ export default function WidgetPreviewModal({
                             {/* @ts-ignore */}
                             <WidgetRenderer
                                 type={type}
-                                data={info.data}
+                                data={$data}
                                 fieldConfig={{
                                     data: formData,
                                 }}

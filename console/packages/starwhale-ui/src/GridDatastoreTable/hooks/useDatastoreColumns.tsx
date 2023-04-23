@@ -33,15 +33,18 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
 
         columnTypes
             ?.filter((column) => !!column)
-            .filter((column) => isSearchColumns(column.name))
+            .filter((column) => {
+                return isSearchColumns(column.name)
+            })
             .sort(sortColumn)
             .forEach((column) => {
-                return columnsWithAttrs.push(
+                columnsWithAttrs.push(
                     CustomColumn({
                         columnType: column,
                         key: column.name,
                         title: column.name,
                         renderCell: RenderMixedCell as any,
+                        fillWidth: false,
                         mapDataToValue: (data: any): string => _.get(data, [column.name, 'value']),
                     })
                 )

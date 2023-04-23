@@ -1,20 +1,23 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef } from 'react'
 import { Skeleton } from 'baseui/skeleton'
 import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { IContextGridTable, ITableProps } from './types'
-import { StoreProvider, useTableContext } from './StoreContext'
-import Pagination from './Pagination'
+import { IContextGridTable, IGridState, ITableProps } from './types'
 import { BusyPlaceholder } from '../BusyLoaderWrapper'
-import { StatefulDataTable } from '../base/data-table'
-import { stateSelector } from '../base/data-table/store'
+import { useStore, useStoreApi } from './hooks/useStore'
+import { StoreProvider } from './store/StoreProvider'
+import StoreUpdater, { useDirectStoreUpdater } from './store/StoreUpdater'
+import useGrid from './hooks/useGrid'
+import { DataTable } from '../base/data-table/data-custom-table'
+import useOnInitHandler from './hooks/useOnInitHandler'
 
 const useStyles = createUseStyles({
     table: {
         'width': '100%',
         'height': '100%',
+        'position': 'relative',
         '& .baseui-table-cell-content': {},
         '& .column-cell .string-cell': {
             overflow: 'hidden',
@@ -50,102 +53,109 @@ const useStyles = createUseStyles({
     },
 })
 
+const loadingMessage = () => (
+    <Skeleton
+        overrides={{
+            Root: {
+                style: {
+                    paddingTop: '10px',
+                },
+            },
+        }}
+        rows={10}
+        width='100%'
+        animation
+    />
+)
+
+const selector = (state: IGridState) => ({
+    onIncludedRowsChange: state.onIncludedRowsChange,
+    onRowHighlightChange: state.onRowHighlightChange,
+    rowSelectedIds: state.rowSelectedIds,
+})
+
 function GridTable({
     isLoading,
-    columns = [],
-    data = [],
-    paginationProps,
+    columns,
+    rows,
     rowActions,
-    searchable = false,
-    filterable = false,
-    queryable = false,
-    columnable = false,
     compareable = false,
     selectable = false,
-    viewable = false,
     queryinline = false,
-    onSave,
-    onChange = () => {},
     emptyMessage,
     emptyColumnMessage,
-    storeRef,
+    resizableColumnWidths = true,
+    rowHighlightIndex = -1,
+    rowHeight = 44,
+    headlineHeight = 0,
+    onInit,
+    children,
 }: ITableProps) {
+    useOnInitHandler(onInit)
+
     const wrapperRef = useRef<HTMLDivElement>(null)
-    const api = useTableContext()
-    const store = api()
-    const $rows = useMemo(
-        () =>
-            data.map((raw, index) => {
-                return {
-                    id: raw.id ?? index.toFixed(),
-                    data: raw,
-                }
-            }),
-        [data]
-    )
-
-    const $filters = useMemo(() => {
-        return store.currentView?.filters
-    }, [store])
-
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
+    const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
+    const store = useStoreApi()
+    // @FIXME
+    useDirectStoreUpdater('columns', columns, store.setState)
+    useDirectStoreUpdater('rows', rows, store.setState)
 
-    React.useEffect(() => {
-        const unsub = api.subscribe(stateSelector, onChange)
-        return unsub
-    }, [api, onChange])
-
-    React.useEffect(() => {
-        if (!storeRef) return
-        // eslint-disable-next-line no-param-reassign
-        storeRef.current = store
-    }, [storeRef, store])
+    const {
+        selectedRowIds,
+        columns: $columns,
+        rows: $rows,
+        sortIndex,
+        sortDirection,
+        textQuery,
+        onSelectMany,
+        onSelectNone,
+        onSelectOne,
+        isRowSelected,
+        isSelectedAll,
+        isSelectedIndeterminate,
+    } = useGrid()
 
     return (
-        <>
-            <div
-                className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
-                ref={wrapperRef}
-            >
-                <StatefulDataTable
-                    store={store}
-                    useStore={api}
-                    resizableColumnWidths
-                    initialFilters={$filters}
-                    searchable={searchable}
-                    queryinline={queryinline}
-                    filterable={filterable}
-                    queryable={queryable}
-                    columnable={columnable}
-                    compareable={compareable}
+        <div
+            className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
+            ref={wrapperRef}
+        >
+            {children}
+            <div data-type='table-wrapper' style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
+                <DataTable
+                    columns={$columns}
                     selectable={selectable}
-                    viewable={viewable}
-                    loading={!!isLoading}
-                    rowActions={rowActions}
-                    columns={columns}
-                    rows={$rows}
-                    onSave={onSave}
-                    loadingMessage={() => (
-                        <Skeleton
-                            overrides={{
-                                Root: {
-                                    style: {
-                                        paddingTop: '10px',
-                                    },
-                                },
-                            }}
-                            rows={10}
-                            width='100%'
-                            animation
-                        />
-                    )}
+                    compareable={compareable}
+                    queryinline={queryinline}
+                    rawColumns={$columns}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
-                    emptyColumnMessage={emptyColumnMessage ?? <BusyPlaceholder type='notfound' />}
+                    // filters={$filtersEnabled}
+                    loading={isLoading}
+                    loadingMessage={loadingMessage}
+                    onIncludedRowsChange={onIncludedRowsChange}
+                    onRowHighlightChange={onRowHighlightChange}
+                    isRowSelected={isRowSelected}
+                    isSelectedAll={isSelectedAll}
+                    isSelectedIndeterminate={isSelectedIndeterminate}
+                    onSelectMany={onSelectMany}
+                    onSelectNone={onSelectNone}
+                    onSelectOne={onSelectOne}
+                    resizableColumnWidths={resizableColumnWidths}
+                    rowHighlightIndex={rowHighlightIndex}
+                    rows={$rows}
+                    rowActions={rowActions}
+                    rowHeight={rowHeight}
+                    selectedRowIds={selectedRowIds as Set<string | number>}
+                    sortDirection={sortDirection}
+                    sortIndex={sortIndex}
+                    textQuery={textQuery}
+                    // controlRef={controlRef}
                 />
+                {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
-            <Pagination {...paginationProps} />
-        </>
+        </div>
     )
 }
 
@@ -155,11 +165,13 @@ export default function ContextGridTable({
     storeKey = 'table',
     initState = {},
     store = undefined,
+    children,
     ...rest
 }: IContextGridTable) {
     return (
         <StoreProvider initState={initState} storeKey={storeKey} store={store}>
-            <MemoGridTable {...rest} />
+            <StoreUpdater {...rest} />
+            <MemoGridTable {...rest}>{children}</MemoGridTable>
         </StoreProvider>
     )
 }

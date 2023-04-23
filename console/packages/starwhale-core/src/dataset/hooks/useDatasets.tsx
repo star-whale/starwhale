@@ -6,7 +6,8 @@ import { getSummary } from '../utils'
 function val(r: any) {
     if (r === undefined) return ''
     if (typeof r === 'object' && 'value' in r) {
-        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+        // dataset use raw value should not be json encode
+        return r.value
     }
 
     return r

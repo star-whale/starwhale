@@ -1,25 +1,19 @@
 import React from 'react'
-import Search from '@starwhale/ui/Search'
-import { ColumnT, QueryT } from './types'
-import { ColumnSchemaDesc } from '@starwhale/core/datastore'
-import { currentQueriesSelector, IStore } from './store'
 import { StatefulPopover } from 'baseui/popover'
-import IconFont from '../../IconFont'
 import Button from '@starwhale/ui/Button'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
+import IconFont from '@starwhale/ui/IconFont'
+import { QueryT } from '@starwhale/ui/base/data-table/types'
+import { ColumnSchemaDesc } from '@starwhale/core'
 
 type PropsT = {
-    columns: ColumnT[]
+    columnTypes?: ColumnSchemaDesc[]
     value: QueryT[]
     onChange: (args: QueryT[]) => void
 }
 
 function ConfigQuery(props: PropsT) {
-    const columnTypes = React.useMemo(() => {
-        return props?.columns.filter((column) => column.columnType).map((column) => column.columnType) ?? []
-    }, [props.columns])
-
-    return <DatastoreMixedTypeSearch fields={columnTypes as any} value={props.value} onChange={props.onChange} />
+    return <DatastoreMixedTypeSearch fields={props.columnTypes as any} value={props.value} onChange={props.onChange} />
 }
 
 function ConfigQueryInline(props: PropsT & { width: number }) {
@@ -72,32 +66,5 @@ function ConfigQueryInline(props: PropsT & { width: number }) {
     )
 }
 
-function useConfigQuery(store: IStore, { columns, queryable }: { columns: ColumnT[]; queryable: boolean | undefined }) {
-    const api = store()
-    const value = store(currentQueriesSelector)
-
-    const onChange = React.useCallback((items) => api.onCurrentViewQueriesChange(items), [api])
-
-    const renderConfigQuery = React.useCallback(() => {
-        if (!queryable) return null
-        return <ConfigQuery columns={columns} value={value} onChange={onChange} />
-    }, [queryable, columns, value, onChange])
-
-    const renderConfigQueryInline = React.useCallback(
-        ({ width }: { width: number }) => {
-            return <ConfigQueryInline columns={columns} value={value} onChange={onChange} width={width} />
-        },
-        [columns, value, onChange]
-    )
-
-    return {
-        renderConfigQuery,
-        renderConfigQueryInline,
-        value,
-        columns,
-        onChange,
-    }
-}
-
+export { ConfigQueryInline, ConfigQuery }
 export default ConfigQuery
-export { useConfigQuery }

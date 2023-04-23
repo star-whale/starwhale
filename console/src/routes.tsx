@@ -51,6 +51,7 @@ import TrashLayout from '@/pages/Trash/TrashLayout'
 import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
 import { getUnauthedRoutes } from './routesUtils'
+import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -310,6 +311,11 @@ const Routes = () => {
                                             exact
                                             path='/projects/:projectId/evaluations'
                                             component={ProjectEvaluations}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/results'
+                                            component={EvaluationListResult}
                                         />
                                         <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                         <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />

@@ -8,25 +8,36 @@ import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
-import { useDrawer } from '@/hooks/useDrawer'
 import _ from 'lodash'
-import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@starwhale/ui/base/data-table/store'
+import { ITableState, useEvaluationStore } from '@starwhale/ui/GridTable/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
-import { useQueryDatasetList } from '@starwhale/core/datastore/hooks/useFetchDatastore'
+import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { tableNameOfSummary } from '@starwhale/core/datastore/utils'
 import { TextLink } from '@/components/Link'
 import { WithCurrentAuth } from '@/api/WithAuth'
-import { GridTable, useDatastoreColumns } from '@starwhale/ui/GridTable'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import { toaster } from 'baseui/toast'
-import EvaluationListCompare from './EvaluationListCompare'
-import { BusyPlaceholder, Button, GridResizer } from '@starwhale/ui'
+import { BusyPlaceholder, Button } from '@starwhale/ui'
 import { useLocalStorage } from 'react-use'
 import { useProject } from '@project/hooks/useProject'
 import JobStatus from '@/domain/job/components/JobStatus'
+import { GridResizerVertical } from '@starwhale/ui/AutoResizer/GridResizerVertical'
+import EvaluationListResult from './EvaluationListResult'
+import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
+import { val } from '@starwhale/ui/GridTable/utils'
+import shallow from 'zustand/shallow'
+
+const selector = (s: ITableState) => ({
+    rowSelectedIds: s.rowSelectedIds,
+    currentView: s.currentView,
+    initStore: s.initStore,
+    getRawConfigs: s.getRawConfigs,
+    onCurrentViewIdChange: s.onCurrentViewIdChange,
+    getRawIfChangedConfigs: s.getRawIfChangedConfigs,
+})
 
 export default function EvaluationListCard() {
-    const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
     const { projectId: projectFromUri } = useParams<{ projectId: string }>()
@@ -35,14 +46,17 @@ export default function EvaluationListCard() {
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
-    const store = useEvaluationStore()
+    const { rowSelectedIds, currentView, initStore, getRawConfigs, getRawIfChangedConfigs } = useEvaluationStore(
+        selector,
+        shallow
+    )
 
     const options = React.useMemo(() => {
-        const sorts = store.currentView?.sortBy
+        const sorts = currentView?.sortBy
             ? [
                   {
-                      columnName: store.currentView?.sortBy,
-                      descending: store.currentView?.sortDirection === 'DESC',
+                      columnName: currentView?.sortBy,
+                      descending: currentView?.sortDirection === 'DESC',
                   },
               ]
             : []
@@ -58,11 +72,15 @@ export default function EvaluationListCard() {
             query: {
                 orderBy: sorts,
             },
-            filter: store.currentView.queries,
+            filter: currentView.queries,
         }
-    }, [store.currentView.queries, store.currentView.sortBy, store.currentView.sortDirection])
+    }, [currentView.queries, currentView.sortBy, currentView.sortDirection])
 
-    const { recordInfo: evaluationsInfo, columnTypes, records } = useQueryDatasetList(summaryTableName, options, true)
+    const {
+        recordInfo: evaluationsInfo,
+        columnTypes,
+        records,
+    } = useFetchDatastoreByTable(summaryTableName, options, true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
@@ -152,10 +170,6 @@ export default function EvaluationListCard() {
         })
     }, [t, $columns, projectId])
 
-    const $compareRows = React.useMemo(() => {
-        return records.filter((r) => store.rowSelectedIds.includes(r.id)) ?? []
-    }, [store.rowSelectedIds, records])
-
     const $ready = React.useMemo(() => {
         return evaluationViewConfig.isSuccess
     }, [evaluationViewConfig.isSuccess])
@@ -175,36 +189,35 @@ export default function EvaluationListCard() {
         }
     }, [changed])
 
-    const doSave = async () => {
-        await setEvaluationViewConfig(projectId, {
+    const doSave = React.useCallback(() => {
+        setEvaluationViewConfig(projectId, {
             name: 'evaluation',
-            content: JSON.stringify(store.getRawConfigs(), null),
+            content: JSON.stringify(getRawIfChangedConfigs(), null),
+        }).then(() => {
+            toaster.positive(t('evaluation.save.success'), {})
         })
-        toaster.positive(t('evaluation.save.success'), {})
-        return {}
-    }
+    }, [projectId, t, getRawIfChangedConfigs])
 
-    const doChange = async (state: ITableState, prevState: ITableState) => {
-        if (!$ready) return
-        setChanged(state.currentView.updated ?? false)
-        setViewId(state.currentView.id)
-
-        if (!_.isEqual(state.views, prevState.views)) {
-            // auto save views
-            // eslint-disable-next-line no-console
-            console.log('saved views', state.views, prevState.views)
-            await setEvaluationViewConfig(projectId, {
-                name: 'evaluation',
-                content: JSON.stringify(
-                    {
-                        ...store.getRawConfigs(),
-                        views: state.views,
-                    },
-                    null
-                ),
-            })
-        }
-    }
+    const onViewsChange = React.useCallback(
+        (state: ITableState, prevState: ITableState) => {
+            // console.log('onViewsChange', state)
+            setChanged(state.currentView.updated ?? false)
+            setViewId(state.currentView.id)
+            if (!_.isEqual(state.views, prevState.views)) {
+                setEvaluationViewConfig(projectId, {
+                    name: 'evaluation',
+                    content: JSON.stringify(
+                        {
+                            ...getRawIfChangedConfigs(),
+                            views: state.views,
+                        },
+                        null
+                    ),
+                })
+            }
+        },
+        [projectId, setViewId, getRawIfChangedConfigs]
+    )
 
     // NOTICE: use isinit to make sure view config is loading into store
     const initRef = React.useRef(false)
@@ -219,29 +232,26 @@ export default function EvaluationListCard() {
             // console.log(e)
         }
         // eslint-disable-next-line no-console
-        console.log('init store')
-        store.initStore($rawConfig)
-        store.onCurrentViewIdChange(viewId)
+        console.log('init store', getRawConfigs(), $rawConfig)
+        initStore({
+            ...getRawConfigs(),
+            ...$rawConfig,
+        })
 
         initRef.current = true
         // store should not be used as a deps, it's will trigger cycle render
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
 
-    React.useEffect(() => {
-        const unsub = useEvaluationCompareStore.subscribe(
-            (state: ITableState) => state.rowSelectedIds,
-            (state: any[]) => store.onSelectMany(state)
-        )
-        return unsub
-    }, [store])
+    const $compareRows = React.useMemo(() => {
+        return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
+    }, [rowSelectedIds, records])
 
     if (!$ready)
         return (
             <Card
                 title={t('Evaluations')}
                 style={{
-                    marginRight: expanded ? expandedWidth : '0',
                     flexShrink: 1,
                     marginBottom: 0,
                     width: '100%',
@@ -256,16 +266,17 @@ export default function EvaluationListCard() {
                 <BusyPlaceholder />
             </Card>
         )
-
     return (
         <Card
             title={t('Evaluations')}
             style={{
-                marginRight: expanded ? expandedWidth : '0',
                 flexShrink: 1,
                 marginBottom: 0,
                 width: '100%',
                 flex: 1,
+            }}
+            bodyStyle={{
+                flexDirection: 'column',
             }}
             extra={
                 <WithCurrentAuth id='evaluation.create'>
@@ -274,40 +285,27 @@ export default function EvaluationListCard() {
             }
         >
             <Prompt when={changed} message='If you leave this page, your changes will be discarded.' />
-            <GridResizer
-                left={() => {
-                    return (
-                        <GridTable
-                            store={useEvaluationStore}
-                            columnable
-                            viewable
-                            queryable
-                            selectable
-                            isLoading={evaluationsInfo.isLoading || evaluationViewConfig.isLoading}
-                            columns={$columnsWithSpecColumns}
-                            data={records}
-                            onSave={doSave as any}
-                            onChange={doChange}
-                            emptyColumnMessage={
-                                <BusyPlaceholder type='notfound'>
-                                    Create a new evaluation or Config to add columns
-                                </BusyPlaceholder>
-                            }
-                        />
-                    )
-                }}
+            <GridResizerVertical
+                top={() => (
+                    <GridCombineTable
+                        title={t('evaluation.title')}
+                        titleOfCompare={t('compare.title')}
+                        store={useEvaluationStore}
+                        compareable
+                        columnable
+                        viewable
+                        queryable
+                        selectable
+                        records={records}
+                        columnTypes={columnTypes}
+                        columns={$columnsWithSpecColumns}
+                        onSave={doSave}
+                        onViewsChange={onViewsChange}
+                    />
+                )}
                 isResizeable={$compareRows.length > 0}
-                right={() => {
-                    return (
-                        <Card style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}>
-                            <EvaluationListCompare
-                                title={t('Compare Evaluations')}
-                                rows={$compareRows}
-                                attrs={columnTypes}
-                            />
-                        </Card>
-                    )
-                }}
+                initGridMode={2}
+                bottom={() => <EvaluationListResult rows={$compareRows} />}
             />
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>

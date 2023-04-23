@@ -1,10 +1,16 @@
 import _ from 'lodash'
 import React from 'react'
-import { currentViewSelector, IStore } from '../store'
-import { ColumnT, ConfigT } from '../types'
+import { ColumnT, ConfigT } from '../../base/data-table/types'
+import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
+import { ITableState } from '../store'
 
-function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
-    const view = store(currentViewSelector)
+const selector = (state: ITableState) => ({
+    currentView: state.currentView,
+    views: state.views,
+})
+
+function useGridCurrentView(columns: ColumnT[]) {
+    const { currentView: view } = useStore(selector)
 
     const columnIds = React.useMemo(() => {
         return columns.map((c) => c.key)
@@ -38,7 +44,7 @@ function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
             ...view,
             ids: $ids,
         }
-    }, [view])
+    }, [view, $ids])
 
     const isAllRuns = React.useMemo(() => {
         return view.id === 'all'
@@ -52,4 +58,6 @@ function useConfigView(store: IStore, { columns }: { columns: ColumnT[] }) {
     }
 }
 
-export default useConfigView
+export { useGridCurrentView }
+
+export default useGridCurrentView

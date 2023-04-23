@@ -1,10 +1,6 @@
 import type * as Types from './types'
 
 export { DataTable } from './data-custom-table'
-export { StatefulContainer } from './stateful-container'
-export { StatefulDataTable } from './stateful-data-table'
-export { StatefulContainer as Unstable_StatefulContainer } from './stateful-container'
-export { StatefulDataTable as Unstable_StatefulDataTable } from './stateful-data-table'
 export { default as AnchorColumn } from './column-anchor'
 export { default as BooleanColumn } from './column-boolean'
 export { default as CategoricalColumn } from './column-categorical'

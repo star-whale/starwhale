@@ -1,10 +1,8 @@
 import React, { useRef, useEffect, useImperativeHandle, useState } from 'react'
-import { SHAPE, SIZE } from 'baseui/button'
 import { useStyletron } from 'baseui'
 import { Drawer } from 'baseui/drawer'
-import { useDrawer } from '@/hooks/useDrawer'
 import { expandBorderRadius } from '@/utils'
-import type { ColumnT, ConfigT } from './types'
+import type { ColumnT, ConfigT } from '../../../base/data-table/types'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Transfer } from '@starwhale/ui/Transfer'
@@ -56,35 +54,21 @@ const useStyles = createUseStyles({
 type PropsT = {
     isInline?: boolean
     view: ConfigT
-    columns: ColumnT[]
-    onApply?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
+    columns?: ColumnT[]
+    onColumnsChange?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
 }
 
 type T = string
-const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
+const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
     const styles = useStyles()
     const [, theme] = useStyletron()
     const [t] = useTranslation()
     const [isOpen, setIsOpen] = React.useState(false)
-    const { expandedWidth, expanded, setExpanded } = useDrawer()
-
-    useEffect(() => {
-        if (props.isInline) {
-            return
-        }
-        if (isOpen && !expanded) {
-            setExpanded(true)
-        } else if (!isOpen && expanded) {
-            setExpanded(false)
-        }
-    }, [props.isInline, isOpen, expanded, setExpanded, expandedWidth])
-
     const ref = useRef(null)
     const { columns } = props
 
     const Wrapper = React.useCallback(
-        // eslint-disable-next-line react/no-unused-prop-types
-        ({ children }: { children: React.ReactNode }) => {
+        ({ children }) => {
             return props.isInline ? (
                 <div className={`${styles.transfer} inherit-height`}>{children}</div>
             ) : (
@@ -93,6 +77,9 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                     isOpen={isOpen}
                     autoFocus
                     onClose={() => setIsOpen(false)}
+                    mountNode={ref.current as any}
+                    showBackdrop={false}
+                    animate={false}
                     overrides={{
                         Root: {
                             style: {
@@ -126,7 +113,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                 </Drawer>
             )
         },
-        [props.isInline, isOpen]
+        [props.isInline, isOpen, styles]
     )
 
     const [value, setValue] = useState<any>(props.view)
@@ -160,9 +147,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                             },
                         },
                     }}
-                >
-                    {t('table.column.manage')}
-                </Button>
+                />
             )}
             <Wrapper>
                 <div className={cn('header', props.isInline ? 'header--inline' : 'header--drawer')}>
@@ -176,7 +161,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                         value={value}
                         onChange={(v) => {
                             setValue(v)
-                            props.onApply?.(v.selectedIds, v.pinnedIds, v.ids)
+                            props.onColumnsChange?.(v.selectedIds, v.pinnedIds, v.ids)
                         }}
                     />
                 </div>
@@ -185,8 +170,11 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
     )
 })
 
-ConfigManageColumns.defaultProps = {
+ConfigColumns.defaultProps = {
     isInline: false,
-    onApply: () => {},
+    columns: [],
+    onColumnsChange: () => {},
 }
-export default ConfigManageColumns
+export { ConfigColumns }
+
+export default ConfigColumns

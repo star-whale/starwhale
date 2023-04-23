@@ -1,15 +1,15 @@
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import React, { useEffect } from 'react'
 import Button from '@starwhale/ui/Button'
-import { useQueryDatastore } from '../datastore/hooks/useFetchDatastore'
 import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import WidgetEditForm from './WidgetForm'
 import { StoreType, useEditorContext } from '../context/EditorContextProvider'
-import { useDatastoreTablesByPrefix } from '../datastore/hooks/useDatastoreTables'
+import { useFetchDatastoreAllTables } from '../datastore/hooks/useFetchDatastoreAllTables'
 import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
+import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -32,7 +32,8 @@ export default function WidgetFormModal({
     // @FIXME use event bus handle global state
     const { dynamicVars } = useEditorContext()
     const { prefix } = dynamicVars
-    const config = store(getWidget(editWidgetId)) ?? {}
+    const widgetIdSelector = React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId])
+    const config = store(widgetIdSelector)
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
 
@@ -53,17 +54,24 @@ export default function WidgetFormModal({
         }
     }, [formData?.tableName])
 
-    const { tables } = useDatastoreTablesByPrefix(prefix)
-    const info = useQueryDatastore(query)
+    const { tables } = useFetchDatastoreAllTables(prefix)
+    const { recordInfo, columnTypes } = useFetchDatastoreByTable(query.tableName, undefined, !!formData?.tableName)
+    const $data = React.useMemo(() => {
+        if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
+        return {
+            records: recordInfo.data.records,
+            columnTypes,
+        }
+    }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
 
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
     }
     form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(info.data?.columnTypes)
+    form.addDataTableColumnsField(recordInfo.data?.columnTypes)
 
     useEffect(() => {
-        setFormData(config.fieldConfig?.data ?? {})
+        if (config) setFormData(config.fieldConfig?.data ?? {})
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editWidgetId])
 
@@ -86,7 +94,7 @@ export default function WidgetFormModal({
                 },
             }}
         >
-            <ModalHeader>{t('panel.chart.add')}</ModalHeader>
+            <ModalHeader>{t('panel.chart.edit')}</ModalHeader>
             <ModalBody style={{ display: 'flex', gap: '30px', flex: 1, overflow: 'auto' }}>
                 <div
                     style={{
@@ -119,7 +127,7 @@ export default function WidgetFormModal({
                             {/* @ts-ignore */}
                             <WidgetRenderer
                                 type={type}
-                                data={info.data}
+                                data={$data}
                                 fieldConfig={{
                                     data: formData,
                                 }}

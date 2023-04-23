@@ -67,7 +67,7 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
     }
 }
 
-export function useDatastore(data?: RecordListVo) {
+export function useDatastoreMixedSchema(data?: RecordListVo) {
     const { records, columnTypes, columnHints } = data ?? {}
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
@@ -82,7 +82,6 @@ export function useDatastore(data?: RecordListVo) {
                 schema = {
                     ...schema,
                     name,
-                    mixed: true,
                 }
                 cached.current.put(key, schema)
             }
@@ -122,4 +121,4 @@ export function useDatastore(data?: RecordListVo) {
     }
 }
 
-export default useDatastore
+export default useDatastoreMixedSchema

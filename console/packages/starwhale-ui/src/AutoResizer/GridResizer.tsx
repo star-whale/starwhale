@@ -1,7 +1,7 @@
 import IconFont from '../IconFont'
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
-import { useStyletron } from 'styletron-react'
+import { themedUseStyletron } from '../theme/styletron'
 
 const gridDefaultLayout = [
     // RIGHT:
@@ -91,6 +91,7 @@ export function GridResizer({
     )
     return (
         <div
+            data-type='grid-resizer'
             ref={gridRef}
             style={{
                 display: 'grid',
@@ -102,6 +103,7 @@ export function GridResizer({
             }}
         >
             <div
+                data-type='grid-resizer-left'
                 ref={leftRef}
                 style={{
                     display: 'flex',
@@ -121,7 +123,20 @@ export function GridResizer({
                     onModeChange={handleResize}
                 />
             )}
-            {isResizeable && right()}
+            {isResizeable && (
+                <div
+                    data-type='grid-resizer-right'
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        width: '100%',
+                        flex: 1,
+                    }}
+                >
+                    {right()}
+                </div>
+            )}
         </div>
     )
 }
@@ -134,7 +149,7 @@ export type ResizeBarPropsT = {
 }
 
 function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef }: ResizeBarPropsT) {
-    const [css] = useStyletron()
+    const [css] = themedUseStyletron()
 
     return (
         <div

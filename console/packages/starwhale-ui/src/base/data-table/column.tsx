@@ -12,7 +12,7 @@ import IconFont from '../../IconFont'
 import { themedUseStyletron } from '../../theme/styletron'
 
 const MIN_WIDTH = 100
-const MAX_WIDTH = 300
+const MAX_WIDTH = 500
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     const RenderCell = React.forwardRef<
