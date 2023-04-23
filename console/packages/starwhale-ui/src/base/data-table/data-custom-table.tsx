@@ -50,6 +50,9 @@ export function DataTable({
     loadingMessage,
     onIncludedRowsChange,
     onRowHighlightChange,
+    isRowSelected,
+    isSelectedAll,
+    isSelectedIndeterminate,
     onSelectMany,
     onSelectNone,
     onSelectOne,
@@ -65,16 +68,11 @@ export function DataTable({
     sortIndex,
     sortDirection,
     textQuery = '',
+    getId,
     controlRef,
-    useStore,
 }: DataTablePropsT) {
     const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
-
-    // TODO remove this
-    const selectedRowIds = React.useMemo(() => {
-        return new Set(Array.from($selectedRowIds))
-    }, [$selectedRowIds])
 
     const rowHeightAtIndex = React.useCallback(
         // eslint-disable-next-line
@@ -332,47 +330,6 @@ export function DataTable({
     ])
     const isSelectable = selectable
     const isQueryInline = queryinline
-
-    const isSelectedAll = React.useMemo(() => {
-        if (!selectedRowIds) {
-            return false
-        }
-        return !!rows.length && selectedRowIds.size >= rows.length
-    }, [selectedRowIds, rows.length])
-    const isSelectedIndeterminate = React.useMemo(() => {
-        if (!selectedRowIds) {
-            return false
-        }
-        return !!selectedRowIds.size && selectedRowIds.size < rows.length
-    }, [selectedRowIds, rows.length])
-    const isRowSelected = React.useCallback(
-        (id) => {
-            if (selectedRowIds) {
-                return selectedRowIds.has(id)
-            }
-            return false
-        },
-        [selectedRowIds]
-    )
-    const handleSelectMany = React.useCallback(() => {
-        if (onSelectMany) {
-            onSelectMany(rows.map((v) => v.id))
-        }
-    }, [rows, onSelectMany])
-    const handleSelectNone = React.useCallback(() => {
-        if (onSelectNone) {
-            onSelectNone()
-        }
-    }, [onSelectNone])
-    const handleSelectOne = React.useCallback(
-        (row) => {
-            if (onSelectOne) {
-                onSelectOne(row.id)
-            }
-        },
-        [onSelectOne]
-    )
-
     const handleSort = React.useCallback(
         (columnIndex) => {
             if (onSort) {
@@ -434,11 +391,12 @@ export function DataTable({
             isQueryInline,
             isSelectable,
             onRowMouseEnter: handleRowMouseEnter,
-            onSelectOne: handleSelectOne,
+            onSelectOne,
             columns,
             rows,
             textQuery,
             normalizedWidths,
+            getId,
         }
     }, [
         handleRowMouseEnter,
@@ -449,9 +407,10 @@ export function DataTable({
         isQueryInline,
         rows,
         columns,
-        handleSelectOne,
+        onSelectOne,
         textQuery,
         normalizedWidths,
+        getId,
     ])
 
     // console.log(rowHighlightIndex, resizeDeltas)
@@ -494,28 +453,6 @@ export function DataTable({
         )
     }, [columns, itemIndexs])
 
-    // useIfChanged({
-    //     setGridRef,
-    //     InnerElement,
-    //     columnWidth,
-    //     length: columns.length,
-    //     itemData,
-    //     handleScroll,
-    //     rowLength: rows.length,
-    //     rowHeightAtIndex,
-    //     handleRowMouseEnter,
-    //     // columnHighlightIndex,
-    //     // rowHighlightIndex,
-    //     isRowSelected,
-    //     isSelectable,
-    //     isQueryInline,
-    //     rows,
-    //     columns,
-    //     handleSelectOne,
-    //     textQuery,
-    //     normalizedWidths,
-    // })
-
     return (
         <>
             <MeasureColumnWidths
@@ -531,7 +468,6 @@ export function DataTable({
                 {({ height, width }) => (
                     <HeaderContext.Provider
                         value={{
-                            useStore,
                             columns,
                             columnHighlightIndex,
                             // @ts-ignore
@@ -549,9 +485,8 @@ export function DataTable({
                             onMouseEnter: handleColumnHeaderMouseEnter,
                             onMouseLeave: handleColumnHeaderMouseLeave,
                             onResize: handleColumnResize,
-                            onSelectMany: handleSelectMany,
-                            onSelectNone: handleSelectNone,
-                            onNoSelect: handleSelectNone,
+                            onSelectMany,
+                            onSelectNone,
                             onSort: handleSort,
                             resizableColumnWidths,
                             compareable,
@@ -563,7 +498,8 @@ export function DataTable({
                             sortIndex: typeof sortIndex === 'number' ? sortIndex : -1,
                             tableHeight: height,
                             widths: normalizedWidths,
-                            onSelectOne: handleSelectOne,
+                            onSelectOne,
+                            getId,
                         }}
                     >
                         <Headers width={width} />

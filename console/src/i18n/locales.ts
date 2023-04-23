@@ -78,6 +78,14 @@ const runtime = {
         en: 'View',
         zh: '查看',
     },
+    'runtime.image.build.confirm': {
+        en: 'Confirm Build Image For Runtime?',
+        zh: '确认为Runtime构建镜像？',
+    },
+    'runtime.image.build': {
+        en: 'Build Image',
+        zh: '构建镜像',
+    },
 }
 
 const model = {
@@ -252,9 +260,17 @@ const job = {
 }
 
 const evaluation = {
+    'evaluation.title': {
+        en: 'Evaluation',
+        zh: '评测',
+    },
     'evaluation.save.success': {
         en: 'Save Evaluation Success',
         zh: '保存成功',
+    },
+    'compare.title': {
+        en: 'Compare',
+        zh: '评测对比',
     },
     'compare.column.metrics': {
         en: 'Metrics',
@@ -267,6 +283,18 @@ const evaluation = {
     'compare.config.show.diff': {
         en: 'Rows with diff only',
         zh: '只显示不同内容',
+    },
+    'compare.show.details': {
+        en: 'Show Details',
+        zh: '显示详情',
+    },
+    'evaluation.detail.title': {
+        en: 'Evaluation Detail',
+        zh: '评测详情',
+    },
+    'evaluation.detail.compare': {
+        en: 'Compare',
+        zh: '评测对比',
     },
 }
 
@@ -1167,7 +1195,7 @@ const locales0 = {
     },
     'All runs': {
         en: 'All runs',
-        zh: '所有运行',
+        zh: '展示所有',
     },
     'Edit': {
         en: 'Edit',

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import typing as t
@@ -5,21 +7,23 @@ from pathlib import Path
 
 from rich import box
 from rich.text import Text
+from rich.tree import Tree
 from rich.panel import Panel
 from rich.table import Table
+from rich.pretty import Pretty
+from rich.syntax import Syntax
 from rich.console import Group
 
 from starwhale.utils import (
     docker,
     console,
     process,
-    load_yaml,
     pretty_bytes,
     in_production,
+    gen_uniq_version,
 )
 from starwhale.consts import (
     FileFlag,
-    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
@@ -34,15 +38,18 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
-from .model import Model, StandaloneModel
+from .model import Model, CloudModel, ModelConfig, ModelInfoFilter, StandaloneModel
 
 
 class ModelTermView(BaseTermView):
-    def __init__(self, model_uri: str) -> None:
+    def __init__(self, model_uri: str | URI) -> None:
         super().__init__()
 
-        self.raw_uri = model_uri
-        self.uri = URI(model_uri, expected_type=URIType.MODEL)
+        if isinstance(model_uri, URI):
+            self.uri = model_uri
+        else:
+            self.uri = URI(model_uri, expected_type=URIType.MODEL)
+
         self.model = Model.get_model(self.uri)
 
     @BaseTermView._simple_action_print
@@ -53,9 +60,86 @@ class ModelTermView(BaseTermView):
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         return self.model.recover(force)
 
-    @BaseTermView._header
-    def info(self, fullname: bool = False) -> None:
-        self._print_info(self.model.info(), fullname=fullname)
+    def info(self, output_filter: ModelInfoFilter = ModelInfoFilter.basic) -> None:
+        info = self.model.info()
+        if not info:
+            console.print(f":bird: model info not found: [bold red]{self.uri}[/]")
+            return
+
+        def _render_handlers() -> Table:
+            table = Table(
+                title="Model Package Runnable Handlers",
+                box=box.MARKDOWN,
+                show_lines=True,
+                expand=True,
+            )
+            table.add_column("Handler Index", style="cyan")
+            table.add_column("Handler Name", style="cyan")
+            table.add_column("Steps", style="green")
+
+            handlers = sorted(info.get("handlers", {}).items())
+            for index, (name, steps) in enumerate(handlers):
+                steps_content = []
+                for step in steps:
+                    steps_content.append(f":palm_tree: {step['name']}")
+                    steps_content.append(f"\t - replicas: {step['replicas']}")
+                    steps_content.append(f"\t - needs: {' '.join(step['needs'])}")
+                table.add_row(str(index), name, "\n".join(steps_content))
+            return table
+
+        def _render_files_tree() -> Tree:
+            files = info.get("files", [])
+            unfold_files: t.Dict[str, t.Any] = {}
+            for f in files:
+                path = Path(f["path"])
+                parent = unfold_files
+                for p in path.parent.parts:
+                    parent.setdefault(p, {})
+                    parent = parent[p]
+
+                parent[path.name] = f"{pretty_bytes(f['size'])}"
+
+            root = Tree("Model Resource Files Tree", style="bold bright_blue")
+
+            def _walk(tree: Tree, files: t.Dict) -> None:
+                for k, v in files.items():
+                    if isinstance(v, dict):
+                        subtree = tree.add(f":file_folder: {k}")
+                        _walk(subtree, v)
+                    else:
+                        tree.add(f":page_facing_up: {k} ({v})")
+
+            _walk(root, unfold_files)
+            return root
+
+        basic_content = Pretty(info.get("basic", {}), expand_all=True)
+        model_yaml_content = Syntax(
+            info.get("model_yaml", ""), "yaml", theme="ansi_dark"
+        )
+        manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
+        handlers_content = _render_handlers()
+        files_content = _render_files_tree()
+
+        # TODO: support files tree
+        if output_filter == ModelInfoFilter.basic:
+            console.print(basic_content)
+        elif output_filter == ModelInfoFilter.model_yaml:
+            console.print(model_yaml_content)
+        elif output_filter == ModelInfoFilter.manifest:
+            console.print(manifest_content)
+        elif output_filter == ModelInfoFilter.handlers:
+            console.print(handlers_content)
+        elif output_filter == ModelInfoFilter.files:
+            console.print(files_content)
+        else:
+            console.rule("[green bold] Model Basic Info")
+            console.print(basic_content)
+            console.rule("[green bold] model.yaml")
+            console.print(model_yaml_content)
+            console.rule("[green bold] _manifest.yaml")
+            console.print(manifest_content)
+            console.rule("[green bold] Model Handlers")
+            console.print(handlers_content)
 
     @BaseTermView._only_standalone
     def diff(self, compare_uri: URI, show_details: bool) -> None:
@@ -120,107 +204,97 @@ class ModelTermView(BaseTermView):
         )
 
     @classmethod
-    @BaseTermView._only_standalone
-    def eval(
+    def run_in_server(
         cls,
-        project: str,
-        target: str,
+        project_uri: URI,
+        model_uri: str,
         dataset_uris: t.List[str],
-        version: str = "",
-        yaml_name: str = DefaultYAMLName.MODEL,
-        step: str = "",
-        task_index: t.Optional[int] = None,
-        task_num: int = 0,
-        runtime_uri: str = "",
-        use_docker: bool = False,
-        gencmd: bool = False,
-        image: str = "",
-    ) -> None:
-        if use_docker:
-            if not runtime_uri and not image:
-                raise FieldTypeOrValueError(
-                    "runtime_uri and image both are none when use_docker"
-                )
-            if runtime_uri:
-                runtime = StandaloneRuntime(
-                    URI(runtime_uri, expected_type=URIType.RUNTIME)
-                )
-                image = runtime.store.get_docker_base_image()
-            mnt_paths = (
-                [os.path.abspath(target)]
-                if in_production() or (os.path.exists(target) and os.path.isdir(target))
-                else []
-            )
-            env_vars = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
-            cmd = docker.gen_swcli_docker_cmd(
-                image,
-                env_vars=env_vars,
-                mnt_paths=mnt_paths,
-            )
-            console.rule(":elephant: docker cmd", align="left")
-            console.print(f"{cmd}\n")
-            if gencmd:
-                return
-            process.check_call(cmd, shell=True)
-            return
-
-        kw = dict(
-            project=project,
-            version=version,
-            workdir=cls._get_workdir(target),
+        runtime_uri: str,
+        resource_pool: str,
+        run_handler: str | int,
+    ) -> t.Tuple[bool, str]:
+        ok, version_or_reason = CloudModel.run(
+            project_uri=project_uri,
+            model_uri=model_uri,
             dataset_uris=dataset_uris,
-            step_name=step,
-            task_index=task_index,
-            task_num=task_num,
-            model_yaml_name=yaml_name,
+            runtime_uri=runtime_uri,
+            resource_pool=resource_pool,
+            run_handler=run_handler,
         )
-        if not in_production() and runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=StandaloneModel.eval_user_handler,
-                kwargs=kw,
-            ).run()
+        if ok:
+            console.print(":clap: success to create job")
+            console.print(
+                f":bird: visit web: {project_uri.instance}/projects/{project_uri.project}/evaluations/{version_or_reason}"
+            )
+            console.print(
+                f":monkey: run command: [bold green]swcli job info {project_uri.full_uri}/job/{version_or_reason} [/]"
+            )
         else:
-            StandaloneModel.eval_user_handler(**kw)  # type: ignore
+            console.print(f":bird: run failed: [bold red]{version_or_reason}[/]")
+
+        return ok, version_or_reason
 
     @classmethod
     @BaseTermView._only_standalone
-    def fine_tune(
+    def run_in_host(
         cls,
-        project: str,
-        target: str,
-        dataset_uris: t.List[str],
-        yaml_name: str = DefaultYAMLName.MODEL,
+        model_src_dir: Path | str,
+        model_config: ModelConfig,
+        project: str = "",
+        version: str = "",
+        run_handler: str = "",
+        dataset_uris: t.Optional[t.List[str]] = None,
         runtime_uri: str = "",
-        model_uri: str = "",
-    ) -> None:
-        if target and model_uri:
-            console.print("workdir and model can not both set together")
-            sys.exit(1)
-        if not target and not model_uri:
-            console.print("workdir or model needs to be set")
-            sys.exit(1)
-
-        if target:
-            workdir = cls._get_workdir(target)
-        else:
-            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
-            workdir = _m.store.src_dir
-
+        scheduler_run_args: t.Optional[t.Dict] = None,
+    ) -> str:
+        version = version or gen_uniq_version()
         kw = dict(
-            project=project,
-            workdir=workdir,
+            model_src_dir=model_src_dir,
+            model_config=model_config,
+            project=URI(project, expected_type=URIType.PROJECT).project,
+            version=version,
+            run_handler=run_handler,
             dataset_uris=dataset_uris,
-            model_yaml_name=yaml_name,
+            scheduler_run_args=scheduler_run_args,
         )
-        if not in_production() and runtime_uri:
+
+        if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
-                target=StandaloneModel.fine_tune,
+                target=StandaloneModel.run,
                 kwargs=kw,
             ).run()
         else:
-            StandaloneModel.fine_tune(**kw)  # type: ignore
+            StandaloneModel.run(**kw)  # type: ignore
+
+        return version
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def run_in_container(
+        cls,
+        model_src_dir: Path,
+        runtime_uri: str = "",
+        docker_image: str = "",
+    ) -> None:
+        # TODO: support to get job version for in container
+        if not runtime_uri and not docker_image:
+            raise FieldTypeOrValueError("runtime_uri and docker_image both are none")
+
+        if runtime_uri:
+            runtime = StandaloneRuntime(URI(runtime_uri, expected_type=URIType.RUNTIME))
+            docker_image = runtime.store.get_docker_base_image()
+
+        mounts = [str(model_src_dir.resolve().absolute())]
+        envs = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
+        cmd = docker.gen_swcli_docker_cmd(
+            docker_image,
+            envs=envs,
+            mounts=mounts,
+        )
+        console.rule(":elephant: docker cmd", align="left")
+        console.print(f"{cmd}\n")
+        process.check_call(cmd, shell=True)
 
     @classmethod
     def _get_workdir(cls, target: str) -> Path:
@@ -256,16 +330,15 @@ class ModelTermView(BaseTermView):
         cls,
         workdir: t.Union[str, Path],
         project: str,
-        yaml_path: t.Union[str, Path],
+        model_config: ModelConfig,
         runtime_uri: str = "",
     ) -> URI:
         workdir = Path(workdir)
-        _config = load_yaml(yaml_path)
         _model_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=_config.get("name"), typ=URIType.MODEL
+            project=project, bundle_name=model_config.name, typ=URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
-        kwargs = {"yaml_path": yaml_path}
+        kwargs = {"model_config": model_config}
         if runtime_uri:
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
@@ -384,8 +457,20 @@ class ModelTermViewJson(ModelTermView):
         )
         cls.pretty_json(_models)
 
-    def info(self, fullname: bool = False) -> None:
-        self.pretty_json(self.get_info_data(self.model.info(), fullname))
+    def info(self, output_filter: ModelInfoFilter = ModelInfoFilter.basic) -> None:
+        info = self.model.info()
+        if output_filter == ModelInfoFilter.basic:
+            info = {"basic": info.get("basic", {})}
+        elif output_filter == ModelInfoFilter.model_yaml:
+            info = {"model_yaml": info.get("model_yaml", "")}
+        elif output_filter == ModelInfoFilter.manifest:
+            info = {"manifest": info.get("manifest", {})}
+        elif output_filter == ModelInfoFilter.handlers:
+            info = {"handlers": info.get("handlers", {})}
+        elif output_filter == ModelInfoFilter.files:
+            info = {"files": info.get("files", [])}
+
+        self.pretty_json(info)
 
     def history(self, fullname: bool = False) -> None:
         fullname = fullname or self.uri.instance_type == InstanceType.CLOUD

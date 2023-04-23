@@ -2,8 +2,12 @@ import json
 import typing as t
 from pathlib import Path
 
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
 from starwhale.utils.load import import_object
 from starwhale.core.model.view import ModelTermView
+from starwhale.core.model.model import ModelConfig
+from starwhale.core.model.store import ModelStorage
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.dataset.view import DatasetTermView
 from starwhale.core.runtime.view import RuntimeTermView
@@ -140,8 +144,50 @@ class Model(BaseArtifact):
         model_yaml: str = "",
         runtime_uri: str = "",
     ) -> t.Any:
-        yaml_path = model_yaml if model_yaml else Path(workdir) / "model.yaml"
-        return ModelTermView.build(workdir, project, yaml_path, runtime_uri)
+        yaml_path = Path(model_yaml) if model_yaml else Path(workdir) / "model.yaml"
+        config = ModelConfig.create_by_yaml(yaml_path)
+        return ModelTermView.build(
+            workdir=workdir,
+            project=project,
+            model_config=config,
+            runtime_uri=runtime_uri,
+        )
+
+    def run_in_host(
+        self,
+        model_uri: str,
+        dataset_uris: t.List[str],
+        runtime_uri: str,
+        run_handler: str,
+    ) -> str:
+        uri = URI(model_uri, URIType.MODEL)
+        model_src_dir = ModelStorage(uri).src_dir
+        model_config = ModelConfig.create_by_yaml(model_src_dir / "model.yaml")
+
+        return ModelTermView.run_in_host(  # type: ignore
+            model_src_dir=model_src_dir,
+            model_config=model_config,
+            dataset_uris=dataset_uris,
+            runtime_uri=runtime_uri,
+            run_handler=run_handler,
+        )
+
+    def run_in_server(
+        self,
+        model_uri: str,
+        dataset_uris: t.List[str],
+        runtime_uri: str,
+        project: str,
+        run_handler: str,
+    ) -> t.Tuple[bool, str]:
+        return ModelTermView.run_in_server(
+            project_uri=URI(project, expected_type=URIType.PROJECT),
+            model_uri=model_uri,
+            dataset_uris=dataset_uris,
+            runtime_uri=runtime_uri,
+            run_handler=run_handler,
+            resource_pool="default",
+        )
 
     def build(
         self,

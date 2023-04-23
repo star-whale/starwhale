@@ -1,22 +1,30 @@
-evaluation:
-  - cls_name: ''
+src.evaluator:SimplePipeline.cmp:
+  - cls_name: SimplePipeline
     concurrency: 1
-    job_name: evaluation
-    needs: [ ]
+    extra_args: []
+    extra_kwargs: {}
+    func_name: ppl
+    module_name: src.evaluator
+    name: src.evaluator:SimplePipeline.ppl
+    needs: []
+    replicas: 2
     resources:
-    - type: nvidia.com/gpu
-      request: 1
-      limit: 1
-    name: ppl
-    task_num: 2
-  - cls_name: ''
+      - type: nvidia.com/gpu
+        request: 1
+        limit: 1
+    show_name: ppl
+  - cls_name: SimplePipeline
     concurrency: 1
-    job_name: evaluation
+    extra_args: []
+    extra_kwargs: {}
+    func_name: cmp
+    module_name: src.evaluator
+    name: src.evaluator:SimplePipeline.cmp
     needs:
-    - ppl
+    - src.evaluator:SimplePipeline.ppl
+    replicas: 1
     resources:
-    - type: nvidia.com/gpu
-      request: 1
-      limit: 1
-    name: cmp
-    task_num: 1
+      - type: nvidia.com/gpu
+        request: 1
+        limit: 1
+    show_name: cmp

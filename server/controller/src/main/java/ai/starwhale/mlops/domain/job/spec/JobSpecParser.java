@@ -33,9 +33,7 @@ import org.springframework.util.CollectionUtils;
 @Component
 public class JobSpecParser {
 
-    public static final String DEFAULT_JOB_NAME = "default";
-
-    public List<StepSpec> parseStepFromYaml(String yamlContent) throws JsonProcessingException {
+    public List<StepSpec> parseAndFlattenStepFromYaml(String yamlContent) throws JsonProcessingException {
         try {
             return Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
             });
@@ -49,6 +47,8 @@ public class JobSpecParser {
         Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
         });
         List<StepSpec> specList = map.get(jobName);
+        // update job name for each step spec
+        specList.forEach(stepSpec -> stepSpec.setJobName(jobName));
         if (CollectionUtils.isEmpty(specList)) {
             log.error("step specification is empty for {}", yamlContent);
             throw new SwValidationException(ValidSubject.MODEL);
@@ -58,6 +58,8 @@ public class JobSpecParser {
 
     public List<StepSpec> parseAllStepFromYaml(String yamlContent) throws JsonProcessingException {
         Map<String, List<StepSpec>> map = Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {});
+        // update job name for each step spec
+        map.forEach((k, v) -> v.forEach(stepSpec -> stepSpec.setJobName(k)));
         List<StepSpec> specList = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(specList)) {
             log.error("step specification is empty for {}", yamlContent);

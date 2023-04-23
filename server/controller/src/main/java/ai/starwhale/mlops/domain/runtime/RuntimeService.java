@@ -552,7 +552,8 @@ public class RuntimeService {
     }
 
     public BuildImageResult buildImage(String projectUrl, String runtimeUrl, String versionUrl) {
-        RuntimeVersionEntity runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
+        var runtime = bundleManager.getBundle(BundleUrl.create(projectUrl, runtimeUrl));
+        var runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
                 BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
         if (null == runtimeVersion) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Not found.");
@@ -560,7 +561,8 @@ public class RuntimeService {
 
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
-            log.debug("runtime:{}-{}'s image:{} has already existed.", runtimeUrl, versionUrl, builtImage);
+            log.debug("runtime:{}-{}'s image:{} has already existed.",
+                    runtime.getName(), runtimeVersion.getName(), builtImage);
             return BuildImageResult.builder()
                     .success(false)
                     .message(String.format("Runtime image [%s] has already existed", builtImage))
@@ -573,23 +575,23 @@ public class RuntimeService {
         }
 
         try {
-            log.debug("start to build image for runtime:{}-{} on k8s.", runtimeUrl, versionUrl);
+            log.debug("start to build image for runtime:{}-{} on k8s.", runtime.getName(), runtimeVersion.getName());
             var project = projectService.findProject(projectUrl);
             var user = userService.currentUserDetail();
             var image = new DockerImage(
                     dockerSetting.getRegistry(),
-                    String.format("%s:%s", runtimeUrl, runtimeVersion.getVersionName()));
+                    String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()));
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
-            // record image to labels
-            k8sJobTemplate.updateAnnotations(job, Map.of("image", image.toString()));
+            // record image to annotations
+            k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("image", image.toString()));
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             List<V1EnvVar> envVars = List.of(
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
-                        String.format("%s/version/%s", runtimeUrl, runtimeVersion.getVersionName())),
+                        String.format("%s/version/%s", runtime.getName(), runtimeVersion.getVersionName())),
                     new V1EnvVar().name("SW_PYPI_INDEX_URL").value(
                         runTimeProperties.getPypi().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
@@ -618,7 +620,7 @@ public class RuntimeService {
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null);
+            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null, null, null);
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);
@@ -628,7 +630,8 @@ public class RuntimeService {
                     .build();
         } catch (ApiException k8sE) {
             if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
-                log.debug("runtime:{}-{}'s image is building, please wait a moment.", runtimeUrl, versionUrl);
+                log.debug("runtime:{}-{}'s image is building, please wait a moment.",
+                        runtime.getName(), runtimeVersion.getName());
                 return BuildImageResult.builder()
                         .success(false)
                         .message("Building image, please wait a moment.")

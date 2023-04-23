@@ -20,9 +20,9 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, InstanceType
 from starwhale.consts.env import SWEnv
-from starwhale.utils.dict import flatten
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.dict_util import flatten
 from starwhale.core.dataset.type import BaseArtifact
 
 from .base import (

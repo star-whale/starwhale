@@ -21,6 +21,7 @@ import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
@@ -134,21 +135,30 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             }
 
             JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-            var jobType = task.getStep().getJob().getType();
+
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(buildCoreContainerEnvs(task));
-                containerOverwriteSpec.setCmds(List.of(jobType.name().toLowerCase()));
+                containerOverwriteSpec.setCmds(List.of("run"));
                 containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
                 containerOverwriteSpec.setImage(jobRuntime.getImage());
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            Map<String, String> nodeSelector = null != task.getStep().getJob().getResourcePool()
-                    ? task.getStep().getJob().getResourcePool().getNodeSelector() : Map.of();
+            var pool = task.getStep().getJob().getResourcePool();
+            Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
+            List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
 
-            k8sJobTemplate.renderJob(k8sJob, task.getId().toString(),
-                    this.restartPolicy, this.backoffLimit, containerSpecMap, nodeSelector);
+            k8sJobTemplate.renderJob(
+                    k8sJob,
+                    task.getId().toString(),
+                    this.restartPolicy,
+                    this.backoffLimit,
+                    containerSpecMap,
+                    nodeSelector,
+                    tolerations,
+                    pool != null ? pool.getMetadata() : null
+            );
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             try {
                 k8sClient.deleteJob(task.getId().toString());
@@ -204,9 +214,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_RUNTIME_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,
                         runtime.getName(), runtime.getVersion()));
+        coreContainerEnvs.put("SW_RUN_HANDLER", task.getTaskRequest().getJobName());
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
+        coreContainerEnvs.put("SW_JOB_VERSION", swJob.getUuid());
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));

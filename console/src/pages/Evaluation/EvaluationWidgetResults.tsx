@@ -107,7 +107,16 @@ function Summary({ fetch }: any) {
                     }
                     key='summary'
                 >
-                    {!record && <BusyPlaceholder type='notfound' style={{ height: '148px', minHeight: 'auto' }} />}
+                    {!record && (
+                        <BusyPlaceholder
+                            type='notfound'
+                            style={{
+                                height: expanded ? '0px' : '148px',
+                                minHeight: expanded ? '0px' : '148px',
+                                overflow: 'hidden',
+                            }}
+                        />
+                    )}
                     <div
                         style={{
                             lineHeight: '32px',

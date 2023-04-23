@@ -1,7 +1,7 @@
 import copy
 from unittest import TestCase
 
-from starwhale.core.job.dag import DAG
+from starwhale.base.scheduler.dag import DAG
 
 
 class DagTest(TestCase):

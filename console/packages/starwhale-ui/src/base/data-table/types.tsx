@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
-import { IStore, ITableState } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -24,8 +23,6 @@ export enum FilterTypes {
     // date = 'date',
 }
 
-// These options are available on all column kinds. Most have additional
-// unique options depending on the data visualization requirements.
 export type SharedColumnOptionsT<ValueT> = {
     cellBlockAlign?: 'start' | 'center' | 'end'
     fillWidth?: boolean
@@ -62,9 +59,7 @@ export type RenderFilterT<ValueT, FilterParamsT> = React.Component<{
     setFilter: (args: FilterParamsT) => void
 }>
 
-// flowlint-next-line unclear-type:off
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
-    // @ts-ignore
     kind: ColumnsT
     sortable: boolean
     renderCell: RenderCellT<ValueT>
@@ -76,7 +71,6 @@ export type ColumnT<ValueT = any, FilterParamsT = any> = {
 
 export type RowT = {
     id: number | string
-    // flowlint-next-line unclear-type:off
     data: any
 }
 
@@ -146,6 +140,7 @@ export type StatefulDataTablePropsT = {
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
     onSelectionChange?: (rows: RowT[]) => any
     onSave?: (view: ConfigT) => void
+    getId?: (row: RowT) => string | number
     resizableColumnWidths?: boolean
     rows: RowT[]
     rowActions?: RowActionT[] | ((row: RowT) => RowActionT[])
@@ -159,8 +154,6 @@ export type StatefulDataTablePropsT = {
     selectable?: boolean
     queryinline?: boolean
     controlRef?: ControlRefT
-    useStore: IStore
-    store?: ITableState
 }
 
 export type DataTablePropsT = {
@@ -171,7 +164,7 @@ export type DataTablePropsT = {
     loadingMessage?: React.ReactNode
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
-    onSelectMany?: (rows: RowT[]) => void
+    onSelectMany?: () => void
     onSelectNone?: () => void
     onSelectOne?: (row: RowT) => void
     onSort?: (columnIndex: number) => void
@@ -181,6 +174,10 @@ export type DataTablePropsT = {
     sortIndex?: number
     sortDirection?: SortDirectionsT
     textQuery?: string
+    getId?: (row: RowT) => string | number
+    isRowSelected?: (row: RowT) => boolean
+    isSelectedAll?: boolean
+    isSelectedIndeterminate?: boolean
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

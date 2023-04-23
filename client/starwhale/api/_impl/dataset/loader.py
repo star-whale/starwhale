@@ -14,6 +14,7 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
+from starwhale.utils.dict_util import transform_dict
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
@@ -149,6 +150,7 @@ class DataLoader:
         cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
         num_workers: int = 2,
         dataset_scan_revision: str = "",
+        field_transformer: t.Optional[t.Dict] = None,
     ):
         self.dataset_uri = dataset_uri
         self.logger = logger or _logger
@@ -172,6 +174,7 @@ class DataLoader:
                 f"num_workers({num_workers}) must be a positive int number"
             )
         self._num_workers = num_workers
+        self._field_transformer = field_transformer
 
         if cache_size <= 0:
             raise ValueError(f"cache_size({cache_size}) must be a positive int number")
@@ -255,6 +258,9 @@ class DataLoader:
             artifact.owner = self.dataset_uri
             if not skip_fetch_data:
                 artifact.fetch_data()
+        if self._field_transformer is not None:
+            _features = transform_dict(row.features, self._field_transformer)
+            row.features.update(_features)
         return DataRow(
             index=row.id, features=row.features, shadow_dataset=shadow_dataset
         )
@@ -347,6 +353,7 @@ def get_data_loader(
     cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
     num_workers: int = 2,
     dataset_scan_revision: str = "",
+    field_transformer: t.Optional[t.Dict] = None,
 ) -> DataLoader:
 
     if session_consumption:
@@ -369,4 +376,5 @@ def get_data_loader(
         cache_size=cache_size,
         num_workers=num_workers,
         dataset_scan_revision=dataset_scan_revision,
+        field_transformer=field_transformer,
     )

@@ -80,7 +80,6 @@ jobs:
           python-version: ${{matrix.python-version}}
           architecture: "x64"
 
-      # jar build
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
@@ -103,11 +102,19 @@ jobs:
 
       - name: Startup nexus service
         working-directory: ./scripts/e2e_test
-        run: bash start_test.sh start_nexus
+        run: bash start_test.sh start_nexus &
 
       - name: Startup minikube
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh start_minikube
+        uses: medyagh/setup-minikube@latest
+        id: minikube
+        with:
+          cache: true
+          driver: docker
+          container-runtime: docker
+          memory: 6G
+          cpus: 2
+          wait: false
+          insecure-registry: "192.0.0.0/8,10.0.0.0/8"
 
       - name: Overwrite configs
         working-directory: ./scripts/e2e_test
@@ -115,19 +122,27 @@ jobs:
           bash start_test.sh overwrite_pip_config
           bash start_test.sh overwrite_pypirc
 
-      - name: Build console ui package
+      - name: Build Console(mock index.html)
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh build_console
+
+      - name: Build server docker image
+        working-directory: ./scripts/e2e_test
+        run: |
+          eval $(minikube docker-env)
+          bash start_test.sh build_server_image
+
+      - name: Startup starwhale k8s service
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh start_starwhale
 
       - name: Build client python package
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh build_swcli
+        env:
+          SKIP_UI_BUILD: 1
 
-      - name: Build server docker image
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh build_server_image
-
-      - name: Pending check for service and nexus
+      - name: Check nexus service available
         working-directory: ./scripts/e2e_test
         run: |
           bash start_test.sh create_service_check_file
@@ -143,15 +158,9 @@ jobs:
 
       - name: Build runtime image
         working-directory: ./scripts/e2e_test
-        run: bash start_test.sh build_runtime_image
-
-      - name: Push docker images into nexus
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh push_images_to_nexus
-
-      - name: Startup starwhale k8s service
-        working-directory: ./scripts/e2e_test
-        run: bash start_test.sh start_starwhale
+        run: |
+          eval $(minikube docker-env)
+          bash start_test.sh build_runtime_image
 
       - name: Wait and check starwhale service
         working-directory: ./scripts/e2e_test
@@ -160,6 +169,13 @@ jobs:
       - name: Test by client side
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh client_test
+
+      - name: Post output client-side test logs
+        if: failure()
+        working-directory: ./scripts/e2e_test
+        run: |
+          minikube image ls --format table
+          bash start_test.sh show_minikube_jobs_log
 
       - name: Test by api side
         working-directory: ./scripts/e2e_test

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 import logging
 import tempfile
@@ -11,10 +13,10 @@ from loguru import logger
 
 from starwhale import (
     URI,
-    step,
     Video,
     Context,
     dataset,
+    handler,
     URIType,
     evaluation,
     pass_context,
@@ -26,6 +28,15 @@ from .sampler import RandomSampling
 from .transform import Resize, Compose, ToTensor, Normalize, RandomCrop
 
 root_dir = Path(__file__).parent.parent
+sampler = RandomSampling()
+transforms = Compose(
+    [
+        Resize((256, 256)),
+        RandomCrop((224, 224)),
+        ToTensor(),
+        Normalize(mean=[124 / 255, 117 / 255, 104 / 255], std=[1 / (0.0167 * 255)] * 3),
+    ]
+)
 
 
 def ppl_post(output: torch.Tensor) -> t.Tuple[t.List[str], t.List[float]]:
@@ -97,76 +108,69 @@ def ppl_pre(videos: t.List[Video], sampler, transforms) -> torch.Tensor:
     )
 
 
-class UCF101CustomPipelineHandler:
-    def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = load_model(self.device)
-        self.sampler = RandomSampling()
-        self.transforms = Compose(
-            [
-                Resize((256, 256)),
-                RandomCrop((224, 224)),
-                ToTensor(),
-                Normalize(
-                    mean=[124 / 255, 117 / 255, 104 / 255], std=[1 / (0.0167 * 255)] * 3
-                ),
-            ]
-        )
-        self.ppl_batch_size = 5
+loaded_model = None
 
-    @step(concurrency=2, task_num=2)
-    @pass_context
-    def run_ppl(self, context: Context) -> None:
-        print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
-        for ds_uri in context.dataset_uris:
-            _uri = URI(ds_uri, expected_type=URIType.DATASET)
-            ds = dataset(_uri)
-            for rows in ds.batch_iter(self.ppl_batch_size):
-                pred_values, probability_matrixs = self.batch_ppl([r[1] for r in rows])
 
-                for (_idx, _data, _annotations), pred_value, probability_matrix in zip(
-                    rows, pred_values, probability_matrixs
-                ):
-                    _unique_id = f"{_uri.object}_{_idx}"
-                    try:
-                        evaluation.log(
-                            category="results",
-                            id=_unique_id,
-                            metrics=dict(
-                                pred_value=dill.dumps(pred_value),
-                                probability_matrix=dill.dumps(probability_matrix),
-                                annotations=_annotations,
-                            ),
-                        )
-                    except Exception:
-                        logger.error(f"[{_unique_id}] data handle -> failed")
-                        raise
+def _get_model() -> t.Any:
+    global loaded_model
+    if loaded_model is None:
+        loaded_model = load_model("cuda" if torch.cuda.is_available() else "cpu")
+    return loaded_model
 
-    @torch.no_grad()
-    def batch_ppl(self, videos: t.List[Video], **kw: t.Any) -> t.Any:
-        _frames_tensor = ppl_pre(
-            videos=videos, sampler=self.sampler, transforms=self.transforms
-        )
-        output = self.model(_frames_tensor)
 
-        # recording
-        probs = torch.nn.Softmax(dim=1)(output)
-        label = torch.max(probs, 1)[1].detach().cpu().numpy()
-        print(f"predict value is:{label}, probability is:{probs}")
+@torch.no_grad()
+def batch_ppl(videos: t.List[Video], **kw: t.Any) -> t.Any:
+    _frames_tensor = ppl_pre(videos=videos, sampler=sampler, transforms=transforms)
+    model = _get_model()
+    output = model(_frames_tensor)
 
-        return ppl_post(output)
+    probs = torch.nn.Softmax(dim=1)(output)
+    label = torch.max(probs, 1)[1].detach().cpu().numpy()
+    print(f"predict value is:{label}, probability is:{probs}")
 
-    @step(needs=["run_ppl"])
-    @multi_classification(
-        confusion_matrix_normalize="all",
-        show_hamming_loss=True,
-        show_cohen_kappa_score=True,
-        show_roc_auc=True,
-    )
-    def run_cmp(self) -> t.Tuple[t.List[int], t.List[int], t.List[t.List[float]]]:
-        result, label, pr = [], [], []
-        for data in evaluation.iter("results"):
-            result.append(dill.loads(data["pred_value"]))
-            label.append(data["annotations"]["label"])
-            pr.append(dill.loads(data["probability_matrix"]))
-        return label, result, pr
+    return ppl_post(output)
+
+
+@handler(concurrency=2, replicas=2)
+@pass_context
+def run_ppl(context: Context) -> None:
+    print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
+    for ds_uri in context.dataset_uris:
+        _uri = URI(ds_uri, expected_type=URIType.DATASET)
+        ds = dataset(_uri)
+        for rows in ds.batch_iter(batch_size=5):
+            pred_values, probability_matrixs = batch_ppl([r[1] for r in rows])
+
+            for (_idx, _, _annotations), pred_value, probability_matrix in zip(
+                rows, pred_values, probability_matrixs
+            ):
+                _unique_id = f"{_uri.object}_{_idx}"
+                try:
+                    evaluation.log(
+                        category="results",
+                        id=_unique_id,
+                        metrics=dict(
+                            pred_value=dill.dumps(pred_value),
+                            probability_matrix=dill.dumps(probability_matrix),
+                            annotations=_annotations,
+                        ),
+                    )
+                except Exception:
+                    logger.error(f"[{_unique_id}] data handle -> failed")
+                    raise
+
+
+@handler(needs=[run_ppl])
+@multi_classification(
+    confusion_matrix_normalize="all",
+    show_hamming_loss=True,
+    show_cohen_kappa_score=True,
+    show_roc_auc=True,
+)
+def run_cmp() -> t.Tuple:
+    result, label, pr = [], [], []
+    for data in evaluation.iter("results"):
+        result.append(dill.loads(data["pred_value"]))
+        label.append(data["annotations"]["label"])
+        pr.append(dill.loads(data["probability_matrix"]))
+    return label, result, pr

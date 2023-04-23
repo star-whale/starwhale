@@ -225,6 +225,7 @@ public class RuntimeServiceTest {
                             throw new BundleException("");
                     }
                 });
+        given(bundleManager.getBundle(any())).willReturn(RuntimeEntity.builder().id(1L).runtimeName("test").build());
         given(bundleManager.getBundleVersion(any(BundleVersionUrl.class)))
                 .willAnswer((Answer<BundleVersionEntity>) invocation -> {
                     BundleVersionUrl url = invocation.getArgument(0);

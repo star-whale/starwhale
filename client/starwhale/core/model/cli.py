@@ -1,26 +1,37 @@
+from __future__ import annotations
+
 import typing as t
 from pathlib import Path
 
 import click
+from click_option_group import (
+    optgroup,
+    MutuallyExclusiveOptionGroup,
+    RequiredMutuallyExclusiveOptionGroup,
+)
 
 from starwhale import URI, URIType
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.base.type import InstanceType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
+from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
+from starwhale.core.model.model import ModelConfig, ModelInfoFilter
+from starwhale.core.model.store import ModelStorage
 
 
 @click.group(
     "model",
     cls=AliasedGroup,
-    help="Model management, build/copy/ppl/cmp/eval/extract...",
+    help="Model management, build/copy/run/extract...",
 )
 @click.pass_context
 def model_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@model_cmd.command("build", help="[ONLY Standalone]Build starwhale model")
+@model_cmd.command("build")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option(
     "-p",
@@ -34,11 +45,62 @@ def model_cmd(ctx: click.Context) -> None:
     default=None,
     help="mode yaml path, default use ${workdir}/model.yaml file",
 )
-@click.option("--runtime", default="", help="runtime uri")
-def _build(workdir: str, project: str, model_yaml: str, runtime: str) -> None:
-    yaml_path = model_yaml if model_yaml else Path(workdir) / DefaultYAMLName.MODEL
+@click.option(
+    "-r",
+    "--runtime",
+    default="",
+    help="runtime uri, build model in the runtime environment process",
+)
+@click.option(
+    "modules",
+    "-m",
+    "--module",
+    multiple=True,
+    help="Python modules to be imported during the build process. The format is python module import path. The option supports set multiple times.",
+)
+@click.option("-n", "--name", default="", help="model name")
+@click.option("-d", "--desc", default="", help="Dataset description")
+def _build(
+    workdir: str,
+    project: str,
+    model_yaml: str,
+    runtime: str,
+    modules: t.List[str],
+    name: str,
+    desc: str,
+) -> None:
+    """Build starwhale model package.
+    Only standalone instance supports model build.
+
+    WORKDIR: model source code directory[Required].
+
+    Example:
+
+        \b
+        # build by the model.yaml in current directory and model package will package all the files from the current directory.
+        swcli model build .
+        # search model run decorators from mnist.evaluate, mnist.train and mnist.predict modules, then package all the files from the current directory to model package.
+        swcli model build . --module mnist.evaluate --module mnist.train --module mnist.predict
+        # build model package in the Starwhale Runtime environment.
+        swcli model build . --module mnist.evaluate --runtime pytorch/version/v1
+    """
+    if model_yaml is None:
+        yaml_path = Path(workdir) / DefaultYAMLName.MODEL
+    else:
+        yaml_path = Path(model_yaml)
+
+    if yaml_path.exists():
+        config = ModelConfig.create_by_yaml(yaml_path)
+    else:
+        config = ModelConfig()
+
+    config.name = name or config.name or Path(workdir).name
+    config.run.modules = modules or config.run.modules
+    config.desc = desc
+    config.do_validate()
+
     ModelTermView.build(
-        workdir=workdir, project=project, yaml_path=yaml_path, runtime_uri=runtime
+        workdir=workdir, project=project, model_config=config, runtime_uri=runtime
     )
 
 
@@ -110,12 +172,41 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
     ModelTermView.copy(src, dest, force, dest_local_project)
 
 
-@model_cmd.command("info", help="Show model details")
+@model_cmd.command("info")
 @click.argument("model")
-@click.option("-f", "--fullname", is_flag=True, help="Show version fullname")
+@click.option(
+    "-of",
+    "--output-filter",
+    type=click.Choice([f.value for f in ModelInfoFilter], case_sensitive=False),
+    default=ModelInfoFilter.basic.value,
+    show_default=True,
+    help="Filter the output content. Only standalone instance supports this option.",
+)
 @click.pass_obj
-def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
-    view(model).info(fullname)
+def _info(view: t.Type[ModelTermView], model: str, output_filter: str) -> None:
+    """Show model details.
+
+    MODEL: argument use the `Model URI` format. Version is optional for the Model URI.
+    If the version is not specified, the latest version will be used.
+
+    Example:
+
+        \b
+        swcli model info mnist # show basic info from the latest version of model
+        swcli model info mnist/version/v0 # show basic info from the v0 version of model
+        swcli model info mnist/version/latest --output-filter=all # show all info
+        swcli model info mnist -of basic # show basic info
+        swcli model info mnist -of manifest # show manifest.yaml
+        swcli model info mnist -of model_yaml  # show model.yaml
+        swcli model info mnist -of handlers # show model runnable handlers info
+        swcli model info mnist -of files # show model package files tree
+        swcli -o json model info mnist -of all # show all info in json format
+    """
+    uri = URI(model, expected_type=URIType.MODEL)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info(ModelInfoFilter(output_filter))
 
 
 @model_cmd.command("diff", help="model version diff")
@@ -163,7 +254,7 @@ def _list(
     show_removed: bool,
     page: int,
     size: int,
-    filters: list,
+    filters: t.List[str],
 ) -> None:
     """
     List Model of the specified project.
@@ -210,142 +301,220 @@ def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
 
-@model_cmd.command("eval")
-@click.argument("target")
-@click.option(
+@model_cmd.command("run")
+@optgroup.group(
+    "\n ** Model Selectors",
+    cls=RequiredMutuallyExclusiveOptionGroup,
+    help="model uri or model source code dir",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-w",
+    "--workdir",
+    type=click.Path(exists=True, file_okay=False),
+    help="Model source dir",
+)
+@optgroup.option("-u", "--uri", help="Model URI")  # type: ignore[no-untyped-call]
+@optgroup.group(
+    "\n ** Global Options",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-h",
+    "--handler",
+    default="0",
+    show_default=True,
+    help="runnable handler index or name, default is None, will use the first handler",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "modules",
+    "-m",
+    "--module",
+    type=str,
+    multiple=True,
+    help="module name, the format is python module import path, handlers will be searched in the module. The option supports set multiple times.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-f",
     "--model-yaml",
-    default=DefaultYAMLName.MODEL,
-    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
+    help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
 )
-@click.option(
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-p",
-    "--evaluation-project",
+    "--run-project",
     envvar=SWEnv.project,
     default="",
-    help=f"Project URI, env is {SWEnv.project}.The model evaluation result will store in the specified project. Default is the current selected project.",
+    help=f"Project URI, env is {SWEnv.project}.The model run result will store in the specified project. Default is the current selected project.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "datasets",
+    "-d",
+    "--dataset",
+    required=False,
+    envvar=SWEnv.dataset_uri,
+    multiple=True,
+    help=f"dataset uri, env is {SWEnv.dataset_uri}",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--in-container",
+    is_flag=True,
+    help="[ONLY Standalone]Use docker container to run model handler, the docker image or runtime uri must be set",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--resource-pool",
+    default="default",
+    type=str,
+    help="resource pool for server side",
+)
+@optgroup.group(
+    "\n ** Runtime Environment Selectors",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of runtime environment. If not set, model run in the current shell environment.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-r",
+    "--runtime",
+    default="",
+    help="runtime uri, model run in the runtime environment process",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-i",
+    "--image",
+    default="",
+    help="[ONLY Standalone]docker image, works only when --use-docker is set",
 )
 @click.option(
     "--version",
-    envvar=SWEnv.eval_version,
     default=None,
-    help=f"Evaluation job version, env is {SWEnv.eval_version}",
+    help="Run version",
     hidden=True,
 )
 @click.option("--step", default="", help="Evaluation run step", hidden=True)
 @click.option(
     "--task-index",
-    default=None,
+    default=-1,
+    type=int,
     help="Index of tasks in the current step",
     hidden=True,
 )
 @click.option(
     "--override-task-num",
     default=0,
+    type=int,
     help="Total num of tasks in the current step",
     hidden=True,
 )
-@click.option("--runtime", default="", help="runtime uri")
-@click.option(
-    "datasets",
-    "--dataset",
-    required=True,
-    envvar=SWEnv.dataset_uri,
-    multiple=True,
-    help=f"dataset uri, env is {SWEnv.dataset_uri}",
-)
-@click.option(
-    "--use-docker",
-    is_flag=True,
-    help="[ONLY Standalone]use docker to run evaluation job",
-)
-@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option(
-    "--image",
-    default="",
-    help="[ONLY Standalone]the image used when use docker",
-)
-def _eval(
-    evaluation_project: str,
-    target: str,
+def _run(
+    workdir: str,
+    uri: str,
+    handler: int | str,
+    modules: t.List[str],
     model_yaml: str,
-    version: str,
-    datasets: list,
-    step: str,
-    task_index: int,
-    override_task_num: int,
+    run_project: str,
+    datasets: t.List[str],
+    in_container: bool,
     runtime: str,
-    use_docker: bool,
-    gencmd: bool,
     image: str,
+    version: str | None,
+    step: str,
+    task_index: int | None,
+    override_task_num: int,
+    resource_pool: str,
 ) -> None:
-    """
-    [ONLY Standalone]Run evaluation processing with root dir of {target}.
+    """Run Model.
+    Model Package and the model source directory are supported.
 
-    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
-    """
-    ModelTermView.eval(
-        project=evaluation_project,
-        target=target,
-        version=version,
-        yaml_name=model_yaml,
-        runtime_uri=runtime,
-        step=step,
-        task_index=task_index,
-        task_num=override_task_num,
-        dataset_uris=datasets,
-        use_docker=use_docker,
-        gencmd=gencmd,
-        image=image,
-    )
+    TARGET: model uri or the working directory.
 
+    Examples:
 
-@model_cmd.command("fine-tune", aliases=["ft"])
-@click.argument("target", required=False, default="")
-@click.option(
-    "-f",
-    "--model-yaml",
-    default=DefaultYAMLName.MODEL,
-    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
-)
-@click.option(
-    "-p",
-    "--project",
-    envvar=SWEnv.project,
-    default="",
-    help=f"Project URI, env is {SWEnv.project}. Default is the current selected project.",
-)
-@click.option("-r", "--runtime", default="", help="runtime uri")
-@click.option("-m", "--model", default="", help="model uri")
-@click.option(
-    "datasets",
-    "--dataset",
-    required=True,
-    envvar=SWEnv.dataset_uri,
-    multiple=True,
-    help=f"dataset uri, env is {SWEnv.dataset_uri}",
-)
-def _fine_tune(
-    target: str,
-    model_yaml: str,
-    project: str,
-    datasets: list,
-    runtime: str,
-    model: str,
-) -> None:
-    """
-    [ONLY Standalone]Run fine tuning with root dir of {target}.
+        \b
+        # --> run by model uri
+        # run the first handler from model uri
+        swcli model run -u mnist/version/latest
+        # run index id(1) handler from model uri
+        swcli model run --uri mnist/version/latest --handler 1
+        # run index fullname(mnist.evaluator:MNISTInference.cmp) handler from model uri
+        swcli model run --uri mnist/version/latest --handler mnist.evaluator:MNISTInference.cmp
 
-    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+        \b
+        # --> run by the working directory, which does not build model package yet. Make local debug happy.
+        # run the first handler from the working directory, use the model.yaml in the working directory
+        swcli model run -w .
+        # run index id(1) handler from the working directory, search mnist.evaluator module and model.yaml handlers(if existed) to get runnable handlers
+        swcli model run --workdir . --module mnist.evaluator --handler 1
+        # run index fullname(mnist.evaluator:MNISTInference.cmp) handler from the working directory, search mnist.evaluator module to get runnable handlers
+        swcli model run --workdir . --module mnist.evaluator --handler mnist.evaluator:MNISTInference.cmp
     """
-    ModelTermView.fine_tune(
-        target=target,
-        project=project,
-        yaml_name=model_yaml,
-        dataset_uris=datasets,
-        runtime_uri=runtime,
-        model_uri=model,
-    )
+    # TODO: support run model in cluster mode
+    run_project_uri = URI(run_project, expected_type=URIType.PROJECT)
+    in_server = run_project_uri.instance_type == InstanceType.CLOUD
+
+    if in_container and in_server:
+        raise RuntimeError("in-container and in-server are mutually exclusive")
+
+    if in_server:
+        if not runtime:
+            raise ValueError("runtime is required in server mode")
+
+        if not handler:
+            raise ValueError("handler is required in server mode")
+
+        ModelTermView.run_in_server(
+            project_uri=run_project_uri,
+            model_uri=uri,
+            dataset_uris=datasets,
+            runtime_uri=runtime,
+            resource_pool=resource_pool,
+            run_handler=handler,
+        )
+        return
+
+    if uri:
+        _uri = URI(uri, URIType.MODEL)
+        model_src_dir = ModelStorage(_uri).src_dir
+
+        if modules:
+            raise NoSupportError("module is not supported in model uri mode")
+    else:
+        model_src_dir = Path(workdir)
+        if in_server:
+            raise RuntimeError(
+                "model run in server mode does not support model src dir"
+            )
+
+    if in_container:
+        ModelTermView.run_in_container(
+            workdir=model_src_dir,
+            runtime_uri=runtime,
+            docker_image=image,
+        )
+    else:
+        if model_yaml is None:
+            yaml_path = model_src_dir / DefaultYAMLName.MODEL
+        else:
+            yaml_path = Path(model_yaml)
+
+        if yaml_path.exists():
+            config = ModelConfig.create_by_yaml(yaml_path)
+        else:
+            config = ModelConfig()
+
+        config.run.modules = modules or config.run.modules
+        config.do_validate()
+
+        ModelTermView.run_in_host(
+            model_src_dir=model_src_dir,
+            model_config=config,
+            project=run_project,
+            version=version,
+            run_handler=handler,
+            dataset_uris=datasets,
+            runtime_uri=runtime,
+            scheduler_run_args={
+                "step_name": step,
+                "task_index": task_index,
+                "task_num": override_task_num,
+            },
+        )
 
 
 @model_cmd.command("serve")

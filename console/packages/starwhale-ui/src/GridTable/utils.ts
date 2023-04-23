@@ -2,6 +2,15 @@ import React from 'react'
 import { CategoricalColumn, CustomColumn, NumericalColumn, StringColumn } from '../base/data-table'
 import CategoricalTagsColumn from '../base/data-table/column-categorical-tags'
 
+export function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        return typeof r.value === 'object' ? JSON.stringify(r.value, null) : r.value
+    }
+
+    return r
+}
+
 export function normalizeStaticColumns(columns: any) {
     return columns.map((raw: any, index: number) => {
         let column = raw

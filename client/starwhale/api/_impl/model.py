@@ -3,21 +3,16 @@ from __future__ import annotations
 import os
 import typing as t
 import inspect
-import tempfile
 from pathlib import Path
 
-import yaml
-
 from starwhale.utils import disable_progress_bar
-from starwhale.consts import DefaultYAMLName
-from starwhale.utils.fs import ensure_file
 from starwhale.consts.env import SWEnv
 
 _path_T = t.Union[str, Path]
 
 
 def build(
-    evaluation_handler: t.Any,
+    modules: t.Optional[t.List[t.Any]] = None,
     workdir: t.Optional[_path_T] = None,
     name: t.Optional[str] = None,
     project_uri: str = "",
@@ -29,7 +24,7 @@ def build(
     In common case, you may call `build` function in your experiment scripts.`build` function is a shortcut for the `swcli model build` command.
 
     Arguments:
-        evaluation_handler: (str, object, required) The evaluation handler supports object(function, class or module) or str(example: "to.path.module:name").
+        modules: (List[str|object] optional) The search modules supports object(function, class or module) or str(example: "to.path.module:name").
         name: (str, optional) The name of Starwhale Model Package, default is the current work dir.
         workdir: (str, Pathlib.Path, optional) The path of the rootdir. The default workdir is the current working dir.
         desc: (str, optional) The description of the Starwhale Model Package.
@@ -41,28 +36,31 @@ def build(
     ```python
     from starwhale import model
 
-    # class handler
+    # class search handlers
     from .user.code.evaluator import ExamplePipelineHandler
-    model.build(ExamplePipelineHandler)
+    model.build([ExamplePipelineHandler])
 
-    # function handler
+    # function search handlers
     from .user.code.evaluator import predict_image
-    model.build(predict_image)
+    model.build([predict_image])
 
-    # module handler, @step decorates function in this module
+    # module handlers, @handler decorates function in this module
     from .user.code import evaluator
-    model.build(evaluator)
+    model.build([evaluator])
 
-    # str handler
-    model.build("user.code.evaluator:ExamplePipelineHandler")
-    model.build("user.code.evaluator:predict_image")
-    model.build("user.code.evaluator")
+    # str search handlers
+    model.build(["user.code.evaluator:ExamplePipelineHandler"])
+    model.build(["user.code1", "user.code2"])
+
+    # no search handlers, use imported modules
+    model.build()
     ```
 
     Returns:
         None.
     """
     from starwhale.core.model.view import ModelTermView
+    from starwhale.core.model.model import ModelConfig
 
     if workdir is None:
         workdir = Path.cwd()
@@ -71,36 +69,38 @@ def build(
 
     name = name or workdir.name
 
-    yaml_path = _render_model_yaml(
-        handler=evaluation_handler,
-        workdir=workdir,
-        name=name,
-        desc=desc,
-    )
-    try:
-        with disable_progress_bar():
-            ModelTermView.build(
-                workdir=workdir,
-                project=project_uri,
-                yaml_path=yaml_path,
-            )
+    search_modules_str = []
+    for h in modules or []:
+        if isinstance(h, str):
+            search_modules_str.append(h)
+        else:
+            search_modules_str.append(_ingest_obj_entrypoint_name(h, workdir))
 
-            from starwhale import URI, URIType
+    config = ModelConfig(name=name, run={"modules": search_modules_str}, desc=desc)
 
-            if remote_project_uri:
-                remote_project_uri = URI(
-                    remote_project_uri, expected_type=URIType.PROJECT
-                ).full_uri
-            elif os.getenv(SWEnv.instance_uri) and os.getenv(SWEnv.project):
-                remote_project_uri = f"{os.getenv(SWEnv.instance_uri)}/project/{os.getenv(SWEnv.project)}"
+    with disable_progress_bar():
+        ModelTermView.build(
+            workdir=workdir,
+            project=project_uri,
+            model_config=config,
+        )
 
-            if remote_project_uri:
-                ModelTermView.copy(
-                    src_uri=f"{URI(project_uri).full_uri}/model/{name}/version/latest",
-                    dest_uri=remote_project_uri,
-                )
-    finally:
-        os.unlink(yaml_path)
+    from starwhale import URI, URIType
+
+    if remote_project_uri:
+        remote_project_uri = URI(
+            remote_project_uri, expected_type=URIType.PROJECT
+        ).full_uri
+    elif os.getenv(SWEnv.instance_uri) and os.getenv(SWEnv.project):
+        remote_project_uri = (
+            f"{os.getenv(SWEnv.instance_uri)}/project/{os.getenv(SWEnv.project)}"
+        )
+
+    if remote_project_uri:
+        ModelTermView.copy(
+            src_uri=f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+            dest_uri=remote_project_uri,
+        )
 
 
 def _ingest_obj_entrypoint_name(
@@ -121,26 +121,3 @@ def _ingest_obj_entrypoint_name(
         return module_import_path
     else:
         return f"{module_import_path}:{obj.__qualname__}"
-
-
-# TODO: remove _render_model_yaml function when the model.yaml is optional for model build
-def _render_model_yaml(
-    handler: t.Any,
-    workdir: Path,
-    name: str,
-    desc: str,
-) -> str:
-    if not isinstance(handler, str):
-        handler = _ingest_obj_entrypoint_name(handler, workdir)
-
-    config = {
-        "name": name,
-        "run": {
-            "handler": handler,
-        },
-        "desc": desc,
-    }
-
-    _, yaml_fpath = tempfile.mkstemp(suffix=DefaultYAMLName.MODEL)
-    ensure_file(yaml_fpath, yaml.safe_dump(config, default_flow_style=False))
-    return yaml_fpath

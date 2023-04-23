@@ -6,6 +6,7 @@ import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
 import _ from 'lodash'
+import { useIfChanged } from '@starwhale/core'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()

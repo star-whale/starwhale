@@ -43,10 +43,17 @@ declare_env() {
 }
 
 start_minikube() {
-    minikube start -p e2e --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    minikube start -p e2e --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE" --driver=docker --container-runtime=docker
     minikube addons enable ingress -p e2e
     minikube addons enable ingress-dns -p e2e
-    kubectl describe node
+    minikube -p e2e docker-env
+}
+
+show_minikube_jobs_log() {
+    echo "--> show pods events:"
+    kubectl -n $SWNS get jobs -o wide
+    kubectl -n $SWNS describe jobs
+    kubectl -n $SWNS logs --tail 10000 -l job-name --all-containers --prefix
 }
 
 start_nexus() {
@@ -80,8 +87,10 @@ build_server_image() {
   make build-package
   popd
   pushd ../../docker
-  docker build -t server -f Dockerfile.server .
-  docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker build \
+    --build-arg BASE_IMAGE=ghcr.io/star-whale/base_server:latest \
+    --tag $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION \
+    -f Dockerfile.server .
   popd
 }
 
@@ -148,15 +157,28 @@ upload_pypi_to_nexus() {
 
 build_runtime_image() {
   pushd ../../docker
-  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION="$PYPI_RELEASE_VERSION" --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
-  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
+  docker build -f Dockerfile.starwhale \
+    --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 \
+    --build-arg PORT_NEXUS=$PORT_NEXUS \
+    --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE \
+    --build-arg SW_VERSION="$PYPI_RELEASE_VERSION" \
+    --tag $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION \
+    --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
   popd
 }
 
 push_images_to_nexus() {
+    push_server_image_to_nexus
+    push_runtime_images_to_nexus
+}
+
+push_server_image_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+}
+
+push_runtime_images_to_nexus() {
+  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
 }
@@ -187,14 +209,13 @@ check_controller_service() {
                     break
             else
               echo "controller is starting"
-              kubectl -n $SWNS get svc
               kubectl -n $SWNS get pods
               kubectl -n $SWNS describe deployments/controller || true
-              kubectl -n $SWNS logs --tail 10 deployments/controller || true
+              kubectl -n $SWNS logs --tail 500 deployments/controller || true
             fi
-            sleep 15
+            sleep 5
     done
-    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER &
+    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER > /dev/null 2>&1 &
 }
 
 client_test() {
@@ -210,9 +231,7 @@ client_test() {
     unset https_proxy
     bash scripts/client_test/cli_test.sh all
   else
-    if ! bash scripts/client_test/cli_test.sh simple; then
-      scripts/e2e_test/check_job.sh 127.0.0.1:$PORT_CONTROLLER || exit 1
-    fi
+    timeout 15m bash scripts/client_test/cli_test.sh simple || exit 1
   fi
   popd
   popd

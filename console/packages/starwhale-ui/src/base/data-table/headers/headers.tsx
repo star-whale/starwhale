@@ -5,10 +5,17 @@ import Header, { HeaderContext, HEADER_ROW_HEIGHT } from './header'
 import type { ColumnT, SortDirectionsT } from '../types'
 import { LocaleContext } from 'baseui/locale'
 import { themedUseStyletron } from '../../../theme/styletron'
-import { useConfigQuery } from '../config-query'
-import { useWhatChanged } from '@simbathesailor/use-what-changed'
+import { useStore, useStoreApi } from '@starwhale/ui/GridTable/hooks/useStore'
+import { IGridState } from '@starwhale/ui/GridTable/types'
+import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
+import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 
 const sum = (ns: number[]): number => ns.reduce((s, n) => s + n, 0)
+
+const selector = (s: IGridState) => ({
+    queryinline: s.queryinline,
+    compare: s.compare,
+})
 
 export default function Headers({ width }: { width: number }) {
     // @FIXME css as dep will cause rerender ?
@@ -16,23 +23,22 @@ export default function Headers({ width }: { width: number }) {
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
     const [resizeIndex, setResizeIndex] = React.useState(-1)
-
-    // useWhatChanged(Object.values(ctx), Object.keys(ctx).join(','))
+    const { queryinline } = useStore(selector)
+    const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
+        useStoreApi().getState()
+    const { columns } = useGrid()
 
     const $columns = React.useMemo(
         () =>
-            ctx.columns.map((v, index) => ({
+            columns.map((v, index) => ({
                 ...v,
                 index,
             })),
-        [ctx.columns]
+        [columns]
     )
 
-    const store = ctx.useStore()
-
-    const { renderConfigQueryInline } = useConfigQuery(ctx.useStore, {
-        columns: ctx.columns,
-        queryable: ctx.isQueryInline,
+    const { renderConfigQueryInline } = useGridQuery({
+        columns,
     })
 
     const headerRender = useCallback(
@@ -40,24 +46,24 @@ export default function Headers({ width }: { width: number }) {
             const columnIndex = column.index
 
             const handleNoSelect = () => {
-                store.onNoSelect(column.key as string)
+                onNoSelect(column.key as string)
             }
 
             const handleFocus = () => {
-                store.onCompareUpdate({
+                onCompareUpdate({
                     comparePinnedKey: column.key as string,
                 })
             }
             const handlePin = (index: number, bool: boolean) => {
-                store.onCurrentViewColumnsPin(column.key as string, bool)
+                onCurrentViewColumnsPin(column.key as string, bool)
             }
 
             // @ts-ignore
             const handleSort = (index: number, direction: SortDirectionsT) => {
-                store.onCurrentViewSort(column.key as string, direction)
+                onCurrentViewSort(column.key as string, direction)
             }
 
-            const isFoucs = column.key === store.compare?.comparePinnedKey
+            const isFoucs = column.key === compare?.comparePinnedKey
             const isPin = !!column.pin
 
             return (
@@ -84,8 +90,8 @@ export default function Headers({ width }: { width: number }) {
                             isSelectable={ctx.isSelectable}
                             isSelectedAll={ctx.isSelectedAll}
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
-                            isQueryInline={ctx.isQueryInline}
-                            querySlot={renderConfigQueryInline({ width })}
+                            isQueryInline={queryinline}
+                            querySlot={queryinline && renderConfigQueryInline({ width })}
                             onMouseEnter={ctx.onMouseEnter}
                             onMouseLeave={ctx.onMouseLeave}
                             onResize={ctx.onResize}
@@ -112,17 +118,20 @@ export default function Headers({ width }: { width: number }) {
             )
         },
         [
-            store,
+            onNoSelect,
+            onCompareUpdate,
+            onCurrentViewColumnsPin,
+            onCurrentViewSort,
+            compare,
             setResizeIndex,
             resizeIndex,
             locale,
             theme,
             ctx.columnHighlightIndex,
-            ctx.columns,
             ctx.isSelectable,
             ctx.isSelectedAll,
             ctx.isSelectedIndeterminate,
-            ctx.isQueryInline,
+            queryinline,
             ctx.measuredWidths,
             ctx.onMouseEnter,
             ctx.onMouseLeave,

@@ -16,11 +16,13 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
 
     React.useEffect(() => {
         if (IS_BROWSER) {
-            if (ref.current) {
+            if (ref.current && column) {
                 onLayout(columnIndex, ref.current.getBoundingClientRect())
             }
         }
     }, [column, onLayout, columnIndex])
+
+    if (!column) return null
 
     return (
         <div
@@ -50,11 +52,13 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 isSelectable={isSelectable}
             />
             {sampleIndexes.map((rowIndex: number, i: number) => {
+                // incase of column from local store, func was parsed to string
+                if (typeof column.renderCell !== 'function') return null
                 const Cell = column.renderCell
                 return (
                     <Cell
                         key={`measure-${i}`}
-                        value={column.mapDataToValue(rows[rowIndex].data)}
+                        value={column.mapDataToValue?.(rows[rowIndex].data)}
                         isSelectable={isSelectable}
                         isQueryInline={isQueryInline}
                         isMeasured

@@ -2,7 +2,7 @@ version: 1.0
 name: imageNet-all
 
 run:
-  handler: imagenet.pipeline:ImageNetEvaluation
+  handler: imagenet.pipeline
 
 model:
   - models/resnet18-f37072fd.pth

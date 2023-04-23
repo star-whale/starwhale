@@ -5,9 +5,7 @@ from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import RunStatus
-from starwhale.core.job.step import Step, StepResult
-from starwhale.core.job.task import TaskResult
-from starwhale.core.job.scheduler import Scheduler
+from starwhale.base.scheduler import Step, Scheduler, StepResult, TaskResult
 
 
 class JobTestCase(TestCase):
@@ -20,21 +18,15 @@ class JobTestCase(TestCase):
             Step.generate_dag(
                 [
                     Step(
-                        job_name="default",
                         name="ppl-1",
-                        resources=[],
                         needs=["cmp"],
                     ),
                     Step(
-                        job_name="default",
                         name="ppl-2",
-                        resources=[],
                         needs=["ppl-1"],
                     ),
                     Step(
-                        job_name="default",
                         name="cmp",
-                        resources=[],
                         needs=["ppl-2"],
                     ),
                 ]
@@ -43,25 +35,21 @@ class JobTestCase(TestCase):
         _dag = Step.generate_dag(
             [
                 Step(
-                    job_name="default",
                     name="base",
                     resources=[],
                     needs=[],
                 ),
                 Step(
-                    job_name="default",
                     name="ppl-1",
                     resources=[],
                     needs=["base"],
                 ),
                 Step(
-                    job_name="default",
                     name="ppl-2",
                     resources=[],
                     needs=["base"],
                 ),
                 Step(
-                    job_name="default",
                     name="cmp",
                     resources=[],
                     needs=["ppl-1", "ppl-2"],
@@ -99,7 +87,6 @@ class JobTestCase(TestCase):
                 dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
                 steps=[
                     Step(
-                        job_name="default",
                         name="ppl",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
@@ -108,7 +95,6 @@ class JobTestCase(TestCase):
                         needs=["cmp"],
                     ),
                     Step(
-                        job_name="default",
                         name="cmp",
                         resources=[{"type": "cpu", "limit": 1, "request": 1}],
                         concurrency=1,
@@ -118,7 +104,7 @@ class JobTestCase(TestCase):
                 ],
             )
 
-    @patch("starwhale.core.job.task.TaskExecutor.execute")
+    @patch("starwhale.base.scheduler.TaskExecutor.execute")
     def test_scheduler(self, m_task_execute: MagicMock):
         m_task_execute.return_value = TaskResult(
             id=random.randint(0, 10), status=RunStatus.SUCCESS
@@ -131,7 +117,6 @@ class JobTestCase(TestCase):
             dataset_uris=["mnist/version/tu788", "mnist/version/tu789"],
             steps=[
                 Step(
-                    job_name="default",
                     name="ppl",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,
@@ -139,7 +124,6 @@ class JobTestCase(TestCase):
                     needs=[],
                 ),
                 Step(
-                    job_name="default",
                     name="cmp",
                     resources=[{"type": "cpu", "limit": 1, "request": 1}],
                     concurrency=1,

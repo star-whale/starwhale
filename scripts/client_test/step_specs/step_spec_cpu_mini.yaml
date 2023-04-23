@@ -1,22 +1,33 @@
-evaluation:
-  - cls_name: ''
+src.evaluator:evaluate:
+  - cls_name: ""
     concurrency: 1
-    job_name: evaluation
-    needs: [ ]
+    extra_args: []
+    extra_kwargs:
+      dataset_uris: null
+      ignore_dataset_data: false
+      ignore_error: false
+      ppl_auto_log: true
+      ppl_batch_size: 1
+    func_name: predict
+    module_name: src.evaluator
+    name: src.evaluator:predict
+    needs: []
+    replicas: 1
     resources:
-    - type: cpu
-      request: 0.4
-      limit: 0.4
-    name: ppl
-    task_num: 2
-  - cls_name: ''
+      - type: cpu
+        request: 0.4
+        limit: 2
+    show_name: predict
+  - cls_name: ""
     concurrency: 1
-    job_name: evaluation
+    extra_args: []
+    extra_kwargs:
+      ppl_auto_log: true
+    func_name: evaluate
+    module_name: src.evaluator
+    name: src.evaluator:evaluate
     needs:
-    - ppl
-    resources:
-    - type: cpu
-      request: 0.4
-      limit: 0.4
-    name: cmp
-    task_num: 1
+      - src.evaluator:predict
+    replicas: 1
+    resources: []
+    show_name: evaluate

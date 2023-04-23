@@ -162,7 +162,7 @@ def fine_tune(
     model.build(
         workdir=ROOTDIR,
         name="imageNet-for-hotdog",
-        evaluation_handler=ImageNetEvaluation,
+        modules=[ImageNetEvaluation],
     )
 
 

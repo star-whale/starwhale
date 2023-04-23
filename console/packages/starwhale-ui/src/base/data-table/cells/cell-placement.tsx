@@ -31,7 +31,17 @@ export type CellPlacementPropsT = {
 
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = themedUseStyletron()
-    const { textQuery, isSelectable, isQueryInline, isRowSelected, onRowMouseEnter, onSelectOne, rows, columns } = data
+    const {
+        textQuery,
+        isSelectable,
+        isQueryInline,
+        isRowSelected,
+        onRowMouseEnter,
+        onSelectOne,
+        rows,
+        columns,
+        getId,
+    } = data
 
     const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
     const { row, rowCount, rowData } = React.useMemo(() => {
@@ -43,13 +53,21 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             rowData: rowTmp?.data ?? {},
         }
     }, [rows, rowIndex])
+
     const Cell = React.useMemo(() => column.renderCell ?? null, [column])
     const value = React.useMemo(() => column.mapDataToValue(rowData), [column, rowData])
-    const isSelected = React.useMemo(() => isRowSelected(row.id), [row])
+    const isSelected = React.useMemo(() => isRowSelected(row), [row])
     const onSelect = React.useMemo(
         () => (isSelectable && columnIndex === 0 ? () => onSelectOne(row) : undefined),
         [isSelectable, onSelectOne, columnIndex, row]
     )
+    const [isFocused, setIsFocused] = React.useState(false)
+    const handleDoubleClick = React.useCallback(() => {
+        setIsFocused(true)
+    }, [setIsFocused])
+    const handleBlur = React.useCallback(() => {
+        setIsFocused(false)
+    }, [setIsFocused])
 
     return (
         <div
@@ -64,7 +82,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 rowIndex === data.rowHighlightIndex ? 'table-row--hovering' : undefined,
 
                 css({
-                    // ...theme.borders.border200,
                     borderTop: 'none',
                     borderBottom: 'none',
                     borderRight: 'none',
@@ -83,18 +100,17 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 })
             )}
             style={style}
+            onBlur={handleBlur}
+            onDoubleClick={handleDoubleClick}
             onMouseEnter={_.throttle(() => onRowMouseEnter(rowIndex), 200)}
             onMouseLeave={_.throttle(() => onRowMouseEnter(-1), 200)}
         >
+            {isFocused}
             <Cell
                 value={value}
                 data={rowData}
                 pin={column.pin}
                 onSelect={onSelect}
-                onAsyncChange={async (v: any) => {
-                    const cellData = data?.columns[columnIndex]
-                    await cellData?.onAsyncChange?.(v, columnIndex, rowIndex)
-                }}
                 isSelected={isSelected}
                 isQueryInline={isQueryInline && columnIndex === 0}
                 textQuery={textQuery}

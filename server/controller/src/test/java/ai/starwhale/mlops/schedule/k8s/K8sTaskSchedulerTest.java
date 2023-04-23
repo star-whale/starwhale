@@ -35,6 +35,7 @@ import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
@@ -175,9 +176,9 @@ public class K8sTaskSchedulerTest {
         @Override
         public V1Job renderJob(V1Job job, String jobName, String restartPolicy, int backoffLimit,
                 Map<String, ContainerOverwriteSpec> containerSpecMap,
-                Map<String, String> nodeSelectors) {
+                Map<String, String> nodeSelectors, List<Toleration> tolerations, Map<String, String> annotations) {
             ContainerOverwriteSpec worker = containerSpecMap.get("worker");
-            Assertions.assertIterableEquals(worker.getCmds(), List.of("evaluation"));
+            Assertions.assertIterableEquals(worker.getCmds(), List.of("run"));
             Assertions.assertEquals("imageRT", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
@@ -193,7 +194,7 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_PYPI_INDEX_URL", "indexU");
             expectedEnvs.put("SW_PYPI_EXTRA_INDEX_URL", "extraU");
             expectedEnvs.put("SW_PYPI_TRUSTED_HOST", "trustedH");
-            expectedEnvs.put("SW_EVALUATION_VERSION", "juuid");
+            expectedEnvs.put("SW_JOB_VERSION", "juuid");
             expectedEnvs.put("SW_TOKEN", "tt");
             expectedEnvs.put("SW_INSTANCE_URI", "http://instanceUri");
             expectedEnvs.put("SW_TASK_STEP", "cmp");
