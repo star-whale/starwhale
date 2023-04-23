@@ -7,6 +7,7 @@ import shutil
 import typing as t
 import tarfile
 from abc import ABCMeta
+from enum import Enum, unique
 from http import HTTPStatus
 from pathlib import Path
 from collections import defaultdict
@@ -72,6 +73,16 @@ from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.model.copy import ModelCopy
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
+
+
+@unique
+class ModelInfoFilter(Enum):
+    basic = "basic"
+    model_yaml = "model_yaml"
+    manifest = "manifest"
+    handlers = "handlers"
+    files = "files"
+    all = "all"
 
 
 class ModelRunConfig(ASDictMixin):
@@ -426,20 +437,29 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         }
 
     def info(self) -> t.Dict[str, t.Any]:
-        _manifest = self._get_bundle_info()
-        _store = self.store
-        _om = {}
-        yaml_path = _store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME
-        if _store.snapshot_workdir.exists():
-            if yaml_path.exists():
-                _om = load_yaml(yaml_path)
-            else:
-                logger.warning("step_spec not found in model snapshot_workdir")
-        else:
-            logger.warning("step_spec not found in model")
-        if _om:
-            _manifest["step_spec"] = _om
-        return _manifest
+        ret: t.Dict[str, t.Any] = {}
+        if not self.store.bundle_path.exists():
+            return ret
+
+        manifest = self.store.manifest
+        ret["basic"] = {
+            "name": self.uri.object.name,
+            "version": self.uri.object.version,
+            "project": self.uri.project,
+            "path": str(self.store.bundle_path),
+            "tags": StandaloneTag(self.uri).list(),
+            "created_at": manifest.get(CREATED_AT_KEY, ""),
+        }
+
+        ret["manifest"] = manifest
+        ret["model_yaml"] = (
+            self.store.hidden_sw_dir / DefaultYAMLName.MODEL
+        ).read_text()
+        job_yaml = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
+        ret["handlers"] = job_yaml
+        ret["files"] = manifest["resources"]
+        ret["basic"]["handlers"] = sorted(job_yaml.keys())
+        return ret
 
     def history(
         self,
@@ -640,12 +660,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             str(workdir.resolve()), str(self.store.src_dir.resolve()), excludes=excludes
         )
 
-        # TODO: use an internal protected model yaml path
-        # make sure model.yaml exists, prevent using the wrong config when running in the cloud
-        target_yaml_path = self.store.src_dir / DefaultYAMLName.MODEL
+        model_yaml = yaml.safe_dump(model_config.asdict(), default_flow_style=False)
         ensure_file(
-            target_yaml_path,
-            yaml.safe_dump(model_config.asdict(), default_flow_style=False),
+            self.store.hidden_sw_dir / DefaultYAMLName.MODEL, model_yaml, parents=True
+        )
+
+        # make sure model.yaml exists, prevent using the wrong config when running in the cloud
+        ensure_file(
+            self.store.src_dir / DefaultYAMLName.MODEL, model_yaml, parents=True
         )
 
         logger.info("[step:copy]finish copy files")

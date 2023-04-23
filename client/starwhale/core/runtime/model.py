@@ -760,10 +760,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             "project": self.uri.project,
             "snapshot_workdir": str(self.store.snapshot_workdir),
             "bundle_path": str(self.store.bundle_path),
+            "version": self.uri.object.version,
+            "tags": StandaloneTag(self.uri).list(),
         }
-
-        ret["basic"]["version"] = self.uri.object.version
-        ret["basic"]["tags"] = StandaloneTag(self.uri).list()
 
         if self.store.snapshot_workdir.exists():
             ret["manifest"] = self.store.manifest

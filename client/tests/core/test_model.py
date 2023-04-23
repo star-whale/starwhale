@@ -30,9 +30,10 @@ from starwhale.api.service import Service
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Handler
 from starwhale.core.model.cli import _list as list_cli
-from starwhale.core.model.view import ModelTermView
+from starwhale.core.model.view import ModelTermView, ModelTermViewJson
 from starwhale.core.model.model import (
     ModelConfig,
+    ModelInfoFilter,
     StandaloneModel,
     resource_to_file_node,
 )
@@ -185,26 +186,12 @@ class StandaloneModelTestCase(TestCase):
         assert "latest" in sm.tag.list()
 
         model_uri = URI(f"mnist/version/{build_version}", expected_type=URIType.MODEL)
-
         sm = StandaloneModel(model_uri)
         _info = sm.info()
 
-        assert _info["version"] == build_version
-        assert _info["name"] == self.name
-        assert _info["config"]["build"]["os"] in ["Linux", "Darwin"]
-        assert "history" not in _info
-
-        model_uri = URI(self.name, expected_type=URIType.MODEL)
-        sm = StandaloneModel(model_uri)
-        ensure_dir(sm.store.bundle_dir / f"{sm.store.bundle_type}")
-        _info = sm.info()
-
-        assert len(_info["history"]) == 1
-        assert _info["history"][0]["name"] == self.name
-        assert _info["history"][0]["version"] == build_version
-
-        _history = sm.history()
-        assert _info["history"] == _history
+        assert _info["basic"]["version"] == build_version
+        assert _info["basic"]["name"] == self.name
+        assert _info["manifest"]["build"]["os"] in ["Linux", "Darwin"]
 
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list) == 1
@@ -224,10 +211,11 @@ class StandaloneModelTestCase(TestCase):
         _list, _ = StandaloneModel.list(URI(""))
         assert not _list[self.name][0]["is_removed"]
 
-        ModelTermView(self.name).info()
-        ModelTermView(self.name).history()
         fname = f"{self.name}/version/{build_version}"
-        ModelTermView(fname).info()
+        for f in ModelInfoFilter:
+            ModelTermView(fname).info(f)
+            ModelTermViewJson(fname).info(f)
+
         ModelTermView(fname).diff(
             URI(fname, expected_type=URIType.MODEL), show_details=False
         )

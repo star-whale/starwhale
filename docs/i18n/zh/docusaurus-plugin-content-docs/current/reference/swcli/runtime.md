@@ -101,7 +101,7 @@ swcli [全局选项] runtime info [选项] RUNTIME
 
 | 选项 | 必填项 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
-| `--output-filter` or `-of` | ❌ | Choice of [basic|runtime_yaml|manifest|lock|all] | basic | 设置输出的过滤规则，比如只显示Runtime的runtime.yaml。目前该参数仅对Standalone Instance的Runtime生效。 |
+| `--output-filter` 或 `-of` | ❌ | Choice of [basic|runtime_yaml|manifest|lock|all] | basic | 设置输出的过滤规则，比如只显示Runtime的runtime.yaml。目前该参数仅对Standalone Instance的Runtime生效。 |
 
 ## swcli runtime list {#list}
 

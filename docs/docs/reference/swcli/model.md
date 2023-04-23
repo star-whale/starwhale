@@ -93,7 +93,7 @@ swcli [GLOBAL OPTIONS] model info [OPTIONS] <MODEL>
 
 | Option | Required | Type | Defaults | Description |
 | --- | --- | --- | --- | --- |
-| `--fullname` | ❌ | Boolean | False | Show the full version name. Only the first 12 characters are shown if this option is false. |
+| `--output-filter` or `-of` | ❌ | Choice of [basic|model_yaml|manifest|files|handlers|all] | basic | Filter the output content. Only standalone instance supports this option. |
 
 ## swcli model list {#list}
 

@@ -17,7 +17,7 @@ from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
-from starwhale.core.model.model import ModelConfig
+from starwhale.core.model.model import ModelConfig, ModelInfoFilter
 from starwhale.core.model.store import ModelStorage
 
 
@@ -172,12 +172,41 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
     ModelTermView.copy(src, dest, force, dest_local_project)
 
 
-@model_cmd.command("info", help="Show model details")
+@model_cmd.command("info")
 @click.argument("model")
-@click.option("-f", "--fullname", is_flag=True, help="Show version fullname")
+@click.option(
+    "-of",
+    "--output-filter",
+    type=click.Choice([f.value for f in ModelInfoFilter], case_sensitive=False),
+    default=ModelInfoFilter.basic.value,
+    show_default=True,
+    help="Filter the output content. Only standalone instance supports this option.",
+)
 @click.pass_obj
-def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
-    view(model).info(fullname)
+def _info(view: t.Type[ModelTermView], model: str, output_filter: str) -> None:
+    """Show model details.
+
+    MODEL: argument use the `Model URI` format. Version is optional for the Model URI.
+    If the version is not specified, the latest version will be used.
+
+    Example:
+
+        \b
+        swcli model info mnist # show basic info from the latest version of model
+        swcli model info mnist/version/v0 # show basic info from the v0 version of model
+        swcli model info mnist/version/latest --output-filter=all # show all info
+        swcli model info mnist -of basic # show basic info
+        swcli model info mnist -of manifest # show manifest.yaml
+        swcli model info mnist -of model_yaml  # show model.yaml
+        swcli model info mnist -of handlers # show model runnable handlers info
+        swcli model info mnist -of files # show model package files tree
+        swcli -o json model info mnist -of all # show all info in json format
+    """
+    uri = URI(model, expected_type=URIType.MODEL)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info(ModelInfoFilter(output_filter))
 
 
 @model_cmd.command("diff", help="model version diff")
