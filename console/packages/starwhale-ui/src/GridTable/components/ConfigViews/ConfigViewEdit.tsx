@@ -95,7 +95,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     isInline
                     view={
                         props.view ?? {
-                            ids: props.columns.map((column) => column.key),
+                            ids: props.columns?.map((column) => column.key),
                         }
                     }
                     columns={props.columns ?? []}
