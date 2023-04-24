@@ -20,7 +20,6 @@ import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import qs from 'qs'
-import { getReadableStorageQuantityStr } from '@/utils'
 import { LabelSmall } from 'baseui/typography'
 
 const useStyles = createUseStyles({
@@ -66,7 +65,6 @@ export default function ModelVersionFiles() {
     const { model } = useModel()
     const [search, setSearch] = React.useState('')
     const [content, setContent] = React.useState('')
-    const [contentSize, setContentSize] = React.useState(0)
     const [targetContent, setTargetContent] = React.useState('')
     const [sourceFile, setSourceFile] = React.useState<FileNodeWithPathT | undefined>()
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -127,7 +125,6 @@ export default function ModelVersionFiles() {
                                     }}
                                     onClick={() => {
                                         setSourceFile(fileMap.get(id))
-                                        setContentSize(0)
                                     }}
                                 >
                                     <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
@@ -162,10 +159,8 @@ export default function ModelVersionFiles() {
                         signature: sourceFile.signature,
                     })}`
                 ).then(async (res) => {
-                    const blob = await res.blob()
-                    setContentSize(blob.size)
                     if (isText(sourceFile) && res.ok) {
-                        const text = await blob.text()
+                        const text = await res.text()
                         setContent(text)
                     } else {
                         setContent(' ')
@@ -218,7 +213,6 @@ export default function ModelVersionFiles() {
                             // eslint-disable-next-line @typescript-eslint/no-use-before-define
                             <CodeViewer
                                 value={content}
-                                size={contentSize}
                                 file={sourceFile}
                                 isDiff={!!query.compare}
                                 modified={targetContent}
@@ -227,7 +221,7 @@ export default function ModelVersionFiles() {
                     }
 
                     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                    return <UnablePreviewer file={sourceFile} size={contentSize} />
+                    return <UnablePreviewer file={sourceFile} />
                 }}
                 gridLayout={[
                     // RIGHT:
@@ -303,10 +297,9 @@ const THEMES = [
 function CodeViewer({
     file,
     value,
-    size = 0,
     modified,
     isDiff = false,
-}: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean; size?: number }) {
+}: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean }) {
     const styles = useStyles()
     const [theme, setTheme] = useLocalStorage<string>(THEMES[0].id)
     const [language, setLanguage] = React.useState<string | undefined>(undefined)
@@ -338,7 +331,7 @@ function CodeViewer({
                 }}
             >
                 <div>
-                    {file?.name ?? ''} <LabelSmall>{size > 0 && getReadableStorageQuantityStr(size)}</LabelSmall>
+                    {file?.name ?? ''} <LabelSmall>{file?.size}</LabelSmall>
                 </div>
                 <div className={styles.flex} style={{ gap: '20px' }}>
                     <div className={styles.flex} style={{ gap: '12px' }}>
@@ -435,7 +428,7 @@ function CodeViewer({
     )
 }
 
-function UnablePreviewer({ file, size = 0 }: { file?: FileNodeWithPathT | null; size?: number }) {
+function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
     return (
         <div>
             <div
@@ -447,7 +440,7 @@ function UnablePreviewer({ file, size = 0 }: { file?: FileNodeWithPathT | null; 
                 }}
             >
                 <div>
-                    {file?.name ?? ''} <LabelSmall>{size > 0 && getReadableStorageQuantityStr(size)}</LabelSmall>
+                    {file?.name ?? ''} <LabelSmall>{file?.size}</LabelSmall>
                 </div>
             </div>
             <AutoResizer>
