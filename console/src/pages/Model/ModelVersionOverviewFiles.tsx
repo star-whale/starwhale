@@ -20,6 +20,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import qs from 'qs'
+import { LabelSmall } from 'baseui/typography'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -122,7 +123,9 @@ export default function ModelVersionFiles() {
                                         alignItems: 'center',
                                         flexWrap: 'nowrap',
                                     }}
-                                    onClick={() => setSourceFile(fileMap.get(id))}
+                                    onClick={() => {
+                                        setSourceFile(fileMap.get(id))
+                                    }}
                                 >
                                     <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
                                     <p style={{ flex: 1 }}>{file.name}</p>
@@ -318,7 +321,7 @@ function CodeViewer({
     )
 
     return (
-        <div>
+        <div style={{ height: '100%', flex: 1 }}>
             <div
                 style={{
                     display: 'flex',
@@ -327,7 +330,9 @@ function CodeViewer({
                     alignItems: 'center',
                 }}
             >
-                <div>{file?.name ?? ''}</div>
+                <div>
+                    {file?.name ?? ''} <LabelSmall>{file?.size}</LabelSmall>
+                </div>
                 <div className={styles.flex} style={{ gap: '20px' }}>
                     <div className={styles.flex} style={{ gap: '12px' }}>
                         Language{' '}
@@ -434,7 +439,9 @@ function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
                     alignItems: 'center',
                 }}
             >
-                <div>{file?.name ?? ''}</div>
+                <div>
+                    {file?.name ?? ''} <LabelSmall>{file?.size}</LabelSmall>
+                </div>
             </div>
             <AutoResizer>
                 {/* eslint-disable-next-line react/no-unused-prop-types */}
@@ -448,6 +455,7 @@ function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
                                 padding: '2px',
                                 width,
                                 height,
+                                minHeight: '500px',
                             }}
                         >
                             <BusyPlaceholder type='center'>
