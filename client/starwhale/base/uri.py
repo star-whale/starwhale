@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing as t
 from pathlib import Path
@@ -299,6 +301,13 @@ class URI:
         obj_type: str = "",
         obj_name: str = "",
         obj_ver: str = "",
-    ) -> "URI":
+    ) -> URI:
         _uri = cls.capsulate_uri_str(instance, project, obj_type, obj_name, obj_ver)
         return cls(_uri)
+
+    @classmethod
+    def guess(cls, raw: str, fallback_type: str) -> URI:
+        try:
+            return URI(raw)
+        except URIFormatError:
+            return URI(raw, expected_type=fallback_type)

@@ -38,5 +38,13 @@ class RuntimeStorage(BaseStorage):
     def manifest_path(self) -> Path:
         return self.snapshot_workdir / DEFAULT_MANIFEST_NAME
 
+    @property
+    def manifest(self) -> t.Dict[str, t.Any]:
+        return self.get_manifest_by_path(
+            fpath=self.bundle_path,
+            bundle_type=self.bundle_type,
+            uri_type=self.uri_type,
+        )
+
     def get_docker_base_image(self) -> str:
         return self.manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)

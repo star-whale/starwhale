@@ -10,7 +10,6 @@ from starwhale.utils import load_yaml
 from starwhale.consts import (
     RECOVER_DIRNAME,
     SW_TMP_DIR_NAME,
-    SHORT_VERSION_CNT,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
@@ -204,7 +203,7 @@ class BaseStorage(metaclass=ABCMeta):
     @classmethod
     def get_manifest_by_path(
         cls, fpath: Path, bundle_type: str, uri_type: str, direct: bool = False
-    ) -> t.Any:
+    ) -> t.Dict[str, t.Any]:
         if not direct and fpath.name.endswith(bundle_type):
             _model_dir = fpath.parent.parent
             _project_dir = _model_dir.parent.parent
@@ -217,17 +216,17 @@ class BaseStorage(metaclass=ABCMeta):
                 / "workdir"
                 / uri_type
                 / _mname
-                / _mversion[:SHORT_VERSION_CNT]
+                / _mversion[:VERSION_PREFIX_CNT]
                 / _mversion
             )
             _extracted_manifest = _extracted_dir / DEFAULT_MANIFEST_NAME
 
             if _extracted_manifest.exists():
-                return load_yaml(_extracted_manifest)
+                return load_yaml(_extracted_manifest)  # type: ignore
 
         with TarFS(str(fpath)) as tar:
             with tar.open(DEFAULT_MANIFEST_NAME) as f:
-                return yaml.safe_load(f)
+                return yaml.safe_load(f)  # type: ignore
 
     @property
     def recover_snapshot_workdir(self) -> Path:

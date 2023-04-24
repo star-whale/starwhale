@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import shutil
@@ -211,20 +213,17 @@ class TestCli:
         dataset_uris: t.List[URI],
         model_uri: URI,
         run_handler: str,
-        runtime_uris: t.Optional[t.List[URI]] = None,
+        runtime_uris: t.Optional[t.List[URI | None]] = None,
     ) -> t.Any:
         logger.info("running evaluation at local...")
         self.select_local_instance()
 
         job_ids = []
-        if not runtime_uris:
-            runtime_uris = [URI("")]
-
-        for runtime_uri in runtime_uris:
+        for runtime_uri in runtime_uris or [None]:
             job_id = self.model_api.run_in_host(
                 model_uri=model_uri.full_uri,
                 dataset_uris=[_ds_uri.full_uri for _ds_uri in dataset_uris],
-                runtime_uri=runtime_uri.full_uri if runtime_uri.raw else "",
+                runtime_uri=runtime_uri,
                 run_handler=run_handler,
             )
             assert job_id
@@ -405,7 +404,7 @@ class TestCli:
         return f(  # type: ignore
             dataset_uris=dataset_uris,
             model_uri=model_uri,
-            runtime_uris=runtime_uris,
+            runtime_uris=runtime_uris,  # type: ignore
             run_handler=run_handler,
         )
 

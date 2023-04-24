@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import typing as t
 from pathlib import Path
 
@@ -33,7 +32,7 @@ from starwhale.utils.fs import cmp_file_content
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.consts.env import SWEnv
-from starwhale.utils.error import FieldTypeOrValueError
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
@@ -244,7 +243,7 @@ class ModelTermView(BaseTermView):
         version: str = "",
         run_handler: str = "",
         dataset_uris: t.Optional[t.List[str]] = None,
-        runtime_uri: str = "",
+        runtime_uri: t.Optional[URI] = None,
         scheduler_run_args: t.Optional[t.Dict] = None,
     ) -> str:
         version = version or gen_uniq_version()
@@ -274,7 +273,7 @@ class ModelTermView(BaseTermView):
     def run_in_container(
         cls,
         model_src_dir: Path,
-        runtime_uri: str = "",
+        runtime_uri: t.Optional[URI] = None,
         docker_image: str = "",
     ) -> None:
         # TODO: support to get job version for in container
@@ -282,11 +281,17 @@ class ModelTermView(BaseTermView):
             raise FieldTypeOrValueError("runtime_uri and docker_image both are none")
 
         if runtime_uri:
-            runtime = StandaloneRuntime(URI(runtime_uri, expected_type=URIType.RUNTIME))
-            docker_image = runtime.store.get_docker_base_image()
+            if runtime_uri.object.typ == URIType.RUNTIME:
+                runtime = StandaloneRuntime(runtime_uri)
+                docker_image = runtime.store.get_docker_base_image()
+            elif runtime_uri.object.typ == URIType.MODEL:
+                model = StandaloneModel(runtime_uri)
+                docker_image = model.store.get_packaged_runtime_base_image()
+            else:
+                raise NoSupportError(f"not support {runtime_uri} to fetch docker image")
 
         mounts = [str(model_src_dir.resolve().absolute())]
-        envs = {SWEnv.runtime_version: runtime_uri} if runtime_uri else {}
+        envs = {SWEnv.runtime_version: str(runtime_uri)} if runtime_uri else {}
         cmd = docker.gen_swcli_docker_cmd(
             docker_image,
             envs=envs,
@@ -332,14 +337,20 @@ class ModelTermView(BaseTermView):
         project: str,
         model_config: ModelConfig,
         runtime_uri: str = "",
+        package_runtime: bool = True,
     ) -> URI:
         workdir = Path(workdir)
         _model_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=model_config.name, typ=URIType.MODEL
+            project=project,
+            bundle_name=model_config.name,
+            typ=URIType.MODEL,
         )
         _m = Model.get_model(_model_uri)
-        kwargs = {"model_config": model_config}
+        kwargs: t.Dict[str, t.Any] = {"model_config": model_config}
         if runtime_uri:
+            if package_runtime:
+                kwargs["package_runtime_uri"] = runtime_uri
+
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=_m.build,
@@ -376,29 +387,15 @@ class ModelTermView(BaseTermView):
     @BaseTermView._only_standalone
     def serve(
         cls,
-        target: str,
-        model_yaml: str,
-        runtime_uri: str,
-        model_uri: str,
+        model_src_dir: Path,
+        model_config: ModelConfig,
+        runtime_uri: URI,
         host: str,
         port: int,
     ) -> None:
-        if target and model_uri:
-            console.print("workdir and model can not both set together")
-            sys.exit(1)
-        if not target and not model_uri:
-            console.print("workdir or model needs to be set")
-            sys.exit(1)
-
-        if target:
-            workdir = cls._get_workdir(target)
-        else:
-            _m = StandaloneModel(URI(model_uri, expected_type=URIType.MODEL))
-            workdir = _m.store.src_dir
-
         kw = dict(
-            model_yaml=model_yaml,
-            workdir=workdir,
+            model_config=model_config,
+            model_src_dir=model_src_dir,
             host=host,
             port=port,
         )
