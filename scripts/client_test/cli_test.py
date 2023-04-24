@@ -144,7 +144,7 @@ class TestCli:
 
     def build_dataset(self, name: str, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
         self.select_local_instance()
-        ret_uri = Dataset.build_with_api(workdir=_workdir, ds_expl=ds_expl)
+        ret_uri = Dataset.build(workdir=_workdir, name=ds_expl.name)
         _uri = URI.capsulate_uri(
             instance=ret_uri.instance,
             project=ret_uri.project,
@@ -153,7 +153,7 @@ class TestCli:
             obj_ver=ret_uri.object.version,
         )
         if self.server_url:
-            assert self.dataset_api.copy(
+            self.dataset_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
             )
@@ -164,14 +164,11 @@ class TestCli:
         assert self.dataset_api.info(_uri.full_uri)
         return _uri
 
-    def build_model(
-        self,
-        _workdir: str,
-    ) -> t.Any:
+    def build_model(self, workdir: str, name: str) -> t.Any:
         self.select_local_instance()
-        _uri = Model.build_with_api(workdir=_workdir)
+        _uri = Model.build(workdir=workdir, name=name)
         if self.server_url:
-            assert self.model_api.copy(
+            self.model_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
@@ -183,16 +180,17 @@ class TestCli:
 
     def build_runtime(
         self,
-        _workdir: str,
+        workdir: str,
         runtime_yaml: str = "runtime.yaml",
     ) -> t.Any:
         self.select_local_instance()
-        runtime_cache_path = f"{_workdir}/.starwhale"
+        runtime_cache_path = f"{workdir}/.starwhale"
         if os.path.exists(runtime_cache_path):
             shutil.rmtree(runtime_cache_path)
-        _uri = Runtime.build_with_api(workdir=_workdir, runtime_yaml=runtime_yaml)
+
+        _uri = Runtime.build(workdir=workdir, runtime_yaml=runtime_yaml)
         if self.server_url:
-            assert self.runtime_api.copy(
+            self.runtime_api.copy(
                 src_uri=_uri.full_uri,
                 target_project=f"cloud://server/project/{self.server_project}",
                 force=True,
@@ -283,7 +281,7 @@ class TestCli:
         self.select_local_instance()
 
         run_handler = "src.evaluator:evaluate"
-        model_uri = self.build_model(f"{self._work_dir}/scripts/example")
+        model_uri = self.build_model(f"{self._work_dir}/scripts/example", "simple")
         dataset_uri = self.build_dataset(
             "simple", f"{self._work_dir}/scripts/example", DatasetExpl("", "")
         )
@@ -318,10 +316,9 @@ class TestCli:
                 raise
 
         for name, example in ALL_EXAMPLES.items():
-            workdir_ = example["workdir"]
             for d_type in example["datasets"]:
-                self.build_dataset(name, workdir_, d_type)
-            self.build_model(workdir_)
+                self.build_dataset(name, example["workdir"], d_type)
+            self.build_model(example["workdir"], name)
 
         for name, rt in RUNTIMES.items():
             if "yamls" not in rt:
@@ -366,21 +363,21 @@ class TestCli:
                     self.build_runtime(str(rt["workdir"]), yml)
 
         example = ALL_EXAMPLES[name]
-        workdir_ = str(example["workdir"])
+        workdir = str(example["workdir"])
 
         rc = subprocess.Popen(
             ["make", "CN=1", "prepare"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            cwd=workdir_,
+            cwd=workdir,
         )
         if rc != 0:
             logger.error(f"prepare data for {example} failed")
             raise
 
         for ds in example["datasets"]:
-            self.build_dataset(name, workdir_, ds)
-        self.build_model(workdir_)
+            self.build_dataset(name, workdir, ds)
+        self.build_model(workdir, name)
 
         self.run_example(name, run_handler, in_standalone=True)
 
@@ -409,8 +406,8 @@ class TestCli:
         )
 
     def debug(self) -> None:
-        for example in ALL_EXAMPLES.values():
-            self.build_model(str(example["workdir"]))
+        for name, example in ALL_EXAMPLES.items():
+            self.build_model(str(example["workdir"]), name)
 
     def smoke_commands(self) -> None:
         commands = [

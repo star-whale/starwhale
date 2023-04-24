@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import os
+import sys
+import copy
 import typing as t
-import tempfile
 from pathlib import Path
-from functools import partial
-
-import dill
 
 from starwhale.utils import console
-from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME, ENV_LOG_VERBOSE_COUNT
+from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import extract_tar
 from starwhale.base.type import URIType, InstanceType
@@ -18,7 +16,7 @@ from starwhale.utils.venv import (
     check_valid_venv_prefix,
     check_valid_conda_prefix,
 )
-from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.core.model.model import StandaloneModel
 
@@ -27,53 +25,66 @@ from .model import StandaloneRuntime
 
 class Process:
     EnvInActivatedProcess = "SW_RUNTIME_ACTIVATED_PROCESS"
+    ActivatedRuntimeURI = "SW_ACTIVATED_RUNTIME_URI_IN_SUBPROCESS"
 
     def __init__(
         self,
-        prefix_path: t.Union[Path, str],
-        target: t.Callable,
-        args: t.Tuple = (),
-        kwargs: t.Dict[str, t.Any] = {},
+        uri: t.Union[URI, str],
+        force_restore: bool = False,
     ) -> None:
-        self._prefix_path = Path(prefix_path).resolve()
-        self._target = target
-        self._args = args
-        self._kwargs = kwargs
+        self._uri = uri
+        self._prefix_path = self._restore_runtime(force_restore=force_restore)
         self._mode = guess_python_env_mode(self._prefix_path)
 
     def __str__(self) -> str:
-        return f"process: {self._target} in prefix path {self._prefix_path}"
+        return f"process: {self._mode} in prefix path {self._prefix_path}"
 
     def __repr__(self) -> str:
-        return f"process: {self._target} with args:{self._args}, kwargs:{self._kwargs} in runtime {self._prefix_path}"
+        return f"process: {self._mode} in prefix path {self._prefix_path}, runtime uri: {self._uri}"
 
     def run(self) -> None:
-        partial_target = partial(self._target, *self._args, **self._kwargs)
-        _, _pkl_path = tempfile.mkstemp(
-            prefix="starwhale-runtime-process-", suffix=".pkl"
+        if os.environ.get(self.EnvInActivatedProcess, "0") == "1":
+            raise RuntimeError("already in runtime activated process")
+
+        argv = copy.deepcopy(sys.argv)
+        if len(argv) < 2:
+            raise NoSupportError("no cli command")
+
+        argv[0] = f"{self._prefix_path}/bin/swcli"
+
+        clear_positions = []
+        # support formats: "--runtime=python3.7" or "--runtime python3.7" or "-r python3.7".
+        # click lib does not support "-r=python3.7" format.
+        for i in range(0, len(argv)):
+            if argv[i] in ("-r", "--runtime"):
+                clear_positions.append(i)
+                clear_positions.append(i + 1)
+                break
+            elif argv[i].startswith("--runtime="):
+                clear_positions.append(i)
+                break
+
+        if not clear_positions:
+            raise RuntimeError(f"no runtime specified: {argv}")
+
+        for p in clear_positions[::-1]:
+            argv.pop(p)
+
+        cmd = [
+            self._get_activate_cmd(),
+            " ".join(argv),
+        ]
+        console.print(
+            f":rooster: run process in the python isolated environment(prefix: {self._prefix_path})"
         )
-        with open(_pkl_path, "wb") as f:
-            dill.dump(partial_target, f)
-
-        if not os.path.exists(_pkl_path):
-            raise NotFoundError(f"dill file: {_pkl_path}")
-
-        verbose = int(os.environ.get(ENV_LOG_VERBOSE_COUNT, "0"))
-        try:
-            cmd = [
-                self._get_activate_cmd(),
-                f'{self._prefix_path}/bin/python3 -c \'from starwhale.utils.debug import init_logger; init_logger({verbose}); import dill; dill.load(open("{_pkl_path}", "rb"))()\'',
-            ]
-            console.print(
-                f":rooster: run process in the python isolated environment(prefix: {self._prefix_path})"
-            )
-            check_call(
-                ["bash", "-c", " && ".join(cmd)],
-                env={self.EnvInActivatedProcess: "1"},
-                log=print,
-            )
-        finally:
-            os.unlink(_pkl_path)
+        check_call(
+            ["bash", "-c", " && ".join(cmd)],
+            env={
+                self.EnvInActivatedProcess: "1",
+                self.ActivatedRuntimeURI: str(self._uri),
+            },
+            log=print,
+        )
 
     def _get_activate_cmd(self) -> str:
         # TODO: support windows platform
@@ -85,20 +96,14 @@ class Process:
         else:
             raise NoSupportError(f"get activate command for mode: {self._mode}")
 
-    @classmethod
-    def from_runtime_uri(
-        cls,
-        uri: t.Union[str, URI],
-        target: t.Callable,
-        args: t.Tuple = (),
-        kwargs: t.Dict[str, t.Any] = {},
+    def _restore_runtime(
+        self,
         force_restore: bool = False,
-    ) -> Process:
-        _uri: URI
-        if isinstance(uri, str):
-            _uri = URI.guess(uri, fallback_type=URIType.RUNTIME)
+    ) -> Path:
+        if isinstance(self._uri, str):
+            _uri = URI.guess(self._uri, fallback_type=URIType.RUNTIME)
         else:
-            _uri = uri
+            _uri = self._uri
 
         console.print(
             f":owl: start to run in the new process with runtime environment: {_uri}"
@@ -147,9 +152,4 @@ class Process:
                 f"venv_prefix({venv_prefix}) and conda_prefix({conda_prefix}) are both not existed"
             )
 
-        return cls(
-            prefix_path=prefix,
-            target=target,
-            args=args,
-            kwargs=kwargs,
-        )
+        return prefix.resolve()

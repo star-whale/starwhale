@@ -19,7 +19,7 @@ from requests_mock import Mocker
 
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
-from starwhale.consts import HTTPMethod
+from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.error import NotFoundError, NoSupportError
@@ -47,6 +47,7 @@ class _DatasetSDKTestBase(BaseTestCase):
         super().setUp()
         self._original_cwd = os.getcwd()
         os.chdir(self.local_storage)
+        os.environ[ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST] = ""
 
     def tearDown(self) -> None:
         if hasattr(self, "_original_cwd"):

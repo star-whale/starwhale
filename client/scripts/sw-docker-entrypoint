@@ -93,7 +93,7 @@ set_py_and_sw() {
 
     set_pip_cache
 
-    if [ "$PY_VER" != "$DEFAULT_PY_VER" ] || [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
+    if [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
         # ignore the editable dev version
         if [ "$DETECTED_SW_VER" != "0.0.0.dev0" ]; then
           echo "-->[Preparing] start to install starwhale:${DETECTED_SW_VER}"
