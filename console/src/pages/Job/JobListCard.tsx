@@ -6,15 +6,16 @@ import { ICreateJobSchema, JobActionType, JobStatusType } from '@job/schemas/job
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/index'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
-import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
 import { TextLink } from '@/components/Link'
+import { MonoText } from '@/components/Text'
+import JobStatus from '@/domain/job/components/JobStatus'
+import Button from '@starwhale/ui/Button'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -47,7 +48,6 @@ export default function JobListCard() {
                 title={t('Jobs')}
                 extra={
                     <Button
-                        size={ButtonSize.compact}
                         onClick={() => {
                             history.push('new_job')
                         }}
@@ -61,6 +61,7 @@ export default function JobListCard() {
                     isLoading={jobsInfo.isLoading}
                     columns={[
                         t('Job ID'),
+                        t('Resource Pool'),
                         t('sth name', [t('Model')]),
                         t('Version'),
                         t('Owner'),
@@ -75,62 +76,87 @@ export default function JobListCard() {
                             const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
                                 [JobStatusType.CREATED]: (
                                     <>
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
+                                        >
                                             {t('Cancel')}
-                                        </StyledLink>
+                                        </Button>
                                         &nbsp;&nbsp;
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                        >
                                             {t('Pause')}
-                                        </StyledLink>
+                                        </Button>
                                     </>
                                 ),
                                 [JobStatusType.RUNNING]: (
                                     <>
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
+                                        >
                                             {t('Cancel')}
-                                        </StyledLink>
+                                        </Button>
                                         &nbsp;&nbsp;
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                        >
                                             {t('Pause')}
-                                        </StyledLink>
+                                        </Button>
                                     </>
                                 ),
                                 [JobStatusType.PAUSED]: (
                                     <>
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
+                                        >
                                             {t('Cancel')}
-                                        </StyledLink>
+                                        </Button>
                                         &nbsp;&nbsp;
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                        >
                                             {t('Resume')}
-                                        </StyledLink>
+                                        </Button>
                                     </>
                                 ),
                                 [JobStatusType.FAIL]: (
                                     <>
-                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                        >
                                             {t('Resume')}
-                                        </StyledLink>
+                                        </Button>
                                     </>
                                 ),
                                 [JobStatusType.SUCCESS]: (
-                                    <TextLink to={`/projects/${projectId}/jobs/${job.id}/results`}>
-                                        {t('View Results')}
-                                    </TextLink>
+                                    <Button
+                                        kind='tertiary'
+                                        onClick={() => history.push(`/projects/${projectId}/jobs/${job.id}/tasks`)}
+                                    >
+                                        {t('View Tasks')}
+                                    </Button>
                                 ),
                             }
 
                             return [
                                 <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
-                                    {job.uuid}
+                                    <MonoText>{job.uuid}</MonoText>
                                 </TextLink>,
+                                job.resourcePool,
                                 job.modelName,
-                                job.modelVersion,
+                                <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
                                 job.owner && <User user={job.owner} />,
-                                job.createdTime && formatTimestampDateTime(job.createdTime),
+                                job?.createdTime && job?.createdTime && formatTimestampDateTime(job?.createdTime),
                                 typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
-                                job.stopTime > 0 ? formatTimestampDateTime(job.stopTime) : '-',
-                                job.jobStatus,
+                                job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
+                                <JobStatus key='jobStatus' status={job.jobStatus as any} />,
                                 actions[job.jobStatus] ?? '',
                             ]
                         }) ?? []

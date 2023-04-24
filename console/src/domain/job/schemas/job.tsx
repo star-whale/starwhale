@@ -11,13 +11,12 @@ export enum JobActionType {
 }
 export enum JobStatusType {
     CREATED = 'CREATED',
+    READY = 'READY',
     PAUSED = 'PAUSED',
     RUNNING = 'RUNNING',
     TO_CANCEL = 'TO_CANCEL',
     CANCELING = 'CANCELING',
     CANCELED = 'CANCELED',
-    TO_COLLECT_RESULT = 'TO_COLLECT_RESULT',
-    COLLECTING_RESULT = 'COLLECTING_RESULT',
     SUCCESS = 'SUCCESS',
     FAIL = 'FAIL',
     UNKNOWN = 'UNKNOWN',
@@ -32,11 +31,13 @@ export interface IJobSchema extends IResourceSchema {
     datasets?: string[]
     runtime?: IRuntimeSchema
     device?: IDeviceSchema
-    deviceAmount: number
+    deviceAmount?: number
     duration: number
-    createdTime: number
-    stopTime: number
     jobStatus: JobStatusType
+    resourcePool?: string
+    comment?: string
+    stopTime?: number
+    createdTime?: number
 }
 
 export type IJobDetailSchema = IJobSchema

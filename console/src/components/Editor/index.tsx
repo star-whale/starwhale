@@ -10,9 +10,9 @@ import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { useProject } from '@project/hooks/useProject'
 
-registerWidgets()
-
 export function withEditorRegister(EditorApp: React.FC) {
+    registerWidgets()
+
     return function EditorLoader(props: any) {
         const { project } = useProject()
         const projectId = project?.id
