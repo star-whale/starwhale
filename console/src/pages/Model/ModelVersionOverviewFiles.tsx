@@ -20,6 +20,8 @@ import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
 import qs from 'qs'
+import { getReadableStorageQuantityStr } from '@/utils'
+import { LabelSmall } from 'baseui/typography'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -64,6 +66,7 @@ export default function ModelVersionFiles() {
     const { model } = useModel()
     const [search, setSearch] = React.useState('')
     const [content, setContent] = React.useState('')
+    const [contentSize, setContentSize] = React.useState(0)
     const [targetContent, setTargetContent] = React.useState('')
     const [sourceFile, setSourceFile] = React.useState<FileNodeWithPathT | undefined>()
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -122,7 +125,10 @@ export default function ModelVersionFiles() {
                                         alignItems: 'center',
                                         flexWrap: 'nowrap',
                                     }}
-                                    onClick={() => setSourceFile(fileMap.get(id))}
+                                    onClick={() => {
+                                        setSourceFile(fileMap.get(id))
+                                        setContentSize(0)
+                                    }}
                                 >
                                     <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
                                     <p style={{ flex: 1 }}>{file.name}</p>
@@ -156,8 +162,10 @@ export default function ModelVersionFiles() {
                         signature: sourceFile.signature,
                     })}`
                 ).then(async (res) => {
+                    const blob = await res.blob()
+                    setContentSize(blob.size)
                     if (isText(sourceFile) && res.ok) {
-                        const text = await res.text()
+                        const text = await blob.text()
                         setContent(text)
                     } else {
                         setContent(' ')
@@ -210,6 +218,7 @@ export default function ModelVersionFiles() {
                             // eslint-disable-next-line @typescript-eslint/no-use-before-define
                             <CodeViewer
                                 value={content}
+                                size={contentSize}
                                 file={sourceFile}
                                 isDiff={!!query.compare}
                                 modified={targetContent}
@@ -218,7 +227,7 @@ export default function ModelVersionFiles() {
                     }
 
                     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                    return <UnablePreviewer file={sourceFile} />
+                    return <UnablePreviewer file={sourceFile} size={contentSize} />
                 }}
                 gridLayout={[
                     // RIGHT:
@@ -294,9 +303,10 @@ const THEMES = [
 function CodeViewer({
     file,
     value,
+    size,
     modified,
     isDiff = false,
-}: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean }) {
+}: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean; size?: number }) {
     const styles = useStyles()
     const [theme, setTheme] = useLocalStorage<string>(THEMES[0].id)
     const [language, setLanguage] = React.useState<string | undefined>(undefined)
@@ -318,7 +328,7 @@ function CodeViewer({
     )
 
     return (
-        <div>
+        <div style={{ height: '100%', flex: 1 }}>
             <div
                 style={{
                     display: 'flex',
@@ -327,7 +337,9 @@ function CodeViewer({
                     alignItems: 'center',
                 }}
             >
-                <div>{file?.name ?? ''}</div>
+                <div>
+                    {file?.name ?? ''} <LabelSmall>{size > 0 && getReadableStorageQuantityStr(size)}</LabelSmall>
+                </div>
                 <div className={styles.flex} style={{ gap: '20px' }}>
                     <div className={styles.flex} style={{ gap: '12px' }}>
                         Language{' '}
@@ -423,7 +435,7 @@ function CodeViewer({
     )
 }
 
-function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
+function UnablePreviewer({ file, size }: { file?: FileNodeWithPathT | null; size?: number }) {
     return (
         <div>
             <div
@@ -434,7 +446,9 @@ function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
                     alignItems: 'center',
                 }}
             >
-                <div>{file?.name ?? ''}</div>
+                <div>
+                    {file?.name ?? ''} <LabelSmall>{size > 0 && getReadableStorageQuantityStr(size)}</LabelSmall>
+                </div>
             </div>
             <AutoResizer>
                 {/* eslint-disable-next-line react/no-unused-prop-types */}
@@ -448,6 +462,7 @@ function UnablePreviewer({ file }: { file?: FileNodeWithPathT | null }) {
                                 padding: '2px',
                                 width,
                                 height,
+                                minHeight: '500px',
                             }}
                         >
                             <BusyPlaceholder type='center'>
