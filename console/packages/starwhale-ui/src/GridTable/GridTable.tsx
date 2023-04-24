@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import { Skeleton } from 'baseui/skeleton'
 import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
@@ -100,13 +100,8 @@ function GridTable({
     const store = useStoreApi()
     // @FIXME
     useDirectStoreUpdater(
-        'columns',
-        useMemo(
-            () => ({
-                getColumns: () => columns,
-            }),
-            [columns]
-        ),
+        'getColumns',
+        useCallback(() => columns, [columns]),
         store.setState
     )
     useDirectStoreUpdater('rows', rows, store.setState)

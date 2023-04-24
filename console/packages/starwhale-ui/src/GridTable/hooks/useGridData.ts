@@ -4,9 +4,13 @@ import { useStoreApi } from './useStore'
 import React, { useMemo } from 'react'
 
 function useGirdData() {
-    const { getId, columns, columnTypes, records } = useStoreApi().getState()
+    const { getId, getColumns, columnTypes, records } = useStoreApi().getState()
 
-    const $rawColumns = React.useMemo(() => columns?.getColumns?.() ?? [], [columns])
+    const $rawColumns = React.useMemo(() => {
+        if (!getColumns || typeof getColumns !== 'function') return []
+
+        return getColumns?.() ?? []
+    }, [getColumns])
 
     const $columns = useDatastoreColumns(columnTypes as any)
 
