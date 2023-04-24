@@ -303,7 +303,7 @@ const THEMES = [
 function CodeViewer({
     file,
     value,
-    size,
+    size = 0,
     modified,
     isDiff = false,
 }: EditorProps & { file?: FileNodeWithPathT | null; modified?: string; isDiff?: boolean; size?: number }) {
@@ -435,7 +435,7 @@ function CodeViewer({
     )
 }
 
-function UnablePreviewer({ file, size }: { file?: FileNodeWithPathT | null; size?: number }) {
+function UnablePreviewer({ file, size = 0 }: { file?: FileNodeWithPathT | null; size?: number }) {
     return (
         <div>
             <div
