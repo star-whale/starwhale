@@ -2,7 +2,21 @@
 /// <reference types="vite/client" />
 
 declare module 'virtual:route-views' {
-    const routes: import('react-router-dom').RouteObject[]
+    export type IExtendRoutesType = {
+        auth?: boolean
+        routes?: IRoute[]
+    }
 
-    export default routes
+    export type IRoute = {
+        path?: string
+        from?: string
+        to?: string
+        component?: any
+        routes?: IRoute[]
+    }
+
+    // eslint-disable-next-line
+    const component: IExtendRoutesType[]
+    // console.log(component)
+    export default component
 }

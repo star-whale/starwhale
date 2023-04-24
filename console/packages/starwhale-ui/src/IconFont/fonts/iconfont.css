@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('iconfont.woff2?t=1680769284437') format('woff2'),
-       url('iconfont.woff?t=1680769284437') format('woff'),
-       url('iconfont.ttf?t=1680769284437') format('truetype');
+  src: url('iconfont.woff2?t=1682328526030') format('woff2'),
+       url('iconfont.woff?t=1682328526030') format('woff'),
+       url('iconfont.ttf?t=1682328526030') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,26 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-account:before {
+  content: "\e660";
+}
+
+.icon-account2:before {
+  content: "\e661";
+}
+
+.icon-bill:before {
+  content: "\e662";
+}
+
+.icon-voucher:before {
+  content: "\e663";
+}
+
+.icon-indent:before {
+  content: "\e664";
 }
 
 .icon-global:before {

@@ -4,6 +4,7 @@ import './fonts/iconfont.css'
 
 import projectSvg from './svg/project.svg'
 import settingSvg from './svg/setting.svg'
+import accountSvg from './svg/account2.svg'
 import emptySvg from './svg/empty.svg'
 import emptyChart from './svg/empty-chart.svg'
 import searchEmptySvg from './svg/search-empty.svg'
@@ -92,6 +93,11 @@ export type IconTypesT =
     | 'group'
     | 'library'
     | 'global'
+    | 'user2'
+    | 'account'
+    | 'bill'
+    | 'voucher'
+    | 'indent'
 
 interface IIconFontProps {
     style?: React.CSSProperties
@@ -107,6 +113,7 @@ const hijacked = {
     empty: emptySvg,
     emptyChart,
     searchEmpty: searchEmptySvg,
+    account2: accountSvg,
     invalidFile,
 }
 

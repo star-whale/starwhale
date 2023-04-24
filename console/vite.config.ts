@@ -9,10 +9,13 @@ import router from './vite-plugin-react-routes'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export const alias = {
+    // @FIXME
     'baseui': path.resolve(__dirname, './node_modules/baseui'),
     'react-use': path.resolve(__dirname, './node_modules/react-use'),
+    'react': path.resolve(__dirname, './node_modules/react'),
     'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
     'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
+    'rc-steps': path.resolve(__dirname, './node_modules/rc-steps'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),

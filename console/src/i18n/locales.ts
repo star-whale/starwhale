@@ -253,10 +253,6 @@ const job = {
         en: 'Failed',
         zh: '失败',
     },
-    'job.status.ready': {
-        en: 'Ready',
-        zh: '已就绪',
-    },
 }
 
 const evaluation = {
@@ -436,6 +432,111 @@ const widget = {
     'panel.view.config.model-buildin': {
         en: 'Model Build-in',
         zh: '模型内置配置',
+    },
+}
+
+const account = {
+    'account.title': {
+        en: 'Account Management',
+        zh: '账户管理',
+    },
+    'account.overview': {
+        en: 'Overview',
+        zh: '账户概览',
+    },
+    'account.id': {
+        en: 'Account ID',
+        zh: '账户ID',
+    },
+    'account.amount.consumed': {
+        en: 'Amount Consumed',
+        zh: '已消费金额',
+    },
+    'account.amount.consumed.tooltip': {},
+    'account.amount.balance': {
+        en: 'Balance',
+        zh: '账户余额',
+    },
+    'account.amount.balance.tooltip': {
+        zh: '账户余额=订单金额-已消费金额-已退款金额',
+        en: 'Balance = Order Amount - Amount Consumed - Amount Refunded',
+    },
+    'account.amount.owed': {
+        en: 'Amount Owed',
+        zh: '已欠费金额',
+    },
+    'account.amount.owed.tooltip': {},
+    'account.amount.available': {
+        en: 'Available',
+        zh: '可用额度',
+    },
+    'account.amount.available.tooltip': {
+        en: 'Available = Order Amount + Coupon Amount - Amount Consumed - Amount Refunded - Amount Frozen',
+        zh: '可用额度=订单金额+代金券金额-已消费金额-已退款金额-已冻结金额',
+    },
+    'account.amount.recharge': {
+        en: 'Recharge',
+        zh: '充值',
+    },
+    'account.amount.recharge.go': {
+        en: 'Recharge',
+        zh: '去充值',
+    },
+    'account.amount.recharge.success': {
+        en: 'Recharge Success',
+        zh: '充值成功',
+    },
+    'account.amount.recharge.failed': {
+        en: 'Recharge Failed',
+        zh: '充值失败',
+    },
+    'account.bill': {
+        en: 'Bill',
+        zh: '账单',
+    },
+    'account.bill.all': {
+        en: 'All Bills',
+        zh: '全部账单 >>',
+    },
+    'account.bill.check': {
+        zh: '查账单',
+        en: 'Check Bill',
+    },
+    'account.order': {
+        en: 'Order',
+        zh: '订单',
+    },
+    'account.order.recharge': {
+        en: 'Recharge Order',
+        zh: '充值订单',
+    },
+    'account.recharge.precaution1': {
+        zh: '1.充值完成后，如您有欠费，充值资金将优先抵扣欠费，剩余资金将保留在您的账户内;',
+        en: '1.After recharging, if you have any arrears, the recharged funds will be used to offset the arrears first, and the remaining funds will be reserved in your account;',
+    },
+    'account.recharge.precaution2': {
+        zh: '2.充值资金不支持直接开票，需要在使用starwhale产品后根据资源消费记录申请;',
+        en: '2.Recharged funds do not support direct invoicing, and you need to apply for an invoice based on the resource consumption record after using starwhale products;',
+    },
+    'account.recharge.precaution3': {
+        zh: '3.充值完成并抵扣欠费后，剩余资金支持申请退款，且只支持原路退回至付款账号',
+        en: '3.After the recharge is completed and the arrears are deducted, the remaining funds support the application for a refund, and only support the original route to return to the payment account',
+    },
+    'account.order.all': {
+        en: 'All Orders',
+        zh: '全部订单 >>',
+    },
+    'account.order.pending': {
+        zh: '待支付{{0}}个',
+        en: '{{0}} Pending',
+    },
+    'account.coupon': {
+        en: 'Coupon',
+        zh: '代金券',
+    },
+    'account.coupon.all': {
+        en: 'All Coupons',
+        zh: '全部代金券 >>',
     },
 }
 
@@ -867,10 +968,6 @@ const locales0 = {
     'View Results': {
         en: 'View Results',
         zh: '查看结果',
-    },
-    'View Tasks': {
-        en: 'View Tasks',
-        zh: '查看任务',
     },
     'job action done': {
         en: 'job action done',
@@ -1404,6 +1501,7 @@ const locales0 = {
     ...evaluation,
     ...widget,
     ...ui,
+    ...account,
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
