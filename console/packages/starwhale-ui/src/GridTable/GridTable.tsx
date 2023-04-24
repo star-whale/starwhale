@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { Skeleton } from 'baseui/skeleton'
 import { areEqual } from 'react-window'
 import { useStyletron } from 'baseui'
@@ -99,7 +99,11 @@ function GridTable({
     const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
     const store = useStoreApi()
     // @FIXME
-    useDirectStoreUpdater('columns', columns, store.setState)
+    useDirectStoreUpdater(
+        'getColumns',
+        useCallback(() => columns, [columns]),
+        store.setState
+    )
     useDirectStoreUpdater('rows', rows, store.setState)
 
     const {

@@ -45,6 +45,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     getId?: (record: any) => string | undefined
     // @FIXME type
     onInit?: (state: Partial<IGridState>) => void
+    getColumns?: () => any[]
 }
 
 export interface IToolBarProps {
