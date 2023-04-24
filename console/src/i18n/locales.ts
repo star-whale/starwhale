@@ -474,19 +474,43 @@ const account = {
         en: 'Available = Order Amount + Coupon Amount - Amount Consumed - Amount Refunded - Amount Frozen',
         zh: '可用额度=订单金额+代金券金额-已消费金额-已退款金额-已冻结金额',
     },
-    'account.amount.recharge': {
+    'account.recharge': {
         en: 'Recharge',
         zh: '充值',
     },
-    'account.amount.recharge.go': {
+    'account.recharge.account': {
+        en: 'Recharge Account',
+        zh: '充值账户',
+    },
+    'account.recharge.amount': {
+        en: 'Recharge Amount',
+        zh: '充值金额',
+    },
+    'account.recharge.input': {
+        zh: '填写充值金额',
+        en: 'Input Recharge Amount',
+    },
+    'account.recharge.input.placeholder': {
+        zh: '请填写充值金额，支持{{0}}元以上',
+        en: 'Please input recharge amount, at least {{0}}',
+    },
+    'account.recharge.confirm': {
+        zh: '确认并支付',
+        en: 'Confirm and Pay',
+    },
+    'account.recharge.finish': {
+        zh: '完成',
+        en: 'Finish',
+    },
+    'account.recharge.go': {
         en: 'Recharge',
         zh: '去充值',
     },
-    'account.amount.recharge.success': {
+    'account.recharge.success': {
         en: 'Recharge Success',
         zh: '充值成功',
     },
-    'account.amount.recharge.failed': {
+    'account.recharge.failed': {
         en: 'Recharge Failed',
         zh: '充值失败',
     },
