@@ -539,7 +539,6 @@ def _run(
 @click.option(  # type: ignore[no-untyped-call]
     "-f",
     "--model-yaml",
-    default=DefaultYAMLName.MODEL,
     help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option("-r", "--runtime", default="", help="runtime uri")
