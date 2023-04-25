@@ -160,7 +160,16 @@ class Runtime(BaseArtifact):
         version = gen_uniq_version()
         yaml_path = os.path.join(workdir, runtime_yaml)
         config = RuntimeConfig.create_by_yaml(Path(yaml_path))
-        cmd = [CLI, "runtime", "build", "--yaml", yaml_path, "--name", config.name]
+        cmd = [
+            CLI,
+            "runtime",
+            "build",
+            "--yaml",
+            yaml_path,
+            "--name",
+            config.name,
+            "--no-cache",
+        ]
         ret_code, res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
         assert ret_code == 0, res
         return URI(f"{config.name}/version/{version}", expected_type=URIType.RUNTIME)

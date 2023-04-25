@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import shutil
 import typing as t
 import logging
 import subprocess
@@ -184,10 +183,6 @@ class TestCli:
         runtime_yaml: str = "runtime.yaml",
     ) -> t.Any:
         self.select_local_instance()
-        runtime_cache_path = f"{workdir}/.starwhale"
-        if os.path.exists(runtime_cache_path):
-            shutil.rmtree(runtime_cache_path)
-
         _uri = Runtime.build(workdir=workdir, runtime_yaml=runtime_yaml)
         if self.server_url:
             self.runtime_api.copy(
