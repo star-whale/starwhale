@@ -49,6 +49,11 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: false,
             },
+            '/billing': {
+                target: 'http://10.131.0.1:8088/',
+                changeOrigin: true,
+                secure: false,
+            },
         },
     },
     build: {

@@ -562,6 +562,30 @@ const account = {
         en: 'All Coupons',
         zh: '全部代金券 >>',
     },
+    'order.number': {
+        en: 'Order Number',
+        zh: '订单编号',
+    },
+    'order.amount': {
+        en: 'Recharge Amount',
+        zh: '充值金额',
+    },
+    'order.amount.refundable': {
+        en: 'Refundable Amount',
+        zh: '可退金额',
+    },
+    'order.amount.refunded': {
+        en: 'Refunded Amount',
+        zh: '已退款金额',
+    },
+    'order.status': {
+        en: 'Order Status',
+        zh: '订单状态',
+    },
+    'orders': {
+        en: 'Orders',
+        zh: '充值订单',
+    },
 }
 
 const locales0 = {
@@ -880,6 +904,10 @@ const locales0 = {
     'Created': {
         en: 'Created',
         zh: '创建时间',
+    },
+    'Finished': {
+        en: 'Finished',
+        zh: '完成时间',
     },
     'Owner': {
         en: 'Owner',
