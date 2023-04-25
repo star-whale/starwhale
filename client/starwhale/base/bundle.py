@@ -167,9 +167,6 @@ class LocalStorageBundleMixin:
             os=platform.system(),
             sw_version=STARWHALE_VERSION,
         )
-        self._manifest["version"] = self._version  # type: ignore
-        self._manifest[CREATED_AT_KEY] = now_str()
-
         # TODO: add signature for import files: model, config
         _fpath = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
         ensure_file(_fpath, yaml.safe_dump(self._manifest, default_flow_style=False))
@@ -183,6 +180,8 @@ class LocalStorageBundleMixin:
         self.uri.object.version = self._version  # type:ignore
         logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
+        self._manifest["version"] = self._version
+        self._manifest[CREATED_AT_KEY] = now_str()
 
     def _make_auto_tags(self) -> None:
         self.tag.add_fast_tag()  # type: ignore

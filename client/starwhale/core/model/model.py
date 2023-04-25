@@ -21,6 +21,7 @@ from starwhale.utils import (
     console,
     now_str,
     load_yaml,
+    pretty_bytes,
     gen_uniq_version,
     validate_obj_name,
 )
@@ -35,8 +36,10 @@ from starwhale.consts import (
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
+    DIGEST_FILE_NAME,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
+    RESOURCE_FILES_NAME,
     SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_JOBS_FILE_NAME,
@@ -81,7 +84,6 @@ from starwhale.core.runtime.model import StandaloneRuntime
 class ModelInfoFilter(Enum):
     basic = "basic"
     model_yaml = "model_yaml"
-    manifest = "manifest"
     handlers = "handlers"
     files = "files"
     all = "all"
@@ -408,11 +410,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
         _compare_model = StandaloneModel(compare_uri)
         base_file_maps = resource_to_file_node(
-            files=self.store.manifest["resources"],
+            files=self.store.resource_files,
             parent_path=self.store.snapshot_workdir,
         )
         compare_file_maps = resource_to_file_node(
-            files=_compare_model.store.manifest["resources"],
+            files=_compare_model.store.resource_files,
             parent_path=_compare_model.store.snapshot_workdir,
         )
         all_paths = {
@@ -443,24 +445,24 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if not self.store.bundle_path.exists():
             return ret
 
-        manifest = self.store.manifest
-        ret["basic"] = {
-            "name": self.uri.object.name,
-            "version": self.uri.object.version,
-            "project": self.uri.project,
-            "path": str(self.store.bundle_path),
-            "tags": StandaloneTag(self.uri).list(),
-            "created_at": manifest.get(CREATED_AT_KEY, ""),
-        }
+        job_yaml = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
+        ret["basic"] = copy.deepcopy(self.store.digest)
+        ret["basic"].update(
+            {
+                "name": self.uri.object.name,
+                "version": self.uri.object.version,
+                "project": self.uri.project,
+                "path": str(self.store.bundle_path),
+                "tags": StandaloneTag(self.uri).list(),
+                "handlers": sorted(job_yaml.keys()),
+            }
+        )
 
-        ret["manifest"] = manifest
         ret["model_yaml"] = (
             self.store.hidden_sw_dir / DefaultYAMLName.MODEL
         ).read_text()
-        job_yaml = load_yaml(self.store.hidden_sw_dir / DEFAULT_JOBS_FILE_NAME)
         ret["handlers"] = job_yaml
-        ret["files"] = manifest["resources"]
-        ret["basic"]["handlers"] = sorted(job_yaml.keys())
+        ret["files"] = self.store.resource_files
         return ret
 
     def history(
@@ -474,9 +476,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             if not _manifest_path.exists():
                 continue
 
-            _manifest = load_yaml(_manifest_path)
+            _digest_path = _bf.path / "src" / SW_AUTO_DIRNAME / DIGEST_FILE_NAME
+            if _digest_path.exists():
+                _info = load_yaml(_digest_path)
+            else:
+                _info = load_yaml(_manifest_path)
 
-            packaged_runtime = _manifest.get("packaged_runtime")
+            packaged_runtime = _info.get("packaged_runtime")
             if packaged_runtime:
                 runtime = f"{packaged_runtime['name']}/version/{packaged_runtime['manifest']['version'][:SHORT_VERSION_CNT]}"
             else:
@@ -488,8 +494,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     version=_bf.version,
                     path=str(_bf.path.resolve()),
                     tags=_bf.tags,
-                    created_at=_manifest[CREATED_AT_KEY],
-                    size=_bf.path.stat().st_size,
+                    created_at=_info[CREATED_AT_KEY],
+                    size=_info.get("size", 0),
                     runtime=runtime,
                 )
             )
@@ -526,26 +532,24 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             bundle_type=BundleType.MODEL,
             uri_type=URIType.MODEL,
         ):
-            if not cls.do_bundle_filter(_bf, filters):
+            _mpath = _bf.path / DEFAULT_MANIFEST_NAME
+            if not _mpath.exists() or not cls.do_bundle_filter(_bf, filters):
                 continue
 
-            if _bf.path.is_file():
-                # for origin swmp(tar)
-                _manifest = ModelStorage.get_manifest_by_path(
-                    _bf.path, BundleType.MODEL, URIType.MODEL
-                )
-            elif (_bf.path / DEFAULT_MANIFEST_NAME).exists():
-                _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
+            _digest_path = _bf.path / "src" / SW_AUTO_DIRNAME / DIGEST_FILE_NAME
+            if _digest_path.exists():
+                _info = load_yaml(_digest_path)
             else:
-                continue
+                _info = load_yaml(_mpath)
+
             rs[_bf.name].append(
                 {
                     "name": _bf.name,
                     "version": _bf.version,
                     "path": str(_bf.path.absolute()),
-                    "size": _bf.path.stat().st_size,
+                    "size": _info.get("size", 0),
                     "is_removed": _bf.is_removed,
-                    CREATED_AT_KEY: _manifest[CREATED_AT_KEY],
+                    CREATED_AT_KEY: _info[CREATED_AT_KEY],
                     "tags": _bf.tags,
                 }
             )
@@ -643,7 +647,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         elif uri.object.typ == URIType.MODEL:
             model = StandaloneModel(uri)
             bundle_path = model.store.packaged_runtime_bundle_path
-            packaged_runtime = model.store.manifest.get("packaged_runtime")
+            packaged_runtime = model.store.digest.get("packaged_runtime")
             if not packaged_runtime or not bundle_path.exists():
                 raise RuntimeError(f"model {uri} not packaged runtime")
 
@@ -667,24 +671,56 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         w = Walker()
         src_fs = open_fs(str(self.store.src_dir.resolve()))
+        total_size = 0
+
+        for f in w.files(src_fs):
+            sub_path = f[1:]
+            size = file_stat(self.store.src_dir / sub_path).st_size
+            separate = size > size_th_to_tar
+            file_info = {
+                "name": os.path.basename(f),
+                "path": f"{self.store.src_dir_name}/{sub_path}",
+                "signature": blake2b_file(self.store.src_dir / sub_path),
+                "duplicate_check": separate,
+                "desc": FileDesc.SRC.name if not separate else FileDesc.MODEL.name,
+                "size": size,
+                "arcname": sub_path,
+            }
+            if separate:
+                self.models.append(file_info)
+            else:
+                self.sources.append(file_info)
+            total_size += size
+
+        self._manifest["size"] = total_size
+        console.print(f":basket: resource files size: {pretty_bytes(total_size)}")
+
+        ensure_file(
+            self.store.resource_files_path,
+            content=yaml.dump(self.models + self.sources, default_flow_style=False),
+            parents=True,
+        )
+
+        ensure_file(
+            self.store.digest_path,
+            content=yaml.dump(self._manifest, default_flow_style=False),
+            parents=True,
+        )
+
         with tarfile.open(self.store.snapshot_workdir / SWMP_SRC_FNAME, "w:") as tar:
-            for f in w.files(src_fs):
-                sub_path = f[1:]
-                size = file_stat(self.store.src_dir / sub_path).st_size
-                separate = size > size_th_to_tar
-                file_info = {
-                    "name": os.path.basename(f),
-                    "path": f"{self.store.src_dir_name}/{sub_path}",
-                    "signature": blake2b_file(self.store.src_dir / sub_path),
-                    "duplicate_check": separate,
-                    "desc": FileDesc.SRC.name if not separate else FileDesc.MODEL.name,
-                    "size": size,
-                }
-                if separate:
-                    self.models.append(file_info)
-                else:
-                    tar.add(str(self.store.src_dir / sub_path), arcname=sub_path)
-                    self.sources.append(file_info)
+            for file_info in self.sources:
+                arcname = str(file_info["arcname"])
+                tar.add(str(self.store.src_dir / arcname), arcname=arcname)
+
+            tar.add(
+                str(self.store.resource_files_path),
+                arcname=f"{SW_AUTO_DIRNAME}/{RESOURCE_FILES_NAME}",
+            )
+
+            tar.add(
+                str(self.store.digest_path),
+                arcname=f"{SW_AUTO_DIRNAME}/{DIGEST_FILE_NAME}",
+            )
 
     def _render_manifest(self) -> None:
         self._manifest["resources"] = self.models + self.sources

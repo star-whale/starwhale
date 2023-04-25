@@ -12,6 +12,7 @@ from starwhale.utils import config as sw_config
 from starwhale.consts import (
     HTTPMethod,
     VERSION_PREFIX_CNT,
+    RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
     ARCHIVED_SWDS_META_FNAME,
 )
@@ -340,11 +341,18 @@ class TestBundleCopy(TestCase):
             swmp_manifest_path,
             yaml.safe_dump(
                 {
-                    "resources": [],
                     "version": "ge3tkylgha2tenrtmftdgyjzni3dayq",
                 }
             ),
+            parents=True,
         )
+
+        ensure_file(
+            swmp_path / "src" / ".starwhale" / RESOURCE_FILES_NAME,
+            yaml.safe_dump([]),
+            parents=True,
+        )
+
         ensure_file(
             tag_manifest_path,
             yaml.safe_dump(

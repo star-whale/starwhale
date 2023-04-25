@@ -210,7 +210,6 @@ def _info(view: t.Type[ModelTermView], model: str, output_filter: str) -> None:
         swcli model info mnist/version/v0 # show basic info from the v0 version of model
         swcli model info mnist/version/latest --output-filter=all # show all info
         swcli model info mnist -of basic # show basic info
-        swcli model info mnist -of manifest # show manifest.yaml
         swcli model info mnist -of model_yaml  # show model.yaml
         swcli model info mnist -of handlers # show model runnable handlers info
         swcli model info mnist -of files # show model package files tree
@@ -619,7 +618,7 @@ def _prepare_model_run_args(
             raise NoSupportError("module is not supported in model uri mode")
 
         if (
-            model_store.manifest.get("packaged_runtime")
+            model_store.digest.get("packaged_runtime")
             and not forbid_packaged_runtime
             and runtime_uri is None
         ):

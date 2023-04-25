@@ -115,7 +115,6 @@ class ModelTermView(BaseTermView):
         model_yaml_content = Syntax(
             info.get("model_yaml", ""), "yaml", theme="ansi_dark"
         )
-        manifest_content = Pretty(info.get("manifest", {}), expand_all=True)
         handlers_content = _render_handlers()
         files_content = _render_files_tree()
 
@@ -124,8 +123,6 @@ class ModelTermView(BaseTermView):
             console.print(basic_content)
         elif output_filter == ModelInfoFilter.model_yaml:
             console.print(model_yaml_content)
-        elif output_filter == ModelInfoFilter.manifest:
-            console.print(manifest_content)
         elif output_filter == ModelInfoFilter.handlers:
             console.print(handlers_content)
         elif output_filter == ModelInfoFilter.files:
@@ -135,8 +132,6 @@ class ModelTermView(BaseTermView):
             console.print(basic_content)
             console.rule("[green bold] model.yaml")
             console.print(model_yaml_content)
-            console.rule("[green bold] _manifest.yaml")
-            console.print(manifest_content)
             console.rule("[green bold] Model Handlers")
             console.print(handlers_content)
 
@@ -460,8 +455,6 @@ class ModelTermViewJson(ModelTermView):
             info = {"basic": info.get("basic", {})}
         elif output_filter == ModelInfoFilter.model_yaml:
             info = {"model_yaml": info.get("model_yaml", "")}
-        elif output_filter == ModelInfoFilter.manifest:
-            info = {"manifest": info.get("manifest", {})}
         elif output_filter == ModelInfoFilter.handlers:
             info = {"handlers": info.get("handlers", {})}
         elif output_filter == ModelInfoFilter.files:
