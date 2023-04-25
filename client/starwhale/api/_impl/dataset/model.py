@@ -25,6 +25,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
+    ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
@@ -111,7 +112,10 @@ class Dataset:
         self.name = name
         self.project_uri = project_uri
         self.__readonly = readonly
-        self._pending_commit_version = gen_uniq_version()
+        self._pending_commit_version = (
+            os.environ.get(ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST)
+            or gen_uniq_version()
+        )
 
         self._make_capsulated_uri = partial(
             URI.capsulate_uri,

@@ -12,7 +12,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
-from starwhale.utils import load_yaml
+from starwhale.utils import load_yaml, gen_uniq_version
 from starwhale.consts import (
     FileFlag,
     HTTPMethod,
@@ -44,6 +44,7 @@ from starwhale.core.model.model import (
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
+from starwhale.core.runtime.process import Process
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -69,6 +70,7 @@ class StandaloneModelTestCase(TestCase):
         ensure_dir(os.path.join(self.workdir, "config"))
         ensure_file(os.path.join(self.workdir, "models", "mnist_cnn.pt"), " ")
         ensure_file(os.path.join(self.workdir, "config", "hyperparam.json"), " ")
+        os.environ[Process.ActivatedRuntimeURI] = ""
 
     @patch("starwhale.base.blob.store.LocalFileStore.copy_dir")
     @patch("starwhale.api._impl.job.Handler._preload_registering_handlers")
@@ -260,7 +262,10 @@ class StandaloneModelTestCase(TestCase):
     ) -> None:
         workdir = Path("/home/test/workdir")
         ensure_dir(workdir)
-        model_config = ModelConfig(name="test", run={"modules": ["x.y.z"]})
+        model_name = "test"
+        model_config = ModelConfig(name=model_name, run={"modules": ["x.y.z"]})
+
+        pytorch_runtime_uri = "pytorch/version/1234"
 
         runtime_snapshot = self.sw.rootdir / "self/workdir/runtime/pytorch/12/1234"
         ensure_file(
@@ -277,12 +282,32 @@ class StandaloneModelTestCase(TestCase):
         m_env_mode.return_value = "venv"
         ensure_dir(venv_prefix)
 
-        def _run(obj: t.Any) -> None:
-            obj._target(*obj._args, **obj._kwargs)
+        def _run_with_package_runtime(obj: t.Any) -> None:
+            os.environ[Process.ActivatedRuntimeURI] = pytorch_runtime_uri
+            ModelTermView.build(
+                workdir=workdir,
+                project="self",
+                model_config=model_config,
+                package_runtime=True,
+            )
 
-        m_process_run.side_effect = _run
+        def _run_without_package_runtime(obj: t.Any) -> None:
+            os.environ[Process.ActivatedRuntimeURI] = pytorch_runtime_uri
+            ModelTermView.build(
+                workdir=workdir,
+                project="self",
+                model_config=model_config,
+                package_runtime=False,
+            )
 
-        packaged_uri = ModelTermView.build(
+        m_process_run.side_effect = _run_with_package_runtime
+        version = os.environ[
+            "SW_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST"
+        ] = gen_uniq_version()
+        packaged_uri = URI(
+            f"{model_name}/version/{version}", expected_type=URIType.MODEL
+        )
+        ModelTermView.build(
             workdir=workdir,
             project="self",
             model_config=model_config,
@@ -306,11 +331,19 @@ class StandaloneModelTestCase(TestCase):
         assert runtime_bundle_path.exists()
         assert runtime_bundle_path.read_text() == "1"
 
-        no_packaged_uri = ModelTermView.build(
+        m_process_run.reset_mock()
+        m_process_run.side_effect = _run_without_package_runtime
+        version = os.environ[
+            "SW_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST"
+        ] = gen_uniq_version()
+        no_packaged_uri = URI(
+            f"{model_name}/version/{version}", expected_type=URIType.MODEL
+        )
+        ModelTermView.build(
             workdir=workdir,
             project="self",
             model_config=model_config,
-            runtime_uri="pytorch/version/1234",
+            runtime_uri=pytorch_runtime_uri,
             package_runtime=False,
         )
 
@@ -328,11 +361,21 @@ class StandaloneModelTestCase(TestCase):
 
         m_restore.side_effect = _restore
 
-        use_model_uri = ModelTermView.build(
+        m_process_run.reset_mock()
+        m_process_run.side_effect = _run_with_package_runtime
+        os.environ[Process.ActivatedRuntimeURI] = str(packaged_uri)
+        version = os.environ[
+            "SW_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST"
+        ] = gen_uniq_version()
+        use_model_uri = URI(
+            f"{model_name}/version/{version}", expected_type=URIType.MODEL
+        )
+
+        ModelTermView.build(
             workdir=workdir,
             project="self",
             model_config=model_config,
-            runtime_uri=packaged_uri,
+            runtime_uri=pytorch_runtime_uri,
             package_runtime=True,
         )
 
@@ -677,7 +720,7 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch("starwhale.core.model.model.StandaloneModel")
     @patch("starwhale.core.model.model.StandaloneModel.serve")
-    @patch("starwhale.core.runtime.process.Process.from_runtime_uri")
+    @patch("starwhale.core.model.view.RuntimeProcess")
     def test_serve(self, *args: t.Any):
         host = "127.0.0.1"
         port = 80

@@ -13,14 +13,7 @@ from rich.pretty import Pretty
 from rich.syntax import Syntax
 from rich.console import Group
 
-from starwhale.utils import (
-    docker,
-    console,
-    process,
-    pretty_bytes,
-    in_production,
-    gen_uniq_version,
-)
+from starwhale.utils import docker, console, process, pretty_bytes, in_production
 from starwhale.consts import (
     FileFlag,
     DEFAULT_PAGE_IDX,
@@ -245,28 +238,19 @@ class ModelTermView(BaseTermView):
         dataset_uris: t.Optional[t.List[str]] = None,
         runtime_uri: t.Optional[URI] = None,
         scheduler_run_args: t.Optional[t.Dict] = None,
-    ) -> str:
-        version = version or gen_uniq_version()
-        kw = dict(
-            model_src_dir=model_src_dir,
-            model_config=model_config,
-            project=URI(project, expected_type=URIType.PROJECT).project,
-            version=version,
-            run_handler=run_handler,
-            dataset_uris=dataset_uris,
-            scheduler_run_args=scheduler_run_args,
-        )
-
+    ) -> None:
         if runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=StandaloneModel.run,
-                kwargs=kw,
-            ).run()
+            RuntimeProcess(uri=runtime_uri).run()
         else:
-            StandaloneModel.run(**kw)  # type: ignore
-
-        return version
+            StandaloneModel.run(
+                model_src_dir=Path(model_src_dir),
+                model_config=model_config,
+                project=URI(project, expected_type=URIType.PROJECT).project,
+                version=version,
+                run_handler=run_handler,
+                dataset_uris=dataset_uris,
+                scheduler_run_args=scheduler_run_args,
+            )
 
     @classmethod
     @BaseTermView._only_standalone
@@ -337,29 +321,30 @@ class ModelTermView(BaseTermView):
         project: str,
         model_config: ModelConfig,
         runtime_uri: str = "",
-        package_runtime: bool = True,
-    ) -> URI:
-        workdir = Path(workdir)
-        _model_uri = cls.prepare_build_bundle(
-            project=project,
-            bundle_name=model_config.name,
-            typ=URIType.MODEL,
-        )
-        _m = Model.get_model(_model_uri)
-        kwargs: t.Dict[str, t.Any] = {"model_config": model_config}
+        package_runtime: bool = False,
+    ) -> None:
         if runtime_uri:
-            if package_runtime:
-                kwargs["package_runtime_uri"] = runtime_uri
-
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=_m.build,
-                args=(workdir,),
-                kwargs=kwargs,
-            ).run()
+            RuntimeProcess(uri=runtime_uri).run()
         else:
-            _m.build(workdir, **kwargs)
-        return _model_uri
+            model_uri = cls.prepare_build_bundle(
+                project=project,
+                bundle_name=model_config.name,
+                typ=URIType.MODEL,
+            )
+            m = Model.get_model(model_uri)
+
+            if package_runtime:
+                packaging_runtime_uri = os.environ.get(
+                    RuntimeProcess.ActivatedRuntimeURI
+                )
+            else:
+                packaging_runtime_uri = None
+
+            m.build(
+                Path(workdir),
+                model_config=model_config,
+                packaging_runtime_uri=packaging_runtime_uri,
+            )
 
     @classmethod
     def copy(
@@ -393,21 +378,15 @@ class ModelTermView(BaseTermView):
         host: str,
         port: int,
     ) -> None:
-        kw = dict(
-            model_config=model_config,
-            model_src_dir=model_src_dir,
-            host=host,
-            port=port,
-        )
-
         if runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=StandaloneModel.serve,
-                kwargs=kw,
-            ).run()
+            RuntimeProcess(uri=runtime_uri).run()
         else:
-            StandaloneModel.serve(**kw)  # type: ignore
+            StandaloneModel.serve(
+                model_config=model_config,
+                model_src_dir=model_src_dir,
+                host=host,
+                port=port,
+            )
 
 
 class ModelTermViewRich(ModelTermView):

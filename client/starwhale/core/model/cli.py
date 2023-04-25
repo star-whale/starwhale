@@ -24,7 +24,7 @@ from starwhale.core.model.store import ModelStorage
 @click.group(
     "model",
     cls=AliasedGroup,
-    help="Model management, build/copy/run/extract...",
+    help="Model management, build/copy/run/list...",
 )
 @click.pass_context
 def model_cmd(ctx: click.Context) -> None:

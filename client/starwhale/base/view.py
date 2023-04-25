@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import json
 import typing as t
@@ -24,6 +25,7 @@ from starwhale.consts import (
     CREATED_AT_KEY,
     SHORT_VERSION_CNT,
     STANDALONE_INSTANCE,
+    ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -140,12 +142,19 @@ class BaseTermView(SWCliConfigMixed):
         if not bundle_name:
             raise FieldTypeOrValueError("no bundle_name")
 
+        obj_ver = ""
+        if auto_gen_version:
+            obj_ver = (
+                os.environ.get(ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST)
+                or gen_uniq_version()
+            )
+
         _uri = URI.capsulate_uri(
             instance=_project_uri.instance,
             project=_project_uri.project,
             obj_type=typ,
             obj_name=bundle_name,
-            obj_ver=gen_uniq_version() if auto_gen_version else "",
+            obj_ver=obj_ver,
         )
         console.print(f":construction_worker: uri {_uri}")
         return _uri

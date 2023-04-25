@@ -53,7 +53,6 @@ from starwhale.core.runtime.model import (
     StandaloneRuntime,
 )
 from starwhale.core.runtime.store import RuntimeStorage
-from starwhale.core.runtime.process import Process
 
 _runtime_data_dir = f"{ROOT_DIR}/data/runtime"
 _swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
@@ -2388,103 +2387,6 @@ class StandaloneRuntimeTestCase(TestCase):
             / version[:VERSION_PREFIX_CNT]
             / version
         )
-
-
-class RuntimeProcessTestCase(TestCase):
-    def setUp(self) -> None:
-        self.setUpPyfakefs()
-
-    @patch("starwhale.core.runtime.process.check_call")
-    def test_venv_process(self, m_call: MagicMock) -> None:
-        rootdir = "/home/starwhale/myproject"
-        ensure_dir(rootdir)
-        ensure_file(os.path.join(rootdir, "pyvenv.cfg"), "")
-        process = Process(
-            prefix_path=rootdir,
-            target=lambda x: x,
-            args=(1,),
-        )
-        process.run()
-        assert m_call.assert_called
-        assert m_call.call_args[0][0][:2] == ["bash", "-c"]
-
-        assert m_call.call_args[0][0][2].startswith(
-            f"source {rootdir}/bin/activate && {rootdir}/bin/python3"
-        )
-        assert "dill.load" in m_call.call_args[0][0][2]
-
-    @patch("starwhale.core.runtime.process.check_call")
-    def test_conda_process(self, m_call: MagicMock) -> None:
-        rootdir = "/home/starwhale/myproject"
-        ensure_dir(rootdir)
-        ensure_file(os.path.join(rootdir, "conda-meta"), "")
-        process = Process(
-            prefix_path=rootdir,
-            target=lambda x, y: print(x, y),
-            args=(1, 2),
-            kwargs={"a": 1},
-        )
-        process.run()
-        assert m_call.assert_called
-        assert m_call.call_args[0][0][:2] == ["bash", "-c"]
-
-        assert m_call.call_args[0][0][2].startswith(
-            f"source activate {rootdir} && {rootdir}/bin/python3"
-        )
-        assert "dill.load" in m_call.call_args[0][0][2]
-
-    @patch("starwhale.core.runtime.model.StandaloneRuntime.restore")
-    @patch("starwhale.core.runtime.process.check_call")
-    def test_from_uri(self, m_call: MagicMock, m_restore: MagicMock) -> None:
-        name = "rttest"
-        version = "1234"
-
-        sw = SWCliConfigMixed()
-        snapshot_workdir = (
-            sw.rootdir
-            / "self"
-            / "workdir"
-            / "runtime"
-            / name
-            / version[:VERSION_PREFIX_CNT]
-            / version
-        )
-
-        venv_dir = snapshot_workdir / "export" / "venv"
-        ensure_dir(venv_dir)
-        ensure_file(venv_dir / "pyvenv.cfg", content="")
-        ensure_file(snapshot_workdir / DEFAULT_MANIFEST_NAME, content="")
-
-        process = Process.from_runtime_uri(
-            uri=f"{name}/version/{version}",
-            target=lambda x: x,
-            force_restore=True,
-        )
-        assert m_call.call_count == 0
-        assert m_restore.call_args[0][0] == snapshot_workdir
-        process.run()
-
-        assert m_call.call_count == 1
-        assert m_call.call_args[0][0][:2] == ["bash", "-c"]
-        assert m_call.call_args[0][0][2].startswith(
-            f"source {venv_dir}/bin/activate && {venv_dir}/bin/python3"
-        )
-        assert "dill.load" in m_call.call_args[0][0][2]
-
-        m_call.reset_mock()
-        m_restore.reset_mock()
-
-        uri = URI(f"{name}/version/{version}", expected_type=URIType.RUNTIME)
-        Process.from_runtime_uri(
-            uri,
-            target=lambda x: x,
-        ).run()
-        assert m_call.call_count == 1
-        assert m_restore.call_count == 0
-
-        uri = "http://1.1.1.1:8081/project/self/runtime/rttest/versoin/123"
-        with self.assertRaises(NoSupportError):
-            Process.from_runtime_uri(uri, target=lambda x: x).run()
 
 
 class DependenciesTestCase(TestCase):

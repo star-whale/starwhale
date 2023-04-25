@@ -565,14 +565,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(workdir=workdir, model_config=model_config),
             ),
         ]
-        package_runtime_uri = kw.get("package_runtime_uri")
-        if package_runtime_uri:
+        packaging_runtime_uri = kw.get("packaging_runtime_uri")
+        if packaging_runtime_uri:
             operations.append(
                 (
                     self._package_runtime,
                     10,
                     "package runtime",
-                    dict(runtime_uri=package_runtime_uri),
+                    dict(runtime_uri=packaging_runtime_uri),
                 )
             )
 

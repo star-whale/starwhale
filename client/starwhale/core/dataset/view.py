@@ -158,24 +158,18 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str,
         config: DatasetConfig,
-    ) -> URI:
-        dataset_uri = cls.prepare_build_bundle(
-            project=config.project_uri,
-            bundle_name=config.name,
-            typ=URIType.DATASET,
-            auto_gen_version=False,
-        )
-        ds = Dataset.get_dataset(dataset_uri)
-
-        kwargs = dict(workdir=Path(workdir), config=config)
-
+    ) -> None:
         if config.runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=config.runtime_uri, target=ds.build, kwargs=kwargs
-            ).run()
+            RuntimeProcess(uri=config.runtime_uri).run()
         else:
-            ds.build(**kwargs)
-        return ds.uri
+            dataset_uri = cls.prepare_build_bundle(
+                project=config.project_uri,
+                bundle_name=config.name,
+                typ=URIType.DATASET,
+                auto_gen_version=False,
+            )
+            ds = Dataset.get_dataset(dataset_uri)
+            ds.build(workdir=Path(workdir), config=config)
 
     @classmethod
     def copy(
