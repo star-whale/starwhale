@@ -292,7 +292,10 @@ class TestCli:
             )
 
         self.run_model_in_standalone(
-            dataset_uris=[dataset_uri], model_uri=model_uri, run_handler=run_handler
+            dataset_uris=[dataset_uri],
+            model_uri=model_uri,
+            run_handler=run_handler,
+            runtime_uris=[runtime_uri],
         )
 
         for job in remote_future_jobs:
