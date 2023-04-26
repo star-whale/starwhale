@@ -16,6 +16,8 @@ export const alias = {
     'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
     'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
     'rc-steps': path.resolve(__dirname, './node_modules/rc-steps'),
+    'lodash': path.resolve(__dirname, './node_modules/lodash'),
+    'react-qr-code': path.resolve(__dirname, './node_modules/react-qr-code'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),

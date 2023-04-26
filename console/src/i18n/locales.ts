@@ -514,6 +514,26 @@ const account = {
         en: 'Recharge Failed',
         zh: '充值失败',
     },
+    'account.recharge.begin': {
+        en: 'Recharge',
+        zh: '开始充值',
+    },
+    'account.recharge.continue': {
+        en: 'Continue',
+        zh: '继续充值',
+    },
+    'account.recharge.cancelled': {
+        en: 'Recharge Cancelled',
+        zh: '支付已取消',
+    },
+    'account.recharge.inprogress.message': {
+        en: 'Order has been submitted at {{0}}, please pay as soon as possible',
+        zh: '订单已于 {{0}} 提交成功，请尽快付款',
+    },
+    'account.recharge.inprogress.message1': {
+        en: 'Please pay within 30 minutes, otherwise it will be cancelled automatically',
+        zh: '请您在提交30分钟内支付完成，否则会自动取消',
+    },
     'account.bill': {
         en: 'Bill',
         zh: '账单',
@@ -545,6 +565,14 @@ const account = {
     'account.recharge.precaution3': {
         zh: '3.充值完成并抵扣欠费后，剩余资金支持申请退款，且只支持原路退回至付款账号',
         en: '3.After the recharge is completed and the arrears are deducted, the remaining funds support the application for a refund, and only support the original route to return to the payment account',
+    },
+    'account.recharge.channel.wechat': {
+        zh: '微信支付',
+        en: 'WeChat Pay',
+    },
+    'account.recharge.qr.desc': {
+        zh: '扫描二维码进行支付',
+        en: 'Scan QR code to pay',
     },
     'account.order.all': {
         en: 'All Orders',
@@ -581,6 +609,38 @@ const account = {
     'order.status': {
         en: 'Order Status',
         zh: '订单状态',
+    },
+    'order.status.unpaid': {
+        en: 'Unpaid',
+        zh: '未支付',
+    },
+    'order.status.paid': {
+        en: 'Paid',
+        zh: '已支付',
+    },
+    'order.status.refunded': {
+        en: 'Refunded',
+        zh: '已退款',
+    },
+    'order.status.cancelled': {
+        en: 'Cancelled',
+        zh: '已取消',
+    },
+    'order.action.cancel': {
+        en: 'Cancel',
+        zh: '取消',
+    },
+    'order.action.cancel.confirm': {
+        en: 'Are you sure to cancel the order?',
+        zh: '确认取消订单吗',
+    },
+    'order.action.cancel.success': {
+        zh: '订单已取消',
+        en: 'Order cancelled',
+    },
+    'order.action.pay': {
+        en: 'Pay',
+        zh: '继续支付',
     },
     'orders': {
         en: 'Orders',
