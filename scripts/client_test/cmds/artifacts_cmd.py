@@ -10,8 +10,6 @@ from starwhale.consts import ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.core.model.view import ModelTermView
-from starwhale.core.model.model import ModelConfig
-from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import RuntimeConfig
 
 from . import CLI
@@ -69,19 +67,28 @@ class Model(BaseArtifact):
         runtime_uri: t.Optional[URI],
         run_handler: str,
     ) -> str:
-        uri = URI(model_uri, URIType.MODEL)
-        model_src_dir = ModelStorage(uri).src_dir
-        model_config = ModelConfig.create_by_yaml(model_src_dir / "model.yaml")
-
         version = gen_uniq_version()
-        ModelTermView.run_in_host(  # type: ignore
-            model_src_dir=model_src_dir,
-            model_config=model_config,
-            dataset_uris=dataset_uris,
-            runtime_uri=runtime_uri,
-            run_handler=run_handler,
-            version=version,
-        )
+        cmd = [
+            CLI,
+            "-vvv",
+            "model",
+            "run",
+            "--uri",
+            model_uri,
+            "--version",
+            version,
+            "--handler",
+            run_handler,
+        ]
+
+        for dataset_uri in dataset_uris:
+            cmd += ["--dataset", dataset_uri]
+
+        if runtime_uri:
+            cmd += ["--runtime", str(runtime_uri)]
+
+        _ret_code, _res = invoke(cmd)
+        assert _ret_code == 0, _res
         return version
 
     def run_in_server(
