@@ -117,6 +117,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
 
+    static final String ANNOTATION_KEY_JOB_ID = "starwhale.ai/job-id";
+    static final String ANNOTATION_KEY_TASK_ID = "starwhale.ai/task-id";
+    static final String ANNOTATION_KEY_USER_ID = "starwhale.ai/user-id";
+
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
         try {
@@ -125,7 +129,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             // TODO: use task's resource needs
             Map<String, ContainerOverwriteSpec> containerSpecMap = new HashMap<>();
 
-            JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
+            var job = task.getStep().getJob();
+            JobRuntime jobRuntime = job.getJobRuntime();
 
             k8sJobTemplate.getContainersTemplates(k8sJob).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
@@ -136,9 +141,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            var pool = task.getStep().getJob().getResourcePool();
+            var pool = job.getResourcePool();
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
+            Map<String, String> annotations = new HashMap<>();
+
+            var userId = job.getOwner() == null ? "" : job.getOwner().getId().toString();
+            annotations.put(ANNOTATION_KEY_JOB_ID, job.getId().toString());
+            annotations.put(ANNOTATION_KEY_TASK_ID, task.getId().toString());
+            annotations.put(ANNOTATION_KEY_USER_ID, userId);
+            if (pool != null && !CollectionUtils.isEmpty(pool.getMetadata())) {
+                annotations.putAll(pool.getMetadata());
+            }
 
             k8sJobTemplate.renderJob(
                     k8sJob,
@@ -148,7 +162,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     containerSpecMap,
                     nodeSelector,
                     tolerations,
-                    pool != null ? pool.getMetadata() : null
+                    annotations
             );
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             try {
