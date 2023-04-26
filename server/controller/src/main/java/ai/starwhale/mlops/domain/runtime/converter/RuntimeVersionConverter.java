@@ -51,6 +51,7 @@ public class RuntimeVersionConverter {
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
                 .image(entity.getImage())
+                .builtImage(entity.getBuiltImage())
                 .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())
                 .runtimeId(idConvertor.convert(entity.getRuntimeId()))

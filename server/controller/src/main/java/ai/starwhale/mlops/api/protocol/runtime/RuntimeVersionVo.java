@@ -51,6 +51,9 @@ public class RuntimeVersionVo implements Serializable {
     @JsonProperty("image")
     private String image;
 
+    @JsonProperty("builtImage")
+    private String builtImage;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 
