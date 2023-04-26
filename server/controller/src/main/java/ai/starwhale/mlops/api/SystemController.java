@@ -50,6 +50,12 @@ public class SystemController implements SystemApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> updateResourcePools(List<ResourcePool> resourcePools) {
+        systemService.updateResourcePools(resourcePools);
+        return ResponseEntity.ok(Code.success.asResponse("Resource pools updated."));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> upgradeVersion(UpgradeRequest upgradeRequest) {
         systemService.upgrade(upgradeRequest.getVersion(), upgradeRequest.getImage());
         return ResponseEntity.ok(Code.success.asResponse("Preparing for upgrade."));

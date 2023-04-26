@@ -47,6 +47,16 @@ public interface SystemApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools();
 
+    @Operation(summary = "Update resource pool")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/system/resourcePool",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> updateResourcePools(
+            @Valid @RequestBody List<ResourcePool> resourcePools
+    );
+
     @Operation(summary = "Upgrade system version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
