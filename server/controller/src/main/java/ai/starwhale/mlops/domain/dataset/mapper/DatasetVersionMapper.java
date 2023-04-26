@@ -177,7 +177,10 @@ public interface DatasetVersionMapper {
                     if (StrUtil.isNotEmpty(version.getVersionTag())) {
                         SET("version_tag = #{versionTag}");
                     }
-                    WHERE("where id = #{id}");
+                    if (StrUtil.isNotEmpty(version.getVersionMeta())) {
+                        SET("version_meta = #{versionMeta}");
+                    }
+                    WHERE("id = #{id}");
                 }
             }.toString();
         }
