@@ -20,7 +20,7 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, empty_dir
-from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.type import URIType, BundleType, InstanceType, DatasetChangeMode
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -79,12 +79,15 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         cls,
         src_uri: str,
         dest_uri: str,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         dest_local_project_uri: str = "",
+        force: bool = False,
     ) -> None:
         dc = DatasetCopy(
-            src_uri,
-            dest_uri,
-            URIType.DATASET,
+            src_uri=src_uri,
+            dest_uri=dest_uri,
+            force=force,
+            mode=mode,
             dest_local_project_uri=dest_local_project_uri,
         )
         dc.do()

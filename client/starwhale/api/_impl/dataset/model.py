@@ -30,7 +30,7 @@ from starwhale.consts import (
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.uri import URI, URIType
 from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import InstanceType
+from starwhale.base.type import InstanceType, DatasetChangeMode
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
@@ -943,11 +943,31 @@ class Dataset:
         """
         return self.__has_committed
 
-    def copy(self, dest_uri: str, dest_local_project_uri: str = "") -> None:
+    def copy(
+        self,
+        dest_uri: str,
+        dest_local_project_uri: str = "",
+        force: bool = False,
+        mode: str = DatasetChangeMode.PATCH.value,
+    ) -> None:
+        """Copy dataset to another instance.
+
+        Args:
+            dest_uri: (str, required) destination dataset uri
+            dest_local_project_uri: (str, optional) destination local project uri
+            force: (bool, optional) force to copy
+            mode: (str, optional) copy mode, default is 'patch'. Mode choices are: 'patch', 'overwrite'.
+              `patch` mode: only update the changed rows and columns for the remote dataset;
+              `overwrite` mode: update records and delete extraneous rows from the remote dataset
+        Returns:
+            None
+        """
         CoreDataset.copy(
             str(self.uri),
             dest_uri,
             dest_local_project_uri=dest_local_project_uri,
+            force=force,
+            mode=DatasetChangeMode(mode),
         )
 
     @classmethod

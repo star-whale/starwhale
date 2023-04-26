@@ -20,6 +20,7 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 
 from starwhale import URI
 from starwhale.utils import config
+from starwhale.base.type import DatasetChangeMode
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -124,6 +125,8 @@ class TestCli:
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
             assert self.instance_api.login(url=self.server_url)
+
+        self.cloud_target_project_uri = f"cloud://server/project/{self.server_project}"
         config.update_swcli_config(
             **{
                 "link_auths": [
@@ -154,7 +157,7 @@ class TestCli:
         if self.server_url:
             self.dataset_api.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://server/project/{self.server_project}",
+                target_project=self.cloud_target_project_uri,
             )
         dss_ = self.datasets.get(name, [])
         dss_.append(_uri)
@@ -169,7 +172,7 @@ class TestCli:
         if self.server_url:
             self.model_api.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://server/project/{self.server_project}",
+                target_project=self.cloud_target_project_uri,
                 force=True,
             )
         self.models.update({_uri.object.name: _uri})
@@ -187,7 +190,7 @@ class TestCli:
         if self.server_url:
             self.runtime_api.copy(
                 src_uri=_uri.full_uri,
-                target_project=f"cloud://server/project/{self.server_project}",
+                target_project=self.cloud_target_project_uri,
                 force=True,
             )
         rts = self.runtimes.get(_uri.object.name, [])
@@ -278,9 +281,17 @@ class TestCli:
         run_handler = "src.evaluator:evaluate"
         workdir = f"{self._work_dir}/scripts/example"
         model_uri = self.build_model(workdir, "simple")
-        dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
         venv_runtime_uri = self.build_runtime(workdir)
         conda_runtime_uri = self.build_runtime(workdir, "runtime_conda.yaml")
+        dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
+
+        if self.server_url:
+            self.dataset_api.copy(
+                src_uri=dataset_uri.full_uri,
+                target_project=self.cloud_target_project_uri,
+                force=True,
+                mode=DatasetChangeMode.OVERWRITE,
+            )
 
         remote_future_jobs = []
         if self.server_url:
