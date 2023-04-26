@@ -246,7 +246,7 @@ class BundleCopy(CloudRequestMixed):
             TimeElapsedColumn(),
             TotalFileSizeColumn(),
             TransferSpeedColumn(),
-            console=console,
+            console=console.rich_console,
             refresh_per_second=0.2,
         ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:

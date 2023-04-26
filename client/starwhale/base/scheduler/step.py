@@ -4,9 +4,7 @@ import typing as t
 from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
-from loguru import logger
-
-from starwhale.utils import load_yaml
+from starwhale.utils import console, load_yaml
 from starwhale.consts import RunStatus
 from starwhale.base.mixin import ASDictMixin
 from starwhale.base.context import Context
@@ -152,7 +150,7 @@ class StepExecutor:
         return f"StepExecutor: step-{self.step}, version-{self.version}, dataset_uris:{self.dataset_uris}"
 
     def execute(self) -> StepResult:
-        logger.info(f"start to execute step:{self.step}")
+        console.info(f"start to execute step:{self.step}")
 
         tasks = [
             TaskExecutor(
@@ -176,5 +174,5 @@ class StepExecutor:
             future_tasks = [pool.submit(t.execute) for t in tasks]
             task_results = [t.result() for t in as_completed(future_tasks)]
 
-        logger.info(f"finish to execute step:{self.step}")
+        console.info(f"finish to execute step:{self.step}")
         return StepResult(name=self.step.name, task_results=task_results)

@@ -2,6 +2,7 @@ from typing import Tuple
 
 import click
 
+from starwhale.utils import console
 from starwhale.utils.cli import AliasedGroup
 
 from .host import CommandRetriever
@@ -23,7 +24,7 @@ def host(broker: str) -> None:
     try:
         retriever.join()
     except KeyboardInterrupt:
-        print("stopping...")
+        console.print("stopping...")
         retriever.stop()
         retriever.join()
 
@@ -43,6 +44,6 @@ def remote(broker: str, args: Tuple[str]) -> None:
     try:
         runner.join()
     except KeyboardInterrupt:
-        print("stopping...")
+        console.print("stopping...")
         runner.stop()
         runner.join()

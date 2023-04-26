@@ -83,7 +83,7 @@ class DatasetCopy(BundleCopy):
             TimeElapsedColumn(),
             TotalFileSizeColumn(),
             TransferSpeedColumn(),
-            console=console,
+            console=console.rich_console,
             refresh_per_second=0.2,
         ) as progress:
             src = TabularDataset(

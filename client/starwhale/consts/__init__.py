@@ -92,6 +92,7 @@ class SupportOS:
 
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
+MINI_FMT_DATETIME = "%H:%M:%S"
 
 # TODO: use better DEFAULT words?
 DEFAULT_COPY_WORKERS = 4

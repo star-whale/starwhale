@@ -820,6 +820,8 @@ class TestCollector(BaseTestCase):
             time.sleep(0.5)
             cnt += 1
 
+        c.join()
+
         with self.assertRaisesRegex(threading.ThreadError, "run raise"):
             c.close()
         assert len(c._run_exceptions) != 0

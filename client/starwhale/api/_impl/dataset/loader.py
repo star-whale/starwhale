@@ -6,9 +6,7 @@ import typing as t
 import threading
 from functools import total_ordering
 
-import loguru
-from loguru import logger as _logger
-
+from starwhale.utils import console
 from starwhale.consts import HTTPMethod
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -145,7 +143,6 @@ class DataLoader:
         dataset_uri: URI,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
-        logger: t.Optional[loguru.Logger] = None,
         session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
         cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
         num_workers: int = 2,
@@ -153,7 +150,6 @@ class DataLoader:
         field_transformer: t.Optional[t.Dict] = None,
     ):
         self.dataset_uri = dataset_uri
-        self.logger = logger or _logger
         self.start = start
         self.end = end
         self.dataset_scan_revision = dataset_scan_revision
@@ -329,7 +325,7 @@ class DataLoader:
             else:
                 yield row
 
-        self.logger.debug(
+        console.debug(
             "queue details:"
             f"meta fetcher(qsize:{meta_fetched_queue.qsize()}, alive: {meta_fetcher.is_alive()}), "
             f"row unpackers(qsize:{row_unpacked_queue.qsize()}, alive: {[t.is_alive() for t in rows_unpackers]})"
@@ -349,13 +345,11 @@ def get_data_loader(
     start: t.Optional[t.Any] = None,
     end: t.Optional[t.Any] = None,
     session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
-    logger: t.Optional[loguru.Logger] = None,
     cache_size: int = _DEFAULT_LOADER_CACHE_SIZE,
     num_workers: int = 2,
     dataset_scan_revision: str = "",
     field_transformer: t.Optional[t.Dict] = None,
 ) -> DataLoader:
-
     if session_consumption:
         sc_start = session_consumption.session_start  # type: ignore
         sc_end = session_consumption.session_end  # type: ignore
@@ -372,7 +366,6 @@ def get_data_loader(
         start=start,
         end=end,
         session_consumption=session_consumption,
-        logger=logger or _logger,
         cache_size=cache_size,
         num_workers=num_workers,
         dataset_scan_revision=dataset_scan_revision,

@@ -4,6 +4,8 @@ from typing import Any, Dict, List
 
 import requests
 
+from starwhale.utils import console
+
 from .common import (
     FileReader,
     FileWriter,
@@ -135,7 +137,7 @@ class CommandRetriever(TaskRunner):
                     command_id = command["command_id"]
                     args = command["args"]
                     if command_id not in self.executions:
-                        print(f"run command {command_id}:", args)
+                        console.print(f"run command {command_id}:", args)
                         executor = CommandExecutor(
                             f"command-{command_id}-executor",
                             f"{self.broker_url}/command/{command_id}",

@@ -4,7 +4,6 @@ import importlib
 from pathlib import Path
 
 import pkg_resources
-from loguru import logger
 
 from starwhale.utils import console
 from starwhale.utils.venv import (
@@ -32,21 +31,22 @@ def import_object(
 
     for _path in external_paths[::-1]:
         if _path not in sys.path:
-            logger.debug(f"insert sys.path: '{_path}'")
             sys.path.insert(0, _path)
             pkg_resources.working_set.add_entry(_path)
             sys_changed = True
 
     try:
         module_name, handler_name = handler_path.split(":", 1)
-        logger.debug(f"import module:{module_name}, handler:{handler_name}")
+        console.print(
+            f":speaking_head: [green]import module:{module_name}, handler:{handler_name}[/]"
+        )
         _module = importlib.import_module(module_name, package=workdir_path)
         _obj = getattr(_module, handler_name, None)
 
         if not _obj:
             raise ModuleNotFoundError(f"{handler_path}")
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        console.print_exception()
         if sys_changed:
             sys.path[:] = prev_paths
         raise
@@ -60,7 +60,6 @@ def load_module(module: str, path: Path) -> t.Any:
     external_paths = [workdir_path]
     for _path in external_paths[::-1]:
         if _path not in sys.path:
-            logger.debug(f"insert sys.path: '{_path}'")
             sys.path.insert(0, _path)
             pkg_resources.working_set.add_entry(_path)
 

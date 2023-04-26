@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import io
-import sys
 import time
 import typing as t
-import logging
 import threading
 from abc import ABCMeta, abstractmethod
 from types import TracebackType
@@ -13,28 +10,18 @@ from functools import wraps
 
 import jsonlines
 
-from starwhale.utils import now_str
+from starwhale.utils import console, now_str
 from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import URIType, RunSubDirType
-from starwhale.utils.log import StreamWrapper
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.core.dataset.tabular import TabularDatasetRow
-
-if t.TYPE_CHECKING:
-    import loguru
-
-
-class _LogType:
-    SW = "starwhale"
-    USER = "user"
-
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
@@ -68,15 +55,8 @@ class PipelineHandler(metaclass=ABCMeta):
             _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
         )
         self.status_dir = _run_dir / RunSubDirType.STATUS
-        self.log_dir = _run_dir / RunSubDirType.LOG
         ensure_dir(self.status_dir)
-        ensure_dir(self.log_dir)
 
-        self.logger, self._sw_logger = self._init_logger(self.log_dir)
-        self._stdout_changed = False
-        self._stderr_changed = False
-        self._orig_stdout = sys.stdout
-        self._orig_stderr = sys.stderr
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
@@ -84,47 +64,10 @@ class PipelineHandler(metaclass=ABCMeta):
         self.evaluation_store = wrapper.Evaluation(
             eval_id=self.context.version, project=self.context.project
         )
-        self._monkey_patch()
         self._update_status(RunStatus.START)
 
-    def _init_logger(
-        self, log_dir: Path, rotation: str = "500MB"
-    ) -> t.Tuple[loguru.Logger, loguru.Logger]:
-        # TODO: remove logger first?
-        # TODO: add custom log format, include daemonset pod name
-        from loguru import logger as _logger
-
-        # TODO: configure log rotation size
-        _logger.add(
-            log_dir / "{time}.log",
-            rotation=rotation,
-            backtrace=True,
-            diagnose=True,
-            serialize=True,
-        )
-        _logger.bind(
-            type=_LogType.USER,
-            task_id=self.context.index,
-            job_id=self.context.version,
-        )
-        _sw_logger = _logger.bind(type=_LogType.SW)
-        return _logger, _sw_logger
-
-    def _monkey_patch(self) -> None:
-        if not isinstance(sys.stdout, StreamWrapper) and isinstance(
-            sys.stdout, io.TextIOWrapper
-        ):
-            sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)  # type: ignore
-            self._stdout_changed = True
-
-        if not isinstance(sys.stderr, StreamWrapper) and isinstance(
-            sys.stderr, io.TextIOWrapper
-        ):
-            sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)  # type: ignore
-            self._stderr_changed = True
-
     def __str__(self) -> str:
-        return f"PipelineHandler status@{self.status_dir}, " f"log@{self.log_dir}"
+        return f"PipelineHandler status@{self.status_dir}"
 
     def __enter__(self) -> PipelineHandler:
         return self
@@ -135,16 +78,10 @@ class PipelineHandler(metaclass=ABCMeta):
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
-        self._sw_logger.debug(
-            f"execute {self.context.step}-{self.context.index} exit func..."
-        )
+        console.debug(f"execute {self.context.step}-{self.context.index} exit func...")
         if value:  # pragma: no cover
-            print(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
-        if self._stdout_changed:
-            sys.stdout = self._orig_stdout
-        if self._stderr_changed:
-            sys.stderr = self._orig_stderr
         self._timeline_writer.close()
 
     @abstractmethod
@@ -160,15 +97,15 @@ class PipelineHandler(metaclass=ABCMeta):
         @wraps(func)  # type: ignore
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             self: PipelineHandler = args[0]
-            self._sw_logger.info(
+            console.info(
                 f"start to run {func.__name__} function@{self.context.step}-{self.context.index} ..."  # type: ignore
             )
             self._update_status(RunStatus.RUNNING)
             try:
                 func(*args, **kwargs)  # type: ignore
-            except Exception as e:
+            except Exception:
                 self._update_status(RunStatus.FAILED)
-                self._sw_logger.exception(f"{func} abort, exception: {e}")
+                console.print_exception()
                 raise
             else:
                 self._update_status(RunStatus.SUCCESS)
@@ -184,7 +121,7 @@ class PipelineHandler(metaclass=ABCMeta):
             else:
                 self.cmp()
         except Exception as e:
-            self._sw_logger.exception(f"cmp exception: {e}")
+            console.exception(f"cmp exception: {e}")
             self._timeline_writer.write(
                 {"time": now, "status": False, "exception": str(e)}
             )
@@ -233,7 +170,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         ]
                 except Exception as e:
                     _exception = e
-                    self._sw_logger.exception(
+                    console.exception(
                         f"[{[r.index for r in rows]}] data handle -> failed"
                     )
                     if not self.ignore_error:
@@ -246,7 +183,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     cnt += 1
                     _idx_with_ds = f"{_uri.object}{join_str}{_idx}"
 
-                    self._sw_logger.debug(
+                    console.debug(
                         f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
                     )
 
@@ -278,7 +215,7 @@ class PipelineHandler(metaclass=ABCMeta):
         if self.flush_result and self.ppl_auto_log:
             self.evaluation_store.flush_result()
 
-        self._sw_logger.info(
+        console.info(
             f"{self.context.step}-{self.context.index} handled {cnt} data items for dataset {self.dataset_uris}"
         )
 

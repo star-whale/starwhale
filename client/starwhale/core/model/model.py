@@ -14,7 +14,6 @@ from collections import defaultdict
 
 import yaml
 from fs import open_fs
-from loguru import logger
 from fs.walk import Walker
 
 from starwhale.utils import (
@@ -354,16 +353,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         exceptions.append(_tr.exception)
             if exceptions:
                 raise Exception(*exceptions)
-
-            logger.debug(
-                f"-->[Finished] run[{version[:SHORT_VERSION_CNT]}] execute finished, results info:{results}"
-            )
-        except Exception as e:
+        except Exception:
             scheduler_status = RunStatus.FAILED
-            error_message = str(e)
-            logger.error(
-                f"-->[Failed] run[{version[:SHORT_VERSION_CNT]}] execute failed, error info:{e}"
-            )
+            console.print_exception()
             raise
         finally:
             _manifest: t.Dict[str, t.Any] = {
@@ -557,7 +549,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
         model_config: ModelConfig = kw["model_config"]
-        logger.debug(f"build workdir:{workdir}")
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -693,7 +684,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             total_size += size
 
         self._manifest["size"] = total_size
-        console.print(f":basket: resource files size: {pretty_bytes(total_size)}")
+        console.debug(f":basket: resource files size: {pretty_bytes(total_size)}")
 
         ensure_file(
             self.store.resource_files_path,
@@ -738,8 +729,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return _config
 
     def _prepare_snapshot(self) -> None:
-        logger.info("[step:prepare-snapshot]prepare model snapshot dirs...")
-
         ensure_dir(self.store.snapshot_workdir)
         ensure_dir(self.store.src_dir)
 
@@ -760,6 +749,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if ignore.exists():
             with open(ignore, "r") as f:
                 excludes = [line.strip() for line in f.readlines()]
+        console.debug(
+            f"copy dir: {workdir} -> {self.store.src_dir}, excludes: {excludes}"
+        )
         self._object_store.copy_dir(
             str(workdir.resolve()), str(self.store.src_dir.resolve()), excludes=excludes
         )
@@ -773,8 +765,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         ensure_file(
             self.store.src_dir / DefaultYAMLName.MODEL, model_yaml, parents=True
         )
-
-        logger.info("[step:copy]finish copy files")
 
     @classmethod
     def _load_config_envs(cls, _config: ModelConfig) -> None:

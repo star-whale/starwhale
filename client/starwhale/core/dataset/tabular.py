@@ -13,10 +13,9 @@ from functools import partial
 from collections import UserDict, defaultdict
 
 import requests
-from loguru import logger
 from typing_extensions import Protocol
 
-from starwhale.utils import validate_obj_name
+from starwhale.utils import console, validate_obj_name
 from starwhale.consts import ENV_POD_NAME, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -113,7 +112,6 @@ class TabularDatasetInfo(UserDict):
 
 
 class TabularDatasetRow(ASDictMixin):
-
     _FEATURES_PREFIX = "features/"
 
     def __init__(
@@ -308,7 +306,7 @@ class TabularDataset:
         trace: TracebackType,
     ) -> None:
         if value:  # pragma: no cover
-            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()
 
@@ -501,7 +499,7 @@ class StandaloneTDSC(TabularDatasetSessionConsumption):
             if not self._todo_queue.empty():
                 task: StandaloneTDSC._BatchTask = self._todo_queue.get()
                 self._doing_consumption[consumer_id][f"{task.start}-{task.end}"] = task
-                logger.info(
+                console.info(
                     f"{consumer_id} handle scan-range: ({task.start}, {task.end})"
                 )
                 return task.start, task.end

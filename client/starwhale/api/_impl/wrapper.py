@@ -8,8 +8,8 @@ from functools import lru_cache
 
 import dill
 import requests
-from loguru import logger
 
+from starwhale.utils import console
 from starwhale.consts import VERSION_PREFIX_CNT, STANDALONE_INSTANCE
 from starwhale.consts.env import SWEnv
 from starwhale.utils.retry import http_retry
@@ -35,8 +35,8 @@ class Logger:
                 try:
                     writer.close()
                 except Exception as e:
-                    logger.exception(f"{writer} exception: {e}")
                     exceptions.append(e)
+                    console.print_exception()
 
             if exceptions:
                 raise Exception(*exceptions)

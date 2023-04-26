@@ -5,8 +5,7 @@ import typing as t
 from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
-from loguru import logger
-
+from starwhale.utils import console
 from starwhale.consts import RunStatus
 from starwhale.base.context import Context
 
@@ -103,7 +102,7 @@ class Scheduler:
             task_num=task_num,
         ).execute()
 
-        logger.info(
+        console.info(
             f"step:{step_name}, result:{result}, run time:{time.time() - start_time}"
         )
         return result
@@ -132,7 +131,7 @@ class Scheduler:
         start_time = time.time()
         task_result: TaskResult = _task.execute()
 
-        logger.info(
+        console.info(
             f"step:{step_name}, task result:{task_result}, run time:{time.time() - start_time}"
         )
         return StepResult(name=step_name, task_results=[task_result])

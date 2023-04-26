@@ -5,6 +5,8 @@ from datetime import datetime
 from fastapi import Body, FastAPI, Request, Response, HTTPException
 from pydantic import BaseSettings
 
+from starwhale.utils import console
+
 from .common import (
     random_id,
     ChunkBuffer,
@@ -105,13 +107,15 @@ class SessionManager:
             new_sessions = {}
             for session_id, session in self.sessions.items():
                 if now - session.last_access_time > settings.gc_timeout_seconds:
-                    print(f"garbage collection: remove session {session_id}")
+                    console.print(f"garbage collection: remove session {session_id}")
                 else:
                     new_sessions[session_id] = session
                     new_commands = {}
                     for command_id, command in session.commands.items():
                         if now - command.last_access_time > settings.gc_timeout_seconds:
-                            print(f"garbage collection: remove command {command_id}")
+                            console.print(
+                                f"garbage collection: remove command {command_id}"
+                            )
                         else:
                             new_commands[command_id] = command
                     session.commands = new_commands
@@ -126,7 +130,7 @@ class SessionManager:
                     settings.gc_interval_seconds,
                 )
                 self.garbage_collector.start()
-                print("garbage collector started")
+                console.print("garbage collector started")
 
     def stop_garbage_collector(self) -> None:
         with global_lock:
@@ -143,7 +147,7 @@ class SessionManager:
                     settings.keep_alive_check_interval_seconds,
                 )
                 self.keep_alive_monitor.start()
-                print("keep alive monitor started")
+                console.print("keep alive monitor started")
 
     def stop_keep_alive_monitor(self) -> None:
         with global_lock:

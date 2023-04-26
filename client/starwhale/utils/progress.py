@@ -3,7 +3,6 @@ import typing as t
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
-from starwhale.utils import console
 from starwhale.consts import ENV_DISABLE_PROGRESS_BAR
 
 
@@ -12,7 +11,7 @@ def run_with_progress_bar(
     operations: t.Sequence[t.Tuple[t.Any, ...]],
     **kw: t.Any,
 ) -> None:
-    if os.environ.get(ENV_DISABLE_PROGRESS_BAR) == "0":
+    if os.environ.get(ENV_DISABLE_PROGRESS_BAR) == "1":
         for op in operations:
             if len(op) == 4:
                 op[0](**op[3])
@@ -23,7 +22,6 @@ def run_with_progress_bar(
             SpinnerColumn(),
             *Progress.get_default_columns(),
             TimeElapsedColumn(),
-            console=console,
             refresh_per_second=1,
         ) as progress:
             task = progress.add_task(

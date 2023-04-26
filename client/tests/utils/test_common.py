@@ -19,7 +19,7 @@ from starwhale.utils import (
     pretty_merge_list,
     validate_obj_name,
 )
-from starwhale.consts import HTTPMethod, ENV_LOG_LEVEL
+from starwhale.consts import HTTPMethod, ENV_LOG_LEVEL, ENV_DISABLE_PROGRESS_BAR
 from starwhale.utils.debug import init_logger
 from starwhale.utils.retry import http_retry
 
@@ -37,9 +37,15 @@ def test_valid_object_name() -> None:
     assert validate_obj_name("v1-alpha1")[0]
 
 
+@patch("os.environ", {})
 def test_logger() -> None:
     init_logger(0)
+    assert os.environ[ENV_LOG_LEVEL] == "ERROR"
+    assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "0"
+
+    init_logger(1)
     assert os.environ[ENV_LOG_LEVEL] == "WARNING"
+    assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "1"
 
     init_logger(3)
     assert os.environ[ENV_LOG_LEVEL] == "DEBUG"

@@ -12,8 +12,7 @@ from pathlib import Path
 from binascii import crc32
 from collections import defaultdict
 
-from loguru import logger
-
+from starwhale.utils import console
 from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
@@ -105,7 +104,7 @@ class RotatedBinWriter:
         trace: TracebackType,
     ) -> None:
         if value:  # pragma: no cover
-            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()
 
@@ -254,7 +253,7 @@ class MappingDatasetBuilder:
         trace: TracebackType,
     ) -> None:
         if value:  # pragma: no cover
-            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()
 

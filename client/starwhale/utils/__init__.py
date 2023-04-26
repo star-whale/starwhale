@@ -9,24 +9,23 @@ import typing as t
 import platform
 from pathlib import Path
 from datetime import datetime
-from functools import cmp_to_key
+from functools import partial, cmp_to_key
 from contextlib import contextmanager
 
 import yaml
-from rich.console import Console
 
 from starwhale.consts import (
     FMT_DATETIME,
+    MINI_FMT_DATETIME,
     SW_DEV_DUMMY_VERSION,
     ENV_DISABLE_PROGRESS_BAR,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.error import NoSupportError
 
-console = Console(soft_wrap=True)
-now_str: t.Callable[[], str] = (
-    lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
-)
+now: t.Callable[[str], str] = lambda x: datetime.now().astimezone().strftime(x)
+now_str: t.Callable[[], str] = partial(now, FMT_DATETIME)
+now_mini_str: t.Callable[[], str] = partial(now, MINI_FMT_DATETIME)
 
 
 def timestamp_to_datatimestr(timestamp: float) -> str:
