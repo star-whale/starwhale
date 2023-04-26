@@ -111,6 +111,8 @@ const Routes = () => {
         )
     }
 
+    console.log(authedRoutes)
+
     return (
         <React.Suspense fallback={<NoneBackgroundPending />}>
             <BrowserRouter>
@@ -119,6 +121,8 @@ const Routes = () => {
                         <ApiHeader />
                         {standaloneMode ? null : <Header />}
                         <Switch>
+                            {/* extends */}
+                            {authedRoutes}
                             {/* setting */}
                             <Route exact path='/settings/:path?'>
                                 <SettingsOverviewLayout>
@@ -301,8 +305,6 @@ const Routes = () => {
                                     </Switch>
                                 </AdminLayout>
                             </Route>
-                            {/* extends */}
-                            {authedRoutes}
                             {/* default */}
                             <Route exact path='/projects/:projectId/:path*'>
                                 <ProjectLayout>

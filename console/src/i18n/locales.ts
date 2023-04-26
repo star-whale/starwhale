@@ -582,13 +582,41 @@ const account = {
         zh: '待支付{{0}}个',
         en: '{{0}} Pending',
     },
-    'account.coupon': {
+    'account.voucher': {
         en: 'Coupon',
         zh: '代金券',
     },
-    'account.coupon.all': {
+    'account.voucher.all': {
         en: 'All Coupons',
         zh: '全部代金券 >>',
+    },
+    'voucher.number': {
+        en: 'Coupon Number',
+        zh: '代金券编号',
+    },
+    'voucher.amount': {
+        en: 'Amount',
+        zh: '面值',
+    },
+    'voucher.amount.frozen': {
+        en: 'Frozen Amount',
+        zh: '冻结金额',
+    },
+    'voucher.amount.balance': {
+        en: 'Balance',
+        zh: '余额',
+    },
+    'voucher.status': {
+        en: 'Coupon Status',
+        zh: '代金券状态',
+    },
+    'voucher.action.detail': {
+        zh: '使用明细',
+        en: 'Detail',
+    },
+    'vouchers': {
+        en: 'Coupons',
+        zh: '代金券',
     },
     'order.number': {
         en: 'Order Number',
@@ -645,6 +673,62 @@ const account = {
     'orders': {
         en: 'Orders',
         zh: '充值订单',
+    },
+    'bill.number': {
+        en: 'Bill Number',
+        zh: '账单编号',
+    },
+    'bill.resource': {
+        en: 'Resource',
+        zh: '资源',
+    },
+    'bill.resource.detail': {
+        en: 'Resource Detail',
+        zh: '资源明细',
+    },
+    'bill.resource.comment': {
+        zh: '计费项',
+        en: 'Billing Item',
+    },
+    'bill.consumption.time': {
+        en: 'Consumption Time',
+        zh: '消费时间',
+    },
+    'bill.price': {
+        en: 'Price',
+        zh: '单价',
+    },
+    'bill.price.unit': {
+        en: 'Price Unit',
+        zh: '单价单位',
+    },
+    'bill.quantity': {
+        en: 'Quantity',
+        zh: '用量',
+    },
+    'bill.quantity.unit': {
+        en: 'Quantity Unit',
+        zh: '用量单位',
+    },
+    'bill.amount': {
+        en: 'Amount',
+        zh: '计费金额',
+    },
+    'bill.status': {
+        en: 'Status',
+        zh: '状态',
+    },
+    'bill.status.paid': {
+        zh: '已结清',
+        en: 'Paid',
+    },
+    'bill.status.unpaid': {
+        zh: '未结清',
+        en: 'Unpaid',
+    },
+    'bills': {
+        en: 'Bills',
+        zh: '账单',
     },
 }
 
