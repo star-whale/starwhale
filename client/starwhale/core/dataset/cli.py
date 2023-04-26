@@ -158,12 +158,27 @@ def _list(
     view.list(project, fullname, show_removed, page, size, filters)
 
 
-@dataset_cmd.command("info", help="Show dataset details")
+@dataset_cmd.command("info")
 @click.argument("dataset")
-@click.option("--fullname", is_flag=True, help="Show version fullname")
 @click.pass_obj
-def _info(view: t.Type[DatasetTermView], dataset: str, fullname: bool) -> None:
-    view(dataset).info(fullname)
+def _info(view: t.Type[DatasetTermView], dataset: str) -> None:
+    """Show dataset details.
+
+    DATASET: argument use the `Dataset URI` format. Version is optional for the Dataset URI.
+    If not specified, will show the latest version.
+
+    Example:
+
+        \b
+        swcli dataset info mnist # show the latest version of mnist dataset
+        swcli dataset info mnist/version/v0 # show the specified version of mnist dataset
+        swcli -o json dataset info mnist # show the latest version of mnist dataset in json format
+    """
+    uri = URI(dataset, expected_type=URIType.DATASET)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).info()
 
 
 @dataset_cmd.command("remove", aliases=["rm"])
@@ -214,7 +229,11 @@ def _history(
 @click.argument("dataset")
 @click.pass_obj
 def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
-    view(dataset).summary()
+    uri = URI(dataset, expected_type=URIType.DATASET)
+    if not uri.object.version:
+        uri.object.version = "latest"
+
+    view(uri).summary()
 
 
 @dataset_cmd.command("copy", aliases=["cp"])

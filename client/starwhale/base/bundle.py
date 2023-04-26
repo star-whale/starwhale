@@ -9,7 +9,6 @@ from contextlib import ExitStack
 import yaml
 from loguru import logger
 from fs.walk import Walker
-from fs.tarfs import TarFS
 
 from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
@@ -22,7 +21,6 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir, ensure_dir, ensure_file, extract_tar
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
@@ -205,45 +203,6 @@ class LocalStorageBundleMixin:
 
         if not path.name.endswith(YAML_TYPES):
             raise FileTypeError(f"{path} file type is not yaml|yml")
-
-    def _get_bundle_info(self) -> t.Dict[str, t.Any]:
-        _uri = self.uri  # type: ignore
-        _store = self.store  # type: ignore
-
-        if not _store.bundle_path.exists():
-            return {}
-
-        _manifest: t.Dict[str, t.Any] = {
-            "uri": _uri.full_uri,
-            "project": _uri.project,
-            "name": _uri.object.name,
-            "snapshot_workdir": str(_store.snapshot_workdir),
-            "bundle_path": str(_store.bundle_path),
-        }
-
-        if _uri.object.version:
-            _tag = StandaloneTag(_uri)
-            _manifest["version"] = _uri.object.version
-            _manifest["config"] = {}
-            _manifest["tags"] = _tag.list()
-
-            if _store.bundle_path.is_dir():
-                _manifest["config"].update(_store.manifest)
-            else:
-                if _store.snapshot_workdir.exists():
-                    _manifest["config"].update(_store.manifest)
-                elif _store.bundle_path.exists():
-                    with TarFS(str(_store.bundle_path)) as tar:
-                        with tar.open(DEFAULT_MANIFEST_NAME) as f:
-                            _om = yaml.safe_load(f)
-                        _manifest["config"].update(_om)
-                else:
-                    raise NotFoundError(
-                        f"{_store.bundle_path} and {_store.snapshot_workdir}"
-                    )
-        else:
-            _manifest["history"] = self.history()  # type: ignore
-        return _manifest
 
     def _do_extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
         _store = self.store  # type: ignore

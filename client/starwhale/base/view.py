@@ -7,10 +7,8 @@ import typing as t
 from functools import wraps
 
 from rich import box
-from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
-from rich.pretty import Pretty
 
 from starwhale.utils import (
     Order,
@@ -50,7 +48,7 @@ class BaseTermView(SWCliConfigMixed):
                     title="Count Details",
                     title_align="left",
                 )
-                rprint(p)
+                console.print(p)
 
             rt = func(*args, **kwargs)  # type: ignore
             if isinstance(rt, tuple) and len(rt) == 2 and "total" in rt[1]:
@@ -70,7 +68,7 @@ class BaseTermView(SWCliConfigMixed):
             # type: ignore
         )
         p = Panel(grid, title="Starwhale Instance", title_align="left")
-        rprint(p)
+        console.print(p)
 
     @staticmethod
     def _header(func: t.Callable) -> t.Callable:
@@ -176,23 +174,6 @@ class BaseTermView(SWCliConfigMixed):
             title, data, custom_header, custom_column=custom_column
         )
         return history
-
-    @staticmethod
-    def _print_info(_info: t.Dict[str, t.Any], fullname: bool = False) -> None:
-        if not _info:
-            console.print(":tea: not found info")
-            return
-
-        _history = _info.pop("history", [])
-
-        console.rule("[green bold]Inspect Details")
-        console.print(Pretty(_info, expand_all=True))
-
-        if _history:
-            console.rule("[green bold] Version History")
-            BaseTermView._print_history(
-                title="History List", history=_history, fullname=fullname
-            )
 
     @staticmethod
     def _print_list(
@@ -314,21 +295,6 @@ class BaseTermView(SWCliConfigMixed):
         if table.row_count == 0:
             console.print("empty")
         console.print(table)
-
-    @staticmethod
-    def get_info_data(
-        _info: t.Dict[str, t.Any], fullname: bool = False
-    ) -> t.Dict[str, t.Any]:
-        if not _info:
-            return dict()
-
-        result = _info
-        _history = _info.pop("history", [])
-
-        if _history:
-            result["history"] = BaseTermView.get_history_data(_history, fullname)
-
-        return result
 
     @staticmethod
     def get_history_data(

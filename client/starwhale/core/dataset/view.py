@@ -1,4 +1,5 @@
-import sys
+from __future__ import annotations
+
 import typing as t
 from pathlib import Path
 
@@ -18,11 +19,14 @@ from .model import Dataset
 
 
 class DatasetTermView(BaseTermView):
-    def __init__(self, dataset_uri: str) -> None:
+    def __init__(self, dataset_uri: str | URI) -> None:
         super().__init__()
 
-        self.raw_uri = dataset_uri
-        self.uri = URI(dataset_uri, expected_type=URIType.DATASET)
+        if isinstance(dataset_uri, URI):
+            self.uri = dataset_uri
+        else:
+            self.uri = URI(dataset_uri, expected_type=URIType.DATASET)
+
         self.dataset = Dataset.get_dataset(self.uri)
 
     @BaseTermView._simple_action_print
@@ -43,17 +47,19 @@ class DatasetTermView(BaseTermView):
             fullname=fullname,
         )
 
-    @BaseTermView._header
-    def info(self, fullname: bool = False) -> None:
-        self._print_info(self.dataset.info(), fullname=fullname)
+    def info(self) -> None:
+        info = self.dataset.info()
+        if info:
+            console.print(Pretty(info, expand_all=True))
+        else:
+            console.print(f":bird: Dataset info not found: [bold red]{self.uri}[/]")
 
     def summary(self) -> None:
-        _summary = self.dataset.summary()
-        if _summary:
-            console.print(Pretty(_summary.asdict(), expand_all=True))
+        summary = self.dataset.summary()
+        if summary:
+            console.print(Pretty(summary.asdict(), expand_all=True))
         else:
             console.print(":tea: not found dataset summary")
-            sys.exit(1)
 
     def _do_diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         r = self.dataset.diff(compare_uri)
@@ -260,8 +266,8 @@ class DatasetTermViewJson(DatasetTermView):
         )
         cls.pretty_json(_datasets)
 
-    def info(self, fullname: bool = False) -> None:
-        self.pretty_json(self.get_info_data(self.dataset.info(), fullname))
+    def info(self) -> None:
+        self.pretty_json(self.dataset.info())
 
     def head(self, rows: int, show_raw_data: bool = False) -> None:
         from starwhale.base.mixin import _do_asdict_convert
