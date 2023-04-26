@@ -33,6 +33,9 @@ DEFAULT_FILE_SIZE_THRESHOLD_TO_TAR_IN_MODEL = 10 * 1024  # 10KB
 SW_AUTO_DIRNAME = ".starwhale"
 SW_EVALUATION_EXAMPLE_DIR = "examples"
 
+RESOURCE_FILES_NAME = "resource_files.yaml"
+DIGEST_FILE_NAME = "digest.yaml"
+
 # used by the versions before 2.0
 # SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 DEFAULT_SW_LOCAL_STORAGE = HOMEDIR / SW_AUTO_DIRNAME

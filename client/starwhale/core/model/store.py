@@ -1,9 +1,12 @@
 import typing as t
 from pathlib import Path
 
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     SW_AUTO_DIRNAME,
+    DIGEST_FILE_NAME,
     VERSION_PREFIX_CNT,
+    RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_SW_TASK_RUN_IMAGE,
 )
@@ -38,6 +41,31 @@ class ModelStorage(BaseStorage):
     @property
     def recover_loc(self) -> Path:
         return self._get_recover_loc_for_bundle()
+
+    @property
+    def resource_files_path(self) -> Path:
+        return self.hidden_sw_dir / RESOURCE_FILES_NAME
+
+    @property
+    def resource_files(self) -> t.List[t.Dict[str, t.Any]]:
+        if not self.resource_files_path.exists():
+            return self.manifest.get("resources", [])
+        else:
+            return load_yaml(self.resource_files_path)  # type: ignore
+
+    @property
+    def digest_path(self) -> Path:
+        return self.hidden_sw_dir / DIGEST_FILE_NAME
+
+    @property
+    def digest(self) -> t.Dict[str, t.Any]:
+        if not self.digest_path.exists():
+            _manifest = self.manifest
+            _manifest.pop("resources", None)
+            _manifest.pop("build", None)
+            return _manifest
+        else:
+            return load_yaml(self.digest_path)  # type: ignore
 
     @property
     def manifest_path(self) -> Path:

@@ -19,6 +19,7 @@ from starwhale.consts import (
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
     VERSION_PREFIX_CNT,
+    RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_JOBS_FILE_NAME,
     EVALUATION_PANEL_LAYOUT_JSON_FILE_NAME,
@@ -48,8 +49,6 @@ from starwhale.core.runtime.process import Process
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
-_base_model_yaml = open(f"{_model_data_dir}/base_manifest.yaml").read()
-_compare_model_yaml = open(f"{_model_data_dir}/compare_manifest.yaml").read()
 
 
 class StandaloneModelTestCase(TestCase):
@@ -185,6 +184,13 @@ class StandaloneModelTestCase(TestCase):
         assert "name" not in _manifest
         assert _manifest["version"] == build_version
 
+        _resource_files_path = (
+            bundle_path / "src" / SW_AUTO_DIRNAME / RESOURCE_FILES_NAME
+        )
+        assert _resource_files_path.exists()
+        _resource_files = load_yaml(_resource_files_path)
+        assert _resource_files == []
+
         assert m_copy_dir.call_count == 1
         assert m_copy_dir.call_args_list[0][0][0] == "/home/starwhale/myproject"
         assert m_copy_dir.call_args_list[0][0][1].endswith("/src")
@@ -198,7 +204,7 @@ class StandaloneModelTestCase(TestCase):
 
         assert _info["basic"]["version"] == build_version
         assert _info["basic"]["name"] == self.name
-        assert _info["manifest"]["build"]["os"] in ["Linux", "Darwin"]
+        assert "size" in _info["basic"]
 
         _list, _ = StandaloneModel.list(URI(""))
         assert len(_list) == 1
@@ -419,6 +425,60 @@ class StandaloneModelTestCase(TestCase):
         base_version = "base_mdklqrbwpyrb2s3eme63k5xqno4o4wwmd3n"
         compare_version = "compare_mdklqrbwpyrb2s3eme63k5xqno4o4ww"
 
+        compare_resource_content = """
+- duplicate_check: true
+  name: empty.pt
+  path: src/model/empty.pt
+  size: 10
+  signature: update_786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce
+  desc: MODEL
+- duplicate_check: false
+  name: svc2.yaml
+  path: src/svc2.yaml
+  size: 10
+  signature: add_035bda269db519c0bb15018359b4baf73c447696af19a05af322ab2a051084e71143e662845edaf8c591a382f18da989c6b69e8271f33e58f617a9fc67911370
+  desc: SRC
+- duplicate_check: false
+  name: runtime.yaml
+  path: src/runtime.yaml
+  size: 10
+  signature: 1dfcf6fbbc0044276e89f1a3e7cde63ac0e96a037e4f0303c514887f6d9c4590af1ee377ab5acbca2535a399f9425d84425d86588d7b4f474b85226ff16789b5
+  desc: SRC
+- duplicate_check: false
+  name: model.yaml
+  path: src/model.yaml
+  size: 10
+  signature: b0660bfbb4f0d8ac1e4e75ce8d351bebf2e80f5c79816ed2e3b28e4309b57433d6cb027414a45f27a318116a10dec7f93cdb1d4ea99ec3ebb76a7178a4044b26
+  desc: SRC
+        """
+
+        base_resource_content = """
+- duplicate_check: true
+  name: empty.pt
+  path: src/model/empty.pt
+  size: 10
+  signature: 786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce
+  desc: MODEL
+- duplicate_check: false
+  name: svc.yaml
+  path: src/svc.yaml
+  size: 10
+  signature: 035bda269db519c0bb15018359b4baf73c447696af19a05af322ab2a051084e71143e662845edaf8c591a382f18da989c6b69e8271f33e58f617a9fc67911370
+  desc: SRC
+- duplicate_check: false
+  name: runtime.yaml
+  path: src/runtime.yaml
+  size: 10
+  signature: 1dfcf6fbbc0044276e89f1a3e7cde63ac0e96a037e4f0303c514887f6d9c4590af1ee377ab5acbca2535a399f9425d84425d86588d7b4f474b85226ff16789b5
+  desc: SRC
+- duplicate_check: false
+  name: model.yaml
+  path: src/model.yaml
+  size: 10
+  signature: b0660bfbb4f0d8ac1e4e75ce8d351bebf2e80f5c79816ed2e3b28e4309b57433d6cb027414a45f27a318116a10dec7f93cdb1d4ea99ec3ebb76a7178a4044b26
+  desc: SRC
+        """
+
         base_bundle_path = (
             self.sw.rootdir
             / "self"
@@ -427,8 +487,11 @@ class StandaloneModelTestCase(TestCase):
             / base_version[:VERSION_PREFIX_CNT]
             / f"{base_version}{BundleType.MODEL}"
         )
-        ensure_dir(base_bundle_path)
-        ensure_file(base_bundle_path / DEFAULT_MANIFEST_NAME, _base_model_yaml)
+        ensure_file(
+            base_bundle_path / "src" / SW_AUTO_DIRNAME / RESOURCE_FILES_NAME,
+            base_resource_content,
+            parents=True,
+        )
 
         compare_bundle_path = (
             self.sw.rootdir
@@ -438,8 +501,11 @@ class StandaloneModelTestCase(TestCase):
             / compare_version[:VERSION_PREFIX_CNT]
             / f"{compare_version}{BundleType.MODEL}"
         )
-        ensure_dir(compare_bundle_path)
-        ensure_file(compare_bundle_path / DEFAULT_MANIFEST_NAME, _compare_model_yaml)
+        ensure_file(
+            compare_bundle_path / "src" / SW_AUTO_DIRNAME / RESOURCE_FILES_NAME,
+            compare_resource_content,
+            parents=True,
+        )
 
         base_model_uri = URI(
             f"{self.name}/version/{base_version}", expected_type=URIType.MODEL
