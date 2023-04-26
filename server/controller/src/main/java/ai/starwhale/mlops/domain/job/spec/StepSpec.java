@@ -54,6 +54,8 @@ public class StepSpec {
 
     private List<RuntimeResource> resources;
 
+    private List<Env> env;
+
     private Integer replicas = 1;
 }
 

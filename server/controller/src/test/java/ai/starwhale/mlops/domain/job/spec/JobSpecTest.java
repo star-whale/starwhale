@@ -35,6 +35,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
+            + "  env: []\n"
             + "  name: ppl\n"
             + "  show_name: ppl\n"
             + "  replicas: 1\n"
@@ -46,6 +47,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
+            + "  env: []\n"
             + "  name: cmp\n"
             + "  show_name: cmp\n"
             + "  replicas: 1\n";
@@ -58,6 +60,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
+            + "  env: []\n"
             + "  name: ppl\n"
             + "  show_name: ppl\n"
             + "  replicas: 1\n"
@@ -70,6 +73,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1\n"
             + "    limit: 1\n"
+            + "  env: []\n"
             + "  name: cmp\n"
             + "  show_name: cmp\n"
             + "  replicas: 1\n";
@@ -82,6 +86,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
+            + "  env: []\n"
             + "  replicas: 1\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
@@ -93,6 +98,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
+            + "  env: []\n"
             + "  replicas: 1\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
@@ -105,6 +111,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
+            + "  env: []\n"
             + "  replicas: 1\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
@@ -116,6 +123,7 @@ public class JobSpecTest {
             + "  - type: \"cpu\"\n"
             + "    request: 1.0\n"
             + "    limit: 1.0\n"
+            + "  env: []\n"
             + "  replicas: 1\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
@@ -142,6 +150,7 @@ public class JobSpecTest {
         Assertions.assertEquals(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of())
+                .env(List.of())
                 .resources(List.of(new RuntimeResource("cpu", 1f, 1f)))
                 .name("ppl")
                 .showName("ppl")
@@ -152,6 +161,7 @@ public class JobSpecTest {
         Assertions.assertEquals(StepSpec.builder()
                 .jobName("default")
                 .needs(List.of("ppl"))
+                .env(List.of())
                 .resources(List.of(new RuntimeResource("cpu", 1f, 1f)))
                 .name("cmp")
                 .showName("cmp")
@@ -166,6 +176,7 @@ public class JobSpecTest {
                 StepSpec.builder()
                     .jobName("default")
                     .needs(List.of())
+                    .env(List.of())
                     .resources(List.of(new RuntimeResource("cpu", 1f, 1f)))
                     .name("ppl")
                     .showName("ppl")
@@ -175,6 +186,7 @@ public class JobSpecTest {
                 StepSpec.builder()
                     .jobName("default")
                     .needs(List.of("ppl"))
+                    .env(List.of())
                     .resources(List.of(new RuntimeResource("cpu", 1f, 1f)))
                     .name("cmp")
                     .showName("cmp")

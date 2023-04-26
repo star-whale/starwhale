@@ -124,15 +124,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
             // TODO: use task's resource needs
             Map<String, ContainerOverwriteSpec> containerSpecMap = new HashMap<>();
-            var initContainers = k8sJobTemplate.getInitContainerTemplates(k8sJob);
-            if (!CollectionUtils.isEmpty(initContainers)) {
-                initContainers.forEach(templateContainer -> {
-                    ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(
-                            templateContainer.getName());
-                    containerOverwriteSpec.setEnvs(getInitContainerEnvs(task));
-                    containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
-                });
-            }
 
             JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
 
@@ -196,6 +187,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         var model = swJob.getModel();
         var runtime = swJob.getJobRuntime();
         Map<String, String> coreContainerEnvs = new HashMap<>();
+        var taskEnv = task.getTaskRequest().getEnv();
+        if (!CollectionUtils.isEmpty(taskEnv)) {
+            taskEnv.forEach(env -> coreContainerEnvs.put(env.getName(), env.getValue()));
+        }
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // support multi dataset uris

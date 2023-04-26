@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -46,10 +45,6 @@ public class K8sJobTemplateTest {
     @Test
     public void testInit() {
         var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
-        List<V1Container> initContainerTemplates = k8sJobTemplate.getInitContainerTemplates(job);
-        List<String> initCnames = initContainerTemplates.stream().map(V1Container::getName)
-                .collect(Collectors.toList());
-        Assertions.assertIterableEquals(List.of("data-provider"), initCnames);
 
         List<V1Container> containerTemplates = k8sJobTemplate.getContainersTemplates(job);
         List<String> cnames = containerTemplates.stream().map(V1Container::getName)
@@ -82,14 +77,6 @@ public class K8sJobTemplateTest {
                 List.of(new V1EnvVar().name("env1").value("env1value"),
                         new V1EnvVar().name("env2").value("env2value")),
                 workerC.getEnv());
-
-        Optional<V1Container> dpCo = v1PodSpec.getInitContainers().stream()
-                .filter(c -> c.getName().equals("data-provider")).findAny();
-        V1Container dpC = dpCo.get();
-        Assertions.assertIterableEquals(
-                List.of(new V1EnvVar().name("envx").value("envxvalue"),
-                        new V1EnvVar().name("envy").value("envyvalue")),
-                dpC.getEnv());
 
         Assertions.assertEquals(1, v1PodSpec.getTolerations().size());
         var tolerationInJob = v1PodSpec.getTolerations().get(0);
