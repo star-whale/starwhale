@@ -271,7 +271,9 @@ public class ColumnSchema {
                 if (this.elementSchema == null) {
                     this.elementSchema = new ColumnSchema("element", 0);
                 }
-                this.elementSchema.update(schema.getElementType());
+                if (schema.hasElementType()) {
+                    this.elementSchema.update(schema.getElementType());
+                }
                 break;
             case MAP:
                 if (this.keySchema == null) {
