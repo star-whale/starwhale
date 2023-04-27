@@ -146,8 +146,7 @@ class TaskExecutor:
         logger.info(f"start to execute task with context({self.context}) ...")
         try:
             loop = asyncio.get_event_loop()
-        except RuntimeError as ex:
-            logger.warning("get event loop error, try to new one", ex)
+        except RuntimeError:
             loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -164,6 +163,7 @@ class TaskExecutor:
             logger.info(
                 f"finish {self.context}, status:{self.status}, error:{self.exception}"
             )
+            loop.close()
             return TaskResult(
                 id=self.index, status=self.status, exception=self.exception
             )
