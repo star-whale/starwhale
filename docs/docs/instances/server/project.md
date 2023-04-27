@@ -10,7 +10,7 @@ There are two types of projects：
 
 - **Private**: Visible to users specified in the project member settings. Private projects can only be seen by project owners and project members. The project owner can manage access in the project setting of Manage Member.
 
-## Create a project 
+## Create a project
 
 1 Sign in to Starwhale, click **Create Project**.
 
@@ -20,13 +20,13 @@ There are two types of projects：
 
 ![image](https://user-images.githubusercontent.com/101299635/234500891-50baad51-1b52-4164-91e2-b14a2fec6b7a.png)
 
-:::tip 
+:::tip
 Avoid duplicate project names.For more information, see [Names in Starwhale](https://doc.starwhale.ai/docs/concepts/names)
 :::  
 
 3 Select project visibility to decide who can find and see the project.
 
-![image](https://user-images.githubusercontent.com/101299635/234525424-e83b40e2-81f1-4ca0-bcac-85996980de70.png) 
+![image](https://user-images.githubusercontent.com/101299635/234525424-e83b40e2-81f1-4ca0-bcac-85996980de70.png)
 
 4 Type a description. It is optional.
 
@@ -52,7 +52,7 @@ Users with the project owner or maintainer role can edit a project. For more inf
   
   ![image](https://user-images.githubusercontent.com/101299635/234529708-6e0cb61a-c0a7-47ee-bd75-faa37e3de0f7.png)
 
-  2 Enter a new name for the project. 
+  2 Enter a new name for the project.
   
   ![image](https://user-images.githubusercontent.com/101299635/234529767-7c8e6e3d-2593-46b3-b7fa-783f35c3fc3a.png)
 
@@ -72,7 +72,7 @@ Users with the project owner or maintainer role can edit a project. For more inf
 
   ![image](https://user-images.githubusercontent.com/101299635/234533083-6abdef2a-d6f1-41d2-861b-9f4c908b49a5.png)
 
-  2 Enter a new name for the project. 
+  2 Enter a new name for the project.
   
   ![image](https://user-images.githubusercontent.com/101299635/234533339-dbd923f1-9ec1-4377-86f4-20aedf737c89.png)
 
@@ -158,7 +158,7 @@ Users with the project owner or maintainer role can edit a project. For more inf
 When you delete a project, all the models, datasets, evaluations and runtimes belonging to the project will also be deleted and can not be restored. Be careful about the action.
 :::
 
-## Manage project member 
+## Manage project member
 
 Only users with the admin role can assign people to the project. The project owner defaulted to having the project owner role.
 
@@ -184,7 +184,7 @@ Only users with the admin role can assign people to the project. The project own
 
 ### Remove a member
 
-1 On the project list page or project overview tab, click the **Manage Member** button. 
+1 On the project list page or project overview tab, click the **Manage Member** button.
 
 ![image](https://user-images.githubusercontent.com/101299635/234538761-4de0b42b-3ebe-4c6e-9b2a-585665d003e7.png)
 
