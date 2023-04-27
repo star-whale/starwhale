@@ -474,6 +474,10 @@ const account = {
         en: 'Available = Order Amount + Coupon Amount - Amount Consumed - Amount Refunded - Amount Frozen',
         zh: '可用额度=订单金额+代金券金额-已消费金额-已退款金额-已冻结金额',
     },
+    'account.amount.refund.tooltip': {
+        zh: '可退款金额=订单金额-已消费金额-已冻结金额-已退款金额',
+        en: 'Refundable = Order Amount - Amount Consumed - Amount Frozen - Amount Refunded',
+    },
     'account.recharge': {
         en: 'Recharge',
         zh: '充值',
@@ -574,6 +578,86 @@ const account = {
         zh: '扫描二维码进行支付',
         en: 'Scan QR code to pay',
     },
+    'account.refund.title': {
+        zh: '申请退款',
+        en: 'Refund',
+    },
+    'account.refund.reason': {
+        zh: '填写退款原因',
+        en: 'Refund Reason',
+    },
+    'account.refund.reason.label': {
+        zh: '退款原因',
+        en: 'Refund Reason',
+    },
+    'account.refund.reason.placeholder': {
+        zh: '请输入...',
+        en: 'Please input...',
+    },
+    'account.refund.confirm.info': {
+        zh: '确认退款信息',
+        en: 'Confirm Refund Information',
+    },
+    'account.refund.finish': {
+        zh: '完成',
+        en: 'Finish',
+    },
+    'account.refund.next': {
+        zh: '下一步',
+        en: 'Next',
+    },
+    'account.refund.account': {
+        zh: '退款账户',
+        en: 'Refund Account',
+    },
+    'account.refund.amount.avaliable': {
+        zh: '可退款金额',
+        en: 'Refundable Amount',
+    },
+    'account.refund.amount': {
+        zh: '退款金额',
+        en: 'Refund Amount',
+    },
+    'account.refund.amount.placeholder': {
+        zh: '请输入退款金额',
+        en: 'Please input refund amount',
+    },
+    'account.refund.confirm': {
+        zh: '确认退款',
+        en: 'Confirm Refund',
+    },
+    'account.refund.amount.error': {
+        zh: '请确认退款金额',
+        en: 'Please confirm refund amount',
+    },
+    'account.refund.success': {
+        zh: '退款成功',
+        en: 'Refund Success',
+    },
+    'account.refund.failed': {
+        zh: '退款失败',
+        en: 'Refund Failed',
+    },
+    'account.refund.finish.desc1': {
+        zh: '退订款项会原路退回',
+        en: 'Refund will be returned to the original payment account',
+    },
+    'account.refund.finish.desc2': {
+        zh: '即：通过支付宝支付的订单，会退至支付使用的支付宝，通过微信支付的订单会退回至支付使用的微信。',
+        en: ' i.e. Orders paid by Alipay will be refunded to the Alipay used for payment, and orders paid by WeChat will be refunded to the WeChat used for payment.',
+    },
+    'account.refund.back': {
+        zh: '返回订单列表',
+        en: 'Back to Order List',
+    },
+    'account.refund.inprogress': {
+        zh: '退款处理中',
+        en: 'In Progress',
+    },
+    'account.refund.retry': {
+        zh: '稍后重试',
+        en: 'Retry',
+    },
     'account.order.all': {
         en: 'All Orders',
         zh: '全部订单 >>',
@@ -669,6 +753,10 @@ const account = {
     'order.action.pay': {
         en: 'Pay',
         zh: '继续支付',
+    },
+    'order.action.refund': {
+        en: 'Refund',
+        zh: '退款',
     },
     'orders': {
         en: 'Orders',

@@ -18,6 +18,7 @@ export const alias = {
     'rc-steps': path.resolve(__dirname, './node_modules/rc-steps'),
     'lodash': path.resolve(__dirname, './node_modules/lodash'),
     'react-qr-code': path.resolve(__dirname, './node_modules/react-qr-code'),
+    'js-yaml': path.resolve(__dirname, './node_modules/js-yaml'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),
@@ -35,6 +36,16 @@ export const alias = {
 export default defineConfig({
     server: {
         proxy: {
+            '/api/v1/system/resourcePool': {
+                target: 'http://10.131.0.1:8088/billing/',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/billing': {
+                target: 'http://10.131.0.1:8088/',
+                changeOrigin: true,
+                secure: false,
+            },
             '/api/v1/log/online': {
                 changeOrigin: true,
                 target:
@@ -48,11 +59,6 @@ export default defineConfig({
             },
             '/plugins': {
                 target: 'http://127.0.0.1:8080/',
-                changeOrigin: true,
-                secure: false,
-            },
-            '/billing': {
-                target: 'http://10.131.0.1:8088/',
                 changeOrigin: true,
                 secure: false,
             },
