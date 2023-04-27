@@ -3,11 +3,15 @@ title: Project in Starwhale
 ---
 
 ## Project type
+
 There are two types of projects：
+
 - **Public**: Visible to anyone. Everyone on the internet can find and see public projects.
-- **Private**: Visible to users specified in the project member settings. Private projects can only be seen by project owners and project members. The project owner can manage access in the project setting of Manage Member. 
+
+- **Private**: Visible to users specified in the project member settings. Private projects can only be seen by project owners and project members. The project owner can manage access in the project setting of Manage Member.
 
 ## Create a project 
+
 1 Sign in to Starwhale, click **Create Project**.
 
 ![creat](https://user-images.githubusercontent.com/101299635/234524179-43ed6154-7379-4cae-8be4-471f95fd7c14.PNG)
@@ -15,6 +19,7 @@ There are two types of projects：
 2 Type a name for the project.
 
 ![image](https://user-images.githubusercontent.com/101299635/234500891-50baad51-1b52-4164-91e2-b14a2fec6b7a.png)
+
 :::tip 
 Avoid duplicate project names.For more information, see [Names in Starwhale](https://doc.starwhale.ai/docs/concepts/names)
 :::  
@@ -32,13 +37,15 @@ Avoid duplicate project names.For more information, see [Names in Starwhale](htt
 ![image](https://user-images.githubusercontent.com/101299635/234525918-6085832b-041c-41ba-9d8d-3293a38d4eda.png)
 
 ## Edit a project
+
 The name, privacy and description  of a project can be edited.
 
 :::tip
 Users with the project owner or maintainer role can edit a project. For more information, see [Roles and permissions](https://doc.starwhale.ai/docs/concepts/roles-permissions)
 :::
 
-### Edit name:
+### Edit name
+
 - If you are on the project list page:
 
   1 Hover your mouse over the project you want to edit, then click the **Edit** button.
@@ -77,7 +84,7 @@ Users with the project owner or maintainer role can edit a project. For more inf
   
   ![image](https://user-images.githubusercontent.com/101299635/234533711-4cb6c94b-bfab-4578-9ba6-42bcbeebe5f7.png)
 
-  ### Edit privacy:
+### Edit privacy
   
 - If you are on the project list page:
 
@@ -107,7 +114,8 @@ Users with the project owner or maintainer role can edit a project. For more inf
   
   ![image](https://user-images.githubusercontent.com/101299635/234535726-e512fb49-7581-44e4-bb96-2a807b614313.png)
 
-### Edit description:
+### Edit description
+
 - If you are on the project list page:
 
   1 Hover your mouse over the project you want to edit, then click the **Edit** button.
@@ -127,7 +135,6 @@ Users with the project owner or maintainer role can edit a project. For more inf
   1 Select Overview on the left navigation, and click **Edit**.
 
   ![image](https://user-images.githubusercontent.com/101299635/234536611-aed1e46e-ef90-4c03-887d-9354df09c300.png)
-
 
   2 Enter any description you want to describe the project.
   
@@ -160,6 +167,7 @@ Only users with the admin role can assign people to the project. The project own
 1 On the project list page or overview tab, click the **Manage Member** button, then **Add Member**.
 
 ![image](https://user-images.githubusercontent.com/101299635/234537971-e2578085-f83c-48a5-b82f-50e57f7efb95.png)
+
 ![image](https://user-images.githubusercontent.com/101299635/234538048-d361a268-e33d-45c0-bc88-2527b04712dd.png)
 
 2 Type the username you want to add to the project, then click a name in the list of matches.
@@ -173,7 +181,6 @@ Only users with the admin role can assign people to the project. The project own
 4 To finish, click **Submit**.
 
 ![image](https://user-images.githubusercontent.com/101299635/234538410-98212746-005c-4ba9-950a-3b2ee137e210.png)
-
 
 ### Remove a member
 
