@@ -69,4 +69,7 @@ public class SystemService {
         return systemSettingService.getResourcePools();
     }
 
+    public void updateResourcePools(List<ResourcePool> resourcePools) {
+        systemSettingService.updateResourcePools(resourcePools);
+    }
 }

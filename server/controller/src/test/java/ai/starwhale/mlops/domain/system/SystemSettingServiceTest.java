@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.system;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -192,5 +194,16 @@ public class SystemSettingServiceTest {
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
 
+    @Test
+    public void testUpdateResourcePools() {
+        systemSettingService.updateSetting(YAML2);
+        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        verify(listener).onUpdate(systemSettingService.getSystemSetting());
 
+        var pool = ResourcePool.builder().name("foo").metadata(Map.of("bar", "baz")).build();
+        systemSettingService.updateResourcePools(List.of(pool));
+        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(pool, systemSettingService.queryResourcePool("foo"));
+        verify(listener, times(2)).onUpdate(systemSettingService.getSystemSetting());
+    }
 }

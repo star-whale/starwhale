@@ -75,6 +75,14 @@ public class SystemControllerTest {
     }
 
     @Test
+    public void testUpdateResourcePools() {
+        var resp = controller.updateResourcePools(List.of(
+                ResourcePool.builder().name("foo").build()
+        ));
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
     public void testGetCurrentVersion() {
         given(systemService.controllerVersion())
                 .willReturn("version1");
