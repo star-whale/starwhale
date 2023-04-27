@@ -1,0 +1,9 @@
+api_version: 1.1
+dependencies:
+  - conda:
+      - numpy
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+mode: conda
+name: simple-test-conda
