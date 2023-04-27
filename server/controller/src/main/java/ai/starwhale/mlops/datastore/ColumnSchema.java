@@ -181,7 +181,7 @@ public class ColumnSchema {
         var type = ColumnType.valueOf(schema.getType());
         Wal.ColumnSchema.Builder ret = null;
         if (this.type != type) {
-            ret = Wal.ColumnSchema.newBuilder();
+            return new ColumnSchema(schema, this.index).toWal();
         }
         switch (type) {
             case LIST:
@@ -192,10 +192,7 @@ public class ColumnSchema {
                 }
                 var elementWal = elementSchema.getDiff(schema.getElementType());
                 if (elementWal != null) {
-                    if (ret == null) {
-                        ret = Wal.ColumnSchema.newBuilder();
-                    }
-                    ret.setElementType(elementWal);
+                    ret = Wal.ColumnSchema.newBuilder().setElementType(elementWal);
                 }
                 break;
             case MAP:
@@ -210,9 +207,7 @@ public class ColumnSchema {
                 var keyWal = keySchema.getDiff(schema.getKeyType());
                 var valueWal = valueSchema.getDiff(schema.getValueType());
                 if (keyWal != null || valueWal != null) {
-                    if (ret == null) {
-                        ret = Wal.ColumnSchema.newBuilder();
-                    }
+                    ret = Wal.ColumnSchema.newBuilder();
                     if (keyWal != null) {
                         ret.setKeyType(keyWal);
                     }
@@ -223,9 +218,7 @@ public class ColumnSchema {
                 break;
             case OBJECT:
                 if (!schema.getPythonType().equals(this.pythonType)) {
-                    if (ret == null) {
-                        ret = Wal.ColumnSchema.newBuilder();
-                    }
+                    ret = Wal.ColumnSchema.newBuilder();
                     ret.setPythonType(schema.getPythonType());
                 }
                 var attributesSchema = this.attributesSchema;
@@ -271,9 +264,7 @@ public class ColumnSchema {
                 if (this.elementSchema == null) {
                     this.elementSchema = new ColumnSchema("element", 0);
                 }
-                if (schema.hasElementType()) {
-                    this.elementSchema.update(schema.getElementType());
-                }
+                this.elementSchema.update(schema.getElementType());
                 break;
             case MAP:
                 if (this.keySchema == null) {
