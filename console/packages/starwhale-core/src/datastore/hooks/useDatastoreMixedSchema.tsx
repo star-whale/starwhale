@@ -69,12 +69,13 @@ export function useDatastoreWithSchema(records: RecordListSchemaT, columnTypes: 
 
 export function useDatastoreMixedSchema(data?: RecordListVo) {
     const { records, columnTypes, columnHints } = data ?? {}
+
     const cached = React.useRef(new LRUCache<string, any>(1000))
 
     const getSchema = React.useCallback(
         (name: string, rowIndex = 0): RecordSchemaT | undefined => {
             const key = `${rowIndex}.${name}`
-            if (cached.current.has(key)) return cached.current.get(key)
+            // if (cached.current.has(key)) return cached.current.get(key)
             const recordTmp = _.get(records, key)
             if (!recordTmp) return undefined
             let schema = SwType.decode_schema(recordTmp)
