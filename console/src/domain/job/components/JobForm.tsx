@@ -71,7 +71,12 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const handleValuesChange = useCallback(
         (_changes, values_) => {
-            if (values_.modelVersionUrl) setModelVersionId(values_.modelVersionUrl[0])
+            if ('modelVersionUrl' in _changes) {
+                setModelVersionHandler('')
+            }
+            if (values_.modelVersionUrl) {
+                setModelVersionId(values_.modelVersionUrl[0])
+            }
             if (values_.modelVersionHandler) setModelVersionHandler(values_.modelVersionHandler)
             let rawTypeTmp = values_.rawType
             if ('rawType' in _changes && !_changes.rawType) {
@@ -97,7 +102,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!modelTree) return undefined
-        let version: IModelVersionSchema
+        let version: IModelVersionSchema | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
                 if (versionTmp.id === modelVersionId) {
@@ -105,14 +110,15 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 }
             })
         )
-        // @ts-ignore
-        return _.merge([], version?.stepSpecs ?? [], yaml.load(stepSpecOverWrites) ?? [])
-    }, [modelTree, modelVersionId, stepSpecOverWrites])
+        return version?.stepSpecs ?? []
+    }, [modelTree, modelVersionId])
 
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
-        return fullStepSource.filter((v) => v.job_name === modelVersionHandler)
-    }, [fullStepSource, modelVersionHandler])
+        return _.merge([], fullStepSource, yaml.load(stepSpecOverWrites) ?? []).filter(
+            (v: StepSpec) => v?.job_name === modelVersionHandler
+        )
+    }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
@@ -156,14 +162,19 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [setStepSpecOverWrites]
     )
 
+    React.useEffect(() => {
+        if (!stepSource) return
+        setStepSpecOverWrites(yaml.dump(stepSource))
+    }, [stepSource, form, setStepSpecOverWrites])
+
     const rawRef = React.useRef(false)
     React.useEffect(() => {
         if (rawRef.current === rawType) return
         if (rawType) {
-            setStepSpecOverWrites(yaml.dump(stepSource))
+            setStepSpecOverWrites(yaml.dump(_.merge([], stepSource, form.getFieldValue('stepSpecOverWrites'))))
         }
         rawRef.current = rawType
-    }, [stepSource, setStepSpecOverWrites, rawType])
+    }, [stepSource, setStepSpecOverWrites, rawType, stepSpecOverWrites, form])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
