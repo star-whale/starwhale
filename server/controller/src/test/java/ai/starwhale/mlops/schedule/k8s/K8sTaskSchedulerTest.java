@@ -147,7 +147,7 @@ public class K8sTaskSchedulerTest {
                                 .size(300L).build()))
                 .stepSpec("")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
-                .project(Project.builder().name("project").build())
+                .project(Project.builder().name("project").id(7L).build())
                 .build();
         Step step = new Step();
         step.setId(1L);
