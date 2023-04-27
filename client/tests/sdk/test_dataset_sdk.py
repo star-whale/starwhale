@@ -1151,7 +1151,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             json={"data": {"uploadId": 1}},
         )
 
-        ds.copy("cloud://test/project/self")
+        ds.copy("cloud://test/project/self", force=True)
         assert make_version_req.call_count == 2
         assert upload_blob_req.call_count == 1
 

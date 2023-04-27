@@ -229,7 +229,7 @@ class BundleCopy(CloudRequestMixed):
 
     def do(self) -> None:
         remote_url = self._get_remote_bundle_console_url()
-        if self._check_version_existed(self.dest_uri) and not self.force:
+        if not self.force and self._check_version_existed(self.dest_uri):
             console.print(f":tea: {remote_url} was already existed, skip copy")
             return
 

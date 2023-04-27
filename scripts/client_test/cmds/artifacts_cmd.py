@@ -8,7 +8,7 @@ from pathlib import Path
 from starwhale.utils import gen_uniq_version
 from starwhale.consts import ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType
+from starwhale.base.type import URIType, DatasetChangeMode
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.runtime.model import RuntimeConfig
 
@@ -152,8 +152,20 @@ class Dataset(BaseArtifact):
         assert ret_code == 0, res
         return URI(f"{name}/version/{version}", expected_type=URIType.DATASET)
 
-    def copy(self, src_uri: str, target_project: str) -> None:
+    def copy(
+        self,
+        src_uri: str,
+        target_project: str,
+        force: bool = False,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+    ) -> None:
         _args = [CLI, self.name, "copy", src_uri, target_project]
+        if force:
+            _args.append("--force")
+        if mode == DatasetChangeMode.PATCH:
+            _args.append("--patch")
+        else:
+            _args.append("--overwrite")
         _ret_code, _res = invoke(_args)
         assert _ret_code == 0, _res
 
@@ -181,7 +193,13 @@ class Runtime(BaseArtifact):
         assert ret_code == 0, res
         return URI(f"{config.name}/version/{version}", expected_type=URIType.RUNTIME)
 
-    def copy(self, src_uri: str, target_project: str, force: bool) -> None:
+    def copy(
+        self,
+        src_uri: str,
+        target_project: str,
+        force: bool,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+    ) -> None:
         _args = [CLI, self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")

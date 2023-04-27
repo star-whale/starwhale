@@ -9,7 +9,7 @@ from rich.pretty import Pretty
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
+from starwhale.base.type import URIType, InstanceType, DatasetChangeMode
 from starwhale.base.view import BaseTermView
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.runtime.process import Process as RuntimeProcess
@@ -176,9 +176,17 @@ class DatasetTermView(BaseTermView):
         cls,
         src_uri: str,
         dest_uri: str,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         dest_local_project_uri: str = "",
+        force: bool = False,
     ) -> None:
-        Dataset.copy(src_uri, dest_uri, dest_local_project_uri)
+        Dataset.copy(
+            src_uri=src_uri,
+            dest_uri=dest_uri,
+            mode=mode,
+            dest_local_project_uri=dest_local_project_uri,
+            force=force,
+        )
         console.print(":clap: copy done")
 
     @BaseTermView._header

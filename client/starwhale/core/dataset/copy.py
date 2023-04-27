@@ -28,10 +28,10 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
+from starwhale.base.uri import URI, URIType
 from starwhale.utils.fs import ensure_file
-from starwhale.base.type import InstanceType
-from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.base.type import InstanceType, DatasetChangeMode
+from starwhale.utils.error import NotFoundError
 from starwhale.base.bundle_copy import BundleCopy, _UploadPhase
 from starwhale.core.dataset.store import DatasetStorage
 
@@ -42,9 +42,10 @@ _LOCAL_STORAGE_SCHEMES = ("", "file")
 
 
 class DatasetCopy(BundleCopy):
-    def __init__(self, src_uri: str, dest_uri: str, typ: str, **kw: t.Any) -> None:
-        super().__init__(src_uri, dest_uri, typ, **kw)
+    def __init__(self, src_uri: str, dest_uri: str, **kw: t.Any) -> None:
+        super().__init__(src_uri, dest_uri, typ=URIType.DATASET, **kw)
         self._max_workers = int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
+        self._copy_mode = kw.get("mode", DatasetChangeMode.PATCH)
 
     def _check_dataset_existed(self, uri: URI) -> bool:
         dataset_name = uri.object.name or self.bundle_name
@@ -63,16 +64,16 @@ class DatasetCopy(BundleCopy):
             return (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
     def do(self) -> None:
+        if not self.force and self._check_version_existed(self.dest_uri):
+            console.print(f":tea: {self.dest_uri} was already existed, skip copy")
+            return
+
         if not self._check_version_existed(self.src_uri):
             raise NotFoundError(f"src dataset not found: {self.src_uri}")
 
-        # TODO: add `--overwrite` for dataset copy
-        if self._check_dataset_existed(self.dest_uri):
-            raise NoSupportError(
-                f"dest dataset already exists, no support to overwrite or update copy: {self.dest_uri}"
-            )
-
-        console.print(f":construction: start to copy {self.src_uri} -> {self.dest_uri}")
+        console.print(
+            f":construction: start to copy[{self._copy_mode.value}] {self.src_uri} -> {self.dest_uri}"
+        )
 
         with Progress(
             SpinnerColumn(),
@@ -134,6 +135,15 @@ class DatasetCopy(BundleCopy):
             self._do_upload_blobs(_artifacts_uri_map, progress)
 
         console.print(":horse: dump dataset meta from src to dest")
+
+        if (
+            self._copy_mode == DatasetChangeMode.OVERWRITE
+            and self._check_dataset_existed(self.dest_uri)
+        ):
+            # TODO: use datastore high performance api to delete all rows
+            for row in dest.scan():
+                dest.delete(row.id)
+
         for row in src.scan():
             for artifact in row.artifacts:
                 link = artifact.link
@@ -315,7 +325,6 @@ class DatasetCopy(BundleCopy):
         artifacts_uri_map: t.Dict[str, str],
         progress: Progress,
     ) -> None:
-
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = [
                 executor.submit(
