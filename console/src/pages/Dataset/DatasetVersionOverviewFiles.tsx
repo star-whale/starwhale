@@ -283,27 +283,6 @@ export default function DatasetVersionFiles() {
             if (cb.label === 'id') return 1
             return ca.label.localeCompare(cb.label)
         })
-        // if (layoutKey === LAYOUT.GRID) {
-        //     return (
-        //         <div
-        //             style={{
-        //                 display: 'grid',
-        //                 gap: '9px',
-        //                 gridTemplateColumns: 'repeat(auto-fit, minmax(161px, 1fr))',
-        //                 placeItems: 'center',
-        //             }}
-        //         >
-        //             {datasets.map((row, index) => {
-        //                 return (
-        //                     <div className={styles.card} key={index}>
-        //                         <div className={styles.cardImg}>{rowAction[0].renderItem(row)}</div>
-        //                         <div className={styles.cardSize}>{rowAction[1].renderItem(row)}</div>
-        //                     </div>
-        //                 )
-        //             })}
-        //         </div>
-        //     )
-        // }
 
         return (
             <TableBuilder
@@ -358,6 +337,8 @@ export default function DatasetVersionFiles() {
             </TableBuilder>
         )
     }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
+
+    console.log(records, datasets)
 
     return (
         <div className={styles.wrapper}>
