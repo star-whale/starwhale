@@ -98,6 +98,11 @@ public class SystemSettingService implements CommandLineRunner {
                 : this.systemSetting.getResourcePoolSetting();
     }
 
+    public void updateResourcePools(List<ResourcePool> resourcePools) {
+        this.systemSetting.setResourcePoolSetting(resourcePools);
+        systemSettingMapper.put(querySetting());
+        listeners.forEach(l -> l.onUpdate(systemSetting));
+    }
 
     @Override
     public void run(String... args) throws Exception {
