@@ -256,6 +256,11 @@ public class ColumnSchema {
             if (this.type != null) {
                 this.singleType = false;
             }
+            this.keySchema = null;
+            this.valueSchema = null;
+            this.elementSchema = null;
+            this.attributesSchema = null;
+            this.pythonType = null;
             this.type = type;
         }
         switch (type) {

@@ -114,6 +114,13 @@ public class TableSchemaTest {
         walMap.put("list", newList);
         this.schema.update(diff);
         walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+
+        var listCol = this.schema.getColumnSchemaByName("list");
+        assertThat(listCol.getType(), is(ColumnType.STRING));
+        assertThat(listCol.getElementSchema(), nullValue());
+        assertThat(listCol.getKeySchema(), nullValue());
+        assertThat(listCol.getValueSchema(), nullValue());
+        assertThat(listCol.getPythonType(), nullValue());
     }
 
     @Test
