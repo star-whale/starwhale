@@ -120,6 +120,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     static final String ANNOTATION_KEY_JOB_ID = "starwhale.ai/job-id";
     static final String ANNOTATION_KEY_TASK_ID = "starwhale.ai/task-id";
     static final String ANNOTATION_KEY_USER_ID = "starwhale.ai/user-id";
+    static final String ANNOTATION_KEY_PROJECT_ID = "starwhale.ai/project-id";
 
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
@@ -150,6 +151,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             annotations.put(ANNOTATION_KEY_JOB_ID, job.getId().toString());
             annotations.put(ANNOTATION_KEY_TASK_ID, task.getId().toString());
             annotations.put(ANNOTATION_KEY_USER_ID, userId);
+            annotations.put(ANNOTATION_KEY_PROJECT_ID, job.getProject().getId().toString());
             if (pool != null && !CollectionUtils.isEmpty(pool.getMetadata())) {
                 annotations.putAll(pool.getMetadata());
             }
