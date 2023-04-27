@@ -366,7 +366,7 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build(),
                             ColumnSchemaDesc.builder().name("j")
                                     .type("LIST")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("k")
                                     .type("OBJECT")
@@ -377,12 +377,12 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("l").type("FLOAT64").build(),
                             ColumnSchemaDesc.builder().name("m")
                                     .type("TUPLE")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("n")
                                     .type("MAP")
-                                    .keyType(ColumnSchemaDesc.builder().type("INT8").build())
-                                    .valueType(ColumnSchemaDesc.builder().type("INT16").build())
+                                    .keyType(ColumnSchemaDesc.builder().name("key").type("INT8").build())
+                                    .valueType(ColumnSchemaDesc.builder().name("value").type("INT16").build())
                                     .build())),
 
                     List.of(new HashMap<>() {
@@ -409,11 +409,12 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("key").type("INT32").build(),
                             ColumnSchemaDesc.builder().name("b").type("STRING").build(),
                             ColumnSchemaDesc.builder().name("f").type("LIST")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("i").type("TUPLE")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
+                            ColumnSchemaDesc.builder().name("j").type("INT32").build(),
                             ColumnSchemaDesc.builder().name("k")
                                     .type("OBJECT")
                                     .pythonType("tt")
@@ -422,8 +423,8 @@ public class MemoryTableImplTest {
                                     .build(),
                             ColumnSchemaDesc.builder().name("n")
                                     .type("MAP")
-                                    .keyType(ColumnSchemaDesc.builder().type("STRING").build())
-                                    .valueType(ColumnSchemaDesc.builder().type("INT16").build())
+                                    .keyType(ColumnSchemaDesc.builder().name("key").type("STRING").build())
+                                    .valueType(ColumnSchemaDesc.builder().name("value").type("INT16").build())
                                     .build())),
 
                     List.of(new HashMap<>() {
@@ -432,6 +433,7 @@ public class MemoryTableImplTest {
                             put("b", "10");
                             put("f", List.of("a"));
                             put("i", List.of("b"));
+                            put("j", "7");
                             put("k", Map.of("a", "b", "b", "c"));
                             put("n", Map.of("1", "2"));
                         }
@@ -446,6 +448,7 @@ public class MemoryTableImplTest {
                                             "b", BaseValue.valueOf("10"),
                                             "f", BaseValue.valueOf(List.of(10)),
                                             "i", TupleValue.valueOf(List.of(11)),
+                                            "j", BaseValue.valueOf(7),
                                             "k", ObjectValue.valueOf("tt", Map.of("a", 11, "b", 12)),
                                             "n", BaseValue.valueOf(Map.of("1", (short) 2)))),
                             new RecordResult(BaseValue.valueOf("x"),
@@ -469,6 +472,25 @@ public class MemoryTableImplTest {
                                             put("n", BaseValue.valueOf(Map.of((byte) 1, (short) 2)));
                                         }
                                     })));
+            // the type of j column changes from list to int and then list again, and with the same element type
+            this.memoryTable.update(
+                new TableSchemaDesc("key", List.of(
+                    ColumnSchemaDesc.builder().name("key").type("INT32").build(),
+                    ColumnSchemaDesc.builder().name("j").type("LIST")
+                        .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                        .build())),
+                    List.of(new HashMap<>() {
+                        {
+                            put("key", "2");
+                            put("j", List.of("b"));
+                        }
+                    }));
+            var all = scanAll(this.memoryTable, List.of("j"), false);
+            assertThat(all, contains(
+                new RecordResult(BaseValue.valueOf(1), false, Map.of("j", BaseValue.valueOf(7))),
+                new RecordResult(BaseValue.valueOf(2), false, Map.of("j", BaseValue.valueOf(List.of(11)))),
+                new RecordResult(BaseValue.valueOf("x"), false, Map.of("j", BaseValue.valueOf(List.of(10))))
+            ));
         }
 
         @Test
@@ -621,16 +643,16 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("i").type("UNKNOWN").build(),
                             ColumnSchemaDesc.builder().name("j")
                                     .type("LIST")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("k")
                                     .type("TUPLE")
-                                    .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("l")
                                     .type("MAP")
-                                    .keyType(ColumnSchemaDesc.builder().type("INT32").build())
-                                    .valueType(ColumnSchemaDesc.builder().type("INT32").build())
+                                    .keyType(ColumnSchemaDesc.builder().name("key").type("INT32").build())
+                                    .valueType(ColumnSchemaDesc.builder().name("value").type("INT32").build())
                                     .build(),
                             ColumnSchemaDesc.builder().name("m")
                                     .type("OBJECT")
@@ -641,9 +663,11 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("n")
                                     .type("LIST")
                                     .elementType(ColumnSchemaDesc.builder()
+                                            .name("element")
                                             .type("TUPLE")
                                             .elementType(ColumnSchemaDesc.builder()
                                                     .type("MAP")
+                                                    .name("element")
                                                     .keyType(ColumnSchemaDesc.builder()
                                                             .type("OBJECT")
                                                             .pythonType("tt")
@@ -661,7 +685,8 @@ public class MemoryTableImplTest {
                                                     .valueType(ColumnSchemaDesc.builder()
                                                             .type("LIST")
                                                             .elementType(
-                                                                    ColumnSchemaDesc.builder().type("INT32").build())
+                                                                    ColumnSchemaDesc.builder()
+                                                                            .name("element").type("INT32").build())
                                                             .build())
                                                     .build())
                                             .build())
@@ -712,7 +737,7 @@ public class MemoryTableImplTest {
                             ColumnSchemaDesc.builder().name("d").type("BOOL").build(),
                             ColumnSchemaDesc.builder().name("e")
                                     .type("LIST")
-                                    .elementType(ColumnSchemaDesc.builder().type("BOOL").build())
+                                    .elementType(ColumnSchemaDesc.builder().name("element").type("BOOL").build())
                                     .build())),
                     List.of(Map.of("key", "2", "d", "0", "e", List.of("0", "1"))));
             records.clear();

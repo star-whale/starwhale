@@ -77,12 +77,7 @@ public class TableSchemaTest {
         var schema = new TableSchema();
         var diff = schema.getDiff(this.desc);
         var expectedDiff = this.schema.toWal();
-        var listDiff = expectedDiff.getColumnsBuilder(2);
-        listDiff.setElementType(listDiff.getElementTypeBuilder().setColumnName(""));
-        var mapDiff = expectedDiff.getColumnsBuilder(3);
-        mapDiff.setKeyType(mapDiff.getKeyTypeBuilder().setColumnName(""))
-                .setValueType(mapDiff.getValueTypeBuilder().setColumnName(""));
-        assertThat(diff.build(), is(expectedDiff.setColumns(2, listDiff).setColumns(3, mapDiff).build()));
+        assertThat(diff.build(), is(expectedDiff.build()));
         schema.update(this.schema.toWal().build());
         assertThat(schema.toWal().build(), is(this.schema.toWal().build()));
     }
@@ -119,6 +114,13 @@ public class TableSchemaTest {
         walMap.put("list", newList);
         this.schema.update(diff);
         walMap.forEach((k, v) -> assertThat(this.schema.getColumnSchemaByName(k).toWal().build(), is(v.build())));
+
+        var listCol = this.schema.getColumnSchemaByName("list");
+        assertThat(listCol.getType(), is(ColumnType.STRING));
+        assertThat(listCol.getElementSchema(), nullValue());
+        assertThat(listCol.getKeySchema(), nullValue());
+        assertThat(listCol.getValueSchema(), nullValue());
+        assertThat(listCol.getPythonType(), nullValue());
     }
 
     @Test
@@ -155,6 +157,7 @@ public class TableSchemaTest {
                 .setElementType(Wal.ColumnSchema.newBuilder()
                         .setColumnType("OBJECT")
                         .setPythonType("x")
+                        .setColumnName("element")
                         .addAttributes(Wal.ColumnSchema.newBuilder()
                                 .setColumnName("a")
                                 .setColumnType("INT32")
@@ -184,7 +187,7 @@ public class TableSchemaTest {
                         List.of(ColumnSchemaDesc.builder()
                                 .name("list")
                                 .type("LIST")
-                                .elementType(ColumnSchemaDesc.builder().type("INT32").build())
+                                .elementType(ColumnSchemaDesc.builder().type("INT32").name("ele").build())
                                 .build())))
                 .build();
         var newList = Wal.ColumnSchema.newBuilder()
@@ -193,6 +196,7 @@ public class TableSchemaTest {
                 .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex())
                 .setElementType(Wal.ColumnSchema.newBuilder()
                         .setColumnType("INT32")
+                        .setColumnName("ele")
                         .build());
         assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newList).build()));
         var walMap = this.schema.getColumnSchemaList().stream()
@@ -209,7 +213,7 @@ public class TableSchemaTest {
                         List.of(ColumnSchemaDesc.builder()
                                 .name("map")
                                 .type("MAP")
-                                .keyType(ColumnSchemaDesc.builder().type("INT8").build())
+                                .keyType(ColumnSchemaDesc.builder().name("key").type("INT8").build())
                                 .valueType(ColumnSchemaDesc.builder().name("value").type("INT32").build())
                                 .build())))
                 .build();
@@ -218,6 +222,7 @@ public class TableSchemaTest {
                 .setColumnType("MAP")
                 .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
                 .setKeyType(Wal.ColumnSchema.newBuilder()
+                        .setColumnName("key")
                         .setColumnType("INT8")
                         .build());
         assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newMap).build()));
@@ -237,7 +242,7 @@ public class TableSchemaTest {
                                 .name("map")
                                 .type("MAP")
                                 .keyType(ColumnSchemaDesc.builder().name("key").type("STRING").build())
-                                .valueType(ColumnSchemaDesc.builder().type("INT8").build())
+                                .valueType(ColumnSchemaDesc.builder().name("value").type("INT8").build())
                                 .build())))
                 .build();
         var newMap = Wal.ColumnSchema.newBuilder()
@@ -245,6 +250,7 @@ public class TableSchemaTest {
                 .setColumnType("MAP")
                 .setColumnIndex(this.schema.getColumnSchemaByName("map").getIndex())
                 .setValueType(Wal.ColumnSchema.newBuilder()
+                        .setColumnName("value")
                         .setColumnType("INT8")
                         .build());
         assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newMap).build()));
