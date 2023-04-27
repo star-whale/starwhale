@@ -276,18 +276,18 @@ class TestCli:
         self.select_local_instance()
 
         run_handler = "src.evaluator:evaluate"
-        model_uri = self.build_model(f"{self._work_dir}/scripts/example", "simple")
-        dataset_uri = self.build_dataset(
-            "simple", f"{self._work_dir}/scripts/example", DatasetExpl("", "")
-        )
-        runtime_uri = self.build_runtime(f"{self._work_dir}/scripts/example")
+        workdir = f"{self._work_dir}/scripts/example"
+        model_uri = self.build_model(workdir, "simple")
+        dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
+        venv_runtime_uri = self.build_runtime(workdir)
+        conda_runtime_uri = self.build_runtime(workdir, "runtime_conda.yaml")
 
         remote_future_jobs = []
         if self.server_url:
             remote_future_jobs = self.run_model_in_server(
                 dataset_uris=[dataset_uri],
                 model_uri=model_uri,
-                runtime_uris=[runtime_uri],
+                runtime_uris=[venv_runtime_uri],
                 run_handler=run_handler,
             )
 
@@ -295,7 +295,7 @@ class TestCli:
             dataset_uris=[dataset_uri],
             model_uri=model_uri,
             run_handler=run_handler,
-            runtime_uris=[runtime_uri],
+            runtime_uris=[conda_runtime_uri],
         )
 
         for job in remote_future_jobs:

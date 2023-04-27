@@ -12,6 +12,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import extract_tar
 from starwhale.base.type import URIType, InstanceType
 from starwhale.utils.venv import (
+    get_conda_bin,
     guess_python_env_mode,
     check_valid_venv_prefix,
     check_valid_conda_prefix,
@@ -70,31 +71,28 @@ class Process:
         for p in clear_positions[::-1]:
             argv.pop(p)
 
-        cmd = [
-            self._get_activate_cmd(),
-            " ".join(argv),
-        ]
+        sub_cmd = " ".join(argv)
+
+        # TODO: support windows platform
+        if self._mode == PythonRunEnv.VENV:
+            _bin_path = (self._prefix_path / "bin/activate").absolute()
+            cmd = " && ".join([f"source {_bin_path}", sub_cmd])
+        elif self._mode == PythonRunEnv.CONDA:
+            cmd = f"{get_conda_bin()} run --prefix {self._prefix_path.absolute()} {sub_cmd}"
+        else:
+            raise NoSupportError(f"get activate command for mode: {self._mode}")
+
         console.print(
             f":rooster: run process in the python isolated environment(prefix: {self._prefix_path})"
         )
         check_call(
-            ["bash", "-c", " && ".join(cmd)],
+            ["bash", "-c", cmd],
             env={
                 self.EnvInActivatedProcess: "1",
                 self.ActivatedRuntimeURI: str(self._uri),
             },
             log=print,
         )
-
-    def _get_activate_cmd(self) -> str:
-        # TODO: support windows platform
-        if self._mode == PythonRunEnv.VENV:
-            _ap = self._prefix_path / "bin/activate"
-            return f"source {_ap.absolute()}"
-        elif self._mode == PythonRunEnv.CONDA:
-            return f"source activate {self._prefix_path.absolute()}"
-        else:
-            raise NoSupportError(f"get activate command for mode: {self._mode}")
 
     def _restore_runtime(
         self,

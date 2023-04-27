@@ -78,6 +78,7 @@ class RuntimeProcessTestCase(TestCase):
         assert not m_restore.called
         assert not m_extract.called
 
+    @patch("starwhale.core.runtime.process.get_conda_bin")
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
     @patch("starwhale.core.runtime.process.check_call")
     @patch("starwhale.core.runtime.process.extract_tar")
@@ -88,12 +89,15 @@ class RuntimeProcessTestCase(TestCase):
         m_extract: MagicMock,
         m_call: MagicMock,
         m_mode: MagicMock,
+        m_conda_bin: MagicMock,
     ) -> None:
         uri = URI("model-test/version/1234", expected_type=URIType.MODEL)
         store = ModelStorage(uri)
         conda_dir = store.packaged_runtime_export_dir / "conda"
         ensure_dir(conda_dir)
         m_mode.return_value = "conda"
+        conda_bin_path = "/opt/conda/bin/conda"
+        m_conda_bin.return_value = conda_bin_path
 
         run_argv = [
             "swcli",
@@ -117,7 +121,7 @@ class RuntimeProcessTestCase(TestCase):
         ]
         assert (
             m_call.call_args[0][0][2]
-            == f"source activate {conda_dir} && {p._prefix_path}/bin/swcli model run mock another"
+            == f"{conda_bin_path} run --prefix {conda_dir} {p._prefix_path}/bin/swcli model run mock another"
         )
         env = m_call.call_args[1]["env"]
         assert env["SW_RUNTIME_ACTIVATED_PROCESS"] == "1"
