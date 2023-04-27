@@ -818,6 +818,42 @@ const account = {
         en: 'Bills',
         zh: '账单',
     },
+    'resource.price': {
+        en: 'Price',
+        zh: '参考价格',
+    },
+    'resource.price.unit.hour': {
+        en: 'per hour',
+        zh: '时',
+    },
+    'resource.price.unit.minute': {
+        en: 'per minute',
+        zh: '分',
+    },
+    'resource.price.unit.second': {
+        en: 'per second',
+        zh: '秒',
+    },
+    'resource.price.unit.count': {
+        en: 'per count',
+        zh: '次',
+    },
+    'resource.price.unit.usage': {
+        en: 'per usage',
+        zh: '用量',
+    },
+    'resource.price.summary': {
+        en: 'Price Summary',
+        zh: '配置费用',
+    },
+    'resource.price.notice': {
+        zh: '按资源使用量付费，按照实际运行时长进行收费（每5分钟为一个计费周期，不足5分钟按5分钟计费），后付费模式。',
+        en: 'Pay according to the actual running time (every 5 minutes is a billing cycle, less than 5 minutes is calculated as 5 minutes), postpaid mode.',
+    },
+    'resource.price.instruction': {
+        zh: '付费计费说明',
+        en: 'Payment and Billing Instructions',
+    },
 }
 
 const locales0 = {
