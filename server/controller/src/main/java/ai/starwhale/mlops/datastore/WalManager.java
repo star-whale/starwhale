@@ -179,15 +179,16 @@ public class WalManager extends Thread {
                                                     100, 2.0, 0.5, 10000))
                                             .build()),
                                     () -> {
-                                        var input = WalManager.this.storageAccessService.get(this.currentFile);
-                                        int len = Math.toIntExact(input.getSize());
-                                        var ret = new byte[len];
-                                        var n = input.readNBytes(ret, 0, len);
-                                        if (n != len) {
-                                            throw new RuntimeException(
+                                        try (var input = WalManager.this.storageAccessService.get(this.currentFile)) {
+                                            int len = Math.toIntExact(input.getSize());
+                                            var ret = new byte[len];
+                                            var n = input.readNBytes(ret, 0, len);
+                                            if (n != len) {
+                                                throw new RuntimeException(
                                                     MessageFormat.format("expected size {0}, actual {1}", len, n));
+                                            }
+                                            return ret;
                                         }
-                                        return ret;
                                     })
                             .apply();
                 } catch (Throwable e) {
