@@ -754,7 +754,8 @@ public class ModelService {
                 @Override
                 public TarFileUtil.TarEntry next() {
                     var filePath = files.remove(0);
-                    try (var inputStream = storageAccessService.get(filePath)) {
+                    try {
+                        var inputStream = storageAccessService.get(filePath);
                         length[0] += inputStream.getSize();
                         return TarFileUtil.TarEntry.builder()
                                 .inputStream(inputStream)
