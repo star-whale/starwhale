@@ -253,6 +253,10 @@ const job = {
         en: 'Failed',
         zh: '失败',
     },
+    'job.status.ready': {
+        en: 'Ready',
+        zh: '就绪',
+    },
 }
 
 const evaluation = {
@@ -452,7 +456,6 @@ const account = {
         en: 'Amount Consumed',
         zh: '已消费金额',
     },
-    'account.amount.consumed.tooltip': {},
     'account.amount.balance': {
         en: 'Balance',
         zh: '账户余额',
@@ -469,7 +472,6 @@ const account = {
         en: 'Amount Owed',
         zh: '已欠费金额',
     },
-    'account.amount.owed.tooltip': {},
     'account.amount.available': {
         en: 'Available',
         zh: '可用额度',
@@ -956,6 +958,10 @@ const locales0 = {
     'tasks': {
         en: 'tasks',
         zh: '任务',
+    },
+    'View Tasks': {
+        en: 'View Tasks',
+        zh: '查看任务',
     },
     'Jobs': {
         en: 'Jobs',

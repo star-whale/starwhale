@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import Button from '@starwhale/ui/Button'
-import IconFont from '@starwhale/ui/IconFont'
 import useTranslation from '@/hooks/useTranslation'
 import { expandBorderRadius } from '@/utils'
 import { expandPadding } from '@starwhale/ui/utils'
@@ -58,7 +57,7 @@ export default function ThirdPartyLoginButton({ isLogin, vendorName, vendor, ico
                     },
                 }}
                 onClick={handleClick}
-            ></Button>
+            />
             {t(isLogin ? 'Log In With' : 'Sign Up With', [vendorName])}
         </div>
     )

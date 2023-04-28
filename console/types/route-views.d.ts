@@ -4,6 +4,8 @@
 declare module 'virtual:route-views' {
     export type IExtendRoutesType = {
         auth?: boolean
+        extend?: boolean
+        extends?: Record<string, any>
         routes?: IRoute[]
     }
 
