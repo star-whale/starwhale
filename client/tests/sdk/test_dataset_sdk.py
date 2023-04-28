@@ -482,9 +482,9 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         ds_v2.close()
 
         assert v0_revision != v1_revision != v2_revision
-        assert manifest_v0["config"]["data_datastore_revision"] == v0_revision
-        assert manifest_v1["config"]["data_datastore_revision"] == v1_revision
-        assert manifest_v2["config"]["data_datastore_revision"] == v2_revision
+        assert manifest_v0["manifest"]["data_datastore_revision"] == v0_revision
+        assert manifest_v1["manifest"]["data_datastore_revision"] == v1_revision
+        assert manifest_v2["manifest"]["data_datastore_revision"] == v2_revision
 
     def test_versioning_data_scan_in_one_commit(self) -> None:
         ds = dataset("mnist")

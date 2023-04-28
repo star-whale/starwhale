@@ -165,7 +165,18 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         return move_dir(self.store.recover_loc, dest_path, force)
 
     def info(self) -> t.Dict[str, t.Any]:
-        return self._get_bundle_info()
+        if not self.store.bundle_path.exists():
+            return {}
+        else:
+            return {
+                "name": self.name,
+                "uri": self.uri.full_uri,
+                "project": self.uri.project,
+                "bundle_path": str(self.store.bundle_path),
+                "version": self.uri.object.version,
+                "tags": StandaloneTag(self.uri).list(),
+                "manifest": self.store.manifest,
+            }
 
     def summary(self) -> t.Optional[DatasetSummary]:
         _manifest = self.store.manifest

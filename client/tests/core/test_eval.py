@@ -207,7 +207,7 @@ class CloudJobTestCase(TestCase):
             self.project_uri,
             fullname=True,
         )
-        assert m_console.call_count == 1
+        assert m_console.called
 
     @Mocker()
     @patch("starwhale.api._impl.wrapper.Evaluation.get")

@@ -217,18 +217,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert _info["version"] == build_version
         assert _info["name"] == name
         assert _info["bundle_path"] == str(snapshot_workdir.resolve())
-        assert "history" not in _info
-
-        dataset_uri = URI(name, expected_type=URIType.DATASET)
-        sd = StandaloneDataset(dataset_uri)
-        ensure_dir(sd.store.bundle_dir / sd.store.bundle_type)
-        _info = sd.info()
-        assert len(_info["history"]) == 1
-        assert _info["history"][0]["name"] == name
-        assert _info["history"][0]["version"] == build_version
-
-        _history = sd.history()
-        assert _info["history"] == _history
 
         _list, _ = StandaloneDataset.list(URI(""))
         assert len(_list) == 1
@@ -249,7 +237,9 @@ class StandaloneDatasetTestCase(TestCase):
         assert not _list[name][0]["is_removed"]
 
         DatasetTermView(name).info()
+        DatasetTermViewJson(dataset_uri).info()
         DatasetTermView(name).history()
+        DatasetTermView(dataset_uri).summary()
         fname = f"{name}/version/{build_version}"
         DatasetTermView(fname).info()
         DatasetTermView(fname).history()

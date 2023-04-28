@@ -71,10 +71,6 @@ swcli [全局选项] dataset info [选项] <DATASET>
 
 `DATASET`是一个[数据集URI](../../swcli/uri.md#model-dataset-runtime)。
 
-| 选项 | 必填项 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- | --- |
-| `--fullname` | ❌ | Boolean | False | 显示完整的版本名称。如果没有使用该选项，则仅显示前 12 个字符。 |
-
 ## swcli dataset list {#list}
 
 ```bash
