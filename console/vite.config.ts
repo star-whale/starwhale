@@ -9,10 +9,21 @@ import router from './vite-plugin-react-routes'
 // import { visualizer } from 'rollup-plugin-visualizer'
 
 export const alias = {
+    // @FIXME
     'baseui': path.resolve(__dirname, './node_modules/baseui'),
     'react-use': path.resolve(__dirname, './node_modules/react-use'),
+    'react': path.resolve(__dirname, './node_modules/react'),
     'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
     'react-i18next': path.resolve(__dirname, './node_modules/react-i18next'),
+    'rc-steps': path.resolve(__dirname, './node_modules/rc-steps'),
+    'react-jss': path.resolve(__dirname, './node_modules/react-jss'),
+    'react-query': path.resolve(__dirname, './node_modules/react-query'),
+    'lodash': path.resolve(__dirname, './node_modules/lodash'),
+    'react-qr-code': path.resolve(__dirname, './node_modules/react-qr-code'),
+    'js-yaml': path.resolve(__dirname, './node_modules/js-yaml'),
+    'qs': path.resolve(__dirname, './node_modules/qs'),
+    'axios': path.resolve(__dirname, './node_modules/axios'),
+    '@monaco-editor/react': path.resolve(__dirname, './node_modules/@monaco-editor/react'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
     '@project': path.resolve(__dirname, './src/domain/project'),
@@ -30,6 +41,16 @@ export const alias = {
 export default defineConfig({
     server: {
         proxy: {
+            '/api/v1/system/resourcePool': {
+                target: 'http://10.131.0.1:8088/billing/',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/billing': {
+                target: 'http://10.131.0.1:8088/',
+                changeOrigin: true,
+                secure: false,
+            },
             '/api/v1/log/online': {
                 changeOrigin: true,
                 target:

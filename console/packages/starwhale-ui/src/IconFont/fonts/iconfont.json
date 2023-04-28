@@ -6,6 +6,55 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "35261241",
+      "name": "select",
+      "font_class": "select",
+      "unicode": "e666",
+      "unicode_decimal": 58982
+    },
+    {
+      "icon_id": "35260847",
+      "name": "WeChat",
+      "font_class": "WeChat",
+      "unicode": "e665",
+      "unicode_decimal": 58981
+    },
+    {
+      "icon_id": "35120427",
+      "name": "account",
+      "font_class": "account",
+      "unicode": "e660",
+      "unicode_decimal": 58976
+    },
+    {
+      "icon_id": "35120428",
+      "name": "account2",
+      "font_class": "account2",
+      "unicode": "e661",
+      "unicode_decimal": 58977
+    },
+    {
+      "icon_id": "35120429",
+      "name": "bill",
+      "font_class": "bill",
+      "unicode": "e662",
+      "unicode_decimal": 58978
+    },
+    {
+      "icon_id": "35120430",
+      "name": "voucher",
+      "font_class": "voucher",
+      "unicode": "e663",
+      "unicode_decimal": 58979
+    },
+    {
+      "icon_id": "35120431",
+      "name": "indent",
+      "font_class": "indent",
+      "unicode": "e664",
+      "unicode_decimal": 58980
+    },
+    {
       "icon_id": "34901738",
       "name": "global",
       "font_class": "global",

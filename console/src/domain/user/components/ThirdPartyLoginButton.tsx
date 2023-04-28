@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react'
 import Button from '@starwhale/ui/Button'
-import IconFont from '@starwhale/ui/IconFont'
 import useTranslation from '@/hooks/useTranslation'
+import { expandBorderRadius } from '@/utils'
+import { expandPadding } from '@starwhale/ui/utils'
 
 export interface IThirdPartyLoginButtonProps {
     isLogin: boolean
@@ -26,22 +27,38 @@ export default function ThirdPartyLoginButton({ isLogin, vendorName, vendor, ico
     )
 
     return (
-        <Button
-            isFull
-            startEnhancer={icon}
-            kind='secondary'
-            endEnhancer={<IconFont type='arrow_right' />}
-            overrides={{
-                BaseButton: {
-                    style: { justifyContent: 'space-between', paddingLeft: '20px', fontSize: '16px' },
-                    // make a button type, prevent triggering click event when we press enter in from
-                    // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#implicit-submission
-                    props: { type: 'button' },
-                },
+        <div
+            style={{
+                display: 'inline-flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
             }}
-            onClick={handleClick}
         >
+            <Button
+                isFull
+                type='button'
+                startEnhancer={icon}
+                kind='secondary'
+                overrides={{
+                    BaseButton: {
+                        style: {
+                            justifyContent: 'space-between',
+                            fontSize: '16px',
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: '#EEF1F6 !important',
+                            color: 'black',
+                            display: 'grid',
+                            placeContent: 'center',
+                            ...expandBorderRadius('50%'),
+                            ...expandPadding('0px', '0px', '0px', '0px'),
+                        },
+                    },
+                }}
+                onClick={handleClick}
+            />
             {t(isLogin ? 'Log In With' : 'Sign Up With', [vendorName])}
-        </Button>
+        </div>
     )
 }

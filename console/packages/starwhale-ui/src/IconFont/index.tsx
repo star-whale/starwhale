@@ -4,10 +4,12 @@ import './fonts/iconfont.css'
 
 import projectSvg from './svg/project.svg'
 import settingSvg from './svg/setting.svg'
+import accountSvg from './svg/account2.svg'
 import emptySvg from './svg/empty.svg'
 import emptyChart from './svg/empty-chart.svg'
 import searchEmptySvg from './svg/search-empty.svg'
 import googleSvg from './svg/google.svg'
+import wechatSvg from './svg/wechat.svg'
 import invalidFile from './svg/invalid-file.svg'
 import { themedUseStyletron } from '../theme/styletron'
 
@@ -92,6 +94,13 @@ export type IconTypesT =
     | 'group'
     | 'library'
     | 'global'
+    | 'user2'
+    | 'account'
+    | 'bill'
+    | 'voucher'
+    | 'indent'
+    | 'select'
+    | 'wechat'
 
 interface IIconFontProps {
     style?: React.CSSProperties
@@ -104,9 +113,11 @@ const hijacked = {
     project: projectSvg,
     setting2: settingSvg,
     google: googleSvg,
+    wechat: wechatSvg,
     empty: emptySvg,
     emptyChart,
     searchEmpty: searchEmptySvg,
+    account2: accountSvg,
     invalidFile,
 }
 

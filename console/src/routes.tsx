@@ -50,7 +50,7 @@ import ProjectTrashes from '@/pages/Project/Trashes'
 import TrashLayout from '@/pages/Trash/TrashLayout'
 import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
-import { getUnauthedRoutes } from './routesUtils'
+import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 
 const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
@@ -89,6 +89,7 @@ const defaultRoutes = [
 ]
 
 const unauthedRoutes = getUnauthedRoutes(defaultRoutes[0])
+const authedRoutes = getAuthedRoutes()
 
 const Routes = () => {
     const [, theme] = themedUseStyletron()
@@ -118,6 +119,8 @@ const Routes = () => {
                         <ApiHeader />
                         {standaloneMode ? null : <Header />}
                         <Switch>
+                            {/* extends */}
+                            {authedRoutes}
                             {/* setting */}
                             <Route exact path='/settings/:path?'>
                                 <SettingsOverviewLayout>
@@ -300,6 +303,7 @@ const Routes = () => {
                                     </Switch>
                                 </AdminLayout>
                             </Route>
+                            {/* default */}
                             <Route exact path='/projects/:projectId/:path*'>
                                 <ProjectLayout>
                                     <Switch>
@@ -330,7 +334,6 @@ const Routes = () => {
                                     </Switch>
                                 </ProjectLayout>
                             </Route>
-                            {/* default */}
                             <Route>
                                 <CenterLayout>
                                     <Switch>
