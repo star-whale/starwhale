@@ -19,7 +19,7 @@ def iter_ucf_item() -> t.Generator:
                     data_path,
                     display_name=video_sub_path,
                     shape=(1,),
-                    mime_type=MIMEType.AVI,
+                    mime_type=MIMEType.WEBM,
                 )
 
                 yield f"{label}_{video_sub_path}", {
