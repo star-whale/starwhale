@@ -201,10 +201,10 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             // view id change will not tiggered changed status, current view only saved in local,
             set({ currentView: view }, false, 'onCurrentViewIdChange')
         },
-        onCurrentViewFiltersChange: (filters) => update({ filters }),
-        onCurrentViewQueriesChange: (queries) => update({ queries }),
+        onCurrentViewFiltersChange: (filters) => update({ filters }, 'onCurrentViewFiltersChange'),
+        onCurrentViewQueriesChange: (queries) => update({ queries }, 'onCurrentViewQueriesChange'),
         onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
-            update({ selectedIds, pinnedIds, ids, updateColumn: true }),
+            update({ selectedIds, pinnedIds, ids, updateColumn: true }, 'onCurrentViewColumnsChange'),
         onCurrentViewColumnsPin: (columnId: string, pined = false) => {
             const { pinnedIds = [], ids = [] } = get().currentView
             const $pinnedIds = new Set(pinnedIds)

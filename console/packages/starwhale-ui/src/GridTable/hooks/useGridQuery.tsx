@@ -1,7 +1,6 @@
 import React from 'react'
 import { useStore } from './useStore'
 import { ConfigQuery, ConfigQueryInline } from '../components/Query'
-import { ColumnT } from '@starwhale/ui/base/data-table/types'
 import shallow from 'zustand/shallow'
 import { IGridState } from '../types'
 
@@ -11,7 +10,7 @@ const selector = (state: IGridState) => ({
     columnTypes: state.columnTypes,
 })
 
-function useGridQuery({ columns }: { columns: ColumnT[] }) {
+function useGridQuery() {
     const { queries, onCurrentViewQueriesChange, columnTypes } = useStore(selector, shallow)
 
     const onChange = React.useCallback((items) => onCurrentViewQueriesChange(items), [onCurrentViewQueriesChange])
@@ -31,7 +30,6 @@ function useGridQuery({ columns }: { columns: ColumnT[] }) {
         renderConfigQuery,
         renderConfigQueryInline,
         value: queries,
-        columns,
         onChange,
     }
 }

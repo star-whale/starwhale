@@ -26,8 +26,8 @@ function useGrid() {
         isSelectedIndeterminate,
         isRowSelected,
     } = useGridSelection()
-    const { ids, isAllRuns, columns, currentView, rows } = useGirdData()
-    const { renderConfigQuery } = useGridQuery({ columns })
+    const { ids, isAllRuns, columns, currentView, rows, originalColumns } = useGirdData()
+    const { renderConfigQuery } = useGridQuery()
 
     return {
         onSave,
@@ -53,6 +53,7 @@ function useGrid() {
         isRowSelected,
         // data
         columns,
+        originalColumns,
         rows,
         // query
         renderConfigQuery,

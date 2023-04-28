@@ -105,6 +105,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             recordInfo,
             recordQuery: query,
             columnTypes,
+            records,
         } = useFetchDatastoreByTable(tableName, tableOptions, enableLoad)
         useEffect(() => {
             if (enableLoad) return
@@ -147,10 +148,10 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const $data = React.useMemo(() => {
             if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
             return {
-                records: recordInfo.data.records,
+                records,
                 columnTypes,
             }
-        }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
+        }, [recordInfo.isSuccess, records, columnTypes])
 
         return (
             <div

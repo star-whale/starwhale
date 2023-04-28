@@ -338,8 +338,6 @@ export default function DatasetVersionFiles() {
         )
     }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
 
-    console.log(records, datasets)
-
     return (
         <div className={styles.wrapper}>
             {HAS_TABLE_CONTROL && (

@@ -6,7 +6,7 @@ import React, { useMemo } from 'react'
 function useGirdData() {
     const { getId, getColumns, columnTypes, records } = useStoreApi().getState()
 
-    const $rawColumns = React.useMemo(() => {
+    const $tablePropsColumns = React.useMemo(() => {
         if (!getColumns || typeof getColumns !== 'function') return []
 
         return getColumns?.() ?? []
@@ -14,12 +14,11 @@ function useGirdData() {
 
     const $columns = useDatastoreColumns(columnTypes as any)
 
-    const {
-        ids,
-        isAllRuns,
-        columns: columnsComputed,
-        currentView,
-    } = useGridCurrentView($rawColumns && $rawColumns.length > 0 ? $rawColumns : $columns)
+    const $originalColumns = React.useMemo(() => {
+        return $tablePropsColumns && $tablePropsColumns.length > 0 ? $tablePropsColumns : $columns
+    }, [$tablePropsColumns, $columns])
+
+    const { ids, isAllRuns, columns: columnsComputed, currentView } = useGridCurrentView($originalColumns)
 
     const rows = useMemo(
         () =>
@@ -35,6 +34,7 @@ function useGirdData() {
 
     return {
         columns: columnsComputed,
+        originalColumns: $originalColumns,
         rows,
         ids,
         isAllRuns,
