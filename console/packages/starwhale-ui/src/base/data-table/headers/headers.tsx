@@ -37,9 +37,7 @@ export default function Headers({ width }: { width: number }) {
         [columns]
     )
 
-    const { renderConfigQueryInline } = useGridQuery({
-        columns,
-    })
+    const { renderConfigQueryInline } = useGridQuery()
 
     const headerRender = useCallback(
         (column: ColumnT & { index: number }, index) => {

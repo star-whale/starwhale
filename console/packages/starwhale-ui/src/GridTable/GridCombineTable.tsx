@@ -75,6 +75,7 @@ function BaseGridCombineTable({
                             queryinline={queryinline}
                             emptyMessage={emptyMessage}
                             emptyColumnMessage={emptyColumnMessage}
+                            headlineHeight={52}
                         >
                             {title && (
                                 <LabelSmall style={{ height: '52px' }} className={styles.headerTitle}>

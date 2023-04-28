@@ -32,7 +32,8 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
     //     setHeadlineHeight(entries[0].contentRect.height)
     // })
 
-    const { columns, isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } = useGrid()
+    const { originalColumns, isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } =
+        useGrid()
 
     return (
         <div
@@ -95,7 +96,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                         <div className='table-config-column flex-row-center'>
                             <ConfigColumns
                                 view={currentView}
-                                columns={columns}
+                                columns={originalColumns}
                                 onColumnsChange={onCurrentViewColumnsChange}
                             />
                         </div>
