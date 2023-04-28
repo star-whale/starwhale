@@ -1,3 +1,4 @@
 twine==4.0.0
+urllib3>=1.26.0,<2.0
 setuptools>=62.0.0
 wheel >= 0.35.0
