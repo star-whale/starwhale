@@ -78,7 +78,7 @@ class Process:
             _bin_path = (self._prefix_path / "bin/activate").absolute()
             cmd = " && ".join([f"source {_bin_path}", sub_cmd])
         elif self._mode == PythonRunEnv.CONDA:
-            cmd = f"{get_conda_bin()} run --prefix {self._prefix_path.absolute()} {sub_cmd}"
+            cmd = f"{get_conda_bin()} run --live-stream --prefix {self._prefix_path.absolute()} {sub_cmd}"
         else:
             raise NoSupportError(f"get activate command for mode: {self._mode}")
 
