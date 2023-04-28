@@ -709,9 +709,8 @@ public class ModelService {
     }
 
     private String getManifest(ModelVersionEntity modelVersionEntity) {
-        try {
-            var p = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), MODEL_MANIFEST);
-            var is = storageAccessService.get(p);
+        var p = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), MODEL_MANIFEST);
+        try (var is = storageAccessService.get(p)) {
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "get manifest error", e);
@@ -755,8 +754,7 @@ public class ModelService {
                 @Override
                 public TarFileUtil.TarEntry next() {
                     var filePath = files.remove(0);
-                    try {
-                        var inputStream = storageAccessService.get(filePath);
+                    try (var inputStream = storageAccessService.get(filePath)) {
                         length[0] += inputStream.getSize();
                         return TarFileUtil.TarEntry.builder()
                                 .inputStream(inputStream)

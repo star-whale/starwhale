@@ -22,6 +22,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
+import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSErrorCode;
@@ -56,8 +57,11 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     public StorageAccessServiceAliyun(S3Config s3Config) {
         this.bucket = s3Config.getBucket();
         this.partSize = s3Config.getHugeFilePartSize();
+
+        var config = new ClientBuilderConfiguration();
+        config.setRequestTimeoutEnabled(true);
         this.ossClient = new OSSClientBuilder()
-                .build(s3Config.getEndpoint(), s3Config.getAccessKey(), s3Config.getSecretKey());
+                .build(s3Config.getEndpoint(), s3Config.getAccessKey(), s3Config.getSecretKey(), config);
     }
 
     @Override
