@@ -1,6 +1,10 @@
 import moment from 'moment-timezone'
 import { dateTimeFormat } from '@/consts'
 
+export function formateDate(s: string, format = 'YYYY-MM-DD'): string {
+    return moment(s, format).tz(moment.tz.guess()).format(format)
+}
+
 export function formatDateTime(s: string, format = 'YYYY-MM-DDTHH:mm:ssZ'): string {
     return moment(s, format).tz(moment.tz.guess()).format(dateTimeFormat)
 }
