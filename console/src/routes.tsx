@@ -111,8 +111,6 @@ const Routes = () => {
         )
     }
 
-    console.log(authedRoutes)
-
     return (
         <React.Suspense fallback={<NoneBackgroundPending />}>
             <BrowserRouter>

@@ -457,6 +457,10 @@ const account = {
         en: 'Balance',
         zh: '账户余额',
     },
+    'account.amount.balance.short': {
+        en: 'Balance',
+        zh: '余额',
+    },
     'account.amount.balance.tooltip': {
         zh: '账户余额=订单金额-已消费金额-已退款金额',
         en: 'Balance = Order Amount - Amount Consumed - Amount Refunded',

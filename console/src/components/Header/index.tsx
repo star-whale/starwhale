@@ -26,6 +26,7 @@ import IconFont from '@starwhale/ui/IconFont'
 import Logo from './Logo'
 import Avatar from '../Avatar'
 import LanguageSelector from './LanguageSelector'
+import { getExtendHeader } from '@/routesUtils'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: (props: IThemedStyleProps) => ({
@@ -371,6 +372,7 @@ export default function Header() {
                                 <span>{t('Get Token')}</span>
                             </div>
                         </div>
+                        {getExtendHeader()}
                         <div className={styles.divider} />
                         <div className={styles.userMenuItems}>
                             <div role='button' tabIndex={0} className={styles.userMenuItem} onClick={onLogout}>

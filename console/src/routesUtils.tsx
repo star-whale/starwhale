@@ -69,8 +69,14 @@ function mergeRoute(source: IRoute = {}, target: IExtendRoutesType = {}): JSX.El
 }
 
 // @FIXME we only support one sample route for now
-const unauthedRoutes = extendRoutes?.find((route) => !route.auth)
-const authedRoutes = extendRoutes?.find((route) => route.auth)
+const unauthedRoutes = extendRoutes?.find((route) => !route.auth && !route.extend)
+const authedRoutes = extendRoutes?.find((route) => route.auth && !route.extend)
+const extendComponents = extendRoutes?.find((route) => route.extend)
 
 export const getUnauthedRoutes = (source: any) => mergeRoute(source, unauthedRoutes)
 export const getAuthedRoutes = (source?: any) => mergeRoute(source, authedRoutes)
+export const getExtendHeader = () => {
+    const HeaderExtend = extendComponents?.extends?.header
+    if (!HeaderExtend) return null
+    return <HeaderExtend />
+}
