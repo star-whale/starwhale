@@ -625,6 +625,7 @@ def _prepare_model_run_args(
     else:
         model_src_dir = Path(workdir)
 
+    model_src_dir = model_src_dir.absolute().resolve()
     if model_yaml is None:
         yaml_path = model_src_dir / DefaultYAMLName.MODEL
     else:

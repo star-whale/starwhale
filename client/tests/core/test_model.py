@@ -707,6 +707,22 @@ class StandaloneModelTestCase(TestCase):
                 {
                     "model": "",
                     "runtime": "",
+                    "workdir": user_workdir / "child" / "..",
+                    "modules": "",
+                    "model_yaml": None,
+                    "forbid_packaged_runtime": False,
+                },
+                {
+                    "model_src_dir": user_workdir,
+                    "config_name": "default",
+                    "config_modules": ["a.b.c"],
+                    "runtime_uri": None,
+                },
+            ),
+            (
+                {
+                    "model": "",
+                    "runtime": "",
                     "workdir": user_workdir,
                     "modules": "",
                     "model_yaml": "/home/user/workdir/custom_model.yaml",
