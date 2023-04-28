@@ -6,11 +6,18 @@ import platform
 import subprocess
 from pathlib import Path, PurePath, PosixPath
 
+import yaml
 import conda_pack
 import virtualenv
 from loguru import logger
 
-from starwhale.utils import console, is_linux, venv_pack, get_downloadable_sw_version
+from starwhale.utils import (
+    console,
+    is_linux,
+    load_yaml,
+    venv_pack,
+    get_downloadable_sw_version,
+)
 from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
@@ -394,23 +401,61 @@ def conda_setup(
 
 
 def conda_export(
-    lock_fpath: t.Union[str, Path], name: str = "", prefix: str = ""
+    lock_fpath: t.Union[str, Path],
+    prefix: str,
+    include_local_wheel: bool = False,
+    include_editable: bool = False,
 ) -> None:
     # TODO: add cmd timeout
-    cmd = [
+    conda_export_cmd = [
         get_conda_bin(),
         "env",
         "export",
+        "--prefix",
+        prefix,
+        "--file",
+        str(lock_fpath),
     ]
+    check_call(conda_export_cmd)
 
-    if name:
-        cmd += ["--name", name]
+    pip_freeze_cmd = [
+        get_conda_bin(),
+        "run",
+        "--prefix",
+        prefix,
+        "pip",
+        "freeze",
+    ]
+    if not include_editable:
+        pip_freeze_cmd += ["--exclude-editable"]
 
-    if prefix:
-        cmd += ["--prefix", prefix]
+    pip_freeze_list = []
+    output = subprocess.check_output(pip_freeze_cmd)
+    for line in output.decode().strip().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
 
-    cmd += ["--file", str(lock_fpath)]
-    check_call(cmd)
+        if not include_local_wheel and (line.endswith(".whl") or "@ file://" in line):
+            continue
+
+        pip_freeze_list.append(line)
+
+    # conda cannot export URL for pip packages installed from git: https://github.com/conda/conda/issues/10320
+    # we use pip freeze to fix this issue.
+    conda_yaml = load_yaml(lock_fpath)
+    dependencies = []
+    for d in conda_yaml.get("dependencies", []):
+        if isinstance(d, dict) and "pip" in d:
+            if pip_freeze_list:
+                d["pip"] = pip_freeze_list
+            else:
+                d.pop("pip", None)
+
+        if d:
+            dependencies.append(d)
+    conda_yaml["dependencies"] = dependencies
+    ensure_file(lock_fpath, yaml.safe_dump(conda_yaml, default_flow_style=False))
 
 
 def conda_env_update(
@@ -426,11 +471,6 @@ def conda_env_update(
         "--prefix",
         str(target_env),
     ]
-    check_call(cmd)
-
-
-def conda_activate(env: t.Union[str, Path]) -> None:
-    cmd = [get_conda_bin(), "activate", str(env)]
     check_call(cmd)
 
 

@@ -2,6 +2,8 @@ api_version: 1.1
 dependencies:
   - conda:
       - numpy
+  - pip:
+      - git+https://github.com/star-whale/starwhale.git@94eeff7863b61480ffb83d055d79eeb6ceb1bd21#subdirectory=example/runtime/pytorch/dummy
 environment:
   arch: noarch
   os: ubuntu:20.04

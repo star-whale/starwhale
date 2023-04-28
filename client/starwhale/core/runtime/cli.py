@@ -633,13 +633,13 @@ def _activate(uri: str, force_restore: bool) -> None:
     "-ie",
     "--include-editable",
     is_flag=True,
-    help="Include editable packages, only for venv mode",
+    help="Include editable packages",
 )
 @click.option(
     "-ilw",
     "--include-local-wheel",
     is_flag=True,
-    help="Include local wheel packages, only for venv mode",
+    help="Include local wheel packages",
 )
 @click.option(
     "-epo",
