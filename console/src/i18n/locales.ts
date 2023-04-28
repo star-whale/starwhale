@@ -1622,6 +1622,10 @@ const locales0 = {
         en: 'Edit',
         zh: '编辑',
     },
+    'Other Login Methods': {
+        en: 'Other Login Methods',
+        zh: '其他方式登录',
+    },
     'emailPlaceholder for login': {
         en: 'yours@example.com or your username',
         zh: '您的电子邮件或用户名',
@@ -1656,11 +1660,11 @@ const locales0 = {
     },
     'Sign Up With': {
         en: 'Sign up with {{0}}',
-        zh: '使用 {{0}} 注册',
+        zh: '{{0}}',
     },
     'Log In With': {
         en: 'Log in with {{0}}',
-        zh: '使用 {{0}} 登录',
+        zh: '{{0}} ',
     },
     'Github': {
         en: 'Github',
@@ -1704,7 +1708,7 @@ const locales0 = {
     },
     'alreadyHaveAccount': {
         en: 'Already have an account?',
-        zh: '已经有一个账户了吗？',
+        zh: '注册过了？',
     },
     'Manage Member': {
         en: 'Manage Member',
