@@ -121,7 +121,7 @@ class RuntimeProcessTestCase(TestCase):
         ]
         assert (
             m_call.call_args[0][0][2]
-            == f"{conda_bin_path} run --prefix {conda_dir} {p._prefix_path}/bin/swcli model run mock another"
+            == f"{conda_bin_path} run --live-stream --prefix {conda_dir} {p._prefix_path}/bin/swcli model run mock another"
         )
         env = m_call.call_args[1]["env"]
         assert env["SW_RUNTIME_ACTIVATED_PROCESS"] == "1"
