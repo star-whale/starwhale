@@ -13,7 +13,9 @@ class Job:
         try:
             return json.loads(_res) if _ret_code == 0 else {}
         except Exception as e:
-            print(f"failed to get job info: {e}, ret-code:{_ret_code}, res:{_res}")
+            print(
+                f"failed to get job info[{version}]: {e}, ret-code:{_ret_code}, res:{_res}"
+            )
             raise
 
     def list(
@@ -43,7 +45,6 @@ class Job:
             _args.append("--show-removed")
 
         _ret_code, _res = invoke(_args)
-        print(f"job info: code={_ret_code}, res={_res}")
         return json.loads(_res.strip()) if _ret_code == 0 else []
 
     def cancel(self, uri: str, force: bool = False) -> bool:

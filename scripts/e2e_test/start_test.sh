@@ -297,6 +297,7 @@ main() {
   if ! in_github_action; then
     trap exit_hook EXIT
     publish_to_k8s
+    sleep 120
   else
     publish_to_mini_k8s
   fi

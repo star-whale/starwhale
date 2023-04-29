@@ -6,13 +6,13 @@ import typing as t
 import logging
 import subprocess
 from time import sleep
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures._base import Future
+from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from cmds import DatasetExpl
 from tenacity import retry
 from cmds.job_cmd import Job
 from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random
 from cmds.base.invoke import invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
@@ -210,7 +210,7 @@ class TestCli:
         model_uri: URI,
         run_handler: str,
         runtime_uris: t.Optional[t.List[URI | None]] = None,
-    ) -> t.Any:
+    ) -> t.List[str]:
         logger.info("running evaluation at local...")
         self.select_local_instance()
 
@@ -237,27 +237,27 @@ class TestCli:
         model_uri: URI,
         runtime_uris: t.List[URI],
         run_handler: str,
-    ) -> t.List[Future]:
+    ) -> t.List[str]:
         self.instance_api.select(instance="server")
         self.project_api.select(project=self.server_project)
 
-        job_status_checkers = []
+        remote_job_ids = []
         for _rt_uri in runtime_uris:
             logger.info("running evaluation at server...")
-            ok, remote_jid = self.model_api.run_in_server(
+            ok, jid = self.model_api.run_in_server(
                 model_uri=model_uri.object.version,
                 dataset_uris=[_ds_uri.object.version for _ds_uri in dataset_uris],
                 runtime_uri=_rt_uri.object.version,
                 project=f"{self.server_url}/project/{self.server_project}",
                 run_handler=run_handler,
             )
-            assert ok
-            job_status_checkers.append(
-                self.executor.submit(self.get_remote_job_status, remote_jid)
-            )
-        return job_status_checkers
+            assert (
+                ok
+            ), f"submit evaluation to server failed, model: {model_uri}, dataset: {dataset_uris}, runtime: {_rt_uri}"
+            remote_job_ids.append(jid)
+        return remote_job_ids
 
-    @retry(stop=stop_after_attempt(10))
+    @retry(stop=stop_after_attempt(20), wait=wait_random(min=2, max=20))
     def get_remote_job_status(self, job_id: str) -> t.Tuple[str, str]:
         while True:
             _remote_job = self.job_api.info(
@@ -293,9 +293,9 @@ class TestCli:
                 mode=DatasetChangeMode.OVERWRITE,
             )
 
-        remote_future_jobs = []
+        remote_job_ids = []
         if self.server_url:
-            remote_future_jobs = self.run_model_in_server(
+            remote_job_ids = self.run_model_in_server(
                 dataset_uris=[dataset_uri],
                 model_uri=model_uri,
                 runtime_uris=[venv_runtime_uri],
@@ -309,8 +309,12 @@ class TestCli:
             runtime_uris=[conda_runtime_uri],
         )
 
-        for job in remote_future_jobs:
-            _, status = job.result()
+        futures = [
+            self.executor.submit(self.get_remote_job_status, jid)
+            for jid in remote_job_ids
+        ]
+        for f in as_completed(futures):
+            _, status = f.result()
             assert status in STATUS_SUCCESS
 
     def test_all(self) -> None:
@@ -341,15 +345,19 @@ class TestCli:
             self.run_example(name, example["run_handler"], in_standalone=False)
             for name, example in ALL_EXAMPLES.items()
         ]
-        status_checkers: t.List[Future] = sum(res, [])
+        remote_job_ids: t.List[str] = sum(res, [])
 
         # model run on standalone
         for name, example in CPU_EXAMPLES.items():
             self.run_example(name, example["run_handler"], in_standalone=True)
 
         failed_jobs = []
-        for _js in status_checkers:
-            jid, status = _js.result()
+        futures = [
+            self.executor.submit(self.get_remote_job_status, jid)
+            for jid in remote_job_ids
+        ]
+        for f in as_completed(futures):
+            jid, status = f.result()
             if status not in STATUS_SUCCESS:
                 failed_jobs.append((jid, status))
 
