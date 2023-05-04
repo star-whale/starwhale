@@ -24,13 +24,16 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.reporting.TaskStatusReceiver;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import java.util.List;
 import java.util.Map;
@@ -87,5 +90,14 @@ public class PodEventHandlerTest {
         verify(taskLogK8sCollector, times(0)).collect(any());
     }
 
-
+    @Test
+    public void testPodScheduled() {
+        v1Pod.getStatus().getContainerStatuses().get(0).getState().terminated(null);
+        v1Pod.getStatus().phase("Pending");
+        v1Pod.getStatus().conditions(List.of(new V1PodCondition().status("True").type("PodScheduled")));
+        podEventHandler.onUpdate(null, v1Pod);
+        verify(taskLogK8sCollector, times(0)).collect(any());
+        var expect = List.of(new ReportedTask(3L, TaskStatus.RUNNING, null));
+        verify(taskStatusReceiver, times(1)).receive(expect);
+    }
 }
