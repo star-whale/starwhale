@@ -850,23 +850,23 @@ const account = {
     },
     'resource.price.unit.hour': {
         en: 'per hour',
-        zh: '每时',
+        zh: '小时',
     },
     'resource.price.unit.minute': {
         en: 'per minute',
-        zh: '每分',
+        zh: '分钟',
     },
     'resource.price.unit.second': {
         en: 'per second',
-        zh: '每秒',
+        zh: '秒',
     },
     'resource.price.unit.count': {
         en: 'per count',
-        zh: '每次',
+        zh: '次',
     },
     'resource.price.unit.usage': {
         en: 'per usage',
-        zh: '每用量',
+        zh: '用量',
     },
     'resource.price.summary': {
         en: 'Price Summary',
@@ -879,6 +879,14 @@ const account = {
     'resource.price.instruction': {
         zh: '付费计费说明',
         en: 'Payment and Billing Instructions',
+    },
+    'USD': {
+        en: 'USD',
+        zh: '美元',
+    },
+    'CNY': {
+        en: 'CNY',
+        zh: '元',
     },
 }
 
