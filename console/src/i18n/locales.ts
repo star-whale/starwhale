@@ -708,6 +708,14 @@ const account = {
         en: 'Coupon Status',
         zh: '代金券状态',
     },
+    'voucher.status.normal': {
+        en: 'Avaliable',
+        zh: '可使用',
+    },
+    'voucher.status.invalid': {
+        en: 'Used',
+        zh: '已使用',
+    },
     'voucher.action.detail': {
         zh: '使用明细',
         en: 'Detail',
