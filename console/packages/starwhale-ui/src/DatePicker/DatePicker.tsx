@@ -2,15 +2,13 @@ import { DatePicker as BaseDatePicker } from 'baseui/datepicker'
 import type { DatepickerProps } from 'baseui/datepicker'
 import React from 'react'
 import { mergeOverrides } from '../utils'
+import moment from 'moment'
 
 export interface IDatePickerProps extends DatepickerProps {
     overrides?: DatepickerProps['overrides']
-    // value?: string
-    // onChange?: (value?: string) => void
-    // disabled?: boolean
 }
 
-export function DatePicker({ size = 'compact', ...rest }: IDatePickerProps) {
+export function DatePicker({ size = 'compact', value, ...rest }: IDatePickerProps) {
     const overrides = mergeOverrides(
         {
             QuickSelect: {
@@ -33,22 +31,16 @@ export function DatePicker({ size = 'compact', ...rest }: IDatePickerProps) {
         rest.overrides
     )
 
-    // eslint-disable-next-line  react/jsx-props-no-spreading
-    return (
-        <BaseDatePicker
-            size={size}
-            {...rest}
-            density='high'
-            overrides={overrides}
-            // clearable
-            // disabled={disabled}
-            // value={value ? moment(value).toDate() : undefined}
-            // onChange={(e) => {
-            //     const date = Array.isArray(e.date) ? e.date[0] : e.date
-            //     onChange?.(date ? moment(date).startOf('day').toDate().toISOString() : undefined)
-            // }}
-        />
-    )
+    const $value = React.useMemo(() => {
+        if (!value) return undefined
+        if (Array.isArray(value)) {
+            return value.map((v) => (v ? moment(v).toDate() : null))
+        }
+        return moment(value).toDate()
+    }, [value])
+
+    // @ts-ignore
+    return <BaseDatePicker size={size} density='high' overrides={overrides} value={$value} {...rest} />
 }
 
 export default DatePicker

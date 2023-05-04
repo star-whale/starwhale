@@ -492,6 +492,10 @@ const account = {
         en: 'Recharge',
         zh: '充值',
     },
+    'account.recharge.overview': {
+        en: 'Recharge',
+        zh: '账户充值',
+    },
     'account.recharge.account': {
         en: 'Recharge Account',
         zh: '充值账户',
