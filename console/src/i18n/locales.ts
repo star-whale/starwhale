@@ -441,7 +441,7 @@ const widget = {
 
 const account = {
     'account.title': {
-        en: 'Account Management',
+        en: 'Account',
         zh: '账户管理',
     },
     'account.overview': {
@@ -820,6 +820,10 @@ const account = {
         zh: '未结清',
         en: 'Unpaid',
     },
+    'bill.amount.total': {
+        en: 'Total Amount',
+        zh: '总金额',
+    },
     'bills': {
         en: 'Bills',
         zh: '账单',
@@ -830,23 +834,23 @@ const account = {
     },
     'resource.price.unit.hour': {
         en: 'per hour',
-        zh: '时',
+        zh: '每时',
     },
     'resource.price.unit.minute': {
         en: 'per minute',
-        zh: '分',
+        zh: '每分',
     },
     'resource.price.unit.second': {
         en: 'per second',
-        zh: '秒',
+        zh: '每秒',
     },
     'resource.price.unit.count': {
         en: 'per count',
-        zh: '次',
+        zh: '每次',
     },
     'resource.price.unit.usage': {
         en: 'per usage',
-        zh: '用量',
+        zh: '每用量',
     },
     'resource.price.summary': {
         en: 'Price Summary',
