@@ -468,6 +468,10 @@ const account = {
         zh: '账户余额=订单金额-已消费金额-已退款金额',
         en: 'Balance = Order Amount - Amount Consumed - Amount Refunded',
     },
+    'account.amount.frozen.tooltip': {
+        zh: '已消费，但暂未出帐，待结算的金额',
+        en: 'Amount consumed but not yet billed',
+    },
     'account.amount.owed': {
         en: 'Amount Owed',
         zh: '已欠费金额',
