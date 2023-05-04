@@ -372,6 +372,19 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY Standalone]Use docker container to run model handler, the docker image or runtime uri must be set",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "-fs",
+    "--forbid-snapshot",
+    is_flag=True,
+    help="[ONLY STANDALONE]Forbid to use model run snapshot dir, use model src dir directly",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--cleanup-snapshot/--no-cleanup-snapshot",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="[ONLY STANDALONE]Cleanup snapshot dir after model run",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "--resource-pool",
     default="default",
     type=str,
@@ -439,6 +452,8 @@ def _run(
     override_task_num: int,
     resource_pool: str,
     forbid_packaged_runtime: bool,
+    forbid_snapshot: bool,
+    cleanup_snapshot: bool,
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -514,6 +529,8 @@ def _run(
             run_handler=handler,
             dataset_uris=datasets,
             runtime_uri=runtime_uri,
+            forbid_snapshot=forbid_snapshot,
+            cleanup_snapshot=cleanup_snapshot,
             scheduler_run_args={
                 "step_name": step,
                 "task_index": task_index,
