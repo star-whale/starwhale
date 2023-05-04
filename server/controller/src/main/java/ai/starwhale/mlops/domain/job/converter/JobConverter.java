@@ -74,6 +74,7 @@ public class JobConverter {
                 .datasets(idList)
                 .jobStatus(job.getStatus())
                 .stopTime(job.getFinishedTime().getTime())
+                .duration(job.getDurationMs())
                 .comment(job.getComment())
                 .resourcePool(job.getResourcePool().getName())
                 .build();
@@ -102,6 +103,7 @@ public class JobConverter {
                 .datasets(idList)
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
+                .duration(jobEntity.getDurationMs())
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .build();

@@ -72,6 +72,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.Builder;
+import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -88,9 +90,9 @@ public class JobRepo {
     private final ObjectMapper objectMapper;
 
     public JobRepo(DataStore store,
-            @Lazy ProjectService projectService,
-            @Lazy ModelService modelService,
-            @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
+                   @Lazy ProjectService projectService,
+                   @Lazy ModelService modelService,
+                   @Lazy UserService userService, JobMapper mainStore, ObjectMapper objectMapper) {
         this.store = store;
         this.projectService = projectService;
         this.modelService = modelService;
@@ -322,18 +324,28 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return;
         }
-        this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), JobStatusColumn, STRING, jobStatus.name());
+        this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+                List.of(ColumnRecord.builder().property(JobStatusColumn).type(STRING).value(jobStatus.name()).build()));
     }
 
-    public void updateJobFinishedTime(Long jobId, Date finishedTime) {
+    public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
         var job = mainStore.findJobById(jobId);
         if (Objects.isNull(job)) {
             return;
         }
         this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), FinishTimeColumn, INT64,
-                (String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false));
+                job.getJobUuid(), List.of(
+                    ColumnRecord.builder()
+                        .property(FinishTimeColumn)
+                        .type(INT64)
+                        .value((String) BaseValue.encode(new Int64Value(finishedTime.getTime()), false, false))
+                        .build(),
+                    ColumnRecord.builder()
+                        .property(DurationColumn)
+                        .type(INT64)
+                        .value((String) BaseValue.encode(new Int64Value(duration), false, false))
+                        .build()
+            ));
     }
 
     public int updateJobComment(Long jobId, String comment) {
@@ -341,8 +353,8 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), CommentColumn, STRING, comment);
+        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+                List.of(ColumnRecord.builder().property(CommentColumn).type(STRING).value(comment).build()));
     }
 
     public int updateJobCommentByUuid(String uuid, String comment) {
@@ -350,8 +362,8 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                uuid, CommentColumn, STRING, comment);
+        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
+                List.of(ColumnRecord.builder().property(CommentColumn).type(STRING).value(comment).build()));
     }
 
     public int removeJob(Long jobId) {
@@ -359,8 +371,8 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), IsDeletedColumn, INT32, "1");
+        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("1").build()));
     }
 
     public int removeJobByUuid(String uuid) {
@@ -368,8 +380,8 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                uuid, IsDeletedColumn, INT32, "1");
+        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
+                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("1").build()));
     }
 
     public int recoverJob(Long jobId) {
@@ -377,8 +389,8 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                job.getJobUuid(), IsDeletedColumn, INT32, "0");
+        return this.updateByUuid(this.tableName(job.getProject().getId()), job.getJobUuid(),
+                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("0").build()));
     }
 
     public int recoverJobByUuid(String uuid) {
@@ -386,25 +398,41 @@ public class JobRepo {
         if (Objects.isNull(job)) {
             return 0;
         }
-        return this.updateByUuid(this.tableName(job.getProject().getId()),
-                uuid, IsDeletedColumn, INT32, "0");
+        return this.updateByUuid(this.tableName(job.getProject().getId()), uuid,
+                List.of(ColumnRecord.builder().property(IsDeletedColumn).type(INT32).value("0").build()));
     }
 
-    private int updateByUuid(String table, String uuid, String property, String type, String value) {
+    @Data
+    @Builder
+    static class ColumnRecord {
+        String property;
+        String type;
+        String value;
+    }
+
+    private int updateByUuid(String table, String uuid, List<ColumnRecord> columnRecords) {
         if (Objects.isNull(table)) {
             return 0;
         }
+        if (CollectionUtils.isEmpty(columnRecords)) {
+            return 0;
+        }
+        List<ColumnSchemaDesc> columns = new ArrayList<>(List.of(
+                ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
+                ColumnSchemaDesc.builder().name(ModifiedTimeColumn).type(INT64).build()));
+
+        Map<String, Object> values = new HashMap<>(Map.of(
+                KeyColumn, uuid,
+                ModifiedTimeColumn,
+                BaseValue.encode(new Int64Value(new Date().getTime()), false, false)));
+        // update columns
+        columnRecords.forEach(record -> {
+            columns.add(ColumnSchemaDesc.builder().name(record.getProperty()).type(record.getType()).build());
+            values.put(record.getProperty(), record.getValue());
+        });
         store.update(table,
-                new TableSchemaDesc(KeyColumn, List.of(
-                        ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
-                        ColumnSchemaDesc.builder().name(ModifiedTimeColumn).type(INT64).build(),
-                        ColumnSchemaDesc.builder().name(property).type(type).build()
-                )),
-                List.of(Map.of(
-                        KeyColumn, uuid,
-                        ModifiedTimeColumn,
-                        BaseValue.encode(new Int64Value(new Date().getTime()), false, false),
-                        property, value))
+                new TableSchemaDesc(KeyColumn, columns),
+                List.of(values)
         );
         store.flush();
         return 1;

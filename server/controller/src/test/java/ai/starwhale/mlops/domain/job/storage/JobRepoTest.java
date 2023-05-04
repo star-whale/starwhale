@@ -220,7 +220,7 @@ public class JobRepoTest {
         verify(dataStore, times(1))
                 .update(eq("project/1/eval/summary"), any(), anyList());
 
-        jobRepo.updateJobFinishedTime(jobId, Date.from(Instant.now()));
+        jobRepo.updateJobFinishedTime(jobId, Date.from(Instant.now()), 100L);
         verify(dataStore, times(2))
                 .update(eq("project/1/eval/summary"), any(), anyList());
 

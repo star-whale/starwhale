@@ -38,7 +38,10 @@ public interface JobMapper {
 
     void updateJobStatus(@Param("jobIds") List<Long> jobIds, @Param("jobStatus") JobStatus jobStatus);
 
-    void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds, @Param("finishedTime") Date finishedTime);
+    void updateJobFinishedTime(
+            @Param("jobIds") List<Long> jobIds,
+            @Param("finishedTime") Date finishedTime,
+            @Param("duration") Long duration);
 
     int updateJobComment(@Param("id") Long id, @Param("comment") String comment);
 
