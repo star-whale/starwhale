@@ -1536,7 +1536,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             console.print(
                 f":cat_face: use conda env prefix({prefix_path}) to export environment..."
             )
-            conda_export(temp_lock_path, prefix=prefix_path)
+            conda_export(
+                temp_lock_path,
+                prefix=prefix_path,
+                include_editable=include_editable,
+                include_local_wheel=include_local_wheel,
+            )
         elif mode == PythonRunEnv.VENV:
             if not check_valid_venv_prefix(prefix_path):
                 raise FormatError(f"venv prefix: {prefix_path}")
