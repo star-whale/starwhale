@@ -46,13 +46,10 @@ export function usePage(opt?: {
             [q, search, sortBy, pageNum, pageSize, rest]
         ),
         useCallback(
-            ({ pageNum, pageSize, search, ...newRest }) => {
+            (props) => {
                 updateQuery?.({
                     ...rest,
-                    ...newRest,
-                    pageNum: pageNum,
-                    pageSize: pageSize,
-                    search: search,
+                    ...props,
                 })
             },
             [updateQuery, rest]
