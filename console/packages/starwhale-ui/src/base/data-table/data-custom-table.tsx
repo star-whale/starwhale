@@ -156,8 +156,7 @@ export function DataTable({
         (columnIndex, delta) => {
             const column = columns[columnIndex]
             setResizeDeltas((prev) => {
-                const v = prev.has(column.key) ? prev.get(column.key) : 0
-                prev.set(column.key, Math.max(v + delta, 0))
+                prev.set(column.key, delta)
                 return new Map(prev)
             })
             resetAfterColumnIndex(columnIndex)

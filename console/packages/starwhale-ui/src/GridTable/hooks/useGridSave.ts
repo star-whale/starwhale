@@ -17,6 +17,7 @@ function useGridSave() {
         (view) => {
             store.onShowViewModel(true, {
                 ...view,
+                name: '',
                 id: undefined,
                 updated: false,
             })

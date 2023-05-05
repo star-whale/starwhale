@@ -270,6 +270,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                             right: 0,
                             top: -6,
                             display: 'flex',
+                            width: '20px',
+                            justifyContent: 'center',
                         }}
                     >
                         <IconFont

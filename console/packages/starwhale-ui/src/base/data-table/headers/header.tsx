@@ -128,7 +128,7 @@ function Header(props: HeaderProps) {
 
                 if (headerCellRef.current) {
                     const left = getPositionX(headerCellRef.current)
-                    const width = event.clientX - left - 5
+                    const width = event.clientX - left
                     const max = Math.ceil(props.resizeMaxWidth)
                     const min = Math.ceil(props.resizeMinWidth)
 
@@ -136,27 +136,32 @@ function Header(props: HeaderProps) {
                         return
                     }
 
+                    let endResizePos = 0
                     if (width >= min && width <= max) {
                         setEndResizePos(event.clientX - RULER_OFFSET)
+                        endResizePos = event.clientX - RULER_OFFSET
                     }
                     if (width < min) {
                         setEndResizePos(left + min - RULER_OFFSET)
+                        endResizePos = left + min - RULER_OFFSET
                     }
                     if (width > max) {
-                        setEndResizePos(max - width - RULER_OFFSET)
+                        setEndResizePos(left + max - RULER_OFFSET)
+                        endResizePos = left + max - RULER_OFFSET
                     }
+
+                    props.onResize(props.index, endResizePos - startResizePos)
                 }
             }
         }
 
         function handleMouseUp() {
-            props.onResize(props.index, endResizePos - startResizePos)
             props.onResizeIndexChange(-1)
             setStartResizePos(0)
             setEndResizePos(0)
         }
 
-        const mousemove = _.throttle(handleMouseMove, 200)
+        const mousemove = _.throttle(handleMouseMove, 100)
         const mouseup = _.throttle(handleMouseUp, 200)
 
         if (isResizingThisColumn) {
@@ -178,6 +183,9 @@ function Header(props: HeaderProps) {
         endResizePos,
         startResizePos,
     ])
+
+    if (isResizingThisColumn)
+        console.log(startResizePos, endResizePos, props.resizeIndex, props.index, isResizingThisColumn)
 
     return (
         <>
@@ -245,22 +253,7 @@ function Header(props: HeaderProps) {
                                 backgroundColor: theme.brandTableHeaderResizer,
                             },
                         })}
-                        style={{
-                            right: `${(RULER_OFFSET + endResizePos - startResizePos) * -1}px`,
-                        }}
-                    >
-                        {isResizingThisColumn && (
-                            <div
-                                className={css({
-                                    backgroundColor: theme.brandTableHeaderResizer,
-                                    position: 'absolute',
-                                    height: `${props.tableHeight}px`,
-                                    right: '1px',
-                                    width: '1px',
-                                })}
-                            />
-                        )}
-                    </div>
+                    />
                 </div>
             )}
         </>
