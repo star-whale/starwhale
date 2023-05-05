@@ -157,6 +157,7 @@ public class JobBoConverter {
                             .build())
                     .createdTime(jobEntity.getCreatedTime())
                     .finishedTime(jobEntity.getFinishedTime())
+                    .durationMs(jobEntity.getDurationMs())
                     .comment(jobEntity.getComment())
                     .build();
         } catch (JsonProcessingException e) {

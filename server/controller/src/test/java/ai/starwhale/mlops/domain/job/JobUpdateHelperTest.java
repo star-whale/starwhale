@@ -69,7 +69,7 @@ public class JobUpdateHelperTest {
         verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                argThat(d -> d.getTime() > 0));
+                argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class JobUpdateHelperTest {
         verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                argThat(d -> d.getTime() > 0));
+                argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
         Thread.sleep(100); // wait for async status update
         Assertions.assertEquals(TaskStatus.CANCELED, luckTask.getStatus());
 
@@ -119,7 +119,7 @@ public class JobUpdateHelperTest {
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
         verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                argThat(d -> d.getTime() > 0));
+                argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
 
     }
 

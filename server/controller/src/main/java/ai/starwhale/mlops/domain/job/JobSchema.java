@@ -44,7 +44,7 @@ public interface JobSchema {
     String FinishTimeColumn = "sys/finished_time";
     String CreatedTimeColumn = "sys/created_time";
     String ModifiedTimeColumn = "sys/modified_time";
-    String DurationColumn = "sys/duration_ms"; // todo unused
+    String DurationColumn = "sys/duration_ms";
     String JobStatusColumn = "sys/job_status";
     String JobTypeColumn = "sys/job_type";
     String ResultOutputPathColumn = "sys/result_output_path";

@@ -78,7 +78,9 @@ public class JobUpdateHelper {
         jobDao.updateJobStatus(job.getId(), desiredJobStatus);
 
         if (jobStatusMachine.isFinal(desiredJobStatus)) {
-            jobDao.updateJobFinishedTime(job.getId(), new Date());
+            var finishedTime = new Date();
+            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
+            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
             if (desiredJobStatus == JobStatus.FAIL) {
                 CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));

@@ -28,6 +28,7 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +59,7 @@ public class JobMockHolder {
                 .type(JobType.EVALUATION)
                 .steps(steps)
                 .outputDir(jobDir)
+                .createdTime(new Date())
                 .build();
         Step currentStep = mockSteps(job, steps);
         job.setCurrentStep(currentStep);

@@ -87,6 +87,7 @@ public class Job extends TimeConcern {
 
     Date createdTime;
     Date finishedTime;
+    Long durationMs;
     String comment;
 
     @Override

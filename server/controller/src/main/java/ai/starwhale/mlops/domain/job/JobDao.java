@@ -85,6 +85,7 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
             if (!CollectionUtils.isEmpty(datasetVersionIds)) {
                 datasetVersionMapper.insert(jobFlattenEntity.getId(), datasetVersionIds);
             }
+            // TODO: only sync evaluation repo
             return jobRepo.addJob(jobFlattenEntity) > 0;
         }
         return false;
@@ -133,9 +134,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         jobRepo.updateJobStatus(jobId, jobStatus);
     }
 
-    public void updateJobFinishedTime(Long jobId, Date finishedTime) {
-        jobMapper.updateJobFinishedTime(List.of(jobId), finishedTime);
-        jobRepo.updateJobFinishedTime(jobId, finishedTime);
+    public void updateJobFinishedTime(Long jobId, Date finishedTime, Long duration) {
+        jobMapper.updateJobFinishedTime(List.of(jobId), finishedTime, duration);
+
+        jobRepo.updateJobFinishedTime(jobId, finishedTime, duration);
     }
 
     public boolean updateJobComment(Long jobId, String comment) {

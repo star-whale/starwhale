@@ -77,8 +77,13 @@ public class JobVo implements Serializable {
     @JsonProperty("resourcePool")
     private String resourcePool;
 
+    private Long duration;
+
     @JsonProperty("duration")
     public Long getDuration() {
+        if (null != duration) {
+            return duration;
+        }
         if (null == stopTime || stopTime <= 0) {
             return System.currentTimeMillis() - createdTime;
         }

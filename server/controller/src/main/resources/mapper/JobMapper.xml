@@ -108,7 +108,7 @@
   </update>
 
   <update id="updateJobFinishedTime">
-    update job_info set finished_time = #{finishedTime} WHERE id in
+    update job_info set finished_time = #{finishedTime}, duration_ms = #{duration} WHERE id in
     <foreach item="item" index="index" collection="jobIds"
       open="(" separator="," close=")">
       #{item}
