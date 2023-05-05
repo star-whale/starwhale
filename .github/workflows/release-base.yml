@@ -1,9 +1,11 @@
 name: Release Starwhale base Docker Image
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch
+  #After fixing the rebuild issue, we can enable push option.
+  #push:
+  #  branches:
+  #    - main
 
 jobs:
   starwhale-base-release:
