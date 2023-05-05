@@ -836,6 +836,10 @@ const account = {
         zh: '未结清',
         en: 'Unpaid',
     },
+    'bill.status.prepare': {
+        zh: '结算中',
+        en: 'Prepare',
+    },
     'bill.amount.total': {
         en: 'Total Amount',
         zh: '总金额',
