@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import gradio
 from PIL import Image as PILImage
-from loguru import logger
 from torchvision import transforms
 
 from starwhale import (
@@ -45,29 +44,23 @@ class CustomPipelineHandler:
             ds = dataset(_uri)
             ds.make_distributed_consumption(session_id=context.version)
             for rows in ds.batch_iter(self.batch_size):
-                try:
-                    pred_values, probability_matrixs = self.batch_ppl(
-                        [r[1] for r in rows]
-                    )
-                    for (
-                        (_idx, _data),
-                        pred_value,
-                        probability_matrix,
-                    ) in zip(rows, pred_values, probability_matrixs):
-                        _unique_id = f"{_uri.object}_{_idx}"
+                pred_values, probability_matrixs = self.batch_ppl([r[1] for r in rows])
+                for (
+                    (_idx, _data),
+                    pred_value,
+                    probability_matrix,
+                ) in zip(rows, pred_values, probability_matrixs):
+                    _unique_id = f"{_uri.object}_{_idx}"
 
-                        evaluation.log(
-                            category="results",
-                            id=_unique_id,
-                            metrics=dict(
-                                pred_value=dill.dumps(pred_value),
-                                probability_matrix=dill.dumps(probability_matrix),
-                                label=_data["label"],
-                            ),
-                        )
-                except Exception:
-                    logger.error(f"[{[r[0] for r in rows]}] data handle -> failed")
-                    raise
+                    evaluation.log(
+                        category="results",
+                        id=_unique_id,
+                        metrics=dict(
+                            pred_value=dill.dumps(pred_value),
+                            probability_matrix=dill.dumps(probability_matrix),
+                            label=_data["label"],
+                        ),
+                    )
 
     @handler(needs=[run_ppl], name="cmp")
     @multi_classification(

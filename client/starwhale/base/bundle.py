@@ -7,7 +7,6 @@ from pathlib import Path
 from contextlib import ExitStack
 
 import yaml
-from loguru import logger
 from fs.walk import Walker
 
 from starwhale.utils import console, now_str, gen_uniq_version
@@ -168,15 +167,12 @@ class LocalStorageBundleMixin:
         # TODO: add signature for import files: model, config
         _fpath = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore
         ensure_file(_fpath, yaml.safe_dump(self._manifest, default_flow_style=False))
-        logger.info(f"[step:manifest]render manifest: {_fpath}")
 
     def _gen_version(self) -> None:
-        logger.info("[step:version]create version...")
         if not getattr(self, "_version", ""):
             self._version = gen_uniq_version()
 
         self.uri.object.version = self._version  # type:ignore
-        logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
         self._manifest["version"] = self._version
         self._manifest[CREATED_AT_KEY] = now_str()
@@ -187,13 +183,10 @@ class LocalStorageBundleMixin:
     def _make_tar(self, ftype: str = "") -> None:
         out = self.store.bundle_dir / f"{self._version}{ftype}"  # type: ignore
         ensure_dir(self.store.bundle_dir)  # type: ignore
-        logger.info(f"[step:tar]try to tar {out} ...")
-
         with tarfile.open(out, "w:") as tar:
             tar.add(str(self.store.snapshot_workdir), arcname="")  # type: ignore
 
         console.print(f":butterfly: {ftype} bundle:{out}")
-        logger.info("[step:tar]finish to make bundle tar")
 
     @classmethod
     def _do_validate_yaml(cls, path: Path) -> None:

@@ -14,10 +14,10 @@ from urllib.parse import urlparse
 
 import boto3
 import requests
-from loguru import logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
+from starwhale.utils import console
 from starwhale.consts import (
     HTTPMethod,
     SWDSBackendType,
@@ -418,7 +418,7 @@ class ObjectStore:
                 else:
                     _store = ObjectStore.from_dataset_uri(owner)
 
-            logger.debug(f"new store backend created for key: {_k}")
+            console.debug(f"new store backend created for key: {_k}")
             cls._stores[_k] = _store
             return _store
 

@@ -42,11 +42,11 @@ import pyarrow as pa  # type: ignore
 import requests
 import tenacity
 import jsonlines
-from loguru import logger
 from filelock import FileLock
 from jsonlines import Writer
 from typing_extensions import Protocol
 
+from starwhale.utils import console
 from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
@@ -1333,7 +1333,7 @@ class RemoteDataStore:
         )
 
         if resp.status_code != HTTPStatus.OK:
-            logger.error(
+            console.error(
                 f"[update-table]Table:{table_name}, resp code:{resp.status_code}, \n resp text: {resp.text}, \n records: {records}"
             )
         resp.raise_for_status()
@@ -1562,7 +1562,7 @@ class TableWriter(threading.Thread):
                         self.table_name, last_schema, to_submit
                     )
             except Exception as e:
-                logger.exception(e)
+                console.print_exception()
                 self._queue_run_exceptions.append(e)
                 if len(self._queue_run_exceptions) > self._run_exceptions_limits:
                     break

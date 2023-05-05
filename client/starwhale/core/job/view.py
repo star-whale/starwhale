@@ -2,7 +2,6 @@ import sys
 import typing as t
 
 from rich import box
-from loguru import logger
 from rich.panel import Panel
 from rich.table import Table
 from rich.pretty import Pretty
@@ -31,7 +30,6 @@ class JobTermView(BaseTermView):
         super().__init__()
         self.raw_uri = job_uri
         self.uri = URI(job_uri, expected_type=URIType.JOB)
-        logger.debug(f"eval job:{self.raw_uri}")
         self.job = Job.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,

@@ -9,6 +9,8 @@ from datetime import datetime
 
 import requests
 
+from starwhale.utils import console
+
 
 def random_id() -> str:
     return "".join(
@@ -55,9 +57,9 @@ class TaskRunner(threading.Thread):
             except UnrecoverableError:
                 raise
             except Exception:
-                print("===Retry due to exception===")
+                console.print("===Retry due to exception===")
                 traceback.print_exc()
-                print("======")
+                console.print("======")
             time.sleep(backoff)
             backoff *= 2
             if backoff > 1:
@@ -206,9 +208,9 @@ class FileReader(TaskRunner):
                     count = self.chunk_buffer_writer.write(data, 0.5)
                     data = data[count:]
         except Exception as e:
-            print("===Stop read from file===")
+            console.print("===Stop read from file===")
             traceback.print_exc()
-            print("======")
+            console.print("======")
             self.chunk_buffer_writer.close(str(e))
         finally:
             self.file.close()
@@ -239,9 +241,9 @@ class FileWriter(TaskRunner):
                         count = os.write(fd, data)
                         data = data[count:]
         except Exception as e:
-            print("===Stop write to file===")
+            console.print("===Stop write to file===")
             traceback.print_exc()
-            print("======")
+            console.print("======")
             self.chunk_buffer_reader.close(str(e))
         finally:
             self.file.close()
@@ -272,9 +274,9 @@ class BrokerReader(TaskRunner):
                         count = self.chunk_buffer_writer.write(data, 0.5)
                         data = data[count:]
         except Exception as e:
-            print("===Stop read from broker===")
+            console.print("===Stop read from broker===")
             traceback.print_exc()
-            print("======")
+            console.print("======")
             self.chunk_buffer_writer.close(str(e))
         finally:
             self.run_until_success(self._close_read, True)
@@ -316,9 +318,9 @@ class BrokerWriter(TaskRunner):
                         self.offset += count
                         d = d[count:]
         except Exception as e:
-            print("===Stop write to broker===")
+            console.print("===Stop write to broker===")
             traceback.print_exc()
-            print("======")
+            console.print("======")
             self.chunk_buffer_reader.close(str(e))
         finally:
             self.run_until_success(self._close_write, True)

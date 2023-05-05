@@ -4,9 +4,9 @@ from http import HTTPStatus
 from functools import wraps
 
 import requests
-from rich import print as rprint
-from loguru import logger
 from rich.panel import Panel
+
+from starwhale.utils import console
 
 
 def wrap_sw_error_resp(
@@ -17,14 +17,13 @@ def wrap_sw_error_resp(
     silent: bool = False,
     ignore_status_codes: t.List[int] = [],
 ) -> None:
-
     if silent:
-        _rprint: t.Callable = lambda x: x
+        _print: t.Callable = lambda x: x
     else:
-        _rprint = rprint
+        _print = console.print
 
     if r.status_code == HTTPStatus.OK:
-        _rprint(f":clap: {header} success")
+        _print(f":clap: {header} success")
         return
 
     msg = f":disappointed_face: url:{r.url}\n:dog: http status code: {r.status_code} \n"
@@ -40,7 +39,7 @@ def wrap_sw_error_resp(
         if r.status_code in ignore_status_codes:
             return
 
-        rprint(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
+        _print(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
         if exit:
             sys.exit(1)
 
@@ -55,7 +54,7 @@ def ignore_error(default_ret: t.Any = "") -> t.Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                logger.warning(f"{func} error: {e}")
+                console.warning(f"{func} error: {e}")
                 return default_ret
 
         return _wrapper

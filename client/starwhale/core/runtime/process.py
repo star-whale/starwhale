@@ -5,6 +5,7 @@ import sys
 import copy
 import typing as t
 from pathlib import Path
+from functools import partial
 
 from starwhale.utils import console
 from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME
@@ -91,7 +92,7 @@ class Process:
                 self.EnvInActivatedProcess: "1",
                 self.ActivatedRuntimeURI: str(self._uri),
             },
-            log=print,
+            log=partial(console.print, without_timestamp=True),
         )
 
     def _restore_runtime(

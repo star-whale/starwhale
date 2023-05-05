@@ -9,7 +9,6 @@ import cv2
 import dill
 import numpy as np
 import torch
-from loguru import logger
 
 from starwhale import (
     URI,
@@ -145,19 +144,15 @@ def run_ppl(context: Context) -> None:
                 rows, pred_values, probability_matrixs
             ):
                 _unique_id = f"{_uri.object}_{_idx}"
-                try:
-                    evaluation.log(
-                        category="results",
-                        id=_unique_id,
-                        metrics=dict(
-                            pred_value=dill.dumps(pred_value),
-                            probability_matrix=dill.dumps(probability_matrix),
-                            annotations=_annotations,
-                        ),
-                    )
-                except Exception:
-                    logger.error(f"[{_unique_id}] data handle -> failed")
-                    raise
+                evaluation.log(
+                    category="results",
+                    id=_unique_id,
+                    metrics=dict(
+                        pred_value=dill.dumps(pred_value),
+                        probability_matrix=dill.dumps(probability_matrix),
+                        annotations=_annotations,
+                    ),
+                )
 
 
 @handler(needs=[run_ppl])

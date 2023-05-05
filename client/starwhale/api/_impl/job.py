@@ -9,7 +9,6 @@ from pathlib import Path
 from collections import defaultdict
 
 import yaml
-from loguru import logger
 
 from starwhale.consts import DecoratorInjectAttr
 from starwhale.utils.fs import ensure_file
@@ -270,8 +269,6 @@ def generate_jobs_yaml(
     package_dir: t.Union[Path, str],
     yaml_path: t.Union[Path, str],
 ) -> None:
-    logger.debug(f"ingest run_handlers {search_modules} at {package_dir}")
-
     expanded_handlers = Handler.get_registered_handlers_with_expanded_needs(
         search_modules, Path(package_dir)
     )

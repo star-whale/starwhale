@@ -13,7 +13,6 @@ from collections import defaultdict
 import yaml
 import jinja2
 from fs import open_fs
-from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.tarfs import TarFS
 from typing_extensions import Protocol
@@ -300,12 +299,12 @@ class WheelDependency(ASDictMixin, BaseDependency):
 
     def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         for path in self._get_wheels(src_dir):
-            logger.debug(f"conda run pip install: {path}")
+            console.debug(f"conda run pip install: {path}")
             conda_install_req(req=path, prefix_path=env_dir, configs=configs)
 
     def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         for path in self._get_wheels(src_dir):
-            logger.debug(f"venv pip install: {path}")
+            console.debug(f"venv pip install: {path}")
             venv_install_req(
                 env_dir, path, pip_config=configs.get("pip")
             )  # type:ignore
@@ -332,7 +331,7 @@ class CondaPkgDependency(ASDictMixin, BaseDependency):
         _conda_pkgs = " ".join([repr(_p) for _p in self.deps if _p])
         _conda_pkgs = _conda_pkgs.strip()
         if _conda_pkgs:
-            logger.debug(f"conda install: {_conda_pkgs}")
+            console.debug(f"conda install: {_conda_pkgs}")
             conda_install_req(
                 req=_conda_pkgs,
                 prefix_path=env_dir,
@@ -341,7 +340,7 @@ class CondaPkgDependency(ASDictMixin, BaseDependency):
             )
 
     def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
-        logger.warning("no support install conda pkg in the venv environment")
+        console.warning("no support install conda pkg in the venv environment")
 
 
 class CondaEnvFileDependency(ASDictMixin, BaseDependency):
@@ -371,7 +370,7 @@ class CondaEnvFileDependency(ASDictMixin, BaseDependency):
         conda_env_update(env_fpath=env_fpath, target_env=env_dir)
 
     def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
-        logger.warning(
+        console.warning(
             "no support install/update conda environment file in the venv environment"
         )
 
@@ -400,12 +399,12 @@ class PipPkgDependency(ASDictMixin, BaseDependency):
     def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         # TODO: merge deps
         for pkg in self._get_pkgs():
-            logger.debug(f"conda run pip install: {pkg}")
+            console.debug(f"conda run pip install: {pkg}")
             conda_install_req(req=pkg, prefix_path=env_dir, configs=configs)
 
     def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         for pkg in self._get_pkgs():
-            logger.debug(f"venv pip install: {pkg}")
+            console.debug(f"venv pip install: {pkg}")
             venv_install_req(env_dir, pkg, pip_config=configs.get("pip"))  # type:ignore
 
 
@@ -496,7 +495,7 @@ class Dependencies(ASDictMixin):
                 self._unparsed.append(d)
 
         if self._unparsed:
-            logger.warning(f"unparsed dependencies:{self._unparsed}")
+            console.warning(f"unparsed dependencies:{self._unparsed}")
 
     def __str__(self) -> str:
         return f"Starwhale Runtime Dependencies: {len(self.deps)}, unparsed: {len(self._unparsed)}"
@@ -1041,12 +1040,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             RuntimeArtifactType.FILES: [],
         }
 
-        logger.info("[step:copy-wheels]start to copy wheels...")
+        console.info("[step:copy-wheels]start to copy wheels...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.WHEELS)
         for _fname in config.dependencies._wheels:
             _fpath = workdir / _fname
             if not _fpath.exists():
-                logger.warning(f"not found wheel: {_fpath}")
+                console.warning(f"not found wheel: {_fpath}")
                 continue
 
             _dest = f"{RuntimeArtifactType.WHEELS}/{_fname.lstrip('/')}"
@@ -1058,13 +1057,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 _dest,
             )
 
-        logger.info("[step:copy-files]start to copy files...")
+        console.info("[step:copy-files]start to copy files...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.FILES)
         for _f in config.dependencies._files:
             _src = workdir / _f["src"]
             _dest = f"{RuntimeArtifactType.FILES}/{_f['src'].lstrip('/')}"
             if not _src.exists():
-                logger.warning(f"not found src-file: {_src}")
+                console.warning(f"not found src-file: {_src}")
                 continue
 
             self._manifest["artifacts"][RuntimeArtifactType.FILES].append(_f)
@@ -1076,13 +1075,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 ensure_dir((self.store.snapshot_workdir / _dest).parent)
                 copy_file(workdir_fs, _f["src"], snapshot_fs, _dest)
 
-        logger.info("[step:copy-deps]start to copy pip/conda requirement files")
+        console.info("[step:copy-deps]start to copy pip/conda requirement files")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
 
         for _fname in config.dependencies._conda_files + config.dependencies._pip_files:
             _fpath = workdir / _fname
             if not _fpath.exists():
-                logger.warning(f"not found dependencies: {_fpath}")
+                console.warning(f"not found dependencies: {_fpath}")
                 continue
 
             _dest = f"{RuntimeArtifactType.DEPEND}/{_fname.lstrip('/')}"
@@ -1200,7 +1199,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             "conda_files": deps._conda_files,
         }
 
-        logger.info("[step:dep]finish dump dep")
+        console.info("[step:dep]finish dump dep")
 
         if download_all_deps:
             packaged = package_python_env(
@@ -1213,7 +1212,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             self._manifest["dependencies"]["local_packaged_env"] = packaged
 
     def _prepare_snapshot(self) -> None:
-        logger.info("[step:prepare-snapshot]prepare runtime snapshot dirs...")
+        console.info("[step:prepare-snapshot]prepare runtime snapshot dirs...")
 
         # TODO: graceful clear?
         if self.store.snapshot_workdir.exists():
@@ -1319,7 +1318,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 raise NotFoundError(src)
 
             if dest.exists() and not force:
-                logger.warning(f"{dest} existed, skip copy")
+                console.warning(f"{dest} existed, skip copy")
 
             ensure_dir(dest.parent)
             shutil.copy(str(src), str(dest))
@@ -1831,7 +1830,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         deps_config = Dependencies(runtime_yaml.get("dependencies", []))
         for dep in deps_config.deps:
             if dep.kind in skip_deps:
-                logger.debug(f"skip {dep} to install")
+                console.debug(f"skip {dep} to install")
                 continue
 
             _func = (

@@ -8,8 +8,8 @@ from pathlib import Path
 from collections import defaultdict
 
 import psutil
-from loguru import logger
 
+from starwhale.utils import console
 from starwhale.consts import FMT_DATETIME
 from starwhale.utils.venv import guess_current_py_env
 from starwhale.utils.error import NotFoundError
@@ -84,8 +84,9 @@ class CollectorThread(threading.Thread):
             try:
                 ret = _action()
                 self.tracker._log_params(ret, source=_TrackSource.SYSTEM)
-            except Exception as e:
-                logger.exception(f"failed to inspect {_info}: {e}")
+            except Exception:
+                console.print(":warning: [red]{_info}[/red] inspect failed")
+                console.print_exception()
 
         # TODO: tune the accuracy of inspect and report interval
         last_inspect_time = last_report_time = time.monotonic()
@@ -106,7 +107,7 @@ class CollectorThread(threading.Thread):
                     self._report_metrics()
                     last_report_time = time.monotonic()
             except Exception as e:
-                logger.exception(e)
+                console.print_exception()
                 self._run_exceptions.append(e)
                 self._raise_run_exceptions()
 

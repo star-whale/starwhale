@@ -12,9 +12,8 @@ from types import TracebackType
 from pathlib import Path
 
 import yaml
-from loguru import logger
 
-from starwhale.utils import now_str, random_str, gen_uniq_version
+from starwhale.utils import console, now_str, random_str, gen_uniq_version
 from starwhale.consts import SW_AUTO_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -133,7 +132,7 @@ class Tracker:
         trace: TracebackType,
     ) -> None:
         if value:  # pragma: no cover
-            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.end()
 

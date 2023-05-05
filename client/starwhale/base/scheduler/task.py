@@ -5,8 +5,7 @@ import asyncio
 from pathlib import Path
 from functools import wraps
 
-from loguru import logger
-
+from starwhale.utils import console
 from starwhale.consts import RunStatus, DecoratorInjectAttr
 from starwhale.utils.load import load_module
 from starwhale.utils.error import NoSupportError
@@ -143,7 +142,7 @@ class TaskExecutor:
                     func()
 
     def execute(self) -> TaskResult:
-        logger.info(f"start to execute task with context({self.context}) ...")
+        console.info(f"start to execute task with context({self.context}) ...")
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -154,13 +153,13 @@ class TaskExecutor:
             Context.set_runtime_context(self.context)
             self._do_execute()
         except Exception as e:
-            logger.exception(e)
+            console.print_exception()
             self.exception = e
             self.__status = RunStatus.FAILED
         else:
             self.__status = RunStatus.SUCCESS
         finally:
-            logger.info(
+            console.info(
                 f"finish {self.context}, status:{self.status}, error:{self.exception}"
             )
             loop.close()

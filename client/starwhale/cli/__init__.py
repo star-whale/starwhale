@@ -25,6 +25,7 @@ def create_sw_cli() -> click.core.Group:
     @click.group(cls=AliasedGroup)
     @click.version_option(version=STARWHALE_VERSION, message="%(version)s")
     @click.option(
+        "verbose_cnt",
         "-v",
         "--verbose",
         count=True,
@@ -32,9 +33,9 @@ def create_sw_cli() -> click.core.Group:
     )
     @click.option("-o", "--output", help="Output format", type=click.Choice(["json"]))
     @click.pass_context
-    def cli(ctx: click.Context, verbose: bool, output: str) -> None:
+    def cli(ctx: click.Context, verbose_cnt: int, output: str) -> None:
         load_swcli_config()
-        init_logger(verbose)
+        init_logger(verbose_cnt)
         ctx.ensure_object(dict)
         ctx.obj["output"] = output
 

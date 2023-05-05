@@ -5,8 +5,7 @@ import threading
 from pathlib import Path
 from functools import wraps
 
-from loguru import logger
-
+from starwhale.utils import console
 from starwhale.utils.error import ParameterError
 
 
@@ -69,7 +68,7 @@ class Context:
             if val and isinstance(val, Context):
                 # TODO: _context_holder set only once?
                 cls._context_holder.value = ctx
-                logger.warning(f"runtime context has already be set: {val}")
+                console.warning(f"runtime context has already be set: {val}")
         except AttributeError:
             cls._context_holder.value = ctx
 

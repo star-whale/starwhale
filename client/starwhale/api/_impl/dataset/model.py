@@ -13,9 +13,8 @@ from functools import wraps, partial, lru_cache
 from itertools import islice
 
 import yaml
-from loguru import logger
 
-from starwhale.utils import now_str, convert_to_bytes, gen_uniq_version
+from starwhale.utils import console, now_str, convert_to_bytes, gen_uniq_version
 from starwhale.consts import (
     FileDesc,
     HTTPMethod,
@@ -250,7 +249,7 @@ class Dataset:
         trace: TracebackType,
     ) -> None:
         if value:  # pragma: no cover
-            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+            console.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()
 
@@ -919,7 +918,7 @@ class Dataset:
         info_revision = _save_info()
         manifest_path = _dump_manifest(dataset_revision, info_revision)
 
-        logger.debug(
+        console.debug(
             f"dataset commit: revision-{dataset_revision}, info revision-{info_revision}"
         )
         if self.project_uri.instance == STANDALONE_INSTANCE:

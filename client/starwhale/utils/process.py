@@ -2,11 +2,11 @@ import os
 import typing as t
 from subprocess import PIPE, Popen, STDOUT, CalledProcessError
 
-from loguru import logger
+from starwhale.utils import console
 
 
 def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
-    log = kwargs.pop("log", logger.debug)
+    log = kwargs.pop("log", console.debug)
     kwargs["bufsize"] = 1
     kwargs["stdout"] = PIPE
     kwargs["stderr"] = STDOUT
@@ -18,7 +18,7 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
 
     output = []
     p = Popen(*args, **kwargs)
-    logger.debug(f"cmd: {p.args!r}")
+    console.debug(f"cmd: {p.args!r}")
 
     while True:
         line = p.stdout.readline()  # type: ignore
