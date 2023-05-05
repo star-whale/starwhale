@@ -29,5 +29,6 @@ swcli --version
 popd
 
 bash "$SCRIPT_DIR"/update_controller_setting.sh
-python3 "$SCRIPT_DIR"/cli_test.py "$1"
-
+for i in $@; do
+    python3 "$SCRIPT_DIR"/cli_test.py $i || exit 1
+done

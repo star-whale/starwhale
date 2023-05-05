@@ -197,7 +197,7 @@ def get_current_shell() -> str:
 def disable_progress_bar() -> t.Generator[None, None, None]:
     old_flag = os.environ.get(ENV_DISABLE_PROGRESS_BAR, "")
 
-    os.environ[ENV_DISABLE_PROGRESS_BAR] = "0"
+    os.environ[ENV_DISABLE_PROGRESS_BAR] = "1"
     try:
         yield
     finally:

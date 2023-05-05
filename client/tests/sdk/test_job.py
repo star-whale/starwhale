@@ -593,6 +593,38 @@ def run(): ...
             ]
         }
 
+    def test_handler_with_other_decorator(self) -> None:
+        content = """
+from starwhale import handler, pass_context
+
+@handler(replicas=2)
+@pass_context
+def handle(context): ...
+        """
+
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
+
+        jobs_info = load_yaml(yaml_path)
+        assert jobs_info == {
+            "mock_user_module:handle": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "extra_args": [],
+                    "extra_kwargs": {},
+                    "func_name": "handle",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:handle",
+                    "needs": [],
+                    "replicas": 2,
+                    "resources": [],
+                    "show_name": "handle",
+                }
+            ]
+        }
+
     def test_handler_deco(self) -> None:
         content = """
 from starwhale import handler

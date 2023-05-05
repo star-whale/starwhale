@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 from starwhale.utils import console
 
@@ -17,6 +17,13 @@ def invoke_with_react(args: List[str], input_content: str = "yes") -> Tuple[int,
     if _err:
         console.warning(f"args:{args}, error is:{_err}")
     return p.returncode, _stdout
+
+
+def check_invoke(*args: Any, **kwargs: Any) -> None:
+    code, _stdout = invoke(*args, **kwargs)
+    assert (
+        code == 0
+    ), f"invoke failed, code:{code}, stdout:{_stdout}, args: {args}, kwargs: {kwargs}"
 
 
 def invoke(

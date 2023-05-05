@@ -1,10 +1,13 @@
 import os
+import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from starwhale.utils import load_yaml
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.load import import_object
-from starwhale.api._impl.model import build
+from starwhale.api._impl.job import Handler
+from starwhale.api._impl.model import build, _called_build_functions
 
 from .. import BaseTestCase
 
@@ -29,6 +32,10 @@ class ModelBuildTestCase(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "is a built-in class"):
             build([list])
 
+        with self.assertRaisesRegex(RuntimeError, "no modules to search"):
+            Handler.clear_registered_handlers()
+            build()
+
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_cwd(
@@ -47,7 +54,7 @@ class ModelBuildTestCase(BaseTestCase):
 
         model_config = m_model_view.build.call_args[1]["model_config"]
         assert model_config.name == "workdir"
-        assert model_config.run.modules == ["cwd_evaluator:Handler"]
+        assert model_config.run.modules == ["cwd_evaluator"]
         assert (
             m_model_view.build.call_args[1]["workdir"]
         ).resolve().absolute() == workdir.resolve().absolute()
@@ -101,6 +108,97 @@ class ModelBuildTestCase(BaseTestCase):
         )
 
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
+    def test_build_in_cycle_call(self, m_check_python: MagicMock) -> None:
+        m_check_python.return_value = [True, None, None]
+        workdir = Path(self.local_storage) / "user" / "workdir"
+        ensure_file(workdir / "__init__.py", "", parents=True)
+        content = """
+
+from pathlib import Path
+from starwhale import model, handler
+
+ROOTDIR = Path(__file__).parent
+
+@handler()
+def handle(): ...
+
+model.build(modules=[handle], workdir=ROOTDIR, name="inner")
+        """
+        ensure_file(workdir / "cycle_evaluator.py", content, parents=True)
+
+        _called_build_functions.clear()
+
+        assert len(_called_build_functions) == 0
+        mock_handler = import_object(
+            workdir=workdir, handler_path="cycle_evaluator:handle", py_env="venv"
+        )
+
+        build(
+            modules=[mock_handler],
+            workdir=workdir,
+            name="outer",
+        )
+        assert len(_called_build_functions) == 2
+
+        def _get_jobs_yaml(model_name: str) -> t.Dict[str, t.Any]:
+            path = list(
+                (Path(self.local_storage) / "self" / "model" / model_name).glob(
+                    "**/*.swmp/src/.starwhale/jobs.yaml"
+                )
+            )[0]
+            return load_yaml(path)
+
+        inner_jobs = _get_jobs_yaml("inner")
+        outer_jobs = _get_jobs_yaml("outer")
+
+        assert (
+            inner_jobs
+            == outer_jobs
+            == {
+                "cycle_evaluator:handle": [
+                    {
+                        "cls_name": "",
+                        "concurrency": 1,
+                        "extra_args": [],
+                        "extra_kwargs": {},
+                        "func_name": "handle",
+                        "module_name": "cycle_evaluator",
+                        "name": "cycle_evaluator:handle",
+                        "needs": [],
+                        "replicas": 1,
+                        "resources": [],
+                        "show_name": "handle",
+                    }
+                ]
+            }
+        )
+
+    @patch("starwhale.utils.load.check_python_interpreter_consistency")
+    @patch("starwhale.core.model.view.ModelTermView")
+    def test_build_with_imported_modules(
+        self, m_model_view: MagicMock, m_check_python: MagicMock
+    ) -> None:
+        m_check_python.return_value = [True, None, None]
+        workdir = Path(self.local_storage) / "user" / "workdir"
+        ensure_file(workdir / "__init__.py", "", parents=True)
+        content = """
+from starwhale import handler
+
+@handler()
+def handle(): ...
+        """
+
+        ensure_file(workdir / "imported_evaluator.py", content, parents=True)
+        import_object(
+            workdir=workdir, handler_path="imported_evaluator:handle", py_env="venv"
+        )
+
+        build(workdir=workdir)
+        kwargs = m_model_view.build.call_args[1]
+        assert kwargs["model_config"].name == "workdir"
+        assert kwargs["model_config"].run.modules == ["imported_evaluator"]
+
+    @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_workdir(
         self, m_model_view: MagicMock, m_check_python: MagicMock
@@ -127,7 +225,7 @@ class ModelBuildTestCase(BaseTestCase):
         kwargs = m_model_view.build.call_args[1]
         assert kwargs["project"] == ""
         assert kwargs["workdir"] == workdir
-        assert kwargs["model_config"].run.modules == ["evaluator:Handler"]
+        assert kwargs["model_config"].run.modules == ["evaluator"]
         assert kwargs["model_config"].name == "mnist"
 
         sub_dir = workdir / "sub"
@@ -144,12 +242,14 @@ class ModelBuildTestCase(BaseTestCase):
 
         m_model_view.reset_mock()
         build(
-            [sub_mock_handler, mock_handler],
+            [sub_mock_handler, "evaluator", "sub.sub_evaluator"],
             workdir=workdir,
             name="mnist",
         )
         kwargs = m_model_view.build.call_args[1]
-        assert kwargs["model_config"].run.modules == [
-            "sub.sub_evaluator:SubHandler",
-            "evaluator:Handler",
-        ]
+        assert set(kwargs["model_config"].run.modules) == set(
+            [
+                "sub.sub_evaluator",
+                "evaluator",
+            ]
+        )
