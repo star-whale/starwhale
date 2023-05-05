@@ -1,7 +1,0 @@
-version: 1.0
-name: mnist
-
-run:
-  handler: mnist.evaluator:MNISTInference
-
-desc: mnist by pytorch
