@@ -1,4 +1,4 @@
-export const headerHeight = 56
+export const headerHeight = 50
 export const sidebarExpandedWidth = 200
 export const sidebarFoldedWidth = 68
 export const textVariant = 'smallPlus'

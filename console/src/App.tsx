@@ -1,4 +1,3 @@
-// @flow
 import React from 'react'
 import { Client as Styletron } from 'styletron-engine-atomic'
 import { Provider as StyletronProvider } from 'styletron-react'
@@ -47,3 +46,4 @@ export default function App(): any {
         </QueryClientProvider>
     )
 }
+// App.whyDidYouRender = true
