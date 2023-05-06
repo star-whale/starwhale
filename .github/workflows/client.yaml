@@ -194,4 +194,4 @@ jobs:
         env:
           GITHUB_ACTION: 1
           PYTHON_VERSION: ${{matrix.python-version}}
-        run: bash scripts/client_test/cli_test.sh simple
+        run: bash scripts/client_test/cli_test.sh sdk simple
