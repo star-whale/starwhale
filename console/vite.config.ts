@@ -81,7 +81,7 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
-        process.env.EXTEND_ROUTES ? inspect() : undefined,
+        // process.env.EXTEND_ROUTES ? inspect() : undefined,
         router({ dir: process.env.EXTEND_ROUTES || 'extend' }),
     ],
     esbuild: {

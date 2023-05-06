@@ -1,22 +1,32 @@
 import React from 'react'
 import { Switch, Route, Redirect } from 'react-router-dom'
 import _ from 'lodash'
-// virtual routes created by plugin
-import extendRoutes from 'virtual:route-views'
-import type { IRoute, IExtendRoutesType } from 'virtual:route-views'
+
+export type IRoute = {
+    path?: string
+    from?: string
+    to?: string
+    component?: any
+    routes?: IRoute[]
+}
+
+let unauthedRoutes = {}
+let authedRoutes = {}
+
+export function registerRoutes(authed: IRoute, unauthed: IRoute) {
+    unauthedRoutes = unauthed
+    authedRoutes = authed
+}
 
 const renderRoutes = (routes: IRoute[], parent?: IRoute): any => {
     return routes.map((route: any, i: number): any => {
         const key = parent ? `${parent?.path}-${i}` : i
-
         if (route.redirect) {
             return <Redirect key={key} exact from={route.path} to={route.redirect} />
         }
-
         if (route.element) {
             return React.cloneElement(route.element, { key })
         }
-
         if (route.component) {
             return (
                 <Route
@@ -42,8 +52,7 @@ const renderRoutes = (routes: IRoute[], parent?: IRoute): any => {
     })
 }
 
-export default renderRoutes
-function mergeRoute(source: IRoute = {}, target: IExtendRoutesType = {}): JSX.Element {
+function mergeRoute(source: IRoute = {}, target: IRoute = {}): JSX.Element {
     const routes: IRoute[] = _.unionWith(target?.routes ?? [], source?.routes ?? [], (a: any, b: any) => {
         if ('path' in a && 'path' in b) {
             return a.path === b.path
@@ -68,15 +77,6 @@ function mergeRoute(source: IRoute = {}, target: IExtendRoutesType = {}): JSX.El
     return renderRoutes(routes)
 }
 
-// @FIXME we only support one sample route for now
-const unauthedRoutes = extendRoutes?.find((route) => !route.auth && !route.extend)
-const authedRoutes = extendRoutes?.find((route) => route.auth && !route.extend)
-const extendComponents = extendRoutes?.find((route) => route.extend)
-
 export const getUnauthedRoutes = (source: any) => mergeRoute(source, unauthedRoutes)
 export const getAuthedRoutes = (source?: any) => mergeRoute(source, authedRoutes)
-export const getExtendHeader = () => {
-    const HeaderExtend = extendComponents?.extends?.header
-    if (!HeaderExtend) return null
-    return <HeaderExtend />
-}
+export default renderRoutes

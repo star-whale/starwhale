@@ -88,13 +88,12 @@ const defaultRoutes = [
     },
 ]
 
-const unauthedRoutes = getUnauthedRoutes(defaultRoutes[0])
-const authedRoutes = getAuthedRoutes()
-
 const Routes = () => {
     const [, theme] = themedUseStyletron()
     const styles = useStyles({ theme })
     const { token, standaloneMode } = useAuth()
+    const unauthedRoutes = getUnauthedRoutes(defaultRoutes[0])
+    const authedRoutes = getAuthedRoutes()
 
     if (!token) {
         return (

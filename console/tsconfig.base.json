@@ -18,7 +18,7 @@
         "typeRoots": ["./types", "./node_modules/@types"],
         "types": ["vite/client", "node", "jest"]
     },
-    "include": ["src", "types", "packages"],
+    "include": ["src", "types", "packages", "extensions"],
     "exclude": [
         "baseui/**",
         "node_modules/**",
@@ -27,6 +27,7 @@
         "**/__generated__/**",
         // "**/__tests__/**",
         "**/build/**",
-        "packages/starwhale-ui/src/base/**/*"
+        "packages/starwhale-ui/src/base/**/*",
+        "extensions/**"
     ]
 }

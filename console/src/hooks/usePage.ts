@@ -6,7 +6,7 @@ export function usePage(opt?: {
     query?: IQueryArgs
     updateQuery?: IUpdateQueryArgs
     defaultCount?: number
-}): [IListQuerySchema, (page: IListQuerySchema) => void] {
+}): [IListQuerySchema & Record<string, any>, (page: IListQuerySchema & Record<string, any>) => void] {
     const { query: query_, updateQuery: updateQuery_ } = opt ?? {}
     const { query: query0, updateQuery: updateQuery0 } = useQueryArgs()
 
@@ -20,7 +20,7 @@ export function usePage(opt?: {
         updateQuery = updateQuery0
     }
 
-    const { pageNum: pageStr = '1', pageSize: pageSizeStr, search, q, sort: sortBy, sort_asc: sortAsc, ...rest } = query
+    const { pageNum: pageStr = '1', pageSize: pageSizeStr, search, q, sort: sortBy, ...rest } = query
     let pageNum = parseInt(pageStr, 10)
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(pageNum) || pageNum <= 0) {
@@ -42,17 +42,14 @@ export function usePage(opt?: {
                 search,
                 q,
                 sort: sortBy,
-                sort_asc: sortAsc === 'true',
             }),
-            [q, search, sortAsc, sortBy, pageNum, pageSize, rest]
+            [q, search, sortBy, pageNum, pageSize, rest]
         ),
         useCallback(
-            (newPage) => {
+            (props) => {
                 updateQuery?.({
                     ...rest,
-                    pageNum: newPage.pageNum,
-                    pageSize: newPage.pageSize,
-                    search: newPage.search,
+                    ...props,
                 })
             },
             [updateQuery, rest]

@@ -10,35 +10,38 @@ import zh from 'javascript-time-ago/locale/zh.json'
 TimeAgo.addDefaultLocale(en)
 TimeAgo.addLocale(zh)
 
-i18n.use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        resources: {
-            en: {
-                translations: Object.entries(locales).reduce((p, [k, v]) => {
-                    return {
-                        ...p,
-                        [k]: v.en,
-                    }
-                }, {}),
+function initI18n() {
+    i18n.use(LanguageDetector)
+        .use(initReactI18next)
+        .init({
+            resources: {
+                en: {
+                    translations: Object.entries(locales).reduce((p, [k, v]) => {
+                        return {
+                            ...p,
+                            [k]: v.en,
+                        }
+                    }, {}),
+                },
+                zh: {
+                    translations: Object.entries(locales).reduce((p, [k, v]) => {
+                        return {
+                            ...p,
+                            [k]: v.zh,
+                        }
+                    }, {}),
+                },
             },
-            zh: {
-                translations: Object.entries(locales).reduce((p, [k, v]) => {
-                    return {
-                        ...p,
-                        [k]: v.zh,
-                    }
-                }, {}),
+            fallbackLng: 'en',
+            debug: false,
+            ns: ['translations'],
+            defaultNS: 'translations',
+            keySeparator: false, // we use content as keys
+            interpolation: {
+                escapeValue: false,
             },
-        },
-        fallbackLng: 'en',
-        debug: false,
-        ns: ['translations'],
-        defaultNS: 'translations',
-        keySeparator: false, // we use content as keys
-        interpolation: {
-            escapeValue: false,
-        },
-    })
+        })
+}
+export { initI18n }
 
 export default i18n
