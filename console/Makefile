@@ -10,7 +10,7 @@ install-dependencies:
 	yarn
 
 prepare:
-	[ ! -d "extensions" ] && mkdir -p extensions
+	mkdir -p extensions || echo 'extensions exists'
 
 build-ui: prepare
 	yarn build
