@@ -72,7 +72,12 @@ def conda_install_req(
         return
 
     configs = configs or {}
-    prefix_cmd = [get_conda_bin(), "run" if use_pip_install else "install"]
+    prefix_cmd = [get_conda_bin()]
+
+    if use_pip_install:
+        prefix_cmd += ["run", "--live-stream"]
+    else:
+        prefix_cmd += ["install"]
 
     if env_name:
         prefix_cmd += ["--name", env_name]

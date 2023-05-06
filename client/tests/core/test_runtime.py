@@ -160,6 +160,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 [
                     "conda",
                     "run",
+                    "--live-stream",
                     "--prefix",
                     conda_prefix_dir,
                     "python3",
@@ -1419,7 +1420,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert m_call.call_count == 2
         pip_cmds = [mc[0][0][4:] for mc in m_call.call_args_list]
-        assert pip_cmds == [[wheel_fpath], ["-r", req_lock_fpath]]
+        assert pip_cmds == [["-r", req_lock_fpath], [wheel_fpath]]
 
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -1646,7 +1647,17 @@ class StandaloneRuntimeTestCase(TestCase):
             ["conda", "create", "--yes", "--prefix", conda_prefix_dir, "python=3.7"],
             [
                 "conda",
+                "env",
+                "update",
+                "--file",
+                req_lock_fpath,
+                "--prefix",
+                conda_prefix_dir,
+            ],
+            [
+                "conda",
                 "run",
+                "--live-stream",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1656,15 +1667,6 @@ class StandaloneRuntimeTestCase(TestCase):
                 "--exists-action",
                 "w",
                 wheel_fpath,
-            ],
-            [
-                "conda",
-                "env",
-                "update",
-                "--file",
-                req_lock_fpath,
-                "--prefix",
-                conda_prefix_dir,
             ],
             [
                 f"{conda_prefix_dir}/bin/python3",
@@ -1713,6 +1715,10 @@ class StandaloneRuntimeTestCase(TestCase):
                         "local_packaged_env": False,
                         "raw_deps": [
                             {
+                                "kind": "conda_env_file",
+                                "deps": "conda-env.yaml",
+                            },
+                            {
                                 "kind": "pip_req_file",
                                 "deps": "requirements-sw-lock.txt",
                             },
@@ -1727,10 +1733,6 @@ class StandaloneRuntimeTestCase(TestCase):
                             {
                                 "kind": "conda_pkg",
                                 "deps": ["c", "d"],
-                            },
-                            {
-                                "kind": "conda_env_file",
-                                "deps": "conda-env.yaml",
                             },
                         ],
                     },
@@ -1769,7 +1771,17 @@ class StandaloneRuntimeTestCase(TestCase):
             ],
             [
                 "conda",
+                "env",
+                "update",
+                "--file",
+                conda_env_fpath,
+                "--prefix",
+                conda_prefix_dir,
+            ],
+            [
+                "conda",
                 "run",
+                "--live-stream",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1784,6 +1796,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [
                 "conda",
                 "run",
+                "--live-stream",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1797,6 +1810,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [
                 "conda",
                 "run",
+                "--live-stream",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1810,6 +1824,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [
                 "conda",
                 "run",
+                "--live-stream",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1830,15 +1845,6 @@ class StandaloneRuntimeTestCase(TestCase):
                 "--yes",
                 "--override-channels",
                 "'c' 'd'",
-            ],
-            [
-                "conda",
-                "env",
-                "update",
-                "--file",
-                conda_env_fpath,
-                "--prefix",
-                conda_prefix_dir,
             ],
             [
                 f"{conda_prefix_dir}/bin/python3",
@@ -2094,6 +2100,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "run",
+            "--live-stream",
             "--prefix",
             sw_conda_dir,
             "python3",
@@ -2249,6 +2256,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "run",
+            "--live-stream",
             "--prefix",
             conda_dir,
             "python3",

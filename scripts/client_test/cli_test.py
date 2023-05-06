@@ -22,6 +22,7 @@ from cmds.artifacts_cmd import Model, Dataset, Runtime
 from starwhale import URI
 from starwhale.utils import config
 from starwhale.base.type import DatasetChangeMode
+from starwhale.utils.debug import init_logger
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -34,6 +35,8 @@ STATUS_FAIL = {"FAIL", "fail", "CANCELED"}
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+init_logger(3)
 
 CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
