@@ -10,7 +10,7 @@ install-dependencies:
 	yarn
 
 prepare:
-	mkdir -p extensions
+	[ -d "extensions" ] || mkdir -p extensions
 
 build-ui: prepare
 	yarn build
