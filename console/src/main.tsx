@@ -18,6 +18,7 @@ window.i = null
 async function initExtensions() {
     if (import.meta.env.VITE_EXTENDS === 'true') {
         // @ts-ignore
+        // eslint-disable-next-line
         return import('../extensions')
     }
 
