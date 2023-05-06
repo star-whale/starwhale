@@ -9,10 +9,13 @@ install-dev-tools:
 install-dependencies:
 	yarn
 
-build-ui:
+prepare:
+	mkdir -p extensions
+
+build-ui: prepare
 	yarn build
 
-ci-lint:
+ci-lint: prepare
 	yarn lint
 	yarn typecheck
 

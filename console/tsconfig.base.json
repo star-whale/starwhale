@@ -27,6 +27,7 @@
         "**/__generated__/**",
         // "**/__tests__/**",
         "**/build/**",
-        "packages/starwhale-ui/src/base/**/*"
+        "packages/starwhale-ui/src/base/**/*",
+        "extensions/**"
     ]
 }

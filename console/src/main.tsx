@@ -25,6 +25,7 @@ async function initExtensions() {
 }
 
 async function init() {
+    // @ts-ignore
     const { authed, unauthed, components, locales } = await initExtensions()
 
     registerRoutes(authed, unauthed)

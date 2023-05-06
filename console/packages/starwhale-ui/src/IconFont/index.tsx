@@ -96,6 +96,7 @@ export type IconTypesT =
     | 'global'
     | 'user2'
     | 'account'
+    | 'account2'
     | 'bill'
     | 'voucher'
     | 'indent'
