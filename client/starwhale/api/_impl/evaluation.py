@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import typing as t
 import threading
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from types import TracebackType
 from pathlib import Path
 from functools import wraps
@@ -31,14 +31,14 @@ _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
 class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
-        ppl_batch_size: int = 1,
+        predict_batch_size: int = 1,
         ignore_dataset_data: bool = False,
         ignore_error: bool = False,
         flush_result: bool = False,
-        ppl_auto_log: bool = True,
+        predict_auto_log: bool = True,
         dataset_uris: t.Optional[t.List[str]] = None,
     ) -> None:
-        self.ppl_batch_size = ppl_batch_size
+        self.predict_batch_size = predict_batch_size
         self.svc = Service()
         self.context = Context.get_runtime_context()
 
@@ -48,7 +48,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.ignore_dataset_data = ignore_dataset_data
         self.ignore_error = ignore_error
         self.flush_result = flush_result
-        self.ppl_auto_log = ppl_auto_log
+        self.predict_auto_log = predict_auto_log
 
         _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
         _run_dir = (
@@ -84,15 +84,6 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self._timeline_writer.close()
 
-    @abstractmethod
-    def ppl(self, data: t.Any, **kw: t.Any) -> t.Any:
-        # TODO: how to handle each element is not equal.
-        raise NotImplementedError
-
-    @abstractmethod
-    def cmp(self, *args: t.Any, **kw: t.Any) -> t.Any:
-        raise NotImplementedError
-
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
@@ -113,15 +104,15 @@ class PipelineHandler(metaclass=ABCMeta):
         return _wrapper
 
     @_record_status  # type: ignore
-    def _starwhale_internal_run_cmp(self) -> None:
+    def _starwhale_internal_run_evaluate(self) -> None:
         now = now_str()
         try:
-            if self.ppl_auto_log:
-                self.cmp(self.evaluation_store.get_results(deserialize=True))
+            if self.predict_auto_log:
+                self._do_evaluate(self.evaluation_store.get_results(deserialize=True))
             else:
-                self.cmp()
+                self._do_evaluate()
         except Exception as e:
-            console.exception(f"cmp exception: {e}")
+            console.exception(f"evaluate exception: {e}")
             self._timeline_writer.write(
                 {"time": now, "status": False, "exception": str(e)}
             )
@@ -129,11 +120,39 @@ class PipelineHandler(metaclass=ABCMeta):
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
 
-    def _is_ppl_batch(self) -> bool:
-        return self.ppl_batch_size > 1
+    def _do_predict(self, *args: t.Any, **kw: t.Any) -> t.Any:
+        predict_func = getattr(self, "predict", None)
+        ppl_func = getattr(self, "ppl", None)
+
+        if predict_func and ppl_func:
+            raise ParameterError("predict and ppl cannot be defined at the same time")
+
+        if predict_func:
+            return predict_func(*args, **kw)
+        elif ppl_func:
+            return ppl_func(*args, **kw)
+        else:
+            raise ParameterError(
+                "predict or ppl must be defined, predict function is recommended"
+            )
+
+    def _do_evaluate(self, *args: t.Any, **kw: t.Any) -> t.Any:
+        evaluate_func = getattr(self, "evaluate", None)
+        cmp_func = getattr(self, "cmp", None)
+        if evaluate_func and cmp_func:
+            raise ParameterError("evaluate and cmp cannot be defined at the same time")
+
+        if evaluate_func:
+            return evaluate_func(*args, **kw)
+        elif cmp_func:
+            return cmp_func(*args, **kw)
+        else:
+            raise ParameterError(
+                "evaluate or cmp must be defined, evaluate function is recommended"
+            )
 
     @_record_status  # type: ignore
-    def _starwhale_internal_run_ppl(self) -> None:
+    def _starwhale_internal_run_predict(self) -> None:
         if not self.dataset_uris:
             raise FieldTypeOrValueError("context.dataset_uris is empty")
         join_str = "_#@#_"
@@ -146,13 +165,13 @@ class PipelineHandler(metaclass=ABCMeta):
             dataset_info = ds.info
             cnt = 0
             idx_prefix = f"{_uri.typ}-{_uri.name}-{_uri.version}"
-            for rows in ds.batch_iter(self.ppl_batch_size):
+            for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None
                 _results: t.Any = b""
                 try:
-                    if self._is_ppl_batch():
-                        _results = self.ppl(
+                    if self.predict_batch_size > 1:
+                        _results = self._do_predict(
                             [row.features for row in rows],
                             index=[row.index for row in rows],
                             index_with_dataset=[
@@ -162,7 +181,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         )
                     else:
                         _results = [
-                            self.ppl(
+                            self._do_predict(
                                 rows[0].features,
                                 index=rows[0].index,
                                 index_with_dataset=f"{idx_prefix}{join_str}{rows[0].index}",
@@ -198,7 +217,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         }
                     )
 
-                    if self.ppl_auto_log:
+                    if self.predict_auto_log:
                         if not self.ignore_dataset_data:
                             for artifact in TabularDatasetRow.artifacts_of(_features):
                                 if artifact.link:
@@ -213,7 +232,7 @@ class PipelineHandler(metaclass=ABCMeta):
                             serialize=True,
                         )
 
-        if self.flush_result and self.ppl_auto_log:
+        if self.flush_result and self.predict_auto_log:
             self.evaluation_store.flush_result()
 
         console.info(
@@ -446,9 +465,9 @@ def _register_predict(
         needs=needs,
         replicas=replicas,
         extra_kwargs=dict(
-            ppl_batch_size=batch_size,
+            predict_batch_size=batch_size,
             ignore_error=not fail_on_error,
-            ppl_auto_log=auto_log,
+            predict_auto_log=auto_log,
             ignore_dataset_data=not auto_log,
             dataset_uris=datasets,
         ),
@@ -514,6 +533,6 @@ def _register_evaluate(
         replicas=1,
         needs=needs,
         extra_kwargs=dict(
-            ppl_auto_log=use_predict_auto_log,
+            predict_auto_log=use_predict_auto_log,
         ),
     )(func)

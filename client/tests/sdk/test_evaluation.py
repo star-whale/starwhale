@@ -139,7 +139,7 @@ class TestModelPipelineHandler(TestCase):
         )
         Context.set_runtime_context(context)
         with SimpleHandler() as _handler:
-            _handler._starwhale_internal_run_cmp()
+            _handler._starwhale_internal_run_evaluate()
 
         status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
@@ -202,7 +202,7 @@ class TestModelPipelineHandler(TestCase):
         )
         Context.set_runtime_context(context)
         with SimpleHandler() as _handler:
-            _handler._starwhale_internal_run_ppl()
+            _handler._starwhale_internal_run_predict()
 
         m_eval_log.assert_called_once()
         status_file_path = os.path.join(_status_dir, "current")
@@ -300,7 +300,7 @@ class TestModelPipelineHandler(TestCase):
         Context.set_runtime_context(context)
         # mock
         with Dummy(flush_result=True) as _handler:
-            _handler._starwhale_internal_run_ppl()
+            _handler._starwhale_internal_run_predict()
 
         context = Context(
             workdir=Path(),
@@ -312,7 +312,7 @@ class TestModelPipelineHandler(TestCase):
         )
         Context.set_runtime_context(context)
         with Dummy() as _handler:
-            _handler._starwhale_internal_run_cmp()
+            _handler._starwhale_internal_run_evaluate()
 
 
 class TestEvaluationLogStore(BaseTestCase):

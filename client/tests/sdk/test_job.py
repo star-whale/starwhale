@@ -210,8 +210,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "dataset_uris": None,
                     "ignore_dataset_data": False,
                     "ignore_error": False,
-                    "ppl_auto_log": True,
-                    "ppl_batch_size": 1,
+                    "predict_auto_log": True,
+                    "predict_batch_size": 1,
                 },
                 "func_name": "img_predict_handler",
                 "module_name": "mock_user_module",
@@ -225,7 +225,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "cls_name": "",
                 "concurrency": 1,
                 "extra_args": [],
-                "extra_kwargs": {"ppl_auto_log": True},
+                "extra_kwargs": {"predict_auto_log": True},
                 "func_name": "img_evaluate_handler",
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:img_evaluate_handler",
@@ -245,8 +245,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "dataset_uris": None,
                     "ignore_dataset_data": False,
                     "ignore_error": False,
-                    "ppl_auto_log": True,
-                    "ppl_batch_size": 1,
+                    "predict_auto_log": True,
+                    "predict_batch_size": 1,
                 },
                 "func_name": "video_predict_handler",
                 "module_name": "mock_user_module",
@@ -260,7 +260,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "cls_name": "",
                 "concurrency": 1,
                 "extra_args": [],
-                "extra_kwargs": {"ppl_auto_log": True},
+                "extra_kwargs": {"predict_auto_log": True},
                 "func_name": "video_evaluate_handler",
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:video_evaluate_handler",
@@ -271,7 +271,9 @@ def video_evaluate_handler(*args, **kwargs): ...
             },
         ]
 
-    @patch("starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_ppl")
+    @patch(
+        "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_predict"
+    )
     def test_predict_deco_on_function(self, mock_ppl: MagicMock) -> None:
         content = """
 from starwhale import evaluation
@@ -302,8 +304,8 @@ def evaluate_handler(*args, **kwargs): ...
                         "dataset_uris": None,
                         "ignore_dataset_data": False,
                         "ignore_error": False,
-                        "ppl_auto_log": True,
-                        "ppl_batch_size": 1,
+                        "predict_auto_log": True,
+                        "predict_batch_size": 1,
                     },
                     "func_name": "predict_handler",
                     "module_name": "mock_user_module",
@@ -317,7 +319,7 @@ def evaluate_handler(*args, **kwargs): ...
                     "cls_name": "",
                     "concurrency": 1,
                     "extra_args": [],
-                    "extra_kwargs": {"ppl_auto_log": True},
+                    "extra_kwargs": {"predict_auto_log": True},
                     "func_name": "evaluate_handler",
                     "module_name": "mock_user_module",
                     "name": "mock_user_module:evaluate_handler",
@@ -336,8 +338,8 @@ def evaluate_handler(*args, **kwargs): ...
                         "dataset_uris": None,
                         "ignore_dataset_data": False,
                         "ignore_error": False,
-                        "ppl_auto_log": True,
-                        "ppl_batch_size": 1,
+                        "predict_auto_log": True,
+                        "predict_batch_size": 1,
                     },
                     "func_name": "predict_handler",
                     "module_name": "mock_user_module",
@@ -385,14 +387,39 @@ def evaluate_handler(*args, **kwargs): ...
         assert result.status == "success"
         assert mock_ppl.call_count == 1
 
-    @patch("starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_cmp")
+    @patch(
+        "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
+    )
+    def test_pipeline_handler_with_ppl_cmp(self, mock_cmp: MagicMock) -> None:
+        content = """
+from starwhale import PipelineHandler
+
+class MockPPLHandler(PipelineHandler):
+    def ppl(self, *args, **kwargs): ...
+    def cmp(self, *args, **kwargs): ...
+        """
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml(
+            [f"{self.module_name}:MockPPLHandler"], self.workdir, yaml_path
+        )
+        jobs_info = load_yaml(yaml_path)
+        assert "mock_user_module:MockPPLHandler.cmp" in jobs_info
+        assert "mock_user_module:MockPPLHandler.ppl" in jobs_info
+        assert jobs_info["mock_user_module:MockPPLHandler.cmp"][1]["needs"] == [
+            "mock_user_module:MockPPLHandler.ppl"
+        ]
+
+    @patch(
+        "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
+    )
     def test_pipeline_handler(self, mock_cmp: MagicMock) -> None:
         content = """
 from starwhale import PipelineHandler
 
 class MockHandler(PipelineHandler):
-    def ppl(self, *args, **kwargs): ...
-    def cmp(self, *args, **kwargs): ...
+    def predict(self, *args, **kwargs): ...
+    def evaluate(self, *args, **kwargs): ...
         """
 
         self._ensure_py_script(content)
@@ -403,50 +430,52 @@ class MockHandler(PipelineHandler):
 
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
-        assert jobs_info["mock_user_module:MockHandler.cmp"] == [
+        assert jobs_info["mock_user_module:MockHandler.evaluate"] == [
             {
                 "cls_name": "MockHandler",
                 "concurrency": 1,
                 "extra_args": [],
                 "extra_kwargs": {},
-                "func_name": "ppl",
+                "func_name": "predict",
                 "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.ppl",
+                "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
                 "replicas": 2,
                 "resources": [],
-                "show_name": "ppl",
+                "show_name": "predict",
             },
             {
                 "cls_name": "MockHandler",
                 "concurrency": 1,
                 "extra_args": [],
                 "extra_kwargs": {},
-                "func_name": "cmp",
+                "func_name": "evaluate",
                 "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.cmp",
-                "needs": ["mock_user_module:MockHandler.ppl"],
+                "name": "mock_user_module:MockHandler.evaluate",
+                "needs": ["mock_user_module:MockHandler.predict"],
                 "replicas": 1,
                 "resources": [],
-                "show_name": "cmp",
+                "show_name": "evaluate",
             },
         ]
-        assert jobs_info["mock_user_module:MockHandler.ppl"] == [
+        assert jobs_info["mock_user_module:MockHandler.predict"] == [
             {
                 "cls_name": "MockHandler",
                 "concurrency": 1,
                 "extra_args": [],
                 "extra_kwargs": {},
-                "func_name": "ppl",
+                "func_name": "predict",
                 "module_name": "mock_user_module",
-                "name": "mock_user_module:MockHandler.ppl",
+                "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
                 "replicas": 2,
                 "resources": [],
-                "show_name": "ppl",
+                "show_name": "predict",
             }
         ]
-        steps = Step.get_steps_from_yaml("mock_user_module:MockHandler.cmp", yaml_path)
+        steps = Step.get_steps_from_yaml(
+            "mock_user_module:MockHandler.evaluate", yaml_path
+        )
         context = Context(
             workdir=self.workdir,
             project="test",
@@ -459,8 +488,12 @@ class MockHandler(PipelineHandler):
         assert result.status == "success"
         assert mock_cmp.call_count == 1
 
-    @patch("starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_cmp")
-    @patch("starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_ppl")
+    @patch(
+        "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
+    )
+    @patch(
+        "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_predict"
+    )
     def test_predict_deco_on_cls_method(
         self, mock_ppl: MagicMock, mock_cmp: MagicMock
     ) -> None:
@@ -493,8 +526,8 @@ class MockHandler:
                     "dataset_uris": None,
                     "ignore_dataset_data": False,
                     "ignore_error": False,
-                    "ppl_auto_log": True,
-                    "ppl_batch_size": 1,
+                    "predict_auto_log": True,
+                    "predict_batch_size": 1,
                 },
                 "func_name": "predict_handler",
                 "module_name": "mock_user_module",
@@ -515,8 +548,8 @@ class MockHandler:
                     "dataset_uris": None,
                     "ignore_dataset_data": False,
                     "ignore_error": False,
-                    "ppl_auto_log": True,
-                    "ppl_batch_size": 1,
+                    "predict_auto_log": True,
+                    "predict_batch_size": 1,
                 },
                 "func_name": "predict_handler",
                 "module_name": "mock_user_module",
@@ -530,7 +563,7 @@ class MockHandler:
                 "cls_name": "MockHandler",
                 "concurrency": 1,
                 "extra_args": [],
-                "extra_kwargs": {"ppl_auto_log": True},
+                "extra_kwargs": {"predict_auto_log": True},
                 "func_name": "evaluate_handler",
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:MockHandler.evaluate_handler",

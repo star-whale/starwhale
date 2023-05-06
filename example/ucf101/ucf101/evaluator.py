@@ -193,7 +193,7 @@ def ppl_pre(videos: t.List[Video], sampler, transforms) -> torch.Tensor:
 
 class UCF101PipelineHandler(PipelineHandler):
     def __init__(self):
-        super().__init__(ignore_error=False, ppl_batch_size=5)
+        super().__init__(ignore_error=False, predict_batch_size=5)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = load_model(self.device)
         self.sampler = RandomSampling()

@@ -263,14 +263,15 @@ class Handler(ASDictMixin):
                     and issubclass(v, PipelineHandler)
                     and v != PipelineHandler
                 ):
-                    ppl_func = getattr(v, "ppl")
-                    cmp_func = getattr(v, "cmp")
-                    Handler.register(replicas=2, name="ppl")(ppl_func)
+                    # compatible with old version: ppl and cmp function are renamed to predict and evaluate
+                    predict_func = getattr(v, "predict", None) or getattr(v, "ppl")
+                    evaluate_func = getattr(v, "evaluate", None) or getattr(v, "cmp")
+                    Handler.register(replicas=2, name="predict")(predict_func)
                     Handler.register(
                         replicas=1,
-                        needs=[ppl_func],
-                        name="cmp",
-                    )(cmp_func)
+                        needs=[predict_func],
+                        name="evaluate",
+                    )(evaluate_func)
 
 
 def generate_jobs_yaml(

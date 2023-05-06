@@ -107,8 +107,8 @@ class JobTermView(BaseTermView):
 
         if "location" in _rt:
             console.rule("Process dirs")
-            console.print(f":cactus: ppl: {_rt['location']['ppl']}")
-            console.print(f":camel: cmp: {_rt['location']['cmp']}")
+            console.print(f":cactus: predict: {_rt['location']['predict']}")
+            console.print(f":camel: evaluate: {_rt['location']['evaluate']}")
 
         if "tasks" in _rt:
             self._print_tasks(_rt["tasks"][0])
