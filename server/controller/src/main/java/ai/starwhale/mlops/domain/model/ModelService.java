@@ -678,7 +678,7 @@ public class ModelService {
                 var runtime = metaInfo.getPackagedRuntime();
 
                 var runtimeRequest = new ClientRuntimeRequest();
-                runtimeRequest.setRuntime(runtime.getName());
+                runtimeRequest.setRuntime(runtime.getName() + ":" + runtime.getManifest().getVersion());
                 runtimeRequest.setProject(model.getProjectId().toString());
                 runtimeRequest.setForce("0");
                 var resourceOptional = metaInfo.getResources().stream()
