@@ -909,3 +909,17 @@ class MockCls:
             NoSupportError, "handler decorator no supports inner class method"
         ):
             generate_jobs_yaml([self.module_name], self.workdir, "not_found.yaml")
+
+    def test_needs_on_normal_function(self) -> None:
+        content = """
+from starwhale import handler
+
+def normal(): ...
+
+@handler(needs=[normal])
+def predict_handler(): ...
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        with self.assertRaisesRegex(RuntimeError, "dependency not found"):
+            generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
