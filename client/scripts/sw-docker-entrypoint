@@ -106,17 +106,17 @@ set_py_and_sw() {
 run() {
     echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} \
-            --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} \
-            --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} \
-            --runtime ${SW_RUNTIME_VERSION} || exit 1
+        runtime_args="--runtime ${SW_RUNTIME_VERSION}"
+
     else
-        swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} \
-            --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} \
-            --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} \
-            --forbid-packaged-runtime || exit 1
+        runtime_args="--forbid-packaged-runtime"
     fi
 
+    swcli ${VERBOSE} model run --handler=${HANDLER} --step=${STEP} \
+        --task-index=${TASK_INDEX} --override-task-num=${TASK_NUM} \
+        --uri ${SW_MODEL_VERSION} --version=${SW_JOB_VERSION} \
+        --forbid-snapshot \
+        ${runtime_args} || exit 1
 }
 
 serve() {

@@ -32,6 +32,7 @@ from starwhale.api.service import Service
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Handler
+from starwhale.core.job.store import JobStorage
 from starwhale.core.model.cli import _list as list_cli
 from starwhale.core.model.cli import _serve as serve_cli
 from starwhale.core.model.cli import _prepare_model_run_args
@@ -562,11 +563,13 @@ class StandaloneModelTestCase(TestCase):
             ),
         ]
         model_config = ModelConfig(name="test", run={"handlers": ["mock-module"]})
+        project = "test"
+        version = "qwertyuiop"
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project="test",
-            version="qwertyuiop",
+            project=project,
+            version=version,
             dataset_uris=["mnist/version/latest"],
             scheduler_run_args={
                 "step_name": "ppl",
@@ -577,27 +580,50 @@ class StandaloneModelTestCase(TestCase):
         single_step_mock.assert_not_called()
         single_task_mock.assert_called_once()
 
+        job_dir = JobStorage.local_run_dir(project, version)
+        job_manifest = load_yaml(job_dir / "_manifest.yaml")
+        model_src_dir = job_manifest["model_src_dir"]
+        assert model_src_dir != str(Path(self.workdir).resolve())
+        assert model_src_dir == str(job_dir / "snapshot")
+        assert not os.path.exists(model_src_dir)
+
+        version = "zxcvbnm"
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project="test",
-            version="qwertyuiop",
+            project=project,
+            version=version,
             dataset_uris=["mnist/version/latest"],
             scheduler_run_args={
                 "step_name": "ppl",
                 "task_index": -1,
             },
+            forbid_snapshot=True,
         )
         single_step_mock.assert_called_once()
+        job_dir = JobStorage.local_run_dir(project, version)
+        job_manifest = load_yaml(job_dir / "_manifest.yaml")
+        model_src_dir = job_manifest["model_src_dir"]
+        assert model_src_dir == str(Path(self.workdir).resolve())
+        assert model_src_dir != str(job_dir / "snapshot")
+        assert os.path.exists(model_src_dir)
 
+        version = "asdfghjkl"
         StandaloneModel.run(
             model_src_dir=Path(self.workdir),
             model_config=model_config,
-            project="test",
-            version="qwertyuiop",
+            project=project,
+            version=version,
             dataset_uris=["mnist/version/latest"],
+            cleanup_snapshot=False,
         )
         schedule_all_mock.assert_called_once()
+        job_dir = JobStorage.local_run_dir(project, version)
+        job_manifest = load_yaml(job_dir / "_manifest.yaml")
+        model_src_dir = job_manifest["model_src_dir"]
+        assert model_src_dir != str(Path(self.workdir).resolve())
+        assert model_src_dir == str(job_dir / "snapshot")
+        assert os.path.exists(model_src_dir)
 
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")

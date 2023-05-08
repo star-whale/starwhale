@@ -52,14 +52,16 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
+    copy_dir,
     move_dir,
     copy_file,
+    empty_dir,
     file_stat,
     ensure_dir,
     ensure_file,
     blake2b_file,
 )
-from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.type import URIType, BundleType, InstanceType, RunSubDirType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
@@ -316,17 +318,27 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         dataset_uris: t.Optional[t.List[str]] = None,
         scheduler_run_args: t.Optional[t.Dict[str, t.Any]] = None,
         external_info: t.Optional[t.Dict[str, t.Any]] = None,
+        forbid_snapshot: bool = False,
+        cleanup_snapshot: bool = True,
     ) -> None:
         external_info = external_info or {}
         dataset_uris = dataset_uris or []
         scheduler_run_args = scheduler_run_args or {}
         version = version or gen_uniq_version()
 
-        job_yaml_path = model_src_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
+        job_dir = JobStorage.local_run_dir(project, version)
+        if forbid_snapshot:
+            snapshot_dir = model_src_dir
+        else:
+            snapshot_dir = job_dir / RunSubDirType.SNAPSHOT
+            # TODO: tune performance for copy files, such as overlay
+            copy_dir(model_src_dir, snapshot_dir)
+
+        job_yaml_path = snapshot_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
         if not job_yaml_path.exists():
             generate_jobs_yaml(
                 search_modules=model_config.run.modules,
-                package_dir=model_src_dir,
+                package_dir=snapshot_dir,
                 yaml_path=job_yaml_path,
             )
 
@@ -336,7 +348,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         scheduler = Scheduler(
             project=project,
             version=version,
-            workdir=model_src_dir,
+            workdir=snapshot_dir,
             dataset_uris=dataset_uris,
             steps=Step.get_steps_from_yaml(run_handler, job_yaml_path),
         )
@@ -363,7 +375,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "scheduler_run_args": scheduler_run_args,
                 "version": version,
                 "project": project,
-                "model_src_dir": str(model_src_dir),
+                "model_src_dir": str(snapshot_dir),
                 "datasets": dataset_uris,
                 "status": scheduler_status,
                 "error_message": error_message,
@@ -371,9 +383,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 **external_info,
             }
 
-            _dir = JobStorage.local_run_dir(project, version)
             ensure_file(
-                _dir / DEFAULT_MANIFEST_NAME,
+                job_dir / DEFAULT_MANIFEST_NAME,
                 yaml.safe_dump(_manifest, default_flow_style=False),
                 parents=True,
             )
@@ -381,6 +392,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             console.print(
                 f":{100 if scheduler_status == RunStatus.SUCCESS else 'broken_heart'}: finish run, {scheduler_status}!"
             )
+
+            if not forbid_snapshot and cleanup_snapshot:
+                empty_dir(snapshot_dir, ignore_errors=True)
 
     def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         """

@@ -22,6 +22,7 @@ class RunSubDirType:
     DATASET = "dataset"
     STATUS = "status"
     RUNLOG = "runlog"
+    SNAPSHOT = "snapshot"
     LOG = "log"
     SWMP = "swmp"
     SWRT = "swrt"

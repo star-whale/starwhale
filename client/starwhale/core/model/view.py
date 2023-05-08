@@ -233,6 +233,8 @@ class ModelTermView(BaseTermView):
         dataset_uris: t.Optional[t.List[str]] = None,
         runtime_uri: t.Optional[URI] = None,
         scheduler_run_args: t.Optional[t.Dict] = None,
+        forbid_snapshot: bool = False,
+        cleanup_snapshot: bool = True,
     ) -> None:
         if runtime_uri:
             RuntimeProcess(uri=runtime_uri).run()
@@ -245,6 +247,8 @@ class ModelTermView(BaseTermView):
                 run_handler=run_handler,
                 dataset_uris=dataset_uris,
                 scheduler_run_args=scheduler_run_args,
+                forbid_snapshot=forbid_snapshot,
+                cleanup_snapshot=cleanup_snapshot,
             )
 
     @classmethod

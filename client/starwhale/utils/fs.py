@@ -240,6 +240,19 @@ def copy_file(src: Path, dest: Path) -> None:
     shutil.copyfile(str(src.absolute()), str(dest.absolute()))
 
 
+def copy_dir(src_dir: Path, dest_dir: Path) -> None:
+    if not src_dir.exists():
+        raise NotFoundError(src_dir)
+
+    if dest_dir.exists():
+        raise ExistedError(dest_dir)
+
+    for src in src_dir.rglob("*"):
+        if not src.is_file():
+            continue
+        copy_file(src, dest_dir / src.relative_to(src_dir))
+
+
 def is_within_dir(parent: t.Union[str, Path], child: t.Union[str, Path]) -> bool:
     parent = str(parent)
     child = str(child)
