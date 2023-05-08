@@ -23,7 +23,7 @@ export function RuntimeTreeSelector(props: any) {
     const runtimeInfo = useFetchRuntimeTree(projectId)
     const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return builtIn? [builtIn] : []
-        let mergedItems = builtIn ? [builtIn, ...runtimeInfo.data.filter(i => i.versions[0].id !== builtIn.versions[0].id)] : runtimeInfo.data
+        let mergedItems = builtIn ? [builtIn, ...runtimeInfo.data] : runtimeInfo.data
         const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
             return {
                 id: runtime.runtimeName,
