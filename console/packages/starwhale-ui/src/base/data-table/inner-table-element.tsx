@@ -79,15 +79,18 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                         columnIndex={columnIndex}
                         rowIndex={rowIndex}
                         data={data}
-                        // @ts-ignore
-                        style={gridRef._getItemStyle(rowIndex, columnIndex)}
+                        style={{
+                            // @ts-ignore
+                            ...gridRef._getItemStyle(rowIndex, columnIndex),
+                            width: ctx.widths[columnIndex],
+                        }}
                     />
                 )
             }
         })
 
         return cells
-    }, [$columns, data, props.children])
+    }, [$columns, data, props.children, ctx.widths])
 
     const $children = React.useMemo(() => {
         return props.children

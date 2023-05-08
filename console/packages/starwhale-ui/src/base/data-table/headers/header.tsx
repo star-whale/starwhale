@@ -73,6 +73,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {
+    width: number
     columnTitle: string
     hoverIndex: number
     index: number
@@ -128,7 +129,7 @@ function Header(props: HeaderProps) {
 
                 if (headerCellRef.current) {
                     const left = getPositionX(headerCellRef.current)
-                    const width = event.clientX - left
+                    let width = event.clientX - left
                     const max = Math.ceil(props.resizeMaxWidth)
                     const min = Math.ceil(props.resizeMinWidth)
 
@@ -136,21 +137,26 @@ function Header(props: HeaderProps) {
                         return
                     }
 
-                    let endResizePos = 0
                     if (width >= min && width <= max) {
-                        setEndResizePos(event.clientX - RULER_OFFSET)
-                        endResizePos = event.clientX - RULER_OFFSET
+                        width -= RULER_OFFSET
                     }
                     if (width < min) {
-                        setEndResizePos(left + min - RULER_OFFSET)
-                        endResizePos = left + min - RULER_OFFSET
+                        width = min
                     }
                     if (width > max) {
-                        setEndResizePos(left + max - RULER_OFFSET)
-                        endResizePos = left + max - RULER_OFFSET
+                        width = max
                     }
 
-                    props.onResize(props.index, endResizePos - startResizePos)
+                    props.onResize(props.index, width - startResizePos)
+                    setEndResizePos(width + left)
+
+                    console.log('startResizePos', {
+                        endResizePos,
+                        left,
+                        width,
+                        startResizePos,
+                        offset: width - startResizePos,
+                    })
                 }
             }
         }
@@ -161,7 +167,7 @@ function Header(props: HeaderProps) {
             setEndResizePos(0)
         }
 
-        const mousemove = _.throttle(handleMouseMove, 100)
+        const mousemove = _.throttle(handleMouseMove, 10)
         const mouseup = _.throttle(handleMouseUp, 200)
 
         if (isResizingThisColumn) {
@@ -234,9 +240,10 @@ function Header(props: HeaderProps) {
                     <div
                         role='presentation'
                         onMouseDown={(event) => {
+                            props.onResize(props.index, 0)
                             props.onResizeIndexChange(props.index)
                             const x = getPositionX(event.target)
-                            setStartResizePos(x)
+                            setStartResizePos(props.width)
                             setEndResizePos(x)
                         }}
                         className={css({

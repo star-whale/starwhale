@@ -137,12 +137,12 @@ export function DataTable({
 
     const [scrollLeft, setScrollLeft] = React.useState(0)
     const resetAfterColumnIndex = React.useCallback(
-        (columnIndex) => {
+        _.debounce((columnIndex) => {
             // console.log(gridRef, columnIndex)
             if (gridRef) {
                 gridRef.resetAfterColumnIndex?.(columnIndex, true)
             }
-        },
+        }, 10),
         [gridRef]
     )
     const handleWidthsChange = React.useCallback(

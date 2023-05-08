@@ -81,6 +81,7 @@ export default function Headers({ width }: { width: number }) {
                         }}
                     >
                         <Header
+                            width={ctx.widths[columnIndex]}
                             columnTitle={column.title}
                             hoverIndex={ctx.columnHighlightIndex}
                             index={columnIndex}
