@@ -69,6 +69,7 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -177,7 +178,8 @@ public class ModelServiceTest {
                 projectService,
                 jobHolder,
                 trashService,
-                jobSpecParser);
+                jobSpecParser,
+                mock(RuntimeService.class));
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {

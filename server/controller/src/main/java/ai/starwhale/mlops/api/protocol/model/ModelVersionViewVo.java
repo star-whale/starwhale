@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -38,6 +39,8 @@ public class ModelVersionViewVo {
     private Integer shared;
 
     private List<StepSpec> stepSpecs;
+
+    private RuntimeViewVo packagedRuntime;
 
     private Long createdTime;
 }

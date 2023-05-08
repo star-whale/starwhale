@@ -31,6 +31,30 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MetaInfo {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PackagedRuntime {
+        String name;
+        String path;
+        String hash;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Manifest {
+            @JsonProperty("base_image")
+            String baseImage;
+            String version;
+        }
+
+        Manifest manifest;
+    }
+
+    @JsonProperty("packaged_runtime")
+    PackagedRuntime packagedRuntime;
 
     @Data
     @NoArgsConstructor

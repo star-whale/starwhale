@@ -1,6 +1,7 @@
 import { IFileSchema } from '@/domain/base/schemas/file'
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
+import { IRuntimeTreeSchema } from '@runtime/schemas/runtime'
 
 export interface IModelVersionSchema extends IResourceSchema {
     name: string
@@ -12,6 +13,7 @@ export interface IModelVersionSchema extends IResourceSchema {
 }
 
 export interface IModelTreeVersionSchema extends IModelVersionSchema {
+    packagedRuntime?: IRuntimeTreeSchema
     versionName?: string
     createdTime?: number
 }

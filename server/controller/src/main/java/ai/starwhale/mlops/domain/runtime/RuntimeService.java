@@ -560,6 +560,7 @@ public class RuntimeService {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Not found.");
         }
 
+        // TODO: search image name in all records' built_image
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.",

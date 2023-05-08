@@ -18,6 +18,7 @@ import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector
 import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
+import {IRuntimeTreeSchema} from "@runtime/schemas/runtime";
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateJobFormSchema>()
 
@@ -101,6 +102,19 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         },
         [stepSpecOverWrites, form, t]
     )
+
+    const embedRuntime: IRuntimeTreeSchema | undefined = React.useMemo(() => {
+        if (!modelTree || !modelVersionId) return undefined
+        let version: IRuntimeTreeSchema | undefined
+        modelTree?.forEach((v) =>
+            v.versions.forEach((versionTmp) => {
+                if (versionTmp.id === modelVersionId && !!versionTmp.packagedRuntime) {
+                    version = versionTmp.packagedRuntime
+                }
+            })
+        )
+        return version
+    }, [modelTree, modelVersionId])
 
     const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!modelTree) return undefined
@@ -307,7 +321,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
                 <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
-                    <RuntimeTreeSelector projectId={projectId} />
+                    <RuntimeTreeSelector projectId={projectId} embed={embedRuntime} />
                 </FormItem>
             </div>
             <FormItem>
