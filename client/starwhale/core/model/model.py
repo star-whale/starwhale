@@ -320,6 +320,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         external_info: t.Optional[t.Dict[str, t.Any]] = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
+        force_generate_jobs_yaml: bool = False,
     ) -> None:
         external_info = external_info or {}
         dataset_uris = dataset_uris or []
@@ -335,7 +336,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             copy_dir(model_src_dir, snapshot_dir)
 
         job_yaml_path = snapshot_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
-        if not job_yaml_path.exists():
+        if not job_yaml_path.exists() or force_generate_jobs_yaml:
             generate_jobs_yaml(
                 search_modules=model_config.run.modules,
                 package_dir=snapshot_dir,

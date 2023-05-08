@@ -575,6 +575,7 @@ class StandaloneModelTestCase(TestCase):
                 "step_name": "ppl",
                 "task_index": 0,
             },
+            force_generate_jobs_yaml=True,
         )
         schedule_all_mock.assert_not_called()
         single_step_mock.assert_not_called()
