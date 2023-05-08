@@ -196,7 +196,7 @@ public class TableSchemaTest {
                 .setColumnIndex(this.schema.getColumnSchemaByName("list").getIndex())
                 .setElementType(Wal.ColumnSchema.newBuilder()
                         .setColumnType("INT32")
-                        .setColumnName("ele")
+                        .setColumnName("element")
                         .build());
         assertThat(diff, is(Wal.TableSchema.newBuilder().addColumns(newList).build()));
         var walMap = this.schema.getColumnSchemaList().stream()

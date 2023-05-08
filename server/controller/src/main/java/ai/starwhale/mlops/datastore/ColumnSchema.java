@@ -181,7 +181,10 @@ public class ColumnSchema {
         var type = ColumnType.valueOf(schema.getType());
         Wal.ColumnSchema.Builder ret = null;
         if (this.type != type) {
-            return new ColumnSchema(schema, this.index).toWal();
+            var cs =  new ColumnSchema(schema, this.index);
+            // update column name for list, tuple, map
+            cs.setName(this.name);
+            return cs.toWal();
         }
         switch (type) {
             case LIST:
