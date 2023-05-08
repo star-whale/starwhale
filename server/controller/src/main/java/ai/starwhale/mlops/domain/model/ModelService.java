@@ -426,9 +426,9 @@ public class ModelService {
                 var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
                 if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
                     var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
-                    var runtimeVersion = runtimeService.findRuntimeVersion(version);
+                    var runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
                     if (null == runtimeVersion && syncBuiltInRuntime(latest.getId())) {
-                        runtimeVersion = runtimeService.findRuntimeVersion(version);
+                        runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
                     }
                     if (null != runtimeVersion) {
                         modelVersion.setBuiltInRuntime(

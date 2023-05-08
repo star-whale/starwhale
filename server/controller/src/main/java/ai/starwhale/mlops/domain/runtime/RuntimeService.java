@@ -239,6 +239,11 @@ public class RuntimeService {
         return Runtime.fromEntity(entity);
     }
 
+    public RuntimeVersion findRuntimeVersionAllowNull(String versioUrl) {
+        RuntimeVersionEntity entity = runtimeDao.getRuntimeVersionAllowNull(versioUrl);
+        return RuntimeVersion.fromEntity(entity);
+    }
+
     public RuntimeVersion findRuntimeVersion(String versioUrl) {
         RuntimeVersionEntity entity = runtimeDao.getRuntimeVersion(versioUrl);
         return RuntimeVersion.fromEntity(entity);

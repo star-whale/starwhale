@@ -33,7 +33,7 @@ public class RuntimeVersion {
     private String versionTag;
 
     public static RuntimeVersion fromEntity(RuntimeVersionEntity entity) {
-        return RuntimeVersion.builder()
+        return entity == null ? null : RuntimeVersion.builder()
                 .id(entity.getId())
                 .runtimeId(entity.getRuntimeId())
                 .versionName(entity.getVersionName())
