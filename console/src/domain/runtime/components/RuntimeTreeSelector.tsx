@@ -19,11 +19,11 @@ const RuntimeTreeNode = themedStyled('div', () => ({
 
 export function RuntimeTreeSelector(props: any) {
     const [t] = useTranslation()
-    const { projectId, embed } = props
+    const { projectId, builtIn } = props
     const runtimeInfo = useFetchRuntimeTree(projectId)
     const $treeData = React.useMemo(() => {
-        if (!runtimeInfo.isSuccess) return embed? [embed] : []
-        let mergedItems = embed ? [embed, ...runtimeInfo.data] : runtimeInfo.data
+        if (!runtimeInfo.isSuccess) return builtIn? [builtIn] : []
+        let mergedItems = builtIn ? [builtIn, ...runtimeInfo.data.filter(i => i.versions[0].id !== builtIn.versions[0].id)] : runtimeInfo.data
         const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
             return {
                 id: runtime.runtimeName,

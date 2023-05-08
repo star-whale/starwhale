@@ -13,7 +13,7 @@ export interface IModelVersionSchema extends IResourceSchema {
 }
 
 export interface IModelTreeVersionSchema extends IModelVersionSchema {
-    packagedRuntime?: IRuntimeTreeSchema
+    builtInRuntime?: IRuntimeTreeSchema
     versionName?: string
     createdTime?: number
 }

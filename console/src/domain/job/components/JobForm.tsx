@@ -103,13 +103,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [stepSpecOverWrites, form, t]
     )
 
-    const embedRuntime: IRuntimeTreeSchema | undefined = React.useMemo(() => {
+    const builtInRuntime: IRuntimeTreeSchema | undefined = React.useMemo(() => {
         if (!modelTree || !modelVersionId) return undefined
         let version: IRuntimeTreeSchema | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
-                if (versionTmp.id === modelVersionId && !!versionTmp.packagedRuntime) {
-                    version = versionTmp.packagedRuntime
+                if (versionTmp.id === modelVersionId && !!versionTmp.builtInRuntime) {
+                    version = versionTmp.builtInRuntime
                 }
             })
         )
@@ -321,7 +321,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
                 <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
-                    <RuntimeTreeSelector projectId={projectId} embed={embedRuntime} />
+                    <RuntimeTreeSelector projectId={projectId} builtIn={builtInRuntime} />
                 </FormItem>
             </div>
             <FormItem>

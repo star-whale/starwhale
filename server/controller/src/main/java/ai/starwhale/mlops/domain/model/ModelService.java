@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.model;
 
+import static ai.starwhale.mlops.common.VersionAliasConverter.BUILTIN;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
@@ -426,12 +427,14 @@ public class ModelService {
                 if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
                     var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
                     var runtimeVersion = runtimeService.findRuntimeVersion(version);
-                    if (null == runtimeVersion && syncEmbedRuntime(latest.getId())) {
+                    if (null == runtimeVersion && syncBuiltInRuntime(latest.getId())) {
                         runtimeVersion = runtimeService.findRuntimeVersion(version);
                     }
                     if (null != runtimeVersion) {
-                        modelVersion.setPackagedRuntime(
+                        modelVersion.setBuiltInRuntime(
                                 RuntimeViewVo.builder()
+                                    .ownerName(entity.getUserName())
+                                    .projectName(entity.getProjectName())
                                     .runtimeId(runtimeVersion.getRuntimeId().toString())
                                     .runtimeName(metaInfo.getPackagedRuntime().getName())
                                     .shared(0)
@@ -439,7 +442,7 @@ public class ModelService {
                                         .id(runtimeVersion.getId().toString())
                                         .versionName(version)
                                         .shared(0)
-                                        .alias("embed")
+                                        .alias(BUILTIN)
                                         .build()))
                                     .build()
                         );
@@ -656,15 +659,15 @@ public class ModelService {
     }
 
     public void end(Long modelVersionId) {
-        syncEmbedRuntime(modelVersionId);
+        syncBuiltInRuntime(modelVersionId);
         modelVersionMapper.updateStatus(modelVersionId, ModelVersionEntity.STATUS_AVAILABLE);
     }
 
-    private boolean syncEmbedRuntime(Long modelVersionId) {
-        // check whether it have an embed runtime
+    private boolean syncBuiltInRuntime(Long modelVersionId) {
+        // check whether it have a built-in runtime
         ModelVersionEntity modelVersionEntity = modelDao.getModelVersion(modelVersionId.toString());
         if (modelVersionEntity == null) {
-            log.warn("embed runtime upload error, no model version found");
+            log.warn("built-in runtime upload error, no model version found");
             return false;
         }
         try {
@@ -703,11 +706,11 @@ public class ModelService {
                         new CustomMultipartFile(fileName, storageAccessService.get(filePath)), runtimeRequest);
                     return true;
                 } else {
-                    log.warn("embed runtime upload error, no path found");
+                    log.warn("built-in runtime upload error, no path found");
                 }
             }
         } catch (Exception e) {
-            log.warn("sync embed runtime error for model version:{},error:{}", modelVersionEntity.getId(), e);
+            log.warn("sync built-in runtime error for model version:{},error:{}", modelVersionEntity.getId(), e);
         }
         return false;
     }

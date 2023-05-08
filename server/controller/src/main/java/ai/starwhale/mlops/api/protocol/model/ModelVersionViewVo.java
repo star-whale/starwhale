@@ -40,7 +40,7 @@ public class ModelVersionViewVo {
 
     private List<StepSpec> stepSpecs;
 
-    private RuntimeViewVo packagedRuntime;
+    private RuntimeViewVo builtInRuntime;
 
     private Long createdTime;
 }
