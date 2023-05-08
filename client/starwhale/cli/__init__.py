@@ -2,7 +2,6 @@ import time
 import random
 
 import click
-from rich.traceback import install
 
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.cli import AliasedGroup
@@ -61,4 +60,3 @@ cli = create_sw_cli()
 
 if __name__ == "__main__":
     cli()
-    install(width=10)
