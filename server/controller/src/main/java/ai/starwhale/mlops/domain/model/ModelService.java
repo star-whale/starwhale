@@ -259,8 +259,8 @@ public class ModelService {
                 "Unable to find the compare version of model "), HttpStatus.BAD_REQUEST);
         }
         try {
-            var baseFiles = parseManifestFiles(getManifest(baseModel));
-            var compareFiles = parseManifestFiles(getManifest(compareModel));
+            var baseFiles = parseManifestFiles(getManifest(baseModel.getStoragePath()));
+            var compareFiles = parseManifestFiles(getManifest(compareModel.getStoragePath()));
             FileNode.compare(baseFiles, compareFiles);
             return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
         } catch (JsonProcessingException e) {
@@ -303,7 +303,7 @@ public class ModelService {
         try {
             // Get file list from manifest
             // TODO read from datastore
-            var manifest = getManifest(version);
+            var manifest = getManifest(version.getStoragePath());
 
             return ModelInfoVo.builder()
                     .id(idConvertor.convert(model.getId()))
@@ -372,7 +372,7 @@ public class ModelService {
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity));
+            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity.getStoragePath()));
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
                 //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
                 vo.setAlias(VersionAliasConverter.LATEST);
@@ -422,12 +422,12 @@ public class ModelService {
                         .shared(toInt(entity.getShared()))
                         .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                         .build();
-                String manifest = getManifest(latest);
+                String manifest = getManifest(entity.getStoragePath());
                 var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
                 if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
                     var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
                     var runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
-                    if (null == runtimeVersion && syncBuiltInRuntime(latest.getId())) {
+                    if (null == runtimeVersion && syncBuiltInRuntime(entity.getId())) {
                         runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
                     }
                     if (null != runtimeVersion) {
@@ -672,7 +672,7 @@ public class ModelService {
         }
         try {
             var model = modelDao.getModel(modelVersionEntity.getModelId());
-            String manifest = getManifest(modelVersionEntity);
+            String manifest = getManifest(modelVersionEntity.getStoragePath());
             var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
             if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
                 var runtime = metaInfo.getPackagedRuntime();
@@ -736,7 +736,7 @@ public class ModelService {
                 "at least one of name or path is not null when download");
         }
 
-        String manifest = getManifest(modelVersionEntity);
+        String manifest = getManifest(modelVersionEntity.getStoragePath());
         // read from manifest
         try {
             var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
@@ -798,8 +798,8 @@ public class ModelService {
 
     }
 
-    private String getManifest(ModelVersionEntity modelVersionEntity) {
-        var p = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), MODEL_MANIFEST);
+    private String getManifest(String storagePath) {
+        var p = String.format(FORMATTER_STORAGE_PATH, storagePath, MODEL_MANIFEST);
         try (var is = storageAccessService.get(p)) {
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (IOException e) {

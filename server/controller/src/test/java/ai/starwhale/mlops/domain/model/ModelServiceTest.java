@@ -70,6 +70,7 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -119,6 +120,8 @@ public class ModelServiceTest {
     private TrashService trashService;
     private JobSpecParser jobSpecParser;
 
+    private RuntimeService runtimeService;
+
     @SneakyThrows
     @BeforeEach
     public void setUp() {
@@ -162,6 +165,7 @@ public class ModelServiceTest {
         jobHolder = mock(HotJobHolder.class);
         trashService = mock(TrashService.class);
         jobSpecParser = mock(JobSpecParser.class);
+        runtimeService = mock(RuntimeService.class);
 
         service = new ModelService(
                 modelMapper,
@@ -179,7 +183,7 @@ public class ModelServiceTest {
                 jobHolder,
                 trashService,
                 jobSpecParser,
-                mock(RuntimeService.class));
+                runtimeService);
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -672,7 +676,7 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testListModelVersionView() {
+    public void testListModelVersionView() throws IOException {
         given(modelVersionMapper.findByLatest(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(5L).build());
         given(modelVersionMapper.findByLatest(same(3L)))
@@ -680,26 +684,61 @@ public class ModelServiceTest {
         given(modelVersionMapper.listModelVersionViewByProject(same(1L)))
                 .willReturn(List.of(
                     ModelVersionViewEntity.builder().id(5L).modelId(1L).versionOrder(4L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(4L).modelId(1L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(3L).modelId(1L).versionOrder(3L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(2L).modelId(3L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").build(),
+                        .userName("sw").shared(false).modelName("model3").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(1L).modelId(3L).versionOrder(1L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").build()
+                        .userName("sw").shared(false).modelName("model3").storagePath("any").build()
                 ));
 
         given(modelVersionMapper.listModelVersionViewByShared(same(1L)))
                 .willReturn(List.of(
                     ModelVersionViewEntity.builder().id(8L).modelId(2L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").build(),
+                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(7L).modelId(2L).versionOrder(2L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").build(),
+                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(6L).modelId(4L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model4").build()
+                        .userName("sw2").shared(true).modelName("model4").storagePath("any").build()
                 ));
+        var manifest = "build:\n"
+                + "  os: Linux\n"
+                + "  sw_version: 0.0.0.dev0\n"
+                + "created_at: 2023-05-06 16:03:46 CST\n"
+                + "packaged_runtime:\n"
+                + "  hash: 123456\n"
+                + "  manifest:\n"
+                + "    artifacts:\n"
+                + "      dependencies:\n"
+                + "      - dependencies/requirements-sw-lock.txt\n"
+                + "      files: []\n"
+                + "      runtime_yaml: runtime.yaml\n"
+                + "      wheels: []\n"
+                + "    base_image: 10.131.0.1:8083/mh7-starwhale:latest\n"
+                + "    version: jbliltwdzcgfpaupig6y7nxd32hjhp662wx6rlkd\n"
+                + "  name: simple-test\n"
+                + "  path: src/.starwhale/runtime/packaged.swrt\n"
+                + "resources:\n"
+                + "- arcname: .starwhale/runtime/packaged.swrt\n"
+                + "  desc: MODEL\n"
+                + "  duplicate_check: true\n"
+                + "  name: packaged.swrt\n"
+                + "  path: src/.starwhale/runtime/packaged.swrt\n"
+                + "  signature: 123456\n"
+                + "  size: 20480";
+        var runtimeVersion = "jbliltwdzcgfpaupig6y7nxd32hjhp662wx6rlkd";
+        given(storageAccessService.get(any())).willAnswer((Answer<LengthAbleInputStream>) invocation ->
+                new LengthAbleInputStream(new ByteArrayInputStream(manifest.getBytes(StandardCharsets.UTF_8)), 0));
+
+        given(runtimeService.findRuntimeVersionAllowNull(runtimeVersion))
+                .willReturn(RuntimeVersion.builder()
+                    .id(1L)
+                    .runtimeId(1L)
+                    .versionName(runtimeVersion)
+                    .build());
 
         var res = service.listModelVersionView("1");
         assertEquals(4, res.size());
@@ -715,5 +754,13 @@ public class ModelServiceTest {
         assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+
+        verify(storageAccessService, times(8)).get(any());
+        verify(runtimeService, times(8)).findRuntimeVersionAllowNull(anyString());
+        res.forEach(modelViewVo -> {
+            modelViewVo.getVersions().forEach(modelVersionViewVo -> {
+                assertThat("have not built-in runtime", modelVersionViewVo.getBuiltInRuntime() != null);
+            });
+        });
     }
 }
