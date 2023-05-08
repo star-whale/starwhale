@@ -28,6 +28,7 @@ from starwhale.consts import (
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file, blake2b_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.api.service import Service
+from starwhale.utils.error import ExistedError, NotFoundError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Handler
 from starwhale.core.job.store import JobStorage
@@ -47,6 +48,7 @@ from starwhale.base.scheduler.step import Step
 from starwhale.core.runtime.process import Process
 from starwhale.base.uricomponents.project import Project
 from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uricomponents.exceptions import NoMatchException
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -551,6 +553,37 @@ class StandaloneModelTestCase(TestCase):
             diff_info["compare_version"]["src/runtime.yaml"].flag == FileFlag.UNCHANGED
         )
         assert diff_info["compare_version"]["src/model.yaml"].flag == FileFlag.UNCHANGED
+
+    def test_extract(self) -> None:
+        target = Path("/home/workdir/target_no_exist")
+
+        with self.assertRaisesRegex(NoMatchException, "Can not find the exact match"):
+            ModelTermView("not-found/version/dummy").extract(force=False, target=target)
+
+        bundle_path = (
+            self.sw.rootdir
+            / "self"
+            / ResourceType.model.value
+            / self.name
+            / "12"
+            / "1234.swmp"
+        )
+        ensure_dir(bundle_path)
+        uri = Resource("mnist/version/1234", typ=ResourceType.model)
+        with self.assertRaises(NotFoundError):
+            ModelTermView(uri).extract(force=False, target=target)
+
+        ensure_file(bundle_path / "src" / "model.yaml", "test", parents=True)
+        ensure_file(bundle_path / "src" / "inner" / "svc.yaml", "test", parents=True)
+        ModelTermView(uri).extract(force=False, target=target)
+
+        assert (target / "model.yaml").read_text() == "test"
+
+        with self.assertRaises(ExistedError):
+            ModelTermView(uri).extract(force=False, target=target)
+
+        ModelTermView(uri).extract(force=True, target=target)
+        assert (target / "model.yaml").read_text() == "test"
 
     @patch("starwhale.base.scheduler.Step.get_steps_from_yaml")
     @patch("starwhale.core.model.model.generate_jobs_yaml")

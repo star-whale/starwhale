@@ -130,6 +130,10 @@ class ModelTermView(BaseTermView):
             console.print(handlers_content)
 
     @BaseTermView._only_standalone
+    def extract(self, target: Path, force: bool = False) -> None:
+        self.model.extract(target=target, force=force)
+
+    @BaseTermView._only_standalone
     def diff(self, compare_uri: Resource, show_details: bool) -> None:
         r = self.model.diff(compare_uri)
         text_details: t.List[Panel] = []

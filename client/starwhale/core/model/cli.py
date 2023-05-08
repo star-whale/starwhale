@@ -119,6 +119,29 @@ def _build(
     )
 
 
+@model_cmd.command("extract")
+@click.argument("model")
+@click.argument("target_dir", default=".")
+@click.option("-f", "--force", is_flag=True, help="Force to extract model package")
+def _extract(model: str, target_dir: str, force: bool) -> None:
+    """Extract model package to target directory.
+
+    MODEL: model uri with version.
+
+    TARGET_DIR: target directory to extract model package.
+
+    Example:
+
+        \b
+        - extract mnist model package to current directory
+            swcli model extract mnist/version/xxxx .
+
+        - extract mnist model package to current directory and force to overwrite the files
+            swcli model extract mnist/version/xxxx . -f
+    """
+    ModelTermView(model).extract(target=Path(target_dir), force=force)
+
+
 @model_cmd.command("tag", help="Model Tag Management, add or remove")
 @click.argument("model")
 @click.argument("tags", nargs=-1)

@@ -308,6 +308,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         svc.hijack = hijack
         return svc
 
+    def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
+        target = Path(target)
+        console.print(f":package: Extracting model({self.uri}) ...")
+        copy_dir(src_dir=self.store.src_dir, dest_dir=target, force=force)
+        console.print(f":clap: Model extracted to {target}")
+        return target
+
     @classmethod
     def run(
         cls,
