@@ -221,6 +221,8 @@ class Resource:
 
     def refine_local_rc_info(self) -> None:
         root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
+        if self.version == "":
+            self.version = "latest"
         if self.version == "latest" or (
             self.version.startswith("v") and self.version[1:].isnumeric()
         ):
