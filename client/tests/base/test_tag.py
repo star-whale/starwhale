@@ -4,37 +4,39 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType
-from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class StandaloneTagTestCase(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
-    def test_tag_instance(self) -> None:
-        self.assertRaises(
-            NoSupportError, StandaloneTag, URI("http://1.1.1.1:8.8.8.8/project/self")
-        )
-
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch(
         "starwhale.utils.config.SWCliConfigMixed._current_instance_obj",
         new_callable=PropertyMock,
     )
-    def test_tag_workflow(self, mock_ins: MagicMock) -> None:
+    def test_tag_workflow(self, mock_ins: MagicMock, mock_conf: MagicMock) -> None:
         mock_ins.return_value = {
             "type": "standalone",
             "uri": "local",
             "current_project": "foo",
         }
+        mock_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "foo"},
+            },
+            "storage": {"root": "/root"},
+        }
         sw = SWCliConfigMixed()
 
         st = StandaloneTag(
-            URI(
+            Resource(
                 "mnist/version/me3dmn3gg4ytanrtmftdgyjzpbrgimi",
-                expected_type=URIType.MODEL,
+                typ=ResourceType.model,
+                _skip_refine=True,
             )
         )
 
@@ -68,9 +70,10 @@ class StandaloneTagTestCase(TestCase):
         assert not _manifest["versions"][_version].get("latest")
 
         st = StandaloneTag(
-            URI(
+            Resource(
                 "mnist/version/gnstmntggi4tinrtmftdgyjzo5wwy2y",
-                expected_type=URIType.MODEL,
+                typ=ResourceType.model,
+                _skip_refine=True,
             )
         )
         st.add(["latest", "test2", "test"])
@@ -93,9 +96,8 @@ class StandaloneTagTestCase(TestCase):
         mock_ins.return_value = {"type": "standalone", "uri": "local"}
         version = "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
         st = StandaloneTag(
-            URI(
-                f"mnist/version/{version}",
-                expected_type=URIType.MODEL,
+            Resource(
+                f"mnist/version/{version}", typ=ResourceType.model, _skip_refine=True
             )
         )
         assert st._get_manifest()["fast_tag_seq"] == -1

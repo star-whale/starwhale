@@ -11,17 +11,16 @@ from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale import (
-    URI,
     Image,
     Context,
     dataset,
     handler,
-    URIType,
     evaluation,
     pass_context,
     multi_classification,
 )
 from starwhale.api.service import api
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Net
 
@@ -40,7 +39,7 @@ class CustomPipelineHandler:
         print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
 
         for uri_str in context.dataset_uris:
-            _uri = URI(uri_str, expected_type=URIType.DATASET)
+            _uri = Resource(uri_str, typ=ResourceType.dataset)
             ds = dataset(_uri)
             ds.make_distributed_consumption(session_id=context.version)
             for rows in ds.batch_iter(self.batch_size):
@@ -50,7 +49,7 @@ class CustomPipelineHandler:
                     pred_value,
                     probability_matrix,
                 ) in zip(rows, pred_values, probability_matrixs):
-                    _unique_id = f"{_uri.object}_{_idx}"
+                    _unique_id = f"{_uri.version}_{_idx}"
 
                     evaluation.log(
                         category="results",

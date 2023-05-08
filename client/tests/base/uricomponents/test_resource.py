@@ -1,4 +1,3 @@
-from typing import Optional
 from dataclasses import dataclass
 from unittest.mock import Mock, patch, MagicMock
 
@@ -26,34 +25,48 @@ class TestResource(TestCase):
         p.instance = MockLocalInstance()
         p.name = "self"
         p.path = ""
-        r = Resource(uri="mnist", typ=ResourceType.dataset, project=p)
+        r = Resource(
+            uri="mnist", typ=ResourceType.dataset, project=p, _skip_refine=True
+        )
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
-        assert r.version is None
+        assert r.version == ""
         assert r.to_uri().raw == "local/project/self/dataset/mnist/version/latest"
 
         # {name}/version/{ver}
-        r = Resource(uri="mnist/version/foo", typ=ResourceType.dataset, project=p)
+        r = Resource(
+            uri="mnist/version/foo",
+            typ=ResourceType.dataset,
+            project=p,
+            _skip_refine=True,
+        )
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
         assert r.version == "foo"
         assert r.to_uri().raw == "local/project/self/dataset/mnist/version/foo"
 
-        r = Resource(uri="foo/bar", typ=ResourceType.dataset, project=p)
+        r = Resource(
+            uri="foo/bar", typ=ResourceType.dataset, project=p, _skip_refine=True
+        )
         assert r.name == "foo"
         assert r.typ == ResourceType.dataset
         assert r.version == "bar"
         assert r.to_uri().raw == "local/project/self/dataset/foo/version/bar"
 
         with self.assertRaises(Exception):
-            Resource(uri="mnist/foo/bar", typ=ResourceType.dataset, project=p)
+            Resource(
+                uri="mnist/foo/bar",
+                typ=ResourceType.dataset,
+                project=p,
+                _skip_refine=True,
+            )
 
     @patch("starwhale.base.uricomponents.resource.Project.parse_from_full_uri")
     def test_with_full_uri(self, mock_parse: MagicMock) -> None:
         ins = mock_parse.return_value
         ins.path = "dataset/mnist/version/foo"
         uri = "local/project/self/dataset/mnist/version/foo"
-        r = Resource(uri)
+        r = Resource(uri, _skip_refine=True)
         assert r.name == "mnist"
         assert r.version == "foo"
         assert r.typ == ResourceType.dataset
@@ -69,9 +82,9 @@ class TestResource(TestCase):
             "storage": {"root": "/root"},
         }
         uri = "local/project/self/dataset/mnist"
-        r = Resource(uri)
+        r = Resource(uri, _skip_refine=True)
         assert r.name == "mnist"
-        assert r.version is None
+        assert r.version == ""
         assert r.typ == ResourceType.dataset
 
     @patch("starwhale.base.uricomponents.resource.glob")
@@ -125,8 +138,8 @@ class TestResource(TestCase):
             instance: str
             project: str
             typ: ResourceType
-            name: Optional[str] = None
-            version: Optional[str] = None
+            name: str = ""
+            version: str = ""
 
             def __eq__(self, other: Resource):
                 return (
@@ -200,7 +213,7 @@ class TestResource(TestCase):
         }
 
         for uri, expect in tests.items():
-            p = Resource(uri, typ=ResourceType.runtime)
+            p = Resource(uri, typ=ResourceType.runtime, _skip_refine=True)
             assert p.name == expect[0]
             assert p.project.name == expect[1]
             assert p.instance.alias == expect[2]

@@ -49,7 +49,6 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
     empty_dir,
@@ -111,6 +110,8 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.uricomponents.project import Project as ProjectURI
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .store import RuntimeStorage
 
@@ -625,18 +626,18 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         StandaloneRuntime.restore(workdir, isolated_env_dir)
 
     @classmethod
-    def get_runtime(cls, uri: URI) -> Runtime:
+    def get_runtime(cls, uri: Resource) -> Runtime:
         _cls = cls._get_cls(uri)
         return _cls(uri)
 
     @classmethod
     def _get_cls(  # type: ignore
         cls,
-        uri: URI,
+        uri: Resource,
     ) -> t.Union[t.Type[StandaloneRuntime], t.Type[CloudRuntime]]:
-        if uri.instance_type == InstanceType.STANDALONE:
+        if uri.instance.is_local:
             return StandaloneRuntime
-        elif uri.instance_type == InstanceType.CLOUD:
+        elif uri.instance.is_cloud:
             return CloudRuntime
         else:
             raise NoSupportError(f"runtime uri:{uri}")
@@ -647,7 +648,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def copy(
         cls,
-        src_uri: str,
+        src_uri: Resource,
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
@@ -662,7 +663,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         bc.do()
 
     @classmethod
-    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+    def activate(cls, uri: Resource, force_restore: bool = False) -> None:
         StandaloneRuntime.activate(uri, force_restore)
 
     @classmethod
@@ -739,13 +740,13 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
 
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = RuntimeStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}
-        self._version = uri.object.version
+        self._version = uri.version
         self._detected_sw_version: str = ""
 
     def info(self) -> t.Dict[str, t.Any]:
@@ -754,14 +755,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             return ret
 
         ret["basic"] = {
-            "name": self.uri.object.name,
-            "uri": self.uri.full_uri,
-            "project": self.uri.project,
+            "name": self.uri.name,
+            "uri": str(self.uri),
+            "project": self.uri.project.name,
             "snapshot_workdir": str(self.store.snapshot_workdir),
             "bundle_path": str(self.store.bundle_path),
-            "version": self.uri.object.version,
+            "version": self.uri.version,
             "tags": StandaloneTag(self.uri).list(),
         }
+
+        ret["basic"]["version"] = self.uri.version
+        ret["basic"]["tags"] = StandaloneTag(self.uri).list()
 
         if self.store.snapshot_workdir.exists():
             ret["manifest"] = self.store.manifest
@@ -803,9 +807,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support short version to recover, today only support full-version
-        dest_path = (
-            self.store.bundle_dir / f"{self.uri.object.version}{BundleType.RUNTIME}"
-        )
+        dest_path = self.store.bundle_dir / f"{self.uri.version}{BundleType.RUNTIME}"
         _ok, _reason = move_dir(self.store.recover_loc, dest_path, force)
         _ok2, _reason2 = True, ""
         if self.store.recover_snapshot_workdir.exists():
@@ -1234,7 +1236,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def list(
         cls,
-        project_uri: URI,
+        project_uri: ProjectURI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
@@ -1269,20 +1271,20 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         cls,
         workdir: t.Union[Path, str],
         name: str,
-        uri: URI,
+        uri: Resource,
         force: bool = False,
         disable_restore: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
         ensure_dir(workdir)
 
-        if uri.instance_type == InstanceType.CLOUD:
+        if uri.instance.is_cloud:
             console.print(f":cloud: copy runtime from {uri} to local")
             _dest_project_uri = f"{STANDALONE_INSTANCE}/project/{DEFAULT_PROJECT}"
-            cls.copy(uri.full_uri, _dest_project_uri, force=force)
-            uri = URI(
-                f"{_dest_project_uri}/runtime/{uri.object.name}/version/{uri.object.version}",
-                expected_type=URIType.RUNTIME,
+            cls.copy(uri, _dest_project_uri, force=force)
+            uri = Resource(
+                f"{_dest_project_uri}/runtime/{uri.name}/version/{uri.version}",
+                typ=ResourceType.runtime,
             )
 
         sw_auto_d = workdir / SW_AUTO_DIRNAME
@@ -1402,8 +1404,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
 
     @classmethod
-    def activate(cls, uri: URI, force_restore: bool = False) -> None:
-        if uri.instance_type != InstanceType.STANDALONE:
+    def activate(cls, uri: Resource, force_restore: bool = False) -> None:
+        if not uri.instance.is_local:
             raise NoSupportError(f"{uri} is not the standalone instance")
 
         _rt = StandaloneRuntime(uri)
@@ -1656,7 +1658,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             _pip = _manifest["configs"].get("pip", {})
             _out = _template.render(
                 base_image=_manifest["base_image"],
-                runtime_name=self.uri.object.name,
+                runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
                 pypi_index_url=_pip.get("index_url", ""),
                 pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
@@ -1956,7 +1958,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
 
 class CloudRuntime(CloudBundleModelMixin, Runtime):
-    def __init__(self, uri: URI) -> None:
+    def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
 
@@ -1964,7 +1966,7 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
     @ignore_error(({}, {}))
     def list(
         cls,
-        project_uri: URI,
+        project_uri: ProjectURI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filter_dict: t.Optional[t.Dict[str, t.Any]] = None,

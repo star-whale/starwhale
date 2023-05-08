@@ -12,16 +12,16 @@ import jsonlines
 
 from starwhale.utils import console, now_str
 from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
-from starwhale.base.type import URIType, RunSubDirType
+from starwhale.base.type import RunSubDirType
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
@@ -140,11 +140,12 @@ class PipelineHandler(metaclass=ABCMeta):
         cnt = 0
         # TODO: user custom config batch size, max_retries
         for uri_str in self.dataset_uris:
-            _uri = URI(uri_str, expected_type=URIType.DATASET)
+            _uri = Resource(uri_str, typ=ResourceType.dataset)
             ds = Dataset.dataset(_uri, readonly=True)
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
+            idx_prefix = f"{_uri.typ}-{_uri.name}-{_uri.version}"
             for rows in ds.batch_iter(self.ppl_batch_size):
                 _start = time.time()
                 _exception = None
@@ -155,7 +156,7 @@ class PipelineHandler(metaclass=ABCMeta):
                             [row.features for row in rows],
                             index=[row.index for row in rows],
                             index_with_dataset=[
-                                f"{_uri.object}{join_str}{row.index}" for row in rows
+                                f"{idx_prefix}{join_str}{row.index}" for row in rows
                             ],
                             dataset_info=dataset_info,
                         )
@@ -164,7 +165,7 @@ class PipelineHandler(metaclass=ABCMeta):
                             self.ppl(
                                 rows[0].features,
                                 index=rows[0].index,
-                                index_with_dataset=f"{_uri.object}{join_str}{rows[0].index}",
+                                index_with_dataset=f"{idx_prefix}{join_str}{rows[0].index}",
                                 dataset_info=dataset_info,
                             )
                         ]
@@ -181,7 +182,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
                 for (_idx, _features), _result in zip(rows, _results):
                     cnt += 1
-                    _idx_with_ds = f"{_uri.object}{join_str}{_idx}"
+                    _idx_with_ds = f"{idx_prefix}{join_str}{_idx}"
 
                     console.debug(
                         f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"

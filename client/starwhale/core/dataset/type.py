@@ -15,7 +15,6 @@ import numpy
 
 from starwhale.utils import load_yaml, convert_to_bytes, validate_obj_name
 from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_STARWHALE_API_VERSION
-from starwhale.base.uri import URI
 from starwhale.utils.fs import FilePosition
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import (
@@ -25,6 +24,7 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
+from starwhale.base.uricomponents.resource import Resource
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 128  # for page cache
@@ -218,7 +218,7 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         self.encoding = encoding
         self.link = link
         self._do_validate()
-        self.owner: t.Optional[t.Union[str, URI]] = None
+        self.owner: t.Optional[Resource] = None
 
     def _do_validate(self) -> None:
         ...
@@ -818,11 +818,11 @@ class Link(ASDictMixin, SwObject):
         size: int = -1,
         data_type: t.Optional[t.Union[BaseArtifact, t.Dict]] = None,
         use_plain_type: bool = False,
-        owner: t.Optional[t.Union[str, URI]] = None,
+        owner: t.Optional[Resource] = None,
         **kwargs: t.Any,
     ) -> None:
         self._type = "link"
-        self.owner = owner.raw if (owner and isinstance(owner, URI)) else owner
+        self.owner = owner
         self.uri = str(uri).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
@@ -941,11 +941,11 @@ class DatasetConfig(ASDictMixin):
         self,
         name: str = "",
         handler: t.Any = "",
-        pkg_data: t.List[str] = [],
-        exclude_pkg_data: t.List[str] = [],
+        pkg_data: t.List[str] | None = None,
+        exclude_pkg_data: t.List[str] | None = None,
         desc: str = "",
         version: str = DEFAULT_STARWHALE_API_VERSION,
-        attr: t.Dict[str, t.Any] = {},
+        attr: t.Dict[str, t.Any] | None = None,
         project_uri: str = "",
         runtime_uri: str = "",
         **kw: t.Any,
@@ -954,9 +954,9 @@ class DatasetConfig(ASDictMixin):
         self.handler = handler
         self.desc = desc
         self.version = version
-        self.attr = DatasetAttr(**attr)
-        self.pkg_data = pkg_data
-        self.exclude_pkg_data = exclude_pkg_data
+        self.attr = DatasetAttr(**(attr or {}))
+        self.pkg_data = pkg_data or []
+        self.exclude_pkg_data = exclude_pkg_data or []
         self.project_uri = project_uri
         self.runtime_uri = runtime_uri
 

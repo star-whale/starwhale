@@ -22,26 +22,27 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import cmp_file_content
-from starwhale.base.type import URIType, InstanceType
+from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Model, CloudModel, ModelConfig, ModelInfoFilter, StandaloneModel
 
 
 class ModelTermView(BaseTermView):
-    def __init__(self, model_uri: str | URI) -> None:
+    def __init__(self, model_uri: str | Resource) -> None:
         super().__init__()
 
-        if isinstance(model_uri, URI):
+        if isinstance(model_uri, Resource):
             self.uri = model_uri
         else:
-            self.uri = URI(model_uri, expected_type=URIType.MODEL)
-
+            self.uri = Resource(model_uri, ResourceType.model)
         self.model = Model.get_model(self.uri)
 
     @BaseTermView._simple_action_print
@@ -129,7 +130,7 @@ class ModelTermView(BaseTermView):
             console.print(handlers_content)
 
     @BaseTermView._only_standalone
-    def diff(self, compare_uri: URI, show_details: bool) -> None:
+    def diff(self, compare_uri: Resource, show_details: bool) -> None:
         r = self.model.diff(compare_uri)
         text_details: t.List[Panel] = []
         table = Table(box=box.SIMPLE, expand=False, show_lines=True)
@@ -141,7 +142,7 @@ class ModelTermView(BaseTermView):
             justify="left",
         )
         table.add_column(
-            f"compare: {compare_uri.object.version[:SHORT_VERSION_CNT]}",
+            f"compare: {compare_uri.version[:SHORT_VERSION_CNT]}",
             style="cyan",
             justify="left",
         )
@@ -185,7 +186,7 @@ class ModelTermView(BaseTermView):
     @BaseTermView._pager
     @BaseTermView._header
     def history(self, fullname: bool = False) -> t.List[t.Dict[str, t.Any]]:
-        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        fullname = fullname or self.uri.instance.is_cloud
         return self._print_history(
             title="Model History List", history=self.model.history(), fullname=fullname
         )
@@ -193,7 +194,7 @@ class ModelTermView(BaseTermView):
     @classmethod
     def run_in_server(
         cls,
-        project_uri: URI,
+        project_uri: Project,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -211,7 +212,7 @@ class ModelTermView(BaseTermView):
         if ok:
             console.print(":clap: success to create job")
             console.print(
-                f":bird: visit web: {project_uri.instance}/projects/{project_uri.project}/evaluations/{version_or_reason}"
+                f":bird: visit web: {project_uri.instance.url}/projects/{project_uri.name}/evaluations/{version_or_reason}"
             )
             console.print(
                 f":monkey: run command: [bold green]swcli job info {project_uri.full_uri}/job/{version_or_reason} [/]"
@@ -231,7 +232,7 @@ class ModelTermView(BaseTermView):
         version: str = "",
         run_handler: str = "",
         dataset_uris: t.Optional[t.List[str]] = None,
-        runtime_uri: t.Optional[URI] = None,
+        runtime_uri: t.Optional[Resource] = None,
         scheduler_run_args: t.Optional[t.Dict] = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
@@ -256,7 +257,7 @@ class ModelTermView(BaseTermView):
     def run_in_container(
         cls,
         model_src_dir: Path,
-        runtime_uri: t.Optional[URI] = None,
+        runtime_uri: t.Optional[Resource] = None,
         docker_image: str = "",
     ) -> None:
         # TODO: support to get job version for in container
@@ -264,10 +265,10 @@ class ModelTermView(BaseTermView):
             raise FieldTypeOrValueError("runtime_uri and docker_image both are none")
 
         if runtime_uri:
-            if runtime_uri.object.typ == URIType.RUNTIME:
+            if runtime_uri.typ == ResourceType.runtime:
                 runtime = StandaloneRuntime(runtime_uri)
                 docker_image = runtime.store.get_docker_base_image()
-            elif runtime_uri.object.typ == URIType.MODEL:
+            elif runtime_uri.typ == ResourceType.model:
                 model = StandaloneModel(runtime_uri)
                 docker_image = model.store.get_packaged_runtime_base_image()
             else:
@@ -289,7 +290,7 @@ class ModelTermView(BaseTermView):
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
         else:
-            _uri = URI(target, URIType.MODEL)
+            _uri = Resource(target, ResourceType.model)
             _store = ModelStorage(_uri)
             workdir = _store.src_dir
         return workdir
@@ -305,9 +306,9 @@ class ModelTermView(BaseTermView):
         filters: t.Optional[t.Union[t.Dict[str, t.Any], t.List[str]]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         filters = filters or {}
-        _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        _uri = Project(project_uri)
         cls.must_have_project(_uri)
-        fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
+        fullname = fullname or _uri.instance.is_cloud
         _models, _pager = Model.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_models, show_removed, fullname)
         return _data, _pager
@@ -323,7 +324,7 @@ class ModelTermView(BaseTermView):
         package_runtime: bool = False,
     ) -> None:
         if runtime_uri:
-            RuntimeProcess(uri=runtime_uri).run()
+            RuntimeProcess(uri=Resource(runtime_uri, typ=ResourceType.runtime)).run()
         else:
             model_uri = cls.prepare_build_bundle(
                 project=project,
@@ -353,7 +354,8 @@ class ModelTermView(BaseTermView):
         force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        Model.copy(src_uri, dest_uri, force, dest_local_project_uri)
+        src = Resource(src_uri, typ=ResourceType.model)
+        Model.copy(src, dest_uri, force, dest_local_project_uri)
         console.print(":clap: copy done.")
 
     @BaseTermView._header
@@ -373,7 +375,7 @@ class ModelTermView(BaseTermView):
         cls,
         model_src_dir: Path,
         model_config: ModelConfig,
-        runtime_uri: URI,
+        runtime_uri: Resource,
         host: str,
         port: int,
     ) -> None:
@@ -446,7 +448,7 @@ class ModelTermViewJson(ModelTermView):
         self.pretty_json(info)
 
     def history(self, fullname: bool = False) -> None:
-        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        fullname = fullname or self.uri.instance.is_cloud
         self.pretty_json(BaseTermView.get_history_data(self.model.history(), fullname))
 
 

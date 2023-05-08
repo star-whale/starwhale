@@ -18,7 +18,6 @@ from starwhale.consts import (
     ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DatasetChangeMode
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
@@ -27,6 +26,7 @@ from starwhale.base.bundle_copy import FileDesc, BundleCopy
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _existed_config_contents = get_predefined_config_yaml()
 
@@ -41,7 +41,8 @@ class TestBundleCopy(TestCase):
         self._sw_config.select_current_default("local", "self")
 
     @Mocker()
-    def test_runtime_copy_c2l(self, rm: Mocker) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_runtime_copy_c2l(self, rm: Mocker, *args: t.Any) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.HEAD,
@@ -243,9 +244,8 @@ class TestBundleCopy(TestCase):
     @Mocker()
     @patch("starwhale.core.model.copy.load_yaml")
     @patch("starwhale.core.model.copy.extract_tar")
-    def test_model_copy_c2l(
-        self, rm: Mocker, m_extract: MagicMock, m_load_yaml: MagicMock
-    ) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_model_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.HEAD,
@@ -512,7 +512,8 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    def test_dataset_copy_c2l(self, rm: Mocker, m_td_scan: MagicMock) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_dataset_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.GET,
@@ -606,6 +607,7 @@ class TestBundleCopy(TestCase):
             ).do()
 
     @Mocker()
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.dataset.copy.TabularDataset.put")
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
     @patch("starwhale.core.dataset.copy.TabularDataset.delete")
@@ -614,7 +616,7 @@ class TestBundleCopy(TestCase):
         rm: Mocker,
         m_td_delete: MagicMock,
         m_td_scan: MagicMock,
-        m_td_put: MagicMock,
+        *args: MagicMock,
     ) -> None:
         name, version = self._prepare_local_dataset()
 
@@ -668,7 +670,7 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    def test_dataset_copy_l2c(self, rm: Mocker, m_td_scan: MagicMock) -> None:
+    def test_dataset_copy_l2c(self, rm: Mocker, *args: MagicMock) -> None:
         _, version = self._prepare_local_dataset()
 
         cases = [
@@ -794,11 +796,16 @@ class TestBundleCopy(TestCase):
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
                 json={"data": {"uploadId": 1}},
             )
-            DatasetCopy(
-                src_uri=case["src_uri"],
-                dest_uri=case["dest_uri"],
-                mode=case["mode"],
-            ).do()
+            try:
+                DatasetCopy(
+                    src_uri=case["src_uri"],
+                    dest_uri=case["dest_uri"],
+                    mode=case["mode"],
+                ).do()
+            except Exception as e:
+                print(f"case: {case}")
+                raise e
+
             assert head_request.call_count == case["head_call_count"]
             assert upload_request.call_count == 2
 
@@ -845,28 +852,27 @@ class TestBundleCopy(TestCase):
             typ=URIType.RUNTIME,
         )
 
-        _v = bc._guess_bundle_version()
-        assert _v == version
         bc.do()
 
     @Mocker()
-    def test_download_bundle_file(self, rm: Mocker) -> None:
+    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    def test_download_bundle_file(self, rm: Mocker, *args: t.Any) -> None:
         version = "112233"
-        versionName = "runtime-version"
+        version_name = "runtime-version"
         rm.request(
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist?versionUrl={version}",
-            json={"data": {"id": 1, "name": "mnist", "versionName": versionName}},
+            json={"data": {"id": 1, "name": "mnist", "versionName": version_name}},
         )
         rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{versionName}",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version_name}",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{versionName}/file",
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version_name}/file",
             content=b"test",
         )
 
@@ -875,25 +881,25 @@ class TestBundleCopy(TestCase):
             / "self"
             / "runtime"
             / "mnist"
-            / f"{versionName[:VERSION_PREFIX_CNT]}"
+            / f"{version_name[:VERSION_PREFIX_CNT]}"
         )
         ensure_dir(dest_dir)
 
         bc = BundleCopy(
             src_uri=f"cloud://pre-bare/project/1/runtime/mnist/version/{version}",
             dest_uri="",
-            local_project_uri="self",
-            typ=URIType.RUNTIME,
+            dest_local_project_uri="self",
+            typ=ResourceType.runtime.name,
         )
         bc.do()
-        swrt_path = dest_dir / f"{versionName}.swrt"
+        swrt_path = dest_dir / f"{version_name}.swrt"
 
         assert swrt_path.exists()
         assert swrt_path.read_bytes() == b"test"
         st = StandaloneTag(
-            URI(
-                f"mnist/version/{versionName}",
-                expected_type=URIType.RUNTIME,
+            Resource(
+                f"mnist/version/{version_name}",
+                typ=ResourceType.runtime,
             )
         )
         assert st.list() == ["latest", "v0"]

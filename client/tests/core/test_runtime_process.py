@@ -6,13 +6,12 @@ from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME
-from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import URIType
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.store import RuntimeStorage
 from starwhale.core.runtime.process import Process
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class RuntimeProcessTestCase(TestCase):
@@ -35,7 +34,9 @@ class RuntimeProcessTestCase(TestCase):
         m_call: MagicMock,
         m_mode: MagicMock,
     ) -> None:
-        uri = URI("runtime-test/version/1234", expected_type=URIType.RUNTIME)
+        uri = Resource(
+            "runtime-test/version/1234", typ=ResourceType.runtime, _skip_refine=True
+        )
         store = RuntimeStorage(uri)
         venv_dir = store.export_dir / "venv"
         ensure_dir(venv_dir)
@@ -91,7 +92,9 @@ class RuntimeProcessTestCase(TestCase):
         m_mode: MagicMock,
         m_conda_bin: MagicMock,
     ) -> None:
-        uri = URI("model-test/version/1234", expected_type=URIType.MODEL)
+        uri = Resource(
+            "model-test/version/1234", typ=ResourceType.model, _skip_refine=True
+        )
         store = ModelStorage(uri)
         conda_dir = store.packaged_runtime_export_dir / "conda"
         ensure_dir(conda_dir)
@@ -151,6 +154,7 @@ class RuntimeProcessTestCase(TestCase):
         assert m_restore.called
         assert not m_extract.called
 
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
     @patch("starwhale.core.runtime.process.check_call")
     @patch("starwhale.core.runtime.process.extract_tar")
@@ -161,18 +165,28 @@ class RuntimeProcessTestCase(TestCase):
         m_extract: MagicMock,
         m_call: MagicMock,
         m_mode: MagicMock,
+        m_conf: MagicMock,
     ) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "foo": {"uri": "http://1.1.1.1:8081"},
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": self.root},
+        }
         with self.assertRaisesRegex(
             FieldTypeOrValueError, "is not a valid uri, only support"
         ):
-            Process("dataset/mnist/version/latest").run()
+            Process(
+                Resource(
+                    "mnist/version/latest", typ=ResourceType.dataset, _skip_refine=True
+                )
+            ).run()
 
-        with self.assertRaisesRegex(
-            FieldTypeOrValueError, "is not a valid uri, only support"
-        ):
-            Process(URI("mnist/version/latest", expected_type=URIType.DATASET)).run()
-
-        uri = URI("runtime-test/version/1234", expected_type=URIType.RUNTIME)
+        uri = Resource(
+            "runtime-test/version/1234", typ=ResourceType.runtime, _skip_refine=True
+        )
         store = RuntimeStorage(uri)
         ensure_dir(store.export_dir / "venv")
         m_mode.return_value = "venv"
@@ -188,5 +202,5 @@ class RuntimeProcessTestCase(TestCase):
         with self.assertRaisesRegex(
             NoSupportError, "run process with cloud instance uri"
         ):
-            uri = "http://1.1.1.1:8081/project/self/runtime/rttest/versoin/123"
+            uri = "http://1.1.1.1:8081/projects/self/runtimes/rttest/versoin/123"
             Process(uri).run()

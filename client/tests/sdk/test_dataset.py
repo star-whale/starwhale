@@ -9,6 +9,7 @@ import queue
 import base64
 import struct
 import typing as t
+import tempfile
 import threading
 from http import HTTPStatus
 from pathlib import Path
@@ -26,11 +27,8 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config
 from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_MANIFEST_NAME
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import (
-    FormatError,
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
@@ -69,6 +67,8 @@ from starwhale.core.dataset.tabular import (
     get_dataset_consumption,
 )
 from starwhale.api._impl.dataset.loader import DataRow
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 from starwhale.api._impl.dataset.builder.mapping_builder import (
     RotatedBinWriter,
     MappingDatasetBuilder,
@@ -127,6 +127,10 @@ def iter_complex_annotations_swds() -> _TGenItem:
 class TestDatasetCopy(BaseTestCase):
     @patch("os.environ", {})
     @Mocker()
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def test_upload(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
@@ -135,7 +139,9 @@ class TestDatasetCopy(BaseTestCase):
         swds_config = DatasetConfig(
             name=dataset_name, handler=iter_complex_annotations_swds
         )
-        dataset_uri = URI(dataset_name, expected_type=URIType.DATASET)
+        dataset_uri = Resource(
+            dataset_name, typ=ResourceType.dataset, _skip_refine=True
+        )
         sd = StandaloneDataset(dataset_uri)
         sd.build(config=swds_config)
         dataset_version = sd._version
@@ -194,7 +200,7 @@ class TestDatasetCopy(BaseTestCase):
                 {
                     "current_instance": "local",
                     "instances": {
-                        "foo": {"uri": "http://1.1.1.1:8182"},
+                        "foo": {"uri": "http://1.1.1.1:8182", "sw_token": "1234"},
                         "local": {"uri": "local", "current_project": "self"},
                     },
                 }
@@ -282,6 +288,10 @@ class TestDatasetCopy(BaseTestCase):
 
     @patch("os.environ", {})
     @Mocker()
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def test_download(self, rm: Mocker) -> None:
         instance_uri = "http://1.1.1.1:8182"
         dataset_name = "complex_annotations"
@@ -402,7 +412,7 @@ class TestDatasetCopy(BaseTestCase):
                 {
                     "current_instance": "local",
                     "instances": {
-                        "foo": {"uri": "http://1.1.1.1:8182"},
+                        "foo": {"uri": "http://1.1.1.1:8182", "sw_token": "token"},
                         "local": {"uri": "local"},
                     },
                 }
@@ -650,6 +660,10 @@ class TestDatasetType(TestCase):
             ClassLabel.from_num_classes(0)
 
     @patch("starwhale.core.dataset.store.boto3.resource")
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def test_link_standalone(self, m_boto3: MagicMock) -> None:
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
@@ -682,10 +696,26 @@ class TestDatasetType(TestCase):
         assert b.to_bytes() == raw_content
 
     @Mocker()
-    def test_link_cloud(self, rm: Mocker) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_link_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "foo": {
+                    "uri": "http://127.0.0.1:8081",
+                    "current_project": "test",
+                    "sw_token": "token",
+                },
+            },
+            "storage": {"root": "/root"},
+        }
+
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-            owner="http://127.0.0.1:8081/project/test/dataset/mnist/version/latest",
+            owner=Resource(
+                "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest",
+                _skip_refine=True,
+            ),
         )
 
         rm.request(
@@ -719,8 +749,29 @@ class TestDatasetSessionConsumption(TestCase):
         self.setUpPyfakefs()
 
     @patch.dict(os.environ, {})
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
-    def test_get_consumption(self, m_scan_id: MagicMock) -> None:
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
+    def test_get_consumption(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+                "test": {
+                    "uri": "http://127.0.0.1:8081",
+                    "current_project": "test",
+                    "sw_token": "123",
+                },
+            },
+            "storage": {"root": "/root"},
+        }
         m_scan_id.return_value = [{"id": 0}]
         os.environ["DATASET_CONSUMPTION_BATCH_SIZE"] = "10"
         consumption = get_dataset_consumption(
@@ -742,8 +793,6 @@ class TestDatasetSessionConsumption(TestCase):
         assert consumption != consumption_new
         assert len(local_standalone_tdsc) == 2
 
-        os.environ[SWEnv.instance_uri] = "cloud://test"
-        os.environ[SWEnv.instance_token] = "123"
         os.environ[ENV_POD_NAME] = "pod-1"
         consumption_cloud = get_dataset_consumption(
             dataset_uri="cloud://test/project/test/dataset/mnist/version/123",
@@ -755,6 +804,14 @@ class TestDatasetSessionConsumption(TestCase):
         assert consumption_cloud.instance_token == "123"
 
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
     def test_standalone_tdsc_multi_thread(self, m_scan_id: MagicMock) -> None:
         total = 1002
         batch_size = 10
@@ -804,33 +861,41 @@ class TestDatasetSessionConsumption(TestCase):
 
     @Mocker()
     @patch.dict(os.environ, {})
-    def test_cloud_tdsc(self, rm: Mocker) -> None:
-        with self.assertRaises(FieldTypeOrValueError):
-            CloudTDSC(
-                "", URI("mnist/version/latest", expected_type=URIType.DATASET), ""
-            )
+    @patch("starwhale.utils.config.load_swcli_config")
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    def test_cloud_tdsc(self, rm: Mocker, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "test": {
+                    "uri": "http://1.1.1.1:8081",
+                    "current_project": "p",
+                    "sw_token": "token",
+                },
+                "local": {"uri": "local", "current_project": "foo"},
+            },
+            "storage": {"root": "/root"},
+        }
 
         os.environ[ENV_POD_NAME] = ""
         with self.assertRaises(RuntimeError):
             CloudTDSC(
+                Resource(
+                    "mnist/version/latest",
+                    typ=ResourceType.dataset,
+                    project=Project("cloud://test/project/p"),
+                    _skip_refine=True,
+                ),
                 "",
-                URI("mnist/version/latest", expected_type=URIType.DATASET),
-                "",
-                instance_token="1122",
             )
 
-        os.environ[ENV_POD_NAME] = "pod-1"
-        with self.assertRaises(FormatError):
-            CloudTDSC(
-                "",
-                URI("mnist", expected_type=URIType.DATASET),
-                "",
-                instance_token="1122",
-            )
-
-        instance_uri = "http://1.1.1.1:8081"
-        os.environ[SWEnv.instance_uri] = instance_uri
-        os.environ[SWEnv.instance_token] = "123"
         os.environ[ENV_POD_NAME] = "pod-1"
         tdsc = get_dataset_consumption(
             dataset_uri="cloud://test/project/test/dataset/mnist/version/123",
@@ -841,7 +906,7 @@ class TestDatasetSessionConsumption(TestCase):
             session_id="123",
         )
         assert tdsc != tdsc_new
-        assert tdsc.instance_uri == instance_uri  # type: ignore
+        assert tdsc.instance_uri == "http://1.1.1.1:8081"  # type: ignore
 
         mock_request = rm.request(
             HTTPMethod.POST,
@@ -870,19 +935,44 @@ class TestDatasetSessionConsumption(TestCase):
             "processedData": [{"end": 1, "start": 1}],
         }
 
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
-    def test_standalone_tdsc(self, m_scan_id: MagicMock) -> None:
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        MagicMock(),
+    )
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
+    def test_standalone_tdsc(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "test": {
+                    "uri": "http://1.1.1.1:8082",
+                    "current_project": "p",
+                    "sw_token": "token",
+                },
+                "local": {"uri": "local", "current_project": "foo"},
+            },
+            "storage": {"root": "/root"},
+        }
+
         with self.assertRaises(FieldTypeOrValueError):
             StandaloneTDSC(
-                dataset_uri=URI("mnist/version/123", expected_type=URIType.DATASET),
+                dataset_uri=Resource(
+                    "mnist/version/123", typ=ResourceType.dataset, _skip_refine=True
+                ),
                 session_id="1",
                 batch_size=-1,
             )
 
         with self.assertRaises(NoSupportError):
             StandaloneTDSC(
-                dataset_uri=URI(
-                    "http://1.1.1.1:8082/project/starwhale/dataset/mnist/version/latest"
+                dataset_uri=Resource(
+                    "http://1.1.1.1:8082/project/starwhale/dataset/mnist/version/latest",
+                    _skip_refine=True,
                 ),
                 session_id="1",
             )
@@ -890,7 +980,9 @@ class TestDatasetSessionConsumption(TestCase):
         m_scan_id.return_value = [{"id": f"{i}-{i}"} for i in range(0, 102)]
 
         tdsc = StandaloneTDSC(
-            dataset_uri=URI("mnist/version/123", expected_type=URIType.DATASET),
+            dataset_uri=Resource(
+                "mnist/version/123", typ=ResourceType.dataset, _skip_refine=True
+            ),
             session_id="1",
             batch_size=10,
         )
@@ -1115,7 +1207,9 @@ class TestTabularDataset(TestCase):
 
         m_scan.side_effect = [rows, rows, [{"id": 0, "features/value": 1}]]
         with TabularDataset.from_uri(
-            URI("mnist/version/123456", expected_type=URIType.DATASET)
+            Resource(
+                "mnist/version/123456", typ=ResourceType.dataset, _skip_refine=True
+            )
         ) as td:
             rs = [i for i in td.scan()]
             assert len(rs) == 3
@@ -1314,12 +1408,27 @@ class TestRotatedBinWriter(TestCase):
 
 
 class TestMappingDatasetBuilder(BaseTestCase):
+    @patch(
+        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        MagicMock(),
+    )
     def setUp(self) -> None:
         super().setUp()
         self.workdir = Path(self.local_storage) / "test"
         self.project_name = "self"
         self.dataset_name = "mnist"
         self.holder_dataset_version = "_current"
+        with patch("starwhale.utils.config.load_swcli_config") as mock_conf:
+            mock_conf.return_value = {
+                "current_instance": "local",
+                "instances": {
+                    "foo": {"uri": "http://1.1.1.1:8182", "sw_token": "token"},
+                    "local": {"uri": "local"},
+                },
+            }
+            self.uri = Resource(
+                "mnist", project=Project("self"), typ=ResourceType.dataset
+            )
 
         self.tdb = TabularDataset(
             name=self.dataset_name,
@@ -1333,8 +1442,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_put(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         mdb.put(DataRow(index=1, features={"label": 1}))
         mdb.put(DataRow(index=1, features={"label-another": 2}))
@@ -1351,8 +1459,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_put_swds_artifacts(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         mdb.put(DataRow(index=1, features={"bin": Binary(b"123")}))
         fpath = Path(self.workdir / "test.bin")
@@ -1400,8 +1507,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         uri = "s3://1.1.1.1/dataset/mnist/t10k-ubyte"
         with MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         ) as mdb:
             mdb.put(
                 DataRow(
@@ -1422,8 +1528,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
         uri = "s3://1.1.1.1/dataset/mnist/t10k-ubyte"
         with MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         ) as mdb:
             mdb.put(
                 DataRow(
@@ -1444,8 +1549,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_put_raise_exception(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         mdb.put(DataRow(index=5, features={"bin": Binary(1)}))  # type: ignore
         mdb.flush()
@@ -1457,8 +1561,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
 
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         mdb.put(DataRow(index=5, features={"bin": Binary(1)}))  # type: ignore
         with self.assertRaisesRegex(threading.ThreadError, exception_msg):
@@ -1467,8 +1570,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_delete(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         for i in range(0, 10):
             mdb.put(DataRow(index=i, features={"label": i}))
@@ -1485,8 +1587,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_close(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         )
         for i in range(0, 10):
             mdb.put(DataRow(index=i, features={"label": i}))
@@ -1502,8 +1603,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_flush_artifacts(self) -> None:
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
             blob_volume_bytes_size=1024 * 1024,
         )
         mdb.put(DataRow(index=1, features={"bin": Binary(b"123")}))
@@ -1523,13 +1623,25 @@ class TestMappingDatasetBuilder(BaseTestCase):
     def test_close_empty(self) -> None:
         MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
+            dataset_uri=self.uri,
         ).close()
 
     @Mocker()
-    def test_put_for_cloud(self, rm: Mocker) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_put_for_cloud(self, rm: Mocker, m_conf: MagicMock) -> None:
         instance_uri = "http://1.1.1.1"
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+                "foo": {
+                    "uri": instance_uri,
+                    "current_project": "test",
+                    "sw_token": "token",
+                },
+            },
+            "storage": {"root": tempfile.gettempdir()},
+        }
         rm.request(
             HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/{self.project_name}",
@@ -1554,13 +1666,13 @@ class TestMappingDatasetBuilder(BaseTestCase):
             json={"data": server_return_uri},
         )
 
-        os.environ[SWEnv.instance_token] = "1234"
-
         mdb = MappingDatasetBuilder(
             workdir=self.workdir,
-            dataset_name=self.dataset_name,
-            project_name=self.project_name,
-            instance_name=instance_uri,
+            dataset_uri=Resource(
+                "mnist",
+                project=Project("cloud://foo/project/self"),
+                typ=ResourceType.dataset,
+            ),
         )
         mdb.put(
             DataRow(

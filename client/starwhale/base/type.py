@@ -57,11 +57,12 @@ class RuntimeLockFileType:
 
 
 def get_bundle_type_by_uri(uri_type: str) -> str:
-    if uri_type == URIType.DATASET:
+    # TODO use constant
+    if uri_type == "dataset":
         return BundleType.DATASET
-    elif uri_type == URIType.MODEL:
+    elif uri_type == "model":
         return BundleType.MODEL
-    elif uri_type == URIType.RUNTIME:
+    elif uri_type == "runtime":
         return BundleType.RUNTIME
     else:
         raise NoSupportError(uri_type)

@@ -8,8 +8,6 @@ from functools import total_ordering
 
 from starwhale.utils import console
 from starwhale.consts import HTTPMethod
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
 from starwhale.utils.dict_util import transform_dict
@@ -19,6 +17,7 @@ from starwhale.core.dataset.tabular import (
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _DEFAULT_LOADER_CACHE_SIZE = 20
 
@@ -140,7 +139,7 @@ _TRowQItem = t.Optional[t.Union[DataRow, Exception]]
 class DataLoader:
     def __init__(
         self,
-        dataset_uri: URI,
+        dataset_uri: Resource,
         start: t.Optional[t.Any] = None,
         end: t.Optional[t.Any] = None,
         session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
@@ -183,9 +182,9 @@ class DataLoader:
             else DEFAULT_CONSUMPTION_BATCH_SIZE
         )
         r = CloudRequestMixed.do_http_request(
-            f"/project/{self.dataset_uri.project}/{self.dataset_uri.object.typ}/{self.dataset_uri.object.name}/uri/sign-links",
+            f"/project/{self.dataset_uri.project.name}/{self.dataset_uri.typ.value}/{self.dataset_uri.name}/uri/sign-links",
             method=HTTPMethod.POST,
-            instance_uri=self.dataset_uri,
+            instance=self.dataset_uri.instance,
             params={
                 "expTimeMillis": int(
                     os.environ.get("SW_MODEL_PROCESS_UNIT_TIME_MILLIS", "60000")
@@ -211,7 +210,7 @@ class DataLoader:
                 if rt is None:
                     break
 
-                if self.dataset_uri.instance_type == InstanceType.CLOUD:
+                if self.dataset_uri.instance.is_cloud:
                     for rows in self.tabular_dataset.scan_batch(
                         rt[0], rt[1], self.session_consumption.batch_size
                     ):
@@ -341,7 +340,7 @@ class DataLoader:
 
 
 def get_data_loader(
-    dataset_uri: t.Union[str, URI],
+    dataset_uri: t.Union[str, Resource],
     start: t.Optional[t.Any] = None,
     end: t.Optional[t.Any] = None,
     session_consumption: t.Optional[TabularDatasetSessionConsumption] = None,
@@ -359,7 +358,7 @@ def get_data_loader(
             )
 
     if isinstance(dataset_uri, str):
-        dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
+        dataset_uri = Resource(dataset_uri, ResourceType.dataset)
 
     return DataLoader(
         dataset_uri,

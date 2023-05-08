@@ -6,12 +6,12 @@ import click
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
 from starwhale.core.dataset.type import DatasetAttr, DatasetConfig
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .view import get_term_view, DatasetTermView
 
@@ -107,7 +107,7 @@ def _build(
 def _diff(
     view: t.Type[DatasetTermView], base_uri: str, compare_uri: str, show_details: bool
 ) -> None:
-    view(base_uri).diff(URI(compare_uri, expected_type=URIType.DATASET), show_details)
+    view(base_uri).diff(Resource(compare_uri, typ=ResourceType.dataset), show_details)
 
 
 @dataset_cmd.command("list", aliases=["ls"])
@@ -175,10 +175,7 @@ def _info(view: t.Type[DatasetTermView], dataset: str) -> None:
         swcli dataset info mnist/version/v0 # show the specified version of mnist dataset
         swcli -o json dataset info mnist # show the latest version of mnist dataset in json format
     """
-    uri = URI(dataset, expected_type=URIType.DATASET)
-    if not uri.object.version:
-        uri.object.version = "latest"
-
+    uri = Resource(dataset, typ=ResourceType.dataset)
     view(uri).info()
 
 
@@ -230,10 +227,7 @@ def _history(
 @click.argument("dataset")
 @click.pass_obj
 def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
-    uri = URI(dataset, expected_type=URIType.DATASET)
-    if not uri.object.version:
-        uri.object.version = "latest"
-
+    uri = Resource(dataset, typ=ResourceType.dataset)
     view(uri).summary()
 
 

@@ -14,24 +14,25 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
 )
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
+from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
 from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
 from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
 
 
 class RuntimeTermView(BaseTermView):
-    def __init__(self, runtime_uri: str | URI) -> None:
+    def __init__(self, runtime_uri: str | Resource) -> None:
         super().__init__()
 
-        if isinstance(runtime_uri, URI):
+        if isinstance(runtime_uri, Resource):
             self.uri = runtime_uri
         else:
-            self.uri = URI(runtime_uri, expected_type=URIType.RUNTIME)
+            self.uri = Resource(runtime_uri, typ=ResourceType.runtime)
 
         self.runtime = Runtime.get_runtime(self.uri)
 
@@ -46,7 +47,7 @@ class RuntimeTermView(BaseTermView):
     @BaseTermView._pager
     @BaseTermView._header
     def history(self, fullname: bool = False) -> t.List[t.Dict[str, t.Any]]:
-        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        fullname = fullname or self.uri.instance.is_cloud
         return self._print_history(
             title="Runtime History", history=self.runtime.history(), fullname=fullname
         )
@@ -93,7 +94,7 @@ class RuntimeTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
-    def activate(cls, uri: URI, force_restore: bool = False) -> None:
+    def activate(cls, uri: Resource, force_restore: bool = False) -> None:
         Runtime.activate(uri, force_restore)
 
     @BaseTermView._only_standalone
@@ -171,7 +172,7 @@ class RuntimeTermView(BaseTermView):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-    ) -> URI:
+    ) -> Resource:
         set_args = list(filter(bool, (conda_name, conda_prefix, venv_prefix)))
         if len(set_args) >= 2:
             raise ExclusiveArgsError(
@@ -228,7 +229,7 @@ class RuntimeTermView(BaseTermView):
         include_local_wheel: bool = False,
         no_cache: bool = False,
         disable_env_lock: bool = False,
-    ) -> URI:
+    ) -> Resource:
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
 
@@ -278,9 +279,9 @@ class RuntimeTermView(BaseTermView):
         filters: t.Optional[t.List[str]] = None,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         filters = filters or []
-        _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        _uri = Project(project_uri)
         cls.must_have_project(_uri)
-        fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
+        fullname = fullname or _uri.instance.is_cloud
         _runtimes, _pager = Runtime.list(_uri, page, size, filters)
         _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
         return _data, _pager
@@ -291,7 +292,7 @@ class RuntimeTermView(BaseTermView):
         cls,
         workdir: t.Union[Path, str],
         name: str,
-        uri: URI,
+        uri: Resource,
         force: bool = False,
         disable_restore: bool = False,
     ) -> None:
@@ -331,7 +332,7 @@ class RuntimeTermView(BaseTermView):
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
         else:
-            _uri = URI(target, URIType.RUNTIME)
+            _uri = Resource(target, ResourceType.runtime)
             _runtime = StandaloneRuntime(_uri)
             workdir = _runtime.store.snapshot_workdir
             if not workdir.exists():
@@ -350,7 +351,8 @@ class RuntimeTermView(BaseTermView):
         force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        Runtime.copy(src_uri, dest_uri, force, dest_local_project_uri)
+        src = Resource(src_uri, typ=ResourceType.runtime)
+        Runtime.copy(src, dest_uri, force, dest_local_project_uri)
         console.print(":clap: copy done.")
 
     @BaseTermView._header
@@ -429,7 +431,7 @@ class RuntimeTermViewJson(RuntimeTermView):
         self.pretty_json(info)
 
     def history(self, fullname: bool = False) -> None:
-        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        fullname = fullname or self.uri.instance.is_cloud
         _data = BaseTermView.get_history_data(
             history=self.runtime.history(), fullname=fullname
         )

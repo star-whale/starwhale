@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import requests
 
+from starwhale.utils import load_yaml
 from starwhale.consts import SW_API_VERSION
 from starwhale.base.uri import URI
 from starwhale.utils.config import load_swcli_config
@@ -17,13 +18,23 @@ from starwhale.base.uricomponents.exceptions import (
     UriTooShortException,
 )
 
-url_regex = re.compile(
+rc_url_regex = re.compile(
     r"(?P<scheme>https*)://"
     r"(?P<host>.*)/projects/"
     r"(?P<project>.+)/"
-    r"(?P<rc_type>models|datasets|runtimes|evaluations)"
+    r"(?P<rc_type>models|datasets|runtimes)"
     r"(/(?P<rc_id>.+)/versions)?"  # optional
     r"(/(?P<rc_version>.+)/.*)?",  # optional
+    re.UNICODE,
+)
+
+# TODO split job and resources
+job_url_regex = re.compile(
+    r"(?P<scheme>https*)://"
+    r"(?P<host>.*)/projects/"
+    r"(?P<project>.+)/"
+    r"(?P<rc_type>evaluations|jobs)"
+    r"(/(?P<rc_id>.+))?",
     re.UNICODE,
 )
 
@@ -33,9 +44,10 @@ class ResourceType(Enum):
     model = "model"
     dataset = "dataset"
     evaluation = "evaluation"
+    job = "job"
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Resource:
     """
     Resource holds the DataSet, Model, Runtime, Eval etc.
@@ -43,14 +55,17 @@ class Resource:
 
     typ: ResourceType
     project: Project
-    name: Optional[str] = None
-    version: Optional[str] = None
+    name: str
+    version: str
 
     def __init__(
         self,
         uri: str,
         typ: Optional[ResourceType] = None,
         project: Optional[Project] = None,
+        token: Optional[str] = None,
+        _skip_refine: bool = False,  # for unit test and resource building or copy(without local dir generated)
+        **kwargs: Any,
     ) -> None:
         """
         :param uri: resource name or uri or version
@@ -68,16 +83,20 @@ class Resource:
         :return: Resource instance
         """
         self._remote_info: Dict[str, Any] = {}
+        self.name = ""  # job has no name, init with empty string
+        self.version = ""  # some resource has no version, init with empty string
 
         # check if it is url from console
-        m = url_regex.match(uri)
+        m = rc_url_regex.match(uri)
+        if m is None:
+            m = job_url_regex.match(uri)
         if m is not None:
             info: Dict[str, str] = m.groupdict()
-            ins = Instance(f'{info["scheme"]}://{info["host"]}')
+            ins = Instance(f'{info["scheme"]}://{info["host"]}', token=token)
             self.project = Project(name=info["project"], instance=ins)
             self.typ = ResourceType(info["rc_type"][:-1])  # remove the last 's'
-            self.name = info.get("rc_id")
-            self.version = info.get("rc_version")
+            self.name = info.get("rc_id") or ""
+            self.version = info.get("rc_version") or ""
             self.refine_remote_rc_info()
             return
 
@@ -109,8 +128,11 @@ class Resource:
         if (typ is not None) and self.typ != typ:
             raise Exception(f"type mismatch: {self.typ} vs {typ}")
 
-        if not self.project.instance.is_local:
-            self.refine_remote_rc_info()
+        if not _skip_refine:
+            if not self.project.instance.is_local:
+                self.refine_remote_rc_info()
+            else:
+                self.refine_local_rc_info()
 
     def _parse_with_type(self, typ: ResourceType, uri: str) -> None:
         """
@@ -133,6 +155,7 @@ class Resource:
                 self._parse_by_version(parts[0])
             except NoMatchException:
                 self.name = parts[0]
+                self.version = ""
         elif len(parts) == 2:
             if parts[0] != "version":
                 # name/version
@@ -160,10 +183,18 @@ class Resource:
             p = f"{root.absolute()}/*/*/*/{ver}*"
             m = glob(p)
             if len(m) == 1:
-                _, typ, self.name, _, self.version = m[0].rsplit("/", 4)
+                _, typ, self.name, _, version = m[0].rsplit("/", 4)
+                self.version = self.path_to_version(version)
                 self.typ = ResourceType[typ]
             else:
-                raise NoMatchException(ver, list(m))
+                # job list has no name
+                m = glob(f"{root.absolute()}/job/*/{ver}*")
+                if len(m) == 1:
+                    _, typ, _, version = m[0].rsplit("/", 3)
+                    self.version = self.path_to_version(version)
+                    self.typ = ResourceType[typ]
+                else:
+                    raise NoMatchException(ver, list(m))
         else:
             # TODO use api to check if it is a name or version
             # assume is is name for now
@@ -188,6 +219,45 @@ class Resource:
         self.name = self._remote_info.get("name", self.name)
         self.version = self._remote_info.get("versionName", self.version)
 
+    def refine_local_rc_info(self) -> None:
+        root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
+        if self.version == "":
+            self.version = "latest"
+        if self.version == "latest" or (
+            self.version.startswith("v") and self.version[1:].isnumeric()
+        ):
+            if not self.name:
+                raise Exception("name is required for latest version")
+            # get version from manifest
+            manifest = root / self.typ.name / self.name / "_manifest.yaml"
+            if not manifest.exists():
+                raise Exception(f"manifest file not found: {manifest}")
+            content = load_yaml(manifest)
+            self.version = content.get("tags", {}).get(self.version, "")
+            return
+
+        if self.typ == ResourceType.job:
+            p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
+            m = glob(p)
+            if len(m) == 1:
+                _, _, _, version = m[0].rsplit("/", 3)
+                self.version = self.path_to_version(version)
+            else:
+                raise NoMatchException(self.version, list(m))
+        else:
+            # storage-root/project/type/name/prefix/full-version
+            p = f"{root.absolute()}/{self.typ.name}/*/*/{self.version}*"
+            m = glob(p)
+            if len(m) == 1:
+                _, _, self.name, _, version = m[0].rsplit("/", 4)
+                self.version = self.path_to_version(version)
+            else:
+                raise NoMatchException(self.version, list(m))
+
+    def path_to_version(self, path: str) -> str:
+        # foobarbaz.swrt -> foobarbaz
+        return path.split(".")[0]
+
     def info(self) -> Dict[str, Any]:
         # TODO: support local resource
         return self._remote_info or {}
@@ -205,7 +275,25 @@ class Resource:
             obj_ver=self.version or "latest",
         )
 
+    def asdict(self) -> Dict:
+        return {
+            "project": self.project.name,
+            "name": self.name,
+            "version": self.version,
+            "type": self.typ.name,
+        }
+
     def __str__(self) -> str:
-        return f"project: {self.project}, name: {self.name}, version: {self.version}"
+        return "/".join(
+            [
+                self.instance.url,
+                "project",
+                self.project.name,
+                self.typ.value,
+                self.name,
+                "version",
+                self.version,
+            ]
+        )
 
     __repr__ = __str__

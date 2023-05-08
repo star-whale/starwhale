@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import copy
 import json
 import typing as t
 import platform
@@ -9,7 +10,7 @@ import threading
 from http import HTTPStatus
 from types import TracebackType
 from pathlib import Path
-from functools import wraps, partial, lru_cache
+from functools import wraps, lru_cache
 from itertools import islice
 
 import yaml
@@ -22,14 +23,13 @@ from starwhale.consts import (
     SW_TMP_DIR_NAME,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.base.uri import URI, URIType
+from starwhale.base.uri import URIType
 from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import InstanceType, DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
@@ -51,6 +51,8 @@ from starwhale.core.dataset.tabular import (
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
+from starwhale.base.uricomponents.project import Project
+from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .loader import DataRow, DataLoader, get_data_loader
 from .builder import MappingDatasetBuilder
@@ -102,26 +104,22 @@ class _Tags:
 class Dataset:
     def __init__(
         self,
-        name: str,
-        version: str,
-        project_uri: URI,
+        uri: Resource,
         readonly: bool = False,
         create: str = _DatasetCreateMode.auto,
     ) -> None:
-        self.name = name
-        self.project_uri = project_uri
+        self._uri = uri
         self.__readonly = readonly
         self._pending_commit_version = (
             os.environ.get(ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST)
             or gen_uniq_version()
         )
 
-        self._make_capsulated_uri = partial(
-            URI.capsulate_uri,
-            instance=self.project_uri.instance,
-            project=self.project_uri.project,
-            obj_type=URIType.DATASET,
-            obj_name=self.name,
+        self._make_capsulated_uri: t.Callable[[str], Resource] = lambda ver: Resource(
+            "/version/".join(filter(bool, [self._uri.name, ver])),
+            typ=ResourceType.dataset,
+            project=copy.deepcopy(self._uri.project),
+            _skip_refine=True,
         )
 
         if create not in (
@@ -133,17 +131,15 @@ class Dataset:
                 f"the current create mode is not in the accept options: {create}"
             )
 
-        _origin_uri = self._make_capsulated_uri(obj_ver=version or "latest")
+        _origin_uri = self._make_capsulated_uri(uri.version or "latest")
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
             if create == _DatasetCreateMode.empty:
                 raise RuntimeError(
-                    f"dataset already existed, failed to create by the {create} create mode: {self.name}"
+                    f"dataset already existed, failed to create by the {create} create mode: {self._uri.name}"
                 )
 
-            self._loading_version = self._auto_complete_version(
-                _origin_uri.object.version
-            )
+            self._loading_version = self._auto_complete_version(_origin_uri.version)
         else:
             # TODO: call server or standalone api to create an empty dataset before committing.
             if create == _DatasetCreateMode.forbid:
@@ -153,21 +149,21 @@ class Dataset:
 
             if readonly:
                 raise ValueError(
-                    f"no support to set a non-existed dataset to the readonly mode: {self.name}"
+                    f"no support to set a non-existed dataset to the readonly mode: {self._uri.name}"
                 )
 
-            if version != "":
+            if self._uri.version != "":
                 raise NoSupportError(
-                    f"no support to create a specified version dataset: {version}"
+                    f"no support to create a specified version dataset: {self._uri.version}"
                 )
 
             self._loading_version = self._pending_commit_version
 
-        self._loading_uri = self._make_capsulated_uri(obj_ver=self._loading_version)
+        self._loading_uri = self._make_capsulated_uri(self._loading_version)
         self.__loading_core_dataset = CoreDataset.get_dataset(self._loading_uri)
 
         self._pending_commit_uri = self._make_capsulated_uri(
-            obj_ver=self._pending_commit_version
+            self._pending_commit_version
         )
         self.__pending_commit_core_dataset = CoreDataset.get_dataset(
             self._pending_commit_uri
@@ -217,10 +213,10 @@ class Dataset:
             return version
 
         # TODO: auto complete for cloud instance
-        if self.project_uri.instance_type == InstanceType.CLOUD:
+        if self._uri.instance.is_cloud:
             return version
 
-        _uri = self._make_capsulated_uri(obj_ver=version)
+        _uri = self._make_capsulated_uri(version)
         store = DatasetStorage(_uri)
         if not store.snapshot_workdir.exists():
             return version
@@ -228,10 +224,10 @@ class Dataset:
             return store.id
 
     def __str__(self) -> str:
-        return f"Dataset: {self.name}, stash version: {self._pending_commit_version}, loading version: {self._loading_version}"
+        return f"Dataset: {self._uri.name}, stash version: {self._pending_commit_version}, loading version: {self._loading_version}"
 
     def __repr__(self) -> str:
-        return f"Dataset: {self.name}, loading uri: {self._loading_uri}, pending commit uri: {self._pending_commit_uri}"
+        return f"Dataset: {self._uri.name}, loading uri: {self._loading_uri}, pending commit uri: {self._pending_commit_uri}"
 
     def __len__(self) -> int:
         return self._total_rows
@@ -366,7 +362,7 @@ class Dataset:
         self, recreate: bool = False, disable_consumption: bool = False
     ) -> DataLoader:
         with self._loader_lock:
-            key = f"consumption-{disable_consumption}-{self.uri.object.version}"
+            key = f"consumption-{disable_consumption}-{self.uri.version}"
             _loader = self.__data_loaders.get(key)
             if _loader is None or recreate:
                 if disable_consumption:
@@ -391,21 +387,21 @@ class Dataset:
         return _loader
 
     @lru_cache(maxsize=32)
-    def _get_datastore_revision(self, uri: URI) -> DatastoreRevision:
-        if uri.object.typ != URIType.DATASET:
+    def _get_datastore_revision(self, uri: Resource) -> DatastoreRevision:
+        if uri.typ != ResourceType.dataset:
             raise NoSupportError(
                 f"only support to fetch dataset datastore revision: {uri}"
             )
 
-        if uri.object.version == "":
+        if uri.version == "":
             raise RuntimeError(f"cannot get version of uri: {uri}")
 
-        if uri.instance_type == InstanceType.CLOUD:
+        if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             r = crm.do_http_request(
-                path=f"/project/{uri.project}/dataset/{uri.object.name}",
-                instance_uri=uri,
-                params={"versionUrl": uri.object.version},
+                path=f"/project/{uri.project.name}/dataset/{uri.name}",
+                instance=uri.instance,
+                params={"versionUrl": uri.version},
             ).json()
             manifest = yaml.safe_load(r["data"]["versionMeta"])
         else:
@@ -503,16 +499,16 @@ class Dataset:
         return _Tags(self.__loading_core_dataset)
 
     @staticmethod
-    def _check_uri_exists(uri: t.Optional[URI]) -> bool:
-        if uri is None or uri.object.version == "":
+    def _check_uri_exists(uri: t.Optional[Resource]) -> bool:
+        if uri is None or uri.version == "":
             return False
 
-        if uri.instance_type == InstanceType.CLOUD:
+        if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             ok, _ = crm.do_http_request_simple_ret(
-                path=f"/project/{uri.project}/{URIType.DATASET}/{uri.object.name}/version/{uri.object.version}",
+                path=f"/project/{uri.project.name}/{URIType.DATASET}/{uri.name}/version/{uri.version}",
                 method=HTTPMethod.HEAD,
-                instance_uri=uri,
+                instance=uri.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],
             )
             return ok
@@ -589,7 +585,7 @@ class Dataset:
             _base_dir = SWCliConfigMixed().rootdir / SW_TMP_DIR_NAME
             ensure_dir(_base_dir)
             self._tmpdir = Path(
-                tempfile.mkdtemp(prefix=f"dataset-{self.name}-", dir=_base_dir)
+                tempfile.mkdtemp(prefix=f"dataset-{self._uri.name}-", dir=_base_dir)
             )
         return self._tmpdir
 
@@ -676,9 +672,7 @@ class Dataset:
                 # TODO: support alignment_bytes_size, volume_bytes_size arguments
                 self._dataset_builder = MappingDatasetBuilder(
                     workdir=self.tmpdir / "builder",
-                    dataset_name=self.name,
-                    project_name=self.project_uri.project,
-                    instance_name=self.project_uri.instance,
+                    dataset_uri=self._uri,
                     blob_alignment_bytes_size=self._builder_blob_alignment_size,
                     blob_volume_bytes_size=self._builder_blob_volume_size,
                 )
@@ -765,7 +759,7 @@ class Dataset:
             raise RuntimeError("version has not been committed yet")
 
     @property
-    def uri(self) -> URI:
+    def uri(self) -> Resource:
         """Dataset URI
 
         Before committing, the uri is for the loading_version.
@@ -882,15 +876,15 @@ class Dataset:
 
             crm = CloudRequestMixed()
             params = {
-                "swds": f"{self.name}:{self._pending_commit_version}",
-                "project": self.project_uri.project,
+                "swds": f"{self._uri.name}:{self._pending_commit_version}",
+                "project": self._uri.project.name,
                 "force": "1",  # stash version is unique, use force=1 to make http retry happy
             }
-            url_path = f"/project/{self.project_uri.project}/dataset/{self.name}/version/{self._pending_commit_version}/file"
+            url_path = f"/project/{self._uri.project.name}/dataset/{self._uri.name}/version/{self._pending_commit_version}/file"
             r = crm.do_multipart_upload_file(
                 url_path=url_path,
                 file_path=manifest_path,
-                instance_uri=self.project_uri,
+                instance=self._uri.instance,
                 params={
                     "phase": _UploadPhase.MANIFEST,
                     "desc": FileDesc.MANIFEST.name,
@@ -901,7 +895,7 @@ class Dataset:
             crm.do_http_request(
                 path=url_path,
                 method=HTTPMethod.POST,
-                instance_uri=self.project_uri,
+                instance=self._uri.instance,
                 data={
                     "phase": _UploadPhase.END,
                     "uploadId": r.json()["data"]["uploadId"],
@@ -921,7 +915,7 @@ class Dataset:
         console.debug(
             f"dataset commit: revision-{dataset_revision}, info revision-{info_revision}"
         )
-        if self.project_uri.instance == STANDALONE_INSTANCE:
+        if self._uri.instance.is_local:
             _submit_standalone_version(manifest_path)
         else:
             _submit_cloud_version(manifest_path)
@@ -962,7 +956,7 @@ class Dataset:
             None
         """
         CoreDataset.copy(
-            str(self.uri),
+            self.uri,
             dest_uri,
             dest_local_project_uri=dest_local_project_uri,
             force=force,
@@ -972,7 +966,7 @@ class Dataset:
     @classmethod
     def list(
         cls,
-        project_uri: t.Union[str, URI] = "",
+        project_uri: t.Union[str, Project] = "",
         fullname: bool = False,
         show_removed: bool = False,
         page_index: int = DEFAULT_PAGE_IDX,
@@ -987,7 +981,7 @@ class Dataset:
     @classmethod
     def dataset(
         cls,
-        uri: t.Union[str, URI],
+        uri: t.Union[str, Resource],
         create: str = _DatasetCreateMode.auto,
         readonly: bool = False,
     ) -> Dataset:
@@ -997,7 +991,7 @@ class Dataset:
         the dataset will be created automatically.
 
         Arguments:
-            uri: (str, URI, required) The dataset uri.
+            uri: (str, Resource, required) The dataset uri.
             create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
                 `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
                 `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
@@ -1041,8 +1035,8 @@ class Dataset:
 
         """
         if isinstance(uri, str):
-            _uri = URI(uri, expected_type=URIType.DATASET)
-        elif isinstance(uri, URI) and uri.object.typ == URIType.DATASET:
+            _uri = Resource(uri, typ=ResourceType.dataset)
+        elif isinstance(uri, Resource) and uri.typ == ResourceType.dataset:
             _uri = uri
         else:
             raise TypeError(
@@ -1050,9 +1044,7 @@ class Dataset:
             )
 
         ds = Dataset(
-            name=_uri.object.name,
-            version=_uri.object.version,
-            project_uri=_uri,  # TODO: cut off dataset resource info?
+            uri=_uri,
             readonly=readonly,
             create=create or _DatasetCreateMode.auto,
         )

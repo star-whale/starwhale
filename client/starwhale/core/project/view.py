@@ -15,6 +15,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
+from starwhale.base.uricomponents.project import Project as ProjectURI
 
 from .model import Project, ProjectObjType
 
@@ -23,7 +24,7 @@ class ProjectTermView(BaseTermView):
     def __init__(self, project_uri: str = "") -> None:
         super().__init__()
         self.raw_uri = project_uri
-        self.uri = URI(project_uri, expected_type=URIType.PROJECT)
+        self.uri = ProjectURI(project_uri)
         self.project = Project.get_project(self.uri)
 
     @BaseTermView._simple_action_print
@@ -65,8 +66,8 @@ class ProjectTermView(BaseTermView):
     def select(self) -> None:
         try:
             self.select_current_default(
-                instance=self.uri.instance_alias or self.uri.instance,
-                project=self.uri.project,
+                instance=self.uri.instance.alias,
+                project=self.uri.name,
             )
         except Exception as e:
             console.print(

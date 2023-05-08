@@ -13,15 +13,12 @@ from binascii import crc32
 from collections import defaultdict
 
 from starwhale.utils import console
-from starwhale.consts import STANDALONE_INSTANCE
-from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     empty_dir,
     ensure_dir,
     blake2b_file,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.base.type import URIType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.retry import http_retry
 from starwhale.core.dataset.type import (
@@ -33,6 +30,7 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 from starwhale.api._impl.dataset.loader import DataRow
+from starwhale.base.uricomponents.resource import Resource
 
 
 class RotatedBinWriter:
@@ -192,25 +190,20 @@ class MappingDatasetBuilder:
     def __init__(
         self,
         workdir: t.Union[Path, str],
-        dataset_name: str,
-        project_name: str,
-        instance_name: str = STANDALONE_INSTANCE,
+        dataset_uri: Resource,
         blob_alignment_bytes_size: int = D_ALIGNMENT_SIZE,
         blob_volume_bytes_size: int = D_FILE_VOLUME_SIZE,
     ) -> None:
         self.workdir = Path(workdir)
-        self.dataset_name = dataset_name
-        self.project_name = project_name
-        self.instance_name = instance_name
-
-        self._in_standalone = instance_name == STANDALONE_INSTANCE
+        self.dataset_uri = dataset_uri
+        self._in_standalone = dataset_uri.instance.is_local
 
         self._blob_alignment_bytes_size = blob_alignment_bytes_size
         self._blob_volume_bytes_size = blob_volume_bytes_size
         self._tabular_dataset = TabularDataset(
-            name=dataset_name,
-            project=project_name,
-            instance_name=instance_name,
+            name=dataset_uri.name,
+            project=dataset_uri.project.name,
+            instance_name=dataset_uri.instance.url,
         )
         self._rows_put_queue: queue.Queue[
             t.Optional[t.Union[DataRow, Exception]]
@@ -313,14 +306,14 @@ class MappingDatasetBuilder:
         else:
             sign_name = blake2b_file(bin_path)
             crm = CloudRequestMixed()
-            instance_uri = URI(self.instance_name, expected_type=URIType.INSTANCE)
+            instance_uri = self.dataset_uri.instance
 
             @http_retry
             def _upload() -> str:
                 r = crm.do_multipart_upload_file(
-                    url_path=f"/project/{self.project_name}/dataset/{self.dataset_name}/hashedBlob/{sign_name}",
+                    url_path=f"/project/{self.dataset_uri.project.name}/dataset/{self.dataset_uri.name}/hashedBlob/{sign_name}",
                     file_path=bin_path,
-                    instance_uri=instance_uri,
+                    instance=instance_uri,
                 )
                 return r.json()["data"]  # type: ignore
 
