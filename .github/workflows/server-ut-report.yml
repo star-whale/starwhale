@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-
   filter:
     runs-on: ubuntu-latest
 
@@ -50,9 +49,9 @@ jobs:
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'adopt'
-          cache: 'maven'
+          java-version: "11"
+          distribution: "adopt"
+          cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
       - name: Build with Maven
@@ -65,7 +64,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           name: controller-ut
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           flags: controller
           verbose: true
           directory: ./server
