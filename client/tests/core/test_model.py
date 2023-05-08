@@ -608,6 +608,7 @@ class StandaloneModelTestCase(TestCase):
         assert model_src_dir != str(Path(self.workdir).resolve())
         assert model_src_dir == str(job_dir / "snapshot")
         assert not os.path.exists(model_src_dir)
+        assert Path.cwd() == Path(model_src_dir)
 
         version = "zxcvbnm"
         StandaloneModel.run(
@@ -629,6 +630,7 @@ class StandaloneModelTestCase(TestCase):
         assert model_src_dir == str(Path(self.workdir).resolve())
         assert model_src_dir != str(job_dir / "snapshot")
         assert os.path.exists(model_src_dir)
+        assert Path.cwd() == Path(model_src_dir)
 
         version = "asdfghjkl"
         StandaloneModel.run(
@@ -646,6 +648,7 @@ class StandaloneModelTestCase(TestCase):
         assert model_src_dir != str(Path(self.workdir).resolve())
         assert model_src_dir == str(job_dir / "snapshot")
         assert os.path.exists(model_src_dir)
+        assert Path.cwd() == Path(model_src_dir)
 
     @Mocker()
     @patch("starwhale.core.model.model.CloudModel.list")

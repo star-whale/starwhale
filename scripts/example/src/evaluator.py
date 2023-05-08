@@ -1,5 +1,7 @@
+import os
 import random
 import typing as t
+import os.path as osp
 
 import numpy
 
@@ -10,6 +12,9 @@ from starwhale import evaluation, multi_classification
     replicas=1,
 )
 def predict(data: t.Dict, **kw: t.Any) -> t.Any:
+    # Test relative path case
+    file_name = osp.join("templates", "data.json")
+    assert osp.exists(file_name)
     return (
         data["txt"].content,
         numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),

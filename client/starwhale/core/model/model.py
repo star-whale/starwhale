@@ -336,6 +336,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             # TODO: tune performance for copy files, such as overlay
             copy_dir(model_src_dir, snapshot_dir)
 
+        # change current dir into snapshot dir, this will help user code to find files easily.
+        console.print(f":airplane: change current dir to {snapshot_dir}")
+        os.chdir(snapshot_dir)
+
         job_yaml_path = snapshot_dir / SW_AUTO_DIRNAME / DEFAULT_JOBS_FILE_NAME
         if not job_yaml_path.exists() or force_generate_jobs_yaml:
             generate_jobs_yaml(
