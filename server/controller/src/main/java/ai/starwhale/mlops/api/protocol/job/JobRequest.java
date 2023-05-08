@@ -35,9 +35,6 @@ public class JobRequest implements Serializable {
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
-    @JsonProperty("useEmbedRuntime")
-    private boolean useEmbedRuntime;
-
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
 
