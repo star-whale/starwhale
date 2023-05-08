@@ -169,6 +169,8 @@ jobs:
       - name: Test by client side
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh client_test
+        env:
+          SKIP_UI_BUILD: 1
 
       - name: Post output client-side test logs
         if: failure()

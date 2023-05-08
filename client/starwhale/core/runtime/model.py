@@ -1868,11 +1868,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             # We assume the equation in the runtime auto-lock build mode:
             #   the lock files = pip_pkg + pip_req_file + conda_pkg + conda_env_file
             raw_deps = []
-            for dep in deps["raw_deps"]:
-                kind = DependencyType(dep["kind"])
-                if kind in (DependencyType.NATIVE_FILE, DependencyType.WHEEL):
-                    raw_deps.append(dep)
-
             for lf in lock_files:
                 if lf.endswith(RuntimeLockFileType.CONDA):
                     raw_deps.append({"deps": lf, "kind": DependencyType.CONDA_ENV_FILE})
@@ -1882,6 +1877,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     raise NoSupportError(
                         f"lock file({lf}) cannot be converted into raw_deps"
                     )
+
+            # NATIVE_FILE and WHEEL must be installed after CONDA_ENV_FILE or PIP_REQ_FILE installation.
+            for dep in deps["raw_deps"]:
+                kind = DependencyType(dep["kind"])
+                if kind in (DependencyType.NATIVE_FILE, DependencyType.WHEEL):
+                    raw_deps.append(dep)
         else:
             raw_deps = deps["raw_deps"]
 

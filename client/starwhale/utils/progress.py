@@ -3,6 +3,7 @@ import typing as t
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
+from starwhale.utils import console
 from starwhale.consts import ENV_DISABLE_PROGRESS_BAR
 
 
@@ -23,6 +24,7 @@ def run_with_progress_bar(
             *Progress.get_default_columns(),
             TimeElapsedColumn(),
             refresh_per_second=1,
+            console=console.rich_console,
         ) as progress:
             task = progress.add_task(
                 f"[red]{title}", total=sum([o[1] for o in operations])
