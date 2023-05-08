@@ -534,6 +534,7 @@ def _run(
                 "task_index": task_index,
                 "task_num": override_task_num,
             },
+            force_generate_jobs_yaml=uri is None,
         )
 
 

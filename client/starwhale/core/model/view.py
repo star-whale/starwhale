@@ -236,6 +236,7 @@ class ModelTermView(BaseTermView):
         scheduler_run_args: t.Optional[t.Dict] = None,
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
+        force_generate_jobs_yaml: bool = False,
     ) -> None:
         if runtime_uri:
             RuntimeProcess(uri=runtime_uri).run()
@@ -250,6 +251,7 @@ class ModelTermView(BaseTermView):
                 scheduler_run_args=scheduler_run_args,
                 forbid_snapshot=forbid_snapshot,
                 cleanup_snapshot=cleanup_snapshot,
+                force_generate_jobs_yaml=force_generate_jobs_yaml,
             )
 
     @classmethod
