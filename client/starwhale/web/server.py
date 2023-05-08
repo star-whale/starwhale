@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 
 from starwhale.web import user, panel, system, project, data_store
-from starwhale.base.uricomponents.instance import Instance
+from starwhale.base.uri.instance import Instance
 
 STATIC_DIR_DEV = pkg_resources.resource_filename("starwhale", "web/ui")
 

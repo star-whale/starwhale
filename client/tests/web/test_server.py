@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from starwhale.utils.fs import ensure_file
 from starwhale.web.server import Server
-from starwhale.base.uricomponents.instance import Instance
+from starwhale.base.uri.instance import Instance
 
 
 def test_static_faked_response():

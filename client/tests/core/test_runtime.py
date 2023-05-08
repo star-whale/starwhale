@@ -36,7 +36,9 @@ from starwhale.utils.error import (
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.project import Project
 from starwhale.core.runtime.cli import _list as runtime_list_cli
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.view import (
     get_term_view,
     RuntimeTermView,
@@ -52,8 +54,6 @@ from starwhale.core.runtime.model import (
     StandaloneRuntime,
 )
 from starwhale.core.runtime.store import RuntimeStorage
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _runtime_data_dir = f"{ROOT_DIR}/data/runtime"
 _swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
@@ -171,8 +171,8 @@ class StandaloneRuntimeTestCase(TestCase):
             )
         )
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info")
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_remote_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.runtime.model.StandaloneRuntime.restore")
     @patch("starwhale.base.bundle.extract_tar")
@@ -256,7 +256,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_extract.call_count == 1
         assert m_restore.call_args[0] == (extract_dir, venv_dir)
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -365,7 +365,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "name": "starwhale",
         }
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -474,7 +474,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "name": "test",
         }
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -578,7 +578,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "name": "starwhale",
         }
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.utils.venv.subprocess.check_output", autospec=True)
     def test_build_from_env_exceptions(
         self, m_check_output: MagicMock, *args: t.Any
@@ -613,7 +613,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 conda_name="not-found-name",
             )
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.subprocess.check_output")
@@ -708,7 +708,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 workdir=workdir, yaml_path=os.path.join(workdir, "runtime.yaml")
             )
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.subprocess.check_output")
@@ -1675,7 +1675,7 @@ class StandaloneRuntimeTestCase(TestCase):
             ],
         ]
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.runtime.model.platform.machine")
     @patch("starwhale.utils.fs.tarfile.open")
     @patch("starwhale.utils.venv.check_call")

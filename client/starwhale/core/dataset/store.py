@@ -30,7 +30,7 @@ from starwhale.utils.fs import (
     FilePosition,
     BLAKE2B_SIGNATURE_ALGO,
 )
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import BundleType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.store import BaseStorage
 from starwhale.utils.error import (
@@ -42,8 +42,8 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 _DEFAULT_S3_REGION = "local"
@@ -72,7 +72,7 @@ class DatasetStorage(BaseStorage):
         version = self.uri.version
         return (
             self.project_dir
-            / URIType.DATASET
+            / ResourceType.dataset.value
             / self.uri.name
             / version[:VERSION_PREFIX_CNT]
             / f"{version}{BundleType.DATASET}"
@@ -88,7 +88,7 @@ class DatasetStorage(BaseStorage):
 
     @property
     def uri_type(self) -> str:
-        return URIType.DATASET
+        return ResourceType.dataset.value
 
     @property
     def data_dir(self) -> Path:
@@ -100,7 +100,7 @@ class DatasetStorage(BaseStorage):
 
     @property
     def dataset_rootdir(self) -> Path:
-        return self.project_dir / URIType.DATASET
+        return self.project_dir / ResourceType.dataset.value
 
     @classmethod
     def save_data_file(

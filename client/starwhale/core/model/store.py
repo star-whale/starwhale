@@ -10,8 +10,9 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_SW_TASK_RUN_IMAGE,
 )
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
+from starwhale.base.uri.resource import ResourceType
 
 
 class ModelStorage(BaseStorage):
@@ -24,7 +25,7 @@ class ModelStorage(BaseStorage):
 
     @property
     def uri_type(self) -> str:
-        return URIType.MODEL
+        return ResourceType.model.value
 
     @property
     def src_dir_name(self) -> str:
@@ -78,7 +79,7 @@ class ModelStorage(BaseStorage):
         version = self.uri.version
         return (
             self.project_dir
-            / URIType.MODEL
+            / self.uri.typ.value
             / self.uri.name
             / version[:VERSION_PREFIX_CNT]
             / f"{version}{BundleType.MODEL}"
@@ -100,6 +101,6 @@ class ModelStorage(BaseStorage):
         manifest = self.get_manifest_by_path(
             fpath=self.packaged_runtime_bundle_path,
             bundle_type=BundleType.RUNTIME,
-            uri_type=URIType.RUNTIME,
+            uri_type=ResourceType.runtime.value,
         )
         return manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)

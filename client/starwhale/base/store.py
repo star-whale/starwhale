@@ -16,8 +16,8 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir, guess_real_path
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 class BundleField(t.NamedTuple):
@@ -177,10 +177,10 @@ class BaseStorage(metaclass=ABCMeta):
         cls,
         project_uri: Project,
         bundle_type: str,
-        uri_type: str,
+        uri_type: ResourceType,
     ) -> t.Generator[BundleField, None, None]:
         sw = SWCliConfigMixed()
-        _obj_dir = sw.rootdir / project_uri.name / uri_type
+        _obj_dir = sw.rootdir / project_uri.name / uri_type.value
         _tags_map = {}
         for _path in _obj_dir.glob(f"**/*{bundle_type}"):
             if not _path.name.endswith(bundle_type):

@@ -60,7 +60,7 @@ from starwhale.utils.fs import (
     ensure_file,
     blake2b_file,
 )
-from starwhale.base.type import URIType, BundleType, InstanceType, RunSubDirType
+from starwhale.base.type import BundleType, InstanceType, RunSubDirType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
@@ -75,11 +75,11 @@ from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.core.model.copy import ModelCopy
+from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 @unique
@@ -180,7 +180,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         bc = ModelCopy(
             src_uri,
             dest_uri,
-            URIType.MODEL,
+            ResourceType.model,
             force,
             dest_local_project_uri=dest_local_project_uri,
         )
@@ -547,7 +547,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         for _bf in ModelStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.MODEL,
-            uri_type=URIType.MODEL,
+            uri_type=ResourceType.model,
         ):
             _mpath = _bf.path / DEFAULT_MANIFEST_NAME
             if not _mpath.exists() or not cls.do_bundle_filter(_bf, filters):
@@ -826,7 +826,7 @@ class CloudModel(CloudBundleModelMixin, Model):
         filter_dict = filter_dict or {}
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(
-            project_uri, URIType.MODEL, page, size, filter_dict
+            project_uri, ResourceType.model, page, size, filter_dict
         )
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:

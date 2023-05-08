@@ -19,7 +19,7 @@ from starwhale.utils.venv import (
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.core.model.model import StandaloneModel
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import StandaloneRuntime
 

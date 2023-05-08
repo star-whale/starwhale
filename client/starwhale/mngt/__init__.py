@@ -19,9 +19,10 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import empty_dir
-from starwhale.base.type import URIType, get_bundle_type_by_uri
+from starwhale.base.type import get_bundle_type_by_uri
 from starwhale.utils.venv import get_conda_bin
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.resource import ResourceType
 
 
 def gc(dry_run: bool = False, yes: bool = False) -> None:
@@ -44,28 +45,32 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
 
         _removed_paths = []
         for typ in (
-            URIType.DATASET,
-            URIType.JOB,
-            URIType.RUNTIME,
-            URIType.MODEL,
+            ResourceType.model,
+            ResourceType.dataset,
+            ResourceType.runtime,
+            ResourceType.job,
         ):
-            _bundle_type = get_bundle_type_by_uri(typ) if typ != URIType.JOB else ""
-            _recover_dir = project_dir / typ / RECOVER_DIRNAME
+            _bundle_type = (
+                get_bundle_type_by_uri(typ) if typ != ResourceType.job else ""
+            )
+            _recover_dir = project_dir / typ.value / RECOVER_DIRNAME
 
-            if typ in (URIType.RUNTIME, URIType.MODEL):
+            if typ in (ResourceType.model, ResourceType.runtime):
                 for _path in _recover_dir.glob(f"**/*{_bundle_type}"):
                     if not (_path.is_file() and _path.name.endswith(_bundle_type)):
                         continue
                     _removed_paths.append(_path)
-                    _workdir_path = _get_workdir_path(project_dir, typ, _path)
+                    _workdir_path = _get_workdir_path(project_dir, typ.value, _path)
                     if _workdir_path.exists():
                         _removed_paths.append(_workdir_path)
-            elif typ in (URIType.DATASET, URIType.JOB):
+            elif typ in (ResourceType.dataset, ResourceType.job):
                 for _path in _recover_dir.glob(f"**/{DEFAULT_MANIFEST_NAME}"):
                     if not _path.is_file():
                         continue
                     _removed_paths.append(_path.parent)
-                    _workdir_path = _get_workdir_path(project_dir, typ, _path.parent)
+                    _workdir_path = _get_workdir_path(
+                        project_dir, _bundle_type, _path.parent
+                    )
                     if _workdir_path.exists():
                         _removed_paths.append(_workdir_path)
 
@@ -90,7 +95,7 @@ def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
     version = bundle_path.name.split(".")[0]
     object_prefix = f"{version[:VERSION_PREFIX_CNT]}/{version}"
 
-    if typ != URIType.JOB:
+    if typ != ResourceType.job.value:
         object_name = bundle_path.parent.parent.name
         object_prefix = f"{object_name}/{object_prefix}"
     _rpath = project_dir / "workdir" / typ / RECOVER_DIRNAME / object_prefix
@@ -119,7 +124,7 @@ def open_web(instance_uri: str = "") -> None:
     instance_uri = instance_uri or sw.current_instance
 
     if instance_uri == STANDALONE_INSTANCE:
-        console.print(":see_no_evil: standalone web ui is comming soon.")
+        console.print(":see_no_evil: standalone web ui is coming soon.")
     else:
         _config = sw.get_sw_instance_config(instance_uri)
         _uri = _config.get("uri", "")

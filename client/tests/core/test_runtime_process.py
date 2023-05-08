@@ -9,9 +9,9 @@ from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.store import RuntimeStorage
 from starwhale.core.runtime.process import Process
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class RuntimeProcessTestCase(TestCase):

@@ -27,12 +27,13 @@ from starwhale.consts import (
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.base.uri import URIType
 from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import DatasetChangeMode
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
     DatasetSummary,
     D_ALIGNMENT_SIZE,
@@ -51,8 +52,6 @@ from starwhale.core.dataset.tabular import (
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .loader import DataRow, DataLoader, get_data_loader
 from .builder import MappingDatasetBuilder
@@ -506,7 +505,7 @@ class Dataset:
         if uri.instance.is_cloud:
             crm = CloudRequestMixed()
             ok, _ = crm.do_http_request_simple_ret(
-                path=f"/project/{uri.project.name}/{URIType.DATASET}/{uri.name}/version/{uri.version}",
+                path=f"/project/{uri.project.name}/{ResourceType.dataset.value}/{uri.name}/version/{uri.version}",
                 method=HTTPMethod.HEAD,
                 instance=uri.instance,
                 ignore_status_codes=[HTTPStatus.NOT_FOUND],

@@ -13,12 +13,11 @@ import pytest
 
 from starwhale.api import track
 from starwhale.utils import now_str, load_yaml
-from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file, BLAKE2B_SIGNATURE_ALGO
-from starwhale.base.type import URIType
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.process import check_call
+from starwhale.base.uri.project import Project
 from starwhale.core.dataset.type import Link, Audio, Image
 from starwhale.api._impl.data_store import TableDesc, TableWriter
 from starwhale.api._impl.track.base import (
@@ -186,10 +185,10 @@ class TestTracker(BaseTestCase):
         with Tracker.start(
             saved_dir=self.local_storage,
             name="test_tracker",
-            project_uri=URI("test_project", expected_type=URIType.PROJECT),
+            project_uri=Project("test_project"),
         ) as t:
             assert t.name == "test_tracker"
-            assert t.project_uri.project == "test_project"
+            assert t.project_uri.name == "test_project"
 
         with Tracker.start(
             saved_dir=self.local_storage,
@@ -197,8 +196,8 @@ class TestTracker(BaseTestCase):
             project_uri="test_project",
             mode="offline",
         ) as t:
-            assert t.project_uri.instance == "local"
-            assert t.project_uri.project == "test_project"
+            assert t.project_uri.instance.alias == "local"
+            assert t.project_uri.name == "test_project"
             assert t._syncer_thread is None
             assert t._handler_thread is not None
             assert t._handler_thread.sync_queue is None  # type: ignore
@@ -213,13 +212,26 @@ class TestTracker(BaseTestCase):
         t1.end()
 
     @patch("os.environ", {})
-    def test_start_for_cloud(self) -> None:
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_start_for_cloud(self, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "foo": {
+                    "uri": "http://1.1.1.1",
+                    "sw_token": "token",
+                },
+                "bar": {"uri": "http://0.0.0.0"},
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": "/root"},
+        }
         with Tracker.start(
             saved_dir=self.local_storage,
             project_uri="http://1.1.1.1/project/test",
             access_token="abcd",
         ) as t:
-            assert t.project_uri.project == "test"
+            assert t.project_uri.name == "test"
 
         with self.assertRaisesRegex(
             ValueError, "access_token is required for cloud instance"

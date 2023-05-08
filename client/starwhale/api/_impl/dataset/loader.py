@@ -11,13 +11,13 @@ from starwhale.consts import HTTPMethod
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import ParameterError
 from starwhale.utils.dict_util import transform_dict
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import (
     TabularDataset,
     TabularDatasetRow,
     DEFAULT_CONSUMPTION_BATCH_SIZE,
     TabularDatasetSessionConsumption,
 )
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _DEFAULT_LOADER_CACHE_SIZE = 20
 

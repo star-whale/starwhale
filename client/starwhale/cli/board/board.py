@@ -6,10 +6,9 @@ import click
 from textual.app import App
 from textual.widgets import Header, ScrollView
 
-from starwhale.base.uri import URI
-
 from .widgets import Jobs, Models, Datasets, Runtimes
 from .project_tree import ProjectTree, ProjectClick
+from ...base.uri.project import Project
 
 if t.TYPE_CHECKING:
     from textual import events
@@ -36,14 +35,14 @@ class Dashboard(App):
         await self.view.dock(Header(style=""), edge="top")
 
         # pass empty dir to URI, it will use current instance / project
-        uri = URI("")
+        uri = Project()
         await self.view.dock(
             ScrollView(
                 ProjectTree(
                     "Starwhale",
                     "projects",
-                    current_instance=uri.instance_alias,
-                    current_project=uri.project,
+                    current_instance=uri.instance.alias,
+                    current_project=uri.name,
                 )
             ),
             edge="left",

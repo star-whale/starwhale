@@ -23,6 +23,7 @@ from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
     Text,
     Audio,
@@ -37,7 +38,6 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.tabular import TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -88,9 +88,7 @@ class _DatasetSDKTestBase(BaseTestCase):
         return (Path(ROOT_DIR) / "data" / "simple.wav").read_bytes()
 
 
-@patch(
-    "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info", MagicMock()
-)
+@patch("starwhale.base.uri.resource.Resource.refine_local_rc_info", MagicMock())
 class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
         ds = dataset("mnist")
@@ -1317,12 +1315,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._dataset_builder.signature_bins_meta[0].size == 48
 
 
-@patch(
-    "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info", MagicMock()
-)
-@patch(
-    "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info", MagicMock()
-)
+@patch("starwhale.base.uri.resource.Resource.refine_local_rc_info", MagicMock())
+@patch("starwhale.base.uri.resource.Resource.refine_remote_rc_info", MagicMock())
 class TestPytorch(_DatasetSDKTestBase):
     def test_skip_default_transform_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -1478,11 +1472,11 @@ class TestPytorch(_DatasetSDKTestBase):
         assert list(item["img"].size()) == [2, 2, 2, 3]
 
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_audio_transform(self) -> None:
@@ -1622,11 +1616,11 @@ class TestTensorflow(_DatasetSDKTestBase):
             tf_dataset._inspect_spec([{"a": 1}, {"a": 2}])
 
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_tf_dataset_drop_index(self) -> None:
@@ -1647,11 +1641,11 @@ class TestTensorflow(_DatasetSDKTestBase):
         assert len(items) == len(ds)
 
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_tf_dataset_with_index(self) -> None:

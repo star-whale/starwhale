@@ -2,8 +2,8 @@ from typing import Any
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.exceptions import UriTooShortException
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.exceptions import UriTooShortException
 
 
 class MockInstance:
@@ -15,7 +15,7 @@ class MockInstance:
 
 
 class TestProject(TestCase):
-    @patch("starwhale.base.uricomponents.project.Instance", MockInstance)
+    @patch("starwhale.base.uri.project.Instance", MockInstance)
     def test_project(self) -> None:
         p = Project()
         assert p.name == "foo"

@@ -20,17 +20,15 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
 )
-from starwhale.base.uri import URI
 from starwhale.utils.fs import cmp_file_content
-from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import StandaloneRuntime
 from starwhale.core.runtime.process import Process as RuntimeProcess
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Model, CloudModel, ModelConfig, ModelInfoFilter, StandaloneModel
 
@@ -248,7 +246,7 @@ class ModelTermView(BaseTermView):
             StandaloneModel.run(
                 model_src_dir=Path(model_src_dir),
                 model_config=model_config,
-                project=URI(project, expected_type=URIType.PROJECT).project,
+                project=Project(project).name,
                 version=version,
                 run_handler=run_handler,
                 dataset_uris=dataset_uris,
@@ -335,7 +333,7 @@ class ModelTermView(BaseTermView):
             model_uri = cls.prepare_build_bundle(
                 project=project,
                 bundle_name=model_config.name,
-                typ=URIType.MODEL,
+                typ=ResourceType.model,
             )
             m = Model.get_model(model_uri)
 

@@ -59,12 +59,25 @@ class ModelBuildTestCase(BaseTestCase):
             m_model_view.build.call_args[1]["workdir"]
         ).resolve().absolute() == workdir.resolve().absolute()
 
-    @patch("os.unlink")
+    @patch("os.unlink", MagicMock())
+    @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
     @patch("starwhale.core.model.view.ModelTermView")
     def test_build_with_copy(
-        self, m_model_view: MagicMock, m_check_python: MagicMock, m_unlink: MagicMock
+        self, m_model_view: MagicMock, m_check_python: MagicMock, m_conf: MagicMock
     ) -> None:
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "foo": {
+                    "uri": "http://localhost:8080",
+                    "current_project": "test",
+                    "sw_token": "token",
+                },
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": "/root"},
+        }
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "copy" / "workdir"
         ensure_dir(workdir / "models")

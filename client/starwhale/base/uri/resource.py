@@ -9,14 +9,10 @@ import requests
 
 from starwhale.utils import load_yaml
 from starwhale.consts import SW_API_VERSION
-from starwhale.base.uri import URI
 from starwhale.utils.config import load_swcli_config
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.instance import Instance
-from starwhale.base.uricomponents.exceptions import (
-    NoMatchException,
-    UriTooShortException,
-)
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.exceptions import NoMatchException, UriTooShortException
 
 rc_url_regex = re.compile(
     r"(?P<scheme>https*)://"
@@ -266,15 +262,6 @@ class Resource:
     def instance(self) -> Instance:
         return self.project.instance
 
-    def to_uri(self) -> URI:
-        return URI.capsulate_uri(
-            instance=str(self.instance),
-            project=self.project.name,
-            obj_type=self.typ.name,
-            obj_name=self.name or "",
-            obj_ver=self.version or "latest",
-        )
-
     def asdict(self) -> Dict:
         return {
             "project": self.project.name,
@@ -283,7 +270,8 @@ class Resource:
             "type": self.typ.name,
         }
 
-    def __str__(self) -> str:
+    @property
+    def full_uri(self) -> str:
         return "/".join(
             [
                 self.instance.url,
@@ -292,8 +280,11 @@ class Resource:
                 self.typ.value,
                 self.name,
                 "version",
-                self.version,
+                self.version or "latest",
             ]
         )
+
+    def __str__(self) -> str:
+        return self.full_uri
 
     __repr__ = __str__

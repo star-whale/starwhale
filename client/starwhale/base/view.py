@@ -27,8 +27,8 @@ from starwhale.consts import (
 )
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 
 if t.TYPE_CHECKING:
     from rich.console import RenderableType
@@ -133,7 +133,7 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def prepare_build_bundle(
-        project: str, bundle_name: str, typ: str, auto_gen_version: bool = True
+        project: str, bundle_name: str, typ: ResourceType, auto_gen_version: bool = True
     ) -> Resource:
         console.print(f":construction: start to build {typ} bundle...")
         project_uri = Project(project)
@@ -150,7 +150,7 @@ class BaseTermView(SWCliConfigMixed):
         _uri = Resource(
             f"{bundle_name}/version/{obj_ver}",
             project=project_uri,
-            typ=ResourceType(typ),
+            typ=typ,
             _skip_refine=True,
         )
         console.print(f":construction_worker: uri {_uri}")

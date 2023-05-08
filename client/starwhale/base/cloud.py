@@ -24,9 +24,9 @@ from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.retry import http_retry
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.instance import Instance
-from starwhale.base.uricomponents.resource import Resource
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.resource import Resource, ResourceType
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -174,9 +174,11 @@ class CloudRequestMixed:
             remain=_d["total"] - _d["size"],
         )
 
-    def _fetch_bundle_info(self, uri: Resource, typ: str) -> t.Dict[str, t.Any]:
+    def _fetch_bundle_info(
+        self, uri: Resource, typ: ResourceType
+    ) -> t.Dict[str, t.Any]:
         _manifest: t.Dict[str, t.Any] = {
-            "uri": uri.to_uri().full_uri,
+            "uri": uri.full_uri,
             "project": uri.project,
             "name": uri.name,
         }
@@ -195,11 +197,13 @@ class CloudRequestMixed:
             )[0]
         return _manifest
 
-    def _fetch_bundle_version_info(self, uri: Resource, typ: str) -> t.Dict[str, t.Any]:
+    def _fetch_bundle_version_info(
+        self, uri: Resource, typ: ResourceType
+    ) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{uri.project}/{typ}/{uri.name}",
             method=HTTPMethod.GET,
-            instance=uri,
+            instance=uri.instance,
             params={"versionName": uri.version},
         ).json()
         return r["data"]  # type: ignore
@@ -208,12 +212,12 @@ class CloudRequestMixed:
         self,
         name: str,
         project_uri: Project,
-        typ: str,
+        typ: ResourceType,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         r = self.do_http_request(
-            f"/project/{project_uri.name}/{typ}/{name}/version",
+            f"/project/{project_uri.name}/{typ.value}/{name}/version",
             instance=project_uri.instance,
             method=HTTPMethod.GET,
             params={"pageNum": page, "pageSize": size},
@@ -238,7 +242,7 @@ class CloudRequestMixed:
     def _fetch_bundle_all_list(
         self,
         project_uri: Project,
-        uri_typ: str,
+        uri_typ: ResourceType,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
         filter_dict: t.Optional[t.Dict[str, t.Any]] = None,
@@ -247,7 +251,7 @@ class CloudRequestMixed:
         _params = {"pageNum": page, "pageSize": size}
         _params.update(filter_dict)
         r = self.do_http_request(
-            f"/project/{project_uri.name}/{uri_typ}",
+            f"/project/{project_uri.name}/{uri_typ.value}",
             params=_params,
             instance=project_uri.instance,
         ).json()
@@ -271,7 +275,7 @@ class CloudRequestMixed:
 
         return objects, self.parse_pager(r)
 
-    def get_bundle_size_from_resp(self, typ: str, item: t.Dict) -> int:
+    def get_bundle_size_from_resp(self, typ: ResourceType, item: t.Dict) -> int:
         default_size = 0
         size = item.get("size", default_size)
         if size:
@@ -284,11 +288,11 @@ class CloudRequestMixed:
         if not isinstance(meta, dict):
             return default_size
 
-        if typ == "dataset":
+        if typ == ResourceType.dataset:
             return int(
                 meta.get("dataset_summary", {}).get("blobs_byte_size", default_size)
             )
-        if typ == "runtime":
+        if typ == ResourceType.runtime:
             # no size info in meta for now
             return default_size
 
@@ -298,7 +302,7 @@ class CloudRequestMixed:
 class CloudBundleModelMixin(CloudRequestMixed):
     def info(self) -> t.Dict[str, t.Any]:
         uri: Resource = self.uri  # type: ignore
-        return self._fetch_bundle_info(uri, uri.typ.value)
+        return self._fetch_bundle_info(uri, uri.typ)
 
     @ignore_error(({}, {}))
     def history(
@@ -308,7 +312,7 @@ class CloudBundleModelMixin(CloudRequestMixed):
         return self._fetch_bundle_history(
             name=uri.name,
             project_uri=uri.project,
-            typ=uri.typ.value,
+            typ=uri.typ,
             page=page,
             size=size,
         )

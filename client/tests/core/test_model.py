@@ -26,7 +26,7 @@ from starwhale.consts import (
     EVALUATION_PANEL_LAYOUT_YAML_FILE_NAME,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file, blake2b_file
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import BundleType
 from starwhale.api.service import Service
 from starwhale.utils.error import ExistedError, NotFoundError
 from starwhale.utils.config import SWCliConfigMixed
@@ -36,6 +36,7 @@ from starwhale.core.model.cli import _list as list_cli
 from starwhale.core.model.cli import _serve as serve_cli
 from starwhale.core.model.cli import _prepare_model_run_args
 from starwhale.core.model.view import ModelTermView, ModelTermViewJson
+from starwhale.base.uri.project import Project
 from starwhale.core.model.model import (
     ModelConfig,
     ModelInfoFilter,
@@ -43,12 +44,11 @@ from starwhale.core.model.model import (
     resource_to_file_node,
 )
 from starwhale.core.model.store import ModelStorage
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
+from starwhale.base.uri.exceptions import NoMatchException
 from starwhale.core.runtime.process import Process
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
-from starwhale.base.uricomponents.exceptions import NoMatchException
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
 _model_yaml = open(f"{_model_data_dir}/model.yaml").read()
@@ -81,11 +81,11 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.Walker.files")
     @patch("starwhale.core.model.model.blake2b_file")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_build_workflow(
@@ -132,7 +132,7 @@ class StandaloneModelTestCase(TestCase):
         bundle_path = (
             self.sw.rootdir
             / "self"
-            / URIType.MODEL
+            / ResourceType.model.value
             / self.name
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.MODEL}"
@@ -262,7 +262,7 @@ class StandaloneModelTestCase(TestCase):
             workdir=self.workdir, project="self", model_config=model_config
         )
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch("starwhale.core.model.model.StandaloneModel._make_meta_tar")
     @patch("starwhale.core.model.model.StandaloneModel._gen_model_serving")
@@ -500,7 +500,7 @@ class StandaloneModelTestCase(TestCase):
         base_bundle_path = (
             self.sw.rootdir
             / "self"
-            / URIType.MODEL
+            / ResourceType.model.value
             / self.name
             / base_version[:VERSION_PREFIX_CNT]
             / f"{base_version}{BundleType.MODEL}"
@@ -514,7 +514,7 @@ class StandaloneModelTestCase(TestCase):
         compare_bundle_path = (
             self.sw.rootdir
             / "self"
-            / URIType.MODEL
+            / ResourceType.model.value
             / self.name
             / compare_version[:VERSION_PREFIX_CNT]
             / f"{compare_version}{BundleType.MODEL}"
@@ -733,7 +733,7 @@ class StandaloneModelTestCase(TestCase):
 
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_prepare_model_run_args(self, *args: t.Any) -> None:
@@ -895,7 +895,7 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.StandaloneModel")
     @patch("starwhale.core.model.model.StandaloneModel.serve")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch("starwhale.core.model.view.RuntimeProcess")
@@ -1057,7 +1057,7 @@ def test_build_with_custom_config_file(
     bundle_path = (
         tmp_path
         / "self"
-        / URIType.MODEL
+        / ResourceType.model.value
         / name
         / build_version[:VERSION_PREFIX_CNT]
         / f"{build_version}{BundleType.MODEL}"
@@ -1101,7 +1101,7 @@ def test_render_eval_layout(m_sw_config: MagicMock, m_g: MagicMock, tmp_path: Pa
     bundle_path = (
         tmp_path
         / "self"
-        / URIType.MODEL
+        / ResourceType.model.value
         / name
         / build_version[:VERSION_PREFIX_CNT]
         / f"{build_version}{BundleType.MODEL}"

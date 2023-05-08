@@ -1,21 +1,12 @@
 from enum import Enum, unique
 
 from starwhale.utils.error import NoSupportError
+from starwhale.base.uri.resource import ResourceType
 
 
 class InstanceType:
     STANDALONE = "standalone"
     CLOUD = "cloud"
-
-
-class URIType:
-    INSTANCE = "instance"
-    PROJECT = "project"
-    MODEL = "model"
-    DATASET = "dataset"
-    RUNTIME = "runtime"
-    JOB = "job"
-    UNKNOWN = "unknown"
 
 
 class RunSubDirType:
@@ -56,13 +47,12 @@ class RuntimeLockFileType:
     CONDA = "conda-sw-lock.yaml"
 
 
-def get_bundle_type_by_uri(uri_type: str) -> str:
-    # TODO use constant
-    if uri_type == "dataset":
+def get_bundle_type_by_uri(uri_type: ResourceType) -> str:
+    if uri_type == ResourceType.dataset:
         return BundleType.DATASET
-    elif uri_type == "model":
+    elif uri_type == ResourceType.model:
         return BundleType.MODEL
-    elif uri_type == "runtime":
+    elif uri_type == ResourceType.runtime:
         return BundleType.RUNTIME
     else:
         raise NoSupportError(uri_type)

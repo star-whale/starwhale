@@ -10,8 +10,8 @@ from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import DatasetAttr, DatasetConfig
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .view import get_term_view, DatasetTermView
 

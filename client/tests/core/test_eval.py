@@ -12,8 +12,8 @@ from starwhale.utils.config import load_swcli_config, get_swcli_config_path
 from starwhale.core.job.view import JobTermView, JobTermViewRich
 from starwhale.core.job.model import CloudJob, StandaloneJob
 from starwhale.core.job.store import JobStorage
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 
 _job_data_dir = f"{ROOT_DIR}/data/job"
 _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
@@ -266,11 +266,11 @@ class CloudJobTestCase(TestCase):
     @Mocker()
     @patch("starwhale.core.job.view.console.print")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_actions(self, rm: Mocker, m_console: MagicMock):

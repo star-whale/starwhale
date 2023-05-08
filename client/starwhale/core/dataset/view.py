@@ -9,12 +9,12 @@ from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
-from starwhale.base.type import URIType, DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode
 from starwhale.base.view import BaseTermView
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import DatasetConfig
 from starwhale.core.runtime.process import Process as RuntimeProcess
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .model import Dataset
 
@@ -171,7 +171,7 @@ class DatasetTermView(BaseTermView):
             dataset_uri = cls.prepare_build_bundle(
                 project=config.project_uri,
                 bundle_name=config.name,
-                typ=URIType.DATASET,
+                typ=ResourceType.dataset,
                 auto_gen_version=False,
             )
             ds = Dataset.get_dataset(dataset_uri)

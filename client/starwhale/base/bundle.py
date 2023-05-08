@@ -28,8 +28,8 @@ from starwhale.base.store import BaseStorage, BundleField
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource
 
 
 class BaseBundle(metaclass=ABCMeta):

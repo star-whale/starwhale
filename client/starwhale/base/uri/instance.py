@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from starwhale.utils import config
-from starwhale.base.uri import URI
-from starwhale.base.uricomponents.exceptions import NoMatchException
+from starwhale.base.uri.exceptions import NoMatchException
 
 
 def _get_instances() -> Dict[str, Dict]:
@@ -19,14 +18,18 @@ def _find_alias_by_url(url: str, token: Optional[str] = None) -> Tuple[str, str]
     """parse url and return instance alias and path from url"""
     if not url:
         return _get_default_instance_alias(), ""
-    p = urlparse(url)
-
-    ins_url = "://".join([p.scheme, p.netloc])
-    if token is not None:
-        return "tmp", url
 
     inst_uri_map = {name: conf["uri"] for name, conf in _get_instances().items()}
     inst_names = list(inst_uri_map.keys())
+
+    # fast path if url is alias
+    if url in inst_names:
+        return url, ""
+
+    p = urlparse(url)
+    ins_url = "://".join([p.scheme, p.netloc])
+    if token is not None:
+        return "tmp", url
 
     # use host as alias when url starts with cloud or non-scheme
     if p.scheme == "cloud":
@@ -84,15 +87,19 @@ class Instance:
 
     @property
     def url(self) -> str:
-        return self.info["uri"]
+        return self.info.get("uri", "")
 
     @property
     def type(self) -> str:
-        return self.info["type"]
+        return self.info.get("type", "")
+
+    @property
+    def username(self) -> str:
+        return self.info.get("username", "")
 
     @property
     def token(self) -> str:
-        return self.info["sw_token"]
+        return self.info.get("sw_token", "")
 
     @property
     def is_local(self) -> bool:
@@ -106,6 +113,3 @@ class Instance:
         if self.is_local:
             return self.url
         return f"cloud://{self.alias}"
-
-    def to_uri(self) -> URI:
-        return URI.capsulate_uri(str(self))
