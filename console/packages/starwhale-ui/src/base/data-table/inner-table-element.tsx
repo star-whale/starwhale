@@ -55,7 +55,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     )
 
     const pinnedWidth = React.useMemo(
-        () => sum(ctx.columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0))),
+        () => sum(ctx.columns.map((v) => (v.pin === 'LEFT' ? ctx.widths.get(v.key) : 0))),
         [ctx.columns, ctx.widths]
     )
 
@@ -71,7 +71,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         // @ts-ignore
         const rowStopIndex = list[list.length - 1]?.props?.['rowIndex']
 
-        $columns.forEach((_: any, columnIndex: number) => {
+        $columns.forEach((column: any, columnIndex: number) => {
             for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
                 cells.push(
                     <CellPlacement
@@ -82,7 +82,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                         style={{
                             // @ts-ignore
                             ...gridRef._getItemStyle(rowIndex, columnIndex),
-                            width: ctx.widths[columnIndex],
+                            width: ctx.widths.get(column.key) ?? 0,
                         }}
                     />
                 )
@@ -96,11 +96,9 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return props.children
     }, [props.children])
 
-    if (!ctx.widths.filter(Boolean).length) {
+    if (ctx.widths.size == 0) {
         return null
     }
-
-    // useIfChanged(ctx)
 
     return (
         <>

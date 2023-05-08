@@ -27,8 +27,6 @@ export default function App(): any {
         return locales?.[i18n.language] ?? {}
     }, [])
 
-    console.log(overrideLanguage)
-
     return (
         <QueryClientProvider client={queryClient}>
             <StyletronProvider value={engine}>

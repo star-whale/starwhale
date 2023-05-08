@@ -36,7 +36,7 @@ export type HeaderContextT = {
     sortIndex: number
     sortDirection: SortDirectionsT
     tableHeight: number
-    widths: number[]
+    widths: Map<any, any>
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -69,7 +69,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     sortIndex: -1,
     sortDirection: null,
     tableHeight: 0,
-    widths: [],
+    widths: new Map(),
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {
@@ -129,7 +129,7 @@ function Header(props: HeaderProps) {
 
                 if (headerCellRef.current) {
                     const left = getPositionX(headerCellRef.current)
-                    let width = event.clientX - left
+                    const width = event.clientX - left - 5
                     const max = Math.ceil(props.resizeMaxWidth)
                     const min = Math.ceil(props.resizeMinWidth)
 
@@ -138,37 +138,28 @@ function Header(props: HeaderProps) {
                     }
 
                     if (width >= min && width <= max) {
-                        width -= RULER_OFFSET
+                        setEndResizePos(event.clientX)
                     }
                     if (width < min) {
-                        width = min
+                        setEndResizePos(left + min)
                     }
                     if (width > max) {
-                        width = max
+                        setEndResizePos(left + max)
                     }
-
-                    props.onResize(props.index, width - startResizePos)
-                    setEndResizePos(width + left)
-
-                    console.log('startResizePos', {
-                        endResizePos,
-                        left,
-                        width,
-                        startResizePos,
-                        offset: width - startResizePos,
-                    })
                 }
             }
         }
 
         function handleMouseUp() {
+            props.onResize(props.index, endResizePos - startResizePos)
             props.onResizeIndexChange(-1)
             setStartResizePos(0)
             setEndResizePos(0)
         }
 
-        const mousemove = _.throttle(handleMouseMove, 10)
-        const mouseup = _.throttle(handleMouseUp, 200)
+        // notice:  no throttle, may cause seq fault
+        const mousemove = handleMouseMove
+        const mouseup = handleMouseUp
 
         if (isResizingThisColumn) {
             document.addEventListener('mousemove', mousemove)
@@ -179,7 +170,8 @@ function Header(props: HeaderProps) {
             document.removeEventListener('mouseup', mouseup)
         }
     }, [
-        props,
+        props.resizeMinWidth,
+        props.resizeMaxWidth,
         isResizingThisColumn,
         setEndResizePos,
         setStartResizePos,
@@ -190,8 +182,7 @@ function Header(props: HeaderProps) {
         startResizePos,
     ])
 
-    if (isResizingThisColumn)
-        console.log(startResizePos, endResizePos, props.resizeIndex, props.index, isResizingThisColumn)
+    if (isResizingThisColumn) console.log(props.columnTitle, startResizePos, endResizePos)
 
     return (
         <>
@@ -240,10 +231,9 @@ function Header(props: HeaderProps) {
                     <div
                         role='presentation'
                         onMouseDown={(event) => {
-                            props.onResize(props.index, 0)
                             props.onResizeIndexChange(props.index)
                             const x = getPositionX(event.target)
-                            setStartResizePos(props.width)
+                            setStartResizePos(x)
                             setEndResizePos(x)
                         }}
                         className={css({
@@ -255,12 +245,27 @@ function Header(props: HeaderProps) {
                             'cursor': 'ew-resize',
                             'position': 'absolute',
                             'height': '100%',
-                            'width': '3px',
+                            'width': '5px',
                             ':hover': {
                                 backgroundColor: theme.brandTableHeaderResizer,
                             },
                         })}
-                    />
+                        style={{
+                            right: `${(RULER_OFFSET + endResizePos - startResizePos) * -1}px`,
+                        }}
+                    >
+                        {isResizingThisColumn && (
+                            <div
+                                className={css({
+                                    backgroundColor: theme.brandTableHeaderResizer,
+                                    position: 'absolute',
+                                    height: `${props.tableHeight}px`,
+                                    right: '1px',
+                                    width: '1px',
+                                })}
+                            />
+                        )}
+                    </div>
                 </div>
             )}
         </>

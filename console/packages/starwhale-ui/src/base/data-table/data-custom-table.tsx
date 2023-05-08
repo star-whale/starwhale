@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { SORT_DIRECTIONS } from './constants'
@@ -125,20 +125,20 @@ export function DataTable({
         ),
         []
     )
-
-    // React.useEffect(() => {
-    //     setMeasuredWidths((prev) => {
-    //         return columns.map((v) => prev.get(v.key) || 60)
-    //     })
-    //     setResizeDeltas((prev) => {
-    //         return columns.map((v, index) => prev.get(v.key) || 0)
-    //     })
-    // }, [columns])
+    const columnKeys = React.useMemo(() => columns.map((c) => c.key).join(','), [columns])
+    useEffect(() => {
+        if (gridRef) {
+            // console.log('reset grid when columns change reorder')
+            gridRef.resetAfterIndices({
+                columnIndex: itemIndexs.overscanColumnStartIndex,
+                rowIndex: itemIndexs.overscanRowStartIndex,
+            })
+        }
+    }, [gridRef, columnKeys])
 
     const [scrollLeft, setScrollLeft] = React.useState(0)
     const resetAfterColumnIndex = React.useCallback(
         _.debounce((columnIndex) => {
-            // console.log(gridRef, columnIndex)
             if (gridRef) {
                 gridRef.resetAfterColumnIndex?.(columnIndex, true)
             }
@@ -155,13 +155,16 @@ export function DataTable({
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
             const column = columns[columnIndex]
+            console.log(columnIndex, column.key, delta)
+
             setResizeDeltas((prev) => {
-                prev.set(column.key, delta)
+                const v = prev.has(column.key) ? prev.get(column.key) : 0
+                prev.set(column.key, Math.max(v + delta, 0))
                 return new Map(prev)
             })
             resetAfterColumnIndex(columnIndex)
         },
-        [setResizeDeltas, resetAfterColumnIndex]
+        [columns, setResizeDeltas, resetAfterColumnIndex]
     )
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
@@ -273,11 +276,12 @@ export function DataTable({
     const [browserScrollbarWidth, setBrowserScrollbarWidth] = React.useState(0)
     const normalizedWidths = React.useMemo(() => {
         const resizedWidths = columns.map((c, i) => {
-            const w = (measuredWidths.get(c.key) ?? c.minWidth) + (resizeDeltas.get(c.key) ?? 0)
-            if (c.maxWidth && w > c.maxWidth) {
-                return c.maxWidth
-            }
-            return w
+            return measuredWidths.get(c.key) + (resizeDeltas.get(c.key) ?? 0)
+            // const w = (measuredWidths.get(c.key) ?? c.minWidth) + (resizeDeltas.get(c.key) ?? 0)
+            // if (c.maxWidth && w > c.maxWidth) {
+            //     return c.maxWidth
+            // }
+            // return w
         })
 
         if (gridRef) {
@@ -312,11 +316,18 @@ export function DataTable({
                 result.push(gridProps.width - sum(result) - scrollbarWidth - 2)
 
                 resetAfterColumnIndex(0)
-                return result
+                return result.reduce((acc, width, i) => {
+                    acc.set(columns[i].key, width)
+                    return acc
+                }, new Map())
             }
         }
 
-        return resizedWidths
+        // turn to map
+        return resizedWidths.reduce((acc, width, i) => {
+            acc.set(columns[i].key, width)
+            return acc
+        }, new Map())
     }, [
         gridRef,
         measuredWidths,
@@ -416,9 +427,9 @@ export function DataTable({
 
     const columnWidth = React.useCallback(
         (index) => {
-            return normalizedWidths[index]
+            return normalizedWidths.get(columns[index].key)
         },
-        [normalizedWidths]
+        [normalizedWidths, columns]
     )
 
     const InnerElement = React.useMemo(() => {
