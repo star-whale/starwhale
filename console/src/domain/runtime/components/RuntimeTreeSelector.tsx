@@ -22,8 +22,8 @@ export function RuntimeTreeSelector(props: any) {
     const { projectId, embed } = props
     const runtimeInfo = useFetchRuntimeTree(projectId)
     const $treeData = React.useMemo(() => {
-        if (!runtimeInfo.isSuccess) return !embed? [embed] : []
-        let mergedItems = !embed ? [embed, ...runtimeInfo.data] : runtimeInfo.data
+        if (!runtimeInfo.isSuccess) return embed? [embed] : []
+        let mergedItems = embed ? [embed, ...runtimeInfo.data] : runtimeInfo.data
         const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
             return {
                 id: runtime.runtimeName,
