@@ -6,6 +6,7 @@ import typing as t
 import logging
 import subprocess
 from time import sleep
+from pathlib import Path
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from cmds import DatasetExpl
@@ -13,7 +14,7 @@ from tenacity import retry
 from cmds.job_cmd import Job
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
-from cmds.base.invoke import invoke
+from cmds.base.invoke import check_invoke
 from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
@@ -433,9 +434,33 @@ class TestCli:
         ]
 
         for cmd in commands:
-            _code, _err = invoke(cmd.split())
-            if _code != 0:
-                raise RuntimeError(f"cmd[{cmd}] run failed, err: {_err}, code: {_code}")
+            check_invoke(cmd.split())
+
+    def test_sdk(self) -> None:
+        script_path = (
+            Path(self._work_dir) / "scripts" / "example" / "src" / "sdk_model_build.py"
+        )
+        check_invoke([sys.executable, str(script_path)])
+
+        self.select_local_instance()
+        ctx_handle_info = self.model_api.info("ctx_handle")
+
+        assert set(ctx_handle_info["basic"]["handlers"]) == set(
+            [
+                "src.evaluator:evaluate",
+                "src.evaluator:predict",
+                "src.sdk_model_build:context_handle",
+            ]
+        ), ctx_handle_info["basic"]["handlers"]
+
+        ctx_handle_no_modules_info = self.model_api.info("ctx_handle_no_modules")
+        assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == set(
+            [
+                "src.evaluator:evaluate",
+                "src.evaluator:predict",
+                "src.sdk_model_build:context_handle",
+            ]
+        ), ctx_handle_no_modules_info["basic"]["handlers"]
 
 
 if __name__ == "__main__":
@@ -448,14 +473,16 @@ if __name__ == "__main__":
             server_url=os.environ.get("CONTROLLER_URL"),
         )
 
-        example = sys.argv[1]
-        if example == "simple":
+        case = sys.argv[1]
+        if case == "simple":
             test_cli.test_simple()
-        elif example == "all":
+        elif case == "all":
             test_cli.test_all()
-        elif example == "debug":
+        elif case == "debug":
             test_cli.debug()
+        elif case == "sdk":
+            test_cli.test_sdk()
         else:
-            test_cli.test_example(name=example, run_handler=sys.argv[2])
+            test_cli.test_example(name=case, run_handler=sys.argv[2])
 
         test_cli.smoke_commands()

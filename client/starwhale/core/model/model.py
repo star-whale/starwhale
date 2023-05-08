@@ -741,7 +741,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def _copy_src(self, workdir: Path, model_config: ModelConfig) -> None:
         console.print(
-            f":thumbs_up: try to copy source code files: {workdir} -> {self.store.src_dir}"
+            f":peacock: copy source code files: {workdir} -> {self.store.src_dir}"
         )
 
         excludes = None

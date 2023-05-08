@@ -140,7 +140,7 @@ class BaseBundle(metaclass=ABCMeta):
             dst = self.store.snapshot_workdir  # type: ignore
             ensure_dir(dst.parent)
             os.rename(src, dst)
-            console.print(f"finish gen resource @ {dst}")
+            console.print(f":100: finish gen resource @ {dst}")
 
         with ExitStack() as stack:
             stack.callback(when_exit)
@@ -173,7 +173,7 @@ class LocalStorageBundleMixin:
             self._version = gen_uniq_version()
 
         self.uri.object.version = self._version  # type:ignore
-        console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
+        console.debug(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
         self._manifest["version"] = self._version
         self._manifest[CREATED_AT_KEY] = now_str()
 

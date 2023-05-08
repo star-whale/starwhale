@@ -7,7 +7,9 @@ import gradio
 from PIL import Image as PILImage
 from torchvision import transforms
 
-from starwhale import Image, evaluation, multi_classification
+from starwhale import Image
+from starwhale import model as starwhale_model
+from starwhale import evaluation, multi_classification
 from starwhale.api.service import api
 
 try:
@@ -78,9 +80,28 @@ def load_model() -> Net:
     model = Net().to(device)
     model.load_state_dict(
         torch.load(  # type: ignore
-            str(Path(__file__).parent.parent / "models" / "mnist_cnn.pt"),
+            str(ROOTDIR / "models" / "mnist_cnn.pt"),
             map_location=device,
         )
     )
     model.eval()
     return model
+
+
+if __name__ == "__main__":
+    # use imported modules as search modules
+    starwhale_model.build(workdir=ROOTDIR)
+
+    # use function object as search modules
+    #    starwhale_model.build(
+    #        name="mnist",
+    #        workdir=ROOTDIR,
+    #        modules=[predict_image, evaluate_results],
+    #    )
+
+    # use import-path str as search modules
+    # starwhale_model.build(
+    #    name="mnist",
+    #    workdir=ROOTDIR,
+    #    modules=["mnist.plain_evaluator"],
+    # )
