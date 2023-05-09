@@ -40,7 +40,7 @@ init_logger(3)
 
 CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
     "mnist": {
-        "run_handler": "mnist.evaluator:MNISTInference.cmp",
+        "run_handler": "mnist.evaluator:MNISTInference.evaluate",
         "workdir": f"{ROOT_DIR}/example/mnist",
         "datasets": [
             DatasetExpl("mnist_bin", "mnist.dataset:iter_mnist_item"),
@@ -50,7 +50,7 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         ],
     },
     "cifar10": {
-        "run_handler": "cifar.evaluator:CIFAR10Inference.cmp",
+        "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
         "workdir": f"{ROOT_DIR}/example/cifar10",
         "datasets": [DatasetExpl("cifar10", "")],
     },
