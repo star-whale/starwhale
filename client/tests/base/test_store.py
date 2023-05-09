@@ -71,3 +71,4 @@ def test_local_file_object_store(
     # ignore venv with exclude
     store.copy_dir(workdir, dst, ["venv/*"], ignore_venv=False)
     assert (dst / "main.py").exists()
+    assert not any(f.exists() for f in venv_files)
