@@ -25,6 +25,7 @@ def build(
     project_uri: str = "",
     desc: str = "",
     remote_project_uri: t.Optional[str] = None,
+    add_all: bool = False,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -41,6 +42,8 @@ def build(
         project_uri: (str, optional) The project uri of the Starwhale Model Package. If the argument is not specified,
             the project_uri is the config value of `swcli project select` command.
         remote_project_uri: (str, optional) The destination project uri(cloud://remote-instance/project/starwhale) of the Starwhale Model Package
+        add_all: (bool, optional) Add all files in the workdir to the Starwhale Model Package. If the argument is False, the python cache files and virtualenv files will be ignored.
+            the ".swignore" file in the workdir will always take effect.
 
     Examples:
     ```python
@@ -113,6 +116,7 @@ def build(
             model_config=ModelConfig(
                 name=name, run={"modules": list(search_modules_str)}, desc=desc
             ),
+            add_all=add_all,
         )
 
     if remote_project_uri:

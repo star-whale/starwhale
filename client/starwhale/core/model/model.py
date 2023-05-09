@@ -73,7 +73,7 @@ from starwhale.api._impl.job import generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler
 from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.base.blob.store import LocalFileStore
+from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
 from starwhale.core.model.copy import ModelCopy
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
@@ -209,7 +209,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def __init__(self, uri: Resource) -> None:
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
-        self.store = ModelStorage(uri)
+        self.store: ModelStorage = ModelStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest class
         self.models: t.List[t.Dict[str, t.Any]] = []
@@ -582,7 +582,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._copy_src,
                 15,
                 "copy src",
-                dict(workdir=workdir, model_config=model_config),
+                dict(
+                    workdir=workdir,
+                    model_config=model_config,
+                    add_all=kw.get("add_all", False),
+                ),
             ),
         ]
         packaging_runtime_uri = kw.get("packaging_runtime_uri")
@@ -758,21 +762,42 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             f":file_folder: workdir: [underline]{self.store.snapshot_workdir}[/]"
         )
 
-    def _copy_src(self, workdir: Path, model_config: ModelConfig) -> None:
+    def _copy_src(
+        self, workdir: Path, model_config: ModelConfig, add_all: bool
+    ) -> None:
+        """
+        Copy source code files to snapshot workdir
+        Args:
+            workdir: source code dir
+            model_config: model config
+            add_all: copy all files, include python cache files(defined in BuiltinPyExcludes) and venv files
+        Returns: None
+        """
         console.print(
             f":peacock: copy source code files: {workdir} -> {self.store.src_dir}"
         )
 
-        excludes = None
+        excludes = []
         ignore = workdir / SW_IGNORE_FILE_NAME
         if ignore.exists():
             with open(ignore, "r") as f:
                 excludes = [line.strip() for line in f.readlines()]
+        if not add_all:
+            excludes += BuiltinPyExcludes
+
         console.debug(
             f"copy dir: {workdir} -> {self.store.src_dir}, excludes: {excludes}"
         )
-        self._object_store.copy_dir(
-            str(workdir.resolve()), str(self.store.src_dir.resolve()), excludes=excludes
+        total_size, ignored = self._object_store.copy_dir(
+            src_dir=workdir.resolve(),
+            dst_dir=self.store.src_dir.resolve(),
+            excludes=excludes,
+            ignore_venv=not add_all,
+        )
+        for i in ignored:
+            console.debug(f"ignored : {str(i)}")
+        console.print(
+            f":file_folder: source code files size: {pretty_bytes(total_size)}"
         )
 
         model_yaml = yaml.safe_dump(model_config.asdict(), default_flow_style=False)
