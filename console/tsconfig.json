@@ -1,24 +1,24 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"],
-      "@user/*": ["src/domain/user/*"],
-      "@project/*": ["src/domain/project/*"],
-      "@model/*": ["src/domain/model/*"],
-      "@job/*": ["src/domain/job/*"],
-      "@dataset/*": ["src/domain/dataset/*"],
-      "@runtime/*": ["src/domain/runtime/*"],
-      "@base/*": ["src/domain/base/*"],
-      "@starwhale/ui": ["./packages/starwhale-ui/src"],
-      "@starwhale/ui/*": ["./packages/starwhale-ui/src/*"],
-      "@starwhale/core": ["./packages/starwhale-core/src"],
-      "@starwhale/core/*": ["./packages/starwhale-core/src/*"],
-      "@starwhale/widgets": ["./packages/starwhale-widgets/src"],
-      "@starwhale/widgets/*": ["./packages/starwhale-widgets/src/*"],
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noFallthroughCasesInSwitch": true,
+        "jsx": "react-jsx",
+        "baseUrl": "./",
+        "paths": {
+            "@/*": ["src/*"],
+            "@user/*": ["src/domain/user/*"],
+            "@project/*": ["src/domain/project/*"],
+            "@model/*": ["src/domain/model/*"],
+            "@job/*": ["src/domain/job/*"],
+            "@dataset/*": ["src/domain/dataset/*"],
+            "@runtime/*": ["src/domain/runtime/*"],
+            "@base/*": ["src/domain/base/*"],
+            "@starwhale/ui": ["./packages/starwhale-ui/src"],
+            "@starwhale/ui/*": ["./packages/starwhale-ui/src/*"],
+            "@starwhale/core": ["./packages/starwhale-core/src"],
+            "@starwhale/core/*": ["./packages/starwhale-core/src/*"],
+            "@starwhale/widgets": ["./packages/starwhale-widgets/src"],
+            "@starwhale/widgets/*": ["./packages/starwhale-widgets/src/*"]
+        }
     }
-  }
 }

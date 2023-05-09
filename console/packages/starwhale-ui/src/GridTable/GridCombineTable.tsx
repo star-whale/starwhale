@@ -9,6 +9,7 @@ import GridCompareTable from './GridCompareTable'
 import { LabelSmall } from 'baseui/typography'
 import { createUseStyles } from 'react-jss'
 import { val } from './utils'
+import { headlineHeight } from './const'
 
 const useStyles = createUseStyles({
     gridComineTable: {
@@ -75,10 +76,10 @@ function BaseGridCombineTable({
                             queryinline={queryinline}
                             emptyMessage={emptyMessage}
                             emptyColumnMessage={emptyColumnMessage}
-                            headlineHeight={52}
+                            headlineHeight={headlineHeight}
                         >
                             {title && (
-                                <LabelSmall style={{ height: '52px' }} className={styles.headerTitle}>
+                                <LabelSmall style={{ height: `${headlineHeight}px` }} className={styles.headerTitle}>
                                     {title}
                                 </LabelSmall>
                             )}
