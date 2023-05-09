@@ -155,8 +155,6 @@ export function DataTable({
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
             const column = columns[columnIndex]
-            console.log(columnIndex, column.key, delta)
-
             setResizeDeltas((prev) => {
                 const v = prev.has(column.key) ? prev.get(column.key) : 0
                 prev.set(column.key, Math.max(v + delta, 0))
@@ -276,12 +274,12 @@ export function DataTable({
     const [browserScrollbarWidth, setBrowserScrollbarWidth] = React.useState(0)
     const normalizedWidths = React.useMemo(() => {
         const resizedWidths = columns.map((c, i) => {
-            return measuredWidths.get(c.key) + (resizeDeltas.get(c.key) ?? 0)
-            // const w = (measuredWidths.get(c.key) ?? c.minWidth) + (resizeDeltas.get(c.key) ?? 0)
-            // if (c.maxWidth && w > c.maxWidth) {
-            //     return c.maxWidth
-            // }
-            // return w
+            const w =
+                !measuredWidths.get(c.key) || _.isNaN(measuredWidths.get(c.key))
+                    ? c.minWidth
+                    : measuredWidths.get(c.key)
+            const delta = !resizeDeltas.get(c.key) || _.isNaN(resizeDeltas.get(c.key)) ? 0 : resizeDeltas.get(c.key)
+            return w + delta
         })
 
         if (gridRef) {
