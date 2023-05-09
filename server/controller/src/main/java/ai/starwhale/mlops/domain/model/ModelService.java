@@ -62,6 +62,7 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.MetaInfo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -414,7 +415,7 @@ public class ModelService {
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
             try {
-                var modelVersion = ModelVersionViewVo.builder()
+                var modelVersionViewVo = ModelVersionViewVo.builder()
                         .id(idConvertor.convert(entity.getId()))
                         .versionName(entity.getVersionName())
                         .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
@@ -422,42 +423,56 @@ public class ModelService {
                         .shared(toInt(entity.getShared()))
                         .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                         .build();
-                String manifest = getManifest(entity.getStoragePath());
-                var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
-                if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
-                    var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
-                    var runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
-                    if (null == runtimeVersion && syncBuiltInRuntime(entity.getId())) {
-                        runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
-                    }
-                    if (null != runtimeVersion) {
-                        modelVersion.setBuiltInRuntime(
-                                RuntimeViewVo.builder()
-                                    .ownerName(entity.getUserName())
-                                    .projectName(entity.getProjectName())
-                                    .runtimeId(runtimeVersion.getRuntimeId().toString())
-                                    .runtimeName(metaInfo.getPackagedRuntime().getName())
+
+                var runtimeVersion = this.getBuiltInRuntime(
+                        ModelVersion.builder().id(entity.getId()).storagePath(entity.getStoragePath()).build());
+                if (null != runtimeVersion) {
+                    var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
+                    modelVersionViewVo.setBuiltInRuntime(
+                            RuntimeViewVo.builder()
+                                .ownerName(entity.getUserName())
+                                .projectName(entity.getProjectName())
+                                .runtimeId(runtimeVersion.getRuntimeId().toString())
+                                .runtimeName(runtime.getName())
+                                .shared(0)
+                                .versions(List.of(RuntimeVersionViewVo.builder()
+                                    .id(runtimeVersion.getId().toString())
+                                    .versionName(runtimeVersion.getVersionName())
                                     .shared(0)
-                                    .versions(List.of(RuntimeVersionViewVo.builder()
-                                        .id(runtimeVersion.getId().toString())
-                                        .versionName(version)
-                                        .shared(0)
-                                        .alias(BUILTIN)
-                                        .build()))
-                                    .build()
-                        );
-                    }
+                                    .alias(BUILTIN)
+                                    .build()))
+                                .build()
+                    );
                 }
 
                 map.get(entity.getModelId())
                         .getVersions()
-                        .add(modelVersion);
+                        .add(modelVersionViewVo);
             }  catch (JsonProcessingException e) {
                 log.error("parse manifest/stepSpec error for model version:{},error:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
             }
         }
         return map.values();
+    }
+
+    public RuntimeVersion getBuiltInRuntime(ModelVersion modelVersion) {
+        String manifest = getManifest(modelVersion.getStoragePath());
+        MetaInfo metaInfo = null;
+        try {
+            metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
+        } catch (JsonProcessingException e) {
+            log.error("parse manifest yaml:{} error when check whether have built-in runtime", modelVersion.getId());
+        }
+        if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
+            var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
+            var runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
+            if (null == runtimeVersion && syncBuiltInRuntime(modelVersion.getId())) {
+                runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
+            }
+            return runtimeVersion;
+        }
+        return null;
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
