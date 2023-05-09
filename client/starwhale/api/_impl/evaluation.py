@@ -37,6 +37,7 @@ class PipelineHandler(metaclass=ABCMeta):
         flush_result: bool = False,
         predict_auto_log: bool = True,
         dataset_uris: t.Optional[t.List[str]] = None,
+        **kwargs: t.Any,
     ) -> None:
         self.predict_batch_size = predict_batch_size
         self.svc = Service()
@@ -49,6 +50,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.ignore_error = ignore_error
         self.flush_result = flush_result
         self.predict_auto_log = predict_auto_log
+        self.kwargs = kwargs
 
         _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
         _run_dir = (
