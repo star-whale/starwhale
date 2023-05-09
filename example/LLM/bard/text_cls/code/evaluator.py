@@ -21,7 +21,7 @@ def label_number(raw: str) -> int:
 
 
 @evaluation.predict
-def ppl(data: dict, **kw):
+def ppl(data):
     text = data["text"]
     result_raw = chatbot.ask(
         f"please tell me which class does the text below belongs to. world , sports , business  or sci/tech : {text}. Answer me as short as possible"

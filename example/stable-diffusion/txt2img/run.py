@@ -19,7 +19,7 @@ class StableDiffusion(PipelineHandler):
         pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
         self.pipe = pipe.to("cuda")
 
-    def ppl(self, content: Text, **kw: t.Any) -> t.Any:
+    def ppl(self, content: Text) -> t.Any:
         return self.pipe(content).images[0]
 
     def cmp(self, ppl_result: t.Iterator) -> t.Any:

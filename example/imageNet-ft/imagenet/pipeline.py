@@ -214,7 +214,7 @@ class ImageNetEvaluation(PipelineHandler):
         return torch.stack([test_augs(data.to_pil())]).to(self.device)
 
     @torch.no_grad()
-    def ppl(self, data: Dict[str, Any], **kw) -> Any:
+    def ppl(self, data: Dict[str, Any]) -> Any:
         output = self.net(self._pre(data.get("img")))
         pred_value = output.argmax(1).item()
         probability_matrix = np.exp(output.tolist()).tolist()

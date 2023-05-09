@@ -11,7 +11,7 @@ from starwhale import evaluation, multi_classification
 @evaluation.predict(
     replicas=1,
 )
-def predict(data: t.Dict, **kw: t.Any) -> t.Any:
+def predict(data: t.Dict) -> t.Any:
     # Test relative path case
     file_name = osp.join("templates", "data.json")
     assert osp.exists(file_name)

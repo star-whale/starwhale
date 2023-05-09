@@ -19,7 +19,7 @@ class TextClassificationHandler(PipelineHandler):
             task="text-classification", model=model, tokenizer=tokenizer
         )
 
-    def ppl(self, data: dict, **kw):
+    def ppl(self, data):
         _r = self.mode(data["text"])
         return _LABEL_NAMES.index(_r[0]["label"])
 

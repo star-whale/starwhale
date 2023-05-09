@@ -24,7 +24,7 @@ class NMTPipeline(PipelineHandler):
         self.max_length = MAX_LENGTH
 
     @torch.no_grad()
-    def ppl(self, data: dict, **kw):
+    def ppl(self, data):
         input_tensor = sentence_to_tensor(
             self.vocab.vin, data["english"].content, self.device
         )

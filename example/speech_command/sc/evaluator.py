@@ -79,7 +79,7 @@ def get_m5_model():
 
 @torch.no_grad()
 @evaluation.predict(resources={"nvidia.com/gpu": 1})
-def predict_speech(data, **kw):
+def predict_speech(data):
     _audio = io.BytesIO(data.speech.to_bytes())
     waveform, _ = torchaudio.load(_audio)
     waveform = torch.nn.utils.rnn.pad_sequence(

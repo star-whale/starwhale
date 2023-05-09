@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import uuid
@@ -27,7 +29,8 @@ from .. import ROOT_DIR, BaseTestCase
 
 
 class SimpleHandler(PipelineHandler):
-    def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
+    def ppl(self, data: t.Dict) -> t.Any:
+        assert isinstance(data, dict)
         return [1, 2], 0.1
 
     def cmp(self, _data_loader: t.Any) -> t.Any:
@@ -313,6 +316,75 @@ class TestModelPipelineHandler(TestCase):
         Context.set_runtime_context(context)
         with Dummy() as _handler:
             _handler._starwhale_internal_run_evaluate()
+
+    def test_predict_ingest(self) -> None:
+        class DummyWithVarKeyword(PipelineHandler):
+            def ppl(self, data: t.Any, **kw: t.Any) -> t.Any:
+                assert data.label == 1
+                assert isinstance(data, dict)
+                assert "index" in kw["external"]
+
+        class DummyWithVarPositional(PipelineHandler):
+            def ppl(self, *args: t.Any, **kw: t.Any) -> t.Any:
+                assert args[0].label == 1
+                assert "index" in kw["external"]
+
+        class DummyWithOnlyData(PipelineHandler):
+            def predict(self, data: t.Any) -> t.Any:
+                assert data.label == 1
+
+        class DummyWithOnlyVarKeyword(PipelineHandler):
+            def predict(self, **kw: t.Any) -> t.Any:
+                assert kw["data"].label == 1
+                assert "index" in kw["external"]
+
+        class DummyWithOnlyVarPositional(PipelineHandler):
+            def predict(self, *args: t.Any) -> t.Any:
+                assert args[0].label == 1
+                assert "index" in args[1]
+
+        class DummyWithKeyword(PipelineHandler):
+            def predict(self, data: t.Any, external: t.Any) -> t.Any:
+                assert data.label == 1
+                assert "index" in external
+
+        class DummyWithoutAny(PipelineHandler):
+            ...
+
+        class DummyWithTwoHandlers(PipelineHandler):
+            def ppl(self, data: t.Any, **kw: t.Any) -> t.Any:
+                ...
+
+            def predict(self, data: t.Any, external: t.Any) -> t.Any:
+                ...
+
+        handlers = [
+            DummyWithVarKeyword,
+            DummyWithOnlyVarKeyword,
+            DummyWithKeyword,
+            DummyWithVarPositional,
+            DummyWithOnlyData,
+            DummyWithOnlyVarPositional,
+        ]
+        Context.set_runtime_context(Context(version="123", project="test"))
+        for h in handlers:
+            h()._do_predict(
+                data=DataRow._Features({"label": 1}),
+                index=0,
+                index_with_dataset="0",
+                dataset_info=TabularDatasetInfo(),
+            )
+
+        with self.assertRaisesRegex(
+            ParameterError, "predict and ppl cannot be defined at the same time"
+        ):
+            DummyWithTwoHandlers()._do_predict({}, 1, "1", TabularDatasetInfo())
+
+        with self.assertRaisesRegex(
+            ParameterError,
+            "predict or ppl must be defined, predict function is recommended",
+        ):
+            DummyWithoutAny()._do_predict({}, 1, "1", TabularDatasetInfo())
 
 
 class TestEvaluationLogStore(BaseTestCase):

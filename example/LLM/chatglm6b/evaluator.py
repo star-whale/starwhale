@@ -22,7 +22,7 @@ hstry = []
 
 
 @evaluation.predict
-def ppl(data: dict, **kw):
+def ppl(data: dict):
     text = data["text"]
     global tokenizer
     if tokenizer is None:

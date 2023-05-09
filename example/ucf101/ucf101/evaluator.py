@@ -209,7 +209,7 @@ class UCF101PipelineHandler(PipelineHandler):
         )
 
     @torch.no_grad()
-    def ppl(self, data_batch: t.List[dict], **kw: t.Any) -> t.Any:
+    def ppl(self, data_batch: t.List[dict]) -> t.Any:
         _frames_tensor = ppl_pre(
             videos=[data["video"] for data in data_batch],
             sampler=self.sampler,
