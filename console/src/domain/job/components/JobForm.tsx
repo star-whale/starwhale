@@ -147,7 +147,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             }
             return true
         },
-        [stepSpecOverWrites, t]
+        [t]
     )
 
     const handleFinish = useCallback(
@@ -176,7 +176,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, t, stepSource, checkStepSource]
+        [onSubmit, history, stepSpecOverWrites, stepSource]
     )
 
     const handleEditorChange = React.useCallback(
@@ -184,7 +184,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             if (!checkStepSource(value)) return
             setStepSpecOverWrites(value)
         },
-        [setStepSpecOverWrites]
+        [setStepSpecOverWrites, checkStepSource]
     )
 
     return (
