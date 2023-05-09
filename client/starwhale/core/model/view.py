@@ -324,6 +324,7 @@ class ModelTermView(BaseTermView):
         workdir: t.Union[str, Path],
         project: str,
         model_config: ModelConfig,
+        add_all: bool,
         runtime_uri: str = "",
         package_runtime: bool = False,
     ) -> None:
@@ -348,6 +349,7 @@ class ModelTermView(BaseTermView):
                 Path(workdir),
                 model_config=model_config,
                 packaging_runtime_uri=packaging_runtime_uri,
+                add_all=add_all,
             )
 
     @classmethod

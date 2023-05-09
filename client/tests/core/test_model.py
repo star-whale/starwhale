@@ -113,6 +113,7 @@ class StandaloneModelTestCase(TestCase):
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
+        m_copy_dir.return_value = (0, [])
 
         svc = MagicMock(spec=Service)
         svc.get_spec.return_value = {}
@@ -203,8 +204,11 @@ class StandaloneModelTestCase(TestCase):
         assert _resource_files == []
 
         assert m_copy_dir.call_count == 1
-        assert m_copy_dir.call_args_list[0][0][0] == "/home/starwhale/myproject"
-        assert m_copy_dir.call_args_list[0][0][1].endswith("/src")
+        assert (
+            str(m_copy_dir.call_args_list[0][1]["src_dir"])
+            == "/home/starwhale/myproject"
+        )
+        assert str(m_copy_dir.call_args_list[0][1]["dst_dir"]).endswith("/src")
 
         assert bundle_path.exists()
         assert "latest" in sm.tag.list()
@@ -259,7 +263,10 @@ class StandaloneModelTestCase(TestCase):
         assert len(_list[self.name]) == 0
 
         ModelTermView.build(
-            workdir=self.workdir, project="self", model_config=model_config
+            workdir=self.workdir,
+            project="self",
+            model_config=model_config,
+            add_all=False,
         )
 
     @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
@@ -318,6 +325,7 @@ class StandaloneModelTestCase(TestCase):
                 project="self",
                 model_config=model_config,
                 package_runtime=True,
+                add_all=False,
             )
 
         def _run_without_package_runtime(obj: t.Any) -> None:
@@ -327,6 +335,7 @@ class StandaloneModelTestCase(TestCase):
                 project="self",
                 model_config=model_config,
                 package_runtime=False,
+                add_all=False,
             )
 
         m_process_run.side_effect = _run_with_package_runtime
@@ -344,6 +353,7 @@ class StandaloneModelTestCase(TestCase):
             model_config=model_config,
             runtime_uri="pytorch/version/1234",
             package_runtime=True,
+            add_all=False,
         )
 
         assert not m_extract.called
@@ -378,6 +388,7 @@ class StandaloneModelTestCase(TestCase):
             model_config=model_config,
             runtime_uri=pytorch_runtime_uri,
             package_runtime=False,
+            add_all=False,
         )
 
         built_model_store = ModelStorage(no_packaged_uri)
@@ -412,6 +423,7 @@ class StandaloneModelTestCase(TestCase):
             model_config=model_config,
             runtime_uri=pytorch_runtime_uri,
             package_runtime=True,
+            add_all=False,
         )
 
         built_model_store = ModelStorage(use_model_uri)

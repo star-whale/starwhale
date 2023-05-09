@@ -1,3 +1,4 @@
+import shutil
 import pathlib
 from unittest.mock import patch, MagicMock, PropertyMock
 
@@ -27,13 +28,47 @@ def test_local_file_object_store(
     assert again.hash == file.hash
     assert again.path == store.root / file.hash[:2] / file.hash
 
-    store.copy_dir(pathlib.Path(__file__).parent, tmp_path / "test")
-    dst = tmp_path / "test" / "test_store.py"
-    assert dst.exists()
-    assert dst.stat().st_ino == file.path.stat().st_ino
+    dst = tmp_path / "test"
+    store.copy_dir(pathlib.Path(__file__).parent, dst, [])
+    script = tmp_path / "test" / "test_store.py"
+    assert script.exists()
+    assert script.stat().st_ino == file.path.stat().st_ino
 
     # copy with exclude
     for i, exclude in enumerate(["*.py", "test_store.py", "/*"]):
         store.copy_dir(pathlib.Path(__file__).parent, tmp_path / f"test-{i}", [exclude])
-        dst = tmp_path / f"test-{i}" / "test_store.py"
-        assert not dst.exists()
+        assert not (tmp_path / f"test-{i}" / "test_store.py").exists()
+
+    # copy with venv in the working dir
+    workdir = tmp_path / "workdir"
+    venv = workdir / "venv"
+    # simulate a venv in the working dir
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").touch()
+    (venv / "bin" / "activate").touch()
+    # user script
+    (workdir / "main.py").touch()
+
+    venv_files = {
+        dst / "venv" / "bin",
+        dst / "venv" / "bin" / "python",
+        dst / "venv" / "bin" / "activate",
+    }
+
+    shutil.rmtree(dst)
+    # do not ignore venv
+    store.copy_dir(workdir, dst, [], ignore_venv=False)
+    assert (dst / "main.py").exists()
+    assert all(f.exists() for f in venv_files)
+
+    shutil.rmtree(dst)
+    # ignore venv
+    store.copy_dir(workdir, dst, [], ignore_venv=True)
+    assert (dst / "main.py").exists()
+    assert not any(f.exists() for f in venv_files)
+
+    shutil.rmtree(dst)
+    # ignore venv with exclude
+    store.copy_dir(workdir, dst, ["venv/*"], ignore_venv=False)
+    assert (dst / "main.py").exists()
+    assert not any(f.exists() for f in venv_files)

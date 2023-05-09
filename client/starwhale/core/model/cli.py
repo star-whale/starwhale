@@ -67,6 +67,14 @@ def model_cmd(ctx: click.Context) -> None:
     show_default=True,
     help="Package Starwhale Runtime into the model.",
 )
+@click.option(
+    "--add-all",
+    is_flag=True,
+    default=False,
+    help="Add all files in the working directory to the model package"
+    "(excludes python cache files and virtual environment files when disabled)."
+    "The '.swignore' file still takes effect.",
+)
 def _build(
     workdir: str,
     project: str,
@@ -76,6 +84,7 @@ def _build(
     package_runtime: bool,
     name: str,
     desc: str,
+    add_all: bool,
 ) -> None:
     """Build starwhale model package.
     Only standalone instance supports model build.
@@ -115,6 +124,7 @@ def _build(
         model_config=config,
         runtime_uri=runtime,
         package_runtime=package_runtime,
+        add_all=add_all,
     )
 
 
