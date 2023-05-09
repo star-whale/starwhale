@@ -33,7 +33,7 @@ function ConfigViews() {
     const [t] = useTranslation()
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(currentView?.id ?? '')
-    const { columns } = useGrid()
+    const { originalColumns } = useGrid()
 
     useEffect(() => {
         if (currentView) {
@@ -131,7 +131,12 @@ function ConfigViews() {
                         paddingRight: '12px',
                     }}
                 >
-                    <ViewsEdit ref={viewRef} columns={columns as any} view={viewEditing} columnTypes={columnTypes} />
+                    <ViewsEdit
+                        ref={viewRef}
+                        columns={originalColumns as any}
+                        view={viewEditing}
+                        columnTypes={columnTypes}
+                    />
                 </ModalBody>
                 <ModalFooter>
                     <Button
