@@ -110,6 +110,21 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             } else {
                 return;
             }
+
+            // make status as running when pod condition contains PodScheduled
+            // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
+            if (pod.getStatus().getConditions() != null) {
+                var podScheduled = pod.getStatus().getConditions().stream()
+                        .filter(c -> StringUtils.hasText(c.getStatus())
+                                && c.getStatus().equals("True")
+                                && StringUtils.hasText(c.getType())
+                                && c.getType().equals("PodScheduled"))
+                        .findAny();
+                if (podScheduled.isPresent()) {
+                    taskStatus = TaskStatus.RUNNING;
+                }
+            }
+
             log.debug("task:{} status changed to {}.", tid, taskStatus);
             taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus, null)));
         }
