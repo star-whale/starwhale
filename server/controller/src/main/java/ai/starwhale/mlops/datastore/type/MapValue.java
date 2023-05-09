@@ -22,10 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 
 @Getter
+@EqualsAndHashCode(callSuper = true)
 public class MapValue extends HashMap<BaseValue, BaseValue> implements BaseValue {
 
     @Override

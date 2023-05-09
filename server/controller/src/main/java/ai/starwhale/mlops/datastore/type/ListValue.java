@@ -20,10 +20,12 @@ import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
 import java.util.ArrayList;
 import java.util.Map;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 
 @Getter
+@EqualsAndHashCode(callSuper = true)
 public class ListValue extends ArrayList<BaseValue> implements BaseValue {
 
     @Override

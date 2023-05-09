@@ -26,12 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.TableQueryFilter.Constant;
 import ai.starwhale.mlops.datastore.TableQueryFilter.Operator;
-import ai.starwhale.mlops.datastore.impl.RecordDecoder;
 import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.BytesValue;
-import ai.starwhale.mlops.datastore.type.ListValue;
-import ai.starwhale.mlops.datastore.type.MapValue;
-import ai.starwhale.mlops.datastore.type.ObjectValue;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -45,11 +41,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -232,7 +226,10 @@ public class DataStoreTest {
                 is(List.of(Map.of("a", "00000003"),
                         Map.of("a", "00000004"))));
         assertThat("test", recordList.getColumnHints(),
-                is(Map.of("a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                is(Map.of("a", ColumnHintsDesc.builder()
+                        .typeHints(List.of("INT32"))
+                        .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                        .build())));
 
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
@@ -253,8 +250,14 @@ public class DataStoreTest {
                 is(List.of(Map.of("k", "2", "a", "00000003"),
                         Map.of("k", "1", "a", "00000004"))));
         assertThat("all columns", recordList.getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
-                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                .build(),
+                        "a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                .build())));
 
         desc.setColumnSchemaList(new ArrayList<>(desc.getColumnSchemaList()));
         desc.getColumnSchemaList().addAll(
@@ -286,10 +289,22 @@ public class DataStoreTest {
                         Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
                         Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
         assertThat("object type", recordList.getColumnHints(),
-                is(Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
-                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "x:link/url", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
-                        "x:link/mime_type", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build())));
+                is(Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("0", "1", "2", "3", "4", "5", "6"))
+                                .build(),
+                        "a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                .build(),
+                        "x:link/url", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("http://test.com/1.jpg", "http://test.com/2.png"))
+                                .build(),
+                        "x:link/mime_type", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("image/jpeg", "image/png"))
+                                .build())));
 
         recordList = this.dataStore.query(DataStoreQueryRequest.builder()
                 .tableName("t1")
@@ -309,8 +324,14 @@ public class DataStoreTest {
                         Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
                         Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
         assertThat("object type alias", recordList.getColumnHints(),
-                is(Map.of("url", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
-                        "y:link/mime_type", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build())));
+                is(Map.of("url", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("http://test.com/1.jpg", "http://test.com/2.png"))
+                                .build(),
+                        "y:link/mime_type", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("image/jpeg", "image/png"))
+                                .build())));
 
         // query non exist table
         final String tableNonExist = "tableNonExist";
@@ -613,9 +634,18 @@ public class DataStoreTest {
                         Map.of("k", "4", "a", "00000001", "b", "00000011"))));
         assertThat("test", recordList.getLastKey(), is("4"));
         assertThat("test", recordList.getColumnHints(), is(
-                Map.of("k", ColumnHintsDesc.builder().typeHints(Set.of("STRING")).build(),
-                        "a", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build(),
-                        "b", ColumnHintsDesc.builder().typeHints(Set.of("INT32")).build())));
+                Map.of("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("0", "1", "2", "3", "4"))
+                                .build(),
+                        "a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1", "2", "3", "4", "5"))
+                                .build(),
+                        "b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("17", "19", "21"))
+                                .build())));
 
         recordList = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1051,73 +1081,6 @@ public class DataStoreTest {
         }
     }
 
-    private void updateHints(Map<String, ColumnHintsDesc> statisticsMap, Map<String, BaseValue> value) {
-        value.forEach((k, v) -> {
-            var statistics = statisticsMap.computeIfAbsent(k, key -> new ColumnHintsDesc());
-            this.updateHints(statistics, v);
-        });
-
-    }
-
-    private void updateHints(ColumnHintsDesc hints, BaseValue value) {
-        var type = BaseValue.getColumnType(value);
-        Set<String> typeHints;
-        if (hints.getTypeHints() == null) {
-            typeHints = new HashSet<>();
-            hints.setTypeHints(typeHints);
-        } else {
-            typeHints = hints.getTypeHints();
-        }
-        if (type != ColumnType.UNKNOWN) {
-            typeHints.add(type.name());
-        }
-        switch (type) {
-            case TUPLE:
-            case LIST:
-                ColumnHintsDesc elementHints;
-                if (hints.getElementHints() == null) {
-                    elementHints = new ColumnHintsDesc();
-                    hints.setElementHints(elementHints);
-                } else {
-                    elementHints = hints.getElementHints();
-                }
-                ((ListValue) value).forEach(e -> this.updateHints(elementHints, e));
-                break;
-            case MAP:
-                ColumnHintsDesc keyHints;
-                if (hints.getKeyHints() == null) {
-                    keyHints = new ColumnHintsDesc();
-                    hints.setKeyHints(keyHints);
-                } else {
-                    keyHints = hints.getKeyHints();
-                }
-                ColumnHintsDesc valueHints;
-                if (hints.getValueHints() == null) {
-                    valueHints = new ColumnHintsDesc();
-                    hints.setValueHints(valueHints);
-                } else {
-                    valueHints = hints.getValueHints();
-                }
-                ((MapValue) value).forEach((k, v) -> {
-                    this.updateHints(keyHints, k);
-                    this.updateHints(valueHints, v);
-                });
-                break;
-            case OBJECT:
-                Map<String, ColumnHintsDesc> attributesHints;
-                if (hints.getAttributesHints() == null) {
-                    attributesHints = new HashMap<>();
-                    hints.setAttributesHints(attributesHints);
-                } else {
-                    attributesHints = hints.getAttributesHints();
-                }
-                this.updateHints(attributesHints, (ObjectValue) value);
-                break;
-            default:
-                break;
-        }
-    }
-
     @Test
     public void testAllTypes() throws Exception {
         List<Map<String, Object>> records = List.of(
@@ -1250,12 +1213,139 @@ public class DataStoreTest {
         var expected = new RecordList(
                 columnSchemaList.stream()
                         .collect(Collectors.toMap(ColumnSchemaDesc::getName, col -> new ColumnSchema(col, 0))),
-                new HashMap<>(),
+                new HashMap<>() {
+                    {
+                        put("key", ColumnHintsDesc.builder()
+                                .typeHints(List.of("STRING"))
+                                .columnValueHints(List.of("x", "y", "z"))
+                                .build());
+                        put("a", ColumnHintsDesc.builder()
+                                .typeHints(List.of("BOOL"))
+                                .columnValueHints(List.of("true"))
+                                .build());
+                        put("b", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT8"))
+                                .columnValueHints(List.of("16"))
+                                .build());
+                        put("c", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT16"))
+                                .columnValueHints(List.of("4096"))
+                                .build());
+                        put("d", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT32"))
+                                .columnValueHints(List.of("1048576"))
+                                .build());
+                        put("e", ColumnHintsDesc.builder()
+                                .typeHints(List.of("INT64"))
+                                .columnValueHints(List.of("268435456"))
+                                .build());
+                        put("f", ColumnHintsDesc.builder()
+                                .typeHints(List.of("FLOAT32"))
+                                .columnValueHints(List.of("1.1"))
+                                .build());
+                        put("g", ColumnHintsDesc.builder()
+                                .typeHints(List.of("FLOAT64"))
+                                .columnValueHints(List.of("1.1"))
+                                .build());
+                        put("h", ColumnHintsDesc.builder()
+                                .typeHints(List.of("BYTES"))
+                                .columnValueHints(List.of("test"))
+                                .build());
+                        put("i", ColumnHintsDesc.builder()
+                                .typeHints(List.of())
+                                .columnValueHints(List.of())
+                                .build());
+                        put("j", ColumnHintsDesc.builder()
+                                .typeHints(List.of("LIST"))
+                                .columnValueHints(List.of())
+                                .elementHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT32"))
+                                        .columnValueHints(List.of("10"))
+                                        .build())
+                                .build());
+                        put("k", ColumnHintsDesc.builder()
+                                .typeHints(List.of("OBJECT"))
+                                .columnValueHints(List.of())
+                                .attributesHints(
+                                        Map.of("a", ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("INT32"))
+                                                        .columnValueHints(List.of("11"))
+                                                        .build(),
+                                                "b", ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("INT32"))
+                                                        .columnValueHints(List.of("12"))
+                                                        .build()))
+                                .build());
+                        put("l", ColumnHintsDesc.builder()
+                                .typeHints(List.of("TUPLE"))
+                                .columnValueHints(List.of())
+                                .elementHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT32"))
+                                        .columnValueHints(List.of("11"))
+                                        .build())
+                                .build());
+                        put("m", ColumnHintsDesc.builder()
+                                .typeHints(List.of("MAP"))
+                                .columnValueHints(List.of())
+                                .keyHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT8"))
+                                        .columnValueHints(List.of("1", "2"))
+                                        .build())
+                                .valueHints(ColumnHintsDesc.builder()
+                                        .typeHints(List.of("INT16"))
+                                        .columnValueHints(List.of("2"))
+                                        .build())
+                                .build());
+                        put("complex", ColumnHintsDesc.builder()
+                                .typeHints(List.of("OBJECT"))
+                                .columnValueHints(List.of())
+                                .attributesHints(Map.of(
+                                        "a", ColumnHintsDesc.builder()
+                                                .typeHints(List.of("LIST"))
+                                                .columnValueHints(List.of())
+                                                .elementHints(ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("TUPLE"))
+                                                        .columnValueHints(List.of())
+                                                        .elementHints(ColumnHintsDesc.builder()
+                                                                .typeHints(List.of("INT32"))
+                                                                .columnValueHints(List.of("1"))
+                                                                .build())
+                                                        .build())
+                                                .build(),
+                                        "b", ColumnHintsDesc.builder()
+                                                .typeHints(List.of("TUPLE"))
+                                                .columnValueHints(List.of())
+                                                .elementHints(ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("LIST"))
+                                                        .columnValueHints(List.of())
+                                                        .elementHints(ColumnHintsDesc.builder()
+                                                                .typeHints(List.of("INT32"))
+                                                                .columnValueHints(List.of("2"))
+                                                                .build())
+                                                        .build())
+                                                .build(),
+                                        "c", ColumnHintsDesc.builder()
+                                                .typeHints(List.of("MAP"))
+                                                .columnValueHints(List.of())
+                                                .keyHints(ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("STRING"))
+                                                        .columnValueHints(List.of("t"))
+                                                        .build())
+                                                .valueHints(ColumnHintsDesc.builder()
+                                                        .typeHints(List.of("LIST"))
+                                                        .columnValueHints(List.of())
+                                                        .elementHints(ColumnHintsDesc.builder()
+                                                                .typeHints(List.of("INT32"))
+                                                                .columnValueHints(List.of("4"))
+                                                                .build())
+                                                        .build())
+                                                .build()))
+                                .build());
+                    }
+                },
                 records,
                 "z",
                 "STRING");
-        records.forEach(
-                r -> this.updateHints(expected.getColumnHints(), RecordDecoder.decodeRecord(schema, r)));
         this.dataStore.update("t", schema, records);
         var result = this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
@@ -1294,8 +1384,9 @@ public class DataStoreTest {
                 .keepNone(true)
                 .encodeWithType(true)
                 .build());
-        this.updateHints(encoded.getColumnHints(), Map.of("key", BaseValue.valueOf(1)));
         encoded.getRecords().add(0, Map.of("key", Map.of("type", "INT32", "value", "00000001")));
+        encoded.getColumnHints().get("key").setTypeHints(List.of("INT32", "STRING"));
+        encoded.getColumnHints().get("key").setColumnValueHints(List.of("1", "x", "y", "z"));
         assertThat(result, is(encoded));
 
         // check WAL

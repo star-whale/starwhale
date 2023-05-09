@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -506,5 +507,95 @@ public class BaseValueTest {
                 is(Map.of("type", "OBJECT",
                         "pythonType", "t",
                         "value", Map.of("0", Map.of("type", "INT32", "value", "0")))));
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assertThat(BaseValue.valueOf(false) == BaseValue.valueOf(false), is(true));
+        assertThat(BaseValue.valueOf(true) == BaseValue.valueOf(true), is(true));
+        assertThat(BaseValue.valueOf(false) != BaseValue.valueOf(true), is(true));
+
+        assertThat(BaseValue.valueOf((byte) 0).equals(BaseValue.valueOf((byte) 0)), is(true));
+        assertThat(BaseValue.valueOf((byte) 0).hashCode(), is(BaseValue.valueOf((byte) 0).hashCode()));
+        assertThat(BaseValue.valueOf((byte) 0).equals(BaseValue.valueOf((byte) 1)), is(false));
+        assertThat(BaseValue.valueOf((byte) 0).hashCode(), not(is(BaseValue.valueOf((byte) 1).hashCode())));
+
+        assertThat(BaseValue.valueOf((short) 0).equals(BaseValue.valueOf((short) 0)), is(true));
+        assertThat(BaseValue.valueOf((short) 0).hashCode(), is(BaseValue.valueOf((short) 0).hashCode()));
+        assertThat(BaseValue.valueOf((short) 0).equals(BaseValue.valueOf((short) 1)), is(false));
+        assertThat(BaseValue.valueOf((short) 0).hashCode(), not(is(BaseValue.valueOf((short) 1).hashCode())));
+
+        assertThat(BaseValue.valueOf(0).equals(BaseValue.valueOf(0)), is(true));
+        assertThat(BaseValue.valueOf(0).hashCode(), is(BaseValue.valueOf(0).hashCode()));
+        assertThat(BaseValue.valueOf(0).equals(BaseValue.valueOf(1)), is(false));
+        assertThat(BaseValue.valueOf(0).hashCode(), not(is(BaseValue.valueOf(1).hashCode())));
+
+        assertThat(BaseValue.valueOf(0L).equals(BaseValue.valueOf(0L)), is(true));
+        assertThat(BaseValue.valueOf(0L).hashCode(), is(BaseValue.valueOf(0L).hashCode()));
+        assertThat(BaseValue.valueOf(0L).equals(BaseValue.valueOf(1L)), is(false));
+        assertThat(BaseValue.valueOf(0L).hashCode(), not(is(BaseValue.valueOf(1L).hashCode())));
+
+        assertThat(BaseValue.valueOf(0.f).equals(BaseValue.valueOf(0.f)), is(true));
+        assertThat(BaseValue.valueOf(0.f).hashCode(), is(BaseValue.valueOf(0.f).hashCode()));
+        assertThat(BaseValue.valueOf(0.f).equals(BaseValue.valueOf(1.f)), is(false));
+        assertThat(BaseValue.valueOf(0.f).hashCode(), not(is(BaseValue.valueOf(1.f).hashCode())));
+
+        assertThat(BaseValue.valueOf(0.).equals(BaseValue.valueOf(0.)), is(true));
+        assertThat(BaseValue.valueOf(0.).hashCode(), is(BaseValue.valueOf(0.).hashCode()));
+        assertThat(BaseValue.valueOf(0.).equals(BaseValue.valueOf(1.)), is(false));
+        assertThat(BaseValue.valueOf(0.).hashCode(), not(is(BaseValue.valueOf(1.).hashCode())));
+
+        assertThat(BaseValue.valueOf("0").equals(BaseValue.valueOf("0")), is(true));
+        assertThat(BaseValue.valueOf("0").hashCode(), is(BaseValue.valueOf("0").hashCode()));
+        assertThat(BaseValue.valueOf("0").equals(BaseValue.valueOf("1")), is(false));
+        assertThat(BaseValue.valueOf("0").hashCode(), not(is(BaseValue.valueOf("1").hashCode())));
+
+        assertThat(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).equals(
+                        BaseValue.valueOf(ByteBuffer.wrap(new byte[0]))),
+                is(true));
+        assertThat(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).hashCode(),
+                is(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).hashCode()));
+        assertThat(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).equals(
+                        BaseValue.valueOf(ByteBuffer.wrap(new byte[1]))),
+                is(false));
+        assertThat(BaseValue.valueOf(ByteBuffer.wrap(new byte[0])).hashCode(),
+                not(is(BaseValue.valueOf(ByteBuffer.wrap(new byte[1])).hashCode())));
+
+        assertThat(BaseValue.valueOf(List.of(0)).equals(BaseValue.valueOf(List.of(0))), is(true));
+        assertThat(BaseValue.valueOf(List.of(0)).hashCode(), is(BaseValue.valueOf(List.of(0)).hashCode()));
+        assertThat(BaseValue.valueOf(List.of(0)).equals(BaseValue.valueOf(List.of(1))), is(false));
+        assertThat(BaseValue.valueOf(List.of(0)).hashCode(), not(is(BaseValue.valueOf(List.of(1)).hashCode())));
+
+        assertThat(TupleValue.valueOf(List.of(0)).equals(TupleValue.valueOf(List.of(0))), is(true));
+        assertThat(TupleValue.valueOf(List.of(0)).hashCode(), is(TupleValue.valueOf(List.of(0)).hashCode()));
+        assertThat(TupleValue.valueOf(List.of(0)).equals(TupleValue.valueOf(List.of(1))), is(false));
+        assertThat(TupleValue.valueOf(List.of(0)).hashCode(), not(is(TupleValue.valueOf(List.of(1)).hashCode())));
+
+        assertThat(BaseValue.valueOf(List.of(0)).equals(TupleValue.valueOf(List.of(0))), is(false));
+
+        assertThat(BaseValue.valueOf(Map.of("0", 0)).equals(BaseValue.valueOf(Map.of("0", 0))), is(true));
+        assertThat(BaseValue.valueOf(Map.of("0", 0)).hashCode(), is(BaseValue.valueOf(Map.of("0", 0)).hashCode()));
+        assertThat(BaseValue.valueOf(Map.of("0", 0)).equals(BaseValue.valueOf(Map.of("1", 0))), is(false));
+        assertThat(BaseValue.valueOf(Map.of("0", 0)).hashCode(), not(is(BaseValue.valueOf(Map.of("1", 0)).hashCode())));
+
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).equals(
+                        ObjectValue.valueOf("t", Map.of("0", 0))),
+                is(true));
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).hashCode(),
+                is(ObjectValue.valueOf("t", Map.of("0", 0)).hashCode()));
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).equals(
+                        ObjectValue.valueOf("t", Map.of("1", 0))),
+                is(false));
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).hashCode(),
+                not(is(ObjectValue.valueOf("t", Map.of("1", 0)).hashCode())));
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).equals(
+                        ObjectValue.valueOf("t1", Map.of("0", 0))),
+                is(false));
+        assertThat(ObjectValue.valueOf("t", Map.of("0", 0)).hashCode(),
+                not(is(ObjectValue.valueOf("t1", Map.of("0", 0)).hashCode())));
+
+        assertThat(BaseValue.valueOf(Map.of("0", 0)).equals(
+                        ObjectValue.valueOf("t", Map.of("0", 0))),
+                is(false));
     }
 }
