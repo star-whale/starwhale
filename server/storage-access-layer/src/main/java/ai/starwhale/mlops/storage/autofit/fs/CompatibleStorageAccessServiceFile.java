@@ -92,5 +92,8 @@ public class CompatibleStorageAccessServiceFile extends CompatibleStorageAccessS
         return storageAccessService.signedUrl(path, expTimeMillis);
     }
 
-
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+        return storageAccessService.signedPutUrl(path, expTimeMillis);
+    }
 }

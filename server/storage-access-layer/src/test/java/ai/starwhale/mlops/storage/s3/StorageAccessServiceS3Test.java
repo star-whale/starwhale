@@ -26,6 +26,7 @@ import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -203,5 +204,22 @@ public class StorageAccessServiceS3Test {
         try (InputStream content = new URL(signedUrl).openStream()) {
             Assertions.assertEquals("a", new String(content.readAllBytes()));
         }
+    }
+
+    @Test
+    public void testSignedPutUrl() throws IOException {
+        String path = "x";
+        String content = "testSignedPutUrl";
+        String signedUrl = s3.signedPutUrl(path, 1000 * 60L);
+        var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        try (var out = conn.getOutputStream()) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        try (var in = conn.getInputStream()) {
+            in.readAllBytes();
+        }
+        Assertions.assertEquals(content, new String(s3.get(path).readAllBytes()));
     }
 }

@@ -23,6 +23,7 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.aliyun.oss.ClientBuilderConfiguration;
+import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSErrorCode;
@@ -164,6 +165,15 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
         return ossClient.generatePresignedUrl(this.bucket, path, new Date(System.currentTimeMillis() + expTimeMillis))
+                .toString();
+    }
+
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+        return ossClient.generatePresignedUrl(this.bucket,
+                        path,
+                        new Date(System.currentTimeMillis() + expTimeMillis),
+                        HttpMethod.PUT)
                 .toString();
     }
 }

@@ -57,6 +57,7 @@ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner.Builder;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Slf4j
 public class StorageAccessServiceS3 implements StorageAccessService {
@@ -283,9 +284,17 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     @Override
-    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+    public String signedUrl(String path, Long expTimeMillis) {
         return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
                 .getObjectRequest(GetObjectRequest.builder().bucket(this.s3Config.getBucket()).key(path).build())
+                .signatureDuration(Duration.ofMillis(expTimeMillis))
+                .build()).url().toString();
+    }
+
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) {
+        return s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
+                .putObjectRequest(PutObjectRequest.builder().bucket(this.s3Config.getBucket()).key(path).build())
                 .signatureDuration(Duration.ofMillis(expTimeMillis))
                 .build()).url().toString();
     }

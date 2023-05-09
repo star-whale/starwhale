@@ -20,6 +20,7 @@ import ai.starwhale.mlops.storage.s3.S3Config;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Assertions;
@@ -30,6 +31,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 public class StorageAccessServiceAliyunTest {
+
     @Container
     private static final S3MockContainer s3Mock =
             new S3MockContainer(System.getProperty("s3mock.version", "latest"))
@@ -60,5 +62,20 @@ public class StorageAccessServiceAliyunTest {
         }
     }
 
-
+    @Test
+    public void testSignedPutUrl() throws IOException {
+        String path = "unit_test/x";
+        String content = "testSignedPutUrl";
+        String signedUrl = aliyun.signedPutUrl(path, 1000 * 60L);
+        var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        try (var out = conn.getOutputStream()) {
+            out.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        try (var in = conn.getInputStream()) {
+            in.readAllBytes();
+        }
+        Assertions.assertEquals(content, new String(aliyun.get(path).readAllBytes()));
+    }
 }
