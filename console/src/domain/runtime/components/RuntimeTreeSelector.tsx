@@ -20,9 +20,9 @@ const RuntimeTreeNode = themedStyled('div', () => ({
 
 function filterBuiltIn(builtIn: IRuntimeTreeSchema, runtimes: IRuntimeTreeSchema[]) {
     return runtimes.map(rt => {
-        rt.versions = rt.versions.filter(sub =>
-            !builtIn.versions.some(subBuiltIn =>
-                subBuiltIn.id === sub.id
+        rt.versions = rt.versions.filter(version =>
+            !builtIn.versions.some(biVersion =>
+                biVersion.id === version.id
             ))
         return rt
     })
@@ -33,7 +33,7 @@ export function RuntimeTreeSelector(props: any) {
     const runtimeInfo = useFetchRuntimeTree(projectId)
     const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return builtIn? [builtIn] : []
-        let mergedItems = builtIn ? [builtIn, ...filterBuiltIn(builtIn, runtimeInfo.data)] : [runtimeInfo.data]
+        let mergedItems = builtIn ? [builtIn, ...filterBuiltIn(builtIn, runtimeInfo.data)] : runtimeInfo.data
         const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
             return {
                 id: runtime.runtimeName,
