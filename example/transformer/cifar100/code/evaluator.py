@@ -33,6 +33,6 @@ class CIFAR100Inference(PipelineHandler):
     def cmp(self, ppl_result):
         result, label = [], []
         for _data in ppl_result:
-            label.append(_data["ds_data"]["fine_label"])
-            result.extend(_data["result"])
+            label.append(_data["input"]["fine_label"])
+            result.extend(_data["output"])
         return label, result

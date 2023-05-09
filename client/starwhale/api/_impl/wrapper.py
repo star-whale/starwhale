@@ -11,6 +11,7 @@ import requests
 
 from starwhale.utils import console
 from starwhale.consts import VERSION_PREFIX_CNT, STANDALONE_INSTANCE
+from starwhale.base.type import PredictLogMode
 from starwhale.consts.env import SWEnv
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
@@ -68,14 +69,6 @@ class Logger:
         writer.delete(key)
 
 
-def _serialize(data: Any) -> Any:
-    return dill.dumps(data)
-
-
-def _deserialize(data: bytes) -> Any:
-    return dill.loads(data)
-
-
 table_name_formatter: Callable[
     [Union[str, int], str], str
 ] = lambda project, table: f"project/{project}/{table}"
@@ -116,6 +109,9 @@ def _get_remote_project_id(instance_uri: str, project: str) -> Any:
 
 
 class Evaluation(Logger):
+    _RESULT_LOG_MODE_KEY = "_mode"
+    _ID_KEY = "id"
+
     def __init__(self, eval_id: str, project: str, instance: str = ""):
         if not eval_id:
             raise RuntimeError("eval id should not be None")
@@ -167,25 +163,38 @@ class Evaluation(Logger):
     def log_result(
         self,
         data_id: Union[int, str],
-        result: Any,
-        serialize: bool = False,
         **kwargs: Any,
     ) -> None:
-        record = {"id": data_id, "result": _serialize(result) if serialize else result}
+        mode = kwargs.pop(self._RESULT_LOG_MODE_KEY, PredictLogMode.PICKLE)
+        mode = PredictLogMode(mode)
+
+        def _serialize(_input: Any) -> Any:
+            if mode == PredictLogMode.PICKLE:
+                return dill.dumps(_input)
+            else:
+                return _input
+
+        record = {
+            self._ID_KEY: data_id,
+            self._RESULT_LOG_MODE_KEY: mode.value,
+        }
         for k, v in kwargs.items():
-            record[k.lower()] = _serialize(v) if serialize else v
+            k = k.lower()
+            if k == self._ID_KEY:
+                raise RuntimeError(f"key {k} is protected, please use another key")
+            record[k] = _serialize(v)
 
         self._log(self._eval_table_name("results"), record)
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
-        record = {"id": self.eval_id}
+        record = {self._ID_KEY: self.eval_id}
         # TODO: without if else?
         if metrics is not None:
             for k, v in metrics.items():
                 k = k.lower()
-                if k != "id":
+                if k != self._ID_KEY:
                     record[k] = v
         else:
             for k, v in kwargs.items():
@@ -199,18 +208,22 @@ class Evaluation(Logger):
             record[k.lower()] = v
         self._log(self._eval_table_name(table_name), record)
 
-    def get_results(self, deserialize: bool = False) -> Iterator[Dict[str, Any]]:
+    def get_results(self) -> Iterator[Dict[str, Any]]:
         for data in self._get(self._eval_table_name("results")):
-            if deserialize:
-                for _k, _v in data.items():
-                    if _k == "id":
+            mode = data.get(self._RESULT_LOG_MODE_KEY, PredictLogMode.PICKLE.value)
+            mode = PredictLogMode(mode)
+
+            if mode == PredictLogMode.PICKLE:
+                for k, v in data.items():
+                    if k in (self._ID_KEY, self._RESULT_LOG_MODE_KEY):
                         continue
-                    data[_k] = _deserialize(_v)
+                    data[k] = dill.loads(v)
+
             yield data
 
     def get_metrics(self) -> Dict[str, Any]:
         for metrics in self._get(self._eval_summary_table_name):
-            if metrics["id"] == self.eval_id:
+            if metrics[self._ID_KEY] == self.eval_id:
                 return metrics
 
         return {}

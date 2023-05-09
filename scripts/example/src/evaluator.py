@@ -10,6 +10,7 @@ from starwhale import evaluation, multi_classification
 
 @evaluation.predict(
     replicas=1,
+    log_mode="plain",
 )
 def predict(data: t.Dict) -> t.Any:
     # Test relative path case
@@ -35,7 +36,7 @@ def predict(data: t.Dict) -> t.Any:
 def evaluate(ppl_result: t.Iterator):
     result, label, pr = [], [], []
     for _data in ppl_result:
-        label.append(_data["ds_data"]["label"])
-        result.append(_data["result"][0])
-        pr.append(_data["result"][1])
+        label.append(_data["input"]["label"])
+        result.append(_data["output"][0])
+        pr.append(_data["output"][1])
     return label, result, pr

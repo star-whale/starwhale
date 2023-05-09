@@ -12,10 +12,15 @@ from functools import wraps
 import jsonlines
 
 from starwhale.utils import console, now_str
-from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
+from starwhale.consts import (
+    RunStatus,
+    CURRENT_FNAME,
+    SHORT_VERSION_CNT,
+    DecoratorInjectAttr,
+)
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
-from starwhale.base.type import RunSubDirType
+from starwhale.base.type import RunSubDirType, PredictLogMode
 from starwhale.api.service import Input, Output, Service
 from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
@@ -37,6 +42,7 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
         flush_result: bool = False,
         predict_auto_log: bool = True,
+        predict_log_mode: str = PredictLogMode.PICKLE.value,
         dataset_uris: t.Optional[t.List[str]] = None,
         **kwargs: t.Any,
     ) -> None:
@@ -51,6 +57,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.ignore_error = ignore_error
         self.flush_result = flush_result
         self.predict_auto_log = predict_auto_log
+        self.predict_log_mode = PredictLogMode(predict_log_mode)
         self.kwargs = kwargs
 
         _logdir = JobStorage.local_run_dir(self.context.project, self.context.version)
@@ -111,7 +118,7 @@ class PipelineHandler(metaclass=ABCMeta):
         now = now_str()
         try:
             if self.predict_auto_log:
-                self._do_evaluate(self.evaluation_store.get_results(deserialize=True))
+                self._do_evaluate(self.evaluation_store.get_results())
             else:
                 self._do_evaluate()
         except Exception as e:
@@ -205,7 +212,7 @@ class PipelineHandler(metaclass=ABCMeta):
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
-            idx_prefix = f"{_uri.typ}-{_uri.name}-{_uri.version}"
+            idx_prefix = f"{_uri.name}-{_uri.version[:SHORT_VERSION_CNT]}"
             for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None
@@ -263,14 +270,18 @@ class PipelineHandler(metaclass=ABCMeta):
                             for artifact in TabularDatasetRow.artifacts_of(_features):
                                 if artifact.link:
                                     artifact.clear_cache()
+
+                        raw_dataset_record = {}
+                        if not self.ignore_dataset_data:
+                            # drop DataRow._Features type, keep dict type for features
+                            raw_dataset_record = _features.copy()
+
                         self.evaluation_store.log_result(
                             data_id=_idx_with_ds,
-                            index=_idx,
-                            result=_result,
-                            ds_data={}
-                            if self.ignore_dataset_data
-                            else _features.copy(),  # drop DataRow._Features type, keep dict type for features
-                            serialize=True,
+                            mode=self.predict_log_mode,
+                            input=raw_dataset_record,
+                            output=_result,
+                            _index=_idx,
                         )
 
         if self.flush_result and self.predict_auto_log:
@@ -447,6 +458,7 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         batch_size: [int, optional] Number of samples per batch. Default is 1.
         fail_on_error: [bool, optional] Fast fail on the exceptions in the predict function. Default is True.
         auto_log: [bool, optional] Auto log the return values of the predict function and the according dataset rows. Default is True.
+        log_mode: [str, optional] When auto_log=True, the log_mode can be specified to control the log behavior. Options are `pickle` and `plain`. Default is `pickle`.
         needs: [List[Callable], optional] The list of the functions that need to be executed before the predict function.
 
     Examples:
@@ -496,6 +508,7 @@ def _register_predict(
     batch_size: int = 1,
     fail_on_error: bool = True,
     auto_log: bool = True,
+    log_mode: str = PredictLogMode.PICKLE.value,
 ) -> None:
     from .job import Handler
 
@@ -509,6 +522,7 @@ def _register_predict(
             predict_batch_size=batch_size,
             ignore_error=not fail_on_error,
             predict_auto_log=auto_log,
+            predict_log_mode=log_mode,
             ignore_dataset_data=not auto_log,
             dataset_uris=datasets,
         ),

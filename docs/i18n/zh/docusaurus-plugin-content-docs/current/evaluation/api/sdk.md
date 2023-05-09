@@ -30,7 +30,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
 `ppl` 函数用来进行推理，输入参数为 data和kw。data表示数据集中某个样本，kw为一个字典，目前包含 `annotations` 和 `index`。每条数据集样本都会调用`ppl`函数，输出为模型推理值，会自动被记录和存储，可以在cmp函数中通过 `ppl_result` 参数获取。
 
-`cmp` 函数一般用来进行推理结果的汇总，并产生最终的评测报告数据，只会调用一次。`cmp` 函数的参数为 `ppl_result` ，可以被迭代。迭代出来的对象为一个字典，包含 `result`, `annotations` 和 `data_id` 三个元素。`result` 为 `ppl` 返回的元素，由于使用了 pickle做序列化-反序列化，data["result"] 变量直接能获取ppl函数return的值；`annotations` 为构建数据集时写入的，此阶段的result["annotations"]为一个dict类型。`data_id` 表示数据集对应的index。
+`cmp` 函数一般用来进行推理结果的汇总，并产生最终的评测报告数据，只会调用一次。`cmp` 函数的参数为 `ppl_result` ，可以被迭代。迭代出来的对象为一个字典，包含 `output`, `input` 和 `data_id` 三个元素。`output` 为 `ppl` 返回的元素，由于使用了 pickle做序列化-反序列化，data["output"] 变量直接能获取ppl函数return的值；`input` 为构建数据集时写入的，此阶段的result["input"]为一个dict类型。`data_id` 表示数据集对应的index。
 
 另外，在PipelineHandler及其子类中可以访问 `self.context` 获取 `starwhale.Context` 类型的上下文信息。
 
@@ -52,9 +52,9 @@ class Example(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["annotations"]["label"])
-            result.extend(_data["result"][0])
-            pr.extend(_data["result"][1])
+            label.append(_data["input"]["label"])
+            result.extend(_data["output"][0])
+            pr.extend(_data["output"][1])
         return label, result, pr
 
     def _pre(self, input: Image) -> torch.Tensor:

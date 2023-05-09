@@ -334,14 +334,14 @@ Starwhale的模型评测一般分为ppl和cmp两个阶段，用户也可以自�
         def cmp(self, ppl_result):
             result, label, pr = [], [], []
             for _data in ppl_result:
-                label.append(ALL_LABELS_MAP[_data["annotations"]["label"]])
-                pr.append(_data["result"][1])
-                result.append(_data["result"][0][0])
+                label.append(ALL_LABELS_MAP[_data["input"]["label"]])
+                pr.append(_data["output"][1])
+                result.append(_data["output"][0][0])
             return label, result, pr
     ```
 
   - cmp过程一般是整个评测的最后一步，负责将ppl推理结果汇总，并对label进行对比，然后得到各种形态的评测报告。继承`PipelineHandler`的类，需要实现cmp方法。
-  - cmp函数的输入参数为`ppl_result`，可以被迭代使用。每个迭代出来的元素是一个dict类型，目前包含 `annotations` , `result` 和 `data_id` 三个元素。`result` 为某条dataset数据的ppl推理结果。
+  - cmp函数的输入参数为`ppl_result`，可以被迭代使用。每个迭代出来的元素是一个dict类型，目前包含 `input` , `output` 和 `data_id` 三个元素。`output` 为某条dataset数据的ppl推理结果。
   - 本例是一个multi classification问题，可以直接用 `starwhale.multi_classification` 修饰器，能自动对cmp结果进行进一步分析，并将结果存储在Starwhale的DataStore中，方便后续的可视化展示。由于设置 `show_roc_auc=True` 参数，cmp函数需要返回三个元素：label列表，result列表和probability_matrix列表。需要注意的是，即使是multi classification问题，也不需要强制用 `starwhale.multi_classification` 修饰器，用户完全可以按照自己的需求定制化cmp过程。
 
 ## 参考资料

@@ -43,7 +43,7 @@ def ppl(data):
 def cmp(ppl_result):
     result, label = [], []
     for _data in ppl_result:
-        label.append(_data["ds_data"]["label"])
-        result.append(_data["result"])
+        label.append(_data["input"]["label"])
+        result.append(_data["output"])
 
     return label, result

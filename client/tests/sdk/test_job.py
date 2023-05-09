@@ -212,6 +212,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "ignore_error": False,
                     "predict_auto_log": True,
                     "predict_batch_size": 1,
+                    "predict_log_mode": "pickle",
                 },
                 "func_name": "img_predict_handler",
                 "module_name": "mock_user_module",
@@ -247,6 +248,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                     "ignore_error": False,
                     "predict_auto_log": True,
                     "predict_batch_size": 1,
+                    "predict_log_mode": "pickle",
                 },
                 "func_name": "video_predict_handler",
                 "module_name": "mock_user_module",
@@ -278,7 +280,7 @@ def video_evaluate_handler(*args, **kwargs): ...
         content = """
 from starwhale import evaluation
 
-@evaluation.predict
+@evaluation.predict(log_mode="pickle")
 def predict_handler(data): ...
 
 @evaluation.evaluate(needs=[predict_handler])
@@ -306,6 +308,7 @@ def evaluate_handler(*args, **kwargs): ...
                         "ignore_error": False,
                         "predict_auto_log": True,
                         "predict_batch_size": 1,
+                        "predict_log_mode": "pickle",
                     },
                     "func_name": "predict_handler",
                     "module_name": "mock_user_module",
@@ -340,6 +343,7 @@ def evaluate_handler(*args, **kwargs): ...
                         "ignore_error": False,
                         "predict_auto_log": True,
                         "predict_batch_size": 1,
+                        "predict_log_mode": "pickle",
                     },
                     "func_name": "predict_handler",
                     "module_name": "mock_user_module",
@@ -501,7 +505,7 @@ class MockHandler(PipelineHandler):
 from starwhale import evaluation
 
 class MockHandler:
-    @evaluation.predict(replicas=4)
+    @evaluation.predict(replicas=4, log_mode="plain")
     def predict_handler(self, **kwargs): ...
 
     @evaluation.evaluate(use_predict_auto_log=True, needs=[predict_handler])
@@ -528,6 +532,7 @@ class MockHandler:
                     "ignore_error": False,
                     "predict_auto_log": True,
                     "predict_batch_size": 1,
+                    "predict_log_mode": "plain",
                 },
                 "func_name": "predict_handler",
                 "module_name": "mock_user_module",
@@ -550,6 +555,7 @@ class MockHandler:
                     "ignore_error": False,
                     "predict_auto_log": True,
                     "predict_batch_size": 1,
+                    "predict_log_mode": "plain",
                 },
                 "func_name": "predict_handler",
                 "module_name": "mock_user_module",

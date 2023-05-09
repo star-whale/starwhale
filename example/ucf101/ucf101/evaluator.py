@@ -227,9 +227,9 @@ class UCF101PipelineHandler(PipelineHandler):
     def cmp(self, ppl_result: t.Iterator) -> t.Any:
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["ds_data"]["label"])
-            result.append(_data["result"][0])
-            pr.append(_data["result"][1])
+            label.append(_data["input"]["label"])
+            result.append(_data["output"][0])
+            pr.append(_data["output"][1])
         return label, result, pr
 
     @api(

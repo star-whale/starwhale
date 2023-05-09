@@ -6,6 +6,7 @@ from requests_mock import Mocker
 from starwhale import Text
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import wrapper, data_store
+from starwhale.base.type import PredictLogMode
 from starwhale.consts.env import SWEnv
 
 from .. import BaseTestCase
@@ -51,17 +52,21 @@ class TestEvaluation(BaseTestCase):
 
     def test_log_results_and_scan(self) -> None:
         eval = wrapper.Evaluation("tt", "test")
-        eval.log_result("0", 3)
-        eval.log_result("1", 4)
-        eval.log_result("2", 5, a="0", B="1")
-        eval.log_result("3", 6, c=None)
+        eval.log_result("0", output=3)
+        eval.log_result("1", output=4, _mode=PredictLogMode.PICKLE)
+        eval.log_result("2", output=5, a="0", B="1", _mode=PredictLogMode.PLAIN)
+        eval.log_result("3", output=6, c=None, _mode="plain")
         eval.close()
         self.assertEqual(
             [
-                {"id": "0", "result": 3},
-                {"id": "1", "result": 4},
-                {"id": "2", "result": 5, "a": "0", "b": "1"},
-                {"id": "3", "result": 6},
+                {"id": "0", "output": 3, "_mode": "pickle"},
+                {
+                    "id": "1",
+                    "output": 4,
+                    "_mode": "pickle",
+                },
+                {"id": "2", "output": 5, "a": "0", "b": "1", "_mode": "plain"},
+                {"id": "3", "output": 6, "_mode": "plain"},
             ],
             list(eval.get_results()),
         )
@@ -97,7 +102,7 @@ class TestEvaluation(BaseTestCase):
         os.environ[SWEnv.instance_token] = "abcd"
         os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
         eval = wrapper.Evaluation("tt", "test")
-        eval.log_result("0", 3)
+        eval.log_result(data_id="0", mode=PredictLogMode.PICKLE, output=3)
         eval.log_metrics({"a/b": 2})
 
         assert len(eval._writers) == 2
