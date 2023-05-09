@@ -35,7 +35,6 @@ public class JobRequest implements Serializable {
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
-    // TODO check built in
     @JsonProperty("runtimeVersionUrl")
     private String runtimeVersionUrl;
 
