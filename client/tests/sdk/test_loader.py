@@ -37,7 +37,6 @@ class TestDataLoader(TestCase):
         self.dataset_uri = Resource(
             "mnist/version/1122334455667788",
             typ=ResourceType.dataset,
-            _skip_refine=True,
         )
         self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
@@ -334,7 +333,7 @@ class TestDataLoader(TestCase):
         dataset_uri = Resource(
             f"http://127.0.0.1:1234/project/self/dataset/mnist/version/{version}",
             typ=ResourceType.dataset,
-            _skip_refine=True,
+            refine=False,
         )
 
         os.environ[SWEnv.instance_token] = "123"
@@ -516,7 +515,6 @@ class TestDataLoader(TestCase):
         dataset_uri = Resource(
             "http://localhost/projects/x/datasets/mnist/versions/1122",
             typ=ResourceType.dataset,
-            _skip_refine=True,
         )
         m_scan_batch.return_value = [
             [

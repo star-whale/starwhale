@@ -97,7 +97,8 @@ class TestModelPipelineHandler(TestCase):
 
         _loader = get_data_loader(
             dataset_uri=Resource(
-                "mnist/version/latest", typ=ResourceType.dataset, _skip_refine=True
+                "mnist/version/latest",
+                typ=ResourceType.dataset,
             ),
         )
         assert isinstance(_loader, DataLoader)
@@ -156,11 +157,11 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_ppl(
@@ -187,7 +188,10 @@ class TestModelPipelineHandler(TestCase):
         m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
 
         datastore_dir = DatasetStorage(
-            Resource(self.dataset_uri_raw, typ=ResourceType.dataset, _skip_refine=True)
+            Resource(
+                self.dataset_uri_raw,
+                typ=ResourceType.dataset,
+            )
         )
         data_dir = datastore_dir.data_dir
         ensure_dir(data_dir)
@@ -218,11 +222,11 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_deserializer(
@@ -288,7 +292,10 @@ class TestModelPipelineHandler(TestCase):
         m_scan_id.return_value = [{"id": 0}]
 
         datastore_dir = DatasetStorage(
-            Resource(self.dataset_uri_raw, typ=ResourceType.dataset, _skip_refine=True)
+            Resource(
+                self.dataset_uri_raw,
+                typ=ResourceType.dataset,
+            )
         )
         ensure_file(datastore_dir.manifest_path, "", parents=True)
 
@@ -370,9 +377,7 @@ class TestModelPipelineHandler(TestCase):
             DummyWithOnlyVarPositional,
         ]
         Context.set_runtime_context(Context(version="123", project="test"))
-        uri = Resource(
-            "mnist/version/123456", typ=ResourceType.dataset, _skip_refine=True
-        )
+        uri = Resource("mnist/version/123456", typ=ResourceType.dataset, refine=False)
         for h in handlers:
             h()._do_predict(
                 data=DataRow._Features({"label": 1}),

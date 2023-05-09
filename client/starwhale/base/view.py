@@ -151,7 +151,6 @@ class BaseTermView(SWCliConfigMixed):
             f"{bundle_name}/version/{obj_ver}",
             project=project_uri,
             typ=typ,
-            _skip_refine=True,
         )
         console.print(f":construction_worker: uri {_uri}")
         return _uri

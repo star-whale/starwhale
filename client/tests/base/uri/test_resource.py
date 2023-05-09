@@ -27,7 +27,10 @@ class TestResource(TestCase):
         p.name = "self"
         p.path = ""
         r = Resource(
-            uri="mnist", typ=ResourceType.dataset, project=p, _skip_refine=True
+            uri="mnist",
+            typ=ResourceType.dataset,
+            project=p,
+            refine=False,
         )
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
@@ -39,7 +42,6 @@ class TestResource(TestCase):
             uri="mnist/version/foo",
             typ=ResourceType.dataset,
             project=p,
-            _skip_refine=True,
         )
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
@@ -47,7 +49,9 @@ class TestResource(TestCase):
         assert r.full_uri == "local/project/self/dataset/mnist/version/foo"
 
         r = Resource(
-            uri="foo/bar", typ=ResourceType.dataset, project=p, _skip_refine=True
+            uri="foo/bar",
+            typ=ResourceType.dataset,
+            project=p,
         )
         assert r.name == "foo"
         assert r.typ == ResourceType.dataset
@@ -59,7 +63,6 @@ class TestResource(TestCase):
                 uri="mnist/foo/bar",
                 typ=ResourceType.dataset,
                 project=p,
-                _skip_refine=True,
             )
 
     @patch("starwhale.base.uri.resource.Project.parse_from_full_uri")
@@ -67,7 +70,7 @@ class TestResource(TestCase):
         ins = mock_parse.return_value
         ins.path = "dataset/mnist/version/foo"
         uri = "local/project/self/dataset/mnist/version/foo"
-        r = Resource(uri, _skip_refine=True)
+        r = Resource(uri, refine=False)
         assert r.name == "mnist"
         assert r.version == "foo"
         assert r.typ == ResourceType.dataset
@@ -83,7 +86,7 @@ class TestResource(TestCase):
             "storage": {"root": "/root"},
         }
         uri = "local/project/self/dataset/mnist"
-        r = Resource(uri, _skip_refine=True)
+        r = Resource(uri, refine=False)
         assert r.name == "mnist"
         assert r.version == ""
         assert r.typ == ResourceType.dataset
@@ -214,7 +217,7 @@ class TestResource(TestCase):
         }
 
         for uri, expect in tests.items():
-            p = Resource(uri, typ=ResourceType.runtime, _skip_refine=True)
+            p = Resource(uri, typ=ResourceType.runtime)
             assert p.name == expect[0]
             assert p.project.name == expect[1]
             assert p.instance.alias == expect[2]
@@ -227,7 +230,7 @@ class TestResource(TestCase):
                 "local": {"uri": "local"},
             },
         }
-        uri = Resource("cloud://foo/project/starwhale/dataset/mnist", _skip_refine=True)
+        uri = Resource("cloud://foo/project/starwhale/dataset/mnist", refine=False)
         assert uri.instance.alias == "foo"
         assert uri.project.name == "starwhale"
         assert uri.typ == ResourceType.dataset
@@ -238,7 +241,7 @@ class TestResource(TestCase):
         uri = Resource(
             "cloud://foo/project/starwhale/dataset/mnist",
             typ=ResourceType.dataset,
-            _skip_refine=True,
+            refine=False,
         )
         assert uri.instance.alias == "foo"
         assert uri.project.name == "starwhale"

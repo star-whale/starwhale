@@ -34,9 +34,7 @@ class RuntimeProcessTestCase(TestCase):
         m_call: MagicMock,
         m_mode: MagicMock,
     ) -> None:
-        uri = Resource(
-            "runtime-test/version/1234", typ=ResourceType.runtime, _skip_refine=True
-        )
+        uri = Resource("runtime-test/version/1234", typ=ResourceType.runtime)
         store = RuntimeStorage(uri)
         venv_dir = store.export_dir / "venv"
         ensure_dir(venv_dir)
@@ -100,9 +98,7 @@ class RuntimeProcessTestCase(TestCase):
         m_mode: MagicMock,
         m_conda_bin: MagicMock,
     ) -> None:
-        uri = Resource(
-            "model-test/version/1234", typ=ResourceType.model, _skip_refine=True
-        )
+        uri = Resource("model-test/version/1234", typ=ResourceType.model)
         store = ModelStorage(uri)
         conda_dir = store.packaged_runtime_export_dir / "conda"
         ensure_dir(conda_dir)
@@ -194,15 +190,9 @@ class RuntimeProcessTestCase(TestCase):
         with self.assertRaisesRegex(
             FieldTypeOrValueError, "is not a valid uri, only support"
         ):
-            Process(
-                Resource(
-                    "mnist/version/latest", typ=ResourceType.dataset, _skip_refine=True
-                )
-            ).run()
+            Process(Resource("mnist/version/latest", typ=ResourceType.dataset)).run()
 
-        uri = Resource(
-            "runtime-test/version/1234", typ=ResourceType.runtime, _skip_refine=True
-        )
+        uri = Resource("runtime-test/version/1234", typ=ResourceType.runtime)
         store = RuntimeStorage(uri)
         ensure_dir(store.export_dir / "venv")
         m_mode.return_value = "venv"

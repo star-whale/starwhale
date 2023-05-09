@@ -63,7 +63,9 @@ class BundleCopy(CloudRequestMixed):
         **kw: t.Any,
     ) -> None:
         self.src_uri: Resource = (
-            Resource(src_uri, typ=typ) if isinstance(src_uri, str) else src_uri
+            Resource(src_uri, typ=typ, refine=True)
+            if isinstance(src_uri, str)
+            else src_uri
         )
         if not self.src_uri.version:
             self.src_uri.version = "latest"
@@ -82,7 +84,7 @@ class BundleCopy(CloudRequestMixed):
         dest = dest_uri
         if isinstance(dest_uri, str):
             try:
-                dest = Resource(dest_uri, typ=typ, project=project, _skip_refine=True)
+                dest = Resource(dest_uri, typ=typ, project=project, refine=False)
             except Exception as e:
                 if str(e).startswith("invalid uri"):
                     dest = Project(dest_uri)
@@ -94,7 +96,7 @@ class BundleCopy(CloudRequestMixed):
                 name=self.src_uri.name,
                 typ=typ,
                 project=dest,
-                _skip_refine=True,
+                refine=False,
             )
         elif isinstance(dest, Resource):
             self.dest_uri = dest

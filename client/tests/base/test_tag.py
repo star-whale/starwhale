@@ -36,7 +36,6 @@ class StandaloneTagTestCase(TestCase):
             Resource(
                 "mnist/version/me3dmn3gg4ytanrtmftdgyjzpbrgimi",
                 typ=ResourceType.model,
-                _skip_refine=True,
             )
         )
 
@@ -73,7 +72,6 @@ class StandaloneTagTestCase(TestCase):
             Resource(
                 "mnist/version/gnstmntggi4tinrtmftdgyjzo5wwy2y",
                 typ=ResourceType.model,
-                _skip_refine=True,
             )
         )
         st.add(["latest", "test2", "test"])
@@ -95,11 +93,7 @@ class StandaloneTagTestCase(TestCase):
     def test_auto_fast_tag(self, mock_ins: MagicMock) -> None:
         mock_ins.return_value = {"type": "standalone", "uri": "local"}
         version = "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
-        st = StandaloneTag(
-            Resource(
-                f"mnist/version/{version}", typ=ResourceType.model, _skip_refine=True
-            )
-        )
+        st = StandaloneTag(Resource(f"mnist/version/{version}", typ=ResourceType.model))
         assert st._get_manifest()["fast_tag_seq"] == -1
         st.add_fast_tag()
         assert st._get_manifest()["fast_tag_seq"] == 0

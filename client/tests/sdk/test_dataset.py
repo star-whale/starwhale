@@ -128,7 +128,7 @@ class TestDatasetCopy(BaseTestCase):
     @patch("os.environ", {})
     @Mocker()
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_upload(self, rm: Mocker) -> None:
@@ -139,9 +139,7 @@ class TestDatasetCopy(BaseTestCase):
         swds_config = DatasetConfig(
             name=dataset_name, handler=iter_complex_annotations_swds
         )
-        dataset_uri = Resource(
-            dataset_name, typ=ResourceType.dataset, _skip_refine=True
-        )
+        dataset_uri = Resource(dataset_name, typ=ResourceType.dataset)
         sd = StandaloneDataset(dataset_uri)
         sd.build(config=swds_config)
         dataset_version = sd._version
@@ -289,7 +287,7 @@ class TestDatasetCopy(BaseTestCase):
     @patch("os.environ", {})
     @Mocker()
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_download(self, rm: Mocker) -> None:
@@ -448,7 +446,6 @@ class TestDatasetCopy(BaseTestCase):
             dc = DatasetCopy(
                 src_uri=Resource(
                     f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
-                    _skip_refine=True,
                 ),
                 dest_uri="",
                 dest_local_project_uri="self",
@@ -691,7 +688,7 @@ class TestDatasetType(TestCase):
 
     @patch("starwhale.core.dataset.store.boto3.resource")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_link_standalone(self, m_boto3: MagicMock) -> None:
@@ -744,7 +741,6 @@ class TestDatasetType(TestCase):
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
             owner=Resource(
                 "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest",
-                _skip_refine=True,
             ),
         )
 
@@ -782,11 +778,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_get_consumption(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
@@ -835,11 +831,11 @@ class TestDatasetSessionConsumption(TestCase):
 
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_standalone_tdsc_multi_thread(self, m_scan_id: MagicMock) -> None:
@@ -893,11 +889,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch.dict(os.environ, {})
     @patch("starwhale.utils.config.load_swcli_config")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_cloud_tdsc(self, rm: Mocker, m_conf: MagicMock) -> None:
@@ -921,7 +917,6 @@ class TestDatasetSessionConsumption(TestCase):
                     "mnist/version/latest",
                     typ=ResourceType.dataset,
                     project=Project("cloud://test/project/p"),
-                    _skip_refine=True,
                 ),
                 "",
             )
@@ -968,11 +963,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_standalone_tdsc(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
@@ -992,7 +987,8 @@ class TestDatasetSessionConsumption(TestCase):
         with self.assertRaises(FieldTypeOrValueError):
             StandaloneTDSC(
                 dataset_uri=Resource(
-                    "mnist/version/123", typ=ResourceType.dataset, _skip_refine=True
+                    "mnist/version/123",
+                    typ=ResourceType.dataset,
                 ),
                 session_id="1",
                 batch_size=-1,
@@ -1002,7 +998,6 @@ class TestDatasetSessionConsumption(TestCase):
             StandaloneTDSC(
                 dataset_uri=Resource(
                     "http://1.1.1.1:8082/project/starwhale/dataset/mnist/version/latest",
-                    _skip_refine=True,
                 ),
                 session_id="1",
             )
@@ -1011,7 +1006,8 @@ class TestDatasetSessionConsumption(TestCase):
 
         tdsc = StandaloneTDSC(
             dataset_uri=Resource(
-                "mnist/version/123", typ=ResourceType.dataset, _skip_refine=True
+                "mnist/version/123",
+                typ=ResourceType.dataset,
             ),
             session_id="1",
             batch_size=10,
@@ -1238,7 +1234,8 @@ class TestTabularDataset(TestCase):
         m_scan.side_effect = [rows, rows, [{"id": 0, "features/value": 1}]]
         with TabularDataset.from_uri(
             Resource(
-                "mnist/version/123456", typ=ResourceType.dataset, _skip_refine=True
+                "mnist/version/123456",
+                typ=ResourceType.dataset,
             )
         ) as td:
             rs = [i for i in td.scan()]
@@ -1439,7 +1436,7 @@ class TestRotatedBinWriter(TestCase):
 
 class TestMappingDatasetBuilder(BaseTestCase):
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def setUp(self) -> None:

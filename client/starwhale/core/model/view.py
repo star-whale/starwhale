@@ -40,7 +40,7 @@ class ModelTermView(BaseTermView):
         if isinstance(model_uri, Resource):
             self.uri = model_uri
         else:
-            self.uri = Resource(model_uri, ResourceType.model)
+            self.uri = Resource(model_uri, ResourceType.model, refine=True)
         self.model = Model.get_model(self.uri)
 
     @BaseTermView._simple_action_print

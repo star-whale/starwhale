@@ -63,7 +63,7 @@ class TestDatasetBackend(TestCase):
         dataset_uri = Resource(
             "http://127.0.0.1:1234/project/self/dataset/mnist/version/1122334455667788",
             typ=ResourceType.dataset,
-            _skip_refine=True,
+            refine=False,
         )
         obj = SignedUrlBackend(dataset_uri)._make_file((Link(data_uri), 0, -1))
         assert obj.read(1) == b"a"

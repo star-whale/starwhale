@@ -41,7 +41,7 @@ class TestBundleCopy(TestCase):
         self._sw_config.select_current_default("local", "self")
 
     @Mocker()
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_runtime_copy_c2l(self, rm: Mocker, *args: t.Any) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -246,7 +246,7 @@ class TestBundleCopy(TestCase):
     @Mocker()
     @patch("starwhale.core.model.copy.load_yaml")
     @patch("starwhale.core.model.copy.extract_tar")
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_model_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -474,7 +474,7 @@ class TestBundleCopy(TestCase):
         assert head_request.call_count == 1
         assert upload_request.call_count == 3
 
-    def _prepare_local_dataset(self) -> t.Union[str, str]:
+    def _prepare_local_dataset(self) -> t.Tuple[str, str]:
         name = "mnist"
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         swds_path = (
@@ -518,7 +518,7 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_dataset_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -556,7 +556,7 @@ class TestBundleCopy(TestCase):
             json={"data": {"versionMeta": yaml.safe_dump({"version": version})}},
         )
 
-        cloud_uri = (
+        cloud_uri = Resource(
             f"cloud://pre-bare/project/myproject/dataset/mnist/version/{version}"
         )
 
@@ -613,7 +613,7 @@ class TestBundleCopy(TestCase):
             ).do()
 
     @Mocker()
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.core.dataset.copy.TabularDataset.put")
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
     @patch("starwhale.core.dataset.copy.TabularDataset.delete")
@@ -645,7 +645,9 @@ class TestBundleCopy(TestCase):
             f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}/version/{version}/file",
             json={"data": {"uploadId": 1}},
         )
-        src_uri = f"local/project/self/mnist/version/{version}"
+        src_uri = Resource(
+            f"local/project/self/dataset/mnist/version/{version}", refine=True
+        )
         dest_uri = "cloud://pre-bare/project/mnist"
 
         head_request = rm.request(
@@ -804,7 +806,7 @@ class TestBundleCopy(TestCase):
             )
             try:
                 DatasetCopy(
-                    src_uri=case["src_uri"],
+                    src_uri=Resource(case["src_uri"], typ=ResourceType.dataset),
                     dest_uri=case["dest_uri"],
                     mode=case["mode"],
                 ).do()
@@ -861,7 +863,7 @@ class TestBundleCopy(TestCase):
         bc.do()
 
     @Mocker()
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_download_bundle_file(self, rm: Mocker, *args: t.Any) -> None:
         version = "112233"
         version_name = "runtime-version"

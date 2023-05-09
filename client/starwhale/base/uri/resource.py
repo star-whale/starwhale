@@ -7,12 +7,16 @@ from dataclasses import dataclass
 
 import requests
 
-from starwhale.utils import load_yaml
+from starwhale.utils import console, load_yaml
 from starwhale.consts import SW_API_VERSION
 from starwhale.utils.config import load_swcli_config
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
-from starwhale.base.uri.exceptions import NoMatchException, UriTooShortException
+from starwhale.base.uri.exceptions import (
+    VerifyException,
+    NoMatchException,
+    UriTooShortException,
+)
 
 rc_url_regex = re.compile(
     r"(?P<scheme>https*)://"
@@ -60,7 +64,7 @@ class Resource:
         typ: Optional[ResourceType] = None,
         project: Optional[Project] = None,
         token: Optional[str] = None,
-        _skip_refine: bool = False,  # for unit test and resource building or copy(without local dir generated)
+        refine: bool = True,
         **kwargs: Any,
     ) -> None:
         """
@@ -76,6 +80,8 @@ class Resource:
                 * resource type, name and version under project e.g. self/dataset/mnist/version/latest
         :param typ: resource type: (dataset, model, runtime etc)
         :param project: project which the resource belongs to (optional)
+        :param token: token for remote resource
+        :param refine: whether to refine the uri
         :return: Resource instance
         """
         self._remote_info: Dict[str, Any] = {}
@@ -93,7 +99,7 @@ class Resource:
             self.typ = ResourceType(info["rc_type"][:-1])  # remove the last 's'
             self.name = info.get("rc_id") or ""
             self.version = info.get("rc_version") or ""
-            self.refine_remote_rc_info()
+            self._refine_remote_rc_info()
             return
 
         if project:
@@ -124,11 +130,18 @@ class Resource:
         if (typ is not None) and self.typ != typ:
             raise Exception(f"type mismatch: {self.typ} vs {typ}")
 
-        if not _skip_refine:
-            if not self.project.instance.is_local:
-                self.refine_remote_rc_info()
-            else:
-                self.refine_local_rc_info()
+        if refine:
+            try:
+                self.refine()
+            except (NoMatchException, VerifyException) as e:
+                console.warning(f"refine resource {uri} failed: {e}")
+
+    def refine(self) -> "Resource":
+        if not self.project.instance.is_local:
+            self._refine_remote_rc_info()
+        else:
+            self._refine_local_rc_info()
+        return self
 
     def _parse_with_type(self, typ: ResourceType, uri: str) -> None:
         """
@@ -200,9 +213,9 @@ class Resource:
             # assume is is name for now
             self.name = ver
 
-    def refine_remote_rc_info(self) -> None:
+    def _refine_remote_rc_info(self) -> None:
         if self.project.instance.is_local:
-            raise Exception("only used for remote resources")
+            raise VerifyException("only used for remote resources")
         if not self.name or not self.version:
             return
         if not self.name.isnumeric() and not self.version.isnumeric():
@@ -219,21 +232,20 @@ class Resource:
         self.name = self._remote_info.get("name", self.name)
         self.version = self._remote_info.get("versionName", self.version)
 
-    def refine_local_rc_info(self) -> None:
+    def _refine_local_rc_info(self) -> None:
         root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
-        if self.version == "":
-            self.version = "latest"
-        if self.version == "latest" or (
-            self.version.startswith("v") and self.version[1:].isnumeric()
-        ):
+        ver = self.version
+        if ver == "":
+            ver = "latest"
+        if ver == "latest" or (ver.startswith("v") and ver[1:].isnumeric()):
             if not self.name:
-                raise Exception("name is required for latest version")
+                raise VerifyException("name is required for latest version")
             # get version from manifest
             manifest = root / self.typ.name / self.name / "_manifest.yaml"
             if not manifest.exists():
-                raise Exception(f"manifest file not found: {manifest}")
+                raise VerifyException(f"manifest file not found: {manifest}")
             content = load_yaml(manifest)
-            self.version = content.get("tags", {}).get(self.version, "")
+            self.version = content.get("tags", {}).get(ver, "")
             return
 
         if self.typ == ResourceType.job:
@@ -254,7 +266,8 @@ class Resource:
             else:
                 raise NoMatchException(self.version, list(m))
 
-    def path_to_version(self, path: str) -> str:
+    @staticmethod
+    def path_to_version(path: str) -> str:
         # foobarbaz.swrt -> foobarbaz
         return path.split(".")[0]
 

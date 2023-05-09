@@ -190,7 +190,9 @@ class Runtime(BaseArtifact):
             config.name,
             "--no-cache",
         ]
-        ret_code, res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
+        ret_code, res = invoke(
+            cmd, external_env={_ENV_FIXED_VERSION: version}, log=True
+        )
         assert ret_code == 0, res
         return Resource(f"{config.name}/version/{version}", typ=ResourceType.runtime)
 
