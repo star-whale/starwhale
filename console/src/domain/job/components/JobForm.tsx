@@ -119,9 +119,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         if (!fullStepSource) return undefined
         if (stepSpecOverWrites) {
             return (yaml.load(stepSpecOverWrites) ?? []) as StepSpec[]
-        } else {
-            return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
         }
+        return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
     const editorValue = React.useMemo(() => {
@@ -133,23 +132,27 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             setModelVersionHandler(value)
             setStepSpecOverWrites('')
         },
-        [setModelVersionHandler, stepSource]
+        [setModelVersionHandler]
     )
 
-    const checkStepSource = useCallback(() => {
-        try {
-            yaml.load(stepSpecOverWrites)
-        } catch (e) {
-            toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
-            return false
-        }
-        return true
-    }, [stepSpecOverWrites, stepSource, t])
+    const checkStepSource = useCallback(
+        (value) => {
+            try {
+                yaml.load(value)
+            } catch (e) {
+                _.debounce(() => {
+                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000, key: 'yaml' })
+                }, 2000)()
+                return false
+            }
+            return true
+        },
+        [stepSpecOverWrites, t]
+    )
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
             setLoading(true)
-            if (!checkStepSource()) return setLoading(false)
             try {
                 await onSubmit({
                     ..._.omit(values_, [
@@ -173,11 +176,12 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, t, stepSource, resource, checkStepSource]
+        [onSubmit, history, stepSpecOverWrites, t, stepSource, checkStepSource]
     )
 
     const handleEditorChange = React.useCallback(
         (value: string) => {
+            if (!checkStepSource(value)) return
             setStepSpecOverWrites(value)
         },
         [setStepSpecOverWrites]
