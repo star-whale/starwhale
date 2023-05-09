@@ -3,17 +3,16 @@ import io
 from PIL import Image as PILImage
 
 from starwhale import (
-    URI,
     Link,
     Text,
     Image,
     dataset,
-    URIType,
     MIMEType,
     ClassLabel,
     BoundingBox,
     COCOObjectAnnotation,
 )
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.api._impl.data_store import Link as PlainLink
 from starwhale.api._impl.data_store import _get_type
 
@@ -90,30 +89,30 @@ def _load_dataset(uri):
 
 
 def load_local_dataset():
-    uri = URI("simple_annotations/version/latest", expected_type=URIType.DATASET)
+    uri = Resource("simple_annotations/version/latest", typ=ResourceType.dataset)
     _load_dataset(uri)
 
-    uri = URI("complex_annotations/version/latest", expected_type=URIType.DATASET)
+    uri = Resource("complex_annotations/version/latest", typ=ResourceType.dataset)
     _load_dataset(uri)
 
 
 def load_cloud_dataset():
     # need port-forward and starwhale-minio host alias in the local environment: kubectl port-forward -n starwhale ${minio-pod} 9000:9000
-    uri = URI(
+    uri = Resource(
         "cloud://pre-tianwei/project/datasets/dataset/simple_annotations/version/muytcnrwgbsggyldmy2tqojrnfrxony",
-        expected_type=URIType.DATASET,
+        typ=ResourceType.dataset,
     )
     _load_dataset(uri)
 
-    uri = URI(
+    uri = Resource(
         "cloud://pre-tianwei/project/datasets/dataset/test_annotations/version/gnrwgnrtmnrgkzrymftggnjvmu4wo4i",
-        expected_type=URIType.DATASET,
+        typ=ResourceType.dataset,
     )
     _load_dataset(uri)
 
-    uri = URI(
+    uri = Resource(
         "cloud://pre-tianwei/project/datasets/dataset/complex_annotations/version/gu4dsmlggjrtemzuhe4tgn3fgbyxm6i",
-        expected_type=URIType.DATASET,
+        typ=ResourceType.dataset,
     )
     _load_dataset(uri)
 

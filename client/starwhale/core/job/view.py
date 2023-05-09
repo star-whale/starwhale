@@ -19,9 +19,9 @@ from starwhale.consts import (
 from starwhale.base.type import JobOperationType
 from starwhale.base.view import BaseTermView
 from starwhale.api._impl.metric import MetricKind
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.instance import Instance
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import Job
 

@@ -23,8 +23,8 @@ from starwhale.utils.error import (
     MissingDependencyError,
 )
 from starwhale.utils.retry import http_retry
+from starwhale.base.uri.resource import Resource
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
-from starwhale.base.uricomponents.resource import Resource
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 128  # for page cache

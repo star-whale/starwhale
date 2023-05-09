@@ -10,16 +10,15 @@ from click_option_group import (
     RequiredMutuallyExclusiveOptionGroup,
 )
 
-from starwhale import URI, URIType
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.utils.cli import AliasedGroup
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError
 from starwhale.core.model.view import get_term_view, ModelTermView
+from starwhale.base.uri.project import Project
 from starwhale.core.model.model import ModelConfig, ModelInfoFilter
 from starwhale.core.model.store import ModelStorage
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 @click.group(
@@ -255,7 +254,7 @@ def _info(view: t.Type[ModelTermView], model: str, output_filter: str) -> None:
 def _diff(
     view: t.Type[ModelTermView], base_uri: str, compare_uri: str, show_details: bool
 ) -> None:
-    view(base_uri).diff(URI(compare_uri, expected_type=URIType.MODEL), show_details)
+    view(base_uri).diff(Resource(compare_uri, typ=ResourceType.model), show_details)
 
 
 @model_cmd.command("list", aliases=["ls"])

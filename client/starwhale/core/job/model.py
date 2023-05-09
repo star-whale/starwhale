@@ -20,8 +20,8 @@ from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.api._impl.metric import MetricKind
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource
 
 from .store import JobStorage
 

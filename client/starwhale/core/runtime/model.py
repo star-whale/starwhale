@@ -58,7 +58,6 @@ from starwhale.utils.fs import (
     get_path_created_time,
 )
 from starwhale.base.type import (
-    URIType,
     BundleType,
     InstanceType,
     DependencyType,
@@ -110,8 +109,8 @@ from starwhale.utils.error import (
 )
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.base.uricomponents.project import Project as ProjectURI
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.project import Project as ProjectURI
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .store import RuntimeStorage
 
@@ -656,7 +655,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         bc = BundleCopy(
             src_uri,
             dest_uri,
-            URIType.RUNTIME,
+            ResourceType.runtime,
             force,
             dest_local_project_uri=dest_local_project_uri,
         )
@@ -1244,7 +1243,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         filters = filters or {}
         rs = defaultdict(list)
         for _bf in RuntimeStorage.iter_all_bundles(
-            project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
+            project_uri, bundle_type=BundleType.RUNTIME, uri_type=ResourceType.runtime
         ):
             if not cls.do_bundle_filter(_bf, filters):
                 continue
@@ -1975,5 +1974,5 @@ class CloudRuntime(CloudBundleModelMixin, Runtime):
         filter_dict = filter_dict or {}
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(
-            project_uri, URIType.RUNTIME, page, size, filter_dict
+            project_uri, ResourceType.runtime, page, size, filter_dict
         )

@@ -20,8 +20,8 @@ from starwhale.utils.error import ParameterError, FieldTypeOrValueError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.tabular import TabularDatasetRow
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"

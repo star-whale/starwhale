@@ -26,9 +26,9 @@ from starwhale.utils.error import (
 from starwhale.utils.retry import http_retry
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, JsonDict, BaseArtifact
 from starwhale.api._impl.data_store import TableEmptyException
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 DEFAULT_CONSUMPTION_BATCH_SIZE = 50
 

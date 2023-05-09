@@ -11,8 +11,7 @@ from starwhale.utils import console, fmt_http_server
 from starwhale.consts import UserRoleType, SW_API_VERSION, STANDALONE_INSTANCE
 from starwhale.base.view import BaseTermView
 from starwhale.utils.http import wrap_sw_error_resp
-
-from .model import CloudInstance
+from starwhale.base.uri.instance import Instance
 
 DEFAULT_HTTP_TIMEOUT = 90
 
@@ -97,30 +96,19 @@ class InstanceTermView(BaseTermView):
         self.delete_instance(instance)
         console.print(":wink: bye.")
 
-    def info(self, instance: str = "") -> t.Dict:
-        instance = instance or self.current_instance
+    def info(self, uri: str = "") -> t.Dict:
+        instance = Instance(uri or self.current_instance)
 
-        if instance == STANDALONE_INSTANCE:
+        if instance.is_local:
             return {
-                "instance": instance,
+                "instance": instance.alias,
                 "root_dir": str(self.rootdir),
             }
         else:
-            # TODO: support use uri directly
-            # TODO: user async to get
-            ci = CloudInstance(instance)
-            _version = ci._fetch_version()
-            _agents = ci._fetch_agents()
-
-            result = {
-                "instance": instance,
-                "version": _version,
-                "agents": [
-                    {"ip": i["ip"], "status": str(i["status"]), "version": i["version"]}
-                    for i in _agents
-                ],
+            return {
+                "instance": instance.alias,
+                "uri": instance.url,
             }
-            return result
 
     def list(self) -> t.List[t.Dict[str, t.Any]]:
         result = list()

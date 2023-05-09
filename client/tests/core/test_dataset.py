@@ -19,10 +19,12 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import BundleType
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
 from starwhale.core.dataset.cli import _build as build_cli
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
     Line,
     Link,
@@ -36,8 +38,6 @@ from starwhale.core.dataset.type import (
 )
 from starwhale.core.dataset.view import DatasetTermView, DatasetTermViewJson
 from starwhale.core.dataset.model import Dataset, StandaloneDataset
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _dataset_data_dir = f"{ROOT_DIR}/data/dataset"
 _dataset_yaml = open(f"{_dataset_data_dir}/dataset.yaml").read()
@@ -48,7 +48,7 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.api._impl.dataset.model.Dataset.commit")
     @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
     def test_function_handler_make_swds(
@@ -173,7 +173,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args[1].handler == handler_func
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_build_workflow(self, *args: t.Any) -> None:
         class _MockBuildExecutor:
             def __iter__(self) -> t.Generator:
@@ -197,7 +197,7 @@ class StandaloneDatasetTestCase(TestCase):
         snapshot_workdir = (
             sw.rootdir
             / "self"
-            / URIType.DATASET
+            / dataset_uri.typ.value
             / name
             / build_version[:VERSION_PREFIX_CNT]
             / f"{build_version}{BundleType.DATASET}"
@@ -258,7 +258,7 @@ class StandaloneDatasetTestCase(TestCase):
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_head(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
@@ -305,7 +305,7 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_from_json(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 

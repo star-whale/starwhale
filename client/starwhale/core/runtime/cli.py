@@ -13,8 +13,8 @@ from starwhale.consts import (
 )
 from starwhale.base.type import RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .view import get_term_view, RuntimeTermView
 from .model import RuntimeInfoFilter

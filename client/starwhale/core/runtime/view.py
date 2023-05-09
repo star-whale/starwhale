@@ -14,13 +14,12 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
 )
-from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
 from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
 from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
 
@@ -151,7 +150,7 @@ class RuntimeTermView(BaseTermView):
     ) -> None:
         runtime_name = runtime_name or image.split(":")[0].split("/")[-1]
         runtime_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
+            project=project, bundle_name=runtime_name, typ=ResourceType.runtime
         )
 
         rt = Runtime.get_runtime(runtime_uri)
@@ -198,7 +197,7 @@ class RuntimeTermView(BaseTermView):
             runtime_name = candidate_runtime_name.strip("/").split("/")[-1]
 
         runtime_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
+            project=project, bundle_name=runtime_name, typ=ResourceType.runtime
         )
         rt = Runtime.get_runtime(runtime_uri)
         rt.build_from_python_env(
@@ -239,7 +238,7 @@ class RuntimeTermView(BaseTermView):
         runtime_name = runtime_name or _config["name"]
 
         _runtime_uri = cls.prepare_build_bundle(
-            project=project, bundle_name=runtime_name, typ=URIType.RUNTIME
+            project=project, bundle_name=runtime_name, typ=ResourceType.runtime
         )
         if include_editable:
             console.print(

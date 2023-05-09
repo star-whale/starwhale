@@ -11,6 +11,7 @@ from starwhale.utils.fs import blake2b_content
 from starwhale.consts.env import SWEnv
 
 from .job import Handler
+from ...base.uri.project import Project
 
 _path_T = t.Union[str, Path]
 _called_build_functions: t.Dict[str, bool] = {}
@@ -114,12 +115,9 @@ def build(
             ),
         )
 
-    from starwhale import URI, URIType
-
     if remote_project_uri:
-        remote_project_uri = URI(
-            remote_project_uri, expected_type=URIType.PROJECT
-        ).full_uri
+        remote_project_uri = Project(remote_project_uri).full_uri
+    # TODO support instance and project env in uri component
     elif os.getenv(SWEnv.instance_uri) and os.getenv(SWEnv.project):
         remote_project_uri = (
             f"{os.getenv(SWEnv.instance_uri)}/project/{os.getenv(SWEnv.project)}"
@@ -127,7 +125,7 @@ def build(
 
     if remote_project_uri:
         ModelTermView.copy(
-            src_uri=f"{URI(project_uri).full_uri}/model/{name}/version/latest",
+            src_uri=f"{Project(project_uri).full_uri}/model/{name}/version/latest",
             dest_uri=remote_project_uri,
         )
 

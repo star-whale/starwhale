@@ -28,13 +28,12 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.base.uri import URIType
 from starwhale.utils.fs import ensure_file
 from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.error import NotFoundError
 from starwhale.base.bundle_copy import BundleCopy, _UploadPhase
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.base.uricomponents.resource import Resource
 
 from .tabular import TabularDataset, DatastoreRevision
 
@@ -47,7 +46,7 @@ class DatasetCopy(BundleCopy):
         super().__init__(
             src_uri,
             dest_uri,
-            typ=URIType.DATASET,
+            typ=ResourceType.dataset,
             **kw,
         )
         self._max_workers = int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
@@ -79,11 +78,11 @@ class DatasetCopy(BundleCopy):
             console.print(f":tea: {self.dest_uri} was already existed, skip copy")
             return
 
-        if not self._check_version_existed(self.src_resource):
-            raise NotFoundError(f"src dataset not found: {self.src_resource}")
+        if not self._check_version_existed(self.src_uri):
+            raise NotFoundError(f"src dataset not found: {self.src_uri}")
 
         console.print(
-            f":construction: start to copy[{self._copy_mode.value}] {self.src_resource} -> {self.dest_uri}"
+            f":construction: start to copy[{self._copy_mode.value}] {self.src_uri} -> {self.dest_uri}"
         )
 
         with Progress(
@@ -98,13 +97,13 @@ class DatasetCopy(BundleCopy):
             refresh_per_second=0.2,
         ) as progress:
             src = TabularDataset(
-                name=self.src_resource.name,
-                project=self.src_resource.project.name,
-                instance_name=self.src_resource.instance.url,
+                name=self.src_uri.name,
+                project=self.src_uri.project.name,
+                instance_name=self.src_uri.instance.url,
             )
 
             dest = TabularDataset(
-                name=self.dest_uri.name or self.src_resource.name,
+                name=self.dest_uri.name or self.src_uri.name,
                 project=self.dest_uri.project.name,
                 instance_name=self.dest_uri.instance.url,
             )
@@ -181,9 +180,9 @@ class DatasetCopy(BundleCopy):
         self, dataset_revision: str, info_revision: str
     ) -> None:
         r = self.do_http_request(
-            path=f"/project/{self.src_resource.project.name}/dataset/{self.src_resource.name}",
-            instance=self.src_resource.instance,
-            params={"versionUrl": self.src_resource.version},
+            path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}",
+            instance=self.src_uri.instance,
+            params={"versionUrl": self.src_uri.version},
         ).json()
 
         manifest = yaml.safe_load(r["data"]["versionMeta"])
@@ -201,14 +200,14 @@ class DatasetCopy(BundleCopy):
         StandaloneTag(uri).add_fast_tag()
 
     def _make_cloud_version(self, dataset_revision: str, info_revision: str) -> None:
-        dataset_name = self.dest_uri.name or self.src_resource.name
+        dataset_name = self.dest_uri.name or self.src_uri.name
         params = {
-            "swds": f"{dataset_name}:{self.src_resource.name}",
+            "swds": f"{dataset_name}:{self.src_uri.name}",
             "project": self.dest_uri.project,
             "force": "1",  # use force=1 to make http retry happy, we check dataset existence in advance
         }
         url_path = self._get_remote_bundle_api_url()
-        snapshot_dir = self._get_versioned_resource_path(self.src_resource)
+        snapshot_dir = self._get_versioned_resource_path(self.src_uri)
         manifest = load_yaml(snapshot_dir / DEFAULT_MANIFEST_NAME)
         manifest[CREATED_AT_KEY] = now_str()
         manifest.update(
@@ -281,9 +280,9 @@ class DatasetCopy(BundleCopy):
         local_blob_path = DatasetStorage._get_object_store_path(hash_name)
         if not local_blob_path.exists():
             self.do_download_file(
-                url_path=f"/project/{self.src_resource.project.name}/dataset/{self.src_resource.name}/blob",
+                url_path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}/blob",
                 dest_path=local_blob_path,
-                instance=self.src_resource.instance,
+                instance=self.src_uri.instance,
                 progress=progress,
                 task_id=task_id,
             )
@@ -296,7 +295,7 @@ class DatasetCopy(BundleCopy):
         self, progress: Progress, local_hashed_uri: str
     ) -> t.Tuple[str, str]:
         local_blob_path = DatasetStorage._get_object_store_path(local_hashed_uri)
-        url_path = f"/project/{self.dest_uri.project.name}/dataset/{self.src_resource.name}/hashedBlob/{local_hashed_uri}"
+        url_path = f"/project/{self.dest_uri.project.name}/dataset/{self.src_uri.name}/hashedBlob/{local_hashed_uri}"
         blob_size = local_blob_path.stat().st_size
 
         task_id = progress.add_task(

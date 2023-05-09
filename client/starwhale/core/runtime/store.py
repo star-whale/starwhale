@@ -2,8 +2,9 @@ import typing as t
 from pathlib import Path
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME, DEFAULT_SW_TASK_RUN_IMAGE
-from starwhale.base.type import URIType, BundleType
+from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
+from starwhale.base.uri.resource import ResourceType
 
 
 class RuntimeStorage(BaseStorage):
@@ -16,7 +17,7 @@ class RuntimeStorage(BaseStorage):
 
     @property
     def uri_type(self) -> str:
-        return URIType.RUNTIME
+        return ResourceType.runtime.value
 
     @property
     def recover_loc(self) -> Path:
@@ -32,7 +33,7 @@ class RuntimeStorage(BaseStorage):
 
     @property
     def runtime_dir(self) -> Path:
-        return self.project_dir / URIType.RUNTIME / self.uri.name
+        return self.project_dir / ResourceType.runtime.value / self.uri.name
 
     @property
     def manifest_path(self) -> Path:

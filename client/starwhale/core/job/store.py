@@ -3,10 +3,10 @@ from pathlib import Path
 
 from starwhale.consts import RECOVER_DIRNAME, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.utils.fs import guess_real_path
-from starwhale.base.type import URIType
 from starwhale.base.store import BaseStorage
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import ResourceType
 
 
 class JobStorage(BaseStorage):
@@ -14,7 +14,7 @@ class JobStorage(BaseStorage):
     def recover_loc(self) -> Path:
         return (
             self.project_dir
-            / URIType.JOB
+            / ResourceType.job.value
             / RECOVER_DIRNAME
             / self.id[:VERSION_PREFIX_CNT]
             / self.id
@@ -23,13 +23,13 @@ class JobStorage(BaseStorage):
     def _guess(self) -> t.Tuple[Path, str]:
         name = self.uri.version
         _p, _v, _ok = guess_real_path(
-            self.project_dir / URIType.JOB / name[:VERSION_PREFIX_CNT], name
+            self.project_dir / ResourceType.job.value / name[:VERSION_PREFIX_CNT], name
         )
         return _p, _v
 
     @property
     def uri_type(self) -> str:
-        return URIType.JOB
+        return ResourceType.job.value
 
     @property
     def manifest_path(self) -> Path:
@@ -40,7 +40,7 @@ class JobStorage(BaseStorage):
         project_uri: Project,
     ) -> t.Generator[t.Tuple[Path, bool], None, None]:
         sw = SWCliConfigMixed()
-        _job_dir = sw.rootdir / project_uri.name / URIType.JOB
+        _job_dir = sw.rootdir / project_uri.name / ResourceType.job.value
         for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _path, RECOVER_DIRNAME in _path.parts
 
@@ -51,7 +51,7 @@ class JobStorage(BaseStorage):
         return (
             sw.rootdir
             / project_name
-            / URIType.JOB
+            / ResourceType.job.value
             / version[:VERSION_PREFIX_CNT]
             / version
         )

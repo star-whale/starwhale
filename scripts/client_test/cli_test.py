@@ -19,10 +19,10 @@ from cmds.project_cmd import Project
 from cmds.instance_cmd import Instance
 from cmds.artifacts_cmd import Model, Dataset, Runtime
 
-from starwhale import URI
 from starwhale.utils import config
 from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.debug import init_logger
+from starwhale.base.uri.resource import Resource
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -123,9 +123,9 @@ class TestCli:
         self.executor = thread_pool
         self.server_url = server_url
         self.server_project = server_project
-        self.datasets: t.Dict[str, t.List[URI]] = {}
-        self.runtimes: t.Dict[str, t.List[URI]] = {}
-        self.models: t.Dict[str, URI] = {}
+        self.datasets: t.Dict[str, t.List[Resource]] = {}
+        self.runtimes: t.Dict[str, t.List[Resource]] = {}
+        self.models: t.Dict[str, Resource] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
             assert self.instance_api.login(url=self.server_url)
@@ -151,24 +151,17 @@ class TestCli:
     def build_dataset(self, name: str, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
         self.select_local_instance()
         ret_uri = Dataset.build(workdir=_workdir, name=ds_expl.name)
-        _uri = URI.capsulate_uri(
-            instance=ret_uri.instance,
-            project=ret_uri.project,
-            obj_type=ret_uri.object.typ,
-            obj_name=ret_uri.object.name,
-            obj_ver=ret_uri.object.version,
-        )
         if self.server_url:
             self.dataset_api.copy(
-                src_uri=_uri.full_uri,
+                src_uri=ret_uri.full_uri,
                 target_project=self.cloud_target_project_uri,
             )
         dss_ = self.datasets.get(name, [])
-        dss_.append(_uri)
+        dss_.append(ret_uri)
         self.datasets.update({name: dss_})
         assert len(self.dataset_api.list())
-        assert self.dataset_api.info(_uri.full_uri)
-        return _uri
+        assert self.dataset_api.info(ret_uri.full_uri)
+        return ret_uri
 
     def build_model(self, workdir: str, name: str) -> t.Any:
         self.select_local_instance()
@@ -179,7 +172,7 @@ class TestCli:
                 target_project=self.cloud_target_project_uri,
                 force=True,
             )
-        self.models.update({_uri.object.name: _uri})
+        self.models.update({_uri.name: _uri})
         assert len(self.model_api.list())
         assert self.model_api.info(_uri.full_uri)
         return _uri
@@ -197,9 +190,9 @@ class TestCli:
                 target_project=self.cloud_target_project_uri,
                 force=True,
             )
-        rts = self.runtimes.get(_uri.object.name, [])
+        rts = self.runtimes.get(_uri.name, [])
         rts.append(_uri)
-        self.runtimes.update({_uri.object.name: rts})
+        self.runtimes.update({_uri.name: rts})
         assert len(self.runtime_api.list())
         assert self.runtime_api.info(_uri.full_uri)
         return _uri
@@ -210,10 +203,10 @@ class TestCli:
 
     def run_model_in_standalone(
         self,
-        dataset_uris: t.List[URI],
-        model_uri: URI,
+        dataset_uris: t.List[Resource],
+        model_uri: Resource,
         run_handler: str,
-        runtime_uris: t.Optional[t.List[URI | None]] = None,
+        runtime_uris: t.Optional[t.List[Resource | None]] = None,
     ) -> t.List[str]:
         logger.info("running evaluation at local...")
         self.select_local_instance()
@@ -237,9 +230,9 @@ class TestCli:
 
     def run_model_in_server(
         self,
-        dataset_uris: t.List[URI],
-        model_uri: URI,
-        runtime_uris: t.List[URI],
+        dataset_uris: t.List[Resource],
+        model_uri: Resource,
+        runtime_uris: t.List[Resource],
         run_handler: str,
     ) -> t.List[str]:
         self.instance_api.select(instance="server")
@@ -249,9 +242,9 @@ class TestCli:
         for _rt_uri in runtime_uris:
             logger.info("running evaluation at server...")
             ok, jid = self.model_api.run_in_server(
-                model_uri=model_uri.object.version,
-                dataset_uris=[_ds_uri.object.version for _ds_uri in dataset_uris],
-                runtime_uri=_rt_uri.object.version,
+                model_uri=model_uri.version,
+                dataset_uris=[_ds_uri.version for _ds_uri in dataset_uris],
+                runtime_uri=_rt_uri.version,
                 project=f"{self.server_url}/project/{self.server_project}",
                 run_handler=run_handler,
             )
@@ -448,22 +441,18 @@ class TestCli:
         self.select_local_instance()
         ctx_handle_info = self.model_api.info("ctx_handle")
 
-        assert set(ctx_handle_info["basic"]["handlers"]) == set(
-            [
-                "src.evaluator:evaluate",
-                "src.evaluator:predict",
-                "src.sdk_model_build:context_handle",
-            ]
-        ), ctx_handle_info["basic"]["handlers"]
+        assert set(ctx_handle_info["basic"]["handlers"]) == {
+            "src.evaluator:evaluate",
+            "src.evaluator:predict",
+            "src.sdk_model_build:context_handle",
+        }, ctx_handle_info["basic"]["handlers"]
 
         ctx_handle_no_modules_info = self.model_api.info("ctx_handle_no_modules")
-        assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == set(
-            [
-                "src.evaluator:evaluate",
-                "src.evaluator:predict",
-                "src.sdk_model_build:context_handle",
-            ]
-        ), ctx_handle_no_modules_info["basic"]["handlers"]
+        assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == {
+            "src.evaluator:evaluate",
+            "src.evaluator:predict",
+            "src.sdk_model_build:context_handle",
+        }, ctx_handle_no_modules_info["basic"]["handlers"]
 
 
 if __name__ == "__main__":

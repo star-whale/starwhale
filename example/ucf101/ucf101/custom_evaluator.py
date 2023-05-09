@@ -11,16 +11,15 @@ import numpy as np
 import torch
 
 from starwhale import (
-    URI,
     Video,
     Context,
     dataset,
     handler,
-    URIType,
     evaluation,
     pass_context,
     multi_classification,
 )
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import MFNET_3D
 from .sampler import RandomSampling
@@ -135,7 +134,7 @@ def batch_ppl(videos: t.List[Video], **kw: t.Any) -> t.Any:
 def run_ppl(context: Context) -> None:
     print(f"start to run ppl@{context.version}-{context.total}-{context.index}...")
     for ds_uri in context.dataset_uris:
-        _uri = URI(ds_uri, expected_type=URIType.DATASET)
+        _uri = Resource(ds_uri, typ=ResourceType.dataset)
         ds = dataset(_uri)
         for rows in ds.batch_iter(batch_size=5):
             pred_values, probability_matrixs = batch_ppl([r[1] for r in rows])
@@ -143,7 +142,7 @@ def run_ppl(context: Context) -> None:
             for (_idx, _, _annotations), pred_value, probability_matrix in zip(
                 rows, pred_values, probability_matrixs
             ):
-                _unique_id = f"{_uri.object}_{_idx}"
+                _unique_id = f"{_uri.typ.value}-{_uri.name}-{_uri.version}_{_idx}"
                 evaluation.log(
                     category="results",
                     id=_unique_id,

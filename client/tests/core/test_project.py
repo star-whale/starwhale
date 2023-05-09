@@ -11,10 +11,10 @@ from starwhale.utils.config import (
     load_swcli_config,
     get_swcli_config_path,
 )
+from starwhale.base.uri.project import Project
 from starwhale.core.project.view import ProjectTermView
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import StandaloneProject
-from starwhale.base.uricomponents.project import Project
 
 _existed_config_contents = get_predefined_config_yaml()
 

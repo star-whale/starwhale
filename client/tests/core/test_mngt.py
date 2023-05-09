@@ -6,8 +6,8 @@ from starwhale.mngt import gc, _get_workdir_path
 from starwhale.utils import config as sw_config
 from starwhale.consts import RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.base.uri.resource import ResourceType
 
 
 class GCTestCase(TestCase):
@@ -20,14 +20,14 @@ class GCTestCase(TestCase):
         project_dir = sw.rootdir / "self"
         saved_model_path = (
             project_dir
-            / URIType.MODEL
+            / ResourceType.model.value
             / "mnist"
             / "mm"
             / "mm4wmmrrgazwknrtmftdgyjzmfwxczi.swmp"
         )
         model_path = (
             project_dir
-            / URIType.MODEL
+            / ResourceType.model.value
             / RECOVER_DIRNAME
             / "mnist"
             / "gq"
@@ -36,7 +36,7 @@ class GCTestCase(TestCase):
         model_workdir_path = (
             project_dir
             / "workdir"
-            / URIType.MODEL
+            / ResourceType.model.value
             / RECOVER_DIRNAME
             / "mnist"
             / "gq"
@@ -51,7 +51,7 @@ class GCTestCase(TestCase):
 
         dataset_path = (
             project_dir
-            / URIType.DATASET
+            / ResourceType.dataset.value
             / RECOVER_DIRNAME
             / "mnist"
             / "me"
@@ -62,7 +62,7 @@ class GCTestCase(TestCase):
 
         runtime_path = (
             project_dir
-            / URIType.RUNTIME
+            / ResourceType.runtime.value
             / RECOVER_DIRNAME
             / "mnist"
             / "g4"
@@ -71,7 +71,7 @@ class GCTestCase(TestCase):
         runtime_workdir_path = (
             project_dir
             / "workdir"
-            / URIType.RUNTIME
+            / ResourceType.runtime.value
             / RECOVER_DIRNAME
             / "mnist"
             / "g4"
@@ -84,7 +84,7 @@ class GCTestCase(TestCase):
 
         job_path = (
             project_dir
-            / URIType.JOB
+            / ResourceType.job.value
             / RECOVER_DIRNAME
             / "gi"
             / "giztgyldgmzggytegftdszlbof4dq3i"
@@ -119,58 +119,58 @@ class GCTestCase(TestCase):
         project_dir = Path("~/.cache/starwhale/self")
         ts = [
             {
-                "type": URIType.MODEL,
+                "type": ResourceType.model.value,
                 "bundle_path": (
                     project_dir
-                    / URIType.MODEL
+                    / ResourceType.model.value
                     / ".recover/mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi.swmp"
                 ),
                 "result": (
                     project_dir
                     / "workdir"
-                    / URIType.MODEL
+                    / ResourceType.model.value
                     / "mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
             },
             {
-                "type": URIType.DATASET,
+                "type": ResourceType.dataset.value,
                 "bundle_path": (
                     project_dir
-                    / URIType.DATASET
+                    / ResourceType.dataset.value
                     / ".recover/mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi.swds"
                 ),
                 "result": (
                     project_dir
                     / "workdir"
-                    / URIType.DATASET
+                    / ResourceType.dataset.value
                     / "mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
             },
             {
-                "type": URIType.RUNTIME,
+                "type": ResourceType.runtime.value,
                 "bundle_path": (
                     project_dir
-                    / URIType.RUNTIME
+                    / ResourceType.runtime.value
                     / ".recover/mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi.swrt"
                 ),
                 "result": (
                     project_dir
                     / "workdir"
-                    / URIType.RUNTIME
+                    / ResourceType.runtime.value
                     / "mnist/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
             },
             {
-                "type": URIType.JOB,
+                "type": ResourceType.job.value,
                 "bundle_path": (
                     project_dir
-                    / URIType.JOB
+                    / ResourceType.job.value
                     / ".recover/gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
                 "result": (
                     project_dir
                     / "workdir"
-                    / URIType.JOB
+                    / ResourceType.job.value
                     / "gq/gq4wmmrrgazwknrtmftdgyjzmfwxczi"
                 ),
             },

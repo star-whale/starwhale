@@ -1,9 +1,8 @@
 from typing import Optional
 from dataclasses import dataclass
 
-from starwhale.base.uri import URI
-from starwhale.base.uricomponents.instance import Instance
-from starwhale.base.uricomponents.exceptions import UriTooShortException
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.exceptions import UriTooShortException
 
 
 @dataclass(unsafe_hash=True)
@@ -73,9 +72,11 @@ class Project:
             )
         return cls(uri=uri)
 
-    def to_uri(self) -> URI:
-        return URI.capsulate_uri(instance=str(self.instance), project=self.name)
-
     @property
     def full_uri(self) -> str:
         return "/".join([self.instance.url, "project", self.name])
+
+    def __str__(self) -> str:
+        return self.full_uri
+
+    __repr__ = __str__

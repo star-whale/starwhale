@@ -13,6 +13,7 @@ from starwhale.consts import HTTPMethod, SWDSBackendType
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import ParameterError
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, Image, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import (
     ObjectStore,
@@ -28,7 +29,6 @@ from starwhale.core.dataset.tabular import (
     get_dataset_consumption,
 )
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 
 class TestDataLoader(TestCase):

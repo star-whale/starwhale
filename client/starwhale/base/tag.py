@@ -13,7 +13,7 @@ from starwhale.utils.error import (
     MissingFieldError,
 )
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.resource import Resource
+from starwhale.base.uri.resource import Resource
 
 
 class StandaloneTag:

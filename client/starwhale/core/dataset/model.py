@@ -19,15 +19,15 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir
-from starwhale.base.type import URIType, BundleType, InstanceType, DatasetChangeMode
+from starwhale.base.type import BundleType, InstanceType, DatasetChangeMode
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.api._impl.dataset.loader import DataRow
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource
 
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
@@ -193,7 +193,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         for _bf in DatasetStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.DATASET,
-            uri_type=URIType.DATASET,
+            uri_type=ResourceType.dataset,
         ):
             if not cls.do_bundle_filter(_bf, filters):
                 continue
@@ -282,7 +282,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         filter_dict = filter_dict or {}
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(
-            project_uri, URIType.DATASET, page, size, filter_dict
+            project_uri, ResourceType.dataset, page, size, filter_dict
         )
 
     def summary(self) -> t.Optional[DatasetSummary]:

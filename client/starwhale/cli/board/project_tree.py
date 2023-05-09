@@ -8,7 +8,6 @@ from rich.text import Text
 from textual.widget import Style, Message
 from textual.widgets import TreeControl
 
-from starwhale.base.uri import URI
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import Project
 
@@ -91,7 +90,7 @@ class ProjectTree(TreeControl[ProjectEntry]):
         ins = node.data.path
         ps, _ = Project.list(ins)
         for i in ps:
-            proj = URI.project_and_owner_to_uri(i["name"], i.get("owner", ""))
+            proj = ":".join([i["name"], i.get("owner", "")])
             path = f"{ins}/{proj}"
             await node.add(proj, ProjectEntry(path, True))
 

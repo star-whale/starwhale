@@ -1,7 +1,6 @@
 from starwhale.api import model, track, evaluation
 from starwhale.api.job import Handler
 from starwhale.version import STARWHALE_VERSION as __version__
-from starwhale.base.uri import URI, URIType
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (
     Line,
@@ -43,8 +42,6 @@ __all__ = [
     "dataset",
     "evaluation",
     "fine_tune",
-    "URI",
-    "URIType",
     "handler",
     "pass_context",
     "Context",

@@ -5,31 +5,27 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import HTTPMethod
-from starwhale.base.type import URIType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.project import Project
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import ResourceType
 
 
 class TestCloudRequestMixed(TestCase):
     def test_get_bundle_size_from_resp(self):
         ins = CloudRequestMixed()
 
-        item = {"size": 7}
-        size = ins.get_bundle_size_from_resp("whatever", item)
-        assert size == 7
-
         meta = {"dataset_summary": {"blobs_byte_size": 8}}
         item = {"meta": yaml.safe_dump(meta)}
-        size = ins.get_bundle_size_from_resp("dataset", item)
+        size = ins.get_bundle_size_from_resp(ResourceType.dataset, item)
         assert size == 8
 
         item = {"no meta": ""}
-        size = ins.get_bundle_size_from_resp("dataset", item)
+        size = ins.get_bundle_size_from_resp(ResourceType.dataset, item)
         assert size == 0
 
         item = {"meta": "no dataset byte size"}
-        size = ins.get_bundle_size_from_resp("dataset", item)
+        size = ins.get_bundle_size_from_resp(ResourceType.dataset, item)
         assert size == 0
 
     @Mocker()
@@ -120,7 +116,7 @@ class TestCloudRequestMixed(TestCase):
 
         cbm = CloudBundleModelMixin()
         _uri = Project("http://1.1.1.1/project/sw")
-        _models, _pager = cbm._fetch_bundle_all_list(_uri, uri_typ=URIType.MODEL)
+        _models, _pager = cbm._fetch_bundle_all_list(_uri, uri_typ=ResourceType.model)
 
         assert len(_models.items()) == 2
         assert len(_models["[2] mnist"]) == 3
@@ -131,7 +127,7 @@ class TestCloudRequestMixed(TestCase):
         cbm = CloudBundleModelMixin()
         _uri = Project("http://1.1.1.1/project/sw")
         _models, _pager = cbm._fetch_bundle_all_list(
-            _uri, uri_typ=URIType.MODEL, filter_dict={"name": "mnist"}
+            _uri, uri_typ=ResourceType.model, filter_dict={"name": "mnist"}
         )
 
         assert len(_models.items()) == 1
@@ -142,7 +138,9 @@ class TestCloudRequestMixed(TestCase):
         cbm = CloudBundleModelMixin()
         _uri = Project("http://1.1.1.1/project/sw")
         _models, _pager = cbm._fetch_bundle_all_list(
-            _uri, uri_typ=URIType.MODEL, filter_dict={"name": "mnist", "latest": True}
+            _uri,
+            uri_typ=ResourceType.model,
+            filter_dict={"name": "mnist", "latest": True},
         )
 
         assert len(_models.items()) == 1

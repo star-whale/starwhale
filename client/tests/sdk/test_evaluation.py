@@ -16,12 +16,12 @@ from starwhale.base.type import RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
 from starwhale.api._impl.evaluation import PipelineHandler, EvaluationLogStore
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 from starwhale.api._impl.dataset.loader import DataRow, DataLoader, get_data_loader
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 from .. import ROOT_DIR, BaseTestCase
 
@@ -153,11 +153,11 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_ppl(
@@ -215,11 +215,11 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_deserializer(

@@ -5,7 +5,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 class StandaloneTagTestCase(TestCase):

@@ -19,14 +19,14 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.core.model.copy import ModelCopy
 from starwhale.base.bundle_copy import FileDesc, BundleCopy
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 
 _existed_config_contents = get_predefined_config_yaml()
 
@@ -41,7 +41,7 @@ class TestBundleCopy(TestCase):
         self._sw_config.select_current_default("local", "self")
 
     @Mocker()
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_runtime_copy_c2l(self, rm: Mocker, *args: t.Any) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -96,7 +96,7 @@ class TestBundleCopy(TestCase):
             BundleCopy(
                 src_uri=cloud_uri,
                 dest_uri=case["dest_uri"],
-                typ=URIType.RUNTIME,
+                typ=ResourceType.runtime,
                 dest_local_project_uri=case["dest_local_project_uri"],
             ).do()
             assert swrt_path.is_file()
@@ -105,7 +105,7 @@ class TestBundleCopy(TestCase):
             BundleCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/pytorch-new-alias",
-                typ=URIType.RUNTIME,
+                typ=ResourceType.runtime,
                 dest_local_project_uri="myproject",
             ).do()
 
@@ -218,7 +218,9 @@ class TestBundleCopy(TestCase):
                 f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{case['dest_runtime']}/version/{version}/file",
             )
             BundleCopy(
-                src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.RUNTIME
+                src_uri=case["src_uri"],
+                dest_uri=case["dest_uri"],
+                typ=ResourceType.runtime,
             ).do()
             assert head_request.call_count == 1
             assert upload_request.call_count == 1
@@ -238,13 +240,13 @@ class TestBundleCopy(TestCase):
             BundleCopy(
                 src_uri="mnist/v1",
                 dest_uri="cloud://pre-bare/project/mnist/runtime/mnist-alias",
-                typ=URIType.RUNTIME,
+                typ=ResourceType.runtime,
             ).do()
 
     @Mocker()
     @patch("starwhale.core.model.copy.load_yaml")
     @patch("starwhale.core.model.copy.extract_tar")
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_model_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -305,7 +307,7 @@ class TestBundleCopy(TestCase):
             ModelCopy(
                 src_uri=cloud_uri,
                 dest_uri=case["dest_uri"],
-                typ=URIType.MODEL,
+                typ=ResourceType.model,
                 dest_local_project_uri=case["dest_local_project_uri"],
             ).do()
             assert swmp_path.exists()
@@ -317,7 +319,7 @@ class TestBundleCopy(TestCase):
             ModelCopy(
                 src_uri=cloud_uri,
                 dest_uri="local/project/self/mnist-new-alias",
-                typ=URIType.MODEL,
+                typ=ResourceType.model,
                 dest_local_project_uri="myproject",
             ).do()
 
@@ -445,7 +447,9 @@ class TestBundleCopy(TestCase):
                 json={"data": {"uploadId": "123"}},
             )
             ModelCopy(
-                src_uri=case["src_uri"], dest_uri=case["dest_uri"], typ=URIType.MODEL
+                src_uri=case["src_uri"],
+                dest_uri=case["dest_uri"],
+                typ=ResourceType.model,
             ).do()
             assert head_request.call_count == 1
             assert upload_request.call_count == 3
@@ -465,7 +469,7 @@ class TestBundleCopy(TestCase):
             ModelCopy(
                 src_uri="mnist/v1",
                 dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
-                typ=URIType.MODEL,
+                typ=ResourceType.model,
             ).do()
 
     def _prepare_local_dataset(self) -> t.Union[str, str]:
@@ -512,7 +516,7 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_dataset_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
@@ -607,7 +611,7 @@ class TestBundleCopy(TestCase):
             ).do()
 
     @Mocker()
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     @patch("starwhale.core.dataset.copy.TabularDataset.put")
     @patch("starwhale.core.dataset.copy.TabularDataset.scan")
     @patch("starwhale.core.dataset.copy.TabularDataset.delete")
@@ -825,7 +829,7 @@ class TestBundleCopy(TestCase):
             BundleCopy(
                 src_uri="mnist/v1",
                 dest_uri="cloud://pre-bare/project/mnist/dataset/mnist-alias",
-                typ=URIType.DATASET,
+                typ=ResourceType.dataset,
             ).do()
 
     @Mocker()
@@ -849,13 +853,13 @@ class TestBundleCopy(TestCase):
         bc = BundleCopy(
             src_uri=f"mnist/version/{version[:5]}",
             dest_uri="cloud://pre-bare/project/",
-            typ=URIType.RUNTIME,
+            typ=ResourceType.runtime,
         )
 
         bc.do()
 
     @Mocker()
-    @patch("starwhale.base.uricomponents.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
     def test_download_bundle_file(self, rm: Mocker, *args: t.Any) -> None:
         version = "112233"
         version_name = "runtime-version"
@@ -889,7 +893,7 @@ class TestBundleCopy(TestCase):
             src_uri=f"cloud://pre-bare/project/1/runtime/mnist/version/{version}",
             dest_uri="",
             dest_local_project_uri="self",
-            typ=ResourceType.runtime.name,
+            typ=ResourceType.runtime,
         )
         bc.do()
         swrt_path = dest_dir / f"{version_name}.swrt"

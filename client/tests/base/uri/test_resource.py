@@ -3,13 +3,14 @@ from unittest.mock import Mock, patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
-from starwhale.base.uricomponents.exceptions import NoMatchException
+from starwhale.base.uri.project import Project
+from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.uri.exceptions import NoMatchException
 
 
 class MockLocalInstance:
     is_local = True
+    url = "local"
 
     def __str__(self) -> str:
         return "local"
@@ -31,7 +32,7 @@ class TestResource(TestCase):
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
         assert r.version == ""
-        assert r.to_uri().raw == "local/project/self/dataset/mnist/version/latest"
+        assert r.full_uri == "local/project/self/dataset/mnist/version/latest"
 
         # {name}/version/{ver}
         r = Resource(
@@ -43,7 +44,7 @@ class TestResource(TestCase):
         assert r.name == "mnist"
         assert r.typ == ResourceType.dataset
         assert r.version == "foo"
-        assert r.to_uri().raw == "local/project/self/dataset/mnist/version/foo"
+        assert r.full_uri == "local/project/self/dataset/mnist/version/foo"
 
         r = Resource(
             uri="foo/bar", typ=ResourceType.dataset, project=p, _skip_refine=True
@@ -51,7 +52,7 @@ class TestResource(TestCase):
         assert r.name == "foo"
         assert r.typ == ResourceType.dataset
         assert r.version == "bar"
-        assert r.to_uri().raw == "local/project/self/dataset/foo/version/bar"
+        assert r.full_uri == "local/project/self/dataset/foo/version/bar"
 
         with self.assertRaises(Exception):
             Resource(
@@ -61,7 +62,7 @@ class TestResource(TestCase):
                 _skip_refine=True,
             )
 
-    @patch("starwhale.base.uricomponents.resource.Project.parse_from_full_uri")
+    @patch("starwhale.base.uri.resource.Project.parse_from_full_uri")
     def test_with_full_uri(self, mock_parse: MagicMock) -> None:
         ins = mock_parse.return_value
         ins.path = "dataset/mnist/version/foo"
@@ -87,7 +88,7 @@ class TestResource(TestCase):
         assert r.version == ""
         assert r.typ == ResourceType.dataset
 
-    @patch("starwhale.base.uricomponents.resource.glob")
+    @patch("starwhale.base.uri.resource.glob")
     @patch("starwhale.utils.config.load_swcli_config")
     def test_version_only(self, mock_conf: MagicMock, mock_glob: MagicMock) -> None:
         mock_conf.return_value = {
@@ -106,17 +107,17 @@ class TestResource(TestCase):
         assert r.name == "mnist"
         assert r.version == "foo"
         assert r.typ == ResourceType.runtime
-        assert r.to_uri().raw == "local/project/self/runtime/mnist/version/foo"
+        assert r.full_uri == "local/project/self/runtime/mnist/version/foo"
 
         # without project
         r = Resource("foo")
         assert r.name == "mnist"
         assert r.version == "foo"
         assert r.typ == ResourceType.runtime
-        assert r.to_uri().raw == "local/project/self/runtime/mnist/version/foo"
+        assert r.full_uri == "local/project/self/runtime/mnist/version/foo"
 
-    @patch("starwhale.base.uricomponents.resource.glob")
-    @patch("starwhale.base.uricomponents.resource.Project.parse_from_full_uri")
+    @patch("starwhale.base.uri.resource.glob")
+    @patch("starwhale.base.uri.resource.Project.parse_from_full_uri")
     def test_version_only_no_match(
         self, mock_parse: MagicMock, mock_glob: MagicMock
     ) -> None:

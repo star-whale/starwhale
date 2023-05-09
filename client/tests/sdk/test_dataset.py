@@ -33,8 +33,10 @@ from starwhale.utils.error import (
     InvalidObjectName,
     FieldTypeOrValueError,
 )
+from starwhale.base.uri.project import Project
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.api._impl.wrapper import DatasetTableKind, _get_remote_project_id
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.type import (
     Link,
@@ -67,8 +69,6 @@ from starwhale.core.dataset.tabular import (
     get_dataset_consumption,
 )
 from starwhale.api._impl.dataset.loader import DataRow
-from starwhale.base.uricomponents.project import Project
-from starwhale.base.uricomponents.resource import Resource, ResourceType
 from starwhale.api._impl.dataset.builder.mapping_builder import (
     RotatedBinWriter,
     MappingDatasetBuilder,
@@ -128,7 +128,7 @@ class TestDatasetCopy(BaseTestCase):
     @patch("os.environ", {})
     @Mocker()
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_upload(self, rm: Mocker) -> None:
@@ -289,7 +289,7 @@ class TestDatasetCopy(BaseTestCase):
     @patch("os.environ", {})
     @Mocker()
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_download(self, rm: Mocker) -> None:
@@ -661,7 +661,7 @@ class TestDatasetType(TestCase):
 
     @patch("starwhale.core.dataset.store.boto3.resource")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_link_standalone(self, m_boto3: MagicMock) -> None:
@@ -752,11 +752,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_get_consumption(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
@@ -805,11 +805,11 @@ class TestDatasetSessionConsumption(TestCase):
 
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     def test_standalone_tdsc_multi_thread(self, m_scan_id: MagicMock) -> None:
@@ -863,11 +863,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch.dict(os.environ, {})
     @patch("starwhale.utils.config.load_swcli_config")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_cloud_tdsc(self, rm: Mocker, m_conf: MagicMock) -> None:
@@ -938,11 +938,11 @@ class TestDatasetSessionConsumption(TestCase):
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.dataset.tabular.DatastoreWrapperDataset.scan_id")
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def test_standalone_tdsc(self, m_scan_id: MagicMock, m_conf: MagicMock) -> None:
@@ -1409,7 +1409,7 @@ class TestRotatedBinWriter(TestCase):
 
 class TestMappingDatasetBuilder(BaseTestCase):
     @patch(
-        "starwhale.base.uricomponents.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
         MagicMock(),
     )
     def setUp(self) -> None:

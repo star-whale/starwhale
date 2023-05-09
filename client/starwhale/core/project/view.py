@@ -6,16 +6,9 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes
-from starwhale.consts import (
-    CREATED_AT_KEY,
-    DEFAULT_PROJECT,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-)
-from starwhale.base.uri import URI
-from starwhale.base.type import URIType
+from starwhale.consts import CREATED_AT_KEY, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.view import BaseTermView
-from starwhale.base.uricomponents.project import Project as ProjectURI
+from starwhale.base.uri.project import Project as ProjectURI
 
 from .model import Project, ProjectObjType
 
@@ -40,16 +33,13 @@ class ProjectTermView(BaseTermView):
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         projects, pager = Project.list(instance_uri, page, size)
 
-        _current_project = URI(
-            instance_uri, expected_type=URIType.INSTANCE
-        ).sw_instance_config.get("current_project", DEFAULT_PROJECT)
+        _current_project = ProjectURI(instance_uri)
 
         result = list()
         for _p in projects:
             _name = _p["name"]
             _owner = _p.get("owner", "")
-            _c_project, _c_owner = URI.uri_to_project_and_owner(_current_project)
-            _is_current = _name == _c_project and (_c_owner == "" or _owner == _c_owner)
+            _is_current = _name == _current_project.name
 
             result.append(
                 {

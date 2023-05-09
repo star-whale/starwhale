@@ -21,6 +21,7 @@ from starwhale.utils.fs import (
 )
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.retry import http_retry
+from starwhale.base.uri.resource import Resource
 from starwhale.core.dataset.type import (
     Link,
     BaseArtifact,
@@ -30,7 +31,6 @@ from starwhale.core.dataset.type import (
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 from starwhale.api._impl.dataset.loader import DataRow
-from starwhale.base.uricomponents.resource import Resource
 
 
 class RotatedBinWriter:

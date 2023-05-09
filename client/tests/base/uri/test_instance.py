@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
-from starwhale.base.uricomponents.instance import Instance, NoMatchException
+from starwhale.base.uri.instance import Instance, NoMatchException
 
 
 class TestInstance(TestCase):
