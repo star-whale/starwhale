@@ -24,10 +24,10 @@ export function RuntimeTreeSelector(props: any) {
     const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return builtIn? [builtIn] : []
         let mergedItems = builtIn ? [builtIn, ...runtimeInfo.data.filter(rt =>
-            builtIn.runtimeName === rt.runtimeName &&
+            !(builtIn.runtimeName === rt.runtimeName &&
             builtIn.versions.some(subBuiltIn =>
                 rt.versions.some(sub => subBuiltIn.id === sub.id)
-            )
+            ))
         )] : runtimeInfo.data
         const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
             return {
