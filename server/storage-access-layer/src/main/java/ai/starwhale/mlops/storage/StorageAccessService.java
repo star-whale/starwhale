@@ -50,4 +50,6 @@ public interface StorageAccessService {
      * @throws IOException any possible IO exception
      */
     String signedUrl(String path, Long expTimeMillis) throws IOException;
+
+    String signedPutUrl(String path, Long expTimeMillis) throws IOException;
 }

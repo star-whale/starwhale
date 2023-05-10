@@ -87,7 +87,12 @@ public class StorageAccessServiceMemory implements StorageAccessService {
     }
 
     @Override
-    public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return null;
+    public String signedUrl(String path, Long expTimeMillis) {
+        return path;
+    }
+
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) {
+        return path;
     }
 }

@@ -75,6 +75,15 @@ public class StorageAccessServiceFileTest {
     }
 
     @Test
+    public void testSignedPutUrl() throws IOException {
+        String path = "unit_test/x";
+        String content = "hello word";
+        service.put(path, content.getBytes(StandardCharsets.UTF_8));
+        String signedUrl = service.signedPutUrl(path, 1000 * 60L);
+        Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
+    }
+
+    @Test
     public void testRange() throws IOException {
         String path = "unit_test/x";
         String content = "hello word";

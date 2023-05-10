@@ -180,17 +180,20 @@ public class StorageAccessServiceMinio implements StorageAccessService {
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
+        return this.signUrl(path, expTimeMillis, Method.GET);
+    }
+
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+        return this.signUrl(path, expTimeMillis, Method.PUT);
+    }
+
+    private String signUrl(String path, Long expTimeMillis, Method method) throws IOException {
         GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder().expiry(expTimeMillis.intValue(),
-                TimeUnit.MILLISECONDS).bucket(this.bucket).object(path).method(Method.GET).build();
+                TimeUnit.MILLISECONDS).bucket(this.bucket).object(path).method(method).build();
         try {
             return minioClient.getPresignedObjectUrl(request);
-        } catch (MinioException e) {
-            log.error("sin url for object {} fails", path, e);
-            throw new IOException(e);
-        } catch (InvalidKeyException e) {
-            log.error("sin url for object {} fails", path, e);
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (MinioException | NoSuchAlgorithmException | InvalidKeyException e) {
             log.error("sin url for object {} fails", path, e);
             throw new IOException(e);
         }

@@ -146,4 +146,9 @@ public class StorageAccessServiceFile implements StorageAccessService {
     public String signedUrl(String path, Long expTimeMillis) throws IOException {
         return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
     }
+
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+        return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
+    }
 }

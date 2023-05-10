@@ -88,5 +88,8 @@ public abstract class CompatibleStorageAccessService implements StorageAccessSer
         return storageAccessService.signedUrl(path, expTimeMillis);
     }
 
-
+    @Override
+    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+        return storageAccessService.signedPutUrl(path, expTimeMillis);
+    }
 }
