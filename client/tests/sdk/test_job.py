@@ -218,7 +218,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:img_predict_handler",
                 "needs": [],
-                "replicas": 2,
+                "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
             },
@@ -254,7 +254,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:video_predict_handler",
                 "needs": [],
-                "replicas": 2,
+                "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
             },
@@ -280,7 +280,7 @@ def video_evaluate_handler(*args, **kwargs): ...
         content = """
 from starwhale import evaluation
 
-@evaluation.predict(log_mode="pickle")
+@evaluation.predict(log_mode="pickle", replicas=2)
 def predict_handler(data): ...
 
 @evaluation.evaluate(needs=[predict_handler])
@@ -444,7 +444,7 @@ class MockHandler(PipelineHandler):
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
-                "replicas": 2,
+                "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
             },
@@ -472,7 +472,7 @@ class MockHandler(PipelineHandler):
                 "module_name": "mock_user_module",
                 "name": "mock_user_module:MockHandler.predict",
                 "needs": [],
-                "replicas": 2,
+                "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
             }

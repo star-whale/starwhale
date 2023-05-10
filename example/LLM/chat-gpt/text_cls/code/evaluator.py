@@ -15,7 +15,7 @@ def label_number(raw: str) -> int:
     return 0
 
 
-@evaluation.predict
+@evaluation.predict(replicas=2)
 def ppl(data):
     # create a completion
     text = data["text"]
