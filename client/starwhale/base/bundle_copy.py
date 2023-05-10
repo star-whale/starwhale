@@ -162,7 +162,7 @@ class BundleCopy(CloudRequestMixed):
             remote = self.dest_uri
             resource_name = self.dest_uri.name or self.src_uri.name
 
-        url = f"{remote.instance}/projects/{remote.project}/{self.typ}s/{resource_name}"
+        url = f"{remote.instance.url}/projects/{remote.project.name}/{self.typ.value}s/{resource_name}"
         if with_version:
             url = f"{url}/versions/{self.src_uri.version}/overview"
         return url
