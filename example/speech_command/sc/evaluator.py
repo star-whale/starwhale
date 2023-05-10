@@ -105,9 +105,9 @@ def predict_speech(data):
 def evaluate_speech(ppl_result):
     result, label, pr = [], [], []
     for _data in ppl_result:
-        label.append(ALL_LABELS_MAP[_data["ds_data"]["command"]])
-        pr.append(_data["result"][1])
-        result.append(_data["result"][0])
+        label.append(ALL_LABELS_MAP[_data["input"]["command"]])
+        pr.append(_data["output"][1])
+        result.append(_data["output"][0])
     return label, result, pr
 
 

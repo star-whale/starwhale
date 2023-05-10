@@ -230,9 +230,9 @@ class ImageNetEvaluation(PipelineHandler):
     def cmp(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_LABEL_NAMES.index(_data["ds_data"]["label"]))
-            result.append(_data["result"][0])
-            pr.append(_data["result"][1])
+            label.append(_LABEL_NAMES.index(_data["input"]["label"]))
+            result.append(_data["output"][0])
+            pr.append(_data["output"][1])
         return label, result, pr
 
     @api(gradio.File(), gradio.Label())

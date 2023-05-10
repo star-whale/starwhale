@@ -72,3 +72,9 @@ class DependencyType(Enum):
 class DatasetChangeMode(Enum):
     PATCH = "patch"
     OVERWRITE = "overwrite"
+
+
+@unique
+class PredictLogMode(Enum):
+    PLAIN = "plain"
+    PICKLE = "pickle"

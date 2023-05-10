@@ -252,12 +252,12 @@ class TestModelPipelineHandler(TestCase):
             def cmp(self, _data_loader: t.Any) -> t.Any:
                 data = [i for i in _data_loader]
                 assert len(data) == 1
-                (x, y, z) = data[0]["result"]
+                (x, y, z) = data[0]["output"]
                 assert x == builtin_data
                 assert np.array_equal(y, np_data)
                 assert torch.equal(z, tensor_data)
 
-                assert label_data == data[0]["ds_data"]["label"]
+                assert label_data == data[0]["input"]["label"]
 
         m_summary.return_value = DatasetSummary(
             rows=1,

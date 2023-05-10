@@ -37,9 +37,9 @@ class CIFAR10Inference(PipelineHandler):
     def evaluate(self, ppl_result):
         result, label, pr = [], [], []
         for _data in ppl_result:
-            label.append(_data["ds_data"]["label"])
-            result.extend(_data["result"][0])
-            pr.extend(_data["result"][1])
+            label.append(_data["input"]["label"])
+            result.extend(_data["output"][0])
+            pr.extend(_data["output"][1])
         return label, result, pr
 
     def _pre(self, input: Image) -> torch.Tensor:

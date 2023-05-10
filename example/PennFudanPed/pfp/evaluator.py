@@ -61,8 +61,8 @@ def predict_mask_rcnn(data, external):
 def cmp(ppl_result):
     pred_results, annotations = [], []
     for _data in ppl_result:
-        annotations.append(_data["ds_data"])
-        pred_results.append(_data["result"])
+        annotations.append(_data["input"])
+        pred_results.append(_data["output"])
 
     evaluator = make_coco_evaluator(annotations, iou_types=IOU_TYPES)
     for index, pred in pred_results:

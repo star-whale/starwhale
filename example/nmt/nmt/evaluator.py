@@ -63,7 +63,7 @@ class NMTPipeline(PipelineHandler):
         result, label = [], []
         for _data in _data_loader:
             result.append(_data["result"])
-            label.append(_data["ds_data"]["french"].content)
+            label.append(_data["input"]["french"].content)
 
         bleu = calculate_bleu(result, [label])
         print(f"bleu: {bleu}")
