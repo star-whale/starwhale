@@ -264,6 +264,7 @@ public class DataStoreControllerTest {
                                 setAlias("b");
                             }
                         }));
+                        setEncodeWithType(false);
                     }
                 }));
             }
@@ -308,6 +309,7 @@ public class DataStoreControllerTest {
                         }));
                     }
                 }));
+                setEncodeWithType(false);
             }
         });
         assertThat("t2", resp.getStatusCode().is2xxSuccessful(), is(true));
@@ -1237,6 +1239,7 @@ public class DataStoreControllerTest {
                     setStart("00000001");
                     setEnd("00000004");
                     setKeepNone(true);
+                    setEncodeWithType(false);
                 }
             };
             DataStoreControllerTest.this.controller.updateTable(new UpdateTableRequest() {
@@ -1365,6 +1368,7 @@ public class DataStoreControllerTest {
                             setTableName("t1");
                         }
                     }));
+                    setEncodeWithType(false);
                 }
             });
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));

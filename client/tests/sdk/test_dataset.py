@@ -371,20 +371,47 @@ class TestDatasetCopy(BaseTestCase):
                     ],
                     "records": [
                         {
-                            "id": "idx-0",
+                            "id": {"value": "idx-0", "type": "STRING"},
                             "features/text": {
-                                "_BaseArtifact__cache_bytes": "",
-                                "link": {
-                                    "offset": "0000000000000080",
-                                    "size": "0000000000000006",
-                                    "uri": "111",
+                                "type": "OBJECT",
+                                "pythonType": "starwhale.core.dataset.type.Text",
+                                "value": {
+                                    "_BaseArtifact__cache_bytes": {
+                                        "type": "STRING",
+                                        "value": "",
+                                    },
+                                    "link": {
+                                        "type": "OBJECT",
+                                        "pythonType": "starwhale.core.dataset.type.Link",
+                                        "value": {
+                                            "offset": {
+                                                "type": "INT64",
+                                                "value": "0000000000000080",
+                                            },
+                                            "size": {
+                                                "type": "INT64",
+                                                "value": "0000000000000006",
+                                            },
+                                            "uri": {"type": "STRING", "value": "111"},
+                                        },
+                                    },
                                 },
                             },
                             "features/bbox": {
-                                "x": "0000000000000002",
-                                "y": "0000000000000002",
-                                "width": "0000000000000003",
-                                "height": "0000000000000004",
+                                "type": "OBJECT",
+                                "pythonType": "starwhale.core.dataset.type.BoundingBox",
+                                "value": {
+                                    "x": {"type": "INT64", "value": "0000000000000001"},
+                                    "y": {"type": "INT64", "value": "0000000000000002"},
+                                    "width": {
+                                        "type": "INT64",
+                                        "value": "0000000000000003",
+                                    },
+                                    "height": {
+                                        "type": "INT64",
+                                        "value": "0000000000000004",
+                                    },
+                                },
                             },
                         }
                     ],
@@ -419,7 +446,10 @@ class TestDatasetCopy(BaseTestCase):
             )
             mock_conf.return_value = origin_conf
             dc = DatasetCopy(
-                src_uri=f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+                src_uri=Resource(
+                    f"{instance_uri}/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}",
+                    _skip_refine=True,
+                ),
                 dest_uri="",
                 dest_local_project_uri="self",
             )
@@ -435,7 +465,7 @@ class TestDatasetCopy(BaseTestCase):
         assert meta_list[0].features["text"].link.uri == "111"
         bbox = meta_list[0].features["bbox"]
         assert isinstance(bbox, BoundingBox)
-        assert bbox.x == 2 and bbox.y == 2
+        assert bbox.x == 1 and bbox.y == 2
         assert bbox.width == 3 and bbox.height == 4
 
 

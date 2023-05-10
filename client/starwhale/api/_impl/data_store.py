@@ -121,10 +121,20 @@ class SwType(metaclass=ABCMeta):
         if type_name == "LIST":
             element_type = schema.get("elementType", None)
             if element_type is None:
+                # parse element type from values
+                v = schema.get("value", None)
+                if v is not None:
+                    element_type = v[0]
+            if element_type is None:
                 raise RuntimeError("no element type found for type LIST")
             return SwListType(SwType.decode_schema(element_type))
         if type_name == "TUPLE":
             element_type = schema.get("elementType", None)
+            if element_type is None:
+                # parse element type from values
+                v = schema.get("value", None)
+                if v is not None:
+                    element_type = v[0]
             if element_type is None:
                 raise RuntimeError("no element type found for type TUPLE")
             return SwTupleType(SwType.decode_schema(element_type))
@@ -151,7 +161,16 @@ class SwType(metaclass=ABCMeta):
                 )
             attrs = {}
             attr_schemas = schema.get("attributes", None)
-            if attr_schemas is not None:
+            if attr_schemas is None:
+                # try using values as attributes
+                values = schema.get("value", {})
+                if not isinstance(values, dict):
+                    raise RuntimeError(
+                        f"invalid schema, values should be a dict, actual {type(values)}"
+                    )
+                for k, v in values.items():
+                    attrs[k] = SwType.decode_schema(v)
+            else:
                 if not isinstance(attr_schemas, list):
                     raise RuntimeError("attributes should be a list")
                 for attr in attr_schemas:
@@ -235,6 +254,9 @@ class SwScalarType(SwType):
             return None
         if self is UNKNOWN:
             return None
+        # TODO: fix hardcoded values
+        if isinstance(value, dict) and "value" in value:
+            value = value["value"]
         if self is BOOL:
             return value == "1"
         if self is STRING:
@@ -279,6 +301,7 @@ class SwCompositeType(SwType):
         return dill.loads(value)
 
 
+# TODO support multiple types for items
 class SwListType(SwCompositeType):
     def __init__(self, element_type: SwType) -> None:
         super().__init__("list")
@@ -306,6 +329,8 @@ class SwListType(SwCompositeType):
             return None
         if isinstance(value, list):
             return [self.element_type.decode(element) for element in value]
+        if isinstance(value, dict) and "value" in value:
+            return [self.element_type.decode(element) for element in value["value"]]
         raise RuntimeError(f"value should be a list: {value}")
 
     def __str__(self) -> str:
@@ -450,6 +475,9 @@ class SwObjectType(SwCompositeType):
             return None
         if isinstance(value, dict):
             ret = self.raw_type()
+            # TODO: fix hard coded value key
+            if "value" in value:
+                value = value["value"]
             for k, v in value.items():
                 type = self.attrs.get(k, None)
                 if type is None:
@@ -1361,7 +1389,10 @@ class RemoteDataStore:
         keep_none: bool = False,
         end_inclusive: bool = False,
     ) -> Iterator[Dict[str, Any]]:
-        post_data: Dict[str, Any] = {"tables": [table.to_dict() for table in tables]}
+        post_data: Dict[str, Any] = {
+            "tables": [table.to_dict() for table in tables],
+            "encodeWithType": True,
+        }
         key_type = _get_type(start)
         if end is not None:
             post_data["end"] = key_type.encode(end)
@@ -1378,21 +1409,15 @@ class RemoteDataStore:
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break
-            column_types_list = resp_json.get("columnTypes", None)
-            if column_types_list is None:
-                raise RuntimeError("no column types in response")
-            column_types = {
-                col["name"]: SwType.decode_schema(col) for col in column_types_list
-            }
             for record in records:
                 r: Dict[str, Any] = {}
                 for k, v in record.items():
-                    col_type = column_types.get(k, None)
+                    col_type = SwType.decode_schema(v)
                     if col_type is None:
                         raise RuntimeError(
                             f"unknown type for column {k}, record={record}"
                         )
-                    r[k] = col_type.decode(v)
+                    r[k] = col_type.decode(v["value"])
                 yield r
             if len(records) == 1000:
                 post_data["start"] = resp_json["lastKey"]
