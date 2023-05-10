@@ -24,6 +24,7 @@ class TextClassificationHandler(PipelineHandler):
 
     @torch.no_grad()
     def ppl(self, data: dict, **kw):
+        print(f"index: {kw['external']['index']}")
         ngrams = list(ngrams_iterator(self.tokenizer(data["text"]), 2))
         tensor = torch.tensor(self.vocab(ngrams)).to(self.device)
         output = self.model(tensor, torch.tensor([0]).to(self.device))

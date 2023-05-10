@@ -21,7 +21,8 @@ class CIFAR10Inference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def predict(self, data: dict, **kw):
+    def predict(self, data, external):
+        print(f"index: {external['index']}")
         data_tensor = self._pre(data["image"])
         output = self.model(data_tensor)
         return self._post(output)

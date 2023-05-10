@@ -8,7 +8,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 @evaluation.predict
-def ppl(data: dict, **kw):
+def ppl(data):
     text = data["text"]
     chat_result = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", messages=[{"role": "user", "content": text}]

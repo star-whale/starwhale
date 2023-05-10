@@ -31,7 +31,7 @@ model: t.Optional[Net] = None
     fail_on_error=False,
     auto_log=True,
 )
-def predict_image(data: t.Dict, **kw: t.Any) -> t.Any:
+def predict_image(data: t.Dict) -> t.Any:
     img: Image = data["img"]
     _tensor = torch.tensor(bytearray(img.to_bytes()), dtype=torch.uint8).reshape(
         img.shape[0], img.shape[1]  # type: ignore

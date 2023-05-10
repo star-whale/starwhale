@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import typing as t
+import inspect
 import threading
 from abc import ABCMeta
 from types import TracebackType
@@ -21,7 +22,7 @@ from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.tabular import TabularDatasetRow
+from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
     str((p).resolve()), mode="w"
@@ -122,21 +123,59 @@ class PipelineHandler(metaclass=ABCMeta):
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
 
-    def _do_predict(self, *args: t.Any, **kw: t.Any) -> t.Any:
+    def _do_predict(
+        self,
+        data: t.List[t.Dict] | t.Dict,
+        index: str | int | t.List[str | int],
+        index_with_dataset: str | t.List[str],
+        dataset_info: TabularDatasetInfo,
+    ) -> t.Any:
         predict_func = getattr(self, "predict", None)
         ppl_func = getattr(self, "ppl", None)
 
         if predict_func and ppl_func:
             raise ParameterError("predict and ppl cannot be defined at the same time")
 
-        if predict_func:
-            return predict_func(*args, **kw)
-        elif ppl_func:
-            return ppl_func(*args, **kw)
-        else:
+        func = predict_func or ppl_func
+        if func is None:
             raise ParameterError(
                 "predict or ppl must be defined, predict function is recommended"
             )
+        external = {
+            "index": index,
+            "index_with_dataset": index_with_dataset,
+            "dataset_info": dataset_info,
+        }
+
+        # provide the more flexible way to inject arguments for predict or ppl function
+        # case1: only accept data argument
+        # 1. def predict(self, data): ...
+        # 2. def predict(self, data, /): ...
+        # case2: accept data and external arguments
+        # 1. def predict(self, *args): ...
+        # 2. def predict(self, **kwargs): ...
+        # 3. def predict(self, *args, **kwargs): ...
+        # 4. def predict(self, data, external: t.Dict): ...
+        # 5. def predict(self, data, **kwargs): ...
+
+        kind = inspect._ParameterKind
+        parameters = inspect.signature(inspect.unwrap(func)).parameters
+        if len(parameters) <= 0:
+            raise RuntimeError("predict/ppl function must have at least one argument")
+        elif len(parameters) == 1:
+            parameter: inspect.Parameter = list(parameters.values())[0]
+            if parameter.kind == kind.VAR_POSITIONAL:
+                return func(data, external)
+            elif parameter.kind == kind.VAR_KEYWORD:
+                return func(data=data, external=external)
+            elif parameter.kind in (kind.POSITIONAL_ONLY, kind.POSITIONAL_OR_KEYWORD):
+                return func(data)
+            else:
+                raise RuntimeError(
+                    f"unsupported parameter kind for predict/ppl function: {parameter.kind}"
+                )
+        else:
+            return func(data, external=external)
 
     def _do_evaluate(self, *args: t.Any, **kw: t.Any) -> t.Any:
         evaluate_func = getattr(self, "evaluate", None)
@@ -174,7 +213,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 try:
                     if self.predict_batch_size > 1:
                         _results = self._do_predict(
-                            [row.features for row in rows],
+                            data=[row.features for row in rows],
                             index=[row.index for row in rows],
                             index_with_dataset=[
                                 f"{idx_prefix}{join_str}{row.index}" for row in rows
@@ -184,7 +223,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     else:
                         _results = [
                             self._do_predict(
-                                rows[0].features,
+                                data=rows[0].features,
                                 index=rows[0].index,
                                 index_with_dataset=f"{idx_prefix}{join_str}{rows[0].index}",
                                 dataset_info=dataset_info,

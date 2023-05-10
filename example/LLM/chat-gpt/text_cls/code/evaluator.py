@@ -16,7 +16,7 @@ def label_number(raw: str) -> int:
 
 
 @evaluation.predict
-def ppl(data: dict, **kw):
+def ppl(data):
     # create a completion
     text = data["text"]
     chat_result = openai.ChatCompletion.create(

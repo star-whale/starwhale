@@ -24,7 +24,7 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def predict(self, data: t.Dict[str, t.Any], **kw: t.Any) -> t.Tuple[float, t.List[float]]:  # type: ignore
+    def predict(self, data: t.Dict[str, t.Any]) -> t.Tuple[float, t.List[float]]:  # type: ignore
         data_tensor = self._pre(data["img"])
         output = self.model(data_tensor)
         return self._post(output)
