@@ -75,12 +75,20 @@ class Step(ASDictMixin):
         # default run index 0 handler
         job_name = job_name or "0"
         jobs = load_yaml(yaml_path)
-        if job_name in jobs:
-            job = jobs[job_name]
-        else:
-            job_index = int(job_name)
-            sorted_jobs = sorted(jobs.items())
-            job = sorted_jobs[job_index][1]
+        sorted_jobs = sorted(jobs.items())
+
+        job = None
+        try:
+            if job_name in jobs:
+                job = jobs[job_name]
+            else:
+                job_index = int(job_name)
+                job = sorted_jobs[job_index][1]
+        finally:
+            console.print(":bank: runnable handlers:")
+            for i, j in enumerate(sorted_jobs):
+                flag = "" if job is None or job != j[1] else "*"
+                console.print(f"\t {flag:2} [{i}]: {j[0]}")
 
         """
         - cls_name: MNISTInference

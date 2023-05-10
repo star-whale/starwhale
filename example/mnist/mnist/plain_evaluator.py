@@ -63,8 +63,8 @@ def evaluate_results(predict_result_iter: t.Iterator) -> t.Tuple:
     result, label, pr = [], [], []
     for _data in predict_result_iter:
         label.append(_data["input"]["label"])
-        result.append(_data["result"][0])
-        pr.append(_data["result"][1])
+        result.append(_data["output"][0])
+        pr.append(_data["output"][1])
     return label, result, pr
 
 

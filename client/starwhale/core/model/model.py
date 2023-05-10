@@ -110,12 +110,11 @@ class ModelRunConfig(ASDictMixin):
         return f"Model Run Config: {self.modules}"
 
     def __repr__(self) -> str:
-        return f"Model Run Config: handlers -> {self.modules}, envs -> {self.envs}"
+        return f"Model Run Config: modules -> {self.modules}, envs -> {self.envs}"
 
     def do_validate(self) -> None:
-        # TODO: validate handler format
         if not self.modules:
-            raise ValueError("model run config must have at least one handler")
+            raise ValueError("not found any modules in model run config")
 
 
 class ModelConfig(ASDictMixin):

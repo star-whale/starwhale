@@ -62,7 +62,7 @@ class NMTPipeline(PipelineHandler):
     def cmp(self, _data_loader):
         result, label = [], []
         for _data in _data_loader:
-            result.append(_data["result"])
+            result.append(_data["output"])
             label.append(_data["input"]["french"].content)
 
         bleu = calculate_bleu(result, [label])

@@ -31,4 +31,6 @@ def init_logger(verbose: int) -> None:
         console.print(f":space_invader: verbosity: {verbose}, log level: {lvl_name}")
 
     # TODO: custom debug for tb install
-    traceback.install(show_locals=True, max_frames=1, width=200)
+    traceback.install(
+        console=console.rich_console, show_locals=True, max_frames=1, width=200
+    )
