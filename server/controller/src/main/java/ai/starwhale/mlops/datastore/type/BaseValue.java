@@ -41,6 +41,7 @@ public interface BaseValue extends Comparable<BaseValue> {
         if (value == null) {
             if (encodeWithType) {
                 var ret = new HashMap<String, Object>();
+                ret.put("type", ColumnType.UNKNOWN.name());
                 ret.put("value", null);
                 return ret;
             } else {

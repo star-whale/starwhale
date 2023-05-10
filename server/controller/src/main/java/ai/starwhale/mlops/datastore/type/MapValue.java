@@ -18,6 +18,7 @@ package ai.starwhale.mlops.datastore.type;
 
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.Wal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,14 +67,21 @@ public class MapValue extends HashMap<BaseValue, BaseValue> implements BaseValue
 
     @Override
     public Object encode(boolean rawResult, boolean encodeWithType) {
-        var ret = new HashMap<>();
-        for (var entry : this.entrySet()) {
-            ret.put(BaseValue.encode(entry.getKey(), rawResult, encodeWithType),
-                    BaseValue.encode(entry.getValue(), rawResult, encodeWithType));
-        }
         if (encodeWithType) {
+            var ret = new ArrayList<>();
+            for (var entry : this.entrySet()) {
+                ret.add(Map.of(
+                        "key", BaseValue.encode(entry.getKey(), rawResult, true),
+                        "value", BaseValue.encode(entry.getValue(), rawResult, true)
+                ));
+            }
             return Map.of("type", this.getColumnType().name(), "value", ret);
         } else {
+            var ret = new HashMap<>();
+            for (var entry : this.entrySet()) {
+                ret.put(BaseValue.encode(entry.getKey(), rawResult, false),
+                        BaseValue.encode(entry.getValue(), rawResult, false));
+            }
             return ret;
         }
     }

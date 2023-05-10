@@ -444,6 +444,29 @@ public class BaseValueTest {
                 }));
         assertThat(BaseValue.encode(BaseValue.valueOf(Map.of(1, 2, 3, 4)), true, false),
                 is(Map.of("1", "2", "3", "4")));
+
+        var result = BaseValue.encode(BaseValue.valueOf(Map.of("a", 8, "b", List.of(9, 10, 11))), false, true);
+        var expected = Map.of(
+                "type", "MAP",
+                "value", List.of(
+                    Map.of(
+                        "key", Map.of("type", "STRING", "value", "a"),
+                        "value", Map.of("type", "INT32", "value", "00000008")
+                    ),
+                    Map.of(
+                        "key", Map.of("type", "STRING", "value", "b"),
+                        "value", Map.of(
+                            "type", "LIST",
+                            "value", List.of(
+                                Map.of("type", "INT32", "value", "00000009"),
+                                Map.of("type", "INT32", "value", "0000000a"),
+                                Map.of("type", "INT32", "value", "0000000b")
+                            )
+                        )
+                    )
+                )
+        );
+        assertThat(result, is(expected));
     }
 
     @Test
@@ -474,6 +497,7 @@ public class BaseValueTest {
         assertThat(BaseValue.encode(null, true, true),
                 is(new HashMap<>() {
                     {
+                        put("type", "UNKNOWN");
                         put("value", null);
                     }
                 }));
@@ -501,8 +525,10 @@ public class BaseValueTest {
                 is(Map.of("type", "TUPLE", "value", List.of(Map.of("type", "INT32", "value", "0")))));
         assertThat(BaseValue.encode(BaseValue.valueOf(Map.of("0", 0)), true, true),
                 is(Map.of("type", "MAP",
-                        "value", Map.of(Map.of("type", "STRING", "value", "0"),
-                                Map.of("type", "INT32", "value", "0")))));
+                        "value", List.of(
+                                Map.of(
+                                        "key", Map.of("type", "STRING", "value", "0"),
+                                        "value", Map.of("type", "INT32", "value", "0"))))));
         assertThat(BaseValue.encode(ObjectValue.valueOf("t", Map.of("0", 0)), true, true),
                 is(Map.of("type", "OBJECT",
                         "pythonType", "t",
