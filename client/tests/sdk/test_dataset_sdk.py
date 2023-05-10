@@ -766,6 +766,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
                     "revision": "data_v0",
                 }
             ],
+            "encodeWithType": True,
             "limit": 1000,
         }
         assert scan_table_mock.request_history[1].json() == {
@@ -775,6 +776,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
                     "revision": "info_v1",
                 }
             ],
+            "encodeWithType": True,
             "end": "0000000000000000",
             "start": "0000000000000000",
             "limit": 1000,

@@ -1034,7 +1034,7 @@ class Dataset:
 
         """
         if isinstance(uri, str):
-            _uri = Resource(uri, typ=ResourceType.dataset)
+            _uri = Resource(uri, typ=ResourceType.dataset, _skip_refine=True)
         elif isinstance(uri, Resource) and uri.typ == ResourceType.dataset:
             _uri = uri
         else:
