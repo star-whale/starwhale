@@ -136,6 +136,7 @@ class PipelineHandler(metaclass=ABCMeta):
         index: str | int | t.List[str | int],
         index_with_dataset: str | t.List[str],
         dataset_info: TabularDatasetInfo,
+        dataset_uri: Resource,
     ) -> t.Any:
         predict_func = getattr(self, "predict", None)
         ppl_func = getattr(self, "ppl", None)
@@ -152,6 +153,8 @@ class PipelineHandler(metaclass=ABCMeta):
             "index": index,
             "index_with_dataset": index_with_dataset,
             "dataset_info": dataset_info,
+            "context": self.context,
+            "dataset_uri": dataset_uri,
         }
 
         # provide the more flexible way to inject arguments for predict or ppl function
@@ -226,6 +229,7 @@ class PipelineHandler(metaclass=ABCMeta):
                                 f"{idx_prefix}{join_str}{row.index}" for row in rows
                             ],
                             dataset_info=dataset_info,
+                            dataset_uri=_uri,
                         )
                     else:
                         _results = [
@@ -234,6 +238,7 @@ class PipelineHandler(metaclass=ABCMeta):
                                 index=rows[0].index,
                                 index_with_dataset=f"{idx_prefix}{join_str}{rows[0].index}",
                                 dataset_info=dataset_info,
+                                dataset_uri=_uri,
                             )
                         ]
                 except Exception as e:
