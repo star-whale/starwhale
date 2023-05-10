@@ -8,7 +8,7 @@ from pathlib import Path
 from functools import partial
 
 from starwhale.utils import console
-from starwhale.consts import PythonRunEnv, DEFAULT_MANIFEST_NAME
+from starwhale.consts import PythonRunEnv
 from starwhale.utils.fs import extract_tar
 from starwhale.utils.venv import (
     get_conda_bin,
@@ -21,7 +21,7 @@ from starwhale.utils.process import check_call
 from starwhale.core.model.model import StandaloneModel
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .model import StandaloneRuntime
+from .model import StandaloneRuntime, RuntimeRestoreStatus
 
 
 class Process:
@@ -122,20 +122,19 @@ class Process:
 
         venv_prefix = snapshot_workdir / "export" / PythonRunEnv.VENV
         conda_prefix = snapshot_workdir / "export" / PythonRunEnv.CONDA
-        has_restored_runtime = check_valid_venv_prefix(
+
+        is_valid_prefix = check_valid_venv_prefix(
             venv_prefix
         ) or check_valid_conda_prefix(conda_prefix)
 
-        if force_restore or not has_restored_runtime:
+        _rrs = RuntimeRestoreStatus
+        is_invalid_status = set([_rrs.get(venv_prefix), _rrs.get(conda_prefix)]) & set(
+            [_rrs.failed, _rrs.restoring]
+        )
+
+        if force_restore or not is_valid_prefix or is_invalid_status:
             console.print(f":snail: start to restore runtime: {_uri}")
-
-            if not (snapshot_workdir / DEFAULT_MANIFEST_NAME).exists():
-                extract_tar(
-                    tar_path=bundle_path,
-                    dest_dir=snapshot_workdir,
-                    force=True,
-                )
-
+            extract_tar(tar_path=bundle_path, dest_dir=snapshot_workdir, force=True)
             StandaloneRuntime.restore(snapshot_workdir, verbose=False)
 
         if venv_prefix.exists():

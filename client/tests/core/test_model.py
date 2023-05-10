@@ -356,7 +356,7 @@ class StandaloneModelTestCase(TestCase):
             add_all=False,
         )
 
-        assert not m_extract.called
+        assert m_extract.called
         assert m_restore.called
         assert m_restore.call_args[0][0] == runtime_snapshot
 

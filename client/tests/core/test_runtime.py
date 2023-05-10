@@ -2501,7 +2501,8 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(snapshot_dir)
         ensure_file(snapshot_dir / DEFAULT_MANIFEST_NAME, yaml.safe_dump(manifest))
 
-        ensure_dir(snapshot_dir / "export" / "venv")
+        venv_dir = snapshot_dir / "export" / "venv"
+        ensure_dir(venv_dir)
 
         m_detect.return_value = ["zsh", "/usr/bin/zsh"]
         uri = Resource(
@@ -2511,6 +2512,24 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_execl.call_args[0][0] == "/usr/bin/zsh"
         assert not m_extract.called
         assert not m_restore.called
+
+        ensure_file(venv_dir / ".runtime_restore_status", "success", parents=True)
+        StandaloneRuntime.activate(uri=uri, force_restore=False)
+        assert not m_restore.called
+
+        ensure_file(venv_dir / ".runtime_restore_status", "failed", parents=True)
+        StandaloneRuntime.activate(uri=uri, force_restore=False)
+        assert m_restore.called
+
+        ensure_file(venv_dir / ".runtime_restore_status", "restoring", parents=True)
+        StandaloneRuntime.activate(uri=uri, force_restore=False)
+        assert m_restore.called
+
+        ensure_file(
+            venv_dir / ".runtime_restore_status", "wrong-word-xxx", parents=True
+        )
+        StandaloneRuntime.activate(uri=uri, force_restore=False)
+        assert m_restore.called
 
         m_execl.reset_mock()
         runtime_config = self.get_runtime_config()
@@ -2525,7 +2544,6 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not m_extract.called
         assert m_restore.called
         assert m_restore.call_args[0][0] == snapshot_dir
-        assert m_execl.call_args[0][0] == "/usr/bin/bash"
 
     def test_property(self) -> None:
         name = "rttest"

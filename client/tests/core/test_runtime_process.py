@@ -79,6 +79,14 @@ class RuntimeProcessTestCase(TestCase):
         assert not m_restore.called
         assert not m_extract.called
 
+        ensure_file(venv_dir / ".runtime_restore_status", "failed", parents=True)
+        with patch.object(sys, "argv", run_argv):
+            p = Process(uri, force_restore=False)
+            p.run()
+
+        assert m_restore.called
+        assert m_extract.called
+
     @patch("starwhale.core.runtime.process.get_conda_bin")
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
     @patch("starwhale.core.runtime.process.check_call")
@@ -141,6 +149,14 @@ class RuntimeProcessTestCase(TestCase):
         assert not m_restore.called
         assert not m_extract.called
 
+        ensure_file(conda_dir / ".runtime_restore_status", "restoring", parents=True)
+        with patch.object(sys, "argv", run_argv):
+            p = Process(uri, force_restore=False)
+            p.run()
+
+        assert m_restore.called
+        assert m_extract.called
+
         ensure_file(
             store.packaged_runtime_snapshot_workdir / DEFAULT_MANIFEST_NAME,
             "",
@@ -152,7 +168,7 @@ class RuntimeProcessTestCase(TestCase):
             p.run()
 
         assert m_restore.called
-        assert not m_extract.called
+        assert m_extract.called
 
     @patch("starwhale.utils.config.load_swcli_config")
     @patch("starwhale.core.runtime.process.guess_python_env_mode")
