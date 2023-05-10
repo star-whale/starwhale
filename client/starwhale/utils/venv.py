@@ -5,6 +5,7 @@ import typing as t
 import platform
 import subprocess
 from pathlib import Path, PurePath, PosixPath
+from functools import lru_cache
 
 import yaml
 import conda_pack
@@ -549,15 +550,18 @@ def get_conda_prefix_path(name: str = "") -> str:
     return output.decode().strip()
 
 
+@lru_cache()
 def get_conda_bin() -> str:
-    # TODO: add process cache
     for _p in (
+        os.environ.get("CONDA_EXE", ""),
         "/opt/miniconda3/bin/conda",
         "/opt/anaconda3/bin/conda",
+        "/usr/local/miniconda3/bin/conda",
+        "/usr/local/anaconda3/bin/conda",
         os.path.expanduser("~/miniconda3/bin/conda"),
         os.path.expanduser("~/anaconda3/bin/conda"),
     ):
-        if os.path.exists(_p):
+        if _p and os.path.exists(_p):
             return _p
     else:
         return "conda"
