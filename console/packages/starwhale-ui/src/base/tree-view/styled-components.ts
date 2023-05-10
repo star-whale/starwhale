@@ -83,13 +83,13 @@ export const StyledItemContent = styled<
         'paddingTop': $theme.sizing.scale100,
         'paddingBottom': $theme.sizing.scale100,
         // @ts-ignore
-        'backgroundColor': $isSelected ? $theme.brandBgSecondary : 'transparent',
+        'backgroundColor': $isSelected ? '#EBF1FF' : 'transparent',
         'outline': $isSelected && $isFocusVisible ? `1px solid ${$theme.colors.accent}` : 'none',
         'outlineOffset': '-3px',
 
         ':hover': {
             // @ts-ignore
-            backgroundColor: $theme.brandBgSecondary,
+            backgroundColor: '#EBF1FF',
         },
     }
 })

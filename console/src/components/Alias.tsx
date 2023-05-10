@@ -11,7 +11,7 @@ export function Alias({ alias = '' }: { alias?: string }) {
                             fontSize: '14px',
                             lineHeight: '14px',
                             borderRadius: '4px',
-                            backgroundColor: '#E5F8FF',
+                            backgroundColor: '#F5F8FF',
                             border: '1px solid #CFD7E6 ',
                             padding: '2px 8px',
                             color: '#02102B',

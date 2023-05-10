@@ -135,7 +135,6 @@ function GridTable({
                     queryinline={queryinline}
                     rawColumns={$columns}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
-                    // filters={$filtersEnabled}
                     loading={isLoading}
                     loadingMessage={loadingMessage}
                     onIncludedRowsChange={onIncludedRowsChange}
@@ -156,6 +155,7 @@ function GridTable({
                     sortIndex={sortIndex}
                     textQuery={textQuery}
                     // controlRef={controlRef}
+                    // filters={$filtersEnabled}
                 />
                 {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>

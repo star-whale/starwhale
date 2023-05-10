@@ -67,8 +67,8 @@ export default function Headers({ width }: { width: number }) {
             return (
                 <Tooltip key={columnIndex} placement={PLACEMENT.bottomLeft}>
                     <div
+                        data-type='header'
                         style={{
-                            width: ctx.widths[columnIndex],
                             ...theme.borders.border200,
                             backgroundColor: theme.colors.backgroundPrimary,
                             borderTop: 'none',
@@ -78,9 +78,11 @@ export default function Headers({ width }: { width: number }) {
                             boxSizing: 'border-box',
                             display: 'flex',
                             height: `${HEADER_ROW_HEIGHT}px`,
+                            width: `${ctx.widths.get(column.key)}px`,
                         }}
                     >
                         <Header
+                            width={ctx.widths.get(column.key)}
                             columnTitle={column.title}
                             hoverIndex={ctx.columnHighlightIndex}
                             index={columnIndex}
@@ -105,7 +107,7 @@ export default function Headers({ width }: { width: number }) {
                             resizableColumnWidths={ctx.resizableColumnWidths}
                             compareable={ctx.compareable}
                             resizeIndex={resizeIndex}
-                            resizeMinWidth={ctx.measuredWidths.get(column.key)}
+                            resizeMinWidth={column.minWidth || 0}
                             resizeMaxWidth={column.maxWidth || Infinity}
                             sortIndex={ctx.sortIndex}
                             sortDirection={ctx.sortDirection}
@@ -150,7 +152,7 @@ export default function Headers({ width }: { width: number }) {
     }, [$columns, headerRender])
 
     const headersLeftWidth = React.useMemo(() => {
-        return sum($columns.map((v, index) => (v.pin === 'LEFT' ? ctx.widths[index] : 0)))
+        return sum($columns.map((v) => (v.pin === 'LEFT' ? ctx.widths.get(v.key) : 0)))
     }, [$columns, ctx.widths])
 
     const headers = React.useMemo(() => {

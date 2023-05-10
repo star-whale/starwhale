@@ -16,6 +16,7 @@ import { StoreProvider, StoreUpdater } from './store'
 import { useStore } from './hooks/useStore'
 import { IContextGridTable, IGridState, ITableProps } from './types'
 import shallow from 'zustand/shallow'
+import { headlineHeight } from './const'
 
 const useStyles = createUseStyles({
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
@@ -28,7 +29,7 @@ const useStyles = createUseStyles({
     },
     headerBar: {
         gap: 20,
-        height: '52px',
+        height: `${headlineHeight}px`,
         lineHeight: '1',
         fontWeight: 'bold',
         display: 'flex',

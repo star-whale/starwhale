@@ -10,7 +10,8 @@ install-dependencies:
 	yarn
 
 prepare:
-	mkdir -p extensions && echo 'export default {}' > extensions/index.tsx  || echo 'extensions exists'
+	mkdir -p extensions && \
+		([ ! -f "extensions/index.tsx" ] && echo 'export default {}' > extensions/index.tsx) || echo 'extensions exists'
 
 build-ui: prepare
 	yarn build

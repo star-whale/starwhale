@@ -1,18 +1,13 @@
 /* eslint-disable */
-
 import * as React from 'react'
-
-import { useStyletron } from 'baseui'
 import type { ColumnT } from './types.js'
 import _ from 'lodash'
 import cn from 'classnames'
 import Checkbox from '../../Checkbox'
-import Button from '../../Button'
-import IconFont from '../../IconFont'
 import { themedUseStyletron } from '../../theme/styletron'
 
 const MIN_WIDTH = 100
-const MAX_WIDTH = 500
+const MAX_WIDTH = 400
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     const RenderCell = React.forwardRef<

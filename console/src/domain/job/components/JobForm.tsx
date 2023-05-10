@@ -77,7 +77,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             if (values_.modelVersionUrl) {
                 setModelVersionId(values_.modelVersionUrl[0])
             }
-            if (values_.modelVersionHandler) setModelVersionHandler(values_.modelVersionHandler)
+            if (values_.modelVersionHandler) {
+                setModelVersionHandler(values_.modelVersionHandler)
+            }
             let rawTypeTmp = values_.rawType
             if ('rawType' in _changes && !_changes.rawType) {
                 try {
@@ -115,20 +117,42 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
-        return _.merge([], fullStepSource, yaml.load(stepSpecOverWrites) ?? []).filter(
-            (v: StepSpec) => v?.job_name === modelVersionHandler
-        )
+        if (stepSpecOverWrites) {
+            return (yaml.load(stepSpecOverWrites) ?? []) as StepSpec[]
+        }
+        return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
+
+    const editorValue = React.useMemo(() => {
+        return yaml.dump(stepSource)
+    }, [stepSource])
+
+    const handleModelHandlerChange = useCallback(
+        (value) => {
+            setModelVersionHandler(value)
+            setStepSpecOverWrites('')
+        },
+        [setModelVersionHandler]
+    )
+
+    const checkStepSource = useCallback(
+        (value) => {
+            try {
+                yaml.load(value)
+            } catch (e) {
+                _.debounce(() => {
+                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000, key: 'yaml' })
+                }, 2000)()
+                return false
+            }
+            return true
+        },
+        [t]
+    )
 
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
             setLoading(true)
-            try {
-                yaml.load(stepSpecOverWrites)
-            } catch (e) {
-                toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
-                throw e
-            }
             try {
                 await onSubmit({
                     ..._.omit(values_, [
@@ -152,29 +176,16 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, t, stepSource]
+        [onSubmit, history, stepSpecOverWrites, stepSource]
     )
 
     const handleEditorChange = React.useCallback(
         (value: string) => {
+            if (!checkStepSource(value)) return
             setStepSpecOverWrites(value)
         },
-        [setStepSpecOverWrites]
+        [setStepSpecOverWrites, checkStepSource]
     )
-
-    React.useEffect(() => {
-        if (!stepSource) return
-        setStepSpecOverWrites(yaml.dump(stepSource))
-    }, [stepSource, form, setStepSpecOverWrites])
-
-    const rawRef = React.useRef(false)
-    React.useEffect(() => {
-        if (rawRef.current === rawType) return
-        if (rawType) {
-            setStepSpecOverWrites(yaml.dump(_.merge([], stepSource, form.getFieldValue('stepSpecOverWrites'))))
-        }
-        rawRef.current = rawType
-    }, [stepSource, setStepSpecOverWrites, rawType, stepSpecOverWrites, form])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -195,9 +206,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         <FormSelect
                             clearable={false}
                             value={modelVersionHandler}
-                            onChange={(value: string) => {
-                                setModelVersionHandler(value)
-                            }}
+                            onChange={handleModelHandlerChange}
                             options={
                                 Array.from(new Set(fullStepSource?.map((tmp) => tmp.job_name))).map((tmp) => {
                                     return {
@@ -282,7 +291,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         height='500px'
                         width='960px'
                         defaultLanguage='yaml'
-                        value={stepSpecOverWrites}
+                        value={editorValue}
                         theme='vs-dark'
                         // @ts-ignore
                         onChange={handleEditorChange}

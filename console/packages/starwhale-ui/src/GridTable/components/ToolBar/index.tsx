@@ -43,56 +43,46 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                 display: viewable || filterable || searchable || queryable || columnable ? 'block' : 'none',
             })}
         >
-            <div ref={headlineRef} className='flex-row-left g-20' style={{ paddingBottom: '20px' }}>
-                <div
-                    className={classNames(
-                        'g-20 ',
-                        css({
-                            'display': 'grid',
-                            'gridTemplateColumns': 'minmax(200px, 280px) auto auto',
-                            ':first-child': {
-                                marginBottom: '20px',
-                            },
-                        })
-                    )}
-                >
-                    {viewable && <ConfigViews />}
-                    {viewable && changed && !selectedRowIds.size && (
-                        <div>
-                            {!isAllRuns && (
-                                <>
-                                    <Button onClick={() => onSave?.(currentView)}>Save</Button>
-                                    &nbsp;&nbsp;
-                                </>
-                            )}
+            <div
+                ref={headlineRef}
+                className='flex-column flex-row-left g-20'
+                style={{ paddingBottom: '8px', gap: '12px' }}
+            >
+                {viewable && (
+                    <div
+                        className={classNames(
+                            'g-20',
+                            css({
+                                display: 'grid',
+                                gridTemplateColumns: 'minmax(200px, 280px) auto auto',
+                            })
+                        )}
+                    >
+                        <ConfigViews />
+                        {changed && !selectedRowIds.size && (
+                            <div>
+                                {!isAllRuns && (
+                                    <>
+                                        <Button onClick={() => onSave?.(currentView)}>Save</Button>
+                                        &nbsp;&nbsp;
+                                    </>
+                                )}
 
-                            <Button onClick={() => onSaveAs?.(currentView)}>Save As</Button>
-                        </div>
-                    )}
-                    {/* {searchable && <QueryInput onChange={onTextQueryChange} />} */}
-                    {/* 
-                    {filterable && (
-                        <FilterOperateMenu
-                            filters={store.currentView?.filters ?? []}
-                            columns={props.columns}
-                            rows={props.rows}
-                            onFilterSet={handeFilterSet}
-                        />
-                    )} */}
-                </div>
+                                <Button onClick={() => onSaveAs?.(currentView)}>Save As</Button>
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div
-                    className={classNames(
-                        css({
-                            display: 'flex',
-                            // marginBottom: queryable || columnable ? '20px' : '0px',
-                        })
-                    )}
+                    className={css({
+                        display: 'flex',
+                    })}
                 >
                     <div className='table-config-query' style={{ flex: 1 }}>
                         {queryable && renderConfigQuery()}
                     </div>
 
-                    {columnable && !selectedRowIds.size && (
+                    {columnable && (
                         <div className='table-config-column flex-row-center'>
                             <ConfigColumns
                                 view={currentView}

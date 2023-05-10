@@ -36,7 +36,7 @@ export type HeaderContextT = {
     sortIndex: number
     sortDirection: SortDirectionsT
     tableHeight: number
-    widths: number[]
+    widths: Map<any, any>
 }
 
 export const HeaderContext = React.createContext<HeaderContextT>({
@@ -69,10 +69,11 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     sortIndex: -1,
     sortDirection: null,
     tableHeight: 0,
-    widths: [],
+    widths: new Map(),
 })
 HeaderContext.displayName = 'HeaderContext'
 type HeaderProps = {
+    width: number
     columnTitle: string
     hoverIndex: number
     index: number
@@ -137,13 +138,13 @@ function Header(props: HeaderProps) {
                     }
 
                     if (width >= min && width <= max) {
-                        setEndResizePos(event.clientX - RULER_OFFSET)
+                        setEndResizePos(event.clientX)
                     }
                     if (width < min) {
-                        setEndResizePos(left + min - RULER_OFFSET)
+                        setEndResizePos(left + min)
                     }
                     if (width > max) {
-                        setEndResizePos(max - width - RULER_OFFSET)
+                        setEndResizePos(left + max)
                     }
                 }
             }
@@ -156,8 +157,9 @@ function Header(props: HeaderProps) {
             setEndResizePos(0)
         }
 
-        const mousemove = _.throttle(handleMouseMove, 200)
-        const mouseup = _.throttle(handleMouseUp, 200)
+        // notice:  no throttle, may cause seq fault
+        const mousemove = handleMouseMove
+        const mouseup = handleMouseUp
 
         if (isResizingThisColumn) {
             document.addEventListener('mousemove', mousemove)
@@ -168,7 +170,8 @@ function Header(props: HeaderProps) {
             document.removeEventListener('mouseup', mouseup)
         }
     }, [
-        props,
+        props.resizeMinWidth,
+        props.resizeMaxWidth,
         isResizingThisColumn,
         setEndResizePos,
         setStartResizePos,
@@ -178,6 +181,8 @@ function Header(props: HeaderProps) {
         endResizePos,
         startResizePos,
     ])
+
+    if (isResizingThisColumn) console.log(props.columnTitle, startResizePos, endResizePos)
 
     return (
         <>
@@ -240,7 +245,7 @@ function Header(props: HeaderProps) {
                             'cursor': 'ew-resize',
                             'position': 'absolute',
                             'height': '100%',
-                            'width': '3px',
+                            'width': '5px',
                             ':hover': {
                                 backgroundColor: theme.brandTableHeaderResizer,
                             },

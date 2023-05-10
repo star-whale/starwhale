@@ -100,6 +100,7 @@ export default function ApiHeader() {
                                     style: { wordBreak: 'break-word', width: '100%' },
                                 },
                             },
+                            key: 'api-header',
                         }
                     )
                     lastErrMsgRef.current[errMsg] = Date.now()
