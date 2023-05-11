@@ -26,7 +26,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import BundleType, DependencyType, RuntimeLockFileType
-from starwhale.utils.venv import EnvTarType, get_python_version
+from starwhale.utils.venv import EnvTarType, get_conda_bin, get_python_version
 from starwhale.utils.error import (
     FormatError,
     NotFoundError,
@@ -62,7 +62,14 @@ _swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
 class StandaloneRuntimeTestCase(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
+        self._clear_cache()
+
+    def tearDown(self) -> None:
+        self._clear_cache()
+
+    def _clear_cache(self) -> None:
         sw_config._config = {}
+        get_conda_bin.cache_clear()
 
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -131,12 +138,17 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _rt_config.dependencies._pip_pkgs[0] == "starwhale"
         assert _rt_config.dependencies._pip_files == []
 
+    @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_call")
     def test_quickstart_from_ishell_conda(self, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         conda_prefix_dir = os.path.join(workdir, SW_AUTO_DIRNAME, "conda")
         name = "test-conda"
+
+        conda_bin_path = "/home/starwhale/miniconda3/bin/conda"
+        os.environ["CONDA_EXE"] = conda_bin_path
+        ensure_file(conda_bin_path, "", parents=True)
 
         StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
@@ -148,7 +160,7 @@ class StandaloneRuntimeTestCase(TestCase):
         _rt_config = load_yaml(runtime_path)
         assert _rt_config["mode"] == "conda"
         assert m_call.call_args_list[0][0][0] == [
-            "conda",
+            conda_bin_path,
             "create",
             "--yes",
             "--prefix",
@@ -158,7 +170,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert " ".join(m_call.call_args_list[1][0][0]).startswith(
             " ".join(
                 [
-                    "conda",
+                    conda_bin_path,
                     "run",
                     "--live-stream",
                     "--prefix",
