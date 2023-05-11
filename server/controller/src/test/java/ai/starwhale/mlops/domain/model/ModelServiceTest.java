@@ -389,10 +389,12 @@ public class ModelServiceTest {
         given(modelVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifyModelVersion("1", "1", "v1", new ModelVersion());
+        assertThrows(SwValidationException.class, () -> service.modifyModelVersion("1", "1", "v1", new ModelVersion()));
+
+        var res = service.modifyModelVersion("1", "1", "v1", ModelVersion.builder().tag("v1").build());
         assertThat(res, is(true));
 
-        res = service.modifyModelVersion("1", "1", "v2", new ModelVersion());
+        res = service.modifyModelVersion("1", "1", "v2", ModelVersion.builder().tag("v1").build());
         assertThat(res, is(false));
     }
 

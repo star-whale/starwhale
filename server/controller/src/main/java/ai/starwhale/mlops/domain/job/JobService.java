@@ -186,6 +186,9 @@ public class JobService {
             log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
             runtimeVersionUrl = modelVersion.getBuiltInRuntime();
         }
+        if (!StringUtils.hasText(runtimeVersionUrl)) {
+            throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
+        }
         runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
         var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
 

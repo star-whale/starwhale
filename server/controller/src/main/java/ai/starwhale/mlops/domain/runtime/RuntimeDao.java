@@ -66,21 +66,16 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     public RuntimeVersionEntity getRuntimeVersion(String versionUrl) {
-        RuntimeVersionEntity entity = getRuntimeVersionAllowNull(versionUrl);
-        if (entity == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    String.format("Unable to find Runtime Version %s", versionUrl));
-        }
-        return entity;
-    }
-
-    public RuntimeVersionEntity getRuntimeVersionAllowNull(String versionUrl) {
         RuntimeVersionEntity entity;
         if (idConvertor.isId(versionUrl)) {
             var id = idConvertor.revert(versionUrl);
             entity = runtimeVersionMapper.find(id);
         } else {
             entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, null);
+        }
+        if (entity == null) {
+            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
+                    String.format("Unable to find Runtime Version %s", versionUrl));
         }
         return entity;
     }

@@ -279,6 +279,9 @@ public class JobServiceTest {
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
                 "", "1", "h", "s", JobType.EVALUATION));
 
+        assertThrows(SwValidationException.class, () -> service.createJob("1", "3", "1", "",
+                "", "1", "h", "s", JobType.EVALUATION));
+
         var res = service.createJob("1", "3", "1", "2",
                  "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION);
         assertThat(res, is(1L));

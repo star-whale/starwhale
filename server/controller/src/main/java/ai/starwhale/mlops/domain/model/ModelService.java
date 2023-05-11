@@ -324,6 +324,9 @@ public class ModelService {
     }
 
     public Boolean modifyModelVersion(String projectUrl, String modelUrl, String versionUrl, ModelVersion version) {
+        if (!StringUtils.hasText(version.getTag()) && !StringUtils.hasText(version.getBuiltInRuntime())) {
+            throw new SwValidationException(ValidSubject.MODEL, "no attributes set for model version");
+        }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, modelUrl, versionUrl));
         ModelVersionEntity entity = ModelVersionEntity.builder()
