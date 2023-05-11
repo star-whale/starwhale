@@ -1684,19 +1684,32 @@ class TableWriter(threading.Thread):
 
             try:
                 to_submit: List[Dict[str, Any]] = []
-                last_schema = None
+                last_schema: TableSchema | None = None
                 for schema, records in self._updating_records:
                     # group the records with the same schema
                     if last_schema is None:
                         last_schema = schema
-                    elif last_schema != schema:
-                        self.latest_revision = self.data_store.update_table(
-                            self.table_name, last_schema, to_submit
-                        )
-                        to_submit = []
-                        last_schema = schema
+                    else:
+                        can_merge = True
+                        try:
+                            last_schema.merge(schema)
+                        except Exception:
+                            can_merge = False
+                        if not can_merge:
+                            console.debug(f"schema changed, {last_schema} -> {schema}")
+                            console.debug(
+                                f"update table {self.table_name}, {len(to_submit)} records"
+                            )
+                            self.latest_revision = self.data_store.update_table(
+                                self.table_name, last_schema, to_submit
+                            )
+                            to_submit = []
+                            last_schema = schema
                     to_submit.extend(records)
                 if len(to_submit) > 0 and last_schema is not None:
+                    console.debug(
+                        f"update table {self.table_name}, {len(to_submit)} records"
+                    )
                     self.latest_revision = self.data_store.update_table(
                         self.table_name, last_schema, to_submit
                     )
