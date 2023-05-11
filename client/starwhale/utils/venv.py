@@ -699,6 +699,11 @@ def get_python_version() -> str:
     return f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
+def pip_compatible_dependencies_check(py_bin: t.Optional[str] = None) -> None:
+    py_bin = py_bin or sys.executable
+    check_call([py_bin, "-m", "pip", "check"])
+
+
 def get_python_version_by_bin(py_bin: str) -> str:
     console.info(f"{py_bin}: python version")
     output = subprocess.check_output(

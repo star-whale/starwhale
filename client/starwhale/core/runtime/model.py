@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+import sys
 import shutil
 import typing as t
 import platform
 import tempfile
+import subprocess
 from abc import ABCMeta
 from enum import Enum, unique
 from pathlib import Path
@@ -96,6 +98,7 @@ from starwhale.utils.venv import (
     get_python_version_by_bin,
     render_python_env_activate,
     get_user_runtime_python_bin,
+    pip_compatible_dependencies_check,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import (
@@ -912,6 +915,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         else:
             pybin = get_user_runtime_python_bin(mode)
             env_use_shell = True
+
+        try:
+            console.print(
+                ":wheelchair: verify the installed packages have compatible dependencies"
+            )
+            pip_compatible_dependencies_check(pybin)
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f":skull: failed to verify compatible dependencies for the {pybin} environment: \n{e.output.strip()}",
+                style="bold red",
+            )
+            sys.exit(1)
 
         python_version = get_python_version_by_bin(pybin)
         workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
