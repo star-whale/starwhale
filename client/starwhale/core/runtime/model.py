@@ -8,6 +8,7 @@ import tempfile
 from abc import ABCMeta
 from enum import Enum, unique
 from pathlib import Path
+from functools import partial
 from collections import defaultdict
 
 import yaml
@@ -221,6 +222,29 @@ class BaseDependency(Protocol):
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
         ...
+
+
+@unique
+class RuntimeRestoreStatus(Enum):
+    restoring = "restoring"
+    success = "success"
+    failed = "failed"
+    undefined = "undefined"
+
+    @classmethod
+    def mark(cls, status: RuntimeRestoreStatus, rootdir: Path) -> None:
+        ensure_file(rootdir / ".runtime_restore_status", status.value, parents=True)
+
+    @classmethod
+    def get(cls, rootdir: Path) -> RuntimeRestoreStatus:
+        fpath = rootdir / ".runtime_restore_status"
+        if not fpath.exists():
+            return cls.undefined
+        else:
+            try:
+                return cls(fpath.read_text().strip())
+            except ValueError:
+                return cls.undefined
 
 
 class NativeFileDependency(ASDictMixin, BaseDependency):
@@ -1415,7 +1439,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
         prefix_path = _rt.store.export_dir / mode
-        if not prefix_path.exists() or force_restore:
+        _rrs = RuntimeRestoreStatus
+        is_invalid_status = _rrs.get(prefix_path) in (_rrs.failed, _rrs.restoring)
+
+        if force_restore or not prefix_path.exists() or is_invalid_status:
             console.print(f":safety_vest: restore runtime into {workdir}")
             cls.restore(workdir)
 
@@ -1811,7 +1838,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             ]
         )
 
-        run_with_progress_bar("runtime restore...", operations)
+        _status = RuntimeRestoreStatus
+        _mark = partial(_status.mark, rootdir=isolated_env_dir)
+
+        try:
+            _mark(_status.restoring)
+            run_with_progress_bar("runtime restore...", operations)
+        except Exception:
+            _mark(_status.failed)
+            raise
+        else:
+            _mark(_status.success)
 
     @staticmethod
     def _install_dependencies_with_runtime_yaml(
