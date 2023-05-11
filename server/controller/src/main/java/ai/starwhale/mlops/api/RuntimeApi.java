@@ -327,7 +327,9 @@ public interface RuntimeApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("runtimeUrl") String runtimeUrl,
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl") String versionUrl);
+            @PathVariable("versionUrl") String versionUrl,
+            @Parameter(description = "user defined running configurations such environment variables")
+            @RequestBody(required = false) String runConfig);
 
 
 }

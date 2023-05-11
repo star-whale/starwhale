@@ -220,8 +220,8 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(String projectUrl, String runtimeUrl,
-            String versionUrl) {
-        BuildImageResult res = runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl);
+            String versionUrl, String runConfig) {
+        BuildImageResult res = runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl, runConfig);
         return ResponseEntity.ok(Code.success.asResponse(res));
     }
 }

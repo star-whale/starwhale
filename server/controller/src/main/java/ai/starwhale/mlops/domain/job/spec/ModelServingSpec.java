@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +40,8 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ModelServingSpec {
     private List<RuntimeResource> resources;
+
+    private Map<String, String> envVars;
 
     public static ModelServingSpec fromYamlString(String content) throws JsonProcessingException {
         var yamlMapper = new YAMLMapper();

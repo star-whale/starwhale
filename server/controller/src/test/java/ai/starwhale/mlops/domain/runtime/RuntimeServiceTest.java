@@ -577,18 +577,18 @@ public class RuntimeServiceTest {
         given(k8sJobTemplate.loadJob(anyString())).willReturn(job);
         given(k8sClient.deployJob(any())).willReturn(job);
 
-        var res = service.buildImage("project-1", "r1", "v1");
+        var res = service.buildImage("project-1", "r1", "v1", null);
 
         verify(k8sJobTemplate, times(1)).loadJob(any());
         verify(k8sClient, times(1)).deployJob(any());
         assertThat(res.getSuccess(), is(true));
 
-        res = service.buildImage("project-1", "r1", "v2");
+        res = service.buildImage("project-1", "r1", "v2", "");
         assertThat(res.getSuccess(), is(false));
 
         given(k8sClient.deployJob(any()))
                 .willThrow(new ApiException(HttpServletResponse.SC_CONFLICT, ""));
-        res = service.buildImage("project-1", "r1", "v1");
+        res = service.buildImage("project-1", "r1", "v1", "---\nenvVars:\n  \"a\": \"b\"");
         assertThat(res.getSuccess(), is(false));
     }
 

@@ -62,6 +62,7 @@ import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -160,7 +161,9 @@ public class ModelServingServiceTest {
                 + "resources:\n"
                 + "- type: \"cpu\"\n"
                 + "  request: 7.0\n"
-                + "  limit: 8.0\n";
+                + "  limit: 8.0\n"
+                + "envVars:\n"
+                + " \"a\": \"b\"\n";
 
         var ss = new V1StatefulSet();
         ss.metadata(new V1ObjectMeta().name("model-serving-7"));
@@ -169,7 +172,7 @@ public class ModelServingServiceTest {
 
         var rc = RuntimeResource.builder().type("cpu").request(7f).limit(8f).build();
         var expectedResource = new ResourceOverwriteSpec(List.of(rc));
-        var expectedEnvs = Map.of(
+        var expectedEnvs = new HashMap<>(Map.of(
                 "SW_PYPI_TRUSTED_HOST", "trusted-host",
                 "SW_PYPI_EXTRA_INDEX_URL", "extra-index",
                 "SW_PYPI_INDEX_URL", "index",
@@ -180,7 +183,8 @@ public class ModelServingServiceTest {
                 "SW_RUNTIME_VERSION", "rt/version/rt-8",
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
-        );
+        ));
+        expectedEnvs.put("a","b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
                 "img",
