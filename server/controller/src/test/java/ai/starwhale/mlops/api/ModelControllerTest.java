@@ -34,6 +34,7 @@ import static org.mockito.BDDMockito.same;
 
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
@@ -164,10 +165,10 @@ public class ModelControllerTest {
         given(modelService.modifyModelVersion(same("p1"), same("m1"), same("v1"), any()))
                 .willReturn(true);
 
-        var resp = controller.modifyModel("p1", "m1", "v1", new ModelTagRequest());
+        var resp = controller.modifyModel("p1", "m1", "v1", new ModelUpdateRequest());
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThrows(StarwhaleApiException.class,
-                () -> controller.modifyModel("p2", "m1", "v1", new ModelTagRequest()));
+                () -> controller.modifyModel("p2", "m1", "v1", new ModelUpdateRequest()));
     }
 
     @Test

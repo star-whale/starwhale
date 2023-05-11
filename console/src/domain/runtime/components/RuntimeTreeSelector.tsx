@@ -7,7 +7,6 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchRuntimeTree } from '../hooks/useFetchRuntimeTree'
-import {IRuntimeTreeSchema} from "@runtime/schemas/runtime";
 
 const RuntimeTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -18,23 +17,14 @@ const RuntimeTreeNode = themedStyled('div', () => ({
     width: '100%',
 }))
 
-function filterBuiltIn(builtIn: IRuntimeTreeSchema, runtimes: IRuntimeTreeSchema[]) {
-    return runtimes.map(rt => {
-        rt.versions = rt.versions.filter(version =>
-            !builtIn.versions.some(biVersion =>
-                biVersion.id === version.id
-            ))
-        return rt
-    })
-}
 export function RuntimeTreeSelector(props: any) {
     const [t] = useTranslation()
-    const { projectId, builtIn } = props
+    const { projectId } = props
     const runtimeInfo = useFetchRuntimeTree(projectId)
     const $treeData = React.useMemo(() => {
-        if (!runtimeInfo.isSuccess) return builtIn? [builtIn] : []
-        let mergedItems = builtIn ? [builtIn, ...filterBuiltIn(builtIn, runtimeInfo.data)] : runtimeInfo.data
-        const treeData: TreeNodeData[] = mergedItems.map((runtime) => {
+        if (!runtimeInfo.isSuccess) return []
+
+        const treeData: TreeNodeData[] = runtimeInfo.data.map((runtime) => {
             return {
                 id: runtime.runtimeName,
                 label: [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/'),

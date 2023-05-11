@@ -13,12 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.common;
-
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-public interface Constants {
-    YAMLMapper yamlMapper = new YAMLMapper();
-    String SW_BUILT_IN_RUNTIME = "starwhale-built-in";
-}
+alter table model_version
+    add built_in_runtime varchar(255) default null;

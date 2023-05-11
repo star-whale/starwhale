@@ -59,10 +59,13 @@ public class ModelVersionVo implements Serializable {
     @JsonProperty("owner")
     private UserVo owner;
 
+    @JsonProperty("builtInRuntime")
+    private String builtInRuntime;
+
     private List<StepSpec> stepSpecs;
 
     public static ModelVersionVo empty() {
         return new ModelVersionVo("", "", "", "", "{}", "",
-                0L, -1L, UserVo.empty(), List.of());
+                0L, -1L, UserVo.empty(), "", List.of());
     }
 }

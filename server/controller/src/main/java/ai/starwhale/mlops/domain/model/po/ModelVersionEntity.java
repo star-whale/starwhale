@@ -52,6 +52,8 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
 
     private String storagePath;
 
+    private String builtInRuntime;
+
     @Deprecated
     // do not save the manifest to the database
     // use oss instead

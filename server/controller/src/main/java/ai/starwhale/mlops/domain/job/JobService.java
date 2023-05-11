@@ -182,17 +182,11 @@ public class JobService {
         var model = modelService.findModel(modelVersion.getModelId());
 
         RuntimeVersion runtimeVersion;
-        if (StringUtils.hasText(runtimeVersionUrl)) {
-            runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
-        } else {
+        if (!StringUtils.hasText(runtimeVersionUrl)) {
             log.debug("try to find built-in runtime for model:{}", modelVersion.getId());
-            runtimeVersion = modelService.getBuiltInRuntime(modelVersion);
+            runtimeVersionUrl = modelVersion.getBuiltInRuntime();
         }
-        if (null == runtimeVersion) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME, "Unable to find runtime version"),
-                    HttpStatus.BAD_REQUEST);
-        }
+        runtimeVersion = runtimeService.findRuntimeVersion(runtimeVersionUrl);
         var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
 
         var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))

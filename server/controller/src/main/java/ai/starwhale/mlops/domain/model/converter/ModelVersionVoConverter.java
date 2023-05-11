@@ -51,6 +51,7 @@ public class ModelVersionVoConverter {
                     .tag(entity.getVersionTag())
                     .meta(entity.getVersionMeta())
                     .manifest(manifest)
+                    .builtInRuntime(entity.getBuiltInRuntime())
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                     .build();

@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
@@ -174,10 +175,13 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> modifyModel(String projectUrl, String modelUrl, String versionUrl,
-            ModelTagRequest modelTagRequest) {
+    public ResponseEntity<ResponseMessage<String>> modifyModel(
+            String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request) {
         Boolean res = modelService.modifyModelVersion(projectUrl, modelUrl, versionUrl,
-                ModelVersion.builder().tag(modelTagRequest.getTag()).build());
+                ModelVersion.builder()
+                    .tag(request.getTag())
+                    .builtInRuntime(request.getBuiltInRuntime())
+                    .build());
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);

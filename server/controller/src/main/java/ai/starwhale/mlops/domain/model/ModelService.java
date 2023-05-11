@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import static ai.starwhale.mlops.common.VersionAliasConverter.BUILTIN;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
@@ -26,13 +25,9 @@ import ai.starwhale.mlops.api.protocol.model.ModelVersionViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionViewVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.Constants;
-import ai.starwhale.mlops.common.CustomMultipartFile;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
@@ -61,8 +56,6 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.MetaInfo;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -138,8 +131,6 @@ public class ModelService {
 
     private final JobSpecParser jobSpecParser;
 
-    private final RuntimeService runtimeService;
-
     @Setter
     private BundleManager bundleManager;
 
@@ -149,7 +140,7 @@ public class ModelService {
                         StoragePathCoordinator storagePathCoordinator, ModelDao modelDao,
                         StorageAccessService storageAccessService, StorageService storageService,
                         UserService userService, ProjectService projectService, HotJobHolder jobHolder,
-                        TrashService trashService, JobSpecParser jobSpecParser, RuntimeService runtimeService) {
+                        TrashService trashService, JobSpecParser jobSpecParser) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -165,7 +156,6 @@ public class ModelService {
         this.jobHolder = jobHolder;
         this.trashService = trashService;
         this.jobSpecParser = jobSpecParser;
-        this.runtimeService = runtimeService;
         this.bundleManager = new BundleManager(
                 idConvertor,
                 versionAliasConvertor,
@@ -415,64 +405,24 @@ public class ModelService {
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
             try {
-                var modelVersionViewVo = ModelVersionViewVo.builder()
-                        .id(idConvertor.convert(entity.getId()))
-                        .versionName(entity.getVersionName())
-                        .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                        .createdTime(entity.getCreatedTime().getTime())
-                        .shared(toInt(entity.getShared()))
-                        .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                        .build();
-
-                var runtimeVersion = this.getBuiltInRuntime(
-                        ModelVersion.builder().id(entity.getId()).storagePath(entity.getStoragePath()).build());
-                if (null != runtimeVersion) {
-                    var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
-                    modelVersionViewVo.setBuiltInRuntime(
-                            RuntimeViewVo.builder()
-                                .ownerName(entity.getUserName())
-                                .projectName(entity.getProjectName())
-                                .runtimeId(runtimeVersion.getRuntimeId().toString())
-                                .runtimeName(runtime.getName())
-                                .shared(0)
-                                .versions(List.of(RuntimeVersionViewVo.builder()
-                                    .id(runtimeVersion.getId().toString())
-                                    .versionName(runtimeVersion.getVersionName())
-                                    .shared(0)
-                                    .alias(BUILTIN)
-                                    .build()))
-                                .build()
-                    );
-                }
-
                 map.get(entity.getModelId())
                         .getVersions()
-                        .add(modelVersionViewVo);
-            }  catch (JsonProcessingException e) {
-                log.error("parse manifest/stepSpec error for model version:{},error:{}", entity.getId(), e);
+                        .add(ModelVersionViewVo.builder()
+                            .id(idConvertor.convert(entity.getId()))
+                            .versionName(entity.getVersionName())
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .createdTime(entity.getCreatedTime().getTime())
+                            .shared(toInt(entity.getShared()))
+                            .builtInRuntime(entity.getBuiltInRuntime())
+                            .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
+                            .build()
+                        );
+            } catch (JsonProcessingException e) {
+                log.error("parse stepSpec error for model version:{}, error:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
             }
         }
         return map.values();
-    }
-
-    public RuntimeVersion getBuiltInRuntime(ModelVersion modelVersion) {
-        String manifest = getManifest(modelVersion.getStoragePath());
-        MetaInfo metaInfo = null;
-        try {
-            metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
-        } catch (JsonProcessingException e) {
-            log.error("parse manifest yaml:{} error when check whether have built-in runtime", modelVersion.getId());
-        }
-        if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
-            var version = metaInfo.getPackagedRuntime().getManifest().getVersion();
-            var runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
-            if (null == runtimeVersion && syncBuiltInRuntime(modelVersion.getId())) {
-                runtimeVersion = runtimeService.findRuntimeVersionAllowNull(version);
-            }
-            return runtimeVersion;
-        }
-        return null;
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
@@ -674,60 +624,7 @@ public class ModelService {
     }
 
     public void end(Long modelVersionId) {
-        syncBuiltInRuntime(modelVersionId);
         modelVersionMapper.updateStatus(modelVersionId, ModelVersionEntity.STATUS_AVAILABLE);
-    }
-
-    private boolean syncBuiltInRuntime(Long modelVersionId) {
-        // check whether it have a built-in runtime
-        ModelVersionEntity modelVersionEntity = modelDao.getModelVersion(modelVersionId.toString());
-        if (modelVersionEntity == null) {
-            log.warn("built-in runtime upload error, no model version found");
-            return false;
-        }
-        try {
-            var model = modelDao.getModel(modelVersionEntity.getModelId());
-            String manifest = getManifest(modelVersionEntity.getStoragePath());
-            var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
-            if (metaInfo != null && metaInfo.getPackagedRuntime() != null) {
-                var runtime = metaInfo.getPackagedRuntime();
-
-                var runtimeRequest = new ClientRuntimeRequest();
-                runtimeRequest.setRuntime(runtime.getName() + ":" + runtime.getManifest().getVersion());
-                runtimeRequest.setProject(model.getProjectId().toString());
-                runtimeRequest.setForce("0");
-                var resourceOptional = metaInfo.getResources().stream()
-                        .filter(r -> r.getPath().equalsIgnoreCase(runtime.getPath()))
-                        .findFirst();
-                if (resourceOptional.isPresent()) {
-                    var resource = resourceOptional.get();
-                    String filePath;
-                    switch (resource.getDesc()) {
-                        case SRC:
-                            filePath = String.format(
-                                    FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), runtime.getPath());
-                            break;
-                        case MODEL:
-                            var project = projectService.findProject(model.getProjectId());
-                            filePath = storagePathCoordinator.allocateCommonModelPoolPath(
-                                    project.getId(), runtime.getHash());
-                            break;
-                        default:
-                            throw new SwValidationException(
-                                    ValidSubject.MODEL, "unsupported type " + resource.getDesc());
-                    }
-                    var fileName = String.format("%s.swrt", runtime.getManifest().getVersion());
-                    runtimeService.upload(
-                        new CustomMultipartFile(fileName, storageAccessService.get(filePath)), runtimeRequest);
-                    return true;
-                } else {
-                    log.warn("built-in runtime upload error, no path found");
-                }
-            }
-        } catch (Exception e) {
-            log.warn("sync built-in runtime error for model version:{},error:{}", modelVersionEntity.getId(), e);
-        }
-        return false;
     }
 
     private Long getOwner() {
