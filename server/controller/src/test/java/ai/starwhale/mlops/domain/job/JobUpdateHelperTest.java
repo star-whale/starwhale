@@ -100,7 +100,7 @@ public class JobUpdateHelperTest {
     }
 
     @Test
-    public void testCanceled() {
+    public void testCanceled() throws InterruptedException {
 
         HotJobHolder hotJobHolder = mock(HotJobHolder.class);
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
@@ -115,6 +115,7 @@ public class JobUpdateHelperTest {
         mockJob.setStatus(JobStatus.RUNNING);
         JobStatus desiredStatus = JobStatus.CANCELED;
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
+        Thread.sleep(1L);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
         verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
