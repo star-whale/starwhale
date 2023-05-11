@@ -62,11 +62,17 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
         if (task.getStatus() == TaskStatus.READY) {
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
             taskScheduler.schedule(List.of(task));
-        } else if (task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())) {
-            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(),
+        } else if (task.getStatus() == TaskStatus.CANCELED || task.getStatus() == TaskStatus.PAUSED) {
+            taskScheduler.stop(List.of(task.getId()));
+            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled immediately",
+                    task.getStatus(),
+                    task.getId(), task.getStatus());
+        } else if (task.getStatus() == TaskStatus.SUCCESS || task.getStatus() == TaskStatus.FAIL) {
+            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled in delayed queue",
+                    task.getStatus(),
                     task.getId(), task.getStatus());
             if (deletionDelayMilliseconds <= 0) {
-                taskScheduler.stopSchedule(List.of(task.getId()));
+                taskScheduler.stop(List.of(task.getId()));
             } else {
                 addToDeleteQueue(task);
             }
@@ -91,7 +97,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             log.debug("delete task {}", task.getTaskId());
             task = taskToDeletes.poll();
         }
-        taskScheduler.stopSchedule(taskIds);
+        taskScheduler.stop(taskIds);
     }
 
     static class TaskToDelete implements Delayed {

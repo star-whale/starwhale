@@ -100,7 +100,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @Override
-    public void stopSchedule(Collection<Long> taskIds) {
+    public void stop(Collection<Long> taskIds) {
         taskIds.forEach(id -> {
             try {
                 k8sClient.deleteJob(id.toString());

@@ -35,6 +35,6 @@ public interface SwTaskScheduler {
     /**
      * @param taskIds tasks to be stop scheduled
      */
-    void stopSchedule(Collection<Long> taskIds);
+    void stop(Collection<Long> taskIds);
 
 }

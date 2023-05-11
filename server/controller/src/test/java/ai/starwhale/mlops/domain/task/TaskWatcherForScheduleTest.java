@@ -53,7 +53,7 @@ public class TaskWatcherForScheduleTest {
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
         verify(taskScheduler).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class TaskWatcherForScheduleTest {
         SwTaskScheduler taskScheduler = mock(
                 SwTaskScheduler.class);
         TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-                taskStatusMachine, 0L);
+                taskStatusMachine, 100L);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -73,7 +73,30 @@ public class TaskWatcherForScheduleTest {
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(2)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(2)).stop(List.of(task.getId()));
+    }
+
+    @Test
+    public void testDelayStopSchedule() throws InterruptedException {
+        SwTaskScheduler taskScheduler = mock(
+                SwTaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
+                taskStatusMachine, 1L);
+        Task task = Task.builder()
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.FAIL)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
+                        .build()).build()).build())
+                .build();
+        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
+        task.updateStatus(TaskStatus.SUCCESS);
+        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
+        taskWatcherForSchedule.processTaskDeletion();
+        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
+        Thread.sleep(1000 * 60L);
+        taskWatcherForSchedule.processTaskDeletion();
+        verify(taskScheduler, times(1)).stop(List.of(task.getId(), task.getId()));
     }
 
     @Test
@@ -93,6 +116,6 @@ public class TaskWatcherForScheduleTest {
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
     }
 }
