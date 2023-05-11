@@ -329,6 +329,7 @@ public class ModelService {
         ModelVersionEntity entity = ModelVersionEntity.builder()
                 .id(versionId)
                 .versionTag(version.getTag())
+                .builtInRuntime(version.getBuiltInRuntime())
                 .build();
         int update = modelVersionMapper.update(entity);
         log.info("Model Version has been modified. ID={}", version.getId());

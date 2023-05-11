@@ -1,19 +1,25 @@
 import os
+import json
 import typing as t
 from pathlib import Path
+from multiprocessing import Process
 
-from starwhale.base.uri.resource import ResourceType, Resource
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     FileDesc,
     FileNode,
+    HTTPMethod,
+    SW_BUILT_IN,
     SWMP_SRC_FNAME,
     SW_AUTO_DIRNAME,
     RESOURCE_FILES_NAME,
-    DEFAULT_MANIFEST_NAME, SW_BUILT_IN, HTTPMethod,
+    DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import extract_tar
+from starwhale.utils.retry import http_retry
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.uri.instance import Instance
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 class ModelCopy(BundleCopy):
@@ -85,32 +91,38 @@ class ModelCopy(BundleCopy):
 
     def final_steps(self):
         if self.src_uri.instance.is_local:
-            manifest_file = self._get_versioned_resource_path(self.src_uri) / DEFAULT_MANIFEST_NAME
+            manifest_file = (
+                self._get_versioned_resource_path(self.src_uri) / DEFAULT_MANIFEST_NAME
+            )
 
             manifest = load_yaml(manifest_file)
             packaged_runtime = manifest.get("packaged_runtime", None)
             if packaged_runtime:
                 rt_version = packaged_runtime["manifest"]["version"]
+
                 runtime_copy = BundleCopy(
-                    Resource(
-                        uri=f'{packaged_runtime["name"]}/version/{rt_version}',
-                        typ=ResourceType.runtime
-                    ),
-                    Resource(
-                        uri=f'cloud://{self.dest_uri.instance}/project/{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}',
-                        typ=ResourceType.runtime
-                    ),
-                    ResourceType.runtime,
+                    src_uri=f'{packaged_runtime["name"]}/version/{rt_version}',
+                    dest_uri=f"{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}",
+                    typ=ResourceType.runtime,
                 )
                 runtime_copy.do()
-                # update built_in runtime to model
-                self.do_http_request(
-                    path=self._get_remote_bundle_api_url(),
-                    method=HTTPMethod.PUT,
+
+                @http_retry
+                def sync_built_in_runtime(path: str, instance: Instance) -> None:
+                    self.do_http_request(
+                        path=path,
+                        method=HTTPMethod.PUT,
+                        instance=instance,
+                        data=json.dumps(
+                            {
+                                "built_in_runtime": rt_version,
+                            }
+                        ),
+                        use_raise=True,
+                        disable_default_content_type=False,
+                    )
+
+                sync_built_in_runtime(
+                    path=self._get_remote_bundle_api_url(for_head=True),
                     instance=self.dest_uri.instance,
-                    data={
-                        "built_in_runtime": rt_version,
-                    },
-                    use_raise=True,
-                    disable_default_content_type=True,
                 )

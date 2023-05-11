@@ -54,6 +54,18 @@ class _UploadPhase:
 
 
 class BundleCopy(CloudRequestMixed):
+    progress: Progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        TotalFileSizeColumn(),
+        TransferSpeedColumn(),
+        console=console.rich_console,
+        refresh_per_second=0.2,
+    )
+
     def __init__(
         self,
         src_uri: str | Resource,
@@ -246,42 +258,31 @@ class BundleCopy(CloudRequestMixed):
 
         console.print(f":construction: start to copy {self.src_uri} -> {self.dest_uri}")
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TimeElapsedColumn(),
-            TotalFileSizeColumn(),
-            TransferSpeedColumn(),
-            console=console.rich_console,
-            refresh_per_second=0.2,
-        ) as progress:
-            if self.src_uri.instance.is_local:
-                if self.typ == ResourceType.model:
-                    self._do_upload_bundle_dir(progress)
-                elif self.typ == ResourceType.runtime:
-                    self._do_upload_bundle_tar(progress)
-                else:
-                    raise NoSupportError(
-                        f"no support to copy {self.typ} from standalone to server"
-                    )
+        if self.src_uri.instance.is_local:
+            if self.typ == ResourceType.model:
+                self._do_upload_bundle_dir(BundleCopy.progress)
+            elif self.typ == ResourceType.runtime:
+                self._do_upload_bundle_tar(BundleCopy.progress)
             else:
-                if self.typ == ResourceType.model:
-                    self._do_download_bundle_dir(progress)
-                elif self.typ == ResourceType.runtime:
-                    self._do_download_bundle_tar(progress)
-                else:
-                    raise NoSupportError(
-                        f"no support to copy {self.typ} from server to standalone"
-                    )
-
-                StandaloneTag(self.dest_uri).add_fast_tag()
-                self._update_manifest(
-                    self._get_versioned_resource_path(self.dest_uri),
-                    {CREATED_AT_KEY: now_str()},
+                raise NoSupportError(
+                    f"no support to copy {self.typ} from standalone to server"
                 )
-            self.final_steps()
+        else:
+            if self.typ == ResourceType.model:
+                self._do_download_bundle_dir(BundleCopy.progress)
+            elif self.typ == ResourceType.runtime:
+                self._do_download_bundle_tar(BundleCopy.progress)
+            else:
+                raise NoSupportError(
+                    f"no support to copy {self.typ} from server to standalone"
+                )
+
+            StandaloneTag(self.dest_uri).add_fast_tag()
+            self._update_manifest(
+                self._get_versioned_resource_path(self.dest_uri),
+                {CREATED_AT_KEY: now_str()},
+            )
+        self.final_steps()
         console.print(f":tea: console url of the remote bundle: {remote_url}")
 
     def final_steps(self) -> None:
