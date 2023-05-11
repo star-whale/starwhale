@@ -869,6 +869,7 @@ public class DataStoreControllerTest {
                             "b", Map.of("type", "INT32", "value", "4"),
                             "x", new HashMap<>() {
                                 {
+                                    put("type", "UNKNOWN");
                                     put("value", null);
                                 }
                             }))));

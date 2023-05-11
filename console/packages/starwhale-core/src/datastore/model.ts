@@ -24,7 +24,7 @@ export class SwType implements ISwType {
     }
     static decode_schema(schema: any, onlyValue = true): any {
         if (schema.type === 'MAP') {
-            const t = new SwMapType(SwMapKeyType, schema.value)
+            const t = new SwMapType(schema.value)
             return {
                 ...schema,
                 value: onlyValue ? t.value : t,
@@ -96,42 +96,31 @@ export class SwListType extends SwCompositeType {
 }
 
 /**
-     * 
+     *
      *     "sys/dataset_id_version_map": {
-            "value": {
-                "{type=INT64, value=1}": {
+            "value": [{
+                "key": {
+                    "type": "INT64",
+                    "value": "1"
+                },
+                "value": {
                     "type": "STRING",
                     "value": "bicm3c23utaujr5nvbgzwp3vmwlnhfgm3yzc2c3r"
                 }
-            },
+            }],
             "type": "MAP"
         },
  */
-export class SwMapKeyType extends SwType {
-    constructor() {
-        super('map_key')
-    }
-
-    // "{type=INT64, value=1}" to {type: INT64, value: 1}
-    decode(value: any): { type: string; value: any } {
-        const arr = value.replace('{', '').replace('}', '').split(',')
-        const rtn = {}
-        arr.reduce((acc: Record<string, any>, cur: string) => {
-            const [key, value] = cur.split('=')
-            acc[key.trim()] = value
-            return acc
-        }, rtn)
-        return rtn as any
-    }
+interface SwMapItem {
+    key: any
+    value: any
 }
 
 export class SwMapType extends SwCompositeType {
-    private key_type: SwMapKeyType
     private value_schema: any
 
-    constructor(key_type: typeof SwMapKeyType, value_schema: any) {
+    constructor(value_schema: any) {
         super('map')
-        this.key_type = new key_type()
         this.value_schema = value_schema
     }
 
@@ -140,8 +129,9 @@ export class SwMapType extends SwCompositeType {
             throw new Error(`Value ${value} is not an object`)
         }
         const res = new Map()
-        for (const [k, v] of Object.entries(value)) {
-            res.set(this.key_type.decode(k).value, SwType.decode_schema(v).value)
+        for (const [_, v] of Object.entries(value)) {
+            const item = v as SwMapItem
+            res.set(SwType.decode_schema(item['key']).value, SwType.decode_schema(item['value']).value)
         }
         return res
     }

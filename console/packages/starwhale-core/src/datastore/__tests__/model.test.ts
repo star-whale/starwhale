@@ -17,12 +17,18 @@ describe('SwType class', () => {
     describe('decode_schema static method', () => {
         it("should return a new schema with value 'MAP' for input schema.type 'MAP'", () => {
             const schema = {
-                value: {
-                    '{type=INT64, value=1}': {
-                        type: 'STRING',
-                        value: 'bicm3c23utaujr5nvbgzwp3vmwlnhfgm3yzc2c3r',
+                value: [
+                    {
+                        key: {
+                            type: 'INT64',
+                            value: '1',
+                        },
+                        value: {
+                            type: 'STRING',
+                            value: 'bicm3c23utaujr5nvbgzwp3vmwlnhfgm3yzc2c3r',
+                        },
                     },
-                },
+                ],
                 type: 'MAP',
             }
             const expectedSchema = { '1': 'bicm3c23utaujr5nvbgzwp3vmwlnhfgm3yzc2c3r' }
@@ -94,16 +100,28 @@ describe('SwType class', () => {
                                 value: null,
                             },
                             extra_info: {
-                                value: {
-                                    '{type=STRING, value=bin_size}': {
-                                        type: 'INT64',
-                                        value: '1024',
+                                value: [
+                                    {
+                                        key: {
+                                            type: 'STRING',
+                                            value: 'bin_size',
+                                        },
+                                        value: {
+                                            type: 'INT64',
+                                            value: '1024',
+                                        },
                                     },
-                                    '{type=STRING, value=bin_offset}': {
-                                        type: 'INT64',
-                                        value: '9216',
+                                    {
+                                        key: {
+                                            type: 'STRING',
+                                            value: 'bin_offset',
+                                        },
+                                        value: {
+                                            type: 'INT64',
+                                            value: '9216',
+                                        },
                                     },
-                                },
+                                ],
                                 type: 'MAP',
                             },
                         },

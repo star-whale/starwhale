@@ -1437,6 +1437,7 @@ public class DataStoreTest {
     private static Object encodeValueWithType(ColumnSchema schema, Object value) {
         var ret = new HashMap<String, Object>();
         if (value == null) {
+            ret.put("type", "UNKNOWN");
             ret.put("value", null);
             return ret;
         }
@@ -1449,9 +1450,11 @@ public class DataStoreTest {
                 break;
             case MAP:
                 value = ((Map<?, ?>) value).entrySet().stream()
-                        .collect(Collectors.toMap(
-                                entry -> encodeValueWithType(schema.getKeySchema(), entry.getKey()),
-                                entry -> encodeValueWithType(schema.getValueSchema(), entry.getValue())));
+                        .map(entry -> Map.of(
+                                "key", encodeValueWithType(schema.getKeySchema(), entry.getKey()),
+                                "value", encodeValueWithType(schema.getValueSchema(), entry.getValue())))
+                        .collect(Collectors.toList());
+
                 break;
             case OBJECT:
                 ret.put("pythonType", schema.getPythonType());

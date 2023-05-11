@@ -13,7 +13,15 @@ from requests_mock import Mocker
 
 from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
-from starwhale.api._impl.data_store import INT64, ColumnSchema, TableWriterException
+from starwhale.api._impl.data_store import (
+    INT32,
+    INT64,
+    STRING,
+    SwType,
+    SwMapType,
+    ColumnSchema,
+    TableWriterException,
+)
 
 from .. import BaseTestCase
 
@@ -2360,6 +2368,22 @@ class TestScalarEncodeDecode(BaseTestCase):
             self.assertEqual(
                 tc[1], data_store.INT64.decode(tc[0]), f"INT64 encode {tc[0]} error"
             )
+
+
+def test_decode_schema_from_type_encoded_values():
+    value = {
+        "type": "MAP",
+        "value": [
+            {
+                "key": {"type": "INT32", "value": "00000001"},
+                "value": {"type": "STRING", "value": "foobar"},
+            }
+        ],
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwMapType(INT32, STRING)
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded == {1: "foobar"}
 
 
 if __name__ == "__main__":
