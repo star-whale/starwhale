@@ -88,7 +88,7 @@ class ModelCopy(BundleCopy):
             #     _dest # the unify dir
             # )
 
-    def final_steps(self):
+    def final_steps(self) -> None:
         if self.src_uri.instance.is_local:
             manifest_file = (
                 self._get_versioned_resource_path(self.src_uri) / DEFAULT_MANIFEST_NAME
