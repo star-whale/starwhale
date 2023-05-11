@@ -38,7 +38,7 @@ def get_mask_rcnn_model():
 
 
 @torch.no_grad()
-@evaluation.predict(resources={"nvidia.com/gpu": 1})
+@evaluation.predict(resources={"nvidia.com/gpu": 1}, replicas=2)
 def predict_mask_rcnn(data, external):
     index = external["index"]
     if isinstance(index, str) and "_" in index and index.startswith("dataset-"):

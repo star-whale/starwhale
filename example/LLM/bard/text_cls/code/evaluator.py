@@ -20,7 +20,7 @@ def label_number(raw: str) -> int:
     return 0
 
 
-@evaluation.predict
+@evaluation.predict(replicas=2)
 def ppl(data):
     text = data["text"]
     result_raw = chatbot.ask(

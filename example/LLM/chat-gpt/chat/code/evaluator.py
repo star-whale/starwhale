@@ -7,7 +7,7 @@ from starwhale import evaluation
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-@evaluation.predict
+@evaluation.predict(replicas=2)
 def ppl(data):
     text = data["text"]
     chat_result = openai.ChatCompletion.create(

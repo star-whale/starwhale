@@ -454,7 +454,7 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         resources: [Dict, optional] Resources for the predict task, such as memory, gpu etc. Current only supports
             the cloud instance.
         concurrency: [int, optional] The concurrency of the predict tasks. Default is 1.
-        replicas: [int, optional] The number of the predict tasks. Default is 2.
+        replicas: [int, optional] The number of the predict tasks. Default is 1.
         batch_size: [int, optional] Number of samples per batch. Default is 1.
         fail_on_error: [bool, optional] Fast fail on the exceptions in the predict function. Default is True.
         auto_log: [bool, optional] Auto log the return values of the predict function and the according dataset rows. Default is True.
@@ -504,7 +504,7 @@ def _register_predict(
     resources: t.Optional[t.Dict[str, t.Any]] = None,
     needs: t.Optional[t.List[t.Callable]] = None,
     concurrency: int = 1,
-    replicas: int = 2,
+    replicas: int = 1,
     batch_size: int = 1,
     fail_on_error: bool = True,
     auto_log: bool = True,
