@@ -323,11 +323,14 @@ class TestModelPipelineHandler(TestCase):
                 assert data.label == 1
                 assert isinstance(data, dict)
                 assert "index" in kw["external"]
+                assert kw["external"]["dataset_uri"].name == "mnist"
+                assert kw["external"]["dataset_uri"].version == "123456"
 
         class DummyWithVarPositional(PipelineHandler):
             def ppl(self, *args: t.Any, **kw: t.Any) -> t.Any:
                 assert args[0].label == 1
                 assert "index" in kw["external"]
+                assert "context" in kw["external"]
 
         class DummyWithOnlyData(PipelineHandler):
             def predict(self, data: t.Any) -> t.Any:
@@ -367,24 +370,28 @@ class TestModelPipelineHandler(TestCase):
             DummyWithOnlyVarPositional,
         ]
         Context.set_runtime_context(Context(version="123", project="test"))
+        uri = Resource(
+            "mnist/version/123456", typ=ResourceType.dataset, _skip_refine=True
+        )
         for h in handlers:
             h()._do_predict(
                 data=DataRow._Features({"label": 1}),
                 index=0,
                 index_with_dataset="0",
                 dataset_info=TabularDatasetInfo(),
+                dataset_uri=uri,
             )
 
         with self.assertRaisesRegex(
             ParameterError, "predict and ppl cannot be defined at the same time"
         ):
-            DummyWithTwoHandlers()._do_predict({}, 1, "1", TabularDatasetInfo())
+            DummyWithTwoHandlers()._do_predict({}, 1, "1", TabularDatasetInfo(), uri)
 
         with self.assertRaisesRegex(
             ParameterError,
             "predict or ppl must be defined, predict function is recommended",
         ):
-            DummyWithoutAny()._do_predict({}, 1, "1", TabularDatasetInfo())
+            DummyWithoutAny()._do_predict({}, 1, "1", TabularDatasetInfo(), uri)
 
 
 class TestEvaluationLogStore(BaseTestCase):
