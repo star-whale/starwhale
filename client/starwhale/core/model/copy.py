@@ -2,7 +2,6 @@ import os
 import json
 import typing as t
 from pathlib import Path
-from multiprocessing import Process
 
 from starwhale.utils import load_yaml
 from starwhale.consts import (
@@ -19,7 +18,7 @@ from starwhale.utils.fs import extract_tar
 from starwhale.utils.retry import http_retry
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.instance import Instance
-from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.base.uri.resource import ResourceType
 
 
 class ModelCopy(BundleCopy):
