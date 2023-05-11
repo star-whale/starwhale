@@ -72,6 +72,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 public class ModelServingServiceTest {
+
     private ModelServingService svc;
     private final ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
     private final RuntimeDao runtimeDao = mock(RuntimeDao.class);
@@ -152,10 +153,10 @@ public class ModelServingServiceTest {
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
         when(systemSettingService.queryResourcePool("default")).thenReturn(
                 ResourcePool.builder()
-                    .name("default")
-                    .nodeSelector(Map.of("foo", "bar"))
-                    .resources(List.of(new Resource("cpu")))
-                    .build());
+                        .name("default")
+                        .nodeSelector(Map.of("foo", "bar"))
+                        .resources(List.of(new Resource("cpu")))
+                        .build());
 
         var spec = "---\n"
                 + "resources:\n"
@@ -184,7 +185,7 @@ public class ModelServingServiceTest {
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
         ));
-        expectedEnvs.put("a","b");
+        expectedEnvs.put("a", "b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
                 "img",
@@ -279,7 +280,6 @@ public class ModelServingServiceTest {
         verify(k8sClient, times(3)).deleteStatefulSet(capture.capture());
         var names = capture.getAllValues();
         assertThat(names, containsInAnyOrder(oldestName, noEntityName, maxTtlName));
-
 
         final var theOnlyRunningAndInMinTtl = new V1StatefulSet()
                 .metadata(new V1ObjectMeta().name("model-serving-1"))
