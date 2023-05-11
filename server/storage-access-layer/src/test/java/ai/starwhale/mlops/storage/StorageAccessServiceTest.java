@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
@@ -63,6 +64,7 @@ public class StorageAccessServiceTest {
             assertThat(in.readAllBytes(), is("c:t/t3".getBytes(StandardCharsets.UTF_8)));
         }
         assertThat(storageAccessService.head("t1").isExists(), is(true));
+        assertThat(storageAccessService.head("t1", true).getMd5sum(), is(DigestUtils.md5Hex("c:t1")));
         storageAccessService.delete("t/t3");
         storageAccessService.delete("t1");
         assertThat(storageAccessService.head("t1").isExists(), is(false));

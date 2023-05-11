@@ -27,6 +27,8 @@ public interface StorageAccessService {
 
     StorageObjectInfo head(String path) throws IOException;
 
+    StorageObjectInfo head(String path, boolean md5sum) throws IOException;
+
     void put(String path, InputStream inputStream, long size) throws IOException;
 
     void put(String path, byte[] body) throws IOException;

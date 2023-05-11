@@ -36,6 +36,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.utils.BoundedInputStream;
 
 public class StorageAccessServiceFile implements StorageAccessService {
@@ -60,11 +61,24 @@ public class StorageAccessServiceFile implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
+        return this.head(path, false);
+    }
+
+    @Override
+    public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         var f = new File(this.rootDir, path);
         if (!f.exists()) {
-            return new StorageObjectInfo(false, 0L, null);
+            return new StorageObjectInfo(false, 0L, null, null);
         }
-        return new StorageObjectInfo(true, f.length(), null);
+        String md5;
+        if (md5sum) {
+            try (var in = new FileInputStream(f)) {
+                md5 = DigestUtils.md5Hex(in);
+            }
+        } else {
+            md5 = null;
+        }
+        return new StorageObjectInfo(true, f.length(), md5, null);
     }
 
     @Override

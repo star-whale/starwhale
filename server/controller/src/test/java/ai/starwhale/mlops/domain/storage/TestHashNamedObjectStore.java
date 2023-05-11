@@ -33,7 +33,7 @@ public class TestHashNamedObjectStore {
     @Test
     public void testSave() throws IOException {
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
-        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null));
+        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null, null));
         HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService, "/abc");
         String blobHash = "abc123fdasd";
         String path = hashNamedObjectStore.put(blobHash, mock(InputStream.class));
@@ -44,8 +44,8 @@ public class TestHashNamedObjectStore {
     public void testHead() throws IOException {
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         HashNamedObjectStore hashNamedObjectStore = new HashNamedObjectStore(storageAccessService, "/abc");
-        when(storageAccessService.head("/abc/h1/h121")).thenReturn(new StorageObjectInfo(false, null, null));
-        when(storageAccessService.head("/abc/h2/h211")).thenReturn(new StorageObjectInfo(true, null, null));
+        when(storageAccessService.head("/abc/h1/h121")).thenReturn(new StorageObjectInfo(false, null, null, null));
+        when(storageAccessService.head("/abc/h2/h211")).thenReturn(new StorageObjectInfo(true, null, null, null));
         Assertions.assertNull(hashNamedObjectStore.head("h121"));
         Assertions.assertNotNull(hashNamedObjectStore.head("h211"));
     }
