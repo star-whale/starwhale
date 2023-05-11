@@ -16,7 +16,8 @@ from starwhale.consts import DEFAULT_PROJECT
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.error import ParameterError
-from starwhale.base.context import Context
+from starwhale.utils.retry import http_retry
+from starwhale.base.context import Context, pass_context
 from starwhale.core.job.store import JobStorage
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
@@ -351,6 +352,19 @@ class TestModelPipelineHandler(TestCase):
                 assert data.label == 1
                 assert "index" in external
 
+        class DummyWithDecoratorOnlyData(PipelineHandler):
+            @http_retry(attempts=3)
+            def predict(self, data: t.Any) -> t.Any:
+                assert data.label == 1
+
+        class DummyWithDecoratorKeyword(PipelineHandler):
+            @http_retry(attempts=3)
+            @pass_context
+            def predict(self, data: t.Any, **kw: t.Any) -> t.Any:
+                assert data.label == 1
+                assert "index" in kw["external"]
+                assert isinstance(kw["context"], Context)
+
         class DummyWithoutAny(PipelineHandler):
             ...
 
@@ -362,6 +376,8 @@ class TestModelPipelineHandler(TestCase):
                 ...
 
         handlers = [
+            DummyWithDecoratorOnlyData,
+            DummyWithDecoratorKeyword,
             DummyWithVarKeyword,
             DummyWithOnlyVarKeyword,
             DummyWithKeyword,
