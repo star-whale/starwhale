@@ -283,9 +283,9 @@ class PipelineHandler(metaclass=ABCMeta):
 
                         self.evaluation_store.log_result(
                             data_id=_idx_with_ds,
-                            mode=self.predict_log_mode,
                             input=raw_dataset_record,
                             output=_result,
+                            _mode=self.predict_log_mode,
                             _index=_idx,
                         )
 

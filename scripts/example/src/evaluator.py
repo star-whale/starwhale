@@ -18,10 +18,10 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
     assert isinstance(external["context"], Context)
     assert external["dataset_uri"].name
     assert external["dataset_uri"].version
-    return (
-        data["txt"].content,
-        numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),
-    )
+    return {
+        "txt": data["txt"],
+        "value": numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),
+    }
 
 
 @evaluation.evaluate(
@@ -38,7 +38,8 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
 def evaluate(ppl_result: t.Iterator):
     result, label, pr = [], [], []
     for _data in ppl_result:
-        label.append(_data["input"]["label"])
-        result.append(_data["output"][0])
-        pr.append(_data["output"][1])
+        assert _data["_mode"] == "plain"
+        label.append(_data["input/label"])
+        result.append(_data["output/txt"])
+        pr.append(_data["output/value"])
     return label, result, pr
