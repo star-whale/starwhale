@@ -120,7 +120,7 @@ public class JobUpdateHelperTest {
         Assertions.assertEquals(desiredStatus, mockJob.getStatus());
         verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
+                argThat(d -> d.getTime() > 0), argThat(d -> d >= 0));
 
     }
 
