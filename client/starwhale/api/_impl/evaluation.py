@@ -256,7 +256,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     cnt += 1
                     _idx_with_ds = f"{idx_prefix}{join_str}{_idx}"
 
-                    console.debug(
+                    console.trace(
                         f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
                     )
 

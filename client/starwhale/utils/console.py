@@ -13,6 +13,15 @@ rich_console = Console(soft_wrap=True)
 _min_level = logging.ERROR
 _min_level_lock = threading.Lock()
 
+CRITICAL = logging.CRITICAL
+FATAL = CRITICAL
+ERROR = logging.ERROR
+WARNING = logging.WARNING
+WARN = WARNING
+INFO = logging.INFO
+DEBUG = logging.DEBUG
+TRACE = 5
+
 
 def set_level(level: int) -> None:
     global _min_level
@@ -31,20 +40,26 @@ class _LevelInfo(t.NamedTuple):
 
 
 _levels: t.Dict[int, _LevelInfo] = {
-    logging.DEBUG: _LevelInfo(logging.DEBUG, "DEBUG", "blue", ":speaker:", "default"),
-    logging.INFO: _LevelInfo(logging.INFO, "INFO", "green", ":bulb:", "default"),
-    logging.WARN: _LevelInfo(
-        logging.WARN, "WARN", "yellow", ":question:", "bold magenta"
-    ),
-    logging.ERROR: _LevelInfo(logging.ERROR, "ERROR", "red", ":x:", "bold red"),
-    logging.FATAL: _LevelInfo(
-        logging.FATAL,
+    TRACE: _LevelInfo(TRACE, "TRACE", "white", ":bird:", "default"),
+    DEBUG: _LevelInfo(DEBUG, "DEBUG", "blue", ":speaker:", "default"),
+    INFO: _LevelInfo(INFO, "INFO", "green", ":bulb:", "default"),
+    WARN: _LevelInfo(WARN, "WARN", "yellow", ":question:", "bold magenta"),
+    ERROR: _LevelInfo(ERROR, "ERROR", "red", ":x:", "bold red"),
+    FATAL: _LevelInfo(
+        FATAL,
         "FATAL",
         "bold red",
         ":x:",
         "red on white",
     ),
 }
+
+
+def get_level_name(level: int) -> str:
+    if level not in _levels:
+        return f"LEVEL {level}"
+    else:
+        return _levels[level].name
 
 
 def print(*args: t.Any, **kwargs: t.Any) -> None:
@@ -59,6 +74,10 @@ def print(*args: t.Any, **kwargs: t.Any) -> None:
 
 def print_exception(*args: t.Any, **kwargs: t.Any) -> None:
     rich_console.print_exception(*args, **kwargs)
+
+
+def trace(*args: t.Any) -> None:
+    _log(TRACE, *args)
 
 
 def debug(*args: t.Any) -> None:

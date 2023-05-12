@@ -706,7 +706,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             total_size += size
 
         self._manifest["size"] = total_size
-        console.debug(f":basket: resource files size: {pretty_bytes(total_size)}")
+        console.info(f":basket: resource files size: {pretty_bytes(total_size)}")
 
         ensure_file(
             self.store.resource_files_path,
@@ -794,7 +794,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ignore_venv=not add_all,
         )
         for i in ignored:
-            console.debug(f"ignored : {str(i)}")
+            console.info(f"ignored : {str(i)}")
         console.print(
             f":file_folder: source code files size: {pretty_bytes(total_size)}"
         )

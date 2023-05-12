@@ -44,7 +44,7 @@ def test_logger() -> None:
     assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "0"
 
     init_logger(1)
-    assert os.environ[ENV_LOG_LEVEL] == "WARNING"
+    assert os.environ[ENV_LOG_LEVEL] == "WARN"
     assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "1"
 
     init_logger(3)
