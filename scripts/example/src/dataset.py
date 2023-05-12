@@ -1,9 +1,6 @@
-from starwhale import Text
-
-
 def simple_text_iter():
     for idx in range(0, 5):
         yield {
-            "txt": Text(f"data-{idx}", encoding="utf-8"),
+            "txt": f"data-{idx}",
             "label": f"label-{idx}",
         }
