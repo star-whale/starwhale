@@ -7,7 +7,7 @@ router = APIRouter()
 prefix = "project"
 
 project = {
-    "id": "1",
+    "id": "self",
     "name": "self",
     "privacy": "PRIVATE",
     "createdTime": 0,

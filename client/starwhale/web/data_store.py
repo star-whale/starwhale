@@ -27,6 +27,8 @@ class QueryTableRequest(BaseModel):
     table_name: str = Field(alias="tableName")
     filter: t.Optional[Filter]
     limit: int
+    raw_result: t.Optional[bool] = Field(alias="rawResult")
+    encode_with_type: t.Optional[bool] = Field(alias="encodeWithType")
 
 
 @router.post("/listTables")
@@ -35,10 +37,15 @@ def list_tables(request: ListTablesRequest) -> SuccessResp:
     root = str(SWCliConfigMixed().datastore_dir)
     path = os.path.join(root, request.prefix)
     files = glob.glob(f"{path}**", recursive=True)
-    files = [
-        os.path.split(f)[0][len(root) :].lstrip("/") for f in files if os.path.isfile(f)
-    ]
-    return success({"tables": files})
+    tables = []
+    for f in files:
+        if not os.path.isfile(f):
+            continue
+        p, file = os.path.split(f)
+        p = p[len(root) :].lstrip("/")
+        table_name = file.split(".sw-datastore.zip")[0]
+        tables.append(f"{p}/{table_name}")
+    return success({"tables": tables})
 
 
 @router.post("/queryTable")
@@ -49,6 +56,8 @@ def query_table(request: QueryTableRequest) -> SuccessResp:
 
     ds = LocalDataStore.get_instance()
     rows = list(ds.scan_tables([TableDesc(request.table_name)]))
+    if request.encode_with_type:
+        return _encode_with_type(rows, request.raw_result or False)
     col, rows = _rows_to_type_and_records(rows)
     return success(
         {
@@ -56,6 +65,17 @@ def query_table(request: QueryTableRequest) -> SuccessResp:
             "records": rows,
         }
     )
+
+
+def _encode_with_type(rows: t.Any, raw_result: bool) -> SuccessResp:
+    ret = []
+    for row in rows:
+        for k, v in row.items():
+            typ = _get_type(v)
+            row[k] = typ.encode_type_encoded_value(v, raw_result)
+        ret.append(row)
+    column_hints = {k: SwType.encode_schema(_get_type(v)) for k, v in rows[0].items()}
+    return success({"records": ret, "columnHints": column_hints})
 
 
 def _is_eval_summary(request: QueryTableRequest) -> t.Union[str, None]:

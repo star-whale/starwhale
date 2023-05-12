@@ -20,6 +20,14 @@ export function useRouterActivePath(navItems: any[]) {
         return $item?.url.pathname.split('/')
     }, [$item])
 
+    if (!paths) {
+        return {
+            item: null,
+            activeItemPath: null,
+            activeItemId: null,
+        }
+    }
+
     return {
         item: $item,
         activeItemPath: $item.path,

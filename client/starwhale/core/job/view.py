@@ -92,7 +92,7 @@ class JobTermView(BaseTermView):
             # TODO support changing host and port
             host = "127.0.0.1"
             port = 8000
-            url = f"http://{host}:{port}/projects/{self.uri.project}/evaluations/{ver}/results?token=local"
+            url = f"http://{host}:{port}/projects/{self.uri.project.name}/evaluations/{ver}/results?token=local"
             console.print(f":tea: open {url} in browser")
             import uvicorn
 
