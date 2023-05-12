@@ -19,6 +19,8 @@ package ai.starwhale.mlops.domain.job.spec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -38,6 +40,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.NON_NULL)
 public class ModelServingSpec {
     private List<RuntimeResource> resources;
 
