@@ -1,5 +1,4 @@
 import os
-import logging
 
 from rich import traceback
 
@@ -13,16 +12,18 @@ from starwhale.consts import (
 
 def init_logger(verbose: int) -> None:
     if verbose == 0:
-        lvl = logging.ERROR
+        lvl = console.ERROR
     elif verbose == 1:
-        lvl = logging.WARNING
+        lvl = console.WARNING
     elif verbose == 2:
-        lvl = logging.INFO
+        lvl = console.INFO
+    elif verbose == 3:
+        lvl = console.DEBUG
     else:
-        lvl = logging.DEBUG
+        lvl = console.TRACE
 
     console.set_level(lvl)
-    lvl_name = logging.getLevelName(lvl)
+    lvl_name = console.get_level_name(lvl)
     os.environ[ENV_LOG_LEVEL] = lvl_name
     os.environ[ENV_LOG_VERBOSE_COUNT] = str(verbose)
 

@@ -1774,7 +1774,7 @@ class TableWriter(threading.Thread):
                             last_schema = schema
                     to_submit.extend(records)
                 if len(to_submit) > 0 and last_schema is not None:
-                    console.debug(
+                    console.trace(
                         f"update table {self.table_name}, {len(to_submit)} records"
                     )
                     self.latest_revision = self.data_store.update_table(
