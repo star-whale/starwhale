@@ -1,12 +1,26 @@
+import time
 import random
 import typing as t
 import os.path as osp
+from functools import wraps
 
 import numpy
 
 from starwhale import Context, evaluation, multi_classification
 
 
+def timing(func: t.Callable) -> t.Any:
+    @wraps(func)
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        start = time.time()
+        result = func(*args, **kwargs)
+        print(f"Time elapsed: {time.time() - start}")
+        return result
+
+    return wrapper
+
+
+@timing
 @evaluation.predict(
     replicas=1,
     log_mode="plain",
