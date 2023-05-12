@@ -136,6 +136,7 @@ class Resource:
         :param uri:
             i.e.
             * mnist
+            * dataset/mnist
             * mnist/latest
             * version/latest
             * mnist/version/latest
@@ -144,6 +145,9 @@ class Resource:
         parts = uri.split("/")
         if len(parts) > 3:
             raise Exception(f"invalid uri {uri} when parse with type {typ}")
+
+        if parts[0] == typ.value:
+            parts = parts[1:]
 
         if len(parts) == 1:
             try:

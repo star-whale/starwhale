@@ -218,3 +218,30 @@ class TestResource(TestCase):
             assert p.name == expect[0]
             assert p.project.name == expect[1]
             assert p.instance.alias == expect[2]
+
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_remote_uri_with_type_part(self, m_conf: MagicMock) -> None:
+        m_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "https://foo.com"},
+                "local": {"uri": "local"},
+            },
+        }
+        uri = Resource("cloud://foo/project/starwhale/dataset/mnist", _skip_refine=True)
+        assert uri.instance.alias == "foo"
+        assert uri.project.name == "starwhale"
+        assert uri.typ == ResourceType.dataset
+        assert uri.name == "mnist"
+        assert uri.version == ""
+
+        # specify type argument
+        uri = Resource(
+            "cloud://foo/project/starwhale/dataset/mnist",
+            typ=ResourceType.dataset,
+            _skip_refine=True,
+        )
+        assert uri.instance.alias == "foo"
+        assert uri.project.name == "starwhale"
+        assert uri.typ == ResourceType.dataset
+        assert uri.name == "mnist"
+        assert uri.version == ""
