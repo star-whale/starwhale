@@ -259,6 +259,10 @@ class SwType(metaclass=ABCMeta):
         ...
 
     @abstractmethod
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        ...
+
+    @abstractmethod
     def decode_from_type_encoded_value(self, value: Any) -> Any:
         ...
 
@@ -348,6 +352,12 @@ class SwScalarType(SwType):
                 return struct.unpack(">d", raw)[0]
         raise RuntimeError("invalid type " + str(self))
 
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        return {
+            "type": str(self),
+            "value": raw_value and str(value) or self.encode(value),
+        }
+
     def decode_from_type_encoded_value(self, value: Any) -> Any:
         return self.decode(value["value"])
 
@@ -399,6 +409,19 @@ class SwListType(SwCompositeType):
             return [self.element_type.decode(element) for element in value]
         raise RuntimeError(f"value should be a list: {value}")
 
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        if value is None:
+            return {"type": str(self), "value": None}
+        if isinstance(value, list):
+            return {
+                "type": str(self),
+                "value": [
+                    self.element_type.encode_type_encoded_value(element, raw_value)
+                    for element in value
+                ],
+            }
+        raise RuntimeError(f"value should be a list: {value}")
+
     def decode_from_type_encoded_value(self, value: Any) -> Any:
         value = value["value"]
         if value is None:
@@ -447,6 +470,19 @@ class SwTupleType(SwCompositeType):
         if isinstance(value, list):
             return tuple([self.element_type.decode(element) for element in value])
         raise RuntimeError(f"value should be a list: {value}")
+
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        if value is None:
+            return {"type": str(self), "value": None}
+        if isinstance(value, tuple):
+            return {
+                "type": str(self),
+                "value": [
+                    self.element_type.encode_type_encoded_value(element, raw_value)
+                    for element in value
+                ],
+            }
+        raise RuntimeError(f"value should be a tuple: {value}")
 
     def decode_from_type_encoded_value(self, value: Any) -> Any:
         value = value["value"]
@@ -504,6 +540,24 @@ class SwMapType(SwCompositeType):
             return {
                 self.key_type.decode(k): self.value_type.decode(v)
                 for k, v in value.items()
+            }
+        raise RuntimeError(f"value should be a dict: {value}")
+
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        if value is None:
+            return {"type": str(self), "value": None}
+        if isinstance(value, dict):
+            return {
+                "type": str(self),
+                "value": [
+                    {
+                        "key": self.key_type.encode_type_encoded_value(k, raw_value),
+                        "value": self.value_type.encode_type_encoded_value(
+                            v, raw_value
+                        ),
+                    }
+                    for k, v in value.items()
+                ],
             }
         raise RuntimeError(f"value should be a dict: {value}")
 
@@ -584,6 +638,19 @@ class SwObjectType(SwCompositeType):
                     raise RuntimeError(f"invalid attribute {k}")
                 ret.__dict__[k] = type.decode(v)
             return ret
+        raise RuntimeError(f"value should be a dict: {value}")
+
+    def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
+        if value is None:
+            return {"type": str(self), "value": None}
+        if isinstance(value, dict):
+            return {
+                "type": str(self),
+                "value": {
+                    k: self.attrs[k].encode_type_encoded_value(v, raw_value)
+                    for k, v in value.items()
+                },
+            }
         raise RuntimeError(f"value should be a dict: {value}")
 
     def decode_from_type_encoded_value(self, value: Any) -> Any:

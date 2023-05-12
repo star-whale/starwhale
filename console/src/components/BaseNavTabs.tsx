@@ -23,6 +23,9 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
     const history = useHistory()
     const [, theme] = themedUseStyletron()
     const { activeItemPath } = useRouterActivePath(navItems)
+    if (!navItems || navItems.length === 0) {
+        return null
+    }
 
     return (
         <Tabs

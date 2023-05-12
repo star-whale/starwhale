@@ -101,7 +101,7 @@ class BundleCopy(CloudRequestMixed):
         else:
             raise Exception("invalid dest_uri")  # this can not happen
 
-        if not self.dest_uri.version:
+        if not self.dest_uri.version or self.dest_uri.version == "latest":
             self.dest_uri.version = self.src_uri.version
         if self.dest_uri.version == "latest":
             self.dest_uri.version = ""
