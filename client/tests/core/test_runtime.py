@@ -269,6 +269,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_restore.call_args[0] == (extract_dir, venv_dir)
 
     @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -378,6 +379,7 @@ class StandaloneRuntimeTestCase(TestCase):
         }
 
     @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -394,6 +396,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_venv: MagicMock,
         m_user_py_ver: MagicMock,
         m_py_env: MagicMock,
+        m_check_call: MagicMock,
         *args: t.Any,
     ) -> None:
         conda_prefix = "/home/starwhale/anaconda3/envs/starwhale"
@@ -422,6 +425,12 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_lock.call_args[1]["env_name"] == conda_name
         assert m_lock.call_args[1]["env_prefix_path"] == ""
         assert not m_lock.call_args[1]["env_use_shell"]
+        assert m_check_call.call_args[0][0] == [
+            f"{conda_prefix}/bin/python3",
+            "-m",
+            "pip",
+            "check",
+        ]
 
         sw = SWCliConfigMixed()
         runtime_workdir = os.path.join(
@@ -487,6 +496,7 @@ class StandaloneRuntimeTestCase(TestCase):
         }
 
     @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.core.runtime.model.guess_current_py_env")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.is_venv")
@@ -1116,6 +1126,43 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not Path(my_garbage).exists()
 
     @patch("os.environ", {})
+    @patch("starwhale.core.runtime.model.get_user_runtime_python_bin")
+    @patch("starwhale.core.runtime.model.is_venv")
+    @patch("starwhale.core.runtime.model.is_conda")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    @patch("starwhale.utils.venv.check_call")
+    def test_build_from_shell_with_check_error(
+        self,
+        m_check_call: MagicMock,
+        m_call_output: MagicMock,
+        m_conda: MagicMock,
+        m_venv: MagicMock,
+        m_py_bin: MagicMock,
+    ) -> None:
+        conda_prefix = "/home/starwhale/anaconda3/envs/starwhale"
+        os.environ[ENV_CONDA_PREFIX] = conda_prefix
+        ensure_dir(os.path.join(conda_prefix, "conda-meta"))
+
+        m_py_bin.return_value = os.path.join(conda_prefix, "bin/python3")
+        m_venv.return_value = False
+        m_conda.return_value = True
+        m_call_output.side_effect = [
+            b"3.7.13",
+            conda_prefix.encode(),
+            b"False",
+        ]
+
+        name = "error_demo_runtime"
+        uri = Resource(name, typ=ResourceType.runtime, _skip_refine=True)
+        sr = StandaloneRuntime(uri)
+
+        m_check_call.side_effect = subprocess.CalledProcessError(
+            1, "cmd", output="test"
+        )
+        with self.assertRaises(SystemExit):
+            sr.build_from_python_env(runtime_name=name, mode="conda")
+
+    @patch("os.environ", {})
     @patch("starwhale.core.runtime.model.conda_export")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.get_python_version_by_bin")
@@ -1155,7 +1202,12 @@ class StandaloneRuntimeTestCase(TestCase):
         with self.assertRaisesRegex(ConfigFormatError, "only support Python"):
             sr.build_from_python_env(runtime_name=name, mode="conda")
 
-        assert m_check_call.call_args is None
+        assert m_check_call.call_args[0][0] == [
+            f"{conda_prefix}/bin/python3",
+            "-m",
+            "pip",
+            "check",
+        ]
 
         m_check_call.reset_mock()
         m_call_output.reset_mock()
