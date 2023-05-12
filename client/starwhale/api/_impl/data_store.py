@@ -414,7 +414,7 @@ class SwListType(SwCompositeType):
             return {"type": str(self), "value": None}
         if isinstance(value, list):
             return {
-                "type": str(self),
+                "type": "LIST",
                 "value": [
                     self.element_type.encode_type_encoded_value(element, raw_value)
                     for element in value
@@ -476,7 +476,7 @@ class SwTupleType(SwCompositeType):
             return {"type": str(self), "value": None}
         if isinstance(value, tuple):
             return {
-                "type": str(self),
+                "type": "TUPLE",
                 "value": [
                     self.element_type.encode_type_encoded_value(element, raw_value)
                     for element in value
@@ -548,7 +548,7 @@ class SwMapType(SwCompositeType):
             return {"type": str(self), "value": None}
         if isinstance(value, dict):
             return {
-                "type": str(self),
+                "type": "MAP",
                 "value": [
                     {
                         "key": self.key_type.encode_type_encoded_value(k, raw_value),
@@ -645,7 +645,7 @@ class SwObjectType(SwCompositeType):
             return {"type": str(self), "value": None}
         if isinstance(value, dict):
             return {
-                "type": str(self),
+                "type": "OBJECT",
                 "value": {
                     k: self.attrs[k].encode_type_encoded_value(v, raw_value)
                     for k, v in value.items()
