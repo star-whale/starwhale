@@ -67,12 +67,20 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
+        return this.head(path, false);
+    }
+
+    @Override
+    public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
             var resp = this.ossClient.headObject(new HeadObjectRequest(this.bucket, path));
-            return new StorageObjectInfo(true, resp.getContentLength(), MetaHelper.mapToString(resp.getUserMetadata()));
+            return new StorageObjectInfo(true,
+                    resp.getContentLength(),
+                    md5sum ? resp.getETag().replace("\"", "") : null,
+                    MetaHelper.mapToString(resp.getUserMetadata()));
         } catch (OSSException e) {
             if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
-                return new StorageObjectInfo(false, 0L, null);
+                return new StorageObjectInfo(false, 0L, null, null);
             }
             throw e;
         }

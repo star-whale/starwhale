@@ -27,5 +27,6 @@ public class StorageObjectInfo {
 
     boolean exists;
     Long contentLength;
+    String md5sum;
     String metaInfo;
 }

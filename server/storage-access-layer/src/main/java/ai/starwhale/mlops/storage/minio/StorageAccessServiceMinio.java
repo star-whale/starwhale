@@ -65,13 +65,21 @@ public class StorageAccessServiceMinio implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
+        return this.head(path, false);
+    }
+
+    @Override
+    public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
             StatObjectResponse resp = this.minioClient.statObject(
                     StatObjectArgs.builder().bucket(bucket).object(path).build());
-            return new StorageObjectInfo(true, resp.size(), MetaHelper.mapToString(resp.userMetadata()));
+            return new StorageObjectInfo(true,
+                    resp.size(),
+                    md5sum ? resp.etag().replace("\"", "") : null,
+                    MetaHelper.mapToString(resp.userMetadata()));
         } catch (ErrorResponseException e) {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
-                return new StorageObjectInfo(false, null, null);
+                return new StorageObjectInfo(false, null, null, null);
             } else {
                 log.error("head object fails", e);
                 throw new IOException(e);

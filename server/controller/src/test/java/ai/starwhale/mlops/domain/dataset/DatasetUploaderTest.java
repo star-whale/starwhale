@@ -83,7 +83,7 @@ public class DatasetUploaderTest {
         });
         StoragePathCoordinator storagePathCoordinator = new StoragePathCoordinator("/test");
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
-        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null));
+        when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null, null));
         UserService userService = mock(UserService.class);
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
         ProjectService projectService = mock(ProjectService.class);

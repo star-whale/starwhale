@@ -111,17 +111,23 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
+        return this.head(path, false);
+    }
+
+    @Override
+    public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path)
                 .build();
         try {
             HeadObjectResponse headObjectResponse = s3client.headObject(build);
-            return new StorageObjectInfo(true, headObjectResponse.contentLength(),
+            return new StorageObjectInfo(true,
+                    headObjectResponse.contentLength(),
+                    md5sum ? headObjectResponse.eTag().replace("\"", "") : null,
                     MetaHelper.mapToString(headObjectResponse.metadata()));
         } catch (NoSuchKeyException e) {
-            return new StorageObjectInfo(false, 0L, null);
+            return new StorageObjectInfo(false, 0L, null, null);
         }
     }
-
 
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
