@@ -81,7 +81,16 @@ def test_datastore_query_table(mock_scan: MagicMock):
     assert resp.json()["data"]["records"] == []
 
     mock_scan.return_value = [
-        {"a": 1, "b": 2.0, "c": "3", "d": True, "e": None, "f": [1, 2, 3]}
+        {
+            "a": 1,
+            "b": 2.0,
+            "c": "3",
+            "d": True,
+            "e": None,
+            "f": [1, 2, 3],
+            "g": (4, 5, 6),
+            "h": {"i": 7},
+        }
     ]
     resp = client.post(
         "/api/v1/datastore/queryTable", json={"tableName": "a/b/c", "limit": 10}
@@ -94,9 +103,85 @@ def test_datastore_query_table(mock_scan: MagicMock):
         {"name": "d", "type": "BOOL"},
         {"name": "e", "type": "UNKNOWN"},
         {"name": "f", "elementType": {"type": "INT64"}, "type": "LIST"},
+        {"name": "g", "elementType": {"type": "INT64"}, "type": "TUPLE"},
+        {
+            "name": "h",
+            "keyType": {"type": "STRING"},
+            "valueType": {"type": "INT64"},
+            "type": "MAP",
+        },
     ]
     assert resp.json()["data"]["records"] == [
-        {"a": "1", "b": "2.0", "c": "3", "d": "True", "e": "None", "f": "[1, 2, 3]"}
+        {
+            "a": "1",
+            "b": "2.0",
+            "c": "3",
+            "d": "True",
+            "e": "None",
+            "f": "[1, 2, 3]",
+            "g": "(4, 5, 6)",
+            "h": "{'i': 7}",
+        }
+    ]
+
+    # request with encode with type
+    resp = client.post(
+        "/api/v1/datastore/queryTable",
+        json={
+            "tableName": "a/b/c",
+            "limit": 10,
+            "encodeWithType": True,
+            "rawResult": True,
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["columnHints"] == {
+        "a": {"type": "INT64"},
+        "b": {"type": "FLOAT64"},
+        "c": {"type": "STRING"},
+        "d": {"type": "BOOL"},
+        "e": {"type": "UNKNOWN"},
+        "f": {"elementType": {"type": "INT64"}, "type": "LIST"},
+        "g": {"elementType": {"type": "INT64"}, "type": "TUPLE"},
+        "h": {
+            "keyType": {"type": "STRING"},
+            "valueType": {"type": "INT64"},
+            "type": "MAP",
+        },
+    }
+    assert resp.json()["data"]["records"] == [
+        {
+            "a": {"type": "INT64", "value": "1"},
+            "b": {"type": "FLOAT64", "value": "2.0"},
+            "c": {"type": "STRING", "value": "3"},
+            "d": {"type": "BOOL", "value": "True"},
+            "e": {"type": "UNKNOWN", "value": "None"},
+            "f": {
+                "type": "LIST",
+                "value": [
+                    {"type": "INT64", "value": "1"},
+                    {"type": "INT64", "value": "2"},
+                    {"type": "INT64", "value": "3"},
+                ],
+            },
+            "g": {
+                "type": "TUPLE",
+                "value": [
+                    {"type": "INT64", "value": "4"},
+                    {"type": "INT64", "value": "5"},
+                    {"type": "INT64", "value": "6"},
+                ],
+            },
+            "h": {
+                "type": "MAP",
+                "value": [
+                    {
+                        "key": {"type": "STRING", "value": "i"},
+                        "value": {"type": "INT64", "value": "7"},
+                    },
+                ],
+            },
+        }
     ]
 
 

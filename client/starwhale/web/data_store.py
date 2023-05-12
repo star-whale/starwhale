@@ -68,13 +68,15 @@ def query_table(request: QueryTableRequest) -> SuccessResp:
 
 
 def _encode_with_type(rows: t.Any, raw_result: bool) -> SuccessResp:
+    if not rows:
+        return success({"records": [], "columnHints": {}})
     ret = []
+    column_hints = {k: SwType.encode_schema(_get_type(v)) for k, v in rows[0].items()}
     for row in rows:
         for k, v in row.items():
             typ = _get_type(v)
             row[k] = typ.encode_type_encoded_value(v, raw_result)
         ret.append(row)
-    column_hints = {k: SwType.encode_schema(_get_type(v)) for k, v in rows[0].items()}
     return success({"records": ret, "columnHints": column_hints})
 
 
