@@ -5,11 +5,11 @@ from unittest.mock import patch, MagicMock
 
 import yaml
 from requests_mock import Mocker
-from requests_mock.exceptions import NoMockAddress
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
+from starwhale.utils import NoSupportError
 from starwhale.consts import (
     HTTPMethod,
     VERSION_PREFIX_CNT,
@@ -225,23 +225,23 @@ class TestBundleCopy(TestCase):
             assert head_request.call_count == 1
             assert upload_request.call_count == 1
 
-        # TODO: support the flowing case
-        with self.assertRaises(NoMockAddress):
-            head_request = rm.request(
-                HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}",
-                json={"message": "not found"},
-                status_code=HTTPStatus.NOT_FOUND,
-            )
-            upload_request = rm.request(
-                HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}/file",
-            )
-            BundleCopy(
-                src_uri="mnist/v1",
-                dest_uri="cloud://pre-bare/project/mnist/runtime/mnist-alias",
-                typ=ResourceType.runtime,
-            ).do()
+        head_request = rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}",
+            json={"message": "not found"},
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        upload_request = rm.request(
+            HTTPMethod.POST,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/mnist-alias/version/{version}/file",
+        )
+        BundleCopy(
+            src_uri="mnist/v1",
+            dest_uri="cloud://pre-bare/project/mnist/runtime/mnist-alias",
+            typ=ResourceType.runtime,
+        ).do()
+        assert head_request.call_count == 1
+        assert upload_request.call_count == 1
 
     @Mocker()
     @patch("starwhale.core.model.copy.load_yaml")
@@ -454,23 +454,25 @@ class TestBundleCopy(TestCase):
             assert head_request.call_count == 1
             assert upload_request.call_count == 3
 
-        # TODO: support the flowing case
-        with self.assertRaises(NoMockAddress):
-            head_request = rm.request(
-                HTTPMethod.HEAD,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
-                json={"message": "not found"},
-                status_code=HTTPStatus.NOT_FOUND,
-            )
-            upload_request = rm.request(
-                HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
-            )
-            ModelCopy(
-                src_uri="mnist/v1",
-                dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
-                typ=ResourceType.model,
-            ).do()
+        head_request = rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+            json={"message": "not found"},
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        upload_request = rm.request(
+            HTTPMethod.POST,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
+            json={"data": {"uploadId": "123"}},
+        )
+        ModelCopy(
+            src_uri="mnist/v1",
+            dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
+            typ=ResourceType.model,
+        ).do()
+
+        assert head_request.call_count == 1
+        assert upload_request.call_count == 3
 
     def _prepare_local_dataset(self) -> t.Union[str, str]:
         name = "mnist"
@@ -814,7 +816,7 @@ class TestBundleCopy(TestCase):
             assert upload_request.call_count == 2
 
         # TODO: support the flowing case
-        with self.assertRaises(NoMockAddress):
+        with self.assertRaises(NoSupportError):
             head_request = rm.request(
                 HTTPMethod.HEAD,
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist-alias/version/{version}",
