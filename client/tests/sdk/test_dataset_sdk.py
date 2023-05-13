@@ -88,7 +88,7 @@ class _DatasetSDKTestBase(BaseTestCase):
         return (Path(ROOT_DIR) / "data" / "simple.wav").read_bytes()
 
 
-@patch("starwhale.base.uri.resource.Resource.refine_local_rc_info", MagicMock())
+@patch("starwhale.base.uri.resource.Resource._refine_local_rc_info", MagicMock())
 class TestDatasetSDK(_DatasetSDKTestBase):
     def test_create_from_empty(self) -> None:
         ds = dataset("mnist")
@@ -1317,8 +1317,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert ds._dataset_builder.signature_bins_meta[0].size == 48
 
 
-@patch("starwhale.base.uri.resource.Resource.refine_local_rc_info", MagicMock())
-@patch("starwhale.base.uri.resource.Resource.refine_remote_rc_info", MagicMock())
+@patch("starwhale.base.uri.resource.Resource._refine_local_rc_info", MagicMock())
+@patch("starwhale.base.uri.resource.Resource._refine_remote_rc_info", MagicMock())
 class TestPytorch(_DatasetSDKTestBase):
     def test_skip_default_transform_without_batch(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()
@@ -1474,11 +1474,11 @@ class TestPytorch(_DatasetSDKTestBase):
         assert list(item["img"].size()) == [2, 2, 2, 3]
 
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_audio_transform(self) -> None:
@@ -1618,11 +1618,11 @@ class TestTensorflow(_DatasetSDKTestBase):
             tf_dataset._inspect_spec([{"a": 1}, {"a": 2}])
 
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_tf_dataset_drop_index(self) -> None:
@@ -1643,11 +1643,11 @@ class TestTensorflow(_DatasetSDKTestBase):
         assert len(items) == len(ds)
 
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_tf_dataset_with_index(self) -> None:

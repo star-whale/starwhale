@@ -48,7 +48,7 @@ class StandaloneDatasetTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.api._impl.dataset.model.Dataset.commit")
     @patch("starwhale.api._impl.dataset.model.Dataset.__setitem__")
     def test_function_handler_make_swds(
@@ -173,7 +173,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args[1].handler == handler_func
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_build_workflow(self, *args: t.Any) -> None:
         class _MockBuildExecutor:
             def __iter__(self) -> t.Generator:
@@ -258,7 +258,7 @@ class StandaloneDatasetTestCase(TestCase):
         # make sure tmp dir is empty
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_head(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
@@ -305,7 +305,7 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_from_json(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 

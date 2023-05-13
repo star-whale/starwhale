@@ -7,6 +7,11 @@ class NoMatchException(Exception):
         super().__init__(message)
 
 
+class VerifyException(Exception):
+    def __init__(self, msg: str = "") -> None:
+        super().__init__(msg)
+
+
 class UriTooShortException(Exception):
     def __init__(self, expect: int, get: int, msg: str = "") -> None:
         super().__init__(

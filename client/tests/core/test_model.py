@@ -47,7 +47,6 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.instance.view import InstanceTermView
 from starwhale.base.scheduler.step import Step
-from starwhale.base.uri.exceptions import NoMatchException
 from starwhale.core.runtime.process import Process
 
 _model_data_dir = f"{ROOT_DIR}/data/model"
@@ -81,11 +80,11 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.Walker.files")
     @patch("starwhale.core.model.model.blake2b_file")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_build_workflow(
@@ -124,7 +123,10 @@ class StandaloneModelTestCase(TestCase):
             Path(self.workdir) / DefaultYAMLName.MODEL
         )
 
-        model_uri = Resource(self.name, typ=ResourceType.model, _skip_refine=True)
+        model_uri = Resource(
+            self.name,
+            typ=ResourceType.model,
+        )
         sm = StandaloneModel(model_uri)
         sm.build(workdir=Path(self.workdir), model_config=model_config)
 
@@ -214,7 +216,8 @@ class StandaloneModelTestCase(TestCase):
         assert "latest" in sm.tag.list()
 
         model_uri = Resource(
-            f"mnist/version/{build_version}", typ=ResourceType.model, _skip_refine=True
+            f"mnist/version/{build_version}",
+            typ=ResourceType.model,
         )
         sm = StandaloneModel(model_uri)
         _info = sm.info()
@@ -230,7 +233,6 @@ class StandaloneModelTestCase(TestCase):
         model_uri = Resource(
             f"{self.name}/version/{build_version}",
             typ=ResourceType.model,
-            _skip_refine=True,
         )
         sd = StandaloneModel(model_uri)
         _ok, _ = sd.remove(False)
@@ -249,7 +251,11 @@ class StandaloneModelTestCase(TestCase):
             ModelTermViewJson(fname).info(f)
 
         ModelTermView(fname).diff(
-            Resource(fname, ResourceType.model, _skip_refine=True), show_details=False
+            Resource(
+                fname,
+                ResourceType.model,
+            ),
+            show_details=False,
         )
         ModelTermView(fname).history()
         ModelTermView(fname).remove()
@@ -269,7 +275,7 @@ class StandaloneModelTestCase(TestCase):
             add_all=False,
         )
 
-    @patch("starwhale.base.uri.resource.Resource.refine_local_rc_info")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch("starwhale.core.model.model.StandaloneModel._make_meta_tar")
     @patch("starwhale.core.model.model.StandaloneModel._gen_model_serving")
@@ -345,7 +351,6 @@ class StandaloneModelTestCase(TestCase):
         packaged_uri = Resource(
             f"{model_name}/version/{version}",
             typ=ResourceType.model,
-            _skip_refine=True,
         )
         ModelTermView.build(
             workdir=workdir,
@@ -380,7 +385,6 @@ class StandaloneModelTestCase(TestCase):
         no_packaged_uri = Resource(
             f"{model_name}/version/{version}",
             typ=ResourceType.model,
-            _skip_refine=True,
         )
         ModelTermView.build(
             workdir=workdir,
@@ -414,7 +418,6 @@ class StandaloneModelTestCase(TestCase):
         use_model_uri = Resource(
             f"{model_name}/version/{version}",
             typ=ResourceType.model,
-            _skip_refine=True,
         )
 
         ModelTermView.build(
@@ -540,7 +543,6 @@ class StandaloneModelTestCase(TestCase):
         base_model_uri = Resource(
             f"{self.name}/version/{base_version}",
             typ=ResourceType.model,
-            _skip_refine=True,
         )
         sm = StandaloneModel(base_model_uri)
 
@@ -548,7 +550,6 @@ class StandaloneModelTestCase(TestCase):
             Resource(
                 f"{self.name}/version/{compare_version}",
                 typ=ResourceType.model,
-                _skip_refine=True,
             )
         )
         assert len(diff_info) == 3
@@ -569,7 +570,7 @@ class StandaloneModelTestCase(TestCase):
     def test_extract(self) -> None:
         target = Path("/home/workdir/target_no_exist")
 
-        with self.assertRaisesRegex(NoMatchException, "Can not find the exact match"):
+        with self.assertRaises(NotFoundError):
             ModelTermView("not-found/version/dummy").extract(force=False, target=target)
 
         bundle_path = (
@@ -581,7 +582,7 @@ class StandaloneModelTestCase(TestCase):
             / "1234.swmp"
         )
         ensure_dir(bundle_path)
-        uri = Resource("mnist/version/1234", typ=ResourceType.model)
+        uri = Resource("mnist/version/1234", typ=ResourceType.model, refine=True)
         with self.assertRaises(NotFoundError):
             ModelTermView(uri).extract(force=False, target=target)
 
@@ -745,7 +746,7 @@ class StandaloneModelTestCase(TestCase):
 
     @patch("starwhale.core.model.model.ModelConfig.do_validate")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     def test_prepare_model_run_args(self, *args: t.Any) -> None:
@@ -851,7 +852,6 @@ class StandaloneModelTestCase(TestCase):
                     "runtime_uri": Resource(
                         "model-test/version/1234",
                         typ=ResourceType.model,
-                        _skip_refine=True,
                     ),
                 },
             ),
@@ -871,7 +871,6 @@ class StandaloneModelTestCase(TestCase):
                     "runtime_uri": Resource(
                         "runtime-test/version/1234",
                         typ=ResourceType.runtime,
-                        _skip_refine=True,
                     ),
                 },
             ),
@@ -907,7 +906,7 @@ class StandaloneModelTestCase(TestCase):
     @patch("starwhale.core.model.model.StandaloneModel")
     @patch("starwhale.core.model.model.StandaloneModel.serve")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch("starwhale.core.model.view.RuntimeProcess")
@@ -1060,7 +1059,10 @@ def test_build_with_custom_config_file(
 
     model_config = ModelConfig.create_by_yaml(workdir / cfg)
 
-    model_uri = Resource(name, typ=ResourceType.model, _skip_refine=True)
+    model_uri = Resource(
+        name,
+        typ=ResourceType.model,
+    )
     sm = StandaloneModel(model_uri)
     sm.build(workdir=workdir, model_config=model_config)
 
@@ -1098,7 +1100,10 @@ def test_render_eval_layout(m_sw_config: MagicMock, m_g: MagicMock, tmp_path: Pa
         "current_instance": "local",
     }
     name = "bar"
-    model_uri = Resource(name, typ=ResourceType.model, _skip_refine=True)
+    model_uri = Resource(
+        name,
+        typ=ResourceType.model,
+    )
     sm = StandaloneModel(model_uri)
 
     workdir = tmp_path / name

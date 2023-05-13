@@ -81,7 +81,10 @@ class StandaloneEvaluationJobTestCase(TestCase):
         m_get.return_value = {}
         m_get_metrics.return_value = {"kind": "multi_classification"}
 
-        uri = Resource(self.job_name[:5], typ=ResourceType.job, _skip_refine=True)
+        uri = Resource(
+            self.job_name[:5],
+            typ=ResourceType.job,
+        )
         job = StandaloneJob(uri)
         info = job.info()
 
@@ -112,7 +115,6 @@ class StandaloneEvaluationJobTestCase(TestCase):
         uri = Resource(
             f"local/project/self/{ResourceType.job.value}/{self.job_name[:6]}",
             typ=ResourceType.job,
-            _skip_refine=True,
         )
         job = StandaloneJob(uri)
 
@@ -157,7 +159,6 @@ class StandaloneEvaluationJobTestCase(TestCase):
         uri = Resource(
             f"local/project/self/{ResourceType.job.value}/{self.job_name}",
             typ=ResourceType.job,
-            _skip_refine=True,
         )
         job = StandaloneJob(uri)
 
@@ -249,9 +250,7 @@ class CloudJobTestCase(TestCase):
             text=_task_list,
         )
 
-        info = CloudJob(
-            Resource(self.job_uri, typ=ResourceType.job, _skip_refine=True)
-        ).info()
+        info = CloudJob(Resource(self.job_uri, typ=ResourceType.job)).info()
         print(f"info oo :{info}")
         assert len(info["tasks"][0]) == 3
         assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
@@ -266,11 +265,11 @@ class CloudJobTestCase(TestCase):
     @Mocker()
     @patch("starwhale.core.job.view.console.print")
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_local_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_local_rc_info",
         MagicMock(),
     )
     @patch(
-        "starwhale.base.uri.resource.Resource.refine_remote_rc_info",
+        "starwhale.base.uri.resource.Resource._refine_remote_rc_info",
         MagicMock(),
     )
     def test_actions(self, rm: Mocker, m_console: MagicMock):

@@ -118,7 +118,6 @@ class Dataset:
             "/version/".join(filter(bool, [self._uri.name, ver])),
             typ=ResourceType.dataset,
             project=copy.deepcopy(self._uri.project),
-            _skip_refine=True,
         )
 
         if create not in (
@@ -1034,7 +1033,7 @@ class Dataset:
 
         """
         if isinstance(uri, str):
-            _uri = Resource(uri, typ=ResourceType.dataset, _skip_refine=True)
+            _uri = Resource(uri, typ=ResourceType.dataset, refine=False)
         elif isinstance(uri, Resource) and uri.typ == ResourceType.dataset:
             _uri = uri
         else:
