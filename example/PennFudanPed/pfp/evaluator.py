@@ -145,7 +145,9 @@ def make_coco_evaluator(ann_list, iou_types) -> CocoEvaluator:
                     "image_id": _a.image_id,
                     "category_id": _a.category_id,
                     "area": _a.area,
-                    "bbox": _a.bbox,
+                    # FIXME: (workaround) convert tuple to list.
+                    # in the server side, the bbox is changed to tuple type, but in the client side, it is list type.
+                    "bbox": list(_a.bbox) if isinstance(_a.bbox, tuple) else _a.bbox,
                     "iscrowd": _a.iscrowd,
                     "segmentation": _a.segmentation,
                 }
