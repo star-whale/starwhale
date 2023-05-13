@@ -48,26 +48,31 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
                 "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
             ),
         ],
+        "runtime": "pytorch37",
     },
     "cifar10": {
         "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
         "workdir": f"{ROOT_DIR}/example/cifar10",
         "datasets": [DatasetExpl("cifar10", "")],
+        "runtime": "pytorch38",
     },
     "nmt": {
         "run_handler": "nmt.evaluator:NMTPipeline.cmp",
         "workdir": f"{ROOT_DIR}/example/nmt",
         "datasets": [DatasetExpl("nmt", "")],
+        "runtime": "pytorch39",
     },
     "ag_news": {
         "run_handler": "tcan.evaluator:TextClassificationHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/text_cls_AG_NEWS",
         "datasets": [DatasetExpl("ag_news", "")],
+        "runtime": "pytorch310",
     },
     "ucf101": {
         "run_handler": "ucf101.evaluator:UCF101PipelineHandler.cmp",
         "workdir": f"{ROOT_DIR}/example/ucf101",
         "datasets": [DatasetExpl("ucf101", "")],
+        "runtime": "pytorch310",
     },
 }
 
@@ -76,6 +81,7 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         "run_handler": "pfp.evaluator:cmp",
         "workdir": f"{ROOT_DIR}/example/PennFudanPed",
         "datasets": [DatasetExpl("pfp", "")],
+        "runtime": "pytorch39",
     },
     "speech_command": {
         "run_handler": "sc.evaluator:evaluate_speech",
@@ -86,21 +92,20 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
                 "speech_command_link", "sc.dataset:LinkRawDatasetBuildExecutor"
             ),
         ],
+        "runtime": "pytorch38",
     },
 }
 
 ALL_EXAMPLES = {**CPU_EXAMPLES, **GPU_EXAMPLES}
 
-RUNTIMES: t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]] = {
-    "pytorch": {
-        "workdir": f"{WORK_DIR}/example/runtime/pytorch-e2e",
-        "yamls": [
-            "runtime-3-7.yaml",
-            "runtime-3-8.yaml",
-            "runtime-3-9.yaml",
-            "runtime-3-10.yaml",
-        ],
-    },
+_pytorch_e2e_root = f"{WORK_DIR}/example/runtime/pytorch-e2e"
+
+# TODO: add conda mode runtime
+RUNTIME_EXAMPLES: t.Dict[str, t.Dict[str, str]] = {
+    "pytorch37": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-7.yaml"},
+    "pytorch38": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-8.yaml"},
+    "pytorch39": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-9.yaml"},
+    "pytorch310": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-10.yaml"},
 }
 
 
@@ -330,23 +335,29 @@ class TestCli:
                 self.build_dataset(name, example["workdir"], d_type)
             self.build_model(example["workdir"], name)
 
-        for name, rt in RUNTIMES.items():
-            if "yamls" not in rt:
-                self.build_runtime(str(rt["workdir"]))
-            else:
-                for yml in list(rt["yamls"]):
-                    self.build_runtime(str(rt["workdir"]), yml)
+        for name, rt in RUNTIME_EXAMPLES.items():
+            self.build_runtime(rt["workdir"], rt["yaml"])
 
         # model run on server
         res = [
-            self.run_example(name, example["run_handler"], in_standalone=False)
+            self.run_example(
+                name,
+                example["run_handler"],
+                in_standalone=False,
+                runtime=example["runtime"],
+            )
             for name, example in ALL_EXAMPLES.items()
         ]
         remote_job_ids: t.List[str] = sum(res, [])
 
         # model run on standalone
         for name, example in CPU_EXAMPLES.items():
-            self.run_example(name, example["run_handler"], in_standalone=True)
+            self.run_example(
+                name,
+                example["run_handler"],
+                in_standalone=True,
+                runtime=example["runtime"],
+            )
 
         failed_jobs = []
         futures = [
@@ -366,15 +377,11 @@ class TestCli:
             logger.info("all jobs finished successfully")
 
     def test_example(self, name: str, run_handler: str) -> None:
-        rt_ = RUNTIMES.get(name) or RUNTIMES.get("pytorch")
-        if not rt_:
+        rt = RUNTIME_EXAMPLES.get(name) or RUNTIME_EXAMPLES.get("pytorch37")
+        if not rt:
             raise RuntimeError(f"no runtime matching for {name}")
-        for name, rt in RUNTIMES.items():
-            if "yamls" not in rt:
-                self.build_runtime(str(rt["workdir"]))
-            else:
-                for yml in list(rt["yamls"]):
-                    self.build_runtime(str(rt["workdir"]), yml)
+
+        self.build_runtime(rt["workdir"], rt["yaml"])
 
         example = ALL_EXAMPLES[name]
         workdir = str(example["workdir"])
@@ -393,10 +400,16 @@ class TestCli:
             self.build_dataset(name, workdir, ds)
         self.build_model(workdir, name)
 
-        self.run_example(name, run_handler, in_standalone=True)
+        self.run_example(
+            name, run_handler, in_standalone=True, runtime=example["runtime"]
+        )
 
     def run_example(
-        self, name: str, run_handler: str, in_standalone: bool = True
+        self,
+        name: str,
+        run_handler: str,
+        in_standalone: bool = True,
+        runtime: str = "pytorch37",
     ) -> t.List:
         dataset_uris = self.datasets.get(name)
         if not dataset_uris:
@@ -404,7 +417,8 @@ class TestCli:
         model_uri = self.models.get(name)
         if not model_uri:
             raise RuntimeError("model should not be empty")
-        runtime_uris = self.runtimes.get(name) or self.runtimes.get("pytorch")
+
+        runtime_uris = self.runtimes.get(runtime)
         if not runtime_uris:
             raise RuntimeError("runtimes should not be empty")
 

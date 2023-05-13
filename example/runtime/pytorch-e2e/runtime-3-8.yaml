@@ -8,4 +8,4 @@ environment:
   os: ubuntu:20.04
   python: 3.8
 mode: venv
-name: pytorch
+name: pytorch38

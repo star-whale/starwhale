@@ -8,4 +8,4 @@ environment:
   arch: noarch
   os: ubuntu:20.04
 mode: venv
-name: pytorch
+name: pytorch310
