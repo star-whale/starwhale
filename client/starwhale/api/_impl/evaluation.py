@@ -171,7 +171,6 @@ class PipelineHandler(metaclass=ABCMeta):
         kind = inspect._ParameterKind
 
         parameters = inspect.signature(inspect.unwrap(func)).parameters.copy()
-        console.debug(f"inspect {func.__name__} parameters: {parameters}")
         # Limitation: When the users use custom decorator on the class method(predict/ppl) and only data argument is defined,
         # it is assumed that the first argument related to the class object name is self. Therefore, we remove it from the list of parameters when inspecting them.
         parameters.pop("self", None)

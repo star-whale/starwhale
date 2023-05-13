@@ -26,6 +26,7 @@ COPY external/condarc /root/.condarc
 
 ENV SW_CONTAINER=1
 ENV TARGETARCH=${TARGETARCH}
+ENV COLUMNS=250
 
 WORKDIR /opt/starwhale/swmp
 ENTRYPOINT ["/usr/local/bin/sw-docker-entrypoint"]
