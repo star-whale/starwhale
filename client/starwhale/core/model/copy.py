@@ -3,6 +3,8 @@ import json
 import typing as t
 from pathlib import Path
 
+from rich.progress import TaskID, Progress
+
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     FileDesc,
@@ -16,9 +18,9 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import extract_tar
 from starwhale.utils.retry import http_retry
-from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.bundle_copy import BundleCopy, _query_param_map
 from starwhale.base.uri.instance import Instance
-from starwhale.base.uri.resource import ResourceType
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 class ModelCopy(BundleCopy):
@@ -88,7 +90,7 @@ class ModelCopy(BundleCopy):
             #     _dest # the unify dir
             # )
 
-    def final_steps(self) -> None:
+    def final_steps(self, progress: Progress) -> None:
         if self.src_uri.instance.is_local:
             manifest_file = (
                 self._get_versioned_resource_path(self.src_uri) / DEFAULT_MANIFEST_NAME
@@ -97,17 +99,51 @@ class ModelCopy(BundleCopy):
             manifest = load_yaml(manifest_file)
             packaged_runtime = manifest.get("packaged_runtime", None)
             if packaged_runtime:
-                rt_version = packaged_runtime["manifest"]["version"]
-
-                runtime_copy = BundleCopy(
-                    src_uri=f'{packaged_runtime["name"]}/version/{rt_version}',
-                    dest_uri=f"{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}",
-                    typ=ResourceType.runtime,
+                _tid = progress.add_task(
+                    f":arrow_up: synchronize the built-in runtime..."
                 )
-                runtime_copy.do()
+                rt_version = packaged_runtime["manifest"]["version"]
+                rt_file_path = (
+                    self._get_versioned_resource_path(self.src_uri)
+                    / packaged_runtime["path"]
+                )
+
+                dest_uri = Resource(
+                    f"{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}",
+                    typ=ResourceType.runtime,
+                    refine=True,
+                )
+
+                def upload_runtime_tar(file_path: Path, progress: Progress) -> None:
+                    task_id = progress.add_task(
+                        f":synchronize the built-in runtime {file_path.name}",
+                        total=file_path.stat().st_size,
+                    )
+                    self.do_multipart_upload_file(
+                        url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
+                        file_path=file_path,
+                        instance=dest_uri.instance,
+                        fields={
+                            _query_param_map[
+                                ResourceType.runtime
+                            ]: f"{SW_BUILT_IN}:{rt_version}",
+                            "project": dest_uri.project.name,
+                            "force": "1" if self.force else "0",
+                        },
+                        use_raise=True,
+                        progress=progress,
+                        task_id=task_id,
+                    )
+
+                upload_runtime_tar(rt_file_path, progress)
 
                 @http_retry
-                def sync_built_in_runtime(path: str, instance: Instance) -> None:
+                def sync_built_in_runtime(
+                    path: str,
+                    instance: Instance,
+                    progress: t.Optional[Progress] = None,
+                    task_id: TaskID = TaskID(0),
+                ) -> None:
                     self.do_http_request(
                         path=path,
                         method=HTTPMethod.PUT,
@@ -120,8 +156,12 @@ class ModelCopy(BundleCopy):
                         use_raise=True,
                         disable_default_content_type=False,
                     )
+                    progress.update(task_id, completed=100)
 
+                print(f"final link:{self._get_remote_bundle_api_url(for_head=True)}")
                 sync_built_in_runtime(
                     path=self._get_remote_bundle_api_url(for_head=True),
                     instance=self.dest_uri.instance,
+                    progress=progress,
+                    task_id=_tid,
                 )
