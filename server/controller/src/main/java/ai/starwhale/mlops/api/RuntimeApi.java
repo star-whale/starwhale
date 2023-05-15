@@ -27,6 +27,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
+import ai.starwhale.mlops.domain.job.spec.RunConfig;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -329,7 +330,7 @@ public interface RuntimeApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl") String versionUrl,
             @Parameter(description = "user defined running configurations such environment variables")
-            @RequestBody(required = false) String runConfig);
+            @RequestBody(required = false) RunConfig runConfig);
 
 
 }

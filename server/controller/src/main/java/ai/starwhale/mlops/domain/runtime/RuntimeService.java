@@ -82,7 +82,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
@@ -553,7 +552,7 @@ public class RuntimeService {
         throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
-    public BuildImageResult buildImage(String projectUrl, String runtimeUrl, String versionUrl, String runConfig) {
+    public BuildImageResult buildImage(String projectUrl, String runtimeUrl, String versionUrl, RunConfig runConfig) {
         var runtime = bundleManager.getBundle(BundleUrl.create(projectUrl, runtimeUrl));
         var runtimeVersion = (RuntimeVersionEntity) bundleManager.getBundleVersion(
                 BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl));
@@ -603,13 +602,10 @@ public class RuntimeService {
                     new V1EnvVar().name("SW_TOKEN").value(
                             runtimeTokenValidator.getToken(user, runtimeVersion.getId())))
             );
-            if (StringUtils.hasText(runConfig)) {
-                RunConfig rc = Constants.yamlMapper.readValue(runConfig, RunConfig.class);
-                if (null != rc.getEnvVars()) {
-                    List<V1EnvVar> collect = rc.getEnvVars().entrySet().stream().map(e -> K8sJobTemplate.toEnvVar(e))
-                            .collect(Collectors.toList());
-                    envVars.addAll(collect);
-                }
+            if (null != runConfig && null != runConfig.getEnvVars()) {
+                List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(e -> K8sJobTemplate.toEnvVar(e))
+                        .collect(Collectors.toList());
+                envVars.addAll(collect);
             }
             k8sJobTemplate.getInitContainerTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
@@ -651,10 +647,6 @@ public class RuntimeService {
                 throw new SwProcessException(ErrorType.INFRA,
                         "deploying job for image build error:" + k8sE.getMessage());
             }
-        } catch (JsonProcessingException e) {
-            log.error("image build request invalid {}", runConfig);
-            throw new SwValidationException(ValidSubject.RUNTIME,
-                    "run config invalid", e);
         }
     }
 

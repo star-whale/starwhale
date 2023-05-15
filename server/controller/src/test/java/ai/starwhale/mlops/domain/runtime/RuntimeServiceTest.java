@@ -58,6 +58,7 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.RunConfig;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
@@ -583,12 +584,12 @@ public class RuntimeServiceTest {
         verify(k8sClient, times(1)).deployJob(any());
         assertThat(res.getSuccess(), is(true));
 
-        res = service.buildImage("project-1", "r1", "v2", "");
+        res = service.buildImage("project-1", "r1", "v2", null);
         assertThat(res.getSuccess(), is(false));
 
         given(k8sClient.deployJob(any()))
                 .willThrow(new ApiException(HttpServletResponse.SC_CONFLICT, ""));
-        res = service.buildImage("project-1", "r1", "v1", "---\nenvVars:\n  \"a\": \"b\"");
+        res = service.buildImage("project-1", "r1", "v1", new RunConfig(Map.of("a", "b")));
         assertThat(res.getSuccess(), is(false));
     }
 
