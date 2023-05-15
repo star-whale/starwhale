@@ -19,6 +19,8 @@ from starwhale.api._impl.data_store import (
     STRING,
     SwType,
     SwMapType,
+    SwListType,
+    SwTupleType,
     ColumnSchema,
     TableWriterException,
 )
@@ -2384,6 +2386,30 @@ def test_decode_schema_from_type_encoded_values():
     assert schema == SwMapType(INT32, STRING)
     decoded = schema.decode_from_type_encoded_value(value)
     assert decoded == {1: "foobar"}
+
+    # list
+    value = {
+        "type": "LIST",
+        "value": [
+            {"type": "STRING", "value": "foobar"},
+        ],
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwListType(STRING)
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded == ["foobar"]
+
+    # tuple
+    value = {
+        "type": "TUPLE",
+        "value": [
+            {"type": "STRING", "value": "foobar"},
+        ],
+    }
+    schema = SwType.decode_schema_from_type_encoded_value(value)
+    assert schema == SwTupleType(STRING)
+    decoded = schema.decode_from_type_encoded_value(value)
+    assert decoded == ("foobar",)
 
 
 if __name__ == "__main__":

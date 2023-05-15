@@ -185,7 +185,10 @@ class SwType(metaclass=ABCMeta):
             # TODO: support more than one item types
             if isinstance(v, (list, tuple)) and len(v) != 0:
                 element_type = SwType.decode_schema_from_type_encoded_value(v[0])
-            return SwTupleType(element_type)
+            if type_name == "LIST":
+                return SwListType(element_type)
+            else:
+                return SwTupleType(element_type)
         if type_name == "MAP":
             # {
             # 	"type": "MAP",

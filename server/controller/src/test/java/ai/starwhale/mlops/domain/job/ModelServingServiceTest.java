@@ -62,6 +62,7 @@ import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -71,6 +72,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 public class ModelServingServiceTest {
+
     private ModelServingService svc;
     private final ModelServingMapper modelServingMapper = mock(ModelServingMapper.class);
     private final RuntimeDao runtimeDao = mock(RuntimeDao.class);
@@ -151,16 +153,18 @@ public class ModelServingServiceTest {
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
         when(systemSettingService.queryResourcePool("default")).thenReturn(
                 ResourcePool.builder()
-                    .name("default")
-                    .nodeSelector(Map.of("foo", "bar"))
-                    .resources(List.of(new Resource("cpu")))
-                    .build());
+                        .name("default")
+                        .nodeSelector(Map.of("foo", "bar"))
+                        .resources(List.of(new Resource("cpu")))
+                        .build());
 
         var spec = "---\n"
                 + "resources:\n"
                 + "- type: \"cpu\"\n"
                 + "  request: 7.0\n"
-                + "  limit: 8.0\n";
+                + "  limit: 8.0\n"
+                + "envVars:\n"
+                + " \"a\": \"b\"\n";
 
         var ss = new V1StatefulSet();
         ss.metadata(new V1ObjectMeta().name("model-serving-7"));
@@ -169,7 +173,7 @@ public class ModelServingServiceTest {
 
         var rc = RuntimeResource.builder().type("cpu").request(7f).limit(8f).build();
         var expectedResource = new ResourceOverwriteSpec(List.of(rc));
-        var expectedEnvs = Map.of(
+        var expectedEnvs = new HashMap<>(Map.of(
                 "SW_PYPI_TRUSTED_HOST", "trusted-host",
                 "SW_PYPI_EXTRA_INDEX_URL", "extra-index",
                 "SW_PYPI_INDEX_URL", "index",
@@ -180,7 +184,8 @@ public class ModelServingServiceTest {
                 "SW_RUNTIME_VERSION", "rt/version/rt-8",
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
-        );
+        ));
+        expectedEnvs.put("a", "b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
                 "img",
@@ -275,7 +280,6 @@ public class ModelServingServiceTest {
         verify(k8sClient, times(3)).deleteStatefulSet(capture.capture());
         var names = capture.getAllValues();
         assertThat(names, containsInAnyOrder(oldestName, noEntityName, maxTtlName));
-
 
         final var theOnlyRunningAndInMinTtl = new V1StatefulSet()
                 .metadata(new V1ObjectMeta().name("model-serving-1"))
