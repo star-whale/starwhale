@@ -287,7 +287,7 @@ class TestCli:
         workdir = f"{self._work_dir}/scripts/example"
         venv_runtime_uri = self.build_runtime(workdir)
         conda_runtime_uri = self.build_runtime(workdir, "runtime_conda.yaml")
-        model_uri = self.build_model(workdir, "simple", "simple-test")
+        model_uri = self.build_model(workdir, "simple", "simple-test-conda")
         dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
 
         if self.server_url:
