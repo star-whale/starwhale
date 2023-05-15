@@ -4,6 +4,7 @@ import type { ColumnT, RowT } from '../types'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { useIfChanged } from '@starwhale/core'
 import _ from 'lodash'
+import Input from '@starwhale/ui/Input'
 
 export type CellPlacementPropsT = {
     columnIndex: number
@@ -105,7 +106,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             onMouseEnter={_.throttle(() => onRowMouseEnter(rowIndex), 200)}
             onMouseLeave={_.throttle(() => onRowMouseEnter(-1), 200)}
         >
-            {isFocused}
             <Cell
                 value={value}
                 data={rowData}

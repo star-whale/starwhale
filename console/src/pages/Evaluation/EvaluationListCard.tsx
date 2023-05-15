@@ -7,7 +7,7 @@ import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
-import { CustomColumn } from '@starwhale/ui/base/data-table'
+import { CustomColumn, CategoricalTagsColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
 import { ITableState, useEvaluationStore } from '@starwhale/ui/GridTable/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
@@ -27,6 +27,8 @@ import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
 import shallow from 'zustand/shallow'
+import ModelSelector from '@/domain/model/components/ModelSelector'
+import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -163,6 +165,25 @@ export default function EvaluationListCard() {
                     mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
             }
+            if (column.key === 'sys/model_name')
+                return CustomColumn({
+                    ...column,
+                    fillWidth: false,
+                    filterable: true,
+                    renderFilter: function RenderFilter() {
+                        return <ModelSelector projectId={projectId} clearable getId={(v) => v.name} />
+                    },
+                })
+            // if (column.key === 'sys/model_version')
+            //     return CustomColumn({
+            //         ...column,
+            //         fillWidth: false,
+            //         filterable: true,
+            //         renderFilter: function RenderFilter() {
+            //             return <ModelTreeSelector projectId={projectId} clearable getId={(v) => v.name} />
+            //         },
+            //     })
+
             return {
                 ...column,
                 fillWidth: false,

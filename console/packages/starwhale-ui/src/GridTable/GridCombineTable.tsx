@@ -60,6 +60,8 @@ function BaseGridCombineTable({
         return records?.filter((r) => rowSelectedIds.includes(getId(r))) ?? []
     }, [rowSelectedIds, records, getId])
 
+    console.log('render toolbar')
+
     return (
         <div data-type='grid-combine-table' className={styles.gridComineTable}>
             <ToolBar columnable={columnable} viewable={viewable} queryable={queryable} />

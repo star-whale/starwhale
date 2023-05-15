@@ -355,6 +355,14 @@ const table = {
         en: 'Search and Filter',
         zh: '搜索和过滤',
     },
+    'table.config.query.simple': {
+        en: 'Simple Query',
+        zh: '简单查询',
+    },
+    'table.config.query.advanced': {
+        en: 'Advanced Query',
+        zh: '高级查询',
+    },
 }
 
 const ui = {

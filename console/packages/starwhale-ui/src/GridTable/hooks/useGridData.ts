@@ -7,7 +7,7 @@ function useGirdData() {
     const { getId, getColumns, columnTypes, records } = useStoreApi().getState()
 
     const $tablePropsColumns = React.useMemo(() => {
-        if (!getColumns || typeof getColumns !== 'function') return []
+        if (!getColumns || typeof getColumns !== 'function') return undefined
 
         return getColumns?.() ?? []
     }, [getColumns])

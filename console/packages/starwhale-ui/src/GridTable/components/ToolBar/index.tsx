@@ -31,15 +31,19 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
     // useResizeObserver(headlineRef, (entries) => {
     //     setHeadlineHeight(entries[0].contentRect.height)
     // })
+    // debugger
 
     const { originalColumns, isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } =
         useGrid()
+
+    const query = React.useMemo(() => {
+        return queryable && renderConfigQuery()
+    }, [queryable, renderConfigQuery])
 
     return (
         <div
             data-type='table-toolbar'
             className={css({
-                // height: `${headlineHeight}px`,
                 display: viewable || filterable || searchable || queryable || columnable ? 'block' : 'none',
             })}
         >
@@ -79,7 +83,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                     })}
                 >
                     <div className='table-config-query' style={{ flex: 1 }}>
-                        {queryable && renderConfigQuery()}
+                        {query}
                     </div>
 
                     {columnable && (

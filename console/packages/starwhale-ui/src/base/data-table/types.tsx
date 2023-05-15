@@ -52,11 +52,11 @@ export type RenderCellT<ValueT> = React.Component<{
     y: number
 }>
 
-export type RenderFilterT<ValueT, FilterParamsT> = React.Component<{
-    close: () => void
-    data: ValueT[]
+export type RenderFilterT<ValueT, FilterParamsT> = React.FC<{
+    // close: () => void
     filterParams?: FilterParamsT
-    setFilter: (args: FilterParamsT) => void
+    // data: ValueT[]
+    // setFilter: (args: FilterParamsT) => void
 }>
 
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
