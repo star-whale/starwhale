@@ -1,2 +1,3 @@
-venv
-output
+venv/*
+output/*
+.starwhale/*

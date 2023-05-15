@@ -17,13 +17,29 @@ ROOTDIR = Path(__file__).parent
 chatglm = None
 tokenizer = None
 
+ds_input_keys = {
+    "webqsp": "rawquestion",
+    "z_bench_common": "prompt",
+    "mkqa": "query", 
+}
 
-hstry = []
-
-
-@evaluation.predict
-def ppl(data: dict):
-    text = data["text"]
+@evaluation.predict(log_mode="plain")
+def ppl(data: dict, external: dict):
+    ds_name=external["dataset_uri"].name
+    if ds_name in ds_input_keys:
+        text = data[ds_input_keys[ds_name]]
+    elif "text" in data:
+        text = data["text"]
+    elif "question" in data:
+        text = data["question"]
+    elif "rawquestion" in data:
+        text = data["rawquestion"]
+    elif "prompt" in data:
+        text = data["prompt"]
+    elif "query" in data:
+        text = data["query"]
+    else:
+        raise ValueError(f"dataset {ds_name} does not fit this model")
     global tokenizer
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -40,9 +56,7 @@ def ppl(data: dict):
                 torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
             )
     chatglm.half().cuda().eval()
-    response, h = chatglm.chat(tokenizer, text, history=hstry)
-    hstry.clear()
-    hstry.extend(h)
+    response, h = chatglm.chat(tokenizer, text, history=[])
     print(f"dataset: {text}\n chatglm6b: {response} \n")
     return response
 
