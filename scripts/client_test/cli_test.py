@@ -50,6 +50,17 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
         ],
         "runtime": "pytorch37",
     },
+    "mnist-with-builtin": {
+        "run_handler": "mnist.evaluator:MNISTInference.evaluate",
+        "workdir": f"{ROOT_DIR}/example/mnist",
+        "datasets": [
+            DatasetExpl("mnist_bin", "mnist.dataset:iter_mnist_item"),
+            DatasetExpl(
+                "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
+            ),
+        ],
+        "runtime": "built-in",
+    },
     "cifar10": {
         "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
         "workdir": f"{ROOT_DIR}/example/cifar10",
@@ -129,7 +140,9 @@ class TestCli:
         self.server_url = server_url
         self.server_project = server_project
         self.datasets: t.Dict[str, t.List[Resource]] = {}
-        self.runtimes: t.Dict[str, t.List[Resource]] = {}
+        self.runtimes: t.Dict[str, t.List[Resource]] = {
+            "built-in": [Resource("runtime/version")]
+        }
         self.models: t.Dict[str, Resource] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
@@ -300,7 +313,7 @@ class TestCli:
             remote_job_ids = self.run_model_in_server(
                 dataset_uris=[dataset_uri],
                 model_uri=model_uri,
-                runtime_uris=[venv_runtime_uri],
+                runtime_uris=[venv_runtime_uri, Resource("runtime/version")],
                 run_handler=run_handler,
             )
 

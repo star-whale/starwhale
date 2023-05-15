@@ -141,7 +141,7 @@ class ModelCopy(BundleCopy):
                 def sync_built_in_runtime(
                     path: str,
                     instance: Instance,
-                    progress: t.Optional[Progress] = None,
+                    progress: Progress,
                     task_id: TaskID = TaskID(0),
                 ) -> None:
                     self.do_http_request(
@@ -158,7 +158,6 @@ class ModelCopy(BundleCopy):
                     )
                     progress.update(task_id, completed=100)
 
-                print(f"final link:{self._get_remote_bundle_api_url(for_head=True)}")
                 sync_built_in_runtime(
                     path=self._get_remote_bundle_api_url(for_head=True),
                     instance=self.dest_uri.instance,

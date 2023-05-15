@@ -91,7 +91,7 @@ public interface RuntimeVersionMapper {
             @Param("runtimeId") Long runtimeId);
 
     @Update("update runtime_version set built_image = #{builtImage} where version_name = #{versionName}")
-    int updateBuiltImage(@Param("versionName") String versionNam, @Param("builtImage") String builtImage);
+    int updateBuiltImage(@Param("versionName") String versionName, @Param("builtImage") String builtImage);
 
     @Select("select " + COLUMNS + " from runtime_version"
             + " where version_order = #{versionOrder}"
