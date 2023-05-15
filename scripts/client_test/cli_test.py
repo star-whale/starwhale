@@ -1,28 +1,27 @@
 from __future__ import annotations
 
+import logging
 import os
+import subprocess
 import sys
 import typing as t
-import logging
-import subprocess
-from time import sleep
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from time import sleep
 
 from cmds import DatasetExpl
-from tenacity import retry
+from cmds.artifacts_cmd import Dataset, Model, Runtime
+from cmds.base.invoke import check_invoke
+from cmds.instance_cmd import Instance
 from cmds.job_cmd import Job
+from cmds.project_cmd import Project
+from starwhale.base.type import DatasetChangeMode
+from starwhale.base.uri.resource import Resource
+from starwhale.utils import config
+from starwhale.utils.debug import init_logger
+from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
-from cmds.base.invoke import check_invoke
-from cmds.project_cmd import Project
-from cmds.instance_cmd import Instance
-from cmds.artifacts_cmd import Model, Dataset, Runtime
-
-from starwhale.utils import config
-from starwhale.base.type import DatasetChangeMode
-from starwhale.utils.debug import init_logger
-from starwhale.base.uri.resource import Resource
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -49,17 +48,6 @@ CPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
             ),
         ],
         "runtime": "pytorch37",
-    },
-    "mnist-with-builtin": {
-        "run_handler": "mnist.evaluator:MNISTInference.evaluate",
-        "workdir": f"{ROOT_DIR}/example/mnist",
-        "datasets": [
-            DatasetExpl("mnist_bin", "mnist.dataset:iter_mnist_item"),
-            DatasetExpl(
-                "mnist_link_raw", "mnist.dataset:LinkRawDatasetProcessExecutor"
-            ),
-        ],
-        "runtime": "built-in",
     },
     "cifar10": {
         "run_handler": "cifar.evaluator:CIFAR10Inference.evaluate",
@@ -119,6 +107,9 @@ RUNTIME_EXAMPLES: t.Dict[str, t.Dict[str, str]] = {
     "pytorch310": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-10.yaml"},
 }
 
+BUILT_IN = "built-in"
+BUILT_IN_EXAMPLES: t.List[str] = ["mnist", "pfp", "simple"]
+
 
 class TestCli:
     instance_api = Instance()
@@ -141,7 +132,7 @@ class TestCli:
         self.server_project = server_project
         self.datasets: t.Dict[str, t.List[Resource]] = {}
         self.runtimes: t.Dict[str, t.List[Resource]] = {
-            "built-in": [Resource("runtime/version")]
+            BUILT_IN: [Resource("runtime/version")]
         }
         self.models: t.Dict[str, Resource] = {}
         if self.server_url:
@@ -181,9 +172,9 @@ class TestCli:
         assert self.dataset_api.info(ret_uri.full_uri)
         return ret_uri
 
-    def build_model(self, workdir: str, name: str) -> t.Any:
+    def build_model(self, workdir: str, name: str, runtime: str) -> t.Any:
         self.select_local_instance()
-        _uri = Model.build(workdir=workdir, name=name)
+        _uri = Model.build(workdir=workdir, name=name, runtime=runtime)
         if self.server_url:
             self.model_api.copy(
                 src_uri=_uri.full_uri,
@@ -295,9 +286,9 @@ class TestCli:
 
         run_handler = "src.evaluator:evaluate"
         workdir = f"{self._work_dir}/scripts/example"
-        model_uri = self.build_model(workdir, "simple")
         venv_runtime_uri = self.build_runtime(workdir)
         conda_runtime_uri = self.build_runtime(workdir, "runtime_conda.yaml")
+        model_uri = self.build_model(workdir, "simple", "simple-test")
         dataset_uri = self.build_dataset("simple", workdir, DatasetExpl("", ""))
 
         if self.server_url:
@@ -313,7 +304,9 @@ class TestCli:
             remote_job_ids = self.run_model_in_server(
                 dataset_uris=[dataset_uri],
                 model_uri=model_uri,
-                runtime_uris=[venv_runtime_uri, Resource("runtime/version")],
+                runtime_uris=[venv_runtime_uri]
+                if "simple" not in BUILT_IN_EXAMPLES
+                else [Resource("runtime/version")],
                 run_handler=run_handler,
             )
 
@@ -321,7 +314,9 @@ class TestCli:
             dataset_uris=[dataset_uri],
             model_uri=model_uri,
             run_handler=run_handler,
-            runtime_uris=[conda_runtime_uri],
+            runtime_uris=[conda_runtime_uri]
+            if "simple" not in BUILT_IN_EXAMPLES
+            else None,
         )
 
         futures = [
@@ -346,7 +341,7 @@ class TestCli:
         for name, example in ALL_EXAMPLES.items():
             for d_type in example["datasets"]:
                 self.build_dataset(name, example["workdir"], d_type)
-            self.build_model(example["workdir"], name)
+            self.build_model(example["workdir"], name, example["runtime"])
 
         for name, rt in RUNTIME_EXAMPLES.items():
             self.build_runtime(rt["workdir"], rt["yaml"])
@@ -357,7 +352,9 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=False,
-                runtime=example["runtime"],
+                runtime=example["runtime"]
+                if name not in BUILT_IN_EXAMPLES
+                else BUILT_IN,
             )
             for name, example in ALL_EXAMPLES.items()
         ]
@@ -369,7 +366,9 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=True,
-                runtime=example["runtime"],
+                runtime=example["runtime"]
+                if name not in BUILT_IN_EXAMPLES
+                else BUILT_IN,
             )
 
         failed_jobs = []
@@ -389,7 +388,7 @@ class TestCli:
         else:
             logger.info("all jobs finished successfully")
 
-    def test_example(self, name: str, run_handler: str) -> None:
+    def test_example(self, name: str, run_handler: str, runtime: str) -> None:
         rt = RUNTIME_EXAMPLES.get(name) or RUNTIME_EXAMPLES.get("pytorch37")
         if not rt:
             raise RuntimeError(f"no runtime matching for {name}")
@@ -411,7 +410,7 @@ class TestCli:
 
         for ds in example["datasets"]:
             self.build_dataset(name, workdir, ds)
-        self.build_model(workdir, name)
+        self.build_model(workdir, name, runtime)
 
         self.run_example(
             name, run_handler, in_standalone=True, runtime=example["runtime"]
@@ -448,7 +447,7 @@ class TestCli:
 
     def debug(self) -> None:
         for name, example in ALL_EXAMPLES.items():
-            self.build_model(str(example["workdir"]), name)
+            self.build_model(str(example["workdir"]), name, str(example["runtime"]))
 
     def smoke_commands(self) -> None:
         commands = [
