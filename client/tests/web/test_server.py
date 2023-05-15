@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import httpx
 from fastapi.testclient import TestClient
 
+from starwhale import Link
 from starwhale.utils.fs import ensure_file
 from starwhale.web.server import Server
 from starwhale.base.uri.instance import Instance
@@ -90,6 +91,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
             "f": [1, 2, 3],
             "g": (4, 5, 6),
             "h": {"i": 7},
+            "i": Link("foo"),
         }
     ]
     resp = client.post(
@@ -110,6 +112,27 @@ def test_datastore_query_table(mock_scan: MagicMock):
             "valueType": {"type": "INT64"},
             "type": "MAP",
         },
+        {
+            "name": "i",
+            "pythonType": "starwhale.core.dataset.type.Link",
+            "type": "OBJECT",
+            "attributes": [
+                {"name": "_type", "type": "STRING"},
+                {"name": "owner", "type": "UNKNOWN"},
+                {"name": "uri", "type": "STRING"},
+                {"name": "scheme", "type": "STRING"},
+                {"name": "offset", "type": "INT64"},
+                {"name": "size", "type": "INT64"},
+                {"name": "data_type", "type": "UNKNOWN"},
+                {"name": "_signed_uri", "type": "STRING"},
+                {
+                    "keyType": {"type": "UNKNOWN"},
+                    "name": "extra_info",
+                    "type": "MAP",
+                    "valueType": {"type": "UNKNOWN"},
+                },
+            ],
+        },
     ]
     assert resp.json()["data"]["records"] == [
         {
@@ -121,6 +144,7 @@ def test_datastore_query_table(mock_scan: MagicMock):
             "f": "[1, 2, 3]",
             "g": "(4, 5, 6)",
             "h": "{'i': 7}",
+            "i": "Link foo",
         }
     ]
 
@@ -147,6 +171,26 @@ def test_datastore_query_table(mock_scan: MagicMock):
             "keyType": {"type": "STRING"},
             "valueType": {"type": "INT64"},
             "type": "MAP",
+        },
+        "i": {
+            "attributes": [
+                {"name": "_type", "type": "STRING"},
+                {"name": "owner", "type": "UNKNOWN"},
+                {"name": "uri", "type": "STRING"},
+                {"name": "scheme", "type": "STRING"},
+                {"name": "offset", "type": "INT64"},
+                {"name": "size", "type": "INT64"},
+                {"name": "data_type", "type": "UNKNOWN"},
+                {"name": "_signed_uri", "type": "STRING"},
+                {
+                    "keyType": {"type": "UNKNOWN"},
+                    "name": "extra_info",
+                    "type": "MAP",
+                    "valueType": {"type": "UNKNOWN"},
+                },
+            ],
+            "pythonType": "starwhale.core.dataset.type.Link",
+            "type": "OBJECT",
         },
     }
     assert resp.json()["data"]["records"] == [
@@ -180,6 +224,21 @@ def test_datastore_query_table(mock_scan: MagicMock):
                         "value": {"type": "INT64", "value": "7"},
                     },
                 ],
+            },
+            "i": {
+                "type": "OBJECT",
+                "pythonType": "starwhale.core.dataset.type.Link",
+                "value": {
+                    "_signed_uri": {"type": "STRING", "value": ""},
+                    "_type": {"type": "STRING", "value": "link"},
+                    "data_type": {"type": "UNKNOWN", "value": "None"},
+                    "extra_info": {"type": "MAP", "value": []},
+                    "offset": {"type": "INT64", "value": "0"},
+                    "owner": {"type": "UNKNOWN", "value": "None"},
+                    "scheme": {"type": "STRING", "value": ""},
+                    "size": {"type": "INT64", "value": "-1"},
+                    "uri": {"type": "STRING", "value": "foo"},
+                },
             },
         }
     ]

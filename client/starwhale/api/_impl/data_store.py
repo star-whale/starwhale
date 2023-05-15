@@ -645,16 +645,21 @@ class SwObjectType(SwCompositeType):
 
     def encode_type_encoded_value(self, value: Any, raw_value: bool = False) -> Any:
         if value is None:
-            return {"type": str(self), "value": None}
-        if isinstance(value, dict):
+            return {"type": "OBJECT", "value": None}
+        if isinstance(value, self.raw_type):
             return {
                 "type": "OBJECT",
+                "pythonType": "LINK"
+                if self.raw_type is Link
+                else self.raw_type.__module__ + "." + self.raw_type.__name__,
                 "value": {
                     k: self.attrs[k].encode_type_encoded_value(v, raw_value)
-                    for k, v in value.items()
+                    for k, v in value.__dict__.items()
                 },
             }
-        raise RuntimeError(f"value should be a dict: {value}")
+        raise RuntimeError(
+            f"value should be of type {self.raw_type.__name__}, but is {value}"
+        )
 
     def decode_from_type_encoded_value(self, value: Any) -> Any:
         value = value["value"]
