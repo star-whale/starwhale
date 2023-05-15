@@ -134,7 +134,7 @@ class Resource:
             try:
                 self.refine()
             except (NoMatchException, VerifyException) as e:
-                console.warning(f"refine resource {uri} failed: {e}")
+                console.warning(f"refine resource[{typ}] {uri} failed: {e}")
 
     def refine(self) -> "Resource":
         if not self.project.instance.is_local:

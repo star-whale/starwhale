@@ -9,6 +9,7 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
+import dill
 import jsonlines
 
 from starwhale.utils import console, now_str
@@ -27,6 +28,7 @@ from starwhale.base.context import Context
 from starwhale.core.job.store import JobStorage
 from starwhale.api._impl.dataset import Dataset
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.dataset.type import JsonDict
 from starwhale.core.dataset.tabular import TabularDatasetRow, TabularDatasetInfo
 
 _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
@@ -35,14 +37,16 @@ _jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
 
 
 class PipelineHandler(metaclass=ABCMeta):
+    _INPUT_PREFIX = "input/"
+
     def __init__(
         self,
         predict_batch_size: int = 1,
-        ignore_dataset_data: bool = False,
         ignore_error: bool = False,
         flush_result: bool = False,
         predict_auto_log: bool = True,
         predict_log_mode: str = PredictLogMode.PICKLE.value,
+        predict_log_dataset_features: t.Optional[t.List[str]] = None,
         dataset_uris: t.Optional[t.List[str]] = None,
         **kwargs: t.Any,
     ) -> None:
@@ -52,8 +56,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self.dataset_uris = self.context.dataset_uris or dataset_uris or []
 
-        # TODO: add args for compare result and label directly
-        self.ignore_dataset_data = ignore_dataset_data
+        self.predict_log_dataset_features = predict_log_dataset_features
         self.ignore_error = ignore_error
         self.flush_result = flush_result
         self.predict_auto_log = predict_auto_log
@@ -117,10 +120,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_evaluate(self) -> None:
         now = now_str()
         try:
-            if self.predict_auto_log:
-                self._do_evaluate(self.evaluation_store.get_results())
-            else:
-                self._do_evaluate()
+            self._do_evaluate()
         except Exception as e:
             console.exception(f"evaluate exception: {e}")
             self._timeline_writer.write(
@@ -192,20 +192,22 @@ class PipelineHandler(metaclass=ABCMeta):
         else:
             return func(data, external=external)
 
-    def _do_evaluate(self, *args: t.Any, **kw: t.Any) -> t.Any:
+    def _do_evaluate(self) -> t.Any:
         evaluate_func = getattr(self, "evaluate", None)
         cmp_func = getattr(self, "cmp", None)
         if evaluate_func and cmp_func:
             raise ParameterError("evaluate and cmp cannot be defined at the same time")
 
-        if evaluate_func:
-            return evaluate_func(*args, **kw)
-        elif cmp_func:
-            return cmp_func(*args, **kw)
-        else:
+        func = evaluate_func or cmp_func
+        if not func:
             raise ParameterError(
                 "evaluate or cmp must be defined, evaluate function is recommended"
             )
+
+        if self.predict_auto_log:
+            func(self._iter_predict_result(self.evaluation_store.get_results()))
+        else:
+            func()
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_predict(self) -> None:
@@ -275,24 +277,12 @@ class PipelineHandler(metaclass=ABCMeta):
                         }
                     )
 
-                    if self.predict_auto_log:
-                        if not self.ignore_dataset_data:
-                            for artifact in TabularDatasetRow.artifacts_of(_features):
-                                if artifact.link:
-                                    artifact.clear_cache()
-
-                        raw_dataset_record = {}
-                        if not self.ignore_dataset_data:
-                            # drop DataRow._Features type, keep dict type for features
-                            raw_dataset_record = _features.copy()
-
-                        self.evaluation_store.log_result(
-                            data_id=_idx_with_ds,
-                            input=raw_dataset_record,
-                            output=_result,
-                            _mode=self.predict_log_mode,
-                            _index=_idx,
-                        )
+                    self._log_predict_result(
+                        features=_features,
+                        idx_with_ds=_idx_with_ds,
+                        output=_result,
+                        idx=_idx,
+                    )
 
         if self.flush_result and self.predict_auto_log:
             self.evaluation_store.flush_result()
@@ -312,6 +302,61 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def serve(self, addr: str, port: int) -> None:
         self.svc.serve(addr, port)
+
+    def _iter_predict_result(
+        self, raw_results_iter: t.Iterator[t.Dict]
+    ) -> t.Iterator[t.Dict]:
+        for data in raw_results_iter:
+            mode = data.get("_mode", PredictLogMode.PICKLE.value)
+            mode = PredictLogMode(mode)
+
+            if "output" in data and mode == PredictLogMode.PICKLE:
+                data["output"] = dill.loads(data["output"])
+
+            input_features = {}
+            for k in list(data.keys()):
+                if k.startswith(self._INPUT_PREFIX):
+                    _, name = k.split(self._INPUT_PREFIX, 1)
+                    input_features[name] = data.pop(k)
+
+            data["input"] = input_features
+            yield data
+
+    def _log_predict_result(
+        self, features: t.Dict, idx_with_ds: str, output: t.Any, idx: str | int
+    ) -> None:
+        if not self.predict_auto_log:
+            return
+
+        if self.predict_log_dataset_features is None:
+            _log_features = features
+        else:
+            _log_features = {
+                k: v
+                for k, v in features.items()
+                if k in self.predict_log_dataset_features
+            }
+
+        for artifact in TabularDatasetRow.artifacts_of(_log_features):
+            if artifact.link:
+                artifact.clear_cache()
+
+        input_features = {
+            f"{self._INPUT_PREFIX}{k}": JsonDict.from_data(v)
+            for k, v in _log_features.items()
+        }
+        if self.predict_log_mode == PredictLogMode.PICKLE:
+            output = dill.dumps(output)
+
+        # for plain mode: if the output is dict type, we(datastore) will log each key-value pair as a column
+        record = {
+            "id": idx_with_ds,
+            "_mode": self.predict_log_mode.value,
+            "_index": idx,
+            "output": output,
+            **input_features,
+        }
+        self.evaluation_store.log_result(record)
 
 
 # TODO: add flush, get_summary functions?
@@ -469,6 +514,8 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         fail_on_error: [bool, optional] Fast fail on the exceptions in the predict function. Default is True.
         auto_log: [bool, optional] Auto log the return values of the predict function and the according dataset rows. Default is True.
         log_mode: [str, optional] When auto_log=True, the log_mode can be specified to control the log behavior. Options are `pickle` and `plain`. Default is `pickle`.
+        log_dataset_features: [List[str], optional] When auto_log=True, the log_dataset_features can be specified to control the log dataset features behavior.
+            Default is None, all dataset features will be logged. If the list is empty, no dataset features will be logged.
         needs: [List[Callable], optional] The list of the functions that need to be executed before the predict function.
 
     Examples:
@@ -484,7 +531,6 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         dataset="mnist/version/latest",
         batch_size=32,
         replicas=4,
-        auto_log=True,
     )
     def predict_batch_images(batch_data)
         ...
@@ -519,6 +565,7 @@ def _register_predict(
     fail_on_error: bool = True,
     auto_log: bool = True,
     log_mode: str = PredictLogMode.PICKLE.value,
+    log_dataset_features: t.Optional[t.List[str]] = None,
 ) -> None:
     from .job import Handler
 
@@ -533,7 +580,7 @@ def _register_predict(
             ignore_error=not fail_on_error,
             predict_auto_log=auto_log,
             predict_log_mode=log_mode,
-            ignore_dataset_data=not auto_log,
+            predict_log_dataset_features=log_dataset_features,
             dataset_uris=datasets,
         ),
     )(func)
