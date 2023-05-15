@@ -52,4 +52,8 @@ public class JobRequest implements Serializable {
 
     @JsonProperty("type")
     private JobType type = JobType.EVALUATION;
+
+    // jobs will not auto start if debug is true
+    @JsonProperty("debugMode")
+    private boolean debugMode = false;
 }

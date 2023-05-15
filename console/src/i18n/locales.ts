@@ -1397,6 +1397,10 @@ const locales0 = {
         en: 'Edit',
         zh: '修改',
     },
+    'eval debug mode': {
+        en: 'Debug Mode',
+        zh: '调试模式',
+    },
     'wrong yaml syntax': {
         en: 'wrong yaml syntax',
         zh: 'YAML 语法错误',

@@ -211,6 +211,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 <FormItem label={t('Resource Pool')} name='resourcePool' required>
                     <ResourcePoolSelector autoSelected />
                 </FormItem>
+                <FormItem label={t('eval debug mode')} name='debugMode'>
+                    <Toggle />
+                </FormItem>
             </div>
             <Divider orientation='top'>{t('Model Information')}</Divider>
             <div className={styles.rowModel}>

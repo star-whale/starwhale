@@ -70,6 +70,7 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOv
     stepSpecOverWrites: StepSpec[]
     rawType: boolean
     modelVersionHandler: string
+    debugMode: boolean
 }
 
 export type IJobResultSchema = any
