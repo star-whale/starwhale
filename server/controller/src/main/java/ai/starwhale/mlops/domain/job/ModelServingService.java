@@ -76,6 +76,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class ModelServingService {
+
     private final ModelServingMapper modelServingMapper;
     private final UserService userService;
     private final ProjectService projectService;
@@ -273,7 +274,7 @@ public class ModelServingService {
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());
 
-        var envs = Map.of(
+        var envs = new HashMap<>(Map.of(
                 "SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()),
                 "SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()),
                 "SW_INSTANCE_URI", instanceUri,
@@ -285,7 +286,11 @@ public class ModelServingService {
                 "SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id),
                 // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
                 "SW_PRODUCTION", "1"
-        );
+        ));
+
+        if (null != modelServingSpec && null != modelServingSpec.getEnvVars()) {
+            envs.putAll(modelServingSpec.getEnvVars());
+        }
 
         List<RuntimeResource> resources = null;
         // get the resources from user input
