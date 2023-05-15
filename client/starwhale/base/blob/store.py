@@ -8,6 +8,7 @@ import fnmatch
 from abc import ABC
 from pathlib import Path
 
+from starwhale.utils.venv import check_valid_venv_prefix, check_valid_conda_prefix
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.blob.file import PathLike, BlakeFile, OptionalPathLike
 
@@ -90,39 +91,35 @@ class LocalFileStore(ObjectStore):
         return file.is_relative_to(dir)
 
     @staticmethod
-    def _check_if_is_venv(path: PathLike) -> bool:
+    def _check_if_is_py_env(path: PathLike) -> bool:
         """
         Check if the path is a virtual environment.
         Args:
             path: the path to be checked
-        Returns: True if the path is a virtual environment
+        Returns: True if the path is a virtual environment or conda environment
         """
-        return (
-            Path(path).is_dir()
-            and Path(path).joinpath("bin/activate").exists()
-            and Path(path).joinpath("bin/python").exists()
-        )
+        return check_valid_venv_prefix(path) or check_valid_conda_prefix(path)
 
     @classmethod
-    def _search_all_venvs(cls, path: PathLike) -> t.List[Path]:
+    def _search_all_py_envs(cls, path: PathLike) -> t.List[Path]:
         """
         Search all virtual environments under the path.
         Args:
             path: the path to be searched
-        Returns: a list of virtual environments
+        Returns: a list of virtual environments or conda environments
         """
-        venvs = []
+        envs = []
         for root, dirs, files in os.walk(path):
-            if cls._check_if_is_venv(root):
-                venvs.append(Path(root))
-        return venvs
+            if cls._check_if_is_py_env(root):
+                envs.append(Path(root))
+        return envs
 
     def copy_dir(
         self,
         src_dir: PathLike,
         dst_dir: PathLike,
         excludes: t.List[str],
-        ignore_venv: bool = True,
+        ignore_venv_or_conda: bool = True,
     ) -> t.Tuple[int, t.List[Path]]:
         """
         Copy a directory from src_dir to the dst_dir using the object store cache.
@@ -131,12 +128,12 @@ class LocalFileStore(ObjectStore):
             src_dir: the source directory
             dst_dir: the destination directory
             excludes: the files to be excluded
-            ignore_venv: whether to ignore virtual environments
+            ignore_venv_or_conda: whether to ignore virtual environments or conda environments
         Returns: a tuple of (total file size in bytes, ignored directories or files)
         """
         src_dir = Path(src_dir)
         dst_dir = Path(dst_dir)
-        ignore_dirs = self._search_all_venvs(src_dir) if ignore_venv else []
+        ignore_dirs = self._search_all_py_envs(src_dir) if ignore_venv_or_conda else []
 
         size = 0  # no record for soft link (inode not working in windows)
         ignored = ignore_dirs

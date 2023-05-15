@@ -136,7 +136,7 @@ class RuntimeProcessTestCase(TestCase):
 
         m_restore.reset_mock()
         m_extract.reset_mock()
-        ensure_file(conda_dir / "conda-meta", "")
+        ensure_file(conda_dir / "conda-meta" / "fake", "", parents=True)
 
         with patch.object(sys, "argv", run_argv):
             p = Process(uri, force_restore=False)

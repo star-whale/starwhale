@@ -769,7 +769,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         Args:
             workdir: source code dir
             model_config: model config
-            add_all: copy all files, include python cache files(defined in BuiltinPyExcludes) and venv files
+            add_all: copy all files, include python cache files(defined in BuiltinPyExcludes) and venv or conda files
         Returns: None
         """
         console.print(
@@ -791,7 +791,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             src_dir=workdir.resolve(),
             dst_dir=self.store.src_dir.resolve(),
             excludes=excludes,
-            ignore_venv=not add_all,
+            ignore_venv_or_conda=not add_all,
         )
         for i in ignored:
             console.info(f"ignored : {str(i)}")
