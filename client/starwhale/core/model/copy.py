@@ -99,13 +99,13 @@ class ModelCopy(BundleCopy):
             manifest = load_yaml(manifest_file)
             packaged_runtime = manifest.get("packaged_runtime", None)
             if packaged_runtime:
-                _tid = progress.add_task(
-                    f":arrow_up: synchronize the built-in runtime..."
-                )
                 rt_version = packaged_runtime["manifest"]["version"]
                 rt_file_path = (
                     self._get_versioned_resource_path(self.src_uri)
                     / packaged_runtime["path"]
+                )
+                _tid = progress.add_task(
+                    f":arrow_up: synchronize the built-in runtime:{rt_version}..."
                 )
 
                 dest_uri = Resource(
