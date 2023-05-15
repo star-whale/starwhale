@@ -131,9 +131,7 @@ class TestCli:
         self.server_url = server_url
         self.server_project = server_project
         self.datasets: t.Dict[str, t.List[Resource]] = {}
-        self.runtimes: t.Dict[str, t.List[Resource]] = {
-            BUILT_IN: [Resource("runtime/version")]
-        }
+        self.runtimes: t.Dict[str, t.List[Resource]] = {}
         self.models: t.Dict[str, Resource] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
@@ -316,7 +314,7 @@ class TestCli:
             run_handler=run_handler,
             runtime_uris=[conda_runtime_uri]
             if "simple" not in BUILT_IN_EXAMPLES
-            else None,
+            else [model_uri],
         )
 
         futures = [
@@ -352,9 +350,7 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=False,
-                runtime=example["runtime"]
-                if name not in BUILT_IN_EXAMPLES
-                else BUILT_IN,
+                runtime=example["runtime"],
             )
             for name, example in ALL_EXAMPLES.items()
         ]
@@ -366,9 +362,7 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=True,
-                runtime=example["runtime"]
-                if name not in BUILT_IN_EXAMPLES
-                else BUILT_IN,
+                runtime=example["runtime"],
             )
 
         failed_jobs = []
@@ -435,8 +429,16 @@ class TestCli:
             raise RuntimeError("runtimes should not be empty")
 
         if in_standalone:
+            runtime_uris = (
+                runtime_uris if name not in BUILT_IN_EXAMPLES else [model_uri]
+            )
             f = self.run_model_in_standalone
         else:
+            runtime_uris = (
+                runtime_uris
+                if name not in BUILT_IN_EXAMPLES
+                else [Resource("runtime/version")]
+            )
             f = self.run_model_in_server  # type: ignore
         return f(  # type: ignore
             dataset_uris=dataset_uris,
@@ -501,6 +503,8 @@ if __name__ == "__main__":
         elif case == "sdk":
             test_cli.test_sdk()
         else:
-            test_cli.test_example(name=case, run_handler=sys.argv[2])
+            test_cli.test_example(
+                name=case, run_handler=sys.argv[2], runtime=sys.argv[3]
+            )
 
         test_cli.smoke_commands()
