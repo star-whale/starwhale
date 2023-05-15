@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-import logging
 import os
-import subprocess
 import sys
 import typing as t
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+import logging
+import subprocess
 from time import sleep
+from pathlib import Path
+from concurrent.futures import as_completed, ThreadPoolExecutor
 
 from cmds import DatasetExpl
-from cmds.artifacts_cmd import Dataset, Model, Runtime
-from cmds.base.invoke import check_invoke
-from cmds.instance_cmd import Instance
-from cmds.job_cmd import Job
-from cmds.project_cmd import Project
-from starwhale.base.type import DatasetChangeMode
-from starwhale.base.uri.resource import Resource
-from starwhale.utils import config
-from starwhale.utils.debug import init_logger
 from tenacity import retry
+from cmds.job_cmd import Job
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
+from cmds.base.invoke import check_invoke
+from cmds.project_cmd import Project
+from cmds.instance_cmd import Instance
+from cmds.artifacts_cmd import Model, Dataset, Runtime
+
+from starwhale.utils import config
+from starwhale.base.type import DatasetChangeMode
+from starwhale.utils.debug import init_logger
+from starwhale.base.uri.resource import Resource
 
 CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
@@ -312,9 +313,7 @@ class TestCli:
             dataset_uris=[dataset_uri],
             model_uri=model_uri,
             run_handler=run_handler,
-            runtime_uris=[conda_runtime_uri]
-            if "simple" not in BUILT_IN_EXAMPLES
-            else [model_uri],
+            runtime_uris=[conda_runtime_uri],
         )
 
         futures = [
@@ -429,9 +428,6 @@ class TestCli:
             raise RuntimeError("runtimes should not be empty")
 
         if in_standalone:
-            runtime_uris = (
-                runtime_uris if name not in BUILT_IN_EXAMPLES else [model_uri]
-            )
             f = self.run_model_in_standalone
         else:
             runtime_uris = (

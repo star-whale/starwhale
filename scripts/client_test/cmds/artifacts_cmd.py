@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import json
 import os
+import json
 import typing as t
 from pathlib import Path
 
+from starwhale.utils import gen_uniq_version
+from starwhale.consts import ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.base.type import DatasetChangeMode
+from starwhale.core.model.view import ModelTermView
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.consts import ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
-from starwhale.core.model.view import ModelTermView
 from starwhale.core.runtime.model import RuntimeConfig
-from starwhale.utils import gen_uniq_version
 
 from . import CLI
 from .base.invoke import invoke

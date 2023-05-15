@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from starwhale.utils import console
 
