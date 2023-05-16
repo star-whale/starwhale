@@ -16,12 +16,6 @@ STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
 RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
-USE_PACKAGED_RUNTIME=${SW_USER_USE_PACKAGED_RUNTIME:-0}
-
-if [ "${USE_PACKAGED_RUNTIME}" = "1" ]; then
-    # TODO： add more validations for uri format
-    SW_RUNTIME_VERSION="model/${SW_MODEL_VERSION}"
-fi
 
 _update_python_alter() {
     echo "-->[Preparing] set python/python3 to $1 ..."
@@ -67,15 +61,9 @@ set_pip_cache() {
 set_py_and_sw() {
     pre_config
 
-    if [ "${USE_PACKAGED_RUNTIME}" = "1" ]; then
-        echo "-->[Preparing] use packaged runtime ..."
-        _MANIFEST_RUNTIME=$(swcli -o json model info ${SW_MODEL_VERSION} -of manifest | jq -r ".packaged_runtime.manifest.environment.python") || exit 1
-        DETECTED_SW_VER=$(swcli -o json model info ${SW_MODEL_VERSION} -of manifest | jq -r ".packaged_runtime.manifest.environment.lock.starwhale_version") || exit 1
-    else
-        echo "-->[Preparing] use runtime ..."
-        _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.python") || exit 1
-        DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.lock.starwhale_version") || exit 1
-    fi
+    echo "-->[Preparing] use runtime ..."
+    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.python") || exit 1
+    DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.lock.starwhale_version") || exit 1
 
     _RUNTIME="python${_MANIFEST_RUNTIME}"
     ORIGIN_SW_VER=$(swcli --version)
@@ -107,7 +95,6 @@ run() {
     echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
         runtime_args="--runtime ${SW_RUNTIME_VERSION}"
-
     else
         runtime_args="--forbid-packaged-runtime"
     fi
@@ -137,7 +124,7 @@ welcome() {
     echo "Run: $1 "
     echo "Model Version: ${SW_MODEL_VERSION}"
     echo "Runtime Version: ${SW_RUNTIME_VERSION}"
-    echo "Use Packaged Runtime: ${USE_PACKAGED_RUNTIME}"
+    echo "Runtime Restored: ${SW_USER_RUNTIME_RESTORED}"
     echo "Local User: ${SW_USER:-root}"
     echo "===================================="
     if [ ! -z "${SW_USER}" ];
@@ -154,7 +141,7 @@ prepare(){
         echo '-->[Preparing] pulling model ...'
         swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
         swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
-        if [ "${RUNTIME_RESTORED}" != "1" ] && [ "${USE_PACKAGED_RUNTIME}" != "1" ]; then
+        if [ "${RUNTIME_RESTORED}" != "1" ]; then
             echo '-->[Preparing] pulling runtime ...'
             swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
         fi
