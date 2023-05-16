@@ -114,12 +114,6 @@ class Dataset:
             or gen_uniq_version()
         )
 
-        self._make_capsulated_uri: t.Callable[[str], Resource] = lambda ver: Resource(
-            "/version/".join(filter(bool, [self._uri.name, ver])),
-            typ=ResourceType.dataset,
-            project=copy.deepcopy(self._uri.project),
-        )
-
         if create not in (
             _DatasetCreateMode.auto,
             _DatasetCreateMode.empty,
@@ -129,7 +123,7 @@ class Dataset:
                 f"the current create mode is not in the accept options: {create}"
             )
 
-        _origin_uri = self._make_capsulated_uri(uri.version or "latest")
+        _origin_uri = self._make_capsulated_uri(uri.version or "latest", refine=True)
         origin_uri_exists = self._check_uri_exists(_origin_uri)
         if origin_uri_exists:
             if create == _DatasetCreateMode.empty:
@@ -157,11 +151,13 @@ class Dataset:
 
             self._loading_version = self._pending_commit_version
 
-        self._loading_uri = self._make_capsulated_uri(self._loading_version)
+        self._loading_uri = self._make_capsulated_uri(
+            self._loading_version, refine=False
+        )
         self.__loading_core_dataset = CoreDataset.get_dataset(self._loading_uri)
 
         self._pending_commit_uri = self._make_capsulated_uri(
-            self._pending_commit_version
+            self._pending_commit_version, refine=False
         )
         self.__pending_commit_core_dataset = CoreDataset.get_dataset(
             self._pending_commit_uri
@@ -205,6 +201,14 @@ class Dataset:
         self._last_data_datastore_revision = ""
         self._last_info_datastore_revision = ""
 
+    def _make_capsulated_uri(self, version: str, refine: bool) -> Resource:
+        return Resource(
+            "/version/".join(filter(bool, [self._uri.name, version])),
+            typ=ResourceType.dataset,
+            project=copy.deepcopy(self._uri.project),
+            refine=refine,
+        )
+
     def _auto_complete_version(self, version: str) -> str:
         version = version.strip()
         if not version:
@@ -214,7 +218,7 @@ class Dataset:
         if self._uri.instance.is_cloud:
             return version
 
-        _uri = self._make_capsulated_uri(version)
+        _uri = self._make_capsulated_uri(version, refine=True)
         store = DatasetStorage(_uri)
         if not store.snapshot_workdir.exists():
             return version

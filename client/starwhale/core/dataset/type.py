@@ -23,7 +23,7 @@ from starwhale.utils.error import (
     MissingDependencyError,
 )
 from starwhale.utils.retry import http_retry
-from starwhale.base.uri.resource import Resource
+from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.api._impl.data_store import SwObject, _TYPE_DICT
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
@@ -188,13 +188,24 @@ class ArtifactType(Enum):
     Unknown = "unknown"
 
 
+class _ResourceOwnerMixin:
+    @property
+    def owner(self) -> t.Optional[Resource]:
+        _owner = getattr(self, "_owner", None)
+        return Resource(_owner, ResourceType.dataset, refine=False) if _owner else None
+
+    @owner.setter
+    def owner(self, value: t.Optional[Resource]) -> None:
+        self._owner = str(value) if value else None
+
+
 # TODO: support File, Model artifacts
 
 
 _TBAType = t.TypeVar("_TBAType", bound="BaseArtifact")
 
 
-class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
+class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
     def __init__(
         self,
         fp: _TArtifactFP,
@@ -218,7 +229,6 @@ class BaseArtifact(ASDictMixin, metaclass=ABCMeta):
         self.encoding = encoding
         self.link = link
         self._do_validate()
-        self.owner: t.Optional[Resource] = None
 
     def _do_validate(self) -> None:
         ...
@@ -810,7 +820,7 @@ class COCOObjectAnnotation(ASDictMixin, SwObject):
 
 
 # TODO: support tensorflow transform
-class Link(ASDictMixin, SwObject):
+class Link(ASDictMixin, _ResourceOwnerMixin, SwObject):
     def __init__(
         self,
         uri: t.Union[str, Path] = "",
@@ -818,11 +828,9 @@ class Link(ASDictMixin, SwObject):
         size: int = -1,
         data_type: t.Optional[t.Union[BaseArtifact, t.Dict]] = None,
         use_plain_type: bool = False,
-        owner: t.Optional[Resource] = None,
         **kwargs: t.Any,
     ) -> None:
         self._type = "link"
-        self.owner = owner
         self.uri = str(uri).strip()
         _up = urlparse(self.uri)
         self.scheme = _up.scheme
@@ -845,7 +853,6 @@ class Link(ASDictMixin, SwObject):
         self.data_type = data_type
 
         self._signed_uri = ""
-
         self.extra_info = kwargs
 
     @property

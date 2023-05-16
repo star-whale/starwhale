@@ -6,12 +6,10 @@ from enum import Enum, unique
 from typing import Any, Dict, List, Union, Callable, Iterator, Optional
 from functools import lru_cache
 
-import dill
 import requests
 
 from starwhale.utils import console
 from starwhale.consts import VERSION_PREFIX_CNT, STANDALONE_INSTANCE
-from starwhale.base.type import PredictLogMode
 from starwhale.consts.env import SWEnv
 from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
@@ -109,7 +107,6 @@ def _get_remote_project_id(instance_uri: str, project: str) -> Any:
 
 
 class Evaluation(Logger):
-    _RESULT_LOG_MODE_KEY = "_mode"
     _ID_KEY = "id"
 
     def __init__(self, eval_id: str, project: str, instance: str = ""):
@@ -160,30 +157,7 @@ class Evaluation(Logger):
         _storage_table_name = self._get_storage_table_name(table_name)
         return super()._flush(_storage_table_name)
 
-    def log_result(
-        self,
-        data_id: Union[int, str],
-        **kwargs: Any,
-    ) -> None:
-        mode = kwargs.pop(self._RESULT_LOG_MODE_KEY, PredictLogMode.PICKLE)
-        mode = PredictLogMode(mode)
-
-        def _serialize(_input: Any) -> Any:
-            if mode == PredictLogMode.PICKLE:
-                return dill.dumps(_input)
-            else:
-                return _input
-
-        record = {
-            self._ID_KEY: data_id,
-            self._RESULT_LOG_MODE_KEY: mode.value,
-        }
-        for k, v in kwargs.items():
-            k = k.lower()
-            if k == self._ID_KEY:
-                raise RuntimeError(f"key {k} is protected, please use another key")
-            record[k] = _serialize(v)
-
+    def log_result(self, record: Dict) -> None:
         self._log(self._eval_table_name("results"), record)
 
     def log_metrics(
@@ -209,17 +183,7 @@ class Evaluation(Logger):
         self._log(self._eval_table_name(table_name), record)
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
-        for data in self._get(self._eval_table_name("results")):
-            mode = data.get(self._RESULT_LOG_MODE_KEY, PredictLogMode.PICKLE.value)
-            mode = PredictLogMode(mode)
-
-            if mode == PredictLogMode.PICKLE:
-                for k, v in data.items():
-                    if k in (self._ID_KEY, self._RESULT_LOG_MODE_KEY):
-                        continue
-                    data[k] = dill.loads(v)
-
-            yield data
+        return self._get(self._eval_table_name("results"))
 
     def get_metrics(self) -> Dict[str, Any]:
         for metrics in self._get(self._eval_summary_table_name):
