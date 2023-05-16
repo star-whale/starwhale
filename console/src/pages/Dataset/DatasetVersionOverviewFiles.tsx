@@ -6,7 +6,7 @@ import { Pagination } from 'baseui/pagination'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
-import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
+import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import qs from 'qs'
@@ -18,7 +18,7 @@ import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
 import { StyledTab } from 'baseui/tabs'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
-import Preview from '@starwhale/ui/Dataset/Preview'
+import Preview from '@starwhale/ui/GridDatastoreTable/components/Preview'
 import { getMeta } from '@/domain/dataset/utils'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 
@@ -251,7 +251,7 @@ export default function DatasetVersionFiles() {
 
                     return (
                         <div className={styles.tableCell} style={wrapperStyle}>
-                            <DatasetViewer dataset={row} showKey={key} />
+                            <DataViewer data={row} showKey={key} />
                             <div
                                 className={styles.cardFullscreen}
                                 role='button'

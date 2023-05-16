@@ -3,6 +3,7 @@ import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
 import { listModels } from '../services/model'
+import useTranslation from '@/hooks/useTranslation'
 
 export interface IModelSelectorProps {
     projectId: string
@@ -12,6 +13,7 @@ export interface IModelSelectorProps {
     disabled?: boolean
     clearable?: boolean
     getId?: (obj: any) => any
+    placeholder?: React.ReactNode
 }
 
 export default function ModelSelector({
@@ -21,8 +23,10 @@ export default function ModelSelector({
     overrides,
     disabled,
     clearable = false,
+    placeholder,
     getId = (obj) => obj.id,
 }: IModelSelectorProps) {
+    const [t] = useTranslation()
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
     const modelsInfo = useQuery(`listModels:${projectId}:${keyword}`, () =>
@@ -52,6 +56,7 @@ export default function ModelSelector({
 
     return (
         <Select
+            placeholder={placeholder ?? t('model.selector.placeholder')}
             disabled={disabled}
             overrides={overrides}
             clearable={clearable}

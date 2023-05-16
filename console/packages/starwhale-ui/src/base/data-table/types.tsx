@@ -41,7 +41,7 @@ export type SharedColumnOptionsT<ValueT> = {
     columnType?: { name: string; type: string }
 }
 
-export type RenderCellT<ValueT> = React.Component<{
+export type RenderCellT<ValueT> = React.FC<{
     data: any
     value: ValueT
     isMeasured?: boolean
@@ -50,6 +50,7 @@ export type RenderCellT<ValueT> = React.Component<{
     textQuery?: string
     x: number
     y: number
+    columnKey: string
 }>
 
 export type RenderFilterT<ValueT, FilterParamsT> = React.FC<{
@@ -153,6 +154,7 @@ export type StatefulDataTablePropsT = {
     queryable?: boolean
     selectable?: boolean
     queryinline?: boolean
+    previewable?: boolean
     controlRef?: ControlRefT
 }
 
@@ -178,6 +180,7 @@ export type DataTablePropsT = {
     isRowSelected?: (row: RowT) => boolean
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
+    onPreview?: (data: { record?: RowT; columnKey?: string }) => void
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

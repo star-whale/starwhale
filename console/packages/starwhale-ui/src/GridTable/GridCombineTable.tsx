@@ -38,13 +38,14 @@ function BaseGridCombineTable({
     records,
     columnTypes,
     columns,
-    // table confi
+    // table config
     title = '',
     titleOfCompare = 'Compare',
     queryable = false,
     queryinline = false,
     columnable = false,
     viewable = false,
+    previewable = false,
     // actions
     onSave,
     onChange = () => {},
@@ -60,8 +61,6 @@ function BaseGridCombineTable({
         return records?.filter((r) => rowSelectedIds.includes(getId(r))) ?? []
     }, [rowSelectedIds, records, getId])
 
-    console.log('render toolbar')
-
     return (
         <div data-type='grid-combine-table' className={styles.gridComineTable}>
             <ToolBar columnable={columnable} viewable={viewable} queryable={queryable} />
@@ -76,6 +75,7 @@ function BaseGridCombineTable({
                             onSave={onSave}
                             onChange={onChange}
                             queryinline={queryinline}
+                            previewable={previewable}
                             emptyMessage={emptyMessage}
                             emptyColumnMessage={emptyColumnMessage}
                             headlineHeight={headlineHeight}

@@ -37,9 +37,13 @@ export const isAnnotation = (data: any) => (typeof data === 'object' && isAnnota
 export const isAnnotationHiddenInTable = (data: any) => isAnnotation(data) && !isMask(data)
 
 export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
-    return data.uri.startsWith('http') ? data.uri : curryParseLinkFn(data)
+    if (data.uri.startsWith('http')) return data.uri
+    if (data._owner) return data._owner
+    if (curryParseLinkFn) return curryParseLinkFn(data)
+    return data.uri
 }
 
+// @FIXME add cache
 export function getSummary(record: RecordT, options: OptionsT) {
     const summaryTmp = new Map<string, SummaryT>()
     const summaryTypesTmp = new Set<string>()

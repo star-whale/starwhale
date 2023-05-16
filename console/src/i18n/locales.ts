@@ -121,6 +121,10 @@ const model = {
         en: 'Handler',
         zh: 'Handler',
     },
+    'model.selector.placeholder': {
+        en: 'Select Model',
+        zh: '选择模型',
+    },
     'online eval': {
         en: 'Online Evaluation',
         zh: '在线评测',

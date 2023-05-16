@@ -5,6 +5,8 @@ import { themedUseStyletron } from '../../../theme/styletron'
 import { useIfChanged } from '@starwhale/core'
 import _ from 'lodash'
 import Input from '@starwhale/ui/Input'
+import IconFont from '@starwhale/ui/IconFont'
+import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 
 export type CellPlacementPropsT = {
     columnIndex: number
@@ -37,11 +39,13 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
         isSelectable,
         isQueryInline,
         isRowSelected,
+        previewable,
         onRowMouseEnter,
         onSelectOne,
         rows,
         columns,
         getId,
+        onPreview,
     } = data
 
     const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
@@ -83,21 +87,24 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 rowIndex === data.rowHighlightIndex ? 'table-row--hovering' : undefined,
 
                 css({
-                    borderTop: 'none',
-                    borderBottom: 'none',
-                    borderRight: 'none',
-                    borderLeft: 'none',
-                    boxSizing: 'border-box',
-                    paddingTop: '0',
-                    paddingBottom: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: '12px',
-                    paddingRight: '12px',
-                    textOverflow: 'ellipsis',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    breakinside: 'avoid',
+                    'borderTop': 'none',
+                    'borderBottom': 'none',
+                    'borderRight': 'none',
+                    'borderLeft': 'none',
+                    'boxSizing': 'border-box',
+                    'paddingTop': '0',
+                    'paddingBottom': '0',
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'paddingLeft': '12px',
+                    'paddingRight': '12px',
+                    'textOverflow': 'ellipsis',
+                    'overflow': 'hidden',
+                    'position': 'relative',
+                    'breakinside': 'avoid',
+                    ":hover [data-type='cell-fullscreen']": {
+                        display: 'grid',
+                    },
                 })
             )}
             style={style}
@@ -106,7 +113,40 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             onMouseEnter={_.throttle(() => onRowMouseEnter(rowIndex), 200)}
             onMouseLeave={_.throttle(() => onRowMouseEnter(-1), 200)}
         >
+            {previewable && (
+                <div
+                    data-type='cell-fullscreen'
+                    className={css({
+                        'position': 'absolute',
+                        'right': '5px',
+                        'top': '5px',
+                        'backgroundColor': 'rgba(2,16,43,0.60)',
+                        'height': '22px',
+                        'width': '22px',
+                        'borderRadius': '2px',
+                        'display': 'none',
+                        'color': '#FFF',
+                        'cursor': 'pointer',
+                        'placeItems': 'center',
+                        'paddingTop': '1px',
+                        ':hover': {
+                            backgroundColor: '#5181E0',
+                        },
+                    })}
+                    role='button'
+                    tabIndex={0}
+                    onClick={() => {
+                        onPreview?.({
+                            record: value,
+                            columnKey: column.key,
+                        })
+                    }}
+                >
+                    <IconFont type='fullscreen' size={14} />
+                </div>
+            )}
             <Cell
+                columnKey={column.key}
                 value={value}
                 data={rowData}
                 pin={column.pin}

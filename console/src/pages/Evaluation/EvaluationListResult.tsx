@@ -67,6 +67,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 records={records}
                 columnTypes={columnTypes}
                 getId={getId}
+                previewable
             />
         </Card>
     )

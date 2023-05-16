@@ -48,7 +48,7 @@ function useGridQuery() {
                 </div>
                 {hasFilter && (
                     <Button as='link' onClick={() => setIsSimpleQuery(!isSimpleQuery)}>
-                        {isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
+                        {!isSimpleQuery ? t('table.config.query.simple') : t('table.config.query.advanced')}
                     </Button>
                 )}
             </div>

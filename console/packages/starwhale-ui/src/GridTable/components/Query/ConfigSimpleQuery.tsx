@@ -11,7 +11,7 @@ type PropsT = {
     onChange: (args: QueryT[]) => void
 }
 
-function ConfigSimpleQuery({ columns, onChange, value }: PropsT & { width: number }) {
+function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
     useEffect(() => {
         const values = _.fromPairs(
             value.map((query) => {

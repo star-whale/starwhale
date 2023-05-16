@@ -87,6 +87,7 @@ export interface ITypeLink extends ITypeBase {
     auth: string
     scheme: string
     with_local_fs_data: boolean
+    _owner: string
 }
 export interface ITypeCOCOObjectAnnotation extends ITypeBase {
     _type: AnnotationType.COCO

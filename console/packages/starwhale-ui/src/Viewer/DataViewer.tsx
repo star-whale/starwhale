@@ -15,9 +15,10 @@ import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
 import _ from 'lodash'
+import { isComplexType } from '@starwhale/core'
 
-export type IDatasetViewerProps = {
-    dataset?: any
+export type IDataViewerProps = {
+    data?: any
     isZoom?: boolean
     hiddenLabels?: Set<number>
     showKey: string
@@ -42,17 +43,18 @@ export function Placeholder() {
     )
 }
 
-export default function DatasetViewer({
-    dataset,
+export default function DataViewer({
+    data: rawData,
     isZoom = false,
     hiddenLabels = new Set(),
     showKey,
-}: IDatasetViewerProps) {
+}: IDataViewerProps) {
     // @ts-ignore
-    const { summary } = dataset
-    const data = summary?.get(showKey)
+    const { type, value } = rawData
 
     const Viewer = React.useMemo(() => {
+        const { summary } = rawData
+        const data = summary?.get(showKey)
         if (!data) return <></>
         if (!_.isObject(data)) {
             return <TextViewer data={data} isZoom={isZoom} />
@@ -109,11 +111,9 @@ export default function DatasetViewer({
             default:
                 return <Placeholder />
         }
-    }, [summary, data, hiddenLabels, isZoom])
+    }, [rawData, hiddenLabels, isZoom])
 
-    if (data === '') return <></>
-
-    if (!data) return <Placeholder />
+    if (!isComplexType(type)) return value
 
     return Viewer
 }

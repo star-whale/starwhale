@@ -12,6 +12,7 @@ import StoreUpdater, { useDirectStoreUpdater } from './store/StoreUpdater'
 import useGrid from './hooks/useGrid'
 import { DataTable } from '../base/data-table/data-custom-table'
 import useOnInitHandler from './hooks/useOnInitHandler'
+import Preview from '../GridDatastoreTable/components/Preview'
 
 const useStyles = createUseStyles({
     table: {
@@ -82,6 +83,7 @@ function GridTable({
     compareable = false,
     selectable = false,
     queryinline = false,
+    previewable = false,
     emptyMessage,
     emptyColumnMessage,
     resizableColumnWidths = true,
@@ -119,7 +121,12 @@ function GridTable({
         isRowSelected,
         isSelectedAll,
         isSelectedIndeterminate,
+        preview,
+        onPreview,
+        onPreviewClose,
     } = useGrid()
+
+    console.log(preview)
 
     return (
         <div
@@ -133,6 +140,7 @@ function GridTable({
                     selectable={selectable}
                     compareable={compareable}
                     queryinline={queryinline}
+                    previewable={previewable}
                     rawColumns={$columns}
                     emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
                     loading={isLoading}
@@ -154,11 +162,18 @@ function GridTable({
                     sortDirection={sortDirection}
                     sortIndex={sortIndex}
                     textQuery={textQuery}
+                    onPreview={onPreview}
                     // controlRef={controlRef}
                     // filters={$filtersEnabled}
                 />
                 {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
+            <Preview
+                preview={preview.record}
+                previewKey={preview.columnKey}
+                isFullscreen={!!preview.record}
+                setIsFullscreen={onPreviewClose}
+            />
         </div>
     )
 }

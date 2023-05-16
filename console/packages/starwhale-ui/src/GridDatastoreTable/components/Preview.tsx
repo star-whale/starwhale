@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React from 'react'
 import Button from '@starwhale/ui/Button'
-import DatasetViewer from '@starwhale/ui/Viewer/DatasetViewer'
+import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import { createUseStyles } from 'react-jss'
@@ -133,7 +133,7 @@ export default function Preview({
     isFullscreen = false,
     setIsFullscreen = () => {},
 }: {
-    preview: any
+    preview: { summary: Map<string, any> }
     previewKey: string
     isFullscreen?: boolean
     setIsFullscreen?: any
@@ -141,7 +141,10 @@ export default function Preview({
     const styles = useStyles()
     const [activeKey, setActiveKey] = React.useState('0')
     const [hiddenLabels, setHiddenLabels] = React.useState<Set<number>>(new Set())
-    const isSimpleView = React.useMemo(() => !_.isObject(preview.summary.get(previewKey)), [preview, previewKey])
+    const isSimpleView = React.useMemo(() => {
+        if (!preview?.summary?.get(previewKey)) return false
+        return !_.isObject(preview?.summary?.get(previewKey))
+    }, [preview, previewKey])
 
     const Panel = React.useMemo(() => {
         return (
@@ -197,7 +200,7 @@ export default function Preview({
                             </div>
                         )}
 
-                        <DatasetViewer dataset={preview} showKey={previewKey} isZoom hiddenLabels={hiddenLabels} />
+                        <DataViewer data={preview} showKey={previewKey} isZoom hiddenLabels={hiddenLabels} />
                     </div>
                 </div>
             </ModalBody>
@@ -232,6 +235,8 @@ function TabControl({
     }, [annotationTypeMap])
     const $isSimpleView = React.useMemo(() => isSimpleView || count === 0, [count, isSimpleView])
     const $activeKey = React.useMemo(() => ($isSimpleView ? '1' : value), [$isSimpleView, value])
+
+    console.log(isSimpleView, count, $isSimpleView, $activeKey)
 
     const Anno = React.useMemo(() => {
         return Array.from(annotationTypeMap).map(([type, list]) => {

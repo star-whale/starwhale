@@ -6,7 +6,7 @@ import { isAnnotation, isAnnotationType } from '../utils'
 export function useDatasetTableAnnotations(dataset: DatasetT, options?: OptionsT) {
     const annotations = React.useMemo(() => {
         const tmp = new Map()
-        dataset.summary.forEach((value: any, key: string) => {
+        dataset?.summary?.forEach((value: any, key: string) => {
             if (!isAnnotation(value)) return
             tmp.set(key, value)
         })
@@ -14,6 +14,7 @@ export function useDatasetTableAnnotations(dataset: DatasetT, options?: OptionsT
     }, [dataset])
 
     const annotationTypes = React.useMemo(() => {
+        if (!dataset.summaryTypes) return new Set()
         return new Set(Array.from(dataset.summaryTypes).filter(isAnnotationType))
     }, [dataset])
 
