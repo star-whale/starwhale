@@ -126,8 +126,6 @@ function GridTable({
         onPreviewClose,
     } = useGrid()
 
-    console.log(preview)
-
     return (
         <div
             className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}

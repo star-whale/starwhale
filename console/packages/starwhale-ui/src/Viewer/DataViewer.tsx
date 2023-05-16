@@ -113,7 +113,7 @@ export default function DataViewer({
         }
     }, [rawData, hiddenLabels, isZoom])
 
-    if (!isComplexType(type)) return value
+    if (typeof value !== 'object') return value ?? ''
 
     return Viewer
 }

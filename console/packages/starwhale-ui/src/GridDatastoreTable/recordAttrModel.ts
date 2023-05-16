@@ -3,6 +3,15 @@ import { RecordSchemaT, isComplexType } from '@starwhale/core/datastore'
 import _ from 'lodash'
 import { getSummary } from '@starwhale/core/dataset'
 
+function val(r: any) {
+    if (r === undefined) return ''
+    if (typeof r === 'object' && 'value' in r) {
+        // dataset use raw value should not be json encode
+        return r.value
+    }
+    return r
+}
+
 export class RecordAttr {
     type: string
     name: string
@@ -33,16 +42,21 @@ export class RecordAttr {
     static decode(record: Record<string, RecordSchemaT>, key: string, options: any = {}) {
         const data = record?.[key]
         const type = data?.type
+        const tmp: Record<string, any> = {}
+        Object.entries(record).forEach(([key, v]) => {
+            tmp[key] = val(v)
+        })
+
         if (isComplexType(type)) {
-            const decode = getSummary(record, {
+            const decode = getSummary(tmp, {
                 parseLink: options.parseLink,
                 showPrivate: false,
                 showLink: false,
             })
-            return new RecordComplexAttr(data, record, decode)
+            return new RecordComplexAttr(data, tmp, decode)
         }
 
-        return new RecordBasicAttr(data, record)
+        return new RecordBasicAttr(data, tmp)
     }
 }
 

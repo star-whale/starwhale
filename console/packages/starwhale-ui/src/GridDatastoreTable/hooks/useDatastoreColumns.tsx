@@ -25,7 +25,7 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
 }
 
 function RenderMixedCell({ value, data, columnKey, ...props }: RenderCellT<any>['props'] & { options: any }) {
-    if (isComplexType(value)) return <DataViewer data={value} showKey={columnKey} />
+    if (isComplexType(value.type)) return <DataViewer data={value} showKey={columnKey} />
     return <StringCell {...props} lineClamp={1} value={value.toString()} />
 }
 

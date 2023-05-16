@@ -129,6 +129,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                         'cursor': 'pointer',
                         'placeItems': 'center',
                         'paddingTop': '1px',
+                        'zIndex': 1,
                         ':hover': {
                             backgroundColor: '#5181E0',
                         },

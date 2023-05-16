@@ -99,7 +99,7 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
         start,
         limit,
         rawResult: true,
-        ignoreNonExistingTable: true,
+        ignoreNonExistingTable: false,
         encodeWithType: true,
     }
     if (revision) {
@@ -126,7 +126,9 @@ export function getScanQuery(params: TableScanParamsT): {
 } {
     const recordQuery = {
         ...params,
+        rawResult: true,
         encodeWithType: true,
+        limit: 100,
     }
 
     return {

@@ -1,26 +1,21 @@
 import React from 'react'
 import { useHistory, useParams } from 'react-router-dom'
-import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
 import { useAuth } from '@/api/Auth'
-import { Pagination } from 'baseui/pagination'
-import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
-import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
-import qs from 'qs'
-import { ArtifactType, isAnnotationHiddenInTable, parseDataSrc } from '@starwhale/core/dataset'
+import { parseDataSrc } from '@starwhale/core/dataset'
 import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
 import { StyledTab } from 'baseui/tabs'
 import { StatefulTooltip } from 'baseui/tooltip'
-import { useDatasets } from '@starwhale/core/dataset/hooks/useDatasets'
-import Preview from '@starwhale/ui/GridDatastoreTable/components/Preview'
 import { getMeta } from '@/domain/dataset/utils'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
+import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
+import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -150,11 +145,7 @@ export default function DatasetVersionFiles() {
     const { revision, rows: rowCount } = React.useMemo(() => {
         return getMeta(datasetVersion?.versionMeta as string)
     }, [datasetVersion?.versionMeta])
-
-    const [preview, setPreview] = React.useState('')
-    const [previewKey, setPreviewKey] = React.useState('')
     const { query } = useQueryArgs()
-
     const $page = React.useMemo(() => {
         return {
             ...page,
@@ -170,18 +161,6 @@ export default function DatasetVersionFiles() {
 
     const { records, columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, $page, true)
 
-    const paginationProps: IPaginationProps = React.useMemo(() => {
-        return {
-            start: page.pageNum,
-            count: page.pageSize,
-            total: rowCount,
-            afterPageChange: () => {},
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, rowCount])
-
-    const [isFullscreen, setIsFullscreen] = React.useState(true)
-
     const options = React.useMemo(
         () => ({
             parseLink: parseDataSrc(
@@ -195,221 +174,21 @@ export default function DatasetVersionFiles() {
         }),
         [projectId, datasetVersion, token]
     )
-
-    const { records: datasets } = useDatasets(records, columnTypes, options)
-
-    const Records = React.useMemo(() => {
-        if (!datasets?.[0]) return <></>
-        const { summary } = datasets?.[0]
-        const rowAction: any[] = []
-        summary.forEach((value, key) => {
-            if (isAnnotationHiddenInTable(value)) return
-
-            rowAction.push({
-                label: key,
-                overrides: {
-                    TableHeadCell: {
-                        style: {
-                            backgroundColor: theme.brandTableHeaderBackground,
-                            borderBottomWidth: '0',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            lineHeight: '14px',
-                        },
-                    },
-                    TableBodyCell: {
-                        style: {
-                            verticalAlign: 'middle',
-                            paddingTop: '4px',
-                            paddingBottom: '4px',
-                            position: 'relative',
-                        },
-                    },
-                },
-                renderItem: (row: any) => {
-                    let wrapperStyle = {}
-
-                    switch (row?.summary?.get('_extendtype')) {
-                        case ArtifactType.Image:
-                            wrapperStyle = {
-                                minWidth: '90px',
-                                height: '90px',
-                                textAlign: 'center',
-                            }
-                            break
-                        case ArtifactType.Audio:
-                            wrapperStyle = { height: '90px', maxWidth: '100%', width: '200px' }
-                            break
-                        case ArtifactType.Video:
-                            wrapperStyle = { maxWidth: '300px' }
-                            break
-                        default:
-                        case ArtifactType.Text:
-                            wrapperStyle = { minHeight: '60px', maxWidth: '400px' }
-                            break
-                    }
-
-                    return (
-                        <div className={styles.tableCell} style={wrapperStyle}>
-                            <DataViewer data={row} showKey={key} />
-                            <div
-                                className={styles.cardFullscreen}
-                                role='button'
-                                tabIndex={0}
-                                onClick={() => {
-                                    setIsFullscreen(true)
-                                    setPreview(row)
-                                    setPreviewKey(key)
-                                    history.push(
-                                        `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files?${qs.stringify(
-                                            {
-                                                ...$page,
-                                                layout: layoutKey,
-                                            }
-                                        )}`
-                                    )
-                                }}
-                            >
-                                <IconFont type='fullscreen' />
-                            </div>
-                        </div>
-                    )
-                },
-            })
-        })
-
-        rowAction.sort((ca, cb) => {
-            if (ca.label === 'id') return -1
-            if (cb.label === 'id') return 1
-            return ca.label.localeCompare(cb.label)
-        })
-
-        return (
-            <TableBuilder
-                data={datasets}
-                overrides={{
-                    Root: { style: { maxHeight: '50vh' } },
-                    TableBodyRow: {
-                        style: {
-                            cursor: 'pointer',
-                        },
-                    },
-                    TableHeadCell: {
-                        style: {
-                            backgroundColor: theme.brandTableHeaderBackground,
-                            fontWeight: 'bold',
-                            borderBottomWidth: 0,
-                            fontSize: '14px',
-                            lineHeight: '16px',
-                            paddingTop: '15px',
-                            paddingBottom: '15px',
-                            paddingLeft: '20px',
-                            paddingRight: '20px',
-                        },
-                    },
-                    TableHeadRow: {
-                        style: {
-                            borderRadius: '4px',
-                        },
-                    },
-                    TableBodyCell: {
-                        style: {
-                            paddingTop: 0,
-                            paddingBottom: 0,
-                            paddingLeft: '20px',
-                            paddingRight: '20px',
-                            lineHeight: '44px',
-                            verticalAlign: 'middle',
-                            textAlign: 'left',
-                        },
-                    },
-                    // ...overrides,
-                }}
-            >
-                {rowAction.map((row) => {
-                    return (
-                        // @ts-ignore
-                        <TableBuilderColumn key={row.label} header={row.label} overrides={row?.overrides}>
-                            {row.renderItem}
-                        </TableBuilderColumn>
-                    )
-                })}
-            </TableBuilder>
-        )
-    }, [layoutKey, datasets, styles, datasetVersionId, history, projectId, datasetId, $page, theme])
+    const $columns = useDatastoreColumns(columnTypes as any, options)
 
     return (
         <div className={styles.wrapper}>
-            {HAS_TABLE_CONTROL && (
-                <div className={styles.icon}>
-                    <LayoutControl
-                        value={layoutKey}
-                        onChange={(key) => {
-                            const newSize = key === LAYOUT.LIST ? PAGE_TABLE_SIZE : PAGE_CARD_SIZE
-                            setLayoutKey(key)
-                            history.push(
-                                `/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersionId}/files/?${qs.stringify(
-                                    {
-                                        ...$page,
-                                        pageNum: Math.max(
-                                            Math.floor((page.pageSize * (page.pageNum - 1)) / newSize),
-                                            1
-                                        ),
-                                        pageSize: newSize,
-                                        layout: key,
-                                    }
-                                )}`
-                            )
-                        }}
-                    />
-                </div>
-            )}
-            {Records}
-            {paginationProps && (
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginTop: 20,
-                    }}
-                >
-                    <div
-                        style={{
-                            flexGrow: 1,
-                        }}
-                    />
-                    <Pagination
-                        size='mini'
-                        numPages={
-                            // esline-disable-next-line react/jsx-curly-brace-presence
-                            paginationProps.total && paginationProps.count
-                                ? Math.ceil(paginationProps.total / Math.max(paginationProps.count, 1))
-                                : 0
-                        }
-                        currentPage={paginationProps.start ?? 1}
-                        onPageChange={({ nextPage }) => {
-                            if (paginationProps.onPageChange) {
-                                paginationProps.onPageChange(nextPage)
-                            }
-                            if (paginationProps.afterPageChange) {
-                                setPage({
-                                    ...page,
-                                    pageNum: nextPage,
-                                })
-                                paginationProps.afterPageChange(nextPage)
-                            }
-                        }}
-                    />
-                </div>
-            )}
-            {preview && (
-                <Preview
-                    preview={preview}
-                    previewKey={previewKey}
-                    isFullscreen={isFullscreen}
-                    setIsFullscreen={setIsFullscreen}
-                />
-            )}
+            <GridCombineTable
+                compareable
+                columnable
+                // viewable
+                // queryable
+                selectable
+                previewable
+                records={records}
+                columnTypes={columnTypes}
+                columns={$columns}
+            />
         </div>
     )
 }
