@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from starwhale.base.uri.project import Project
 from starwhale.core.model.model import ModelConfig, ModelInfoFilter
 from starwhale.core.model.store import ModelStorage
 from starwhale.base.uri.resource import Resource, ResourceType
+from starwhale.core.runtime.process import Process
 
 
 @click.group(
@@ -670,7 +672,8 @@ def _prepare_model_run_args(
             raise NoSupportError("module is not supported in model uri mode")
 
         if (
-            model_store.digest.get("packaged_runtime")
+            os.environ.get(Process.EnvInActivatedProcess, "0") == "0"
+            and model_store.digest.get("packaged_runtime")
             and not forbid_packaged_runtime
             and runtime_uri is None
         ):
