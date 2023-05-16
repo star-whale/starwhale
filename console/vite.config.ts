@@ -37,20 +37,26 @@ export const alias = {
     '@starwhale/widgets': path.resolve(__dirname, './packages/starwhale-widgets/src'),
 }
 
+let extendProxies = {}
+if (process.env.VITE_EXTENDS === 'true')
+    extendProxies = {
+        '/api/v1/system/resourcePool': {
+            target: 'http://10.131.0.1:8088/billing/',
+            changeOrigin: true,
+            secure: false,
+        },
+        '/billing': {
+            target: 'http://10.131.0.1:8088/',
+            changeOrigin: true,
+            secure: false,
+        },
+    }
+
 // https://vitejs.dev/config/
 export default defineConfig({
     server: {
         proxy: {
-            '/api/v1/system/resourcePool': {
-                target: 'http://10.131.0.1:8088/billing/',
-                changeOrigin: true,
-                secure: false,
-            },
-            '/billing': {
-                target: 'http://10.131.0.1:8088/',
-                changeOrigin: true,
-                secure: false,
-            },
+            ...extendProxies,
             '/api/v1/log/online': {
                 changeOrigin: true,
                 target:
@@ -81,8 +87,6 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
-        // process.env.EXTEND_ROUTES ? inspect() : undefined,
-        router({ dir: process.env.EXTEND_ROUTES || 'extend' }),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
