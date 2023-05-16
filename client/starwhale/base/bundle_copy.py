@@ -361,7 +361,7 @@ class BundleCopy(CloudRequestMixed):
                 self.field_flag: self.field_value,
                 "phase": _UploadPhase.MANIFEST,
                 "desc": FileDesc.MANIFEST.name,
-                "project": self.dest_uri.project,
+                "project": self.dest_uri.project.name,
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
@@ -436,7 +436,7 @@ class BundleCopy(CloudRequestMixed):
             instance=self.dest_uri.instance,
             data={
                 self.field_flag: self.field_value,
-                "project": self.dest_uri.project,
+                "project": self.dest_uri.project.name,
                 "phase": phase,
                 "uploadId": upload_id,
             },
