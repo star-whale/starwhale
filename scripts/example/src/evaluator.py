@@ -6,7 +6,7 @@ from functools import wraps
 
 import numpy
 
-from starwhale import Context, evaluation, multi_classification
+from starwhale import Text, Image, Context, evaluation, multi_classification
 
 
 def timing(func: t.Callable) -> t.Any:
@@ -24,6 +24,7 @@ def timing(func: t.Callable) -> t.Any:
 @evaluation.predict(
     replicas=1,
     log_mode="plain",
+    log_dataset_features=["txt", "img", "label"],
 )
 def predict(data: t.Dict, external: t.Dict) -> t.Any:
     # Test relative path case
@@ -33,7 +34,7 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
     assert external["dataset_uri"].name
     assert external["dataset_uri"].version
     return {
-        "txt": data["txt"],
+        "txt": data["txt"].to_str(),
         "value": numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),
     }
 
@@ -53,7 +54,12 @@ def evaluate(ppl_result: t.Iterator):
     result, label, pr = [], [], []
     for _data in ppl_result:
         assert _data["_mode"] == "plain"
-        label.append(_data["input/label"])
+        assert "placeholder" not in _data["input"]
+        assert isinstance(_data["input"]["img"], Image)
+        assert _data["input"]["img"].owner
+        assert isinstance(_data["input"]["txt"], Text)
+
+        label.append(_data["input"]["label"])
         result.append(_data["output/txt"])
         pr.append(_data["output/value"])
     return label, result, pr

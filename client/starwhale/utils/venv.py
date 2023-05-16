@@ -744,11 +744,13 @@ def get_user_runtime_python_bin(py_env: str) -> str:
 
 
 def check_valid_venv_prefix(prefix: t.Union[str, Path]) -> bool:
-    return (Path(prefix) / "pyvenv.cfg").exists()
+    expect = Path(prefix) / "pyvenv.cfg"
+    return expect.exists() and expect.is_file()
 
 
 def check_valid_conda_prefix(prefix: t.Union[str, Path]) -> bool:
-    return (Path(prefix) / "conda-meta").exists()
+    expect = Path(prefix) / "conda-meta"
+    return expect.exists() and expect.is_dir()
 
 
 def guess_python_env_mode(prefix: t.Union[str, Path]) -> str:

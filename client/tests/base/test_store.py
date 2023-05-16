@@ -43,32 +43,50 @@ def test_local_file_object_store(
     workdir = tmp_path / "workdir"
     venv = workdir / "venv"
     # simulate a venv in the working dir
-    (venv / "bin").mkdir(parents=True)
-    (venv / "bin" / "python").touch()
-    (venv / "bin" / "activate").touch()
+    venv.mkdir(parents=True, exist_ok=True)
+    (venv / "pyvenv.cfg").touch()
+    # simulate a conda env in the working dir
+    conda = workdir / "conda"
+    conda.mkdir(parents=True, exist_ok=True)
+    (conda / "conda-meta").mkdir(parents=True, exist_ok=True)
+    # make a fake file in the conda meta dir, make sure the copy touches the dir
+    (conda / "conda-meta" / "fake").touch()
+
     # user script
     (workdir / "main.py").touch()
 
-    venv_files = {
-        dst / "venv" / "bin",
-        dst / "venv" / "bin" / "python",
-        dst / "venv" / "bin" / "activate",
+    env_files = {
+        dst / "venv",
+        dst / "venv" / "pyvenv.cfg",
+        dst / "conda",
+        dst / "conda" / "conda-meta",
+        dst / "conda" / "conda-meta" / "fake",
     }
 
     shutil.rmtree(dst)
-    # do not ignore venv
-    store.copy_dir(workdir, dst, [], ignore_venv=False)
+    # do not ignore env paths
+    sz = store.copy_dir(workdir, dst, [], ignore_venv_or_conda=False)
     assert (dst / "main.py").exists()
-    assert all(f.exists() for f in venv_files)
+    assert all(f.exists() for f in env_files)
+    assert sz == (dst / "main.py").stat().st_size + sum(
+        f.stat().st_size for f in [venv / "pyvenv.cfg", conda / "conda-meta" / "fake"]
+    )
 
     shutil.rmtree(dst)
-    # ignore venv
-    store.copy_dir(workdir, dst, [], ignore_venv=True)
+    # ignore env paths
+    sz = store.copy_dir(workdir, dst, [], ignore_venv_or_conda=True)
     assert (dst / "main.py").exists()
-    assert not any(f.exists() for f in venv_files)
+    assert not any(f.exists() for f in env_files)
+    assert sz == (dst / "main.py").stat().st_size
+    ignored = (dst / "venv", dst / "conda" / "conda-meta")
+    assert all(not f.exists() for f in ignored)
 
     shutil.rmtree(dst)
-    # ignore venv with exclude
-    store.copy_dir(workdir, dst, ["venv/*"], ignore_venv=False)
+    # ignore env paths with exclude
+    sz = store.copy_dir(workdir, dst, ["venv/*", "conda/*"], ignore_venv_or_conda=False)
     assert (dst / "main.py").exists()
-    assert not any(f.exists() for f in venv_files)
+    assert not any(f.exists() for f in env_files)
+    assert sz == (dst / "main.py").stat().st_size
+    assert dst / "venv"
+    ignored = (dst / "venv" / "pyvenv.cfg", dst / "conda" / "conda-meta" / "fake")
+    assert all(not f.exists() for f in ignored)

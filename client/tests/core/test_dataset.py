@@ -344,6 +344,7 @@ class TestJsonDict(TestCase):
         self.assertEqual(Link, type(_jd.d))
         self.assertEqual("http://ad.c/d", _jd.d.uri)
         self.assertEqual(("a", "b"), _jd.e)
+
         self.assertEqual(
             data_store.SwObjectType(
                 JsonDict,
@@ -357,7 +358,6 @@ class TestJsonDict(TestCase):
                             "_type": data_store.STRING,
                             "uri": data_store.STRING,
                             "scheme": data_store.STRING,
-                            "owner": data_store.UNKNOWN,
                             "offset": data_store.INT64,
                             "size": data_store.INT64,
                             "data_type": data_store.UNKNOWN,

@@ -249,7 +249,6 @@ class TestDatasetCopy(BaseTestCase):
                         {
                             "attributes": [
                                 {"name": "_type", "type": "STRING"},
-                                {"name": "owner", "type": "UNKNOWN"},
                                 {"name": "uri", "type": "STRING"},
                                 {"name": "scheme", "type": "STRING"},
                                 {"name": "offset", "type": "INT64"},
@@ -267,7 +266,6 @@ class TestDatasetCopy(BaseTestCase):
                             "pythonType": "starwhale.core.dataset.type.Link",
                             "type": "OBJECT",
                         },
-                        {"name": "owner", "type": "UNKNOWN"},
                     ],
                     "name": "mask",
                     "pythonType": "starwhale.core.dataset.type.Image",
@@ -739,9 +737,9 @@ class TestDatasetType(TestCase):
 
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
-            owner=Resource(
-                "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest",
-            ),
+        )
+        link.owner = Resource(
+            "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
         )
 
         rm.request(

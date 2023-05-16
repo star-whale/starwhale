@@ -52,14 +52,16 @@ class TestEvaluation(BaseTestCase):
 
     def test_log_results_and_scan(self) -> None:
         eval = wrapper.Evaluation("tt", "test")
-        eval.log_result("0", output=3)
-        eval.log_result("1", output=4, _mode=PredictLogMode.PICKLE)
-        eval.log_result("2", output=5, a="0", B="1", _mode=PredictLogMode.PLAIN)
-        eval.log_result("3", output=6, c=None, _mode="plain")
+        eval.log_result(dict(id="0", output=3))
+        eval.log_result(dict(id="1", output=4, _mode=PredictLogMode.PICKLE.value))
+        eval.log_result(
+            dict(id="2", output=5, a="0", b="1", _mode=PredictLogMode.PLAIN.value)
+        )
+        eval.log_result(dict(id="3", output=6, c=None, _mode="plain"))
         eval.close()
         self.assertEqual(
             [
-                {"id": "0", "output": 3, "_mode": "pickle"},
+                {"id": "0", "output": 3},
                 {
                     "id": "1",
                     "output": 4,
@@ -102,7 +104,7 @@ class TestEvaluation(BaseTestCase):
         os.environ[SWEnv.instance_token] = "abcd"
         os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
         eval = wrapper.Evaluation("tt", "test")
-        eval.log_result(data_id="0", mode=PredictLogMode.PICKLE, output=3)
+        eval.log_result(dict(id="0", mode=PredictLogMode.PICKLE.value, output=3))
         eval.log_metrics({"a/b": 2})
 
         assert len(eval._writers) == 2

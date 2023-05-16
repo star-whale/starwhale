@@ -179,7 +179,7 @@ class CloudRequestMixed:
     ) -> t.Dict[str, t.Any]:
         _manifest: t.Dict[str, t.Any] = {
             "uri": uri.full_uri,
-            "project": uri.project,
+            "project": uri.project.name,
             "name": uri.name,
         }
 

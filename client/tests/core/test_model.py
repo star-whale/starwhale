@@ -112,7 +112,7 @@ class StandaloneModelTestCase(TestCase):
         m_stat.return_value.st_size = 1
         m_blake_file.return_value = "123456"
         m_walker_files.return_value = []
-        m_copy_dir.return_value = (0, [])
+        m_copy_dir.return_value = 0
 
         svc = MagicMock(spec=Service)
         svc.get_spec.return_value = {}
