@@ -320,9 +320,16 @@ class TestCli:
             self.executor.submit(self.get_remote_job_status, jid)
             for jid in remote_job_ids
         ]
+        failed_jobs = []
         for f in as_completed(futures):
-            _, status = f.result()
-            assert status in STATUS_SUCCESS
+            jid, status = f.result()
+            if status not in STATUS_SUCCESS:
+                failed_jobs.append((jid, status))
+
+            if failed_jobs:
+                msg = f"jobs failed: {failed_jobs}"
+                logger.error(msg)
+                raise RuntimeError(msg)
 
     def test_all(self) -> None:
         for name, example in ALL_EXAMPLES.items():
