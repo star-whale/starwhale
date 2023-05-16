@@ -8,6 +8,7 @@ import fnmatch
 from abc import ABC
 from pathlib import Path
 
+from starwhale.utils import console, pretty_bytes
 from starwhale.utils.venv import check_valid_venv_prefix, check_valid_conda_prefix
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.blob.file import PathLike, BlakeFile, OptionalPathLike
@@ -120,7 +121,7 @@ class LocalFileStore(ObjectStore):
         dst_dir: PathLike,
         excludes: t.List[str],
         ignore_venv_or_conda: bool = True,
-    ) -> t.Tuple[int, t.List[Path]]:
+    ) -> int:
         """
         Copy a directory from src_dir to the dst_dir using the object store cache.
         When the file is already in the object store, it will be linked instead of copied.
@@ -129,14 +130,13 @@ class LocalFileStore(ObjectStore):
             dst_dir: the destination directory
             excludes: the files to be excluded
             ignore_venv_or_conda: whether to ignore virtual environments or conda environments
-        Returns: a tuple of (total file size in bytes, ignored directories or files)
+        Returns: total file size in bytes
         """
         src_dir = Path(src_dir)
         dst_dir = Path(dst_dir)
         ignore_dirs = self._search_all_py_envs(src_dir) if ignore_venv_or_conda else []
 
         size = 0  # no record for soft link (inode not working in windows)
-        ignored = ignore_dirs
 
         for src in src_dir.rglob("*"):
             if not src.is_file():
@@ -148,20 +148,18 @@ class LocalFileStore(ObjectStore):
                 if self._is_file_under_dir(src, ignore_dir):
                     ignore = True
                     break
-            if ignore:
-                continue
-
-            exclude = any(
+            if ignore or any(
                 [fnmatch.fnmatch(str(src), str(src_dir / ex)) for ex in excludes]
-            )
-            if exclude:
-                ignored.append(src)
+            ):
+                console.trace(f"ignore to copy file: {src}")
                 continue
 
-            size += src.stat().st_size
+            file_size = src.stat().st_size
+            size += file_size
+            console.trace(f"copy file: {src}, size: {pretty_bytes(file_size)}")
             file = self._put(path=src)
             dst = dst_dir / src.relative_to(src_dir)
             dst.parent.mkdir(parents=True, exist_ok=True)
             file.link(dst, soft=self.soft_link)
 
-        return size, ignored
+        return size

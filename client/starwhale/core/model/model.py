@@ -787,14 +787,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         console.debug(
             f"copy dir: {workdir} -> {self.store.src_dir}, excludes: {excludes}"
         )
-        total_size, ignored = self._object_store.copy_dir(
+        total_size = self._object_store.copy_dir(
             src_dir=workdir.resolve(),
             dst_dir=self.store.src_dir.resolve(),
             excludes=excludes,
             ignore_venv_or_conda=not add_all,
         )
-        for i in ignored:
-            console.info(f"ignored : {str(i)}")
         console.print(
             f":file_folder: source code files size: {pretty_bytes(total_size)}"
         )
