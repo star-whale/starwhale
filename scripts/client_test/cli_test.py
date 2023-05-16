@@ -342,13 +342,13 @@ class TestCli:
                 logger.error(f"prepare data for {example} failed")
                 raise
 
+        for name, rt in RUNTIME_EXAMPLES.items():
+            self.build_runtime(rt["workdir"], rt["yaml"])
+
         for name, example in ALL_EXAMPLES.items():
             for d_type in example["datasets"]:
                 self.build_dataset(name, example["workdir"], d_type)
             self.build_model(example["workdir"], name, example["runtime"])
-
-        for name, rt in RUNTIME_EXAMPLES.items():
-            self.build_runtime(rt["workdir"], rt["yaml"])
 
         # model run on server
         res = [
