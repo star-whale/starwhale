@@ -203,7 +203,7 @@ class DatasetCopy(BundleCopy):
         dataset_name = self.dest_uri.name or self.src_uri.name
         params = {
             "swds": f"{dataset_name}:{self.src_uri.name}",
-            "project": self.dest_uri.project,
+            "project": self.dest_uri.project.name,
             "force": "1",  # use force=1 to make http retry happy, we check dataset existence in advance
         }
         url_path = self._get_remote_bundle_api_url()
