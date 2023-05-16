@@ -240,14 +240,14 @@ class TestCli:
         self,
         dataset_uris: t.List[Resource],
         model_uri: Resource,
-        runtime_uris: t.List[Resource | None],
         run_handler: str,
+        runtime_uris: t.Optional[t.List[Resource | None]] = None,
     ) -> t.List[str]:
         self.instance_api.select(instance="server")
         self.project_api.select(project=self.server_project)
 
         remote_job_ids = []
-        for _rt_uri in runtime_uris:
+        for _rt_uri in runtime_uris or [None]:
             logger.info("running evaluation at server...")
             ok, jid = self.model_api.run_in_server(
                 model_uri=model_uri.version,
@@ -437,7 +437,7 @@ class TestCli:
         if in_standalone:
             f = self.run_model_in_standalone
         else:
-            runtime_uris = runtime_uris if name not in BUILT_IN_EXAMPLES else [None]
+            runtime_uris = runtime_uris if name not in BUILT_IN_EXAMPLES else None
             f = self.run_model_in_server  # type: ignore
         return f(  # type: ignore
             dataset_uris=dataset_uris,
