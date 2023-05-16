@@ -180,7 +180,7 @@ export type DataTablePropsT = {
     isRowSelected?: (row: RowT) => boolean
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
-    onPreview?: (data: { record?: RowT; columnKey?: string }) => void
+    onPreview?: (data: { record?: any; columnKey?: string }) => void
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

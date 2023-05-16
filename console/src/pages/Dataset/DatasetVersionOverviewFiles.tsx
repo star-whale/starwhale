@@ -1,17 +1,11 @@
 import React from 'react'
-import { useHistory, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '@/api/Auth'
 import { usePage } from '@/hooks/usePage'
 import { useQueryArgs } from '@/hooks/useQueryArgs'
-import IconFont from '@starwhale/ui/IconFont/index'
 import { createUseStyles } from 'react-jss'
 import { parseDataSrc } from '@starwhale/core/dataset'
-import { useSearchParam } from 'react-use'
 import { useDatasetVersion } from '@/domain/dataset/hooks/useDatasetVersion'
-import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
-import { SpaceTabs, Tab } from '@starwhale/ui/Tab'
-import { StyledTab } from 'baseui/tabs'
-import { StatefulTooltip } from 'baseui/tooltip'
 import { getMeta } from '@/domain/dataset/utils'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
@@ -84,80 +78,25 @@ const useCardStyles = createUseStyles({
     },
 })
 
-const PAGE_TABLE_SIZE = 10
-const PAGE_CARD_SIZE = 50
-const HAS_TABLE_CONTROL = false
-enum LAYOUT {
-    GRID = '1',
-    LIST = '0',
-}
-
-function TabOverride({ children, ...rest }: any) {
-    return (
-        <StatefulTooltip placement='top' content={rest.id === LAYOUT.GRID ? 'Grid View' : 'List View'} showArrow>
-            <StyledTab {...rest}>
-                <div>{children}</div>
-            </StyledTab>
-        </StatefulTooltip>
-    )
-}
-
-function LayoutControl({ value, onChange = () => {} }: { value: string; onChange: (str: string) => void }) {
-    return (
-        <div
-            style={{
-                padding: '0px',
-            }}
-        >
-            <SpaceTabs
-                onChange={({ activeKey: activeKeyNew }) => {
-                    onChange(activeKeyNew as string)
-                }}
-                activeKey={value}
-                overrides={{
-                    Tab: {
-                        component: TabOverride,
-                    },
-                }}
-            >
-                <Tab title={<IconFont type='grid' />} key={LAYOUT.GRID} />
-                <Tab title={<IconFont type='view' />} key={LAYOUT.LIST} />
-            </SpaceTabs>
-        </div>
-    )
-}
-
 export default function DatasetVersionFiles() {
-    const { projectId, datasetId, datasetVersionId } = useParams<{
+    const { projectId } = useParams<{
         projectId: string
-        datasetId: string
-        datasetVersionId: string
     }>()
-    const [, theme] = themedUseStyletron()
-    // @FIXME layoutParam missing when build
-    const layoutParam = useSearchParam('layout') as string
-    const [layoutKey, setLayoutKey] = React.useState(layoutParam ?? '0')
-    const [page, setPage] = usePage()
+    const [page] = usePage()
     const { token } = useAuth()
-    const history = useHistory()
     const styles = useCardStyles()
     const { datasetVersion } = useDatasetVersion()
-    const { revision, rows: rowCount } = React.useMemo(() => {
+    const { revision } = React.useMemo(() => {
         return getMeta(datasetVersion?.versionMeta as string)
     }, [datasetVersion?.versionMeta])
     const { query } = useQueryArgs()
     const $page = React.useMemo(() => {
         return {
             ...page,
-            layout: layoutKey,
             filter: query.filter,
             revision,
         }
-    }, [page, layoutKey, query.filter, revision])
-
-    React.useEffect(() => {
-        setLayoutKey(layoutParam ?? '0')
-    }, [layoutParam])
+    }, [page, query.filter, revision])
 
     const { records, columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, $page, true)
 

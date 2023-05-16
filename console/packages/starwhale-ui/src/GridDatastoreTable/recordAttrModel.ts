@@ -1,6 +1,5 @@
-import React from 'react'
+// eslint-disable-next-line max-classes-per-file
 import { RecordSchemaT, isComplexType } from '@starwhale/core/datastore'
-import _ from 'lodash'
 import { getSummary } from '@starwhale/core/dataset'
 
 function val(r: any) {
@@ -14,7 +13,9 @@ function val(r: any) {
 
 export class RecordAttr {
     type: string
+
     name: string
+
     value: any
 
     constructor(
@@ -28,7 +29,7 @@ export class RecordAttr {
     }
 
     toString() {
-        return ''
+        return this.value ?? ''
     }
 
     get summary() {
@@ -43,8 +44,8 @@ export class RecordAttr {
         const data = record?.[key]
         const type = data?.type
         const tmp: Record<string, any> = {}
-        Object.entries(record).forEach(([key, v]) => {
-            tmp[key] = val(v)
+        Object.entries(record).forEach(([k, v]) => {
+            tmp[k] = val(v)
         })
 
         if (isComplexType(type)) {
@@ -53,28 +54,21 @@ export class RecordAttr {
                 showPrivate: false,
                 showLink: false,
             })
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             return new RecordComplexAttr(data, tmp, decode)
         }
-
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return new RecordBasicAttr(data, tmp)
     }
 }
 
 export class RecordBasicAttr extends RecordAttr {
-    constructor(data: RecordSchemaT, record: Record<string, RecordSchemaT>) {
-        super(data, record)
-    }
-
     toString() {
         return this.value ?? ''
     }
 }
 
 export class RecordComplexAttr extends RecordAttr {
-    constructor(data: RecordSchemaT, record: Record<string, RecordSchemaT>, decode: ReturnType<typeof getSummary>) {
-        super(data, record, decode)
-    }
-
     toString() {
         return JSON.stringify(this.value, null, 2)
     }

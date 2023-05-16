@@ -236,8 +236,6 @@ function TabControl({
     const $isSimpleView = React.useMemo(() => isSimpleView || count === 0, [count, isSimpleView])
     const $activeKey = React.useMemo(() => ($isSimpleView ? '1' : value), [$isSimpleView, value])
 
-    console.log(isSimpleView, count, $isSimpleView, $activeKey)
-
     const Anno = React.useMemo(() => {
         return Array.from(annotationTypeMap).map(([type, list]) => {
             if (hiddenTypes.has(type)) return <span key={type} />
@@ -301,7 +299,7 @@ function TabControl({
                 <div className={styles.annotation}>
                     <LabelMedium>Annotation Type</LabelMedium>
                     <div className={styles.annotationTypes}>
-                        {Array.from(annotationTypes).map((type) => {
+                        {Array.from(annotationTypes).map((type: any) => {
                             return (
                                 <Checkbox
                                     key={type}

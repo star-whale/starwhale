@@ -1,10 +1,8 @@
 import React from 'react'
 import { RecordSchemaT, isComplexType, isSearchColumns } from '@starwhale/core/datastore'
 import { CustomColumn } from '../../base/data-table'
-import { ColumnT, RenderCellT } from '../../base/data-table/types'
+import { ColumnT } from '../../base/data-table/types'
 import { StringCell } from '../../base/data-table/column-string'
-import _ from 'lodash'
-import { RecordT, getSummary } from '@starwhale/core/dataset'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { RecordAttr } from '../recordAttrModel'
 
@@ -24,8 +22,9 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     return ca.name.localeCompare(cb.name)
 }
 
-function RenderMixedCell({ value, data, columnKey, ...props }: RenderCellT<any>['props'] & { options: any }) {
-    if (isComplexType(value.type)) return <DataViewer data={value} showKey={columnKey} />
+function RenderMixedCell({ value, columnKey, ...props }: { value: RecordAttr; columnKey: string }) {
+    if (!value) return ''
+    if (isComplexType(value?.type)) return <DataViewer data={value} showKey={columnKey as string} />
     return <StringCell {...props} lineClamp={1} value={value.toString()} />
 }
 
@@ -46,7 +45,7 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
                         key: column.name,
                         title: column.name,
                         fillWidth: false,
-                        renderCell: (props: any) => <RenderMixedCell {...props} />,
+                        renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
                             return RecordAttr.decode(record, column.name, options)
                         },
@@ -55,7 +54,7 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
             })
 
         return columnsWithAttrs
-    }, [columnTypes])
+    }, [columnTypes, options])
 
     return columns
 }

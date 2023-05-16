@@ -1,4 +1,4 @@
-import Widgets from '@starwhale/ui/form/widgets'
+import Widgets from '@starwhale/ui/RJSFForm/widgets'
 import Form from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
 import React from 'react'

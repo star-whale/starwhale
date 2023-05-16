@@ -7,7 +7,7 @@ import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useHistory, useParams, Prompt } from 'react-router-dom'
-import { CustomColumn, CategoricalTagsColumn } from '@starwhale/ui/base/data-table'
+import { CustomColumn } from '@starwhale/ui/base/data-table'
 import _ from 'lodash'
 import { ITableState, useEvaluationStore } from '@starwhale/ui/GridTable/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
@@ -28,7 +28,6 @@ import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
 import shallow from 'zustand/shallow'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 
 const selector = (s: ITableState) => ({
@@ -155,11 +154,9 @@ export default function EvaluationListCard() {
                 fillWidth: false,
             }
         })
-    }, [t, $columns, projectId])
+    }, [$columns, projectId])
 
-    const $ready = React.useMemo(() => {
-        return evaluationViewConfig.isSuccess
-    }, [evaluationViewConfig.isSuccess])
+    const $ready = evaluationViewConfig.isSuccess
 
     React.useEffect(() => {
         const unloadCallback = (event: any) => {

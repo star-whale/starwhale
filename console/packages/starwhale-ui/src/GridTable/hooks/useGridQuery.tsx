@@ -53,7 +53,7 @@ function useGridQuery() {
                 )}
             </div>
         )
-    }, [columnTypes, originalColumns, queries, onChange, isSimpleQuery, hasFilter])
+    }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, t])
 
     const renderConfigQueryInline = React.useCallback(
         ({ width }: { width: number }) => {
@@ -61,7 +61,7 @@ function useGridQuery() {
                 <ConfigQueryInline value={queries} onChange={onChange} width={width} columnTypes={sortedColumnTypes} />
             )
         },
-        [columnTypes, queries, onChange]
+        [sortedColumnTypes, queries, onChange]
     )
 
     return {

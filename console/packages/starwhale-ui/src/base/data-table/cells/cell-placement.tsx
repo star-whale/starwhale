@@ -2,11 +2,8 @@ import React from 'react'
 import cn from 'classnames'
 import type { ColumnT, RowT } from '../types'
 import { themedUseStyletron } from '../../../theme/styletron'
-import { useIfChanged } from '@starwhale/core'
 import _ from 'lodash'
-import Input from '@starwhale/ui/Input'
 import IconFont from '@starwhale/ui/IconFont'
-import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
 
 export type CellPlacementPropsT = {
     columnIndex: number

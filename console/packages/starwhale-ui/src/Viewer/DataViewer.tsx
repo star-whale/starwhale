@@ -15,7 +15,6 @@ import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
 import _ from 'lodash'
-import { isComplexType } from '@starwhale/core'
 
 export type IDataViewerProps = {
     data?: any
@@ -49,9 +48,6 @@ export default function DataViewer({
     hiddenLabels = new Set(),
     showKey,
 }: IDataViewerProps) {
-    // @ts-ignore
-    const { type, value } = rawData
-
     const Viewer = React.useMemo(() => {
         const { summary } = rawData
         const data = summary?.get(showKey)
@@ -111,9 +107,9 @@ export default function DataViewer({
             default:
                 return <Placeholder />
         }
-    }, [rawData, hiddenLabels, isZoom])
+    }, [rawData, hiddenLabels, isZoom, showKey])
 
-    if (typeof value !== 'object') return value ?? ''
+    if (typeof rawData.value !== 'object') return rawData.value ?? ''
 
     return Viewer
 }

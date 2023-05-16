@@ -8,7 +8,7 @@ import { IGridState } from '../types'
 import { useStore } from './useStore'
 import shallow from 'zustand/shallow'
 import { useState } from 'react'
-import { GirdRecord } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
+import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 
 const selector = (s: IGridState) => ({
     initStore: s.initStore,
@@ -31,7 +31,7 @@ function useGrid() {
     const { ids, isAllRuns, columns, currentView, rows, originalColumns } = useGirdData()
     const { renderConfigQuery } = useGridQuery()
     const [preview, setPreview] = useState<{
-        record?: GirdRecord
+        record?: RecordAttr
         columnKey: string
     }>({
         record: undefined,

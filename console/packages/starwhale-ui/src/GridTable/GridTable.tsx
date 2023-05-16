@@ -160,14 +160,14 @@ function GridTable({
                     sortDirection={sortDirection}
                     sortIndex={sortIndex}
                     textQuery={textQuery}
-                    onPreview={onPreview}
+                    onPreview={onPreview as any}
                     // controlRef={controlRef}
                     // filters={$filtersEnabled}
                 />
                 {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
             <Preview
-                preview={preview.record}
+                preview={preview.record as any}
                 previewKey={preview.columnKey}
                 isFullscreen={!!preview.record}
                 setIsFullscreen={onPreviewClose}

@@ -175,7 +175,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, stepSource]
+        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource]
     )
 
     const handleEditorChange = React.useCallback(

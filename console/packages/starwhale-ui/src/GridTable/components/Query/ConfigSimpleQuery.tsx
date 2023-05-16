@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { ColumnT, QueryT } from '@starwhale/ui/base/data-table/types'
 import _ from 'lodash'
-import { createForm } from '@starwhale/ui/Form/form'
+import { createForm } from '@starwhale/ui/Form/forms'
 
 const { Form, FormItem, useForm } = createForm<Record<string, any>>()
 
@@ -12,29 +12,32 @@ type PropsT = {
 }
 
 function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
-    useEffect(() => {
-        const values = _.fromPairs(
-            value.map((query) => {
-                return [query.property, query.value]
-            })
-        )
-        setValues(values)
-        form.setFieldsValue(values)
-    }, [value])
-
     const [values, setValues] = React.useState<Record<string, any> | undefined>(undefined)
 
     const [form] = useForm()
 
-    const handleValuesChange = React.useCallback((_changes, values_: Record<string, any>) => {
-        onChange?.(
-            Object.entries(values_).map(([key, value]) => ({
-                value,
-                op: 'EQUAL',
-                property: key,
-            }))
+    useEffect(() => {
+        const tmp = _.fromPairs(
+            value.map((query) => {
+                return [query.property, query.value]
+            })
         )
-    }, [])
+        setValues(tmp)
+        form.setFieldsValue(tmp)
+    }, [value, form])
+
+    const handleValuesChange = React.useCallback(
+        (_changes, values_: Record<string, any>) => {
+            onChange?.(
+                Object.entries(values_).map(([key, v]) => ({
+                    value: v,
+                    op: 'EQUAL',
+                    property: key,
+                }))
+            )
+        },
+        [onChange]
+    )
 
     const columnsWithFilter = React.useMemo(() => {
         return columns?.filter((column) => column.filterable)

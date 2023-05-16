@@ -74,7 +74,6 @@ export function getSummary(record: RecordT, options: OptionsT) {
                         _extendSrc: anno.link ? linkToData(anno.link, options.parseLink) : undefined,
                         _extendType: isMask(anno) ? AnnotationType.MASK : anno._type,
                     })
-                    if (anno._owner) console.log(anno._owner, anno.link, [anno._owner, anno.link?.uri].join('/'))
                 }
 
                 Object.entries(anno).forEach(([_key, tmp]: any) => {
