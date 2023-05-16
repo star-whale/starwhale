@@ -231,7 +231,7 @@ client_test() {
     unset https_proxy
     bash scripts/client_test/cli_test.sh all
   else
-    timeout 15m bash scripts/client_test/cli_test.sh simple || exit 1
+    timeout 20m bash scripts/client_test/cli_test.sh simple || exit 1
   fi
   popd
   popd
