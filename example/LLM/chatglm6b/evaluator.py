@@ -20,12 +20,16 @@ tokenizer = None
 ds_input_keys = {
     "webqsp": "rawquestion",
     "z_bench_common": "prompt",
-    "mkqa": "query", 
+    "mkqa": "query",
 }
 
-@evaluation.predict(log_mode="plain",log_dataset_features=["query","text","question","rawquestion","prompt"])
+
+@evaluation.predict(
+    log_mode="plain",
+    log_dataset_features=["query", "text", "question", "rawquestion", "prompt"],
+)
 def ppl(data: dict, external: dict):
-    ds_name=external["dataset_uri"].name
+    ds_name = external["dataset_uri"].name
     if ds_name in ds_input_keys:
         text = data[ds_input_keys[ds_name]]
     elif "text" in data:
