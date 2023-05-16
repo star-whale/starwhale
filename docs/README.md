@@ -1,6 +1,1 @@
-
-# development
-
-- yarn
-- yarn build
-- yarn run serve
+Updating docs to https://github.com/star-whale/docs.
