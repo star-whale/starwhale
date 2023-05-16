@@ -240,7 +240,7 @@ class TestCli:
         self,
         dataset_uris: t.List[Resource],
         model_uri: Resource,
-        runtime_uris: t.List[Resource],
+        runtime_uris: t.List[Resource | None],
         run_handler: str,
     ) -> t.List[str]:
         self.instance_api.select(instance="server")
@@ -252,7 +252,7 @@ class TestCli:
             ok, jid = self.model_api.run_in_server(
                 model_uri=model_uri.version,
                 dataset_uris=[_ds_uri.version for _ds_uri in dataset_uris],
-                runtime_uri=_rt_uri.version,
+                runtime_uri=_rt_uri.version if _rt_uri else "",
                 project=f"{self.server_url}/project/{self.server_project}",
                 run_handler=run_handler,
             )
@@ -305,7 +305,7 @@ class TestCli:
                 model_uri=model_uri,
                 runtime_uris=[venv_runtime_uri]
                 if "simple" not in BUILT_IN_EXAMPLES
-                else [Resource("runtime/version")],
+                else [None],
                 run_handler=run_handler,
             )
 
@@ -440,7 +440,7 @@ class TestCli:
             runtime_uris = (
                 runtime_uris
                 if name not in BUILT_IN_EXAMPLES
-                else [Resource("runtime/version")]
+                else [None]
             )
             f = self.run_model_in_server  # type: ignore
         return f(  # type: ignore
