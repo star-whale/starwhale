@@ -118,7 +118,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
             "type": "OBJECT",
             "attributes": [
                 {"name": "_type", "type": "STRING"},
-                {"name": "owner", "type": "UNKNOWN"},
                 {"name": "uri", "type": "STRING"},
                 {"name": "scheme", "type": "STRING"},
                 {"name": "offset", "type": "INT64"},
@@ -175,7 +174,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
         "i": {
             "attributes": [
                 {"name": "_type", "type": "STRING"},
-                {"name": "owner", "type": "UNKNOWN"},
                 {"name": "uri", "type": "STRING"},
                 {"name": "scheme", "type": "STRING"},
                 {"name": "offset", "type": "INT64"},
@@ -234,7 +232,6 @@ def test_datastore_query_table(mock_scan: MagicMock):
                     "data_type": {"type": "UNKNOWN", "value": "None"},
                     "extra_info": {"type": "MAP", "value": []},
                     "offset": {"type": "INT64", "value": "0"},
-                    "owner": {"type": "UNKNOWN", "value": "None"},
                     "scheme": {"type": "STRING", "value": ""},
                     "size": {"type": "INT64", "value": "-1"},
                     "uri": {"type": "STRING", "value": "foo"},
