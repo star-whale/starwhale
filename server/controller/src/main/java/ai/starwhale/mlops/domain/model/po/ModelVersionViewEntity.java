@@ -48,4 +48,8 @@ public class ModelVersionViewEntity extends BaseEntity implements HasId {
     private String jobs;
 
     private Boolean shared;
+
+    private String storagePath;
+
+    private String builtInRuntime;
 }

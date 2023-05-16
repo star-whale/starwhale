@@ -12,6 +12,7 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import NoSupportError
 from starwhale.consts import (
     HTTPMethod,
+    SW_BUILT_IN,
     VERSION_PREFIX_CNT,
     RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
@@ -326,6 +327,7 @@ class TestBundleCopy(TestCase):
     @Mocker()
     def test_model_copy_l2c(self, rm: Mocker) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        built_in_version = "abcdefg1234"
         swmp_path = (
             self._sw_config.rootdir
             / "self"
@@ -345,7 +347,14 @@ class TestBundleCopy(TestCase):
             swmp_manifest_path,
             yaml.safe_dump(
                 {
-                    "version": "ge3tkylgha2tenrtmftdgyjzni3dayq",
+                    "version": version,
+                    "packaged_runtime": {
+                        "manifest": {
+                            "version": built_in_version,
+                        },
+                        "name": "other",
+                        "path": "src/.starwhale/runtime/packaged.swrt",
+                    },
                 }
             ),
             parents=True,
@@ -354,6 +363,12 @@ class TestBundleCopy(TestCase):
         ensure_file(
             swmp_path / "src" / ".starwhale" / RESOURCE_FILES_NAME,
             yaml.safe_dump([]),
+            parents=True,
+        )
+
+        ensure_file(
+            swmp_path / "src" / ".starwhale" / "runtime" / "packaged.swrt",
+            "",
             parents=True,
         )
 
@@ -446,6 +461,18 @@ class TestBundleCopy(TestCase):
                 headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
                 json={"data": {"uploadId": "123"}},
             )
+
+            rt_upload_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
+                headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
+                json={"data": {"uploadId": "126"}},
+            )
+            link_rt_request = rm.request(
+                HTTPMethod.PUT,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}",
+                json={"built_in_runtime": built_in_version},
+            )
             ModelCopy(
                 src_uri=case["src_uri"],
                 dest_uri=case["dest_uri"],
@@ -453,6 +480,8 @@ class TestBundleCopy(TestCase):
             ).do()
             assert head_request.call_count == 1
             assert upload_request.call_count == 3
+            assert rt_upload_request.call_count == 1
+            assert link_rt_request.call_count == 1
 
         head_request = rm.request(
             HTTPMethod.HEAD,
@@ -465,6 +494,17 @@ class TestBundleCopy(TestCase):
             f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
             json={"data": {"uploadId": "123"}},
         )
+        rt_upload_request = rm.request(
+            HTTPMethod.POST,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
+            headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
+            json={"data": {"uploadId": "126"}},
+        )
+        link_rt_request = rm.request(
+            HTTPMethod.PUT,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+            json={"built_in_runtime": built_in_version},
+        )
         ModelCopy(
             src_uri="mnist/v1",
             dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
@@ -473,6 +513,8 @@ class TestBundleCopy(TestCase):
 
         assert head_request.call_count == 1
         assert upload_request.call_count == 3
+        assert rt_upload_request.call_count == 1
+        assert link_rt_request.call_count == 1
 
     def _prepare_local_dataset(self) -> t.Tuple[str, str]:
         name = "mnist"

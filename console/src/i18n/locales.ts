@@ -844,6 +844,10 @@ const locales0 = {
         en: 'Runtime',
         zh: '运行时',
     },
+    'Runtime Type': {
+        en: 'Runtime Type',
+        zh: '类型',
+    },
     'End Time': {
         en: 'End Time',
         zh: '结束时间',

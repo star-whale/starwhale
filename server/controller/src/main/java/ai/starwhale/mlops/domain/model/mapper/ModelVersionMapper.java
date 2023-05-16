@@ -35,10 +35,11 @@ import org.apache.ibatis.jdbc.SQL;
 public interface ModelVersionMapper {
 
     String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, created_time, modified_time, jobs, status, shared";
+            + " storage_path, created_time, modified_time, jobs, status, shared, built_in_runtime";
 
     String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, m.model_name, m.id as model_id,"
-            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.created_time, v.modified_time";
+            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.storage_path, built_in_runtime,"
+            + " v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
@@ -160,6 +161,9 @@ public interface ModelVersionMapper {
                     UPDATE("model_version");
                     if (StrUtil.isNotEmpty(version.getVersionTag())) {
                         SET("version_tag = #{versionTag}");
+                    }
+                    if (StrUtil.isNotEmpty(version.getBuiltInRuntime())) {
+                        SET("built_in_runtime = #{builtInRuntime}");
                     }
                     if (StrUtil.isNotEmpty(version.getJobs())) {
                         SET("jobs=#{jobs}");

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
@@ -76,7 +77,7 @@ public interface RuntimeMapper {
                 {
                     SELECT(COLUMNS);
                     FROM("runtime_info");
-                    WHERE("is_deleted = 0");
+                    WHERE("is_deleted = 0 and runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }

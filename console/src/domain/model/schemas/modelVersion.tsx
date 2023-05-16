@@ -9,6 +9,7 @@ export interface IModelVersionSchema extends IResourceSchema {
     meta: Record<string, unknown>
     owner?: IUserSchema
     stepSpecs: StepSpec[]
+    builtInRuntime: string
 }
 
 export interface IModelTreeVersionSchema extends IModelVersionSchema {

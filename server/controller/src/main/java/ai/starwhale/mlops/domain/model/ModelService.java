@@ -250,8 +250,8 @@ public class ModelService {
                 "Unable to find the compare version of model "), HttpStatus.BAD_REQUEST);
         }
         try {
-            var baseFiles = parseManifestFiles(getManifest(baseModel));
-            var compareFiles = parseManifestFiles(getManifest(compareModel));
+            var baseFiles = parseManifestFiles(getManifest(baseModel.getStoragePath()));
+            var compareFiles = parseManifestFiles(getManifest(compareModel.getStoragePath()));
             FileNode.compare(baseFiles, compareFiles);
             return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
         } catch (JsonProcessingException e) {
@@ -294,7 +294,7 @@ public class ModelService {
         try {
             // Get file list from manifest
             // TODO read from datastore
-            var manifest = getManifest(version);
+            var manifest = getManifest(version.getStoragePath());
 
             return ModelInfoVo.builder()
                     .id(idConvertor.convert(model.getId()))
@@ -324,11 +324,15 @@ public class ModelService {
     }
 
     public Boolean modifyModelVersion(String projectUrl, String modelUrl, String versionUrl, ModelVersion version) {
+        if (!StringUtils.hasText(version.getTag()) && !StringUtils.hasText(version.getBuiltInRuntime())) {
+            throw new SwValidationException(ValidSubject.MODEL, "no attributes set for model version");
+        }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, modelUrl, versionUrl));
         ModelVersionEntity entity = ModelVersionEntity.builder()
                 .id(versionId)
                 .versionTag(version.getTag())
+                .builtInRuntime(version.getBuiltInRuntime())
                 .build();
         int update = modelVersionMapper.update(entity);
         log.info("Model Version has been modified. ID={}", version.getId());
@@ -363,7 +367,7 @@ public class ModelService {
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity));
+            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity.getStoragePath()));
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
                 //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
                 vo.setAlias(VersionAliasConverter.LATEST);
@@ -413,10 +417,12 @@ public class ModelService {
                             .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                             .createdTime(entity.getCreatedTime().getTime())
                             .shared(toInt(entity.getShared()))
+                            .builtInRuntime(entity.getBuiltInRuntime())
                             .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                            .build());
-            }  catch (JsonProcessingException e) {
-                log.error("parse step spec error for model version:{},error:{}", entity.getId(), e);
+                            .build()
+                        );
+            } catch (JsonProcessingException e) {
+                log.error("parse stepSpec error for model version:{}, error:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
             }
         }
@@ -646,7 +652,7 @@ public class ModelService {
                 "at least one of name or path is not null when download");
         }
 
-        String manifest = getManifest(modelVersionEntity);
+        String manifest = getManifest(modelVersionEntity.getStoragePath());
         // read from manifest
         try {
             var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
@@ -691,7 +697,7 @@ public class ModelService {
                 return;
             default:
                 throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "unsupport type " + fileDesc),
+                        new SwValidationException(ValidSubject.MODEL, "unsupported type " + fileDesc),
                         HttpStatus.BAD_REQUEST
                 );
         }
@@ -708,8 +714,8 @@ public class ModelService {
 
     }
 
-    private String getManifest(ModelVersionEntity modelVersionEntity) {
-        var p = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), MODEL_MANIFEST);
+    private String getManifest(String storagePath) {
+        var p = String.format(FORMATTER_STORAGE_PATH, storagePath, MODEL_MANIFEST);
         try (var is = storageAccessService.get(p)) {
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (IOException e) {

@@ -389,10 +389,12 @@ public class ModelServiceTest {
         given(modelVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
                 .willReturn(1);
 
-        var res = service.modifyModelVersion("1", "1", "v1", new ModelVersion());
+        assertThrows(SwValidationException.class, () -> service.modifyModelVersion("1", "1", "v1", new ModelVersion()));
+
+        var res = service.modifyModelVersion("1", "1", "v1", ModelVersion.builder().tag("v1").build());
         assertThat(res, is(true));
 
-        res = service.modifyModelVersion("1", "1", "v2", new ModelVersion());
+        res = service.modifyModelVersion("1", "1", "v2", ModelVersion.builder().tag("v1").build());
         assertThat(res, is(false));
     }
 
@@ -670,7 +672,7 @@ public class ModelServiceTest {
     }
 
     @Test
-    public void testListModelVersionView() {
+    public void testListModelVersionView() throws IOException {
         given(modelVersionMapper.findByLatest(same(1L)))
                 .willReturn(ModelVersionEntity.builder().id(5L).build());
         given(modelVersionMapper.findByLatest(same(3L)))
@@ -678,25 +680,25 @@ public class ModelServiceTest {
         given(modelVersionMapper.listModelVersionViewByProject(same(1L)))
                 .willReturn(List.of(
                     ModelVersionViewEntity.builder().id(5L).modelId(1L).versionOrder(4L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(4L).modelId(1L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(3L).modelId(1L).versionOrder(3L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").build(),
+                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(2L).modelId(3L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").build(),
+                        .userName("sw").shared(false).modelName("model3").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(1L).modelId(3L).versionOrder(1L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").build()
+                        .userName("sw").shared(false).modelName("model3").storagePath("any").build()
                 ));
 
         given(modelVersionMapper.listModelVersionViewByShared(same(1L)))
                 .willReturn(List.of(
                     ModelVersionViewEntity.builder().id(8L).modelId(2L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").build(),
+                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(7L).modelId(2L).versionOrder(2L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").build(),
+                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
                     ModelVersionViewEntity.builder().id(6L).modelId(4L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model4").build()
+                        .userName("sw2").shared(true).modelName("model4").storagePath("any").build()
                 ));
 
         var res = service.listModelVersionView("1");

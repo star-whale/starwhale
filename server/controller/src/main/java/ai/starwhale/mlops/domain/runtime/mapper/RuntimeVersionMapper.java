@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
@@ -90,7 +91,7 @@ public interface RuntimeVersionMapper {
             @Param("runtimeId") Long runtimeId);
 
     @Update("update runtime_version set built_image = #{builtImage} where version_name = #{versionName}")
-    int updateBuiltImage(@Param("versionName") String versionNam, @Param("builtImage") String builtImage);
+    int updateBuiltImage(@Param("versionName") String versionName, @Param("builtImage") String builtImage);
 
     @Select("select " + COLUMNS + " from runtime_version"
             + " where version_order = #{versionOrder}"
@@ -106,6 +107,7 @@ public interface RuntimeVersionMapper {
             + " from runtime_version as v, runtime_info as b, project_info as p, user_info as u"
             + " where v.runtime_id = b.id"
             + " and b.project_id = p.id"
+            + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
             + " and b.is_deleted = 0"
             + " and p.is_deleted = 0"
@@ -117,6 +119,7 @@ public interface RuntimeVersionMapper {
             + " from runtime_version as v, runtime_info as b, project_info as p, user_info as u"
             + " where v.runtime_id = b.id"
             + " and b.project_id = p.id"
+            + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
             + " and b.is_deleted = 0"
             + " and p.is_deleted = 0"

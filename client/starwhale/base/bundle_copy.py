@@ -275,13 +275,16 @@ class BundleCopy(CloudRequestMixed):
                     raise NoSupportError(
                         f"no support to copy {self.typ} from server to standalone"
                     )
-
                 StandaloneTag(self.dest_uri).add_fast_tag()
                 self._update_manifest(
                     self._get_versioned_resource_path(self.dest_uri),
                     {CREATED_AT_KEY: now_str()},
                 )
+            self.final_steps(progress)
         console.print(f":tea: console url of the remote bundle: {remote_url}")
+
+    def final_steps(self, progress: Progress) -> None:
+        pass
 
     def upload_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError

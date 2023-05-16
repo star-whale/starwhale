@@ -21,6 +21,7 @@ import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
+import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
@@ -290,7 +291,7 @@ public interface ModelApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
             String versionUrl,
-            @Valid @RequestBody ModelTagRequest modelTagRequest);
+            @Valid @RequestBody ModelUpdateRequest request);
 
     @Operation(summary = "Manage tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

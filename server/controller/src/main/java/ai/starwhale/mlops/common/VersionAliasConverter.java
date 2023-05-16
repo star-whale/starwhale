@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 public class VersionAliasConverter implements Converter<Long, String> {
 
     public static final String LATEST = "latest";
+    public static final String BUILTIN = "built-in";
 
     @Override
     public String convert(Long order) throws ConvertException {

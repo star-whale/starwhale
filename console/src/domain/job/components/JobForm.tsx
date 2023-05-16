@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
@@ -15,7 +15,7 @@ import Button from '@starwhale/ui/Button'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 import { FormSelect, Toggle } from '@starwhale/ui/Select'
 import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
-import { RuntimeTreeSelector } from '../../runtime/components/RuntimeTreeSelector'
+import RuntimeTreeSelector from '@runtime/components/RuntimeTreeSelector'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
 
@@ -69,6 +69,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const [loading, setLoading] = useState(false)
 
+    const RuntimeType = {
+        BUILTIN: 'builtIn',
+        OTHER: 'other',
+    }
+    const [builtInRuntime, setBuiltInRuntime] = useState<string>('')
+    const [type, setType] = useState(builtInRuntime ? RuntimeType.BUILTIN : '')
+
     const handleValuesChange = useCallback(
         (_changes, values_) => {
             if ('modelVersionUrl' in _changes) {
@@ -102,8 +109,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [stepSpecOverWrites, form, t]
     )
 
-    const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
-        if (!modelTree) return undefined
+    const modelVersion: IModelVersionSchema | undefined = React.useMemo(() => {
+        if (!modelTree || !modelVersionId) return undefined
         let version: IModelVersionSchema | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
@@ -112,8 +119,19 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 }
             })
         )
-        return version?.stepSpecs ?? []
+        return version
     }, [modelTree, modelVersionId])
+
+    useEffect(() => {
+        if (!modelVersion) return
+        setBuiltInRuntime(modelVersion?.builtInRuntime ?? '')
+        setType(modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER)
+    }, [modelVersion])
+
+    const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
+        if (!modelVersion) return undefined
+        return modelVersion?.stepSpecs ?? []
+    }, [modelVersion])
 
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
@@ -161,12 +179,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'datasetVersionId',
                         'datasetVersionIdsArr',
                         'runtimeId',
+                        'runtimeVersionUrl',
                         'rawType',
                         'stepSpecOverWrites',
                         'modelVersionHandler',
                         'modelVersionUrl',
                     ]),
-                    runtimeVersionUrl: values_.runtimeVersionUrl[0],
+                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? builtInRuntime : values_.runtimeVersionUrl[0],
                     modelVersionUrl: values_.modelVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                     stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(stepSource),
@@ -306,9 +325,53 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-                <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
-                    <RuntimeTreeSelector projectId={projectId} />
-                </FormItem>
+                {!!builtInRuntime && (
+                    <FormItemLabel label={t('Runtime Type')}>
+                        <div style={{ marginTop: '8px' }} />
+                        <FormSelect
+                            clearable={false}
+                            value={type}
+                            onChange={(value: string) => {
+                                setType(value)
+                            }}
+                            options={[
+                                {
+                                    label: RuntimeType.BUILTIN,
+                                    id: RuntimeType.BUILTIN,
+                                },
+                                {
+                                    label: RuntimeType.OTHER,
+                                    id: RuntimeType.OTHER,
+                                },
+                            ]}
+                        />
+                    </FormItemLabel>
+                )}
+                {type === RuntimeType.BUILTIN && (
+                    <>
+                        <label
+                            htmlFor='l-built-in'
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 0px' }}
+                        >
+                            * {t('Runtime Version')}
+                        </label>
+                        <p
+                            id='l-built-in'
+                            style={{
+                                padding: '5px 20px',
+                                borderRadius: '4px',
+                                border: '1px solid #E2E7F0',
+                            }}
+                        >
+                            {builtInRuntime}
+                        </p>
+                    </>
+                )}
+                {(type === RuntimeType.OTHER || !builtInRuntime) && (
+                    <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
+                        <RuntimeTreeSelector projectId={projectId} />
+                    </FormItem>
+                )}
             </div>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>

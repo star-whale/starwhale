@@ -239,14 +239,19 @@ public class RuntimeService {
         return Runtime.fromEntity(entity);
     }
 
-    public RuntimeVersion findRuntimeVersion(String versioUrl) {
-        RuntimeVersionEntity entity = runtimeDao.getRuntimeVersion(versioUrl);
+    public RuntimeVersion findRuntimeVersion(String versionUrl) {
+        RuntimeVersionEntity entity = runtimeDao.getRuntimeVersion(versionUrl);
         return RuntimeVersion.fromEntity(entity);
     }
 
     public RuntimeVersion findRuntimeVersion(Long versionId) {
         RuntimeVersionEntity entity = (RuntimeVersionEntity) runtimeDao.findVersionById(versionId);
         return RuntimeVersion.fromEntity(entity);
+    }
+
+    public RuntimeVersion findBuiltInRuntimeVersion(Long projectId, String version) {
+        var runtime = runtimeDao.getRuntimeByName(Constants.SW_BUILT_IN_RUNTIME, projectId);
+        return RuntimeVersion.fromEntity(runtimeDao.getRuntimeVersion(runtime.getId(), version));
     }
 
     public Boolean deleteRuntime(RuntimeQuery query) {
@@ -560,6 +565,7 @@ public class RuntimeService {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Not found.");
         }
 
+        // TODO: search image name in all records' built_image
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.",

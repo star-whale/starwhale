@@ -44,6 +44,8 @@ public class ModelVersion {
 
     private String storagePath;
 
+    private String builtInRuntime;
+
     public static ModelVersion fromEntity(ModelVersionEntity entity) {
         return ModelVersion.builder()
                 .id(entity.getId())
@@ -54,6 +56,7 @@ public class ModelVersion {
                 .meta(entity.getVersionMeta())
                 .jobs(entity.getJobs())
                 .storagePath(entity.getStoragePath())
+                .builtInRuntime(entity.getBuiltInRuntime())
                 .build();
     }
 }

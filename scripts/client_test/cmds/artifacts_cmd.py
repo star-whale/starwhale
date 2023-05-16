@@ -110,9 +110,11 @@ class Model(BaseArtifact):
         )
 
     @classmethod
-    def build(cls, workdir: str, name: str) -> Resource:
+    def build(cls, workdir: str, name: str, runtime: str = "") -> Resource:
         version = gen_uniq_version()
         cmd = [CLI, "model", "build", workdir, "--name", name]
+        if runtime:
+            cmd.extend(["--runtime", runtime])
         _ret_code, _res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
         assert _ret_code == 0, _res
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)

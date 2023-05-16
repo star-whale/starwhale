@@ -16,30 +16,17 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
-@Builder
 @Validated
-@Schema(description = "Model Version View Object", title = "Model")
-public class ModelVersionViewVo {
+public class ModelUpdateRequest {
 
-    private String id;
+    @JsonProperty("tag")
+    private String tag;
 
-    private String versionName;
-
-    private String alias;
-
-    private Integer shared;
-
-    private List<StepSpec> stepSpecs;
-
+    @JsonProperty("built_in_runtime")
     private String builtInRuntime;
-
-    private Long createdTime;
 }
