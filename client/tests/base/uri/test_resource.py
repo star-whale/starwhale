@@ -1,11 +1,14 @@
+from pathlib import Path
 from dataclasses import dataclass
 from unittest.mock import Mock, patch, MagicMock
 
+import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale.utils.fs import ensure_file
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.base.uri.exceptions import NoMatchException
+from starwhale.base.uri.exceptions import NoMatchException, MultipleMatchException
 
 
 class MockLocalInstance:
@@ -248,3 +251,54 @@ class TestResource(TestCase):
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == ""
+
+    @patch("starwhale.base.uri.resource.load_swcli_config")
+    def test_duplicate_version(self, m_conf: MagicMock):
+        root = Path("/root")
+        m_conf.return_value = {
+            "current_instance": "local",
+            "instances": {
+                "local": {"uri": "local", "current_project": "self"},
+            },
+            "storage": {"root": str(root)},
+        }
+
+        # fake two model with same version
+        model1 = root / "self" / "model" / "mnist" / "fo" / "foo"
+        model1.mkdir(parents=True)
+        (model1 / "_manifest.yaml").touch()
+        ensure_file(
+            model1.parent.parent / "_manifest.yaml",
+            yaml.safe_dump({"tags": {"latest": "foo"}}),
+        )
+
+        model2 = root / "self" / "model" / "mnist-dup" / "fo" / "foo"
+        model2.mkdir(parents=True)
+        (model2 / "_manifest.yaml").touch()
+        ensure_file(
+            model2.parent.parent / "_manifest.yaml",
+            yaml.safe_dump({"tags": {"latest": "foo"}}),
+        )
+
+        rc = Resource("mnist", typ=ResourceType.model)
+        assert rc.version == "foo"
+        assert rc.name == "mnist"
+
+        with self.assertRaises(MultipleMatchException):
+            Resource("foo", typ=ResourceType.model)
+
+        rc = Resource("mnist/foo", typ=ResourceType.model)
+        assert rc.version == "foo"
+        assert rc.name == "mnist"
+
+        rc = Resource("mnist/version/foo", typ=ResourceType.model)
+        assert rc.version == "foo"
+        assert rc.name == "mnist"
+
+        rc = Resource("mnist-dup/foo", typ=ResourceType.model)
+        assert rc.version == "foo"
+        assert rc.name == "mnist-dup"
+
+        rc = Resource("mnist-dup/version/foo", typ=ResourceType.model)
+        assert rc.version == "foo"
+        assert rc.name == "mnist-dup"

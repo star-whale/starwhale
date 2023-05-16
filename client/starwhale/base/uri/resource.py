@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from enum import Enum
 from glob import glob
@@ -16,6 +18,7 @@ from starwhale.base.uri.exceptions import (
     VerifyException,
     NoMatchException,
     UriTooShortException,
+    MultipleMatchException,
 )
 
 rc_url_regex = re.compile(
@@ -119,6 +122,9 @@ class Resource:
         if "//" in uri:
             raise Exception(f"wrong uri({uri}) format with '//'")
 
+        self._parse_resource(uri, refine, typ)
+
+    def _parse_resource(self, uri: str, refine: bool, typ: ResourceType | None) -> None:
         parts = len(uri.split("/"))
         # 3 == len('mnist/version/latest'.split(/))
         # means that there is no type info in the uri
@@ -199,6 +205,8 @@ class Resource:
                 _, typ, self.name, _, version = m[0].rsplit("/", 4)
                 self.version = self.path_to_version(version)
                 self.typ = ResourceType[typ]
+            elif len(m) > 1:
+                raise MultipleMatchException(ver, m)
             else:
                 # job list has no name
                 m = glob(f"{root.absolute()}/job/*/{ver}*")
@@ -206,6 +214,8 @@ class Resource:
                     _, typ, _, version = m[0].rsplit("/", 3)
                     self.version = self.path_to_version(version)
                     self.typ = ResourceType[typ]
+                elif len(m) > 1:
+                    raise MultipleMatchException(ver, m)
                 else:
                     raise NoMatchException(ver, list(m))
         else:
@@ -258,7 +268,7 @@ class Resource:
                 raise NoMatchException(self.version, list(m))
         else:
             # storage-root/project/type/name/prefix/full-version
-            p = f"{root.absolute()}/{self.typ.name}/*/*/{self.version}*"
+            p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
             m = glob(p)
             if len(m) == 1:
                 _, _, self.name, _, version = m[0].rsplit("/", 4)
