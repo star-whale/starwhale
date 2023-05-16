@@ -437,11 +437,7 @@ class TestCli:
         if in_standalone:
             f = self.run_model_in_standalone
         else:
-            runtime_uris = (
-                runtime_uris
-                if name not in BUILT_IN_EXAMPLES
-                else [None]
-            )
+            runtime_uris = runtime_uris if name not in BUILT_IN_EXAMPLES else [None]
             f = self.run_model_in_server  # type: ignore
         return f(  # type: ignore
             dataset_uris=dataset_uris,
