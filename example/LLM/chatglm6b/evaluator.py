@@ -23,7 +23,7 @@ ds_input_keys = {
     "mkqa": "query", 
 }
 
-@evaluation.predict(log_mode="plain")
+@evaluation.predict(log_mode="plain",log_dataset_features=["query","text","question","rawquestion","prompt"])
 def ppl(data: dict, external: dict):
     ds_name=external["dataset_uri"].name
     if ds_name in ds_input_keys:
