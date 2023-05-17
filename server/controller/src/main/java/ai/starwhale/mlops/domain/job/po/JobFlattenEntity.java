@@ -141,4 +141,6 @@ public class JobFlattenEntity {
 
     @JsonProperty(IsDeletedColumn)
     private Integer isDeleted;
+
+    private boolean debugMode;
 }

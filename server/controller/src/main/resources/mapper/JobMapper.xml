@@ -27,6 +27,7 @@
     j.job_comment,
     j.resource_pool,
     j.is_deleted as job_is_deleted,
+    j.debug_mode,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -157,7 +158,8 @@
     runtime_version_id,
     result_output_path,
     step_spec,
-    resource_pool)
+    resource_pool,
+    debug_mode)
     values (#{job.jobUuid},
     #{job.projectId},
     #{job.modelVersionId},
@@ -168,7 +170,8 @@
     #{job.runtimeVersionId},
     #{job.resultOutputPath},
     #{job.stepSpec},
-    #{job.resourcePool}
+    #{job.resourcePool},
+    #{job.debugMode}
     )
   </insert>
 
@@ -190,6 +193,7 @@
     <result property="isDeleted" column="job_is_deleted"/>
     <result property="runtimeVersionId" column="runtime_version_id"/>
     <result property="resourcePool" column="resource_pool"/>
+    <result property="debugMode" column="debug_mode"/>
     <association property="project" resultMap="projectResultMap"/>
     <association property="modelVersion" resultMap="modelVersionResultMap"/>
     <association property="owner" resultMap="userResultMap"/>

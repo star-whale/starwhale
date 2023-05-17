@@ -174,7 +174,7 @@ public class JobService {
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
-            String handler, String stepSpecOverWrites, JobType type) {
+            String handler, String stepSpecOverWrites, JobType type, boolean debugMode) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
@@ -249,6 +249,7 @@ public class JobService {
                 .stepSpec(stepSpecOverWrites)
                 .createdTime(new Date())
                 .modifiedTime(new Date())
+                .debugMode(debugMode)
                 .build();
 
         jobDao.addJob(jobEntity);

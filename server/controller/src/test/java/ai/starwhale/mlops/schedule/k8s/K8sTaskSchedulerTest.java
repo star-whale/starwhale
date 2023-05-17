@@ -64,7 +64,7 @@ public class K8sTaskSchedulerTest {
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
         K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
-        scheduler.schedule(Set.of(mockTask()));
+        scheduler.schedule(Set.of(mockTask(false)));
         verify(k8sClient).deployJob(any());
     }
 
@@ -95,7 +95,7 @@ public class K8sTaskSchedulerTest {
         K8sClient k8sClient = mock(K8sClient.class);
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
         K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
-        Task task = mockTask();
+        Task task = mockTask(false);
         scheduler.schedule(Set.of(task));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
@@ -119,7 +119,7 @@ public class K8sTaskSchedulerTest {
                 10,
                 mock(StorageAccessService.class)
         );
-        var task = mockTask();
+        var task = mockTask(false);
         scheduler.schedule(Set.of(task));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         task.getTaskRequest()
@@ -135,12 +135,43 @@ public class K8sTaskSchedulerTest {
                 .getContainers().get(0).getEnv().contains(expectedEnv));
     }
 
-    private Task mockTask() {
+    @Test
+    public void testDebugMode() throws IOException, ApiException {
+        var client = mock(K8sClient.class);
+
+        var runTimeProperties = new RunTimeProperties("", new Pypi("", "", ""));
+        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
+        var scheduler = new K8sTaskScheduler(
+                client,
+                mock(TaskTokenValidator.class),
+                runTimeProperties,
+                k8sJobTemplate,
+                null,
+                null,
+                null, "",
+                50,
+                "OnFailure",
+                10,
+                mock(StorageAccessService.class)
+        );
+        var task = mockTask(true);
+        scheduler.schedule(Set.of(task));
+        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
+
+        verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
+        var jobs = jobArgumentCaptor.getAllValues();
+        var container = jobs.get(0).getSpec().getTemplate().getSpec().getContainers().get(0);
+        Assertions.assertNull(container.getArgs());
+        Assertions.assertEquals(List.of("tail", "-f", "/dev/null"), container.getCommand());
+    }
+
+    private Task mockTask(boolean debugMode) {
         Job job = Job.builder()
                 .id(1L)
                 .model(Model.builder().path("path_swmp").build())
                 .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
                 .type(JobType.EVALUATION)
+                .debugMode(debugMode)
                 .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")

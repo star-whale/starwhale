@@ -79,6 +79,8 @@ public class JobEntity extends BaseEntity implements BundleEntity {
 
     private String stepSpec;
 
+    private boolean debugMode;
+
     @Override
     public String getName() {
         return jobUuid;

@@ -90,6 +90,8 @@ public class Job extends TimeConcern {
     Long durationMs;
     String comment;
 
+    boolean debugMode;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

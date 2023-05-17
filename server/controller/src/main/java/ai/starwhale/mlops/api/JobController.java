@@ -132,7 +132,8 @@ public class JobController implements JobApi {
                 jobRequest.getResourcePool(),
                 jobRequest.getHandler(),
                 jobRequest.getStepSpecOverWrites(),
-                jobRequest.getType());
+                jobRequest.getType(),
+                jobRequest.isDebugMode());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

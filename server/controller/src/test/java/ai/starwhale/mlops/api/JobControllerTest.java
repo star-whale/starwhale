@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
@@ -141,7 +142,7 @@ public class JobControllerTest {
     @Test
     public void testCreatJob() {
         given(jobService.createJob(anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), anyString(), any(), any()))
+                anyString(), anyString(), anyString(), anyString(), anyString(), any(), any(), eq(false)))
                 .willReturn(1L);
         JobRequest jobRequest = new JobRequest();
         jobRequest.setHandler("eval");
