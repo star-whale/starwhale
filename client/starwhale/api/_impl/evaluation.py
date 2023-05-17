@@ -222,7 +222,7 @@ class PipelineHandler(metaclass=ABCMeta):
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
-            idx_prefix = f"{_uri.name}-{_uri.version[:SHORT_VERSION_CNT]}"
+            idx_prefix = _uri.info().get("id") or _uri.name
             for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None
