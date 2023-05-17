@@ -38,19 +38,19 @@ export const alias = {
 }
 
 let extendProxies = {}
-if (process.env.VITE_EXTENDS === 'true')
-    extendProxies = {
-        '/api/v1/system/resourcePool': {
-            target: 'http://10.131.0.1:8088/billing/',
-            changeOrigin: true,
-            secure: false,
-        },
-        '/billing': {
-            target: 'http://10.131.0.1:8088/',
-            changeOrigin: true,
-            secure: false,
-        },
-    }
+// if (process.env.VITE_EXTENDS === 'true')
+//     extendProxies = {
+//         '/api/v1/system/resourcePool': {
+//             target: 'http://10.131.0.1:8088/billing/',
+//             changeOrigin: true,
+//             secure: false,
+//         },
+//         '/billing': {
+//             target: 'http://10.131.0.1:8088/',
+//             changeOrigin: true,
+//             secure: false,
+//         },
+//     }
 
 // https://vitejs.dev/config/
 export default defineConfig({
