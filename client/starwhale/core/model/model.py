@@ -868,14 +868,14 @@ class CloudModel(CloudBundleModelMixin, Model):
         resource_pool: str = "default",
     ) -> t.Tuple[bool, str]:
         crm = CloudRequestMixed()
-        model_uri = Resource(
+        _model_uri = Resource(
             model_uri, ResourceType.model, project=project_uri, refine=True
         )
-        dataset_uris = [
+        _dataset_uris = [
             Resource(i, ResourceType.model, project=project_uri, refine=True)
             for i in dataset_uris
         ]
-        runtime_uri = (
+        _runtime_uri = (
             Resource(
                 runtime_uri,
                 ResourceType.runtime,
@@ -891,12 +891,13 @@ class CloudModel(CloudBundleModelMixin, Model):
             instance=project_uri.instance,
             data=json.dumps(
                 {
-                    "modelVersionUrl": model_uri.remote_info("id") or model_uri.version,
+                    "modelVersionUrl": _model_uri.remote_info("id")
+                    or _model_uri.version,
                     "datasetVersionUrls": ",".join(
-                        [i.remote_info("id") or i.version for i in dataset_uris]
+                        [i.remote_info("id") or i.version for i in _dataset_uris]
                     ),
-                    "runtimeVersionUrl": runtime_uri.remote_info("id", "")
-                    if runtime_uri
+                    "runtimeVersionUrl": _runtime_uri.remote_info("id", "")
+                    if _runtime_uri
                     else "",
                     "resourcePool": resource_pool,
                     "handler": run_handler,
