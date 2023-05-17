@@ -1,5 +1,4 @@
 import { Popover } from 'baseui/popover'
-import { PLACEMENT } from 'baseui/toast'
 import React, { useEffect, useState } from 'react'
 
 function SelectorPopover({
@@ -24,7 +23,7 @@ function SelectorPopover({
 
     return (
         <Popover
-            placement={PLACEMENT.bottomRight}
+            // placement={PLACEMENT.bottomRight}
             showArrow
             autoFocus={false}
             isOpen={isOpen}

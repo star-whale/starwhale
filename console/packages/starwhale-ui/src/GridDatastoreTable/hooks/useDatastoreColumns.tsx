@@ -1,9 +1,10 @@
 import React from 'react'
-import { isSearchColumns } from '@starwhale/core/datastore'
+import { RecordSchemaT, isComplexType, isSearchColumns } from '@starwhale/core/datastore'
 import { CustomColumn } from '../../base/data-table'
-import { ColumnT, RenderCellT } from '../../base/data-table/types'
+import { ColumnT } from '../../base/data-table/types'
 import { StringCell } from '../../base/data-table/column-string'
-import _ from 'lodash'
+import DataViewer from '@starwhale/ui/Viewer/DataViewer'
+import { RecordAttr } from '../recordAttrModel'
 
 export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (ca.name === 'sys/id') return -1
@@ -21,13 +22,13 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     return ca.name.localeCompare(cb.name)
 }
 
-function RenderMixedCell({ value, ...props }: RenderCellT<any>['props']) {
-    return (
-        <StringCell {...props} lineClamp={1} value={typeof value === 'object' ? JSON.stringify(value, null) : value} />
-    )
+export function RenderMixedCell({ value, columnKey, ...props }: { value: RecordAttr; columnKey: string }) {
+    if (!value) return ''
+    if (isComplexType(value?.type)) return <DataViewer data={value} showKey={columnKey as string} />
+    return <StringCell {...props} lineClamp={1} value={value.toString()} />
 }
 
-export function useDatastoreColumns(columnTypes?: { name: string; type: string }[]): ColumnT[] {
+export function useDatastoreColumns(columnTypes?: { name: string; type: string }[], options = {}): ColumnT[] {
     const columns = React.useMemo(() => {
         const columnsWithAttrs: ColumnT[] = []
 
@@ -39,19 +40,21 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
             .sort(sortColumn)
             .forEach((column) => {
                 columnsWithAttrs.push(
-                    CustomColumn({
+                    CustomColumn<RecordAttr, any>({
                         columnType: column,
                         key: column.name,
                         title: column.name,
-                        renderCell: RenderMixedCell as any,
                         fillWidth: false,
-                        mapDataToValue: (data: any): string => _.get(data, [column.name, 'value']),
+                        renderCell: RenderMixedCell as any,
+                        mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
+                            return RecordAttr.decode(record, column.name, options)
+                        },
                     })
                 )
             })
 
         return columnsWithAttrs
-    }, [columnTypes])
+    }, [columnTypes, options])
 
     return columns
 }

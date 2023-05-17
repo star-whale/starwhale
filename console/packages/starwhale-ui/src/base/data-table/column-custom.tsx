@@ -7,6 +7,7 @@ import type { ColumnT, RenderCellT, RenderFilterT, SharedColumnOptionsT } from '
 // I could not re-use the ColumnT type to build this.. tried to spread the ColumnT
 // and define renderFilter, etc. to optional, but required status was maintained.
 type OptionsT<ValueT, FilterParamsT> = {
+    // @ts-ignore
     renderCell: RenderCellT<ValueT>
     renderFilter?: RenderFilterT<ValueT, FilterParamsT>
     buildFilter?: (args: FilterParamsT) => (args: ValueT) => boolean

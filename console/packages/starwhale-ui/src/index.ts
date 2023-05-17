@@ -1,5 +1,5 @@
 export { default as IconFont } from './IconFont'
-export * from './form'
+export * from './RJSFForm'
 export * from './Button'
 export * from './Input'
 export * from './Search'

@@ -136,21 +136,21 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const stepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!fullStepSource) return undefined
         if (stepSpecOverWrites) {
-            return (yaml.load(stepSpecOverWrites) ?? []) as StepSpec[]
+            try {
+                return (yaml.load(stepSpecOverWrites) ?? []) as StepSpec[]
+            } catch (e) {
+                return []
+            }
         }
         return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
-    const editorValue = React.useMemo(() => {
-        return yaml.dump(stepSource)
-    }, [stepSource])
-
     const handleModelHandlerChange = useCallback(
         (value) => {
             setModelVersionHandler(value)
-            setStepSpecOverWrites('')
+            setStepSpecOverWrites(yaml.dump(fullStepSource?.filter((v: StepSpec) => v?.job_name === value)))
         },
-        [setModelVersionHandler]
+        [setModelVersionHandler, fullStepSource]
     )
 
     const checkStepSource = useCallback(
@@ -158,9 +158,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             try {
                 yaml.load(value)
             } catch (e) {
-                _.debounce(() => {
-                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000, key: 'yaml' })
-                }, 2000)()
+                toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000, key: 'yaml' })
                 return false
             }
             return true
@@ -171,6 +169,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
             setLoading(true)
+            if (values_.rawType && !checkStepSource(stepSpecOverWrites)) return
             try {
                 await onSubmit({
                     ..._.omit(values_, [
@@ -195,15 +194,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, stepSource]
+        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource]
     )
 
     const handleEditorChange = React.useCallback(
         (value: string) => {
-            if (!checkStepSource(value)) return
             setStepSpecOverWrites(value)
         },
-        [setStepSpecOverWrites, checkStepSource]
+        [setStepSpecOverWrites]
     )
 
     return (
@@ -310,7 +308,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         height='500px'
                         width='960px'
                         defaultLanguage='yaml'
-                        value={editorValue}
+                        value={stepSpecOverWrites}
                         theme='vs-dark'
                         // @ts-ignore
                         onChange={handleEditorChange}

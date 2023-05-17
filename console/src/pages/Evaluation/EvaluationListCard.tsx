@@ -27,6 +27,8 @@ import EvaluationListResult from './EvaluationListResult'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { val } from '@starwhale/ui/GridTable/utils'
 import shallow from 'zustand/shallow'
+import ModelSelector from '@/domain/model/components/ModelSelector'
+import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -99,80 +101,60 @@ export default function EvaluationListCard() {
     const $columnsWithSpecColumns = useMemo(() => {
         return $columns.map((column) => {
             if (column.key === 'sys/id')
-                return CustomColumn({
+                return CustomColumn<RecordAttr, any>({
                     ...column,
-                    key: column.key,
-                    title: column.key,
-                    fillWidth: false,
-                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
-                    // @ts-ignore
-                    renderCell: ({ value: id }) => {
+                    renderCell: ({ value: record }) => {
+                        const id = record.value
                         if (!id) return <></>
-                        return (
-                            <TextLink key={id} to={`/projects/${projectId}/evaluations/${id}/results`}>
-                                {id}
-                            </TextLink>
-                        )
+                        return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
                     },
                 })
             if (column.key === 'sys/duration')
-                return CustomColumn({
+                return CustomColumn<RecordAttr, any>({
                     ...column,
-                    key: 'duration',
-                    title: t('Elapsed Time'),
-                    sortable: true,
-                    filterType: 'number',
-                    fillWidth: false,
-                    sortFn: (a: any, b: any) => {
-                        const aNum = Number(a)
-                        const bNum = Number(b)
-                        if (Number.isNaN(aNum)) {
-                            return -1
-                        }
-                        return aNum - bNum
-                    },
-                    // @ts-ignore
-                    renderCell: ({ value }) => <p title={value}>{durationToStr(value)}</p>,
-                    mapDataToValue: (data: any): number => _.get(data, [column.key, 'value'], 0),
+                    renderCell: ({ value }) => <p title={value.toString()}>{durationToStr(value.value)}</p>,
                 })
             if (column.key === 'sys/job_status')
-                return CustomColumn({
+                return CustomColumn<RecordAttr, any>({
                     ...column,
-                    key: column.key,
-                    title: column.key,
-                    sortable: true,
-                    fillWidth: false,
-                    // @ts-ignore
                     renderCell: ({ value }) => (
-                        <div title={value}>
-                            <JobStatus status={value} />
+                        <div title={value.toString()}>
+                            <JobStatus status={value.toString() as any} />
                         </div>
                     ),
-                    mapDataToValue: (data: any): string => _.get(data, [column.key, 'value'], ''),
                 })
             if (column.key?.endsWith('time')) {
-                return CustomColumn({
+                return CustomColumn<RecordAttr, any>({
                     ...column,
-                    key: column.key,
-                    title: column.key,
-                    fillWidth: false,
-                    // @ts-ignore
                     renderCell: ({ value }) => {
-                        return <span title={value}>{formatTimestampDateTime(value)}</span>
+                        return <span title={value.toString()}>{formatTimestampDateTime(value.value)}</span>
                     },
-                    mapDataToValue: (data: any) => _.get(data, [column.key, 'value'], 0),
                 })
             }
-            return {
-                ...column,
-                fillWidth: false,
+            if (column.key === 'sys/model_name') {
+                return {
+                    ...column,
+                    filterable: true,
+                    renderFilter: function RenderFilter() {
+                        return <ModelSelector projectId={projectId} clearable getId={(v) => v.name} />
+                    },
+                }
             }
-        })
-    }, [t, $columns, projectId])
+            // if (column.key === 'sys/model_version')
+            //     return CustomColumn({
+            //         ...column,
+            //         fillWidth: false,
+            //         filterable: true,
+            //         renderFilter: function RenderFilter() {
+            //             return <ModelTreeSelector projectId={projectId} clearable getId={(v) => v.name} />
+            //         },
+            //     })
 
-    const $ready = React.useMemo(() => {
-        return evaluationViewConfig.isSuccess
-    }, [evaluationViewConfig.isSuccess])
+            return { ...column }
+        })
+    }, [$columns, projectId])
+
+    const $ready = evaluationViewConfig.isSuccess
 
     React.useEffect(() => {
         const unloadCallback = (event: any) => {

@@ -182,8 +182,6 @@ function Header(props: HeaderProps) {
         startResizePos,
     ])
 
-    if (isResizingThisColumn) console.log(props.columnTitle, startResizePos, endResizePos)
-
     return (
         <>
             <HeaderCell

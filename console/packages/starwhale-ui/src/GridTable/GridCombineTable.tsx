@@ -38,13 +38,14 @@ function BaseGridCombineTable({
     records,
     columnTypes,
     columns,
-    // table confi
+    // table config
     title = '',
     titleOfCompare = 'Compare',
     queryable = false,
     queryinline = false,
     columnable = false,
     viewable = false,
+    previewable = false,
     // actions
     onSave,
     onChange = () => {},
@@ -74,6 +75,7 @@ function BaseGridCombineTable({
                             onSave={onSave}
                             onChange={onChange}
                             queryinline={queryinline}
+                            previewable={previewable}
                             emptyMessage={emptyMessage}
                             emptyColumnMessage={emptyColumnMessage}
                             headlineHeight={headlineHeight}

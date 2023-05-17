@@ -60,6 +60,7 @@ export function DataTable({
     resizableColumnWidths = false,
     compareable = false,
     queryinline = false,
+    previewable = false,
     rows: allRows,
     rowActions,
     rowHeight = 44,
@@ -70,6 +71,7 @@ export function DataTable({
     textQuery = '',
     getId,
     controlRef,
+    onPreview,
 }: DataTablePropsT) {
     const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
@@ -398,6 +400,7 @@ export function DataTable({
             isRowSelected,
             isQueryInline,
             isSelectable,
+            previewable,
             onRowMouseEnter: handleRowMouseEnter,
             onSelectOne,
             columns,
@@ -405,6 +408,7 @@ export function DataTable({
             textQuery,
             normalizedWidths,
             getId,
+            onPreview,
         }
     }, [
         handleRowMouseEnter,
@@ -413,12 +417,14 @@ export function DataTable({
         isRowSelected,
         isSelectable,
         isQueryInline,
+        previewable,
         rows,
         columns,
         onSelectOne,
         textQuery,
         normalizedWidths,
         getId,
+        onPreview,
     ])
 
     // console.log(rowHighlightIndex, resizeDeltas)

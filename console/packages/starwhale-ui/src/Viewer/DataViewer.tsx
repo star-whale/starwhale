@@ -16,8 +16,8 @@ import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
 import _ from 'lodash'
 
-export type IDatasetViewerProps = {
-    dataset?: any
+export type IDataViewerProps = {
+    data?: any
     isZoom?: boolean
     hiddenLabels?: Set<number>
     showKey: string
@@ -42,17 +42,15 @@ export function Placeholder() {
     )
 }
 
-export default function DatasetViewer({
-    dataset,
+export default function DataViewer({
+    data: rawData,
     isZoom = false,
     hiddenLabels = new Set(),
     showKey,
-}: IDatasetViewerProps) {
-    // @ts-ignore
-    const { summary } = dataset
-    const data = summary?.get(showKey)
-
+}: IDataViewerProps) {
     const Viewer = React.useMemo(() => {
+        const { summary } = rawData
+        const data = summary?.get(showKey)
         if (!data) return <></>
         if (!_.isObject(data)) {
             return <TextViewer data={data} isZoom={isZoom} />
@@ -109,11 +107,9 @@ export default function DatasetViewer({
             default:
                 return <Placeholder />
         }
-    }, [summary, data, hiddenLabels, isZoom])
+    }, [rawData, hiddenLabels, isZoom, showKey])
 
-    if (data === '') return <></>
-
-    if (!data) return <Placeholder />
+    if (typeof rawData.value !== 'object') return rawData.value ?? ''
 
     return Viewer
 }

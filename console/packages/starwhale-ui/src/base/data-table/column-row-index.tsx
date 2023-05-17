@@ -50,6 +50,7 @@ function RowIndexColumn(): RowIndexColumnT {
         sortable: false,
         sortFn: () => 0,
         title: '',
+        key: 'row-index',
     })
 }
 

@@ -121,6 +121,10 @@ const model = {
         en: 'Handler',
         zh: 'Handler',
     },
+    'model.selector.placeholder': {
+        en: 'Select Model',
+        zh: '选择模型',
+    },
     'online eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
@@ -354,6 +358,14 @@ const table = {
     'table.search.placeholder': {
         en: 'Search and Filter',
         zh: '搜索和过滤',
+    },
+    'table.config.query.simple': {
+        en: 'Simple Query',
+        zh: '简单查询',
+    },
+    'table.config.query.advanced': {
+        en: 'Advanced Query',
+        zh: '高级查询',
     },
 }
 

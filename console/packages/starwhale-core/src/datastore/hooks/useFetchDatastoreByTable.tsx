@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest } from '../schemas/datastore'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'
@@ -21,10 +21,14 @@ export function useFetchDatastoreByTable(
     const recordInfo = useQueryDatastore(recordQuery, enabled)
     const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
 
+    // cache columnTypes, especially when query changed, record fetch again, columnTypes will be reset
+    const columnTypesRef = useRef(columnTypes)
+    if (recordInfo.isSuccess) columnTypesRef.current = columnTypes
+
     return {
         recordQuery,
         recordInfo,
-        columnTypes,
+        columnTypes: !recordInfo.isSuccess ? columnTypesRef.current : columnTypes,
         records,
     }
 }
