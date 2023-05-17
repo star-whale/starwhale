@@ -229,9 +229,6 @@ class Resource:
         if not self.name or not self.version:
             # TODO guess by name or version only
             return
-        if not self.name.isnumeric() and not self.version.isnumeric():
-            # both are not numeric, assume it is already refined
-            return
 
         base_path = f"{self.instance.url}/api/{SW_API_VERSION}/project/{self.project.name}/{self.typ.value}/{self.name}"
         headers = {"Authorization": self.instance.token}

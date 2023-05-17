@@ -994,9 +994,9 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/model/mnist",
             json={
                 "data": {
-                    "versionId": 100,
+                    "versionId": "100",
                     "name": "mnist",
-                    "versionName": "123456",
+                    "versionName": "123456a",
                 }
             },
         )
@@ -1004,9 +1004,9 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/dataset/mnist",
             json={
                 "data": {
-                    "versionId": 200,
+                    "versionId": "200",
                     "name": "mnist",
-                    "versionName": "223456",
+                    "versionName": "223456a",
                 }
             },
         )
@@ -1014,9 +1014,9 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/runtime/mnist",
             json={
                 "data": {
-                    "versionId": 300,
+                    "versionId": "300",
                     "name": "mnist",
-                    "versionName": "323456",
+                    "versionName": "323456a",
                 }
             },
         )
@@ -1025,25 +1025,25 @@ class CloudModelTest(TestCase):
         )
         result, data = CloudModel.run(
             project_uri=Project("https://foo.com/project/starwhale"),
-            model_uri="mnist/version/123456",
-            dataset_uris=["mnist/version/223456"],
-            runtime_uri="mnist/version/323456",
+            model_uri="mnist/version/123456a",
+            dataset_uris=["mnist/version/223456a"],
+            runtime_uri="mnist/version/323456a",
             resource_pool="default",
             run_handler="test:predict",
         )
         assert result
         assert data == "success"
         assert rm.call_count == 4
-        assert rm.request_history[0].qs == {"versionurl": ["123456"]}
+        assert rm.request_history[0].qs == {"versionurl": ["123456a"]}
         assert rm.request_history[0].method == "GET"
-        assert rm.request_history[1].qs == {"versionurl": ["223456"]}
+        assert rm.request_history[1].qs == {"versionurl": ["223456a"]}
         assert rm.request_history[1].method == "GET"
-        assert rm.request_history[2].qs == {"versionurl": ["323456"]}
+        assert rm.request_history[2].qs == {"versionurl": ["323456a"]}
         assert rm.request_history[2].method == "GET"
         assert json.loads(rm.request_history[3].text) == {
-            "modelVersionUrl": 100,
-            "datasetVersionUrls": "200",
-            "runtimeVersionUrl": 300,
+            "modelVersionUrl": '100',
+            "datasetVersionUrls": '200',
+            "runtimeVersionUrl": '300',
             "resourcePool": "default",
             "handler": "test:predict",
         }
