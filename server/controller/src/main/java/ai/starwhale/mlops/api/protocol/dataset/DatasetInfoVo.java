@@ -38,6 +38,9 @@ public class DatasetInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
+    @JsonProperty("versionId")
+    private String versionId;
+
     @JsonProperty("versionName")
     private String versionName;
 

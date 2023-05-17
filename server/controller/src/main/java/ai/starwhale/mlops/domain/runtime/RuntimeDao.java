@@ -84,6 +84,7 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
             var id = idConvertor.revert(versionUrl);
             entity = runtimeVersionMapper.find(id);
         } else {
+            // TODO need deprecated, it's not unique
             entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, null);
         }
         if (entity == null) {
