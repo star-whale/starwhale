@@ -7,6 +7,12 @@ class NoMatchException(Exception):
         super().__init__(message)
 
 
+class MultipleMatchException(Exception):
+    def __init__(self, item: str, found: Optional[List[str]] = None) -> None:
+        message = f"Found multiple match item {item}, found: {found}"
+        super().__init__(message)
+
+
 class VerifyException(Exception):
     def __init__(self, msg: str = "") -> None:
         super().__init__(msg)
