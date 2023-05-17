@@ -165,7 +165,7 @@ export default function EvaluationListCard() {
 
             return { ...column }
         })
-    }, [$columns, projectId])
+    }, [$columns, projectId, t])
 
     const $ready = evaluationViewConfig.isSuccess
 

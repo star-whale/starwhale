@@ -1,7 +1,6 @@
 import Select, { ISelectProps } from '@starwhale/ui/Select'
 import _ from 'lodash'
-import React, { useEffect, useState } from 'react'
-import { useQuery } from 'react-query'
+import React, { useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { JobStatusType } from '../schemas/job'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
@@ -38,7 +37,7 @@ export default function JobStatusSelector({
         },
     })
 
-    const [keyword, setKeyword] = useState<string>()
+    // const [keyword, setKeyword] = useState<string>()
     const JOB_STATUS = {
         [JobStatusType.CREATED]: (
             <p className={cls} style={{ color: '#2B65D9', backgroundColor: '#EBF1FF' }}>
@@ -84,9 +83,8 @@ export default function JobStatusSelector({
     const handleJobStatusInputChange = _.debounce((term: string) => {
         if (!term) {
             setOptions([])
-            return
         }
-        setKeyword(term)
+        // setKeyword(term)
     })
 
     return (
@@ -95,6 +93,7 @@ export default function JobStatusSelector({
             disabled={disabled}
             overrides={overrides}
             clearable={clearable}
+            searchable={false}
             options={options}
             onChange={(params) => {
                 if (params.type === 'clear') {

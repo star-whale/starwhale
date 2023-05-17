@@ -114,6 +114,7 @@ export function GridResizerVertical({
                     resizeTitle={resizeTitle}
                     mode={gridMode}
                     resizeRef={resizeRef}
+                    // eslint-disable-next-line
                     onResizeStart={resizeStart}
                     onModeChange={setGridMode}
                 />
@@ -126,9 +127,10 @@ export function GridResizerVertical({
 export type ResizeBarPropsT = {
     resizeRef: React.RefObject<any>
     mode: number
-    onResizeStart: () => void
+    // eslint-disable-next-line
+    onResizeStart?: () => void
     onModeChange: (mode: number) => void
-    resizeTitle: string
+    resizeTitle?: string
 }
 
 function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resizeRef }: ResizeBarPropsT) {
@@ -205,72 +207,6 @@ function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resize
                     )
                 })}
             </div>
-        </div>
-    )
-}
-
-function ResizeBar({ mode: gridMode = 0, onResizeStart, onModeChange, resizeRef }: ResizeBarPropsT) {
-    const [css] = themedUseStyletron()
-
-    return (
-        <div
-            ref={resizeRef}
-            className={classNames(
-                'resize-bar-vertical',
-                css({
-                    width: '100%',
-                    flexBasis: '100%',
-                    cursor: 'row-resize',
-                    paddingTop: '25px',
-                    zIndex: 20,
-                    overflow: 'visible',
-                    backgroundColor: '#fff',
-                    position: 'relative',
-                    right: gridMode === 2 ? '0px' : undefined,
-                    left: gridMode === 0 ? '0px' : undefined,
-                })
-            )}
-            role='button'
-            tabIndex={0}
-            onMouseDown={onResizeStart}
-        >
-            <i
-                role='button'
-                tabIndex={0}
-                className='resize-top resize-top--hover'
-                onClick={() => onModeChange(1)}
-                style={{
-                    transform: 'rotate(90deg)',
-                }}
-            >
-                <IconFont
-                    type='fold2'
-                    size={12}
-                    style={{
-                        color: gridMode !== 2 ? undefined : '#ccc',
-                        transform: 'rotate(-90deg) translateY(-2px)',
-                        marginBottom: '2px',
-                    }}
-                />
-            </i>
-            <i
-                role='button'
-                tabIndex={0}
-                className='resize-bottom resize-bottom--hover'
-                onClick={() => onModeChange(-1)}
-                style={{
-                    transform: 'rotate(90deg)',
-                }}
-            >
-                <IconFont
-                    type='unfold2'
-                    size={12}
-                    style={{
-                        color: gridMode !== 0 ? undefined : '#ccc',
-                        transform: 'rotate(-90deg) translateY(2px)',
-                    }}
-                />
-            </i>
         </div>
     )
 }

@@ -79,7 +79,7 @@ export function ModelTreeSelector(
         })
 
         return treeData
-    }, [modelInfo, projectId, t])
+    }, [modelInfo, projectId, t, getId])
 
     const options = React.useMemo(() => {
         return [
@@ -96,7 +96,7 @@ export function ModelTreeSelector(
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [$treeData])
+    }, [$treeData, getId])
 
     return (
         <DynamicSelector

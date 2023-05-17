@@ -159,8 +159,6 @@ export function SelectorItemRender(
         }
     }, [isFocus, isEditing])
 
-    console.log('-selectedIds-', selectedIds)
-
     return (
         <SelectItemContainer
             ref={ref}

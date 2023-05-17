@@ -52,6 +52,11 @@ export interface IJobFormProps {
     onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
+const RuntimeType = {
+    BUILTIN: 'builtIn',
+    OTHER: 'other',
+}
+
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const styles = useStyles()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
@@ -69,10 +74,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const [loading, setLoading] = useState(false)
 
-    const RuntimeType = {
-        BUILTIN: 'builtIn',
-        OTHER: 'other',
-    }
     const [builtInRuntime, setBuiltInRuntime] = useState<string>('')
     const [type, setType] = useState(builtInRuntime ? RuntimeType.BUILTIN : '')
 
@@ -194,7 +195,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource]
+        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource, builtInRuntime, type]
     )
 
     const handleEditorChange = React.useCallback(

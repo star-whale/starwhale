@@ -21,7 +21,6 @@ const containsNode = (parent, child) => {
 }
 
 export function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
-    console.log(value, '---')
     return (
         <Tree
             data={info.data}
@@ -58,7 +57,7 @@ export function DynamicSelector<T = any>({
         if (rest.value && rest.value !== values) {
             setValues(rest.value)
         }
-    }, [rest.value])
+    }, [rest.value, values])
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
