@@ -39,6 +39,7 @@ export type SelectorItemRenderPropsT = {
     options?: SelectorItemOptionT[]
     style?: React.CSSProperties
     addItemRef?: (ref: React.RefObject<any>) => void
+    selectedIds?: any[]
 }
 
 export type SelectorItemPropsT = {

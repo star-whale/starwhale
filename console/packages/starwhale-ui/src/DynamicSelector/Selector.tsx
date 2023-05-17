@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
 import SelectorItemRender from './SelectorItemRender'
 import { DynamicSelectorPropsT, SelectorItemPropsT, SelectorItemValueT } from './types'
@@ -52,6 +52,12 @@ export function DynamicSelector<T = any>({
             inputRef: { current: null | HTMLInputElement }
         }
     }>({})
+
+    useEffect(() => {
+        if (rest.value && rest.value !== values) {
+            setValues(rest.value)
+        }
+    }, [rest.value, values])
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
@@ -139,6 +145,7 @@ export function DynamicSelector<T = any>({
                 key={0}
                 value={{}}
                 isFocus
+                selectedIds={values}
                 {...getSharedProps(lastIndex)}
                 onChange={(newValue: any) => {
                     setValues(newValue)

@@ -3,15 +3,16 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { themedUseStyletron } from '../theme/styletron'
 
+const RESIZEBAR_WIDTH = 60
+
 const gridDefaultLayout = [
-    // RIGHT:
-    '0px 40px 1fr',
+    // Top:
+    `1fr ${RESIZEBAR_WIDTH - 8}px 0px`,
     // MIDDLE:
-    '1fr 40px 1fr',
-    // LEFT:
-    '1fr 40px 0px',
+    `1fr ${RESIZEBAR_WIDTH}px 1fr`,
+    // Bottom:
+    `0px ${RESIZEBAR_WIDTH}px 1fr`,
 ]
-const RESIZEBAR_WIDTH = 40
 export type GridResizerPropsT = {
     top: () => React.ReactNode
     bottom: () => React.ReactNode
@@ -19,6 +20,7 @@ export type GridResizerPropsT = {
     threshold?: number
     isResizeable?: boolean
     initGridMode?: number
+    resizeTitle?: string
 }
 
 export function GridResizerVertical({
@@ -27,7 +29,8 @@ export function GridResizerVertical({
     gridLayout = gridDefaultLayout,
     threshold = 200,
     isResizeable = true,
-    initGridMode = 1,
+    initGridMode = 0,
+    resizeTitle = '',
 }: GridResizerPropsT) {
     const [gridMode, setGridMode] = useState(initGridMode)
     const resizeRef = React.useRef<any>(null)
@@ -82,15 +85,6 @@ export function GridResizerVertical({
         return resizeEnd
     })
 
-    const handleResize = useCallback(
-        (dir) => {
-            let next = Math.min(gridLayout.length - 1, gridMode + dir)
-            next = Math.max(0, next)
-            grdiModeRef.current = next
-            setGridMode(next)
-        },
-        [gridMode, setGridMode, grdiModeRef, gridLayout.length]
-    )
     return (
         <div
             ref={gridRef}
@@ -116,11 +110,13 @@ export function GridResizerVertical({
             </div>
             {isResizeable && (
                 // eslint-disable-next-line  @typescript-eslint/no-use-before-define
-                <ResizeBar
+                <ResizeBar2
+                    resizeTitle={resizeTitle}
                     mode={gridMode}
                     resizeRef={resizeRef}
+                    // eslint-disable-next-line
                     onResizeStart={resizeStart}
-                    onModeChange={handleResize}
+                    onModeChange={setGridMode}
                 />
             )}
             {isResizeable && bottom()}
@@ -131,72 +127,86 @@ export function GridResizerVertical({
 export type ResizeBarPropsT = {
     resizeRef: React.RefObject<any>
     mode: number
-    onResizeStart: () => void
+    // eslint-disable-next-line
+    onResizeStart?: () => void
     onModeChange: (mode: number) => void
+    resizeTitle?: string
 }
 
-function ResizeBar({ mode: gridMode = 2, onResizeStart, onModeChange, resizeRef }: ResizeBarPropsT) {
+function ResizeBar2({ mode: gridMode = 0, resizeTitle = '', onModeChange, resizeRef }: ResizeBarPropsT) {
     const [css] = themedUseStyletron()
 
     return (
         <div
             ref={resizeRef}
+            data-type='resize-bar-vertical'
             className={classNames(
-                'resize-bar-vertical',
                 css({
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid #e8e8e8',
                     width: '100%',
                     flexBasis: '100%',
-                    cursor: 'row-resize',
-                    paddingTop: '25px',
                     zIndex: 20,
                     overflow: 'visible',
                     backgroundColor: '#fff',
                     position: 'relative',
-                    right: gridMode === 2 ? '0px' : undefined,
-                    left: gridMode === 0 ? '0px' : undefined,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: gridMode === 0 ? '0px' : '8px',
                 })
             )}
             role='button'
             tabIndex={0}
-            onMouseDown={onResizeStart}
+            // onMouseDown={onResizeStart}
         >
-            <i
-                role='button'
-                tabIndex={0}
-                className='resize-top resize-top--hover'
-                onClick={() => onModeChange(1)}
-                style={{
-                    transform: 'rotate(90deg)',
-                }}
+            <div
+                className={css({
+                    color: 'rgba(2,16,43,0.60)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    lineHeight: '36px',
+                })}
             >
-                <IconFont
-                    type='fold2'
-                    size={12}
-                    style={{
-                        color: gridMode !== 2 ? undefined : '#ccc',
-                        transform: 'rotate(-90deg) translateY(-2px)',
-                        marginBottom: '2px',
-                    }}
-                />
-            </i>
-            <i
-                role='button'
-                tabIndex={0}
-                className='resize-bottom resize-bottom--hover'
-                onClick={() => onModeChange(-1)}
-                style={{
-                    transform: 'rotate(90deg)',
-                }}
+                {resizeTitle}
+            </div>
+            <div
+                className={css({
+                    border: '1px solid #CFD7E6',
+                    borderRadius: '4px',
+                    alignSelf: 'flex-end',
+                    padding: '6px 0 ',
+                })}
             >
-                <IconFont
-                    type='unfold2'
-                    size={12}
-                    style={{
-                        color: gridMode !== 0 ? undefined : '#ccc',
-                        transform: 'rotate(-90deg) translateY(2px)',
-                    }}
-                />
-            </i>
+                {['layout-1', 'layout-2', 'layout-3'].map((icon, index) => {
+                    return (
+                        <i
+                            key={icon}
+                            role='button'
+                            tabIndex={index}
+                            onClick={() => onModeChange(index)}
+                            style={{
+                                display: 'inline-flex',
+                                width: '40px',
+                                height: '14px',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderLeft: index === 1 ? '1px solid #CFD7E6' : 'none',
+                                borderRight: index === 1 ? '1px solid #CFD7E6' : 'none',
+                            }}
+                        >
+                            <IconFont
+                                type={icon as any}
+                                size={14}
+                                style={{
+                                    color: gridMode !== index ? 'rgba(2,16,43,0.40)' : '#2B65D9',
+                                    marginBottom: '2px',
+                                }}
+                            />
+                        </i>
+                    )
+                })}
+            </div>
         </div>
     )
 }

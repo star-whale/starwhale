@@ -102,6 +102,9 @@ export type IconTypesT =
     | 'indent'
     | 'select'
     | 'wechat'
+    | 'layout-1'
+    | 'layout-2'
+    | 'layout-3'
 
 interface IIconFontProps {
     style?: React.CSSProperties

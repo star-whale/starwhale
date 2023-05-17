@@ -7,6 +7,7 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchModelTree } from '../hooks/useFetchModelTree'
+import _ from 'lodash'
 
 const ModelTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -21,10 +22,12 @@ export function ModelTreeSelector(
     props: any & {
         projectId: string
         onDataChange?: (data: any) => void
+        getId?: (obj: any) => any
+        multiple?: boolean
     }
 ) {
     const [t] = useTranslation()
-    const { projectId } = props
+    const { projectId, getId = (obj: any) => obj.id, multiple } = props
     const modelInfo = useFetchModelTree(projectId)
 
     useEffect(() => {
@@ -41,9 +44,9 @@ export function ModelTreeSelector(
                 label: [model.ownerName, model.projectName, model.modelName].join('/'),
                 isExpanded: true,
                 children:
-                    model.versions?.map((item: any) => {
+                    model.versions?.map((item) => {
                         return {
-                            id: item.id,
+                            id: getId(item),
                             label: (
                                 <ModelTreeNode>
                                     <ModelLabel version={item} />
@@ -76,7 +79,7 @@ export function ModelTreeSelector(
         })
 
         return treeData
-    }, [modelInfo, projectId, t])
+    }, [modelInfo, projectId, t, getId])
 
     const options = React.useMemo(() => {
         return [
@@ -89,13 +92,20 @@ export function ModelTreeSelector(
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
                 getDataToLabelView: (data: any) => data?.labelView,
                 getDataToLabelTitle: (data: any) => data?.labelTitle,
-                getDataToValue: (data: any) => data?.id,
+                getDataToValue: (data: any) => getId(data),
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [$treeData])
+    }, [$treeData, getId])
 
-    return <DynamicSelector {...props} options={options} />
+    return (
+        <DynamicSelector
+            {...props}
+            value={props.value && !_.isArray(props.value) ? [props.value] : props.value}
+            onChange={(v) => props.onChange?.(multiple ? v : v[0])}
+            options={options}
+        />
+    )
 }
 
 export default ModelTreeSelector

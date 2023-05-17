@@ -29,6 +29,8 @@ import { val } from '@starwhale/ui/GridTable/utils'
 import shallow from 'zustand/shallow'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
+import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
+import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -122,6 +124,10 @@ export default function EvaluationListCard() {
                             <JobStatus status={value.toString() as any} />
                         </div>
                     ),
+                    filterable: true,
+                    renderFilter: function RenderFilter() {
+                        return <JobStatusSelector clearable />
+                    },
                 })
             if (column.key?.endsWith('time')) {
                 return CustomColumn<RecordAttr, any>({
@@ -140,19 +146,26 @@ export default function EvaluationListCard() {
                     },
                 }
             }
-            // if (column.key === 'sys/model_version')
-            //     return CustomColumn({
-            //         ...column,
-            //         fillWidth: false,
-            //         filterable: true,
-            //         renderFilter: function RenderFilter() {
-            //             return <ModelTreeSelector projectId={projectId} clearable getId={(v) => v.name} />
-            //         },
-            //     })
+            if (column.key === 'sys/model_version')
+                return CustomColumn({
+                    ...column,
+                    filterable: true,
+                    renderFilter: function RenderFilter() {
+                        return (
+                            <ModelTreeSelector
+                                placeholder={t('model.selector.version.placeholder')}
+                                projectId={projectId}
+                                multiple={false}
+                                clearable
+                                getId={(v: any) => v.versionName}
+                            />
+                        )
+                    },
+                })
 
             return { ...column }
         })
-    }, [$columns, projectId])
+    }, [$columns, projectId, t])
 
     const $ready = evaluationViewConfig.isSuccess
 
@@ -286,8 +299,9 @@ export default function EvaluationListCard() {
                     />
                 )}
                 isResizeable={$compareRows.length > 0}
-                initGridMode={2}
+                initGridMode={0}
                 bottom={() => <EvaluationListResult rows={$compareRows} />}
+                resizeTitle={t('evalution.result.title')}
             />
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>

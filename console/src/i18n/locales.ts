@@ -125,6 +125,10 @@ const model = {
         en: 'Select Model',
         zh: '选择模型',
     },
+    'model.selector.version.placeholder': {
+        en: 'Select Model Version',
+        zh: '请选择模型版本',
+    },
     'online eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
@@ -261,6 +265,10 @@ const job = {
         en: 'Ready',
         zh: '就绪',
     },
+    'job.status.selector.placeholder': {
+        en: 'Select Job Status',
+        zh: '选择任务状态',
+    },
 }
 
 const evaluation = {
@@ -299,6 +307,10 @@ const evaluation = {
     'evaluation.detail.compare': {
         en: 'Compare',
         zh: '评测对比',
+    },
+    'evalution.result.title': {
+        en: 'Result Details',
+        zh: '结果详情',
     },
 }
 

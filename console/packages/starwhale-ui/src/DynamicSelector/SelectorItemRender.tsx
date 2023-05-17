@@ -24,6 +24,7 @@ const isValueExist = (v: any) => {
 
 export function SelectorItemRender(
     {
+        selectedIds = [],
         value = {},
         options = [],
         onChange = () => {},
@@ -34,7 +35,6 @@ export function SelectorItemRender(
     }: SelectorItemRenderPropsT,
     itemRef: RefObject<any>
 ) {
-    const [selectedIds, setSelectedIds] = React.useState<string[]>([])
     const [search, setSearch] = useState<any>()
     const [removing, setRemoving] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
@@ -66,13 +66,11 @@ export function SelectorItemRender(
     )
 
     const handleChange = (ids: any) => {
-        setSelectedIds(ids)
         onChange?.(ids)
     }
 
     const handleRemove = (id: any) => {
         const newIds = selectedIds.filter((item) => item !== id)
-        setSelectedIds(newIds)
         onChange?.(newIds as any)
     }
 
