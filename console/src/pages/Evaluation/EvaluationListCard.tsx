@@ -286,8 +286,9 @@ export default function EvaluationListCard() {
                     />
                 )}
                 isResizeable={$compareRows.length > 0}
-                initGridMode={2}
+                initGridMode={0}
                 bottom={() => <EvaluationListResult rows={$compareRows} />}
+                resizeTitle={t('evalution.result.title')}
             />
             <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>

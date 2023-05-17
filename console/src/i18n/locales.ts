@@ -300,6 +300,10 @@ const evaluation = {
         en: 'Compare',
         zh: '评测对比',
     },
+    'evalution.result.title': {
+        en: 'Result Details',
+        zh: '结果详情',
+    },
 }
 
 const table = {

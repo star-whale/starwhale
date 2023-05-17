@@ -156,7 +156,13 @@ function Summary({ fetch }: any) {
                                                     alignItems: 'center',
                                                 }}
                                             >
-                                                {value}
+                                                <pre
+                                                    style={{
+                                                        fontFamily: 'inherit',
+                                                    }}
+                                                >
+                                                    {value}
+                                                </pre>
                                             </div>
                                         </React.Fragment>
                                     )
