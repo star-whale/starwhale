@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,10 +70,9 @@ public class JobDatasetVersionMapperTest extends MySqlContainerHolder {
         List<Long> ids = jobDatasetVersionMapper.listDatasetVersionIdsByJobId(
                 13L);
         Assertions.assertEquals(2, ids.size());
-        Assertions.assertIterableEquals(
-                List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()),
-                ids
-        );
+        Assertions.assertTrue(
+                CollectionUtils.isEqualCollection(List.of(datasetVersionEntity.getId(), datasetVersionEntity2.getId()),
+                        ids));
 
     }
 }
