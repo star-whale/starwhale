@@ -994,7 +994,7 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/model/mnist",
             json={
                 "data": {
-                    "id": 100,
+                    "versionId": 100,
                     "name": "mnist",
                     "versionName": "123456",
                 }
@@ -1004,7 +1004,7 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/dataset/mnist",
             json={
                 "data": {
-                    "id": 200,
+                    "versionId": 200,
                     "name": "mnist",
                     "versionName": "223456",
                 }
@@ -1014,7 +1014,7 @@ class CloudModelTest(TestCase):
             "https://foo.com/api/v1/project/starwhale/runtime/mnist",
             json={
                 "data": {
-                    "id": 300,
+                    "versionId": 300,
                     "name": "mnist",
                     "versionName": "323456",
                 }

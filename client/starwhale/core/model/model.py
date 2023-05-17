@@ -891,12 +891,15 @@ class CloudModel(CloudBundleModelMixin, Model):
             instance=project_uri.instance,
             data=json.dumps(
                 {
-                    "modelVersionUrl": _model_uri.info().get("id")
+                    "modelVersionUrl": _model_uri.info().get("versionId")
                     or _model_uri.version,
                     "datasetVersionUrls": ",".join(
-                        [str(i.info().get("id")) or i.version for i in _dataset_uris]
+                        [
+                            str(i.info().get("versionId") or i.version)
+                            for i in _dataset_uris
+                        ]
                     ),
-                    "runtimeVersionUrl": _runtime_uri.info().get("id")
+                    "runtimeVersionUrl": _runtime_uri.info().get("versionId")
                     or _runtime_uri.version
                     if _runtime_uri
                     else "",

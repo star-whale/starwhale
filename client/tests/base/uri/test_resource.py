@@ -321,6 +321,7 @@ class TestResource(TestCase):
                 "data": {
                     "id": 1,
                     "name": "mnist",
+                    "versionId": 101,
                     "versionName": "123456",
                 }
             },
@@ -334,3 +335,4 @@ class TestResource(TestCase):
         assert uri.name == "mnist"
         assert uri.version == "123456"
         assert uri.info().get("id") == 1
+        assert uri.info().get("versionId") == 101

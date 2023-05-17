@@ -38,6 +38,9 @@ public class RuntimeInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
+    @JsonProperty("versionId")
+    private String versionId;
+
     @JsonProperty("versionName")
     private String versionName;
 
@@ -64,6 +67,6 @@ public class RuntimeInfoVo implements Serializable {
     private List<FlattenFileVo> files;
 
     public static RuntimeInfoVo empty() {
-        return new RuntimeInfoVo("", "", "", "", "", "", "", 0, 0L, List.of());
+        return new RuntimeInfoVo("", "", "", "", "", "", "", "", 0, 0L, List.of());
     }
 }
