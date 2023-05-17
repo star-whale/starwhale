@@ -1,4 +1,5 @@
 import os
+import json
 import typing as t
 import pathlib
 import tempfile
@@ -38,6 +39,7 @@ from starwhale.core.model.cli import _prepare_model_run_args
 from starwhale.core.model.view import ModelTermView, ModelTermViewJson
 from starwhale.base.uri.project import Project
 from starwhale.core.model.model import (
+    CloudModel,
     ModelConfig,
     ModelInfoFilter,
     StandaloneModel,
@@ -983,6 +985,69 @@ class StandaloneModelTestCase(TestCase):
 class CloudModelTest(TestCase):
     def setUp(self) -> None:
         sw_config._config = {}
+
+    @Mocker()
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_run(self, rm: Mocker, load_conf: MagicMock) -> None:
+        load_conf.return_value = {"instances": {"foo": {"uri": "https://foo.com"}}}
+        rm.get(
+            "https://foo.com/api/v1/project/starwhale/model/mnist",
+            json={
+                "data": {
+                    "id": 100,
+                    "name": "mnist",
+                    "versionName": "123456",
+                }
+            },
+        )
+        rm.get(
+            "https://foo.com/api/v1/project/starwhale/dataset/mnist",
+            json={
+                "data": {
+                    "id": 200,
+                    "name": "mnist",
+                    "versionName": "223456",
+                }
+            },
+        )
+        rm.get(
+            "https://foo.com/api/v1/project/starwhale/runtime/mnist",
+            json={
+                "data": {
+                    "id": 300,
+                    "name": "mnist",
+                    "versionName": "323456",
+                }
+            },
+        )
+        rm.post(
+            "https://foo.com/api/v1/project/starwhale/job", json={"data": "success"}
+        )
+        result, data = CloudModel.run(
+            project_uri=Project("https://foo.com/project/starwhale"),
+            model_uri="mnist/version/123456",
+            dataset_uris=["mnist/version/223456"],
+            runtime_uri="mnist/version/323456",
+            resource_pool="default",
+            run_handler="test:predict",
+        )
+        assert result
+        assert data == "success"
+        assert rm.call_count == 4
+        assert rm.request_history[0].qs == {"versionurl": ["123456"]}
+        assert rm.request_history[0].method == "GET"
+        assert rm.request_history[1].qs == {"versionurl": ["223456"]}
+        assert rm.request_history[1].method == "GET"
+        assert rm.request_history[2].qs == {"versionurl": ["323456"]}
+        assert rm.request_history[2].method == "GET"
+        assert json.loads(rm.request_history[3].text) == {
+            "modelVersionUrl": 100,
+            "datasetVersionUrls": "200",
+            "runtimeVersionUrl": 300,
+            "resourcePool": "default",
+            "handler": "test:predict",
+        }
+        assert rm.request_history[3].method == "POST"
 
     def test_cli_list(self) -> None:
         mock_obj = MagicMock()

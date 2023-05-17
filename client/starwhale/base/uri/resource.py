@@ -149,9 +149,6 @@ class Resource:
             self._refine_local_rc_info()
         return self
 
-    def remote_info(self, key: str, default: Any = None) -> Any:
-        return self._remote_info.get(key, default)
-
     def _parse_with_type(self, typ: ResourceType, uri: str) -> None:
         """
         :param typ:

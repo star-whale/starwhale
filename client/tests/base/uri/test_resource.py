@@ -333,4 +333,4 @@ class TestResource(TestCase):
         assert uri.typ == ResourceType.dataset
         assert uri.name == "mnist"
         assert uri.version == "123456"
-        assert uri.remote_info("id") == 1
+        assert uri.info().get("id") == 1

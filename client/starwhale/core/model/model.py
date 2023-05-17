@@ -872,7 +872,7 @@ class CloudModel(CloudBundleModelMixin, Model):
             model_uri, ResourceType.model, project=project_uri, refine=True
         )
         _dataset_uris = [
-            Resource(i, ResourceType.model, project=project_uri, refine=True)
+            Resource(i, ResourceType.dataset, project=project_uri, refine=True)
             for i in dataset_uris
         ]
         _runtime_uri = (
@@ -882,7 +882,7 @@ class CloudModel(CloudBundleModelMixin, Model):
                 project=project_uri,
                 refine=True,
             )
-            if not runtime_uri
+            if runtime_uri
             else None
         )
         r = crm.do_http_request(
@@ -891,12 +891,13 @@ class CloudModel(CloudBundleModelMixin, Model):
             instance=project_uri.instance,
             data=json.dumps(
                 {
-                    "modelVersionUrl": _model_uri.remote_info("id")
+                    "modelVersionUrl": _model_uri.info().get("id")
                     or _model_uri.version,
                     "datasetVersionUrls": ",".join(
-                        [i.remote_info("id") or i.version for i in _dataset_uris]
+                        [str(i.info().get("id")) or i.version for i in _dataset_uris]
                     ),
-                    "runtimeVersionUrl": _runtime_uri.remote_info("id", "")
+                    "runtimeVersionUrl": _runtime_uri.info().get("id")
+                    or _runtime_uri.version
                     if _runtime_uri
                     else "",
                     "resourcePool": resource_pool,
