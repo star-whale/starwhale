@@ -149,6 +149,9 @@ class Resource:
             self._refine_local_rc_info()
         return self
 
+    def remote_info(self, key: str, default: Any = None) -> Any:
+        return self._remote_info.get(key, default)
+
     def _parse_with_type(self, typ: ResourceType, uri: str) -> None:
         """
         :param typ:
@@ -227,6 +230,7 @@ class Resource:
         if self.project.instance.is_local:
             raise VerifyException("only used for remote resources")
         if not self.name or not self.version:
+            # TODO guess by name or version only
             return
         if not self.name.isnumeric() and not self.version.isnumeric():
             # both are not numeric, assume it is already refined
