@@ -28,8 +28,6 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
             cellBlockAlign = 'flex-end'
         }
 
-        if (props.isSelected) console.log(options, ProvidedCell)
-
         return (
             <div
                 // @ts-ignore
@@ -59,6 +57,8 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
                 )}
                 {Boolean(props.onSelect) && (
                     <span className={css({ paddingRight: theme.sizing.scale300 })}>
+                        {123}
+
                         {/* @ts-ignore */}
                         <Checkbox
                             //@ts-ignore

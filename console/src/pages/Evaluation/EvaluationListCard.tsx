@@ -131,14 +131,15 @@ export default function EvaluationListCard() {
                     },
                 })
             }
-            if (column.key === 'sys/model_name')
-                return CustomColumn({
+            if (column.key === 'sys/model_name') {
+                return {
                     ...column,
                     filterable: true,
                     renderFilter: function RenderFilter() {
                         return <ModelSelector projectId={projectId} clearable getId={(v) => v.name} />
                     },
-                })
+                }
+            }
             // if (column.key === 'sys/model_version')
             //     return CustomColumn({
             //         ...column,
@@ -149,10 +150,7 @@ export default function EvaluationListCard() {
             //         },
             //     })
 
-            return {
-                ...column,
-                fillWidth: false,
-            }
+            return { ...column }
         })
     }, [$columns, projectId])
 

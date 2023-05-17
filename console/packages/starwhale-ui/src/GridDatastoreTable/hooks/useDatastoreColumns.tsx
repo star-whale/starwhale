@@ -22,7 +22,7 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     return ca.name.localeCompare(cb.name)
 }
 
-function RenderMixedCell({ value, columnKey, ...props }: { value: RecordAttr; columnKey: string }) {
+export function RenderMixedCell({ value, columnKey, ...props }: { value: RecordAttr; columnKey: string }) {
     if (!value) return ''
     if (isComplexType(value?.type)) return <DataViewer data={value} showKey={columnKey as string} />
     return <StringCell {...props} lineClamp={1} value={value.toString()} />
