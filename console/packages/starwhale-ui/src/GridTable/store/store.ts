@@ -202,7 +202,8 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             set({ currentView: view }, false, 'onCurrentViewIdChange')
         },
         onCurrentViewFiltersChange: (filters) => update({ filters }, 'onCurrentViewFiltersChange'),
-        onCurrentViewQueriesChange: (queries) => update({ queries }, 'onCurrentViewQueriesChange'),
+        onCurrentViewQueriesChange: (queries) =>
+            update({ queries: queries.filter((v) => !!v.value) }, 'onCurrentViewQueriesChange'),
         onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], ids: any[]) =>
             update({ selectedIds, pinnedIds, ids, updateColumn: true }, 'onCurrentViewColumnsChange'),
         onCurrentViewColumnsPin: (columnId: string, pined = false) => {

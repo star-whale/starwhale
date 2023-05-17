@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useClickAway } from 'react-use'
 import SelectorItemRender from './SelectorItemRender'
 import { DynamicSelectorPropsT, SelectorItemPropsT, SelectorItemValueT } from './types'
@@ -21,6 +21,7 @@ const containsNode = (parent, child) => {
 }
 
 export function SelectorItemByTree({ value, onChange, search, inputRef, info, $multiple }: SelectorItemPropsT) {
+    console.log(value, '---')
     return (
         <Tree
             data={info.data}
@@ -52,6 +53,12 @@ export function DynamicSelector<T = any>({
             inputRef: { current: null | HTMLInputElement }
         }
     }>({})
+
+    useEffect(() => {
+        if (rest.value && rest.value !== values) {
+            setValues(rest.value)
+        }
+    }, [rest.value])
 
     useClickAway(ref, (e) => {
         if (containsNode(ref.current, e.target)) return
@@ -139,6 +146,7 @@ export function DynamicSelector<T = any>({
                 key={0}
                 value={{}}
                 isFocus
+                selectedIds={values}
                 {...getSharedProps(lastIndex)}
                 onChange={(newValue: any) => {
                     setValues(newValue)

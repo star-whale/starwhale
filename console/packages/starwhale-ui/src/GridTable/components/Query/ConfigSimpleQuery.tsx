@@ -29,11 +29,13 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
     const handleValuesChange = React.useCallback(
         (_changes, values_: Record<string, any>) => {
             onChange?.(
-                Object.entries(values_).map(([key, v]) => ({
-                    value: v,
-                    op: 'EQUAL',
-                    property: key,
-                }))
+                Object.entries(values_)
+                    .filter((v) => !!v)
+                    .map(([key, v]) => ({
+                        value: v,
+                        op: 'EQUAL',
+                        property: key,
+                    }))
             )
         },
         [onChange]
@@ -46,7 +48,15 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
     const Filters = React.useMemo(() => {
         return columnsWithFilter?.map((column) => {
             return (
-                <FormItem name={column.key} noStyle key={column.key}>
+                <FormItem
+                    name={column.key}
+                    key={column.key}
+                    noStyle
+                    style={{
+                        marginBottom: 0,
+                        minWidth: '170px',
+                    }}
+                >
                     {/* @ts-ignore */}
                     {column?.renderFilter()}
                 </FormItem>
@@ -59,9 +69,9 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
             <div
                 data-type='config-simple-query'
                 style={{
-                    display: 'grid',
-                    gap: 40,
-                    gridTemplateColumns: '280px minmax(170px, max-content)',
+                    display: 'flex',
+                    gap: 20,
+                    flexWrap: 'nowrap',
                 }}
             >
                 {Filters}

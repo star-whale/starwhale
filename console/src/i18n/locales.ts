@@ -125,6 +125,10 @@ const model = {
         en: 'Select Model',
         zh: '选择模型',
     },
+    'model.selector.version.placeholder': {
+        en: 'Select Model Version',
+        zh: '请选择模型版本',
+    },
     'online eval': {
         en: 'Online Evaluation',
         zh: '在线评测',
@@ -260,6 +264,10 @@ const job = {
     'job.status.ready': {
         en: 'Ready',
         zh: '就绪',
+    },
+    'job.status.selector.placeholder': {
+        en: 'Select Job Status',
+        zh: '选择任务状态',
     },
 }
 
