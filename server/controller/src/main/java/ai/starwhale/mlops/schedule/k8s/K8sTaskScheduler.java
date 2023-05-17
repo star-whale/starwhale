@@ -171,10 +171,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             // this makes the job running forever
             if (job.isDebugMode()) {
                 log.info("debug mode of job {} is on, will not run the job, just tail -f /dev/null", job.getId());
-                var workerPod = k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0);
-                workerPod.setArgs(null);
+                var workerContainer = k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0);
+                workerContainer.setArgs(null);
                 k8sJob.getSpec().setActiveDeadlineSeconds(null);
-                workerPod.setCommand(List.of("tail", "-f", "/dev/null"));
+                workerContainer.setCommand(List.of("tail", "-f", "/dev/null"));
             }
 
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
