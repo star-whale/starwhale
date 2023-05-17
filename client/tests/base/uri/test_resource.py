@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from unittest.mock import Mock, patch, MagicMock
 
 import yaml
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils.fs import ensure_file
@@ -302,3 +303,36 @@ class TestResource(TestCase):
         rc = Resource("mnist-dup/version/foo", typ=ResourceType.model)
         assert rc.version == "foo"
         assert rc.name == "mnist-dup"
+
+    @Mocker()
+    @patch("starwhale.utils.config.load_swcli_config")
+    def test_remote_uri_with_version_and_refine(
+        self, rm: Mocker, m_conf: MagicMock
+    ) -> None:
+        m_conf.return_value = {
+            "instances": {
+                "foo": {"uri": "https://foo.com"},
+                "local": {"uri": "local"},
+            },
+        }
+        rm.get(
+            "https://foo.com/api/v1/project/starwhale/dataset/mnist",
+            json={
+                "data": {
+                    "id": 1,
+                    "name": "mnist",
+                    "versionId": 101,
+                    "versionName": "123456",
+                }
+            },
+        )
+        uri = Resource(
+            "cloud://foo/project/starwhale/dataset/mnist/version/123456", refine=True
+        )
+        assert uri.instance.alias == "foo"
+        assert uri.project.name == "starwhale"
+        assert uri.typ == ResourceType.dataset
+        assert uri.name == "mnist"
+        assert uri.version == "123456"
+        assert uri.info().get("id") == 1
+        assert uri.info().get("versionId") == 101

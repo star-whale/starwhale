@@ -868,16 +868,41 @@ class CloudModel(CloudBundleModelMixin, Model):
         resource_pool: str = "default",
     ) -> t.Tuple[bool, str]:
         crm = CloudRequestMixed()
-
+        _model_uri = Resource(
+            model_uri, ResourceType.model, project=project_uri, refine=True
+        )
+        _dataset_uris = [
+            Resource(i, ResourceType.dataset, project=project_uri, refine=True)
+            for i in dataset_uris
+        ]
+        _runtime_uri = (
+            Resource(
+                runtime_uri,
+                ResourceType.runtime,
+                project=project_uri,
+                refine=True,
+            )
+            if runtime_uri
+            else None
+        )
         r = crm.do_http_request(
             f"/project/{project_uri.name}/job",
             method=HTTPMethod.POST,
             instance=project_uri.instance,
             data=json.dumps(
                 {
-                    "modelVersionUrl": model_uri,
-                    "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
-                    "runtimeVersionUrl": runtime_uri,
+                    "modelVersionUrl": _model_uri.info().get("versionId")
+                    or _model_uri.version,
+                    "datasetVersionUrls": ",".join(
+                        [
+                            str(i.info().get("versionId") or i.version)
+                            for i in _dataset_uris
+                        ]
+                    ),
+                    "runtimeVersionUrl": _runtime_uri.info().get("versionId")
+                    or _runtime_uri.version
+                    if _runtime_uri
+                    else "",
                     "resourcePool": resource_pool,
                     "handler": run_handler,
                 }

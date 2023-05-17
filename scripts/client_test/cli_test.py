@@ -250,9 +250,14 @@ class TestCli:
         for _rt_uri in runtime_uris or [None]:
             logger.info("running evaluation at server...")
             ok, jid = self.model_api.run_in_server(
-                model_uri=model_uri.version,
-                dataset_uris=[_ds_uri.version for _ds_uri in dataset_uris],
-                runtime_uri=_rt_uri.version if _rt_uri else "",
+                model_uri=f"{model_uri.name}/version/{model_uri.version}",
+                dataset_uris=[
+                    f"{_ds_uri.name}/version/{_ds_uri.version}"
+                    for _ds_uri in dataset_uris
+                ],
+                runtime_uri=f"{_rt_uri.name}/version/{_rt_uri.version}"
+                if _rt_uri
+                else "",
                 project=f"{self.server_url}/project/{self.server_project}",
                 run_handler=run_handler,
             )

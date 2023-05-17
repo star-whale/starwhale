@@ -227,6 +227,7 @@ class Resource:
         if self.project.instance.is_local:
             raise VerifyException("only used for remote resources")
         if not self.name or not self.version:
+            # TODO guess by name or version only
             return
         if not self.name.isnumeric() and not self.version.isnumeric():
             # both are not numeric, assume it is already refined

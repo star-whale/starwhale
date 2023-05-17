@@ -238,6 +238,7 @@ public class DatasetService {
             return DatasetInfoVo.builder()
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
+                    .versionId(idConvertor.convert(versionEntity.getId()))
                     .versionName(versionEntity.getVersionName())
                     .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionTag(versionEntity.getVersionTag())

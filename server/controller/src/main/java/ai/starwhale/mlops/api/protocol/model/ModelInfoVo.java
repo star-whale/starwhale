@@ -42,6 +42,9 @@ public class ModelInfoVo implements Serializable {
     @JsonProperty("versionAlias")
     private String versionAlias;
 
+    @JsonProperty("versionId")
+    private String versionId;
+
     @JsonProperty("versionName")
     private String versionName;
 
@@ -63,7 +66,7 @@ public class ModelInfoVo implements Serializable {
 
     public static ModelInfoVo empty() {
         return new ModelInfoVo("", "",
-                "", "", "", "", "",
+                "", "", "", "", "", "",
                 0L, new ArrayList<>());
     }
 

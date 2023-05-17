@@ -184,7 +184,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'modelVersionHandler',
                         'modelVersionUrl',
                     ]),
-                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? builtInRuntime : values_.runtimeVersionUrl[0],
+                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl[0],
                     modelVersionUrl: values_.modelVersionUrl[0],
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                     stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(stepSource),

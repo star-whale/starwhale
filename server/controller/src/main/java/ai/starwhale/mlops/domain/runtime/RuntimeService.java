@@ -301,6 +301,7 @@ public class RuntimeService {
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))
                     .name(rt.getRuntimeName())
+                    .versionId(idConvertor.convert(versionEntity.getId()))
                     .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
                     .versionName(versionEntity.getVersionName())
                     .versionTag(versionEntity.getVersionTag())
