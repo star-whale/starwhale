@@ -111,7 +111,7 @@ class ModelCopy(BundleCopy):
                 dest_uri = Resource(
                     f"{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}",
                     typ=ResourceType.runtime,
-                    refine=True,
+                    refine=False,
                 )
 
                 def upload_runtime_tar(file_path: Path, progress: Progress) -> None:
