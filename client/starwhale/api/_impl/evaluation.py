@@ -13,12 +13,7 @@ import dill
 import jsonlines
 
 from starwhale.utils import console, now_str
-from starwhale.consts import (
-    RunStatus,
-    CURRENT_FNAME,
-    SHORT_VERSION_CNT,
-    DecoratorInjectAttr,
-)
+from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import RunSubDirType, PredictLogMode
@@ -222,7 +217,14 @@ class PipelineHandler(metaclass=ABCMeta):
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
-            idx_prefix = f"{_uri.name}-{_uri.version[:SHORT_VERSION_CNT]}"
+            if _uri.instance.is_local:
+                # avoid confusion with underscores in project names
+                idx_prefix = f"{_uri.project.name}/{_uri.name}"
+            else:
+                r_id = _uri.info().get("id")
+                if not r_id:
+                    raise KeyError("fetch dataset id error")
+                idx_prefix = str(r_id)
             for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None

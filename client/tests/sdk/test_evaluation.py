@@ -6,22 +6,26 @@ import uuid
 import errno
 import shutil
 import typing as t
+import tempfile
+from http import HTTPStatus
 from pathlib import Path
 from contextlib import contextmanager
 from unittest.mock import patch, MagicMock
 
 import dill
 import jsonlines
+import requests_mock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import gen_uniq_version
-from starwhale.consts import DEFAULT_PROJECT
+from starwhale.consts import HTTPMethod, ENV_POD_NAME, DEFAULT_PROJECT
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.error import ParameterError
 from starwhale.utils.retry import http_retry
 from starwhale.base.context import Context, pass_context
 from starwhale.core.job.store import JobStorage
+from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage
@@ -138,7 +142,8 @@ class TestModelPipelineHandler(TestCase):
         self.project = DEFAULT_PROJECT
         self.eval_id = "mm3wky3dgbqt"
 
-        self.dataset_uri_raw = f"mnist/version/{gen_uniq_version()}"
+        self.dataset_version = gen_uniq_version()
+        self.dataset_uri_raw = f"mnist/version/{self.dataset_version}"
         self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
 
@@ -248,6 +253,85 @@ class TestModelPipelineHandler(TestCase):
             handler._starwhale_internal_run_evaluate()
 
     @contextmanager
+    def _mock_ppl_prepare_data_in_cloud(self) -> t.Any:
+        with patch(
+            "starwhale.base.uri.resource.Resource._refine_local_rc_info"
+        ) as _, patch(
+            "starwhale.core.dataset.model.CloudDataset.summary"
+        ) as m_summary, patch(
+            "starwhale.api._impl.dataset.Dataset.batch_iter"
+        ) as m_ds, patch(
+            "starwhale.api._impl.dataset.Dataset.info"
+        ) as m_ds_info, patch(
+            "starwhale.api._impl.wrapper.Evaluation.log_result"
+        ) as m_log_result, patch(
+            "starwhale.utils.config.load_swcli_config"
+        ) as m_config, patch.dict(
+            os.environ, {ENV_POD_NAME: "test-pod-1"}
+        ), requests_mock.Mocker() as rm:
+            m_config.return_value = {
+                "current_instance": "cloud",
+                "instances": {
+                    "cloud": {"uri": "https://localhost:80", "sw_token": "bar"},
+                    "local": {"uri": "local"},
+                },
+                "storage": {"root": tempfile.gettempdir()},
+            }
+
+            _logdir = JobStorage.local_run_dir(self.project, self.eval_id)
+            _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
+            _status_dir = _run_dir / RunSubDirType.STATUS
+
+            m_summary.return_value = DatasetSummary(
+                rows=1,
+            )
+
+            m_ds.return_value = [
+                [
+                    DataRow(
+                        0,
+                        {
+                            "image": GrayscaleImage(link=Link("")),
+                            "label": 0,
+                            "annotation": "a",
+                        },
+                    )
+                ]
+            ]
+            m_ds_info.return_value = TabularDatasetInfo(mapping={"id": 0, "value": 1})
+
+            rm.request(
+                HTTPMethod.HEAD,
+                f"https://localhost:80/api/v1/project/starwhale/dataset/mnist/version/{self.dataset_version}",
+                json={"message": "found"},
+                status_code=HTTPStatus.OK,
+            )
+            rm.get(
+                "https://localhost:80/api/v1/project/starwhale/dataset/mnist",
+                json={
+                    "data": {
+                        "id": 11,
+                        "versionId": 22,
+                        "name": "mnist",
+                        "versionName": self.dataset_version,
+                    }
+                },
+            )
+            context = Context(
+                workdir=Path(),
+                project=Project("https://localhost:80/project/starwhale").full_uri,
+                version=self.eval_id,
+                dataset_uris=[
+                    f"https://localhost:80/project/starwhale/dataset/{self.dataset_uri_raw}"
+                ],
+                step="ppl",
+                index=0,
+            )
+            Context.set_runtime_context(context)
+
+            yield _status_dir, m_log_result
+
+    @contextmanager
     def _mock_ppl_prepare_data(self) -> t.Any:
         with patch(
             "starwhale.base.uri.resource.Resource._refine_local_rc_info",
@@ -340,7 +424,7 @@ class TestModelPipelineHandler(TestCase):
                 _handler._starwhale_internal_run_predict()
 
             log_result = m_log_result.call_args[0][0]
-            assert log_result["id"].startswith("mnist-")
+            assert log_result["id"].startswith("self/mnist_")
             assert log_result["_mode"] == "plain"
             assert log_result["_index"] == 0
             assert log_result["output"] == {"result": "ok"}
@@ -351,6 +435,20 @@ class TestModelPipelineHandler(TestCase):
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
             assert "success" in open(status_file_path).read()
+
+    def test_ppl_with_plain_mode_in_cloud(self) -> None:
+        with self._mock_ppl_prepare_data_in_cloud() as (status_dir, m_log_result):
+            with PlainHandler() as _handler:
+                _handler._starwhale_internal_run_predict()
+
+            log_result = m_log_result.call_args[0][0]
+            assert log_result["id"].startswith("11_")
+            assert log_result["_mode"] == "plain"
+            assert log_result["_index"] == 0
+            assert log_result["output"] == {"result": "ok"}
+            assert isinstance(log_result["input/image"], GrayscaleImage)
+            assert log_result["input/label"] == 0
+            assert "input/annotation" not in log_result
 
     def test_ppl(self) -> None:
         with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
