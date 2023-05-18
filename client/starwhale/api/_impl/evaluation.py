@@ -224,9 +224,10 @@ class PipelineHandler(metaclass=ABCMeta):
             if _uri.instance.is_local:
                 idx_prefix = f"{_uri.project.name}_{_uri.name}"
             else:
-                idx_prefix = _uri.info().get("id")
-                if not idx_prefix:
+                r_id = _uri.info().get("id")
+                if not r_id:
                     raise KeyError("fetch dataset id error")
+                idx_prefix = str(r_id)
             for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None
