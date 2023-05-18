@@ -84,7 +84,7 @@ function AutoStorePagination() {
         <AutoPagination
             page={page}
             onPageChange={onPageChange as any}
-            total={records && records?.length == page.pageSize ? page.pageNum + 1 : page.pageNum}
+            total={records && records?.length === page.pageSize ? page.pageNum + 1 : page.pageNum}
         />
     )
 }

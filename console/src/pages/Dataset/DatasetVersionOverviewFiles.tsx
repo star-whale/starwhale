@@ -101,7 +101,7 @@ export default function DatasetVersionFiles() {
         return {
             revision,
         }
-    }, [page, query.filter, revision])
+    }, [revision])
 
     const { currentView } = useDatasetStore(selector, shallow)
 

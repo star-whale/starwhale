@@ -6,7 +6,7 @@ export type DatastorePagePropsT = {
     pageNum?: number
     pageSize?: number
     sortBy?: string
-    sortDirection?: 'ASC' | 'DESC'
+    sortDirection?: 'ASC' | 'DESC' | string
     queries?: any[]
 }
 
@@ -19,6 +19,7 @@ function useDatastorePage({
 }: DatastorePagePropsT) {
     const [page, setPage] = React.useState<DatastorePageT>({} as any)
 
+    // eslint-disable-next-line @typescript-eslint/no-shadow
     const initPage = React.useCallback(({ sortBy, sortDirection, queries, pageNum, pageSize }) => {
         const sorts = sortBy
             ? [
@@ -61,8 +62,8 @@ function useDatastorePage({
     return {
         page: $page,
         setPage: React.useCallback(
-            (page: DatastorePageT) => {
-                setPage(page)
+            (tmp: DatastorePageT) => {
+                setPage(tmp)
             },
             [setPage]
         ),

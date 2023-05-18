@@ -1,4 +1,3 @@
-import React from 'react'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
