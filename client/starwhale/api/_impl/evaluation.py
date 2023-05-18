@@ -13,11 +13,7 @@ import dill
 import jsonlines
 
 from starwhale.utils import console, now_str
-from starwhale.consts import (
-    RunStatus,
-    CURRENT_FNAME,
-    DecoratorInjectAttr,
-)
+from starwhale.consts import RunStatus, CURRENT_FNAME, DecoratorInjectAttr
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import wrapper
 from starwhale.base.type import RunSubDirType, PredictLogMode
@@ -222,7 +218,8 @@ class PipelineHandler(metaclass=ABCMeta):
             dataset_info = ds.info
             cnt = 0
             if _uri.instance.is_local:
-                idx_prefix = f"{_uri.project.name}_{_uri.name}"
+                # avoid confusion with underscores in project names
+                idx_prefix = f"{_uri.project.name}/{_uri.name}"
             else:
                 r_id = _uri.info().get("id")
                 if not r_id:
