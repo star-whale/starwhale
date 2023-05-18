@@ -15,6 +15,7 @@ exclude = '''
     | build
     | dist
     | \.history
+    | example/LLM/belle-bloom/BELLE
   )/
 )
 '''
@@ -27,6 +28,7 @@ exclude = [
     "__pycache__/",
     "tests/",
     "dummy/setup.py",
+    "example/LLM/belle-bloom/BELLE/",
 ]
 show_column_numbers = true
 ignore_missing_imports = true
@@ -48,3 +50,4 @@ multi_line_output = 3
 length_sort = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
+extend_skip_glob="../example/LLM/belle-bloom/BELLE/*"

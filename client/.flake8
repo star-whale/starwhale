@@ -20,3 +20,4 @@ exclude =
     venv
     build
     dist
+    ../example/LLM/belle-bloom/BELLE/*
