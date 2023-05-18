@@ -46,6 +46,12 @@ class TestBundleCopy(TestCase):
     def test_runtime_copy_c2l(self, rm: Mocker, *args: t.Any) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch",
+            json={"data": {"id": 1, "versionName": version, "versionId": 100}},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}",
             json={"message": "existed"},
@@ -250,6 +256,12 @@ class TestBundleCopy(TestCase):
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     def test_model_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist",
+            json={"data": {"id": 1, "versionName": version, "versionId": 100}},
+            status_code=HTTPStatus.OK,
+        )
         rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}",

@@ -1041,9 +1041,9 @@ class CloudModelTest(TestCase):
         assert rm.request_history[2].qs == {"versionurl": ["323456a"]}
         assert rm.request_history[2].method == "GET"
         assert json.loads(rm.request_history[3].text) == {
-            "modelVersionUrl": '100',
-            "datasetVersionUrls": '200',
-            "runtimeVersionUrl": '300',
+            "modelVersionUrl": "100",
+            "datasetVersionUrls": "200",
+            "runtimeVersionUrl": "300",
             "resourcePool": "default",
             "handler": "test:predict",
         }
