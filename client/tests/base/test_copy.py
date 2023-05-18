@@ -47,7 +47,7 @@ class TestBundleCopy(TestCase):
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch",
+            "http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
         )
@@ -258,7 +258,7 @@ class TestBundleCopy(TestCase):
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist",
+            "http://1.1.1.1:8182/api/v1/project/myproject/model/mnist",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
         )
