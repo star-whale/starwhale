@@ -26,7 +26,6 @@ from starwhale.utils.retry import http_retry
 from starwhale.base.context import Context, pass_context
 from starwhale.core.job.store import JobStorage
 from starwhale.base.uri.project import Project
-from starwhale.base.uri.instance import Instance
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Link, DatasetSummary, GrayscaleImage
 from starwhale.core.dataset.store import ObjectStore, DatasetStorage

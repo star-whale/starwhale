@@ -16,7 +16,6 @@ from starwhale.utils import console, now_str
 from starwhale.consts import (
     RunStatus,
     CURRENT_FNAME,
-    SHORT_VERSION_CNT,
     DecoratorInjectAttr,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
