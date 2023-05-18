@@ -12,7 +12,7 @@ import { useEvaluationDetailStore } from '@starwhale/ui/GridTable/store'
 import useTranslation from '@/hooks/useTranslation'
 
 function prefixColumn(row: any, prefix: string | number) {
-    return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('-')}-`
+    return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('/')}@`
 }
 
 function getPrefixId(row: any, prefix: string | number) {
