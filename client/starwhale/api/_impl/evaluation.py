@@ -222,7 +222,13 @@ class PipelineHandler(metaclass=ABCMeta):
             ds.make_distributed_consumption(session_id=self.context.version)
             dataset_info = ds.info
             cnt = 0
-            idx_prefix = _uri.info().get("id") or _uri.name
+            if _uri.instance.is_local:
+                idx_prefix = f"{_uri.project.name}_{_uri.name}"
+            else:
+                print(f"url:{uri_str}, r info:{_uri.info()}")
+                idx_prefix = _uri.info().get("id")
+                if not idx_prefix:
+                    raise KeyError("fetch dataset id error")
             for rows in ds.batch_iter(self.predict_batch_size):
                 _start = time.time()
                 _exception = None
