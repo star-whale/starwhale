@@ -18,6 +18,8 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     if (!ca.name?.startsWith('sys/') && cb.name?.startsWith('sys/')) {
         return 1
     }
+    if (ca.name === 'id') return -1
+    if (cb.name === 'id') return 1
 
     return ca.name.localeCompare(cb.name)
 }

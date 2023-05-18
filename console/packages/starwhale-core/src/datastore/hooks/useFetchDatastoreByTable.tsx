@@ -1,23 +1,9 @@
-import { useMemo, useRef } from 'react'
-import { IListQuerySchema } from '../../server/schemas/list'
-import { QueryTableRequest } from '../schemas/datastore'
+import { useRef } from 'react'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'
 import { useQueryDatastore } from './useFetchDatastore'
-import { getQuery } from './useDatastoreQueryParams'
+import { QueryTableRequest } from '../schemas/datastore'
 
-export function useFetchDatastoreByTable(
-    tableName?: string,
-    options?: IListQuerySchema & {
-        filter?: any[]
-        query?: QueryTableRequest
-        revision?: string
-    },
-    enabled = true
-) {
-    const { recordQuery } = useMemo(() => {
-        return getQuery({ options, tableName })
-    }, [tableName, options])
-
+export function useFetchDatastoreByTable(recordQuery: QueryTableRequest, enabled = true) {
     const recordInfo = useQueryDatastore(recordQuery, enabled)
     const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
 

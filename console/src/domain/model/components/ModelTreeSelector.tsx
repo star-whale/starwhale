@@ -27,7 +27,7 @@ export function ModelTreeSelector(
     }
 ) {
     const [t] = useTranslation()
-    const { projectId, getId = (obj: any) => obj.id, multiple } = props
+    const { projectId, getId = (obj: any) => obj.id, multiple = true } = props
     const modelInfo = useFetchModelTree(projectId)
 
     useEffect(() => {

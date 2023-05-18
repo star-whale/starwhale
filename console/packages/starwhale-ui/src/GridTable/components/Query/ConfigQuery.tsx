@@ -5,6 +5,7 @@ import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import IconFont from '@starwhale/ui/IconFont'
 import { QueryT } from '@starwhale/ui/base/data-table/types'
 import { ColumnSchemaDesc } from '@starwhale/core'
+import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
 
 type PropsT = {
     columnTypes?: ColumnSchemaDesc[]
@@ -13,7 +14,13 @@ type PropsT = {
 }
 
 function ConfigQuery(props: PropsT) {
-    return <DatastoreMixedTypeSearch fields={props.columnTypes as any} value={props.value} onChange={props.onChange} />
+    return (
+        <DatastoreMixedTypeSearch
+            fields={props.columnTypes?.sort(sortColumn) as any}
+            value={props.value}
+            onChange={props.onChange}
+        />
+    )
 }
 
 function ConfigQueryInline(props: PropsT & { width: number }) {

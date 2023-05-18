@@ -1,9 +1,8 @@
 import { useScanDatastore } from './useFetchDatastore'
-import { TableScanParamsT, useDatastoreScanParams } from './useDatastoreQueryParams'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'
+import { ScanTableRequest } from '../schemas/datastore'
 
-export function useFetchDatastoreByTables(queries: TableScanParamsT) {
-    const { recordQuery } = useDatastoreScanParams(queries)
+export function useFetchDatastoreByTables(recordQuery: ScanTableRequest) {
     const recordInfo = useScanDatastore(recordQuery, true)
     const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
 

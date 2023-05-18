@@ -46,6 +46,7 @@ function BaseGridCombineTable({
     columnable = false,
     viewable = false,
     previewable = false,
+    paginationable = false,
     // actions
     onSave,
     onChange = () => {},
@@ -68,8 +69,8 @@ function BaseGridCombineTable({
                 left={() => {
                     return (
                         <MemoGridTable
-                            queryable
                             selectable
+                            paginationable={paginationable}
                             columns={columns}
                             isLoading={isLoading}
                             onSave={onSave}

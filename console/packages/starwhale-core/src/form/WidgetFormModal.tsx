@@ -10,6 +10,7 @@ import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
 import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
+import useDatastorePage from '../datastore/hooks/useDatastorePage'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -42,20 +43,16 @@ export default function WidgetFormModal({
     }
 
     const type = formData?.chartType
-    const query = React.useMemo(() => {
-        // @ts-ignore
-        const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
-        return {
-            tableName,
-            start: 0,
-            limit: PAGE_TABLE_SIZE,
-            rawResult: true,
-            ignoreNonExistingTable: true,
-        }
-    }, [formData?.tableName])
+    const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
 
     const { tables } = useFetchDatastoreAllTables(prefix)
-    const { recordInfo, columnTypes } = useFetchDatastoreByTable(query.tableName, undefined, !!formData?.tableName)
+
+    const { getQueryParams } = useDatastorePage({
+        pageNum: 1,
+        pageSize: PAGE_TABLE_SIZE,
+    })
+
+    const { recordInfo, columnTypes } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {

@@ -20,6 +20,7 @@ import { toaster } from 'baseui/toast'
 import { useRouterActivePath } from '@/hooks/useRouterActivePath'
 import { DatastoreMixedTypeSearch } from '@starwhale/ui/Search/Search'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
+import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
@@ -58,10 +59,11 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         }
     }, [datasetVersionInfo.data, setDatasetVersion])
 
-    const params = useMemo(() => {
-        return { pageNum: 1, pageSize: 1 }
-    }, [])
-    const { columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, params, true)
+    const { getQueryParams } = useDatastorePage({
+        pageNum: 1,
+        pageSize: 1,
+    })
+    const { columnTypes } = useFetchDatastoreByTable(getQueryParams(datasetVersion?.indexTable), true)
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [

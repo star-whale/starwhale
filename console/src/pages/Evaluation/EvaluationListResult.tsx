@@ -10,6 +10,7 @@ import { val } from '@starwhale/ui/GridTable/utils'
 import { ITableProps } from '@starwhale/ui/GridTable/types'
 import { useEvaluationDetailStore } from '@starwhale/ui/GridTable/store'
 import useTranslation from '@/hooks/useTranslation'
+import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 
 function prefixColumn(row: any, prefix: string | number) {
     return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('/')}@`
@@ -26,7 +27,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
     const { project } = useProject()
     const projectId = project?.id || projectFromUri
 
-    const queries = React.useMemo(
+    const tables = React.useMemo(
         () =>
             rows?.map((row, i) => {
                 return {
@@ -42,10 +43,12 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
         },
         [rows]
     )
-
-    const { records, columnTypes, recordInfo } = useFetchDatastoreByTables({
-        tables: queries,
+    const { page, setPage, getScanParams } = useDatastorePage({
+        pageNum: 1,
+        pageSize: 20,
     })
+
+    const { records, columnTypes, recordInfo } = useFetchDatastoreByTables(getScanParams(tables))
 
     return (
         <Card
@@ -60,7 +63,6 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 isLoading={recordInfo.isLoading}
                 store={useEvaluationDetailStore}
                 columnable
-                // queryable
                 title={t('evaluation.detail.title')}
                 titleOfCompare={t('evaluation.detail.compare')}
                 selectable
@@ -68,6 +70,9 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 columnTypes={columnTypes}
                 getId={getId}
                 previewable
+                paginationable
+                page={page}
+                onPageChange={setPage}
             />
         </Card>
     )
