@@ -167,7 +167,10 @@ class SwInputFile implements InputFile {
 
             private void initInput(long pos, long size) throws IOException {
                 this.closeInput();
-                this.input = storageAccessService.get(path, pos, Math.max(size, 4096));
+                // https://help.aliyun.com/document_detail/31980.html
+                // size can not be larger than the lasts content length
+                size = Math.min(Math.max(size, 4096), fileLength - pos);
+                this.input = storageAccessService.get(path, pos, size);
             }
 
             private void closeInput() throws IOException {
