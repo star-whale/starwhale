@@ -424,7 +424,7 @@ class TestModelPipelineHandler(TestCase):
                 _handler._starwhale_internal_run_predict()
 
             log_result = m_log_result.call_args[0][0]
-            assert log_result["id"].startswith("self_mnist_")
+            assert log_result["id"].startswith("self/mnist_")
             assert log_result["_mode"] == "plain"
             assert log_result["_index"] == 0
             assert log_result["output"] == {"result": "ok"}
