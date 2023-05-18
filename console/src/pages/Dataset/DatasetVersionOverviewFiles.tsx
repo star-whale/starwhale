@@ -152,6 +152,7 @@ export default function DatasetVersionFiles() {
                 paginationable
                 page={tablePage}
                 onPageChange={setPage}
+                rowHeight={80}
             />
         </div>
     )

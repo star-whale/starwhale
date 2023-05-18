@@ -47,6 +47,7 @@ function BaseGridCombineTable({
     viewable = false,
     previewable = false,
     paginationable = false,
+    rowHeight,
     // actions
     onSave,
     onChange = () => {},
@@ -80,6 +81,7 @@ function BaseGridCombineTable({
                             emptyMessage={emptyMessage}
                             emptyColumnMessage={emptyColumnMessage}
                             headlineHeight={headlineHeight}
+                            rowHeight={rowHeight}
                         >
                             {title && (
                                 <LabelSmall style={{ height: `${headlineHeight}px` }} className={styles.headerTitle}>
