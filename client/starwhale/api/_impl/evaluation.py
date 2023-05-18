@@ -224,7 +224,6 @@ class PipelineHandler(metaclass=ABCMeta):
             if _uri.instance.is_local:
                 idx_prefix = f"{_uri.project.name}_{_uri.name}"
             else:
-                print(f"url:{uri_str}, r info:{_uri.info()}")
                 idx_prefix = _uri.info().get("id")
                 if not idx_prefix:
                     raise KeyError("fetch dataset id error")
