@@ -738,6 +738,12 @@ class TestDatasetType(TestCase):
         link = Link(
             uri="s3://minioadmin:minioadmin@10.131.0.1:9000/users/path/to/file",
         )
+
+        rm.request(
+            HTTPMethod.GET,
+            "http://127.0.0.1:8081/api/v1/project/test/dataset/mnist",
+            json={"data": {"id": 1, "versionName": "123456a", "versionId": 100}},
+        )
         link.owner = Resource(
             "http://127.0.0.1:8081/project/test/dataset/mnist/version/latest"
         )
