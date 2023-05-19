@@ -16,7 +16,7 @@ test.beforeAll(async ({ admin }) => {
 })
 
 test.afterAll(async ({}) => {
-    await wait(10000)
+    await wait(5000)
 
     if (process.env.CLOSE_AFTER_TEST === 'true') {
         await page.context().close()

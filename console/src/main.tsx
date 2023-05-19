@@ -15,6 +15,9 @@ window.g = null
 // @ts-ignore
 window.i = null
 
+// eslint-disable-next-line
+console.log(process.env.GIT_COMMIT_HASH)
+
 async function initExtensions() {
     if (import.meta.env.VITE_EXTENDS === 'true') {
         // @ts-ignore

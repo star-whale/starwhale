@@ -209,6 +209,7 @@
     "@storybook/preset-create-react-app": "^4.1.2",
     "@storybook/preview-web": "^6.5.16",
     "@storybook/react": "^6.5.16",
+    "@types/fs-extra": "^11.0.1",
     "@types/sortablejs": "^1.15.0",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",

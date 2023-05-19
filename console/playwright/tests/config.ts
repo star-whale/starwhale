@@ -17,7 +17,7 @@ export const CONST = {
         projectDescription: 'testing',
     },
     adminSettings: 'Admin Settings',
-    projectId: '3',
+    projectId: '1',
     newUserName: 'lwz1',
     newUserPassword: 'abcd1234',
 }
@@ -41,16 +41,16 @@ export const SELECTOR = {
     loginName: 'input[type="text"]',
     loginPassword: 'input[type="password"]',
     // --- homepage ----
-    userWrapper: '[class^=userNameWrapper]',
-    userAvtarName: '[class^=userAvatarName]',
-    authAdminSetting: '[class^=userMenuItems] >> :has-text("Admin Settings")',
+    userWrapper: '[class*=userNameWrapper]',
+    userAvtarName: '[class*=userAvatarName]',
+    authAdminSetting: '[class*=userMenuItems] >> :has-text("Admin Settings")',
     projectCreate: 'button:has-text("Create")',
     // --- project form ---
-    projectForm: 'form[class^=project]',
-    projectName: 'form[class^=project] >> input[type="text"]',
-    projectPrivacy: 'form[class^=project] >> label:has-text("Private")',
-    projectDescription: 'form[class^=project] >> textarea[type="textarea"]',
-    projectSubmit: 'form[class^=project] >> button:has-text("Submit")',
+    projectForm: 'form[class*=project]',
+    projectName: 'form[class*=project] >> input[type="text"]',
+    projectPrivacy: 'form[class*=project] >> label:has-text("Private")',
+    projectDescription: 'form[class*=project] >> textarea[type="textarea"]',
+    projectSubmit: 'form[class*=project] >> button:has-text("Submit")',
     projectClose: 'role=button[name="Close"]',
     // --- project list ---
     projectCard: '[class*=projectCard]',
@@ -58,7 +58,8 @@ export const SELECTOR = {
     projectCardActions: '[class^=actions]',
     projectCardActionDelete: '[class^=actions] >> [class^=delete]',
     projectCardActionEdit: '[class^=actions] >> [class^=edit]',
-    projectCardDeleteConfirm: 'role=button[name="Continue"]',
+    projectCardDeleteConfirm: 'role=button[name="Confirm"]',
+    projectModelInput: 'role=dialog >> input[type="text"]',
     // --- table ---
     // table: '[class^=table]',
     table: '[class*=tablePinnable]',

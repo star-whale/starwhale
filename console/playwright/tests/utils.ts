@@ -29,7 +29,7 @@ export async function wait(ms: number) {
     })
 }
 
-export async function takeScreenshot({ testcase, route }) {
+export async function takeScreenshot({ testcase, route }: any) {
     const url = new URL(route)
     const screenshotPath = path.resolve(CONFIG.screenshotDir, `./${(url.pathname as any).replaceAll('/', '-')}.png`)
     await fse.ensureDir(path.dirname(screenshotPath))

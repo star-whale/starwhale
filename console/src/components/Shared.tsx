@@ -10,7 +10,25 @@ export function Shared({ shared = 0, isTextShow = false }: { shared?: number; is
     return (
         <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
             {shared === 1 && (
-                <IconFont type='group' style={{ borderRadius: '2px', backgroundColor: '#E6FFF4', color: '#00B368' }} />
+                <div
+                    style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '2px',
+                        backgroundColor: '#E6FFF4',
+                        display: 'grid',
+                        placeItems: 'center',
+                    }}
+                >
+                    <IconFont
+                        type='group'
+                        size={12}
+                        style={{
+                            color: '#00B368',
+                            margin: '0 auto',
+                        }}
+                    />
+                </div>
             )}
             {isTextShow && (shared === 1 ? t('dataset.overview.shared.yes') : t('dataset.overview.shared.no'))}
         </div>

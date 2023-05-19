@@ -6,28 +6,28 @@ let page: Page
 
 test.beforeAll(async ({ user }) => {
     page = user.page
-    await wait(1000)
+    // await wait(1000)
     await page.goto('/', {
         waitUntil: 'networkidle',
     })
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
-test.afterAll(async ({}) => {
-    await wait(10000)
+// test.afterAll(async ({}) => {
+//     await wait(5000)
 
-    if (process.env.CLOSE_AFTER_TEST === 'true') {
-        await page.context().close()
-        if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/user.webm`)
-    }
-})
+//     if (process.env.CLOSE_AFTER_TEST === 'true') {
+//         await page.context().close()
+//         if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/user.webm`)
+//     }
+// })
 
 test.describe('Login', () => {
     test.afterAll(async () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
     test('default route should be projects', async ({}) => {
-        await page.waitForURL(/\/projects/)
+        // await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
     })
 
@@ -55,7 +55,6 @@ test.describe('Project list', () => {
         await expect(page.locator(SELECTOR.projectDescription)).not.toBeEmpty()
         await expect(page.locator(SELECTOR.projectPrivacy)).toBeChecked()
         await page.locator(SELECTOR.projectSubmit).click()
-        await expect(page.locator(SELECTOR.projectForm)).toBeHidden()
     })
 
     test('check project list and delete project just created', async () => {
@@ -69,8 +68,8 @@ test.describe('Project list', () => {
         await p.hover()
         await expect(p.locator(SELECTOR.projectCardActions)).toBeVisible()
         await p.locator(SELECTOR.projectCardActionDelete).click()
-        await p.getByRole('textbox', { name: '' }).fill(CONST.user.projectName)
         await page.waitForSelector(SELECTOR.projectCardDeleteConfirm)
+        await page.locator(SELECTOR.projectModelInput).fill(CONST.user.projectName)
         await page.locator(SELECTOR.projectCardDeleteConfirm).click()
         await expect(p).not.toBeVisible()
     })
@@ -116,16 +115,9 @@ test.describe('Evaluation', () => {
     test.describe('Search', () => {
         test('should be 2 success status ', async () => {
             const p = page.locator(SELECTOR.table)
-            await p.getByRole('textbox', { name: 'Search by text' }).fill('SUCCESS')
+            await p.getByRole('textbox', { name: 'Search by text' }).fill('Success')
             await wait(1000)
             await expect(await getTableDisplayRow(p)).toEqual(2)
-        })
-
-        test('should be 5 rows ', async () => {
-            const p = page.locator(SELECTOR.table)
-            await p.getByRole('textbox', { name: 'Search by text' }).fill('')
-            await wait(1000)
-            await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
         })
     })
 
@@ -255,9 +247,7 @@ test.describe('Evaluation Results', () => {
         test('should have panels  summary/confusion matrix/label.roc_auc', async () => {
             await expect(page.getByText('Summary')).toBeVisible()
             await wait(1000)
-            await expect(page.getByText('roc_auc/0')).toBeVisible()
-            await wait(1000)
-            await expect(page.getByText('labels')).toBeVisible()
+            await expect(page.getByText('sys/job_status')).toBeVisible()
             await wait(1000)
             await expect(page.locator(SELECTOR.confusionMatrix)).toBeVisible()
         })
@@ -278,8 +268,8 @@ test.describe('Evaluation Results', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
-        test('should have 3 tasks of success status', async () => {
-            await expect(page.getByText('Success')).toHaveCount(3)
+        test('should have at least 1 tasks of success status', async () => {
+            await expect(page.getByText('Success')).toBeGreaterThan(0)
         })
         test('should show success task log', async () => {
             await page

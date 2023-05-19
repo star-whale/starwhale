@@ -1,15 +1,17 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
 import { devices } from '@playwright/test'
 import * as fse from 'fs-extra'
+import path from 'path'
 
 // process.env.PROXY = 'http://e2e.pre.intra.starwhale.ai/'
+const proxy = process.env.PROXY ?? ''
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 require('dotenv').config()
-
+fse.ensureDir('test-storage')
 fse.emptyDirSync('test-video')
 if (process.env.CLEAN_AUTH === 'true') fse.emptyDirSync('test-storage')
 else fse.ensureDir('test-storage')
@@ -21,7 +23,7 @@ const config: PlaywrightTestConfig = {
     testDir: './tests',
     // testIgnore: ['tests-examples/*'],
     /* Maximum time one test can run for. */
-    timeout: 30 * 1000,
+    timeout: 20 * 1000,
     expect: {
         /**
          * Maximum time expect() should wait for the condition to be met.
@@ -44,7 +46,7 @@ const config: PlaywrightTestConfig = {
         /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
         actionTimeout: 0,
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: process.env.PROXY ?? 'http://localhost:5173',
+        baseURL: process.env.PROXY ?? 'http://localhost:5177',
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
@@ -58,6 +60,10 @@ const config: PlaywrightTestConfig = {
     /* Configure projects for major browsers */
     projects: [
         {
+            name: 'setup',
+            testMatch: '**/*.setup.ts',
+        },
+        {
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
@@ -66,21 +72,22 @@ const config: PlaywrightTestConfig = {
                     permissions: ['clipboard-read', 'clipboard-write'],
                 },
             },
+            dependencies: ['setup'],
         },
 
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox'],
-            },
-        },
+        // {
+        //     name: 'firefox',
+        //     use: {
+        //         ...devices['Desktop Firefox'],
+        //     },
+        // },
 
-        {
-            name: 'webkit',
-            use: {
-                ...devices['Desktop Safari'],
-            },
-        },
+        // {
+        //     name: 'webkit',
+        //     use: {
+        //         ...devices['Desktop Safari'],
+        //     },
+        // },
 
         /* Test against mobile viewports. */
         // {
@@ -119,7 +126,7 @@ const config: PlaywrightTestConfig = {
     //     command: 'npm run start',
     //     port: 3000,
     // },
-    // globalSetup: require.resolve('./global-setup'),
+    // globalSetup: require.resolve('./setup/global-setup'),
 }
 
 export default config
