@@ -8,10 +8,10 @@ export { expect } from '@playwright/test'
 
 export const test = baseTest.extend({
     admin: async ({ browser }, use) => {
-        await use(await AdminPage.create(browser))
+        await use(await AdminPage.create(browser, 'admin'))
     },
     user: async ({ browser }, use) => {
-        await use(await UserPage.create(browser))
+        await use(await UserPage.create(browser, 'maintainer'))
     },
 })
 

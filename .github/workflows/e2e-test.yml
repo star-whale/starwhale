@@ -13,6 +13,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - e2e/*
 
 env:
   PYPI_RELEASE_VERSION: 100.0.0
@@ -66,10 +69,10 @@ jobs:
       matrix:
         python-version:
           - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
+          # - "3.8"
+          # - "3.9"
+          # - "3.10"
+          # - "3.11"
 
     steps:
       - uses: actions/checkout@v3

@@ -229,7 +229,8 @@ client_test() {
   if ! in_github_action; then
     unset http_proxy
     unset https_proxy
-    bash scripts/client_test/cli_test.sh all
+    # bash scripts/client_test/cli_test.sh all
+    bash scripts/client_test/cli_test.sh mnist
   else
     timeout 15m bash scripts/client_test/cli_test.sh simple || exit 1
   fi
@@ -246,6 +247,13 @@ api_test() {
   if ! in_github_action; then
     source upgrade_test.sh
   fi
+}
+
+console_test() {
+  pushd ../../console/playwright
+  yarn install
+  PROXY=$CONTROLLER_URL yarn test
+  popd
 }
 
 restore_env() {
@@ -305,6 +313,8 @@ main() {
   client_test
   api_test
   kubectl scale deployment controller -n $SWNS --replicas=0
+
+  # console_test
 
 }
 

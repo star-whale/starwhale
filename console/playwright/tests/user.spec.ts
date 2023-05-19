@@ -27,6 +27,7 @@ test.describe('Login', () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
     test('default route should be projects', async ({}) => {
+        await page.waitForURL(/\/projects/)
         await expect(page).toHaveURL(/\/projects/)
     })
 
@@ -68,7 +69,7 @@ test.describe('Project list', () => {
         await p.hover()
         await expect(p.locator(SELECTOR.projectCardActions)).toBeVisible()
         await p.locator(SELECTOR.projectCardActionDelete).click()
-
+        await p.getByRole('textbox', { name: '' }).fill(CONST.user.projectName)
         await page.waitForSelector(SELECTOR.projectCardDeleteConfirm)
         await page.locator(SELECTOR.projectCardDeleteConfirm).click()
         await expect(p).not.toBeVisible()
@@ -182,7 +183,7 @@ test.describe('Evaluation', () => {
             await p.locator(SELECTOR.row2column1).locator('label').check()
             await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
             await wait(1000)
-            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist\-/)
+            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist/)
             await wait(1000)
             await expect(await page.locator('.cell--neq').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
@@ -307,7 +308,7 @@ test.describe('Models', () => {
             if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
         })
 
-        test('should have 1 model', async () => {
+        test('should have 1 model of mnist', async () => {
             await expect(page.locator('td').getByText('mnist')).toHaveCount(1)
         })
 

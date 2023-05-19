@@ -4,15 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.27.0"
+    "@playwright/test": "1.29"
   },
   "scripts": {
     "test": "yarn test:e2e:headless",
     "test:e2e:report": "yarn playwright show-report",
-    "test:e2e:headed": "cross-env DISABLE_LOGGING=true playwright test --headed  --project=chromium",
+    "test:e2e:headed": "cross-env DISPLAY=:99 DISABLE_LOGGING=true playwright test --headed  --project=chromium",
     "test:e2e:headless": "cross-env DISABLE_LOGGING=true PWDEBUG=0 playwright test   --project=chromium",
-    "test:e2e:debug": "cross-env PWDEBUG=1 playwright test --project=chromium",
-    "test:e2e:snapshot": "cross-env PWDEBUG=0 playwright test --project=chromium --update-snapshots"
+    "test:e2e:debug": "cross-env DISPLAY=:99 PWDEBUG=1 playwright test --project=chromium",
+    "test:e2e:snapshot": "cross-env DISPLAY=:99 PWDEBUG=0 playwright test --project=chromium --update-snapshots"
   },
   "dependencies": {
     "cross-env": "^7.0.3"
