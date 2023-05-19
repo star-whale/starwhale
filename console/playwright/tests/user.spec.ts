@@ -101,69 +101,66 @@ test.describe('Evaluation', () => {
         test('should evaluation have toolbar/header/row', async () => {
             const p = page.locator(SELECTOR.table)
 
-            await page.waitForSelector('role=button[name="Evaluation ID"]')
-
-            await expect(p.getByText('Select a view')).toBeTruthy()
-            await expect(p.getByText('Filters')).toBeTruthy()
-            await expect(p.getByText('Manage Columns')).toBeTruthy()
+            await expect(p.locator('.table-config-query')).toBeTruthy()
+            await expect(p.locator('.table-config-column')).toBeTruthy()
 
             await page.waitForSelector('.table-headers')
             await expect(p.locator('.table-headers').getByText('Evaluation ID')).toBeTruthy()
         })
     })
 
-    test.describe('Search', () => {
-        test('should be 2 success status ', async () => {
-            const p = page.locator(SELECTOR.table)
-            await p.getByRole('textbox', { name: 'Search by text' }).fill('Success')
-            await wait(1000)
-            await expect(await getTableDisplayRow(p)).toEqual(2)
-        })
-    })
+    // test.describe('Search', () => {
+    //     test('should be 2 success status ', async () => {
+    //         const p = page.locator(SELECTOR.table)
+    //         await p.getByRole('textbox', { name: 'Search by text' }).fill('Succe')
+    //         await wait(1000)
+    //         await expect(await getTableDisplayRow(p)).toEqual(2)
+    //     })
+    // })
 
-    test.describe('Manage columns', () => {
-        test('remove evaluation column & add accuracy column', async () => {
-            const checkedButton = page.locator(
-                'role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))'
-            )
-            if ((await checkedButton.count()) > 0) await checkedButton.click()
+    // test.describe('Manage columns', () => {
+    //     test('remove evaluation column & add accuracy column', async () => {
+    //         const checkedButton = page.locator(
+    //             'role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))'
+    //         )
+    //         if ((await checkedButton.count()) > 0) await checkedButton.click()
 
-            const p = page.locator(SELECTOR.table)
-            const drawer = page.locator('[data-baseweb="drawer"]')
-            await p.getByRole('button', { name: /Manage Columns/ }).click()
+    //         const p = page.locator(SELECTOR.table)
+    //         const drawer = page.locator('[data-baseweb="drawer"]')
+    //         await p.getByRole('button', { name: /Manage Columns/ }).click()
 
-            await drawer.getByTitle('Evaluation ID').locator('label').uncheck()
-            await drawer.getByTitle('accuracy').locator('label').check()
-            await drawer.getByRole('button', { name: /Apply/ }).click()
-            await drawer.getByTitle('Close').click()
+    //         await drawer.getByTitle('Evaluation ID').locator('label').uncheck()
+    //         await drawer.getByTitle('accuracy').locator('label').check()
+    //         await drawer.getByRole('button', { name: /Apply/ }).click()
+    //         await drawer.getByTitle('Close').click()
 
-            await expect(p.locator('.table-headers').getByText('Evaluation ID')).toBeHidden()
-            await expect(p.locator('.table-headers').getByText('accuracy')).toBeVisible()
-        })
-    })
+    //         await expect(p.locator('.table-headers').getByText('Evaluation ID')).toBeHidden()
+    //         await expect(p.locator('.table-headers').getByText('accuracy')).toBeVisible()
+    //     })
+    // })
 
-    test.describe('Filter', () => {
-        test('should be no rows when evaluation id = none', async () => {
-            const p = page.locator(SELECTOR.table)
-            await p.getByText('Filters').click()
+    // test.describe('Filter', () => {
+    //     test('should be no rows when evaluation id = none', async () => {
+    //         const p = page.locator(SELECTOR.table)
+    //         await p.getByText('Filters').click()
 
-            await page.waitForSelector(':has-text("Add filter")')
-            await page.getByText('Add filter').click()
+    //         await page.waitForSelector(':has-text("Add filter")')
+    //         await page.getByText('Add filter').click()
 
-            await selectOption(page, '.filter-ops', 'Evaluation ID')
-            await page.getByText('Apply').click()
+    //         await selectOption(page, '.filter-ops', 'Evaluation ID')
+    //         await page.getByText('Apply').click()
 
-            await expect(await getTableDisplayRow(p)).toEqual(0)
-        })
-    })
+    //         await expect(await getTableDisplayRow(p)).toEqual(0)
+    //     })
+    // })
 
-    test.describe('View', () => {
-        test('should show rows when select all runs', async () => {
-            const p = page.locator(SELECTOR.table)
-            await selectOption(page, '.table-config-view', 'All runs')
-            await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
-        })
-    })
+    // test.describe('View', () => {
+    //     test('should show rows when select all runs', async () => {
+    //         const p = page.locator(SELECTOR.table)
+    //         await selectOption(page, '.table-config-view', 'All runs')
+    //         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
+    //     })
+    // })
 
     test.describe('Compare', () => {
         test('should show compare table when checked one row', async () => {

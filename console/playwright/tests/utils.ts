@@ -11,7 +11,7 @@ export async function selectOption(page: Page, selector: string, text: string | 
 }
 
 export async function getTableDisplayRow(page: Locator | Page) {
-    return await page.locator('.table-inner >> nth=0 >> .table-row').count()
+    return await page.locator('.table-inner >> .table-cell').count()
 }
 
 export async function getLastestRowID(page: Locator | Page) {
