@@ -31,6 +31,7 @@ import ModelSelector from '@/domain/model/components/ModelSelector'
 import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
+import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -55,36 +56,19 @@ export default function EvaluationListCard() {
         shallow
     )
 
-    const options = React.useMemo(() => {
-        const sorts = currentView?.sortBy
-            ? [
-                  {
-                      columnName: currentView?.sortBy,
-                      descending: currentView?.sortDirection === 'DESC',
-                  },
-              ]
-            : []
-
-        sorts.push({
-            columnName: 'sys/id',
-            descending: true,
-        })
-
-        return {
-            pageNum: 1,
-            pageSize: 1000,
-            query: {
-                orderBy: sorts,
-            },
-            filter: currentView.queries,
-        }
-    }, [currentView.queries, currentView.sortBy, currentView.sortDirection])
+    const { page, setPage, getQueryParams } = useDatastorePage({
+        pageNum: 1,
+        pageSize: 100,
+        sortBy: currentView?.sortBy || 'sys/id',
+        sortDirection: currentView?.sortBy ? (currentView?.sortDirection as any) : 'DESC',
+        queries: currentView?.queries,
+    })
 
     const {
         recordInfo: evaluationsInfo,
         columnTypes,
         records,
-    } = useFetchDatastoreByTable(summaryTableName, options, true)
+    } = useFetchDatastoreByTable(getQueryParams(summaryTableName), true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
@@ -291,6 +275,9 @@ export default function EvaluationListCard() {
                         viewable
                         queryable
                         selectable
+                        paginationable
+                        page={page}
+                        onPageChange={setPage}
                         records={records}
                         columnTypes={columnTypes}
                         columns={$columnsWithSpecColumns}

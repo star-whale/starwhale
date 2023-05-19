@@ -103,4 +103,10 @@ export const isNumbericType = (v: string) =>
 export const isComplexType = (v: string) =>
     [DataTypes.LIST, DataTypes.TUPLE, DataTypes.MAP, DataTypes.OBJECT, DataTypes.BYTES].includes(v as DataTypes)
 export const isBasicType = (v: string) => isNumbericType(v) || isStringType(v) || isBoolType(v)
-export const isSearchColumns = (v: string) => !v.startsWith('_') && !v.startsWith('sys/_')
+export const isSearchColumns = (v: string) => {
+    if (v.startsWith('_')) return false
+    if (v.startsWith('sys/_')) return false
+    if (v.split('@')[1]?.startsWith('_')) return false
+
+    return true
+}

@@ -4,6 +4,7 @@ import { getWidget } from '../store/hooks/useSelector'
 import { WidgetRenderer } from '../widget/WidgetRenderer'
 import { StoreType } from '../context/EditorContextProvider'
 import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
+import useDatastorePage from '../datastore/hooks/useDatastorePage'
 
 const PAGE_TABLE_SIZE = 100
 
@@ -23,19 +24,15 @@ export default function WidgetPreviewModal({
     const [formData, setFormData] = React.useState<Record<string, any>>({})
 
     const type = formData?.chartType
-    const query = React.useMemo(() => {
-        // @ts-ignore
-        const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
-        return {
-            tableName,
-            start: 0,
-            limit: PAGE_TABLE_SIZE,
-            rawResult: true,
-            ignoreNonExistingTable: true,
-        }
-    }, [formData?.tableName])
+    const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
 
-    const { recordInfo, columnTypes } = useFetchDatastoreByTable(query.tableName, undefined, true)
+    const { getQueryParams } = useDatastorePage({
+        pageNum: 1,
+        pageSize: PAGE_TABLE_SIZE,
+    })
+
+    const { recordInfo, columnTypes } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
+
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {

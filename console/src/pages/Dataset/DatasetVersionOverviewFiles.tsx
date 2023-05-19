@@ -10,6 +10,9 @@ import { getMeta } from '@/domain/dataset/utils'
 import useFetchDatastoreByTable from '@starwhale/core/datastore/hooks/useFetchDatastoreByTable'
 import { useDatastoreColumns } from '@starwhale/ui/GridDatastoreTable'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
+import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
+import { ITableState, useDatasetStore } from '@starwhale/ui/GridTable/store'
+import shallow from 'zustand/shallow'
 
 const useCardStyles = createUseStyles({
     wrapper: {
@@ -78,6 +81,10 @@ const useCardStyles = createUseStyles({
     },
 })
 
+const selector = (s: ITableState) => ({
+    currentView: s.currentView,
+})
+
 export default function DatasetVersionFiles() {
     const { projectId } = useParams<{
         projectId: string
@@ -90,15 +97,30 @@ export default function DatasetVersionFiles() {
         return getMeta(datasetVersion?.versionMeta as string)
     }, [datasetVersion?.versionMeta])
     const { query } = useQueryArgs()
-    const $page = React.useMemo(() => {
+    const extra = React.useMemo(() => {
         return {
-            ...page,
-            filter: query.filter,
             revision,
         }
-    }, [page, query.filter, revision])
+    }, [revision])
 
-    const { records, columnTypes } = useFetchDatastoreByTable(datasetVersion?.indexTable, $page, true)
+    const { currentView } = useDatasetStore(selector, shallow)
+
+    const {
+        page: tablePage,
+        setPage,
+        getQueryParams,
+    } = useDatastorePage({
+        pageNum: page.pageNum,
+        pageSize: 50,
+        queries: query.filter,
+        sortBy: currentView?.sortBy || 'id',
+        sortDirection: currentView?.sortDirection || 'DESC',
+    })
+
+    const { records, columnTypes } = useFetchDatastoreByTable(
+        getQueryParams(datasetVersion?.indexTable, extra),
+        !!datasetVersion?.indexTable
+    )
 
     const options = React.useMemo(
         () => ({
@@ -127,6 +149,10 @@ export default function DatasetVersionFiles() {
                 records={records}
                 columnTypes={columnTypes}
                 columns={$columns}
+                paginationable
+                page={tablePage}
+                onPageChange={setPage}
+                rowHeight={80}
             />
         </div>
     )

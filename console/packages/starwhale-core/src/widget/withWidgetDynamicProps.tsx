@@ -10,6 +10,7 @@ import { exportTable } from '../datastore'
 import { PanelDownloadEvent, PanelReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
+import useDatastorePage from '../datastore/hooks/useDatastorePage'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -62,43 +63,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
         const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
-        const tableOptions = React.useMemo(() => {
-            if (!tableConfig)
-                return {
-                    pageNum: 1,
-                    pageSize: 1000,
-                }
-
-            if (!tableConfig)
-                return {
-                    pageNum: 1,
-                    pageSize: 1000,
-                }
-
-            const sorts = tableConfig.sortBy
-                ? [
-                      {
-                          columnName: tableConfig.sortBy,
-                          descending: tableConfig.sortDirection === 'DESC',
-                      },
-                  ]
-                : []
-
-            sorts.push({
-                columnName: 'id',
-                descending: true,
-            })
-
-            return {
-                pageNum: 1,
-                pageSize: 1000,
-                query: {
-                    orderBy: sorts,
-                },
-                filter: tableConfig.queries,
-            }
-        }, [tableConfig])
-
+        const { getQueryParams } = useDatastorePage({
+            pageNum: 1,
+            pageSize: 1000,
+            sortBy: tableConfig?.sortBy || 'id',
+            sortDirection: tableConfig?.sortDirection || 'DESC',
+            queries: tableConfig?.queries,
+        })
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
         const {
@@ -106,19 +77,11 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             recordQuery: query,
             columnTypes,
             records,
-        } = useFetchDatastoreByTable(tableName, tableOptions, enableLoad)
+        } = useFetchDatastoreByTable(getQueryParams(tableName), enableLoad)
         useEffect(() => {
             if (enableLoad) return
             if (inViewport) setEnableload(true)
         }, [inViewport, enableLoad])
-
-        // useIfChanged({
-        //     overrides,
-        //     tableConfig,
-        //     tableName,
-        //     inViewport,
-        //     enableLoad,
-        // })
 
         useEffect(() => {
             // @FIXME better use scoped eventBus

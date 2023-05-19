@@ -47,6 +47,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     // @FIXME type
     onInit?: (state: Partial<IGridState>) => void
     getColumns?: () => any[]
+    paginationable?: boolean
 }
 
 export interface IToolBarProps {
@@ -55,11 +56,13 @@ export interface IToolBarProps {
 }
 
 export interface IPaginationProps {
-    total?: number
-    start?: number
-    count?: number
-    onPageChange?: (page: number) => void
-    afterPageChange?: (page: number) => void
+    page?: {
+        pageNum: number
+        pageSize: number
+        [key: string]: any
+    }
+    onPageChange?: (page: any) => void
+    afterPageChange?: (page: any) => void
 }
 
 export type IContextGridTable = {

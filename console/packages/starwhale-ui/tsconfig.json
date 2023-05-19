@@ -1,9 +1,7 @@
 {
-  "extends": "../../tsconfig",
-  "compilerOptions": {
-    "skipLibCheck": true
-  },
-  "include": [
-    "src/**/*.ts*"
-  ]
+    "extends": "../../tsconfig",
+    "compilerOptions": {
+        "skipLibCheck": true
+    },
+    "include": ["src/**/*.ts*", "../starwhale-core/src/datastore/hooks/useDatastorePage.tsx"]
 }

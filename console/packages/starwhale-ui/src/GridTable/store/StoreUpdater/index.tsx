@@ -54,6 +54,8 @@ const StoreUpdater = ({
     onIncludedRowsChange,
     onRowHighlightChange,
     onRowSelectedChange,
+    page,
+    onPageChange,
 }: StoreUpdaterProps) => {
     const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -78,6 +80,8 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onIncludedRowsChange', onIncludedRowsChange, store.setState)
     useDirectStoreUpdater('onRowHighlightChange', onRowHighlightChange, store.setState)
     useDirectStoreUpdater('onRowSelectedChange', onRowSelectedChange, store.setState)
+    useDirectStoreUpdater('page', page, store.setState)
+    useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
     // useStoreUpdater(columns, store.setColumns)

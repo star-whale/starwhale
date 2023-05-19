@@ -13,6 +13,7 @@ import useGrid from './hooks/useGrid'
 import { DataTable } from '../base/data-table/data-custom-table'
 import useOnInitHandler from './hooks/useOnInitHandler'
 import Preview from '../GridDatastoreTable/components/Preview'
+import AutoStorePagination from './components/Pagination/AutoPagination'
 
 const useStyles = createUseStyles({
     table: {
@@ -60,6 +61,7 @@ const loadingMessage = () => (
             Root: {
                 style: {
                     paddingTop: '10px',
+                    minHeight: '200px',
                 },
             },
         }}
@@ -68,6 +70,7 @@ const loadingMessage = () => (
         animation
     />
 )
+const defaultEmptyMessage = () => <BusyPlaceholder type='notfound' style={{ minHeight: '300px' }} />
 
 const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,
@@ -84,7 +87,8 @@ function GridTable({
     selectable = false,
     queryinline = false,
     previewable = false,
-    emptyMessage,
+    paginationable = false,
+    emptyMessage = defaultEmptyMessage,
     emptyColumnMessage,
     resizableColumnWidths = true,
     rowHighlightIndex = -1,
@@ -126,13 +130,18 @@ function GridTable({
         onPreviewClose,
     } = useGrid()
 
+    const paginationHeight = paginationable ? 50 : 0
+
     return (
         <div
             className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
             ref={wrapperRef}
         >
             {children}
-            <div data-type='table-wrapper' style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
+            <div
+                data-type='table-wrapper'
+                style={{ width: '100%', height: `calc(100% - ${headlineHeight + paginationHeight}px)` }}
+            >
                 <DataTable
                     columns={$columns}
                     selectable={selectable}
@@ -140,7 +149,7 @@ function GridTable({
                     queryinline={queryinline}
                     previewable={previewable}
                     rawColumns={$columns}
-                    emptyMessage={emptyMessage ?? <BusyPlaceholder type='notfound' />}
+                    emptyMessage={emptyMessage}
                     loading={isLoading}
                     loadingMessage={loadingMessage}
                     onIncludedRowsChange={onIncludedRowsChange}
@@ -166,6 +175,7 @@ function GridTable({
                 />
                 {columns?.length === 0 && (emptyColumnMessage ?? <BusyPlaceholder type='notfound' />)}
             </div>
+            {paginationable && <AutoStorePagination />}
             <Preview
                 preview={preview.record as any}
                 previewKey={preview.columnKey}

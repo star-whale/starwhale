@@ -408,6 +408,17 @@ export const useEvaluationDetailStore = createCustomStore(
     },
     false
 )
+export const useDatasetStore = createCustomStore(
+    'dataset',
+    {
+        compare: {
+            comparePinnedKey: '',
+            compareShowCellChanges: true,
+            compareShowDiffOnly: false,
+        },
+    },
+    false
+)
 const stateSelector = (state: ITableState) => state
 const currentQueriesSelector = (state: ITableState) => state.currentView?.queries ?? []
 const currentViewSelector = (state: ITableState) => state.currentView ?? {}

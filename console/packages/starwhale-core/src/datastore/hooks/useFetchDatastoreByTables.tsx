@@ -1,16 +1,20 @@
 import { useScanDatastore } from './useFetchDatastore'
-import { TableScanParamsT, useDatastoreScanParams } from './useDatastoreQueryParams'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'
+import { ScanTableRequest } from '../schemas/datastore'
+import { useRef } from 'react'
 
-export function useFetchDatastoreByTables(queries: TableScanParamsT) {
-    const { recordQuery } = useDatastoreScanParams(queries)
+export function useFetchDatastoreByTables(recordQuery: ScanTableRequest) {
     const recordInfo = useScanDatastore(recordQuery, true)
     const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
+
+    // cache columnTypes, especially when query changed, record fetch again, columnTypes will be reset
+    const columnTypesRef = useRef(columnTypes)
+    if (recordInfo.isSuccess) columnTypesRef.current = columnTypes
 
     return {
         recordInfo,
         records,
-        columnTypes,
+        columnTypes: !recordInfo.isSuccess ? columnTypesRef.current : columnTypes,
     }
 }
 

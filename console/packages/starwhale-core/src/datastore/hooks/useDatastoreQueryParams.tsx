@@ -1,7 +1,7 @@
-import React from 'react'
 import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
+import { DatastorePageT } from '../types'
 
 export type TableQueryParamsT = {
     tableName?: string
@@ -108,50 +108,23 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
     if (filter) {
         raw.filter = filter
     }
-    const [columnQuery, recordQuery] = [
-        {
-            ...raw,
-            encodeWithType: false,
-        },
-        raw,
-    ]
-    return {
-        columnQuery,
-        recordQuery,
-    }
+    return raw
 }
 
-export function getScanQuery(params: TableScanParamsT): {
-    recordQuery: ScanTableRequest
-} {
+export function getScanQuery(tables: ScanTableRequest['tables'], options: DatastorePageT): ScanTableRequest {
+    const { pageNum = 1, pageSize = 10 } = options || {}
+    const { start, limit } = {
+        start: (pageNum - 1) * pageSize ?? 0,
+        limit: pageSize ?? 0,
+    }
+
     const recordQuery = {
-        ...params,
+        tables,
+        start,
+        limit,
         rawResult: true,
         encodeWithType: true,
-        limit: 100,
     }
 
-    return {
-        recordQuery,
-    }
-}
-
-export function useDatastoreQueryParams(queries: TableQueryParamsT[]) {
-    const $queries = React.useMemo(() => {
-        return queries.map(getQuery)
-    }, [queries])
-
-    return {
-        queries: $queries,
-    }
-}
-
-export function useDatastoreScanParams(queries: TableScanParamsT) {
-    const { recordQuery } = React.useMemo(() => {
-        return getScanQuery(queries)
-    }, [queries])
-
-    return {
-        recordQuery,
-    }
+    return recordQuery as any
 }
