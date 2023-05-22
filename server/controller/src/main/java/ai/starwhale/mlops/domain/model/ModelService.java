@@ -99,6 +99,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.IOUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -580,7 +581,7 @@ public class ModelService {
                 projectId, signature);
 
         try {
-            storageAccessService.put(modelPath, modelFile.getInputStream());
+            storageAccessService.put(modelPath, modelFile.getInputStream(), modelFile.getSize());
         } catch (IOException e) {
             log.error("upload model failed {}", uploadRequest.getSwmp(), e);
             throw new StarwhaleApiException(
@@ -600,7 +601,7 @@ public class ModelService {
                     HttpStatus.BAD_REQUEST
             );
         }
-        //upload to storage
+        // upload to storage
         final String storagePath = modelVersionEntity.getStoragePath();
         String jobContent = "";
         try (final InputStream inputStream = multipartFile.getInputStream()) {
@@ -617,6 +618,12 @@ public class ModelService {
                     storageAccessService.put(
                             String.format(FORMATTER_STORAGE_SRC_FILE_PATH, storagePath, name), in, size
                     )
+            );
+            // upload src.tar to oss
+            storageAccessService.put(
+                    String.format(FORMATTER_STORAGE_PATH, storagePath, multipartFile.getOriginalFilename()),
+                    multipartFile.getInputStream(),
+                    multipartFile.getSize()
             );
         } catch (IOException | ArchiveException e) {
             log.error("upload model src failed {}", uploadRequest.getSwmp(), e);
@@ -693,8 +700,7 @@ public class ModelService {
                 filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getId(), signature);
                 break;
             case SRC_TAR:
-                this.pullSrcTar(name,
-                        String.format(FORMATTER_STORAGE_SRC_PATH, modelVersionEntity.getStoragePath()), httpResponse);
+                this.pullSrcTar(name, modelVersionEntity.getStoragePath(), httpResponse);
                 return;
             default:
                 throw new StarwhaleApiException(
@@ -727,9 +733,12 @@ public class ModelService {
     public void pullFile(String name, Supplier<InputStream> streamSupplier, HttpServletResponse httpResponse) {
         try (InputStream fileInputStream = streamSupplier.get();
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            if (fileInputStream == null) {
+                return;
+            }
             long length = fileInputStream.transferTo(outputStream);
-            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            httpResponse.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"");
+            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
             outputStream.flush();
         } catch (IOException e) {
             log.error("download manifest file failed", e);
@@ -737,7 +746,20 @@ public class ModelService {
         }
     }
 
-    public void pullSrcTar(String name, String srcPath, HttpServletResponse httpResponse) {
+    public void pullSrcTar(String name, String storagePath, HttpServletResponse httpResponse) {
+        pullFile(name, () -> {
+            try {
+                return storageAccessService.get(String.format(FORMATTER_STORAGE_PATH, storagePath, name));
+            } catch (IOException e) {
+                log.error("pull original src tar failed, try to reCompress from files");
+                reCompressToTar(name, storagePath, httpResponse);
+                return null;
+            }
+        }, httpResponse);
+    }
+
+    private void reCompressToTar(String name, String storagePath, HttpServletResponse httpResponse) {
+        String srcPath = String.format(FORMATTER_STORAGE_SRC_PATH, storagePath);
         List<String> files;
         try {
             files = storageAccessService.list(srcPath).collect(Collectors.toList());
@@ -747,6 +769,7 @@ public class ModelService {
         }
 
         if (CollectionUtils.isEmpty(files)) {
+            log.error("file path:{} is empty", srcPath);
             throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
         }
 
@@ -775,15 +798,13 @@ public class ModelService {
                 }
             }, outputStream);
 
-            httpResponse.addHeader("Content-Disposition",
-                    "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length[0]));
+            httpResponse.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"");
+            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(length[0]));
             outputStream.flush();
         } catch (IOException | ArchiveException e) {
             log.error("download file from storage failed {}", srcPath, e);
             throw new SwProcessException(ErrorType.STORAGE);
         }
-
     }
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {

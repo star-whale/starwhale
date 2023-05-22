@@ -96,6 +96,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.stubbing.Answer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -459,8 +460,6 @@ public class ModelServiceTest {
                         Job.builder().model(Model.builder().name("m1").version("v1").build()).build(),
                         Job.builder().model(Model.builder().name("m2").version("v2").build()).build()
                 ));
-        given(storagePathCoordinator.allocateModelPath(any(), any(), any()))
-                .willReturn("path2");
 
         try (var mockIOUtils = mockStatic(IOUtils.class); var mockTarFileUtil = mockStatic(TarFileUtil.class)) {
             mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
@@ -468,6 +467,7 @@ public class ModelServiceTest {
             given(modelVersionMapper.find(3L))
                     .willReturn(ModelVersionEntity.builder()
                             .id(1L)
+                            .storagePath("path1")
                             .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
                             .build()
                     );
@@ -476,11 +476,12 @@ public class ModelServiceTest {
             request.setProject("1");
             request.setSwmp("m1:v1");
 
-            MultipartFile modelFile = new MockMultipartFile("modelFile", new byte[10]);
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(modelFile, request));
+            // case1: upload manifest
+            MultipartFile manifestFile = new MockMultipartFile("modelFile", new byte[10]);
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(manifestFile, request));
 
             request.setForce("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(modelFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(manifestFile, request));
 
             request.setSwmp("m3:v3");
             var manifestContent = "build:\n"
@@ -495,15 +496,24 @@ public class ModelServiceTest {
             mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
                     .thenReturn(manifestContent);
 
-            service.uploadManifest(modelFile, request);
+            service.uploadManifest(manifestFile, request);
+            verify(storageAccessService, times(1)).put(eq("path1/_manifest.yaml"), any(InputStream.class), eq(10L));
 
+            // case2: upload src.tar
+            MultipartFile srcTar = new MockMultipartFile("src", "src.tar", null, new byte[20]);
             mockTarFileUtil.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                    .thenReturn(manifestContent.getBytes());
-            service.uploadSrc(3L, modelFile, request);
+                    .thenReturn("".getBytes());
+            service.uploadSrc(3L, srcTar, request);
             mockTarFileUtil.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
+            verify(storageAccessService, times(1)).put(eq("path1/src.tar"), any(InputStream.class), eq(20L));
 
+            // case3: upload model
+            given(storagePathCoordinator.allocateCommonModelPoolPath(any(), any()))
+                    .willReturn("test/project/1/common-model/1");
+            MultipartFile modelFile = new MockMultipartFile("model.pth", "src/model/model.pth", null, new byte[100]);
             service.uploadModel(3L, "123456", modelFile, request);
-            verify(storageAccessService, times(1)).put(any(), any(InputStream.class));
+            verify(storageAccessService, times(1))
+                    .put(eq("test/project/1/common-model/1"), any(InputStream.class), eq(100L));
 
             given(modelVersionMapper.find(3L))
                     .willReturn(ModelVersionEntity.builder()
@@ -512,8 +522,8 @@ public class ModelServiceTest {
                             .build()
                     );
             request.setProject("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, modelFile, request));
-            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", modelFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, manifestFile, request));
+            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", manifestFile, request));
 
         }
     }
@@ -528,29 +538,54 @@ public class ModelServiceTest {
     @Test
     public void testPullSrcTar() throws IOException {
         HttpServletResponse response = new MockHttpServletResponse();
+        String fileName = "src.tar";
+
         // case1: oss error test
-        var srcPath1 = "path1/src";
-        given(storageAccessService.list(srcPath1)).willThrow(IOException.class);
-        assertThrows(SwProcessException.class, () -> service.pullSrcTar("src.tar", srcPath1, response));
-        verify(storageAccessService, times(1)).list(srcPath1);
-        verify(storageAccessService, times(0)).get(any());
+        var srcPath1 = "path1";
+        given(storageAccessService.get(srcPath1 + "/" + fileName))
+                .willReturn(new LengthAbleInputStream(new ByteArrayInputStream(new byte[]{}), 0));
+        service.pullSrcTar(fileName, srcPath1, response);
+        verify(storageAccessService, times(1)).get(any());
+        verify(storageAccessService, times(0)).list(any());
+
+        assertThat("response head", response.containsHeader(HttpHeaders.CONTENT_DISPOSITION));
+        assertThat("response head file name",
+                response.getHeader(HttpHeaders.CONTENT_DISPOSITION),
+                is("attachment; filename=\"" + fileName + "\"")
+        );
+
+    }
+
+    @Test
+    public void testPullSrcTarFromRecompress() throws IOException {
+        HttpServletResponse response = new MockHttpServletResponse();
+        String fileName = "src.tar";
+
+        // case1: oss error test
+        var srcPath1 = "path1";
+        given(storageAccessService.get(srcPath1 + "/" + fileName)).willThrow(IOException.class);
+        given(storageAccessService.list(srcPath1 + "/src")).willThrow(IOException.class);
+        assertThrows(SwProcessException.class, () -> service.pullSrcTar(fileName, srcPath1, response));
+        verify(storageAccessService, times(1)).list(srcPath1 + "/src");
+        verify(storageAccessService, times(1)).get(srcPath1 + "/" + fileName);
 
         // case2: empty files test
-        var srcPath = "path/src";
-        given(storageAccessService.list(srcPath)).willReturn(Stream.of());
-        assertThrows(SwValidationException.class, () -> service.pullSrcTar("src.tar", srcPath, response));
-        verify(storageAccessService, times(1)).list(srcPath);
-        verify(storageAccessService, times(0)).get(any());
+        var srcPath2 = "path";
+        given(storageAccessService.get(srcPath2 + "/" + fileName)).willThrow(IOException.class);
+        given(storageAccessService.list(srcPath2 + "/src")).willReturn(Stream.of());
+        assertThrows(SwValidationException.class, () -> service.pullSrcTar(fileName, srcPath2, response));
+        verify(storageAccessService, times(1)).list(srcPath2 + "/src");
+        verify(storageAccessService, times(1)).get(srcPath2 + "/" + fileName);
 
         // case3 : full workflow test
         try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
             // case 1: download file
-            given(storageAccessService.list(srcPath)).willReturn(Stream.of("path1/src/file1", "path1/src/file2"));
+            given(storageAccessService.list(srcPath2 + "/src"))
+                    .willReturn(Stream.of("path/src/file1", "path/src/file2"));
 
-            service.pullSrcTar("src.tar", srcPath, response);
+            service.pullSrcTar(fileName, srcPath2, response);
 
             tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
-            verify(storageAccessService, times(2)).list(srcPath);
         }
     }
 
@@ -637,6 +672,7 @@ public class ModelServiceTest {
         // case 5: pull src as tar
         var responseForNormal = new MockHttpServletResponse();
         try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
+            given(storageAccessService.get("path1/src.tar")).willThrow(IOException.class);
             given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/a.py", "path1/src/b.py"));
             manifestInputStream.reset();
             service.pull(

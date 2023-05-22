@@ -31,8 +31,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ModelVersionEntity extends BaseEntity implements BundleVersionEntity {
 
-    public static final Integer STATUS_AVAILABLE = 1;
-    public static final Integer STATUS_UN_AVAILABLE = 0;
+    public static final int STATUS_AVAILABLE = 1;
+    public static final int STATUS_UN_AVAILABLE = 0;
 
     private Long id;
 
