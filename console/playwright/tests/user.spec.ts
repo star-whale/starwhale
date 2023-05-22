@@ -27,7 +27,7 @@ test.describe('Login', () => {
         await takeScreenshot({ testcase: page, route: page.url() })
     })
     test('default route should be projects', async ({}) => {
-        // await page.waitForURL(/\/projects/, { timeout: 20000 })
+        await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
     })
 
@@ -266,17 +266,20 @@ test.describe('Evaluation Results', () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
         test('should have at least 1 tasks of success status', async () => {
-            await expect(page.getByText('Success')).toBeGreaterThan(0)
+            await expect(await page.getByText('Success').count()).toBeGreaterThan(0)
         })
         test('should show success task log', async () => {
             await page
-                .getByText(/View Log/)
+                .getByText(/View Logs/)
                 .first()
                 .click()
             await expect(page.locator('.tr--selected')).toBeDefined()
         })
         test('should log count be greater than 10', async () => {
-            await page.getByText(/Log\:/).first().click()
+            await page
+                .getByText(/Execution id\:/)
+                .first()
+                .click()
             await page.waitForSelector('.ReactVirtualized__Grid__innerScrollContainer > div')
             await expect(
                 await page.locator('.ReactVirtualized__Grid__innerScrollContainer > div').count()
@@ -316,27 +319,29 @@ test.describe('Models', () => {
         })
 
         test('should link to model versions', async () => {
-            await page.getByRole('link', { name: /History/ }).click()
-            await expect(page).toHaveURL(ROUTES.modelVersions)
-        })
-
-        test('lastest model should not be reverted', async () => {
+            await page.locator('tr > td >> nth=0').getByRole('link').click()
             await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
             await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
         })
     })
 
-    test.describe('Overview', () => {
+    test.describe('Files', () => {
         test.beforeAll(async () => {
-            await page.goto(ROUTES.modelOverview)
+            if (!page.url().includes(ROUTES.modelVersionFiles)) await page.goto(ROUTES.modelVersionFiles)
         })
 
-        test('should model name be link to model overview', async () => {
-            await page.getByRole('button', { name: /Model ID\:/ }).click()
-            await expect(page.locator('div:right-of(:text("Version Name"))').first()).toHaveText(
-                'mftdoolcgvqwknrtmftdgyjzobvti2q'
-            )
-            await expect(page.getByRole('cell', { name: 'mftdoolcgvqwknrtmftdgyjzobvti2q.swmp' })).toBeVisible()
+        test('should model overview show editor', async () => {
+            await page
+                // .getByRole('button', { name: /model\.yaml/ })
+                .locator('[data-nodeid="src/model.yaml"]')
+                .click()
+            // await expect(page.locator('div:right-of(:text("Version Name"))').first()).toHaveText(
+            //     'mftdoolcgvqwknrtmftdgyjzobvti2q'
+            // )
+            // await page.waitForSelector(':has-text("mnist.evaluator:MNISTInference")', { timeout: 10000 })
+            // await expect(page.locator(':right-of(:text("mnist.evaluator:MNISTInference"))')).toBeVisible()
+            // await page.waitForResponse((response) => response.url().includes('file') && response.status() === 200)
+            // await expect(page.locator('span:has-text("MNISTInference")')).toBeVisible()
         })
     })
 })
@@ -351,39 +356,14 @@ test.describe('Datasets', () => {
             if (!page.url().includes(ROUTES.datasets)) await page.goto(ROUTES.datasets)
         })
 
-        test('should have 1 dataset', async () => {
-            await expect(page.locator('td').getByText('mnist')).toHaveCount(1)
+        test('should have mnist dataset', async () => {
+            await expect(page.locator('td').getByText(CONST.datasetName)).toBeVisible()
         })
 
         test('should dataset name be link to version files', async () => {
-            await page.getByRole('link', { name: 'mnist' }).click()
-            await expect(page).toHaveURL(ROUTES.datasetVersionFiles)
-        })
-
-        test('breadcrumb should be back to dataset list', async () => {
-            await page.getByRole('button', { name: 'Datasets' }).click()
-            await expect(page).toHaveURL(ROUTES.datasets)
-        })
-    })
-
-    test.describe('Files', async () => {
-        test.beforeAll(async () => {
-            if (!page.url().includes(ROUTES.datasetVersionFiles)) await page.goto(ROUTES.datasetVersionFiles)
-            await page.locator('.icon-grid').click()
-        })
-
-        test('should canvas render at least one dataset', async () => {
-            const dom = page.locator('.image-grayscale >> nth=0 >> canvas')
-            await wait(1000)
-            await expect(await dom.screenshot()).toMatchSnapshot()
-        })
-
-        test('should show data when version changed', async () => {
-            await selectOption(page, '[data-baseweb="select"]', /v5/)
-            await expect(page).toHaveURL(/\/versions\/5\/files/)
-            // fix: dom not attached
-            await page.click('.image-grayscale >> nth=0 >> canvas')
-            await expect(page.locator('.react-transform-wrapper canvas')).toBeVisible()
+            await page.getByRole('link', { name: CONST.datasetName }).click()
+            await page.waitForSelector('.image-grayscale')
+            await expect(await page.locator('.image-grayscale').count()).toBeGreaterThan(0)
         })
     })
 

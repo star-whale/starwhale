@@ -12,7 +12,7 @@ const proxy = process.env.PROXY ?? ''
  */
 require('dotenv').config()
 fse.ensureDir('test-storage')
-fse.emptyDirSync('test-video')
+// fse.emptyDirSync('test-video')
 if (process.env.CLEAN_AUTH === 'true') fse.emptyDirSync('test-storage')
 else fse.ensureDir('test-storage')
 
@@ -53,7 +53,7 @@ const config: PlaywrightTestConfig = {
 
         video: {
             mode: 'on-first-retry',
-            size: { width: 640, height: 480 },
+            size: { width: 1024, height: 760 },
         },
     },
 

@@ -41,7 +41,7 @@ function SelectorPopover({
                         backgroundColor: '#FFF',
                         minHeight: '200px',
                         minWidth: '410px',
-                        maxHeight: '600px',
+                        maxHeight: '400px',
                         overflow: 'auto',
                     },
                 },

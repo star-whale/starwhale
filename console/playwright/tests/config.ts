@@ -20,6 +20,7 @@ export const CONST = {
     projectId: '1',
     newUserName: 'lwz1',
     newUserPassword: 'abcd1234',
+    datasetName: 'mnist_bin',
 }
 export const ROUTES = {
     evaluations: `/projects/${CONST.projectId}/evaluations`,
@@ -29,11 +30,11 @@ export const ROUTES = {
     evaluationNewJob: `/projects/${CONST.projectId}/new_job`,
     models: `/projects/${CONST.projectId}/models`,
     modelOverview: `/projects/${CONST.projectId}/models/1`,
-    modelVersions: `/projects/${CONST.projectId}/models/1/versions`,
+    modelVersionFiles: `/projects/${CONST.projectId}/models/1/versions/1/files`,
     datasets: `/projects/${CONST.projectId}/datasets`,
     datasetOverview: `/projects/${CONST.projectId}/datasets/1`,
     datasetVersions: `/projects/${CONST.projectId}/datasets/1/versions`,
-    datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/6/files`,
+    datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/10/files`,
     adminUsers: `/admin/users`,
     adminSettings: `/admin/settings`,
 }
