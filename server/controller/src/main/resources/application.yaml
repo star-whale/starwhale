@@ -18,6 +18,7 @@ sw:
   docker:
     registry: ${SW_DOCKER_REGISTRY_URL:}
   runtime:
+    image-for-build: ${SW_IMAGE_FOR_BUILD:gcr.io/kaniko-project/executor:latest}
     pypi:
       index-url: ${SW_PYPI_INDEX_URL:}
       extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:}
