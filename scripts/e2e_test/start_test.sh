@@ -229,8 +229,7 @@ client_test() {
   if ! in_github_action; then
     unset http_proxy
     unset https_proxy
-    # bash scripts/client_test/cli_test.sh all
-    bash scripts/client_test/cli_test.sh mnist
+    bash scripts/client_test/cli_test.sh all
   else
     timeout 15m bash scripts/client_test/cli_test.sh simple || exit 1
   fi
