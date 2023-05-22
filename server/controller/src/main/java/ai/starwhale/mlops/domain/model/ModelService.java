@@ -747,10 +747,9 @@ public class ModelService {
     }
 
     public void pullSrcTar(String name, String storagePath, HttpServletResponse httpResponse) {
-        var srcPath = String.format(FORMATTER_STORAGE_PATH, storagePath, name);
         pullFile(name, () -> {
             try {
-                return storageAccessService.get(srcPath);
+                return storageAccessService.get(String.format(FORMATTER_STORAGE_PATH, storagePath, name));
             } catch (IOException e) {
                 log.error("pull original src tar failed, try to reCompress from files");
                 reCompressToTar(name, storagePath, httpResponse);
