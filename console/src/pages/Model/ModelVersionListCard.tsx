@@ -63,19 +63,6 @@ export default function ModelVersionListCard() {
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
                             <>
-                                {i ? (
-                                    <WithCurrentAuth id='model.version.revert'>
-                                        <Button
-                                            kind='tertiary'
-                                            size='mini'
-                                            key={model.id}
-                                            onClick={() => handleAction(model.id)}
-                                        >
-                                            {t('Revert')}
-                                        </Button>
-                                    </WithCurrentAuth>
-                                ) : null}
-                                &nbsp;&nbsp;
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
@@ -88,6 +75,14 @@ export default function ModelVersionListCard() {
                                 >
                                     {t('online eval')}
                                 </Button>
+                                &nbsp;&nbsp;
+                                {i ? (
+                                    <WithCurrentAuth id='model.version.revert'>
+                                        <Button kind='tertiary' key={model.id} onClick={() => handleAction(model.id)}>
+                                            {t('Revert')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                ) : null}
                             </>,
                         ]
                     }) ?? []

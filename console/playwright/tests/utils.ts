@@ -11,7 +11,7 @@ export async function selectOption(page: Page, selector: string, text: string | 
 }
 
 export async function getTableDisplayRow(page: Locator | Page) {
-    return await page.locator('.table-inner >> nth=0 >> .table-row').count()
+    return await page.locator('.table-inner >> .table-cell').count()
 }
 
 export async function getLastestRowID(page: Locator | Page) {
@@ -29,11 +29,11 @@ export async function wait(ms: number) {
     })
 }
 
-export async function takeScreenshot({ testcase, route }) {
+export async function takeScreenshot({ testcase, route }: any) {
     const url = new URL(route)
     const screenshotPath = path.resolve(CONFIG.screenshotDir, `./${(url.pathname as any).replaceAll('/', '-')}.png`)
     await fse.ensureDir(path.dirname(screenshotPath))
     // const explicitScreenshotTarget = await page.$('[data-testid="screenshot-target"]');
     const screenshotTarget = testcase
-    await screenshotTarget.screenshot({ path: screenshotPath, type: 'png', fullPage: true })
+    await screenshotTarget.screenshot({ path: screenshotPath, type: 'jpg', fullPage: true })
 }

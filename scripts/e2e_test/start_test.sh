@@ -248,6 +248,13 @@ api_test() {
   fi
 }
 
+console_test() {
+  pushd ../../console/playwright
+  yarn install
+  PROXY=$CONTROLLER_URL yarn test
+  popd
+}
+
 restore_env() {
   docker image rm starwhale
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
@@ -305,6 +312,8 @@ main() {
   client_test
   api_test
   kubectl scale deployment controller -n $SWNS --replicas=0
+
+  # console_test
 
 }
 

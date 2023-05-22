@@ -99,7 +99,7 @@ export function getQuery({ options, tableName }: TableQueryParamsT) {
         start,
         limit,
         rawResult: true,
-        ignoreNonExistingTable: false,
+        ignoreNonExistingTable: true,
         encodeWithType: true,
     }
     if (revision) {
@@ -124,6 +124,7 @@ export function getScanQuery(tables: ScanTableRequest['tables'], options: Datast
         limit,
         rawResult: true,
         encodeWithType: true,
+        ignoreNonExistingTable: true,
     }
 
     return recordQuery as any

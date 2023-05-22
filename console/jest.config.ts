@@ -167,7 +167,7 @@ export default {
     testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
 
     // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-    testPathIgnorePatterns: ['/node_modules/', '/playwright/', '/stories/'],
+    testPathIgnorePatterns: ['/node_modules/', '/stories/', '/playwright/'],
 
     // The regexp pattern or array of patterns that Jest uses to detect test files
     // testRegex: '^.+\\.test\\.(ts|tsx)$',

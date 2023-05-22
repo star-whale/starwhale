@@ -12,9 +12,9 @@ export class AdminPage {
         this.page = page
     }
 
-    static async create(browser: Browser) {
+    static async create(browser: Browser, role: string) {
         const context = await browser.newContext({
-            storageState: 'test-storage/storage-admin.json',
+            storageState: `test-storage/storage-${role}.json`,
             recordVideo: {
                 dir: 'test-video/',
             },
@@ -34,9 +34,9 @@ export class UserPage {
         this.page = page
     }
 
-    static async create(browser: Browser) {
+    static async create(browser: Browser, role: string) {
         const context = await browser.newContext({
-            storageState: 'test-storage/storage-maintainer.json',
+            storageState: `test-storage/storage-${role}.json`,
             recordVideo: {
                 dir: 'test-video/',
             },

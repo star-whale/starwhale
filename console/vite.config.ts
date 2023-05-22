@@ -3,10 +3,13 @@ import path from 'path'
 import react from '@vitejs/plugin-react'
 import inspect from 'vite-plugin-inspect'
 import router from './vite-plugin-react-routes'
+import { readFileSync } from 'fs'
 
 // import eslint from 'vite-plugin-eslint'
 // import mpa from '../../vite-plugin-mpa'
 // import { visualizer } from 'rollup-plugin-visualizer'
+const { execSync } = require('child_process')
+const commitNumber = execSync('git rev-parse HEAD').toString().trim()
 
 export const alias = {
     // @FIXME
@@ -54,6 +57,11 @@ let extendProxies = {}
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    define: {
+        'process.env': {
+            GIT_COMMIT_HASH: JSON.stringify(commitNumber),
+        },
+    },
     server: {
         proxy: {
             ...extendProxies,

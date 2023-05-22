@@ -3,11 +3,11 @@ export const CONFIG = {
 }
 export const USERS = [
     { role: 'admin', username: 'starwhale', password: 'abcd1234' },
-    { role: 'maintainer', username: 'lwzlwz', password: 'abcd1234' },
+    { role: 'maintainer', username: 'lwz1', password: 'abcd1234' },
 ]
 export const CONST = {
     user: {
-        userName: 'lwzlwz',
+        userName: 'lwz1',
         projectName: 'e2e',
         projectDescription: 'testing',
     },
@@ -17,9 +17,10 @@ export const CONST = {
         projectDescription: 'testing',
     },
     adminSettings: 'Admin Settings',
-    projectId: '3',
+    projectId: '1',
     newUserName: 'lwz1',
     newUserPassword: 'abcd1234',
+    datasetName: 'mnist_bin',
 }
 export const ROUTES = {
     evaluations: `/projects/${CONST.projectId}/evaluations`,
@@ -29,11 +30,11 @@ export const ROUTES = {
     evaluationNewJob: `/projects/${CONST.projectId}/new_job`,
     models: `/projects/${CONST.projectId}/models`,
     modelOverview: `/projects/${CONST.projectId}/models/1`,
-    modelVersions: `/projects/${CONST.projectId}/models/1/versions`,
+    modelVersionFiles: `/projects/${CONST.projectId}/models/1/versions/1/files`,
     datasets: `/projects/${CONST.projectId}/datasets`,
     datasetOverview: `/projects/${CONST.projectId}/datasets/1`,
     datasetVersions: `/projects/${CONST.projectId}/datasets/1/versions`,
-    datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/6/files`,
+    datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/10/files`,
     adminUsers: `/admin/users`,
     adminSettings: `/admin/settings`,
 }
@@ -41,16 +42,16 @@ export const SELECTOR = {
     loginName: 'input[type="text"]',
     loginPassword: 'input[type="password"]',
     // --- homepage ----
-    userWrapper: '[class^=userNameWrapper]',
-    userAvtarName: '[class^=userAvatarName]',
-    authAdminSetting: '[class^=userMenuItems] >> :has-text("Admin Settings")',
+    userWrapper: '[class*=userNameWrapper]',
+    userAvtarName: '[class*=userAvatarName]',
+    authAdminSetting: '[class*=userMenuItems] >> :has-text("Admin Settings")',
     projectCreate: 'button:has-text("Create")',
     // --- project form ---
-    projectForm: 'form[class^=project]',
-    projectName: 'form[class^=project] >> input[type="text"]',
-    projectPrivacy: 'form[class^=project] >> label:has-text("Private")',
-    projectDescription: 'form[class^=project] >> textarea[type="textarea"]',
-    projectSubmit: 'form[class^=project] >> button:has-text("Submit")',
+    projectForm: 'form[class*=project]',
+    projectName: 'form[class*=project] >> input[type="text"]',
+    projectPrivacy: 'form[class*=project] >> label:has-text("Private")',
+    projectDescription: 'form[class*=project] >> textarea[type="textarea"]',
+    projectSubmit: 'form[class*=project] >> button:has-text("Submit")',
     projectClose: 'role=button[name="Close"]',
     // --- project list ---
     projectCard: '[class*=projectCard]',
@@ -58,7 +59,8 @@ export const SELECTOR = {
     projectCardActions: '[class^=actions]',
     projectCardActionDelete: '[class^=actions] >> [class^=delete]',
     projectCardActionEdit: '[class^=actions] >> [class^=edit]',
-    projectCardDeleteConfirm: 'role=button[name="Continue"]',
+    projectCardDeleteConfirm: 'role=button[name="Confirm"]',
+    projectModelInput: 'role=dialog >> input[type="text"]',
     // --- table ---
     // table: '[class^=table]',
     table: '[class*=tablePinnable]',
@@ -71,11 +73,12 @@ export const SELECTOR = {
     listCreate: '[class*=cardHeadWrapper] >> :has-text("Create")',
     // --- evaluation result ----
     confusionMatrix: '[class*=card]:has(:has-text("Confusion Matrix")) >> .plotly',
+    panels: '[class*=panelWrapper]',
     // --- form ---
     formItem: (text: string) => `[class*=formItem]:has(:has-text("${text}")) > div`,
     // --- user form ---
     userForm: 'form[class*=user]',
-    userSubmit: 'form[class^=user] >> button:has-text("Submit")',
+    userSubmit: 'form[class*=user] >> button:has-text("Submit")',
     userClose: 'role=button[name="Close"]',
-    userDisableConfirm: 'role=button[name="Continue"]',
+    userDisableConfirm: 'role=button[name="Yes"]',
 }

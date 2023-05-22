@@ -235,7 +235,9 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                                                     {data?.type} {content?.status}
                                                                 </div>
                                                                 {conf.icon ?? ''}
-                                                                <div className='flow-content'>{sectionContent}</div>
+                                                                <div className='flow-content' title={sectionContent}>
+                                                                    {sectionContent}
+                                                                </div>
                                                                 <div className='flow-time'>{sectionTime}</div>
                                                             </div>
                                                         </Link>
