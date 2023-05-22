@@ -343,7 +343,7 @@ public interface ModelApi {
     @GetMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/file",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     void pull(
             @RequestParam(name = "desc", required = false) FileDesc fileDesc,
             @RequestParam(name = "partName", required = false) String name,
