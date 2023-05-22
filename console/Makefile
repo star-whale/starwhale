@@ -5,7 +5,6 @@ ut:
 
 install-dev-tools:
 	npm install -g yarn pnpm@latest
-	npm install -g yarn pnpm@latest
 
 install-dependencies:
 	yarn
