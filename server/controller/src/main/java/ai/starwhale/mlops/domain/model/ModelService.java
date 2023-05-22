@@ -622,7 +622,7 @@ public class ModelService {
             // upload src.tar to oss
             storageAccessService.put(
                     String.format(FORMATTER_STORAGE_PATH, storagePath, multipartFile.getOriginalFilename()),
-                    inputStream,
+                    multipartFile.getInputStream(),
                     multipartFile.getSize()
             );
         } catch (IOException | ArchiveException e) {
