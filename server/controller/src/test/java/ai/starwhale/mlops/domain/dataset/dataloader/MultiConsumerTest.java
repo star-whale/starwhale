@@ -90,10 +90,14 @@ public class MultiConsumerTest extends MySqlContainerHolder {
             Arguments.of(2, true, 1),
             Arguments.of(6, true, 1),
             Arguments.of(10, true, 1),
-            Arguments.of(0, true, 2),
-            Arguments.of(2, true, 2),
-            Arguments.of(6, true, 2),
-            Arguments.of(10, true, 2)
+            Arguments.of(0, false, 2),
+            Arguments.of(2, false, 2),
+            Arguments.of(6, false, 2),
+            Arguments.of(10, false, 2),
+            Arguments.of(0, true, 3),
+            Arguments.of(2, true, 3),
+            Arguments.of(6, true, 3),
+            Arguments.of(10, true, 3)
         );
     }
 
@@ -205,7 +209,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         verify(dataRangeProvider, times(datasetNum)).returnDataIndex(any());
 
         var datasetSize = (totalRangesNum - 1) * batchSize + 8;
-        assertEquals(datasetSize * datasetNum, count.get());
+        // Message Delivery Semantics: At least once
+        assertTrue(datasetSize * datasetNum <= count.get());
 
         var processedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.PROCESSED.name());
         var unprocessedData = dataReadLogMapper.selectByStatus(sessionId, Status.DataStatus.UNPROCESSED.name());
@@ -213,7 +218,8 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
         assertEquals(totalRangesNum * datasetNum, processedData.size());
         assertEquals(0, unprocessedData.size());
-        assertEquals((totalRangesNum) * datasetNum + errorNumPerConsumer * consumerNum, totalProcessedNum);
+        // Message Delivery Semantics: At least once
+        assertTrue((totalRangesNum) * datasetNum + errorNumPerConsumer * consumerNum <= totalProcessedNum);
 
         executor.shutdownNow();
     }

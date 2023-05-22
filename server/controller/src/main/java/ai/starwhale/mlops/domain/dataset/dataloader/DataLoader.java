@@ -31,8 +31,7 @@ public class DataLoader {
         var consumerId = request.getConsumerId();
         var session = dataReadManager.getOrGenerateSession(request);
 
-        dataReadManager.handleConsumerData(consumerId,
-                request.isSerial(), request.getProcessedData(), session);
+        dataReadManager.handleConsumerData(consumerId, request.isSerial(), request.getProcessedData(), session);
 
         return dataReadManager.assignmentData(consumerId, session);
     }

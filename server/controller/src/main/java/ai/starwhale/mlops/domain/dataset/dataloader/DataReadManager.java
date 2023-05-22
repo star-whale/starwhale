@@ -111,6 +111,14 @@ public class DataReadManager {
 
     }
 
+    /**
+     * Assign data for consumer
+     * Message Delivery Semantics: At least once
+     *
+     * @param consumerId consumer
+     * @param session session
+     * @return data
+     */
     @Transactional(propagation = REQUIRES_NEW)
     DataReadLog assignmentData(String consumerId, Session session) {
         var sid = session.getId();
@@ -128,10 +136,14 @@ public class DataReadManager {
             if (Objects.isNull(dataRange)) {
                 // find timeout data to consume
                 var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
-                dataRange = dataReadLogDao.selectTop1TimeoutData(
+                dataRange = maxProcessedTime == null ?  null : dataReadLogDao.selectTop1TimeoutData(
                     sid, maxProcessedTime * timeoutTolerance);
             }
 
+            if (Objects.isNull(dataRange)) {
+                // find unprocessed data to consume(only lead to repeat consume, but it doesn't matter)
+                dataRange = dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
+            }
             if (Objects.nonNull(dataRange)) {
                 dataRange.setConsumerId(consumerId);
                 dataReadLogDao.updateToAssigned(dataRange);
@@ -152,8 +164,7 @@ public class DataReadManager {
             // update processed data
             if (CollectionUtils.isNotEmpty(processedData)) {
                 for (DataIndexDesc indexDesc : processedData) {
-                    dataReadLogDao.updateToProcessed(
-                            sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+                    dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
                 }
             }
             // Whether to process serially under the same consumer,
