@@ -1,5 +1,5 @@
 import React from 'react'
-import { useStore } from './useStore'
+import { useStore, useStoreApi } from './useStore'
 import { ConfigQuery, ConfigQueryInline } from '../components/Query'
 import shallow from 'zustand/shallow'
 import { IGridState } from '../types'
@@ -12,17 +12,18 @@ import useTranslation from '@/hooks/useTranslation'
 const selector = (state: IGridState) => ({
     queries: state.currentView?.queries ?? [],
     onCurrentViewQueriesChange: state.onCurrentViewQueriesChange ?? [],
-    columnTypes: state.columnTypes,
 })
 
 function useGridQuery() {
-    const { queries, onCurrentViewQueriesChange: onChange, columnTypes } = useStore(selector, shallow)
+    const { queries, onCurrentViewQueriesChange: onChange } = useStore(selector, shallow)
+    const { columnTypes } = useStoreApi().getState()
     const { originalColumns } = useGirdData()
     const [isSimpleQuery, setIsSimpleQuery] = React.useState(true)
     const [t] = useTranslation()
 
     const sortedColumnTypes = React.useMemo(() => {
-        return columnTypes?.sort(sortColumn)
+        // @FIXME why columnTypes is frozen?
+        return [...(columnTypes ?? [])]?.sort(sortColumn)
     }, [columnTypes])
 
     const hasFilter = React.useMemo(() => {

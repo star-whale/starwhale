@@ -14,13 +14,19 @@ type PropsT = {
 }
 
 function ConfigQuery(props: PropsT) {
-    return (
-        <DatastoreMixedTypeSearch
-            fields={props.columnTypes?.sort(sortColumn) as any}
-            value={props.value}
-            onChange={props.onChange}
-        />
-    )
+    const fields = React.useMemo(() => {
+        // @FIXME why columnTypes is frozen?
+        return (props.columnTypes ?? [])
+            .map((column) => {
+                return {
+                    name: column.name,
+                    type: column.type,
+                }
+            })
+            .sort(sortColumn as any)
+    }, [props.columnTypes])
+
+    return <DatastoreMixedTypeSearch fields={fields as any} value={props.value} onChange={props.onChange} />
 }
 
 function ConfigQueryInline(props: PropsT & { width: number }) {
