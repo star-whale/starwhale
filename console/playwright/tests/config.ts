@@ -73,6 +73,7 @@ export const SELECTOR = {
     listCreate: '[class*=cardHeadWrapper] >> :has-text("Create")',
     // --- evaluation result ----
     confusionMatrix: '[class*=card]:has(:has-text("Confusion Matrix")) >> .plotly',
+    panels: '[class*=panelWrapper]',
     // --- form ---
     formItem: (text: string) => `[class*=formItem]:has(:has-text("${text}")) > div`,
     // --- user form ---

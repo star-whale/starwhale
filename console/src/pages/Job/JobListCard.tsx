@@ -16,6 +16,7 @@ import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button from '@starwhale/ui/Button'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -47,14 +48,16 @@ export default function JobListCard() {
             <Card
                 title={t('Jobs')}
                 extra={
-                    <Button
-                        onClick={() => {
-                            history.push('new_job')
-                        }}
-                        isLoading={jobsInfo.isLoading}
-                    >
-                        {t('create')}
-                    </Button>
+                    <WithCurrentAuth id='evaluation.create'>
+                        <Button
+                            onClick={() => {
+                                history.push('new_job')
+                            }}
+                            isLoading={jobsInfo.isLoading}
+                        >
+                            {t('create')}
+                        </Button>
+                    </WithCurrentAuth>
                 }
             >
                 <Table

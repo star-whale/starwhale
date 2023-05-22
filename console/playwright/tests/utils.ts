@@ -35,5 +35,5 @@ export async function takeScreenshot({ testcase, route }: any) {
     await fse.ensureDir(path.dirname(screenshotPath))
     // const explicitScreenshotTarget = await page.$('[data-testid="screenshot-target"]');
     const screenshotTarget = testcase
-    await screenshotTarget.screenshot({ path: screenshotPath, type: 'png', fullPage: true })
+    await screenshotTarget.screenshot({ path: screenshotPath, type: 'jpg', fullPage: true })
 }

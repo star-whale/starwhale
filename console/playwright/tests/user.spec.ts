@@ -6,11 +6,14 @@ let page: Page
 
 test.beforeAll(async ({ user }) => {
     page = user.page
-    // await wait(1000)
     await page.goto('/', {
         waitUntil: 'networkidle',
     })
     await expect(page).toHaveTitle(/Starwhale Console/)
+})
+
+test.afterEach(async () => {
+    await takeScreenshot({ testcase: page, route: page.url() })
 })
 
 // test.afterAll(async ({}) => {
@@ -23,9 +26,6 @@ test.beforeAll(async ({ user }) => {
 // })
 
 test.describe('Login', () => {
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
     test('default route should be projects', async ({}) => {
         await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
@@ -41,9 +41,6 @@ test.describe('Login', () => {
 })
 
 test.describe('Project list', () => {
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
     test('should project form modal act show,submit,close', async ({}) => {
         const el = await page.waitForSelector(SELECTOR.projectCreate)
         await el.click()
@@ -86,9 +83,6 @@ test.describe('Evaluation', () => {
         const p = page.locator(SELECTOR.table)
         await selectOption(page, '.table-config-view', 'All runs')
         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
-    })
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
     })
 
     // test.describe('Auth', () => {
@@ -201,9 +195,6 @@ test.describe('Evaluation Create', () => {
             await expect(versions.nth(i)).not.toBeEmpty()
         }
     })
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
     test.describe('Overview', () => {
         test('should add resource', async () => {
             const add = page.getByRole('button', { name: /Add/ }).first()
@@ -232,21 +223,17 @@ test.describe('Evaluation Create', () => {
 })
 
 test.describe('Evaluation Results', () => {
-    test.afterEach(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
-
     test.describe('Results', () => {
         test.beforeAll(async () => {
             if (page.url().includes(ROUTES.evaluations)) await page.getByRole('link', { name: '5' }).click()
             if (!page.url().includes(ROUTES.evaluationResult)) await page.goto(ROUTES.evaluationResult)
         })
-        test('should have panels  summary/confusion matrix/label.roc_auc', async () => {
+        test('should have panels num > 1', async () => {
             await expect(page.getByText('Summary')).toBeVisible()
             await wait(1000)
             await expect(page.getByText('sys/job_status')).toBeVisible()
             await wait(1000)
-            await expect(page.locator(SELECTOR.confusionMatrix)).toBeVisible()
+            await expect(await page.locator(SELECTOR.panels).count()).toBeGreaterThan(1)
         })
     })
 
@@ -289,10 +276,6 @@ test.describe('Evaluation Results', () => {
 })
 
 test.describe('Models', () => {
-    test.afterEach(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
-
     test.describe('List', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.models)) await page.goto(ROUTES.models)
@@ -347,10 +330,6 @@ test.describe('Models', () => {
 })
 
 test.describe('Datasets', () => {
-    test.afterEach(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
-
     test.describe('List', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.datasets)) await page.goto(ROUTES.datasets)

@@ -43,18 +43,25 @@ const config: PlaywrightTestConfig = {
     reporter: 'html',
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
+        viewport: { width: 1280, height: 720 },
+
         /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
         actionTimeout: 0,
         /* Base URL to use in actions like `await page.goto('/')`. */
         baseURL: process.env.PROXY ?? 'http://localhost:5177',
 
+        acceptDownloads: true,
+
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
 
         video: {
-            mode: 'on-first-retry',
+            mode: 'on',
             size: { width: 1024, height: 760 },
         },
+
+        // screenshot: { mode: 'only-on-failure', fullPage: true },
+        screenshot: { mode: 'on', fullPage: true },
     },
 
     /* Configure projects for major browsers */
