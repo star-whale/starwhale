@@ -1,0 +1,11 @@
+*/.git/*
+*.pdf
+*.png
+BELLE/data/*
+BELLE/docs/*
+BELLE/chat/*
+BELLE/assets/*
+BELLE/train/dschat_train_v1/*
+BELLE/models/gptq/dist/*
+BELLE/models/gptq/build/*
+BELLE/models/gptq/quant_cuda.egg-info/*

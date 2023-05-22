@@ -1,0 +1,42 @@
+name: belle
+mode: conda
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: 3.9
+configs:
+  conda:
+    channels:
+      - conda-forge
+      - nvidia/label/cuda-11.7.1
+dependencies:
+  - conda:
+      # conda dependencies according to the following requirements:
+      # - https://github.com/LianjiaTech/BELLE/blob/main/models/gptq/README.md
+      - cuda-toolkit=11.7.1
+  - pip:
+      # pip dependencies according to the following requirements:
+      # - https://github.com/LianjiaTech/BELLE/blob/main/train/requirements.txt
+      # - https://github.com/LianjiaTech/BELLE/blob/main/models/gptq/requirements.txt
+      - torch==2.0.1
+      - transformers==4.28.1
+      - huggingface_hub==0.13.1
+      - datasets==2.10.1
+      - numpy
+      - sentencepiece
+      - chardet
+      - cchardet
+      - accelerate==0.17.1
+      - bitsandbytes==0.37.1
+      - fire==0.5.0
+      - tqdm==4.65.0
+      - deepspeed==0.9.0
+      - safetensors==0.3.0
+      # external starwhale dependencies
+      - starwhale >= 0.4.5
+  - wheels:
+      # quant_cuda is built from https://github.com/LianjiaTech/BELLE/blob/main/models/gptq/setup_cuda.py @ cf191f9d178326782e01dceacd8357d507b9aab8
+      # because of the quant_cuda does not use setup.py script, so we cannot install it from git+https url.
+      # wheel build command(in the models/gptq dir): python setup_cuda.py bdist_wheel
+      - quant_cuda-0.0.0-cp39-cp39-linux_x86_64.whl
