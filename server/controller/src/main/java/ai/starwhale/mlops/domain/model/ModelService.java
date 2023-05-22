@@ -113,7 +113,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class ModelService {
 
     static final String MODEL_MANIFEST = "_manifest.yaml";
-    static final String SRC_TAR = "src.tar";
 
     private final ModelMapper modelMapper;
     private final ModelVersionMapper modelVersionMapper;
