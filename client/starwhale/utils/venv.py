@@ -391,7 +391,7 @@ def conda_setup(
     if not name and not prefix:
         raise ParameterError("conda setup must set name or prefix")
 
-    cmd = [get_conda_bin(), "create", "--yes"]
+    cmd = [get_conda_bin(), "create", "--yes", "--quiet"]
     if name:
         cmd += ["--name", name]
 
@@ -471,6 +471,8 @@ def conda_env_update(
         get_conda_bin(),
         "env",
         "update",
+        "--verbose",
+        "--quiet",
         "--file",
         str(env_fpath),
         "--prefix",
