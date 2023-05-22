@@ -29,8 +29,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DatasetVersion {
 
-    public static final Integer STATUS_AVAILABLE = 1;
-    public static final Integer STATUS_UN_AVAILABLE = 0;
+    public static final int STATUS_AVAILABLE = 1;
+    public static final int STATUS_UN_AVAILABLE = 0;
     private Long id;
     private Long datasetId;
     private Long versionOrder;
@@ -61,6 +61,7 @@ public class DatasetVersion {
                 .filesUploaded(versionEntity.getFilesUploaded())
                 .storagePath(versionEntity.getStoragePath())
                 .size(versionEntity.getSize())
+                .status(versionEntity.getStatus())
                 .indexTable(versionEntity.getIndexTable())
                 .build();
     }

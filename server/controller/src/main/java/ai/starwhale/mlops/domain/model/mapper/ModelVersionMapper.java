@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.model.mapper;
 
+import static ai.starwhale.mlops.domain.model.po.ModelVersionEntity.STATUS_AVAILABLE;
+
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
@@ -64,6 +66,7 @@ public interface ModelVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
+            + " and v.status = " + STATUS_AVAILABLE
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and m.is_deleted = 0"
@@ -75,6 +78,7 @@ public interface ModelVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
+            + " and v.status = " + STATUS_AVAILABLE
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and p.is_deleted = 0"
@@ -136,6 +140,7 @@ public interface ModelVersionMapper {
                     if (StrUtil.isNotEmpty(tag)) {
                         WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
+                    WHERE("status = " + STATUS_AVAILABLE);
                     ORDER_BY("version_order desc");
                 }
             }.toString();

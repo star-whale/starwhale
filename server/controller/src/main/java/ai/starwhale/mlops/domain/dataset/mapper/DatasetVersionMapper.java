@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.mapper;
 
+import static ai.starwhale.mlops.domain.dataset.bo.DatasetVersion.STATUS_AVAILABLE;
+
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
@@ -111,6 +113,7 @@ public interface DatasetVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from dataset_version as v, dataset_info as b, project_info as p, user_info as u"
             + " where v.dataset_id = b.id"
+            + " and v.status = " + STATUS_AVAILABLE
             + " and b.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and b.is_deleted = 0"
@@ -122,6 +125,7 @@ public interface DatasetVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from dataset_version as v, dataset_info as b, project_info as p, user_info as u"
             + " where v.dataset_id = b.id"
+            + " and v.status = " + STATUS_AVAILABLE
             + " and b.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and b.is_deleted = 0"
@@ -148,6 +152,7 @@ public interface DatasetVersionMapper {
                     if (StrUtil.isNotEmpty(tag)) {
                         WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
+                    WHERE("status = " + STATUS_AVAILABLE);
                     ORDER_BY("version_order desc");
                 }
             }.toString();
