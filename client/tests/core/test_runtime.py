@@ -163,6 +163,7 @@ class StandaloneRuntimeTestCase(TestCase):
             conda_bin_path,
             "create",
             "--yes",
+            "--quiet",
             "--prefix",
             conda_prefix_dir,
             f"python={get_python_version()}",
@@ -1707,11 +1708,21 @@ class StandaloneRuntimeTestCase(TestCase):
         conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
         conda_prefix_dir = os.path.join(export_dir, "conda")
         assert conda_cmds == [
-            ["conda", "create", "--yes", "--prefix", conda_prefix_dir, "python=3.7"],
+            [
+                "conda",
+                "create",
+                "--yes",
+                "--quiet",
+                "--prefix",
+                conda_prefix_dir,
+                "python=3.7",
+            ],
             [
                 "conda",
                 "env",
                 "update",
+                "--verbose",
+                "--quiet",
                 "--file",
                 req_lock_fpath,
                 "--prefix",
@@ -1828,6 +1839,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "create",
                 "--yes",
+                "--quiet",
                 "--prefix",
                 conda_prefix_dir,
                 "python=3.7",
@@ -1836,6 +1848,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "env",
                 "update",
+                "--verbose",
+                "--quiet",
                 "--file",
                 conda_env_fpath,
                 "--prefix",
