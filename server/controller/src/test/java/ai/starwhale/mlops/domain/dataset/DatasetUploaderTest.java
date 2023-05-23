@@ -85,7 +85,7 @@ public class DatasetUploaderTest {
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.head(anyString())).thenReturn(new StorageObjectInfo(false, null, null, null));
         UserService userService = mock(UserService.class);
-        when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
+        when(userService.currentUserDetail()).thenReturn(User.builder().id(1L).build());
         ProjectService projectService = mock(ProjectService.class);
         when(projectService.findProject(anyString())).thenReturn(
                 Project.builder().id(1L).build());

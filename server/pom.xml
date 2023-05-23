@@ -27,7 +27,7 @@
         <json-flattener.version>0.13.0</json-flattener.version>
         <junit.version>5.8.2</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <maven-surefile-plugin.version>3.0.0-M7</maven-surefile-plugin.version>
+        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.2.0</maven-checkstyle-plugin.version>
@@ -43,6 +43,7 @@
         <parquet.version>1.12.3</parquet.version>
         <hadoop.version>2.10.1</hadoop.version>
         <protobuf-util.version>3.21.9</protobuf-util.version>
+        <lz4-java.version>1.8.0</lz4-java.version>
         <spring-boot.version>2.7.7</spring-boot.version>
         <spring-boot-admin.version>2.7.7</spring-boot-admin.version>
     </properties>
@@ -55,6 +56,11 @@
                 <version>${spring-boot.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+                <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -231,6 +237,11 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java-util</artifactId>
                 <version>${protobuf-util.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -540,7 +551,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefile-plugin.version}</version>
+                    <version>${maven-surefire-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.github.os72</groupId>

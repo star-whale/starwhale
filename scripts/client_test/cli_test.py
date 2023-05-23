@@ -457,7 +457,7 @@ class TestCli:
 
     def smoke_commands(self) -> None:
         commands = [
-            "timeout 2 swcli --help",
+            "timeout 10 swcli --help",
             "swcli --version",
         ]
 

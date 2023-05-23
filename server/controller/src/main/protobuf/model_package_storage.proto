@@ -1,0 +1,69 @@
+/* A model package is stored in meta blobs and data blobs. Meta blobs describe all files and
+ * directories in the model package, and data blobs are actual file data.
+ *
+ * When creating the model package, a Breath-First-Search (BFS) is performed on the directory tree.
+ * Each node, either a directory or a file, is described as a File protobuf message and added to a
+ * list during the search. For each directory, itself is added af first, then all its subdirectories
+ * in alphabet order, and finally all its files in alphabet order. Thus the root directory is always
+ * the first one in the list.
+ *
+ * During the search, file data are written to data blobs. Files are split into 65533-bytes blocks.
+ * Each block is tried to be compressed at first. If the compressed size is greater than the
+ * original size, then the block is stored without compression. Each block, whether compressed or
+ * not, is preceded with a byte denoting the compression algorithm(enum CompressionAlgorithm) and
+ * two-bytes in network order representing the size of the block, and then written to a 4MB buffer.
+ * When the buffer is full, it is dumped to a data block. If a file has more than one data blobs, it
+ * is considered as a huge file and its data blob references should be put in separate File protobuf
+ * messages so that listing directories can be pretty fast. These messages should be appended to the
+ * File protobuf list during the search.
+ *
+ * The File message list is finally split into 64KB meta blobs. The first meta blob contains indexes
+ * to other meta blobs. Meta blobs are not compressed.
+ */
+syntax = "proto3";
+
+option java_package = "ai.starwhale.mlops.domain.model";
+
+enum CompressionAlgorithm {
+  COMPRESSION_ALGORITHM_NO_COMPRESSION = 0;
+  COMPRESSION_ALGORITHM_LZ4 = 1;
+}
+
+enum FileType {
+  FILE_TYPE_REGULAR = 0;
+  FILE_TYPE_HUGE = 1;
+  FILE_TYPE_DIRECTORY = 2;
+}
+
+message File {
+  FileType type = 1;
+  string name = 2;
+  int64 size = 3;
+  int32 permission = 4;
+
+  /* Points to data blobs. For huge files, blob_ids should be put in separate File messages that
+     keeps the directory content as small as possible. */
+  repeated string blob_ids = 5;
+  repeated string signed_urls = 100; /* only set for restful API */
+  int32 blob_offset = 6; // only used for files whose sizes are less than 4KB
+  int32 blob_size = 7; // only used for files whose sizes are less than 4KB
+  bytes md5 = 8;
+  CompressionAlgorithm compression_algorithm = 9;
+
+  /* For directories, they are the range of directories contents. For huge files, they are the range
+     of data blobs references. from_file_index is inclusive, to_file_index is exclusive. */
+  int32 from_file_index = 10;
+  int32 to_file_index = 11;
+}
+
+message MetaBlobIndex {
+  string blob_id = 1;
+  int32 last_file_index = 2;
+}
+
+message MetaBlob {
+  repeated File files = 1;
+  /* only the first meta blob has following field */
+  repeated MetaBlobIndex meta_blob_indexes = 2;
+  bytes data = 3; /* data blob buffer less than 16KB*/
+}

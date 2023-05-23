@@ -29,6 +29,7 @@ declare_env() {
   export NEXUS_USER_NAME="${NEXUS_USER_NAME:=admin}"
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
+  export PORT_MINIO="${PORT_MINIO:=9000}"
   export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
   export CONTROLLER_URL="${CONTROLLER_URL:=http://127.0.0.1:8082}"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
@@ -221,6 +222,11 @@ check_controller_service() {
             sleep 5
     done
     nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER > /dev/null 2>&1 &
+    nohup kubectl port-forward --namespace $SWNS svc/minio $PORT_MINIO:$PORT_MINIO > /dev/null 2>&1 &
+    DNS_RECORD='127.0.0.1 minio'
+    if ! fgrep "$DNS_RECORD" /etc/hosts; then
+      echo "$DNS_RECORD" | sudo tee -a /etc/hosts
+    fi
 }
 
 client_test() {

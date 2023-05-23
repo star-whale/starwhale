@@ -4,11 +4,9 @@ import os
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
-from concurrent.futures import wait, ThreadPoolExecutor
 
-import yaml
+import trio
 from rich.progress import (
-    TaskID,
     Progress,
     BarColumn,
     TextColumn,
@@ -18,22 +16,22 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from starwhale.utils import console, now_str, load_yaml
+from starwhale.utils import console, load_yaml
 from starwhale.consts import (
-    FileDesc,
     FileNode,
     HTTPMethod,
-    CREATED_AT_KEY,
+    SW_BUILT_IN,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.blob.store import LocalFileStore
+from starwhale.core.model.copy import upload_model, download_model
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 
@@ -276,218 +274,72 @@ class BundleCopy(CloudRequestMixed):
                         f"no support to copy {self.typ} from server to standalone"
                     )
                 StandaloneTag(self.dest_uri).add_fast_tag()
-                self._update_manifest(
-                    self._get_versioned_resource_path(self.dest_uri),
-                    {CREATED_AT_KEY: now_str()},
-                )
-            self.final_steps(progress)
+
         console.print(f":tea: console url of the remote bundle: {remote_url}")
-
-    def final_steps(self, progress: Progress) -> None:
-        pass
-
-    def upload_files(self, workdir: Path) -> t.Iterator[FileNode]:
-        raise NotImplementedError
 
     def download_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
-        _workdir = self._get_versioned_resource_path(self.dest_uri)
-
-        def _download(_tid: TaskID, fd: FileNode) -> None:
-            if fd.signature:
-                f = self._object_store.get(fd.signature)
-                if f is not None and f.exists():
-                    console.trace(f"link {fd.signature} to {fd.path}")
-                    f.link(_workdir / fd.path)
-                    progress.update(_tid, total=fd.size, advance=fd.size)
-                    return
-
-            self.do_download_file(
-                # TODO: use /project/{self.typ}/pull api
-                url_path=self._get_remote_bundle_api_url(),
-                dest_path=fd.path,
-                instance=self.src_uri.instance,
-                params={
-                    "desc": fd.file_desc.name,
-                    "partName": fd.name,
-                    "signature": fd.signature,
-                },
-                progress=progress,
-                task_id=_tid,
-            )
-            # put the downloaded file to object store for cache usage
-            self._object_store.link(fd.path, fd.signature)
-
-        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
-        _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
-        _download(
-            _tid,
-            FileNode(
-                path=_manifest_path,
-                name=DEFAULT_MANIFEST_NAME,
-                signature="",
-                file_desc=FileDesc.MANIFEST,
-                size=0,
-            ),
+        workdir = self._get_versioned_resource_path(self.dest_uri)
+        ensure_dir(workdir)
+        trio.run(
+            download_model,
+            self.src_uri,
+            workdir,
+            self._object_store,
+            progress,
         )
 
-        for _f in self.download_files(workdir=_workdir):
-            _tid = progress.add_task(
-                f":arrow_down: {_f.name}",
-                total=float(_f.size),
-            )
-            if not _f.path.exists() or self.force:
-                _download(_tid, _f)
-
-    def _do_ubd_bundle_prepare(
+    def _do_upload_bundle_dir(
         self,
-        progress: t.Optional[Progress],
-        workdir: Path,
-        url_path: str,
-    ) -> t.Any:
-        manifest_path = workdir / DEFAULT_MANIFEST_NAME
-        if progress is None:
-            task_id = TaskID(0)
-        else:
-            task_id = progress.add_task(
-                f":arrow_up: {manifest_path.name}",
-                total=manifest_path.stat().st_size,
-            )
+        progress: Progress,
+    ) -> None:
+        workdir = self._get_versioned_resource_path(self.src_uri)
+        trio.run(
+            upload_model,
+            self.dest_uri,
+            workdir,
+            progress,
+            self._upload_built_in_runtime,
+        )
 
-        # TODO: use rich progress
-        r = self.do_multipart_upload_file(
-            url_path=url_path,
-            file_path=manifest_path,
-            instance=self.dest_uri.instance,
-            params={
-                self.field_flag: self.field_value,
-                "phase": _UploadPhase.MANIFEST,
-                "desc": FileDesc.MANIFEST.name,
-                "project": self.dest_uri.project.name,
+    def _upload_built_in_runtime(self, progress: Progress) -> str | None:
+        manifest_file = (
+            self._get_versioned_resource_path(self.src_uri) / DEFAULT_MANIFEST_NAME
+        )
+
+        manifest = load_yaml(manifest_file)
+        packaged_runtime = manifest.get("packaged_runtime", None)
+        if not packaged_runtime:
+            return None
+        rt_version: str = packaged_runtime["manifest"]["version"]
+
+        dest_uri = Resource(
+            f"{self.dest_uri.project}/{SW_BUILT_IN}/version/{rt_version}",
+            typ=ResourceType.runtime,
+            refine=False,
+        )
+
+        file_path: Path = (
+            self._get_versioned_resource_path(self.src_uri) / packaged_runtime["path"]
+        )
+        task_id = progress.add_task(
+            f":arrow_up: uploading the built-in runtime {file_path.name}",
+            total=file_path.stat().st_size,
+        )
+        self.do_multipart_upload_file(
+            url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
+            file_path=file_path,
+            instance=dest_uri.instance,
+            fields={
+                _query_param_map[ResourceType.runtime]: f"{SW_BUILT_IN}:{rt_version}",
+                "project": dest_uri.project.name,
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
             progress=progress,
             task_id=task_id,
         )
-        return r.json().get("data", {})
-
-    def _do_ubd_blobs(
-        self,
-        progress: t.Optional[Progress],
-        workdir: Path,
-        upload_id: str,
-        url_path: str,
-        existed_files: t.Optional[t.List] = None,
-    ) -> None:
-        existed_files = existed_files or []
-
-        # TODO: add retry deco
-        def _upload_blob(_tid: TaskID, fd: FileNode) -> None:
-            if not fd.path.exists():
-                raise NotFoundError(f"{fd.path} not found")
-
-            if progress is not None:
-                progress.update(_tid, visible=True)
-            self.do_multipart_upload_file(
-                url_path=url_path,
-                file_path=fd.path,
-                instance=self.dest_uri.instance,
-                params={
-                    self.field_flag: self.field_value,
-                    "phase": _UploadPhase.BLOB,
-                    "uploadId": upload_id,
-                    "partName": fd.name,
-                    "signature": fd.signature,
-                    "desc": fd.file_desc.name,
-                },
-                use_raise=True,
-                progress=progress,
-                task_id=_tid,
-            )
-
-        _p_map = {}
-        for _id, _f in enumerate(self.upload_files(workdir=workdir)):
-            if existed_files and _f.signature in existed_files:
-                continue
-
-            if progress is None:
-                _tid = TaskID(_id)
-            else:
-                _tid = progress.add_task(
-                    f":arrow_up: {_f.path.name}",
-                    total=float(_f.size),
-                    visible=False,
-                )
-            _p_map[_tid] = _f
-        with ThreadPoolExecutor(
-            max_workers=int(os.environ.get("SW_BUNDLE_COPY_THREAD_NUM", "5"))
-        ) as executor:
-            futures = [
-                executor.submit(_upload_blob, _tid, _file_desc)
-                for _tid, _file_desc in _p_map.items()
-            ]
-            # TODO throw errors
-            wait(futures)
-
-    def _do_ubd_end(self, upload_id: str, url_path: str, ok: bool) -> None:
-        phase = _UploadPhase.END if ok else _UploadPhase.CANCEL
-        self.do_http_request(
-            path=url_path,
-            method=HTTPMethod.POST,
-            instance=self.dest_uri.instance,
-            data={
-                self.field_flag: self.field_value,
-                "project": self.dest_uri.project.name,
-                "phase": phase,
-                "uploadId": upload_id,
-            },
-            use_raise=True,
-            disable_default_content_type=True,
-        )
-
-    def _do_upload_bundle_dir(
-        self,
-        progress: t.Optional[Progress] = None,
-        workdir: t.Optional[Path] = None,
-    ) -> None:
-        workdir = workdir or self._get_versioned_resource_path(self.src_uri)
-        url_path = self._get_remote_bundle_api_url()
-
-        res_data = self._do_ubd_bundle_prepare(
-            progress=progress,
-            workdir=workdir,
-            url_path=url_path,
-        )
-        upload_id: str = res_data.get("uploadId", "")
-        if not upload_id:
-            raise Exception("upload id is empty")
-        exists_files: list = res_data.get("existed", [])
-        try:
-            self._do_ubd_blobs(
-                progress=progress,
-                workdir=workdir,
-                upload_id=upload_id,
-                url_path=url_path,
-                existed_files=exists_files,
-            )
-        except Exception as e:
-            console.print(
-                f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
-            )
-            self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=False)
-            raise
-        else:
-            self._do_ubd_end(upload_id=upload_id, url_path=url_path, ok=True)
-
-    @staticmethod
-    def _update_manifest(workdir: Path, patch: t.Dict[str, t.Any]) -> None:
-        file = workdir / DEFAULT_MANIFEST_NAME
-        # downloaded runtime is a tarball
-        if not file.exists():
-            return
-        manifest = load_yaml(file)
-        manifest.update(patch)
-        ensure_file(file, yaml.safe_dump(manifest, default_flow_style=False))
+        progress.update(task_id, completed=file_path.stat().st_size)
+        return rt_version

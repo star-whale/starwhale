@@ -31,9 +31,6 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ModelVersionEntity extends BaseEntity implements BundleVersionEntity {
 
-    public static final int STATUS_AVAILABLE = 1;
-    public static final int STATUS_UN_AVAILABLE = 0;
-
     private Long id;
 
     private Long modelId;
@@ -48,23 +45,13 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
 
     private String versionTag;
 
-    private String versionMeta;
-
-    private String storagePath;
-
     private String builtInRuntime;
 
-    @Deprecated
-    // do not save the manifest to the database
-    // use oss instead
-    private String manifest;
+    private String metaBlobId;
+
+    private Long storageSize;
 
     private String jobs;
-
-    /**
-     * 0 - unavailable 1 - available
-     */
-    private Integer status = STATUS_UN_AVAILABLE;
 
     @Override
     public String getName() {

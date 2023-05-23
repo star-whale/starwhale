@@ -1,16 +1,25 @@
 import json
+import random
+import struct
 import typing as t
+import hashlib
+import itertools
 from http import HTTPStatus
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import yaml
+import httpx
+import respx
+import lz4.block
 from requests_mock import Mocker
-from pyfakefs.fake_filesystem_unittest import TestCase
+from google.protobuf import json_format
 
 from tests import get_predefined_config_yaml
 from starwhale.utils import config as sw_config
 from starwhale.utils import NoSupportError
 from starwhale.consts import (
+    FileDesc,
     HTTPMethod,
     SW_BUILT_IN,
     VERSION_PREFIX_CNT,
@@ -21,25 +30,109 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import DatasetChangeMode
+from starwhale.proto_gen import model_package_storage_pb2 as pb2
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
-from starwhale.core.model.copy import ModelCopy
-from starwhale.base.bundle_copy import FileDesc, BundleCopy
+from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
 
+from .. import BaseTestCase
+
 _existed_config_contents = get_predefined_config_yaml()
 
 
-class TestBundleCopy(TestCase):
+class _ModelServer:
+    def __init__(self) -> None:
+        self._models: t.Dict[str, t.Any] = {}
+        self._blobs: t.Dict[str, bytes] = {}
+        self._hashes: t.Dict[t.Tuple[str, int], str] = {}
+
+    def _init_blob(self, md5: str, length: int) -> t.Tuple[str, str]:
+        if (md5, length) in self._hashes:
+            return "EXISTED", self._hashes[(md5, length)]
+        return "OK", f"{random.getrandbits(64):016X}"
+
+    def _upload_blob(self, blob_id: str, data: bytes) -> None:
+        self._blobs[blob_id] = data
+
+    def _complete_blob(self, blob_id: str) -> str:
+        d = self._blobs[blob_id]
+        return self._hashes.setdefault((hashlib.md5(d).hexdigest(), len(d)), blob_id)
+
+    def serve(self, req: httpx.Request) -> httpx.Response:
+        print(req)
+        if (
+            req.method == HTTPMethod.POST
+            and req.headers["Content-Type"] == "application/json"
+        ):
+            print(req.content)
+        if req.method == HTTPMethod.POST and req.url.path == "/api/v1/blob":
+            data = json.loads(req.content)
+            md5 = data["contentMd5"]
+            length = int(data["contentLength"])
+            status, blob_id = self._init_blob(md5, length)
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "status": status,
+                        "blobId": blob_id,
+                        "signedUrl": f"http://1.1.1.1:8182/uploadblob/{blob_id}",
+                    }
+                },
+            )
+
+        if req.method == HTTPMethod.PUT and req.url.path.startswith("/uploadblob/"):
+            self._blobs[req.url.path[len("/uploadblob/") :]] = req.content
+            return httpx.Response(200)
+
+        if req.url.path.startswith("/api/v1/blob/"):
+            blob_id = req.url.path[len("/api/v1/blob/") :]
+            if req.method == HTTPMethod.GET:
+                return httpx.Response(200, content=self._blobs[blob_id])
+            if req.method == HTTPMethod.POST:
+                return httpx.Response(
+                    200, json={"data": {"blobId": self._complete_blob(blob_id)}}
+                )
+
+        if req.method == HTTPMethod.POST and req.url.path.endswith("/completeUpload"):
+            self._models[
+                req.url.path[len("/api/v1") : -len("/completeUpload")]
+            ] = json.loads(req.content)
+            return httpx.Response(200)
+
+        if req.method == HTTPMethod.GET and req.url.path.endswith("/meta"):
+            blob_id = req.url.params.get("blobId", "")
+            if blob_id == "":
+                blob_id = t.cast(
+                    str,
+                    self._models[req.url.path[len("/api/v1") : -len("/meta")]][
+                        "metaBlobId"
+                    ],
+                )
+            meta_blob = pb2.MetaBlob()
+            meta_blob.ParseFromString(self._blobs[blob_id])
+            for file in meta_blob.files:
+                for id in file.blob_ids:
+                    file.signed_urls.append(f"http://1.1.1.1:8182/api/v1/blob/{id}")
+            return httpx.Response(
+                200, json={"data": json_format.MessageToJson(meta_blob)}
+            )
+
+        raise RuntimeError(f"unhandled request: {req}")
+
+
+class TestBundleCopy(BaseTestCase):
     def setUp(self) -> None:
-        self.setUpPyfakefs()
+        super().setUp()
         sw_config._config = {}
         path = get_swcli_config_path()
-        self.fs.create_file(path, contents=_existed_config_contents)
+        ensure_file(path, _existed_config_contents)
         self._sw_config = SWCliConfigMixed()
         self._sw_config.select_current_default("local", "self")
+        self._model_server = _ModelServer()
 
     @Mocker()
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
@@ -251,11 +344,12 @@ class TestBundleCopy(TestCase):
         assert upload_request.call_count == 1
 
     @Mocker()
-    @patch("starwhale.core.model.copy.load_yaml")
-    @patch("starwhale.core.model.copy.extract_tar")
-    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
-    def test_model_copy_c2l(self, rm: Mocker, *args: MagicMock) -> None:
+    @respx.mock
+    def test_model_copy_c2l(self, rm: Mocker) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
+
+        cloud_uri = f"cloud://pre-bare/project/myproject/model/mnist/version/{version}"
+
         rm.request(
             HTTPMethod.GET,
             "http://1.1.1.1:8182/api/v1/project/myproject/model/mnist",
@@ -268,19 +362,6 @@ class TestBundleCopy(TestCase):
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
-        rm.request(
-            HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=MANIFEST&partName=_manifest.yaml&signature=",
-            json={"resources": []},
-        )
-        rm.request(
-            HTTPMethod.GET,
-            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/file?desc=SRC_TAR&partName=src.tar&signature=",
-            content=b"mnist model content",
-        )
-        # m_load_yaml.return_value = {"resources": []}
-
-        cloud_uri = f"cloud://pre-bare/project/myproject/model/mnist/version/{version}"
 
         cases = [
             {
@@ -310,6 +391,102 @@ class TestBundleCopy(TestCase):
             },
         ]
 
+        meta_blobs = [pb2.MetaBlob()]
+        meta_blobs[0].files.append(
+            pb2.File(type=pb2.FILE_TYPE_DIRECTORY, from_file_index=1, to_file_index=4)
+        )
+        meta_blobs[0].files.append(
+            pb2.File(
+                type=pb2.FILE_TYPE_REGULAR,
+                name="readme",
+                size=6,
+                permission=0o644,
+                blob_ids=[""],
+                blob_size=6,
+                md5=bytes.fromhex("3905d7917f2b3429490b01cfb60d8f5b"),
+            )
+        )
+        meta_blobs[0].data = b"readmet"
+        meta_blobs[0].meta_blob_indexes.append(
+            pb2.MetaBlobIndex(blob_id="0000000000000063", last_file_index=3)
+        )
+        meta_blobs.append(
+            pb2.MetaBlob(
+                files=[
+                    pb2.File(
+                        type=pb2.FILE_TYPE_HUGE,
+                        name="big",
+                        size=65536 * 2,
+                        permission=0o600,
+                        md5=bytes.fromhex("13d30e5ea70257d1117973ced6063ce0"),
+                        compression_algorithm=pb2.COMPRESSION_ALGORITHM_LZ4,
+                        from_file_index=4,
+                        to_file_index=5,
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_DIRECTORY,
+                        name="d",
+                        permission=0o700,
+                        from_file_index=5,
+                        to_file_index=7,
+                    ),
+                    pb2.File(
+                        blob_ids=["0000000000000064", "0000000000000065"],
+                        signed_urls=["http://1.1.1.1/big1", "http://1.1.1.1/big2"],
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_REGULAR,
+                        name="readme",
+                        size=6,
+                        permission=0o644,
+                        blob_ids=[""],
+                        blob_size=6,
+                        md5=bytes.fromhex("3905d7917f2b3429490b01cfb60d8f5b"),
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_REGULAR,
+                        name="t",
+                        size=1,
+                        permission=0o644,
+                        blob_ids=[""],
+                        blob_offset=6,
+                        blob_size=1,
+                        md5=bytes.fromhex("e358efa489f58062f10dd7316b65649e"),
+                    ),
+                ]
+            )
+        )
+        respx.get(
+            url__eq=f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/meta"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": json_format.MessageToJson(meta_blobs[0])},
+            )
+        )
+        respx.get(
+            url__eq=f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/meta?blobId=0000000000000063"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": json_format.MessageToJson(meta_blobs[1])},
+            )
+        )
+
+        def compress_chunk(b: bytes) -> t.Any:
+            d = lz4.block.compress(b, store_size=False)
+            return struct.pack(">H", len(d)) + d
+
+        respx.get("http://1.1.1.1/big1").mock(
+            return_value=httpx.Response(
+                200, content=compress_chunk(b"0" * 65536) + compress_chunk(b"1" * 65536)
+            )
+        )
+        respx.get("http://1.1.1.1/big2").mock(
+            return_value=httpx.Response(
+                200, content=compress_chunk(b"2" * 65536) + compress_chunk(b"3" * 65536)
+            )
+        )
         for case in cases:
             swmp_path = (
                 self._sw_config.rootdir / case["path"] / version[:2] / f"{version}.swmp"
@@ -317,7 +494,7 @@ class TestBundleCopy(TestCase):
             swmp_manifest_path = swmp_path / "_manifest.yaml"
             assert not swmp_path.exists()
             assert not swmp_manifest_path.exists()
-            ModelCopy(
+            BundleCopy(
                 src_uri=cloud_uri,
                 dest_uri=case["dest_uri"],
                 typ=ResourceType.model,
@@ -325,18 +502,21 @@ class TestBundleCopy(TestCase):
             ).do()
             assert swmp_path.exists()
             assert swmp_path.is_dir()
-            assert swmp_manifest_path.exists()
-            assert swmp_manifest_path.is_file()
-
-        with self.assertRaises(Exception):
-            ModelCopy(
-                src_uri=cloud_uri,
-                dest_uri="local/project/self/mnist-new-alias",
-                typ=ResourceType.model,
-                dest_local_project_uri="myproject",
-            ).do()
+            with open(swmp_path / "readme", "r") as f:
+                self.assertEqual("readme", f.read())
+            with open(swmp_path / "d/readme", "r") as f:
+                self.assertEqual("readme", f.read())
+            with open(swmp_path / "d/t", "r") as f:
+                self.assertEqual("t", f.read())
+            with open(swmp_path / "big", "rb") as f:
+                data = f.read()
+                self.assertEqual(65536 * 4, len(data))
+                self.assertEqual(
+                    b"0" * 65536 + b"1" * 65536 + b"2" * 65536 + b"3" * 65536, data
+                )
 
     @Mocker()
+    @respx.mock
     def test_model_copy_l2c(self, rm: Mocker) -> None:
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         built_in_version = "abcdefg1234"
@@ -349,12 +529,11 @@ class TestBundleCopy(TestCase):
             / f"{version}.swmp"
         )
         swmp_manifest_path = swmp_path / "_manifest.yaml"
-        swmp_src_tar_path = swmp_path / "src.tar"
         tag_manifest_path = (
             self._sw_config.rootdir / "self" / "model" / "mnist" / "_manifest.yaml"
         )
         ensure_dir(swmp_path)
-        ensure_file(swmp_src_tar_path, "")
+        ensure_file(swmp_path / "readme", "readme")
         ensure_file(
             swmp_manifest_path,
             yaml.safe_dump(
@@ -396,6 +575,8 @@ class TestBundleCopy(TestCase):
                 }
             ),
         )
+
+        respx.route().side_effect = self._model_server.serve
 
         cases = [
             {
@@ -467,12 +648,6 @@ class TestBundleCopy(TestCase):
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
             )
-            upload_request = rm.request(
-                HTTPMethod.POST,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}/file",
-                headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
-                json={"data": {"uploadId": "123"}},
-            )
 
             rt_upload_request = rm.request(
                 HTTPMethod.POST,
@@ -480,20 +655,13 @@ class TestBundleCopy(TestCase):
                 headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
                 json={"data": {"uploadId": "126"}},
             )
-            link_rt_request = rm.request(
-                HTTPMethod.PUT,
-                f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}",
-                json={"built_in_runtime": built_in_version},
-            )
-            ModelCopy(
+            BundleCopy(
                 src_uri=case["src_uri"],
                 dest_uri=case["dest_uri"],
                 typ=ResourceType.model,
             ).do()
             assert head_request.call_count == 1
-            assert upload_request.call_count == 3
             assert rt_upload_request.call_count == 1
-            assert link_rt_request.call_count == 1
 
         head_request = rm.request(
             HTTPMethod.HEAD,
@@ -501,32 +669,102 @@ class TestBundleCopy(TestCase):
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
-        upload_request = rm.request(
-            HTTPMethod.POST,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/file",
-            json={"data": {"uploadId": "123"}},
-        )
         rt_upload_request = rm.request(
             HTTPMethod.POST,
             f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}/file",
             headers={"X-SW-UPLOAD-TYPE": FileDesc.MANIFEST.name},
             json={"data": {"uploadId": "126"}},
         )
-        link_rt_request = rm.request(
-            HTTPMethod.PUT,
-            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
-            json={"built_in_runtime": built_in_version},
+
+        def random_bytes(n: int) -> bytes:
+            return bytes(bytearray(random.getrandbits(8) for _ in range(n)))
+
+        def random_compressible_bytes(n: int) -> bytes:
+            words = [random_bytes(random.randint(3, 15)) for _ in range(300)]
+            ret = []
+            total = 0
+            while total < n:
+                ret.append(words[random.randint(0, len(words) - 1)])
+                total += len(ret[-1])
+            return b"".join(ret)[:n]
+
+        model_file = random_bytes(1024 * 1024 * 20 + 1024)
+        ensure_file(swmp_path / "model", model_file)
+        ensure_file(
+            swmp_path / "mixed",
+            random_compressible_bytes(1024 * 500)
+            + random_bytes(1024 * 500)
+            + random_compressible_bytes(1024 * 500),
         )
-        ModelCopy(
+        file99 = random_compressible_bytes(999)
+        ensure_file(
+            swmp_path / "/".join([str(i) for i in range(20)]), file99, parents=True
+        )
+        for i in range(500):
+            ensure_file(
+                swmp_path / "t" / f"f{i}",
+                random_compressible_bytes(random.randint(100, 10000)),
+                parents=True,
+            )
+        for i in range(500):
+            ensure_file(
+                swmp_path / "t" / f"d{i}" / "x",
+                random_compressible_bytes(random.randint(100, 10000)),
+                parents=True,
+            )
+        tzFile = random_compressible_bytes(1024 * 1024 * 20)
+        ensure_file(swmp_path / "t" / "z", tzFile, parents=True)
+        ensure_file(swmp_path / "empty", "")
+        ensure_dir(swmp_path / "empty_dir")
+        BundleCopy(
             src_uri="mnist/v1",
             dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
             typ=ResourceType.model,
         ).do()
 
-        assert head_request.call_count == 1
-        assert upload_request.call_count == 3
-        assert rt_upload_request.call_count == 1
-        assert link_rt_request.call_count == 1
+        rm.request(
+            HTTPMethod.GET,
+            "http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias?versionUrl=v1",
+            json={"data": {"id": 1, "versionName": version, "versionId": 100}},
+            status_code=HTTPStatus.OK,
+        )
+        rm.request(
+            HTTPMethod.HEAD,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}",
+            json={"message": "existed"},
+            status_code=HTTPStatus.OK,
+        )
+        BundleCopy(
+            src_uri="cloud://pre-bare/project/mnist/model/mnist-alias/version/v1",
+            dest_uri="mnist/v2",
+            typ=ResourceType.model,
+        ).do()
+        dest_path = (
+            self._sw_config.rootdir / "self/model/mnist" / version[:2] / "v2.swmp"
+        )
+
+        def compare(dir1: Path, dir2: Path) -> None:
+            for f1, f2 in itertools.zip_longest(
+                sorted(dir1.iterdir()), sorted(dir2.iterdir())
+            ):
+                self.assertIsNotNone(f1)
+                self.assertIsNotNone(f2)
+                self.assertEqual(f1.name, f2.name)
+                self.assertEqual(f1.is_dir(), f2.is_dir())
+                if f1.is_dir():
+                    compare(f1, f2)
+                else:
+                    with open(f1, "rb") as a:
+                        with open(f2, "rb") as b:
+                            d1 = a.read()
+                            d2 = b.read()
+                            self.assertEqual(
+                                hashlib.md5(d1).hexdigest(),
+                                hashlib.md5(d2).hexdigest(),
+                                f1.as_posix() + " vs " + f2.as_posix(),
+                            )
+
+        compare(swmp_path, dest_path)
 
     def _prepare_local_dataset(self) -> t.Tuple[str, str]:
         name = "mnist"

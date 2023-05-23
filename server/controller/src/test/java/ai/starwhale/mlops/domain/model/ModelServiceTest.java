@@ -18,739 +18,882 @@ package ai.starwhale.mlops.domain.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
-import static org.mockito.BDDMockito.same;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.api.protocol.storage.FileDesc;
-import ai.starwhale.mlops.common.ArchiveFileConsumer;
-import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
+import ai.starwhale.mlops.api.protocol.storage.FileNode;
+import ai.starwhale.mlops.api.protocol.storage.FileNode.Type;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TarFileUtil;
-import ai.starwhale.mlops.common.VersionAliasConverter;
-import ai.starwhale.mlops.domain.bundle.BundleException;
-import ai.starwhale.mlops.domain.bundle.BundleManager;
-import ai.starwhale.mlops.domain.bundle.BundleUrl;
-import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
-import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
-import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.configuration.security.JwtLoginToken;
+import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.job.ModelServingService;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
-import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
-import ai.starwhale.mlops.domain.model.converter.ModelVoConverter;
-import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
-import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
-import ai.starwhale.mlops.domain.model.po.ModelEntity;
-import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
-import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
-import ai.starwhale.mlops.exception.SwProcessException;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
+import de.codecentric.boot.admin.server.config.AdminServerProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.servlet.http.HttpServletResponse;
+import java.util.stream.IntStream;
 import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
+import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Exception;
+import net.jpountz.lz4.LZ4Factory;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.stubbing.Answer;
-import org.springframework.http.HttpHeaders;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
+import org.junit.jupiter.api.TestInstance;
+import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
-public class ModelServiceTest {
+@MybatisTest
+@AutoConfigureTestDatabase(replace = Replace.NONE)
+@ComponentScan(basePackages = {
+        "ai.starwhale.mlops.common",
+        "ai.starwhale.mlops.domain",
+        "ai.starwhale.mlops.datastore",
+        "ai.starwhale.mlops.reporting",
+        "ai.starwhale.mlops.resulting",
+        "ai.starwhale.mlops.configuration.security"},
+        excludeFilters = {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)})
+@Import({K8sJobTemplate.class, ResourceEventHolder.class})
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class ModelServiceTest extends MySqlContainerHolder {
 
-    private ModelService service;
-    private ModelMapper modelMapper;
-    private ModelVersionMapper modelVersionMapper;
-    private ModelVoConverter modelConverter;
-    private ModelVersionVoConverter versionConvertor;
-    private StoragePathCoordinator storagePathCoordinator;
-    private StorageAccessService storageAccessService;
-    private StorageService storageService;
+    private static final StorageAccessServiceMemory storageAccessServiceMemory = new StorageAccessServiceMemory();
+    private User user;
+
+    @TestConfiguration
+    public static class Config {
+
+        @Bean
+        StorageAccessService storageAccessService() {
+            return storageAccessServiceMemory;
+        }
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+
+        @Bean
+        StoragePathCoordinator storagePathCoordinator() {
+            return new StoragePathCoordinator("/tt");
+        }
+
+        @Bean
+        RestTemplate restTemplate() {
+            return new RestTemplate();
+        }
+
+        @Bean
+        AdminServerProperties adminServerProperties() {
+            return new AdminServerProperties();
+        }
+
+        @Bean
+        SecurityProperties securityProperties() {
+            return new SecurityProperties();
+        }
+
+        @Bean
+        HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+            return mock(HandlerMappingIntrospector.class);
+        }
+
+        @Bean
+        SwTaskScheduler swTaskScheduler() {
+            return mock(SwTaskScheduler.class);
+        }
+
+        @Bean
+        K8sClient k8sClient() {
+            return mock(K8sClient.class);
+        }
+
+        @Bean
+        ModelServingService modelServingService() {
+            return mock(ModelServingService.class);
+        }
+    }
+
+    @Autowired
     private UserService userService;
+    @Autowired
     private ProjectService projectService;
+    @Autowired
+    private ModelService modelService;
+
+    @Autowired
     private ModelDao modelDao;
-    private HotJobHolder jobHolder;
-    private BundleManager bundleManager;
-    private TrashService trashService;
-    private JobSpecParser jobSpecParser;
+    @Autowired
+    private StorageAccessService storageAccessService;
+
+    private static final LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+
+    private static final LZ4Compressor lz4Compressor = lz4Factory.fastCompressor();
+
+    private class ModelBuilder {
+
+        private final Map<String, Object> dataMap = new HashMap<>();
+        private final ByteBuffer dataBuf = ByteBuffer.allocate(4 * 1024 * 1024);
+        private final ArrayList<ModelPackageStorage.File.Builder> fileList = new ArrayList<>();
+        private final Random random = new Random();
+
+        public void add(String path, byte[] data) {
+            var pathList = path.split("/");
+            var current = dataMap;
+            for (int i = 0; i < pathList.length; ++i) {
+                var s = pathList[i];
+                if (i == pathList.length - 1) {
+                    current.put(s, data);
+                } else {
+                    //noinspection unchecked
+                    current = (Map<String, Object>) current.computeIfAbsent(s, k -> new HashMap<String, Object>());
+                }
+            }
+        }
+
+        public byte[] generate(String path, int length, boolean compressible) {
+            var b = new byte[length];
+            if (!compressible) {
+                this.random.nextBytes(b);
+            } else {
+                var words = new ArrayList<byte[]>();
+                for (int i = 0; i < 300; ++i) {
+                    int len = this.random.nextInt(10) + 3;
+                    var word = new byte[len];
+                    for (int j = 0; j < len; ++j) {
+                        word[j] = (byte) (this.random.nextInt(26) + 'a');
+                    }
+                    words.add(word);
+                }
+                ByteBuffer buf = ByteBuffer.allocate(length + 20);
+                do {
+                    buf.put((byte) ' ');
+                    buf.put(words.get(this.random.nextInt(words.size())));
+                } while (buf.position() < length);
+                buf.flip();
+                buf.get(b);
+            }
+            byte checksum = 0;
+            for (var bb : path.getBytes(StandardCharsets.UTF_8)) {
+                checksum ^= bb;
+            }
+            for (int i = 1; i < b.length; ++i) {
+                checksum ^= b[i];
+            }
+            b[0] = checksum;
+            this.add(path, b);
+            return b;
+        }
+
+        public byte[] generate(String path, int minLength, int maxLength, boolean compressible) {
+            var length = this.random.nextInt(maxLength - minLength + 1) + minLength;
+            return this.generate(path, length, compressible);
+        }
+
+        public void remove(String path) {
+            var pathList = path.split("/");
+            var current = dataMap;
+            for (int i = 0; i < pathList.length; ++i) {
+                var s = pathList[i];
+                if (i == pathList.length - 1) {
+                    current.remove(s);
+                } else {
+                    //noinspection unchecked
+                    current = (Map<String, Object>) current.computeIfAbsent(s, k -> new HashMap<String, Object>());
+                }
+            }
+        }
+
+        public void clear() {
+            this.dataMap.clear();
+        }
+
+        private String putBlob(byte[] b) throws IOException {
+            return this.putBlob(b, 0, b.length);
+        }
+
+        private String putBlob(byte[] b, int offset, int length) throws IOException {
+            var result = modelService.initUploadBlob(
+                    new InitUploadBlobRequest(DigestUtils.md5Hex(new ByteArrayInputStream(b, offset, length)),
+                            (long) b.length));
+            if (result.getStatus() == Status.OK) {
+                storageAccessService.put(result.getSignedUrl(), new ByteArrayInputStream(b, offset, length));
+                return modelService.completeUploadBlob(result.getBlobId());
+            } else {
+                return result.getBlobId();
+            }
+        }
+
+        private List<String> writeData(ModelPackageStorage.File.Builder file, byte[] b)
+                throws IOException {
+            var ret = new ArrayList<String>();
+            if (b.length == 0) {
+                return ret;
+            }
+            var buf = ByteBuffer.allocate(this.dataBuf.capacity());
+            for (int i = 0; i < b.length; ) {
+                int size = Math.min(65536, b.length - i);
+                for (; ; ) {
+                    try {
+                        var compressed = lz4Compressor.compress(b, i, size, buf.array(), buf.position() + 2);
+                        if (compressed > 65536) {
+                            size -= 4096;
+                            continue;
+                        } else {
+                            buf.put((byte) (compressed >> 8));
+                            buf.put((byte) (compressed & 0xff));
+                            buf.position(buf.position() + compressed);
+                        }
+                        break;
+                    } catch (LZ4Exception e) {
+                        if (i == 0) {
+                            for (var j = 0; j < b.length; j += this.dataBuf.capacity()) {
+                                size = Math.min(this.dataBuf.capacity(), b.length - j);
+                                ret.add(this.putBlob(b, j, size));
+                            }
+                            return ret;
+                        }
+                        ret.add(this.putBlob(buf.array(), 0, buf.position()));
+                        buf.clear();
+                    }
+                }
+                i += size;
+            }
+            ret.add(this.putBlob(buf.array(), 0, buf.position()));
+            file.setCompressionAlgorithm(CompressionAlgorithm.COMPRESSION_ALGORITHM_LZ4);
+            return ret;
+        }
+
+        private void appendData(ModelPackageStorage.File.Builder file, byte[] b) throws IOException {
+            for (; ; ) {
+                try {
+                    var compressed = lz4Compressor.compress(b, 0, b.length, this.dataBuf.array(),
+                            this.dataBuf.position() + 2);
+                    if (compressed + 2 < b.length) {
+                        file.setBlobOffset(this.dataBuf.position());
+                        file.setBlobSize(compressed + 2);
+                        file.setCompressionAlgorithm(CompressionAlgorithm.COMPRESSION_ALGORITHM_LZ4);
+                        this.dataBuf.put((byte) (compressed >> 8));
+                        this.dataBuf.put((byte) (compressed & 0xff));
+                        this.dataBuf.position(this.dataBuf.position() + compressed);
+                    } else {
+                        if (this.dataBuf.remaining() < b.length) {
+                            this.flushDataBuf();
+                        }
+                        file.setBlobOffset(this.dataBuf.position());
+                        file.setBlobSize(b.length);
+                        this.dataBuf.put(b);
+                    }
+                    this.fileList.add(file);
+                    return;
+                } catch (LZ4Exception e) {
+                    this.flushDataBuf();
+                }
+            }
+        }
+
+        private void flushDataBuf() throws IOException {
+            var blobId = this.putBlob(this.dataBuf.array(), 0, this.dataBuf.position());
+            this.fileList.forEach(file -> file.addBlobIds(blobId));
+            this.dataBuf.clear();
+            this.fileList.clear();
+        }
+
+        public String build() throws IOException {
+            var nodeList = new ArrayList<Pair<ModelPackageStorage.File.Builder, Object>>();
+            var root = ModelPackageStorage.File.newBuilder().setName("").setType(FileType.FILE_TYPE_DIRECTORY);
+            nodeList.add(Pair.of(root, this.dataMap));
+            for (int i = 0; i < nodeList.size(); ++i) {
+                var node = nodeList.get(i);
+                var f = node.getLeft();
+                var data = node.getRight();
+                if (data instanceof byte[]) {
+                    var b = (byte[]) data;
+                    f.setSize(b.length);
+                    f.setMd5(ByteString.copyFrom(DigestUtils.md5(b)));
+                    f.setType(FileType.FILE_TYPE_REGULAR);
+                    if (b.length == 0) {
+                        f.addBlobIds("");
+                    } else if (b.length < 4096) {
+                        this.appendData(f, b);
+                    } else {
+                        var blobIds = this.writeData(f, b);
+                        if (blobIds.size() == 1) {
+                            f.addBlobIds(blobIds.get(0));
+                        } else {
+                            f.setType(FileType.FILE_TYPE_HUGE);
+                            f.setFromFileIndex(nodeList.size());
+                            for (int j = 0; j < blobIds.size(); j += 100) {
+                                int k = Math.min(j + 100, blobIds.size());
+                                var child = ModelPackageStorage.File.newBuilder();
+                                blobIds.subList(j, k).forEach(child::addBlobIds);
+                                nodeList.add(Pair.of(child, null));
+                            }
+                            f.setToFileIndex(nodeList.size());
+                        }
+                    }
+                } else if (data instanceof Map) {
+                    f.setType(FileType.FILE_TYPE_DIRECTORY);
+                    @SuppressWarnings("unchecked") var dir = new TreeMap<>((Map<String, Object>) data);
+                    f.setFromFileIndex(nodeList.size());
+                    dir.forEach((k, v) -> {
+                        if (v instanceof Map) {
+                            var child = ModelPackageStorage.File.newBuilder().setName(k);
+                            nodeList.add(Pair.of(child, v));
+                        }
+                    });
+                    dir.forEach((k, v) -> {
+                        if (v instanceof byte[]) {
+                            var child = ModelPackageStorage.File.newBuilder().setName(k);
+                            nodeList.add(Pair.of(child, v));
+                        }
+                    });
+                    f.setToFileIndex(nodeList.size());
+                }
+            }
+            var firstMetaBlob = ModelPackageStorage.MetaBlob.newBuilder();
+            if (this.dataBuf.position() < 4096) {
+                firstMetaBlob.setData(ByteString.copyFrom(this.dataBuf.array(), 0, this.dataBuf.position()));
+                this.fileList.forEach(file -> file.addBlobIds(""));
+            } else {
+                this.flushDataBuf();
+            }
+            var currentMetaBlob = firstMetaBlob;
+            int sum = 0;
+            for (int i = 0; i < nodeList.size(); ++i) {
+                var file = nodeList.get(i).getLeft();
+                var message = file.build();
+                var size = CodedOutputStream.computeMessageSize(1, message);
+                if (sum + size > 65536) {
+                    if (currentMetaBlob != firstMetaBlob) {
+                        firstMetaBlob.addMetaBlobIndexes(
+                                ModelPackageStorage.MetaBlobIndex.newBuilder()
+                                        .setBlobId(this.putBlob(currentMetaBlob.build().toByteArray()))
+                                        .setLastFileIndex(i - 1));
+                    }
+                    currentMetaBlob = ModelPackageStorage.MetaBlob.newBuilder();
+                    sum = 0;
+                }
+                sum += size;
+                currentMetaBlob.addFiles(message);
+            }
+            if (currentMetaBlob != firstMetaBlob) {
+                firstMetaBlob.addMetaBlobIndexes(
+                        ModelPackageStorage.MetaBlobIndex.newBuilder()
+                                .setBlobId(this.putBlob(currentMetaBlob.build().toByteArray()))
+                                .setLastFileIndex(nodeList.size() - 1));
+            }
+            return this.putBlob(firstMetaBlob.build().toByteArray());
+        }
+    }
+
+    private final byte[] readmeFile = "this is a readme file".getBytes(StandardCharsets.UTF_8);
+
+    private byte[] modelFile;
+
+    private String modelMd5;
+
+    private byte[] tzFile;
+
+    private String tzMd5;
+
+    private byte[] file99;
+
+    private byte[] fileS;
 
     @SneakyThrows
+    @BeforeAll
+    public void init() {
+        this.user = this.userService.loadUserByUsername("test");
+        this.setUp();
+        this.projectService.createProject(Project.builder()
+                .name("1")
+                .owner(User.builder().id(this.user.getId()).build())
+                .privacy(Privacy.PRIVATE)
+                .description("")
+                .build());
+
+        var modelBuilder = new ModelBuilder();
+        modelBuilder.add("src/.starwhale/jobs.yaml", "[]".getBytes(StandardCharsets.UTF_8));
+        this.modelFile = modelBuilder.generate("model", 100 * 1024 * 1024, false);
+        this.modelMd5 = DigestUtils.md5Hex(this.modelFile);
+        modelBuilder.add("readme", this.readmeFile);
+
+        this.file99 = modelBuilder.generate(
+                IntStream.range(0, 100).mapToObj(String::valueOf).collect(Collectors.joining("/")),
+                1000, false);
+
+        for (int i = 0; i < 5000; ++i) {
+            modelBuilder.generate("t/f" + i, 1, 10000, true);
+        }
+        for (int i = 0; i < 5000; ++i) {
+            modelBuilder.generate("t/d" + i + "/x", 1, 10000, true);
+        }
+        this.tzFile = modelBuilder.generate("t/z", 10 * 1024 * 1024, true);
+        this.tzMd5 = DigestUtils.md5Hex(this.tzFile);
+        modelBuilder.add("t/empty", new byte[0]);
+
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                for (int k = 0; k < 5; ++k) {
+                    for (int l = 0; l < 5; ++l) {
+                        for (int m = 0; m < 5; ++m) {
+                            modelBuilder.generate("v/" + i + "/" + j + "/" + k + "/" + l + "/" + m,
+                                    1, 10000, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        this.modelService.createModelVersion("1", "m", "v1", new CreateModelVersionRequest(modelBuilder.build(), null));
+
+        modelBuilder.generate("test", 10, 100, true);
+        modelBuilder.remove("v/1/1/1/1/1");
+        modelBuilder.generate("t/d3/x", 1, 10000, true);
+        this.modelService.createModelVersion("1", "m", "v2", new CreateModelVersionRequest(modelBuilder.build(), null));
+
+        this.modelService.createModelVersion("1", "m", "v3", new CreateModelVersionRequest(modelBuilder.build(), null));
+
+        modelBuilder.remove("test");
+        modelBuilder.remove("0/1/2/3/4");
+        modelBuilder.add("0/1/2/3/5/6/7", "".getBytes(StandardCharsets.UTF_8));
+        this.modelService.createModelVersion("1", "m", "v4", new CreateModelVersionRequest(modelBuilder.build(), null));
+
+        modelBuilder.clear();
+
+        this.fileS = modelBuilder.generate("s", 10, 100, true);
+
+        modelBuilder.add("src/.starwhale/jobs.yaml", "[]".getBytes(StandardCharsets.UTF_8));
+        this.modelService.createModelVersion("1", "m1", "v1",
+                new CreateModelVersionRequest(modelBuilder.build(), null));
+    }
+
+    @AfterAll
+    public void clear() {
+        this.modelDao.remove(Long.parseLong(
+                this.modelService.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m").build()).getId()));
+        this.modelDao.remove(Long.parseLong(
+                this.modelService.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m1").build()).getId()));
+    }
+
     @BeforeEach
     public void setUp() {
-        modelMapper = mock(ModelMapper.class);
-        modelVersionMapper = mock(ModelVersionMapper.class);
-        modelConverter = mock(ModelVoConverter.class);
-        given(modelConverter.convert(any(ModelEntity.class)))
-                .willAnswer(invocation -> {
-                    ModelEntity entity = invocation.getArgument(0);
-                    return ModelVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .name(entity.getName())
-                            .build();
-                });
-        versionConvertor = mock(ModelVersionVoConverter.class);
-        given(versionConvertor.convert(any(ModelVersionEntity.class), any()))
-                .willAnswer(invocation -> {
-                    ModelVersionEntity entity = invocation.getArgument(0);
-                    return ModelVersionVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .name(entity.getName())
-                            .build();
-                });
-        storagePathCoordinator = mock(StoragePathCoordinator.class);
-        storageAccessService = mock(StorageAccessService.class);
-        storageService = mock(StorageService.class);
-        given(storageService.listStorageFile(any()))
-                .willReturn(List.of());
-        given(storageService.getStorageSize(any()))
-                .willReturn(1000L);
-
-        userService = mock(UserService.class);
-        given(userService.currentUserDetail())
-                .willReturn(User.builder().id(1L).idTableKey(1L).build());
-        projectService = mock(ProjectService.class);
-        given(projectService.getProjectId(same("1")))
-                .willReturn(1L);
-        given(projectService.getProjectId(same("2")))
-                .willReturn(2L);
-        modelDao = mock(ModelDao.class);
-        jobHolder = mock(HotJobHolder.class);
-        trashService = mock(TrashService.class);
-        jobSpecParser = mock(JobSpecParser.class);
-
-        service = new ModelService(
-                modelMapper,
-                modelVersionMapper,
-                new IdConverter(),
-                new VersionAliasConverter(),
-                modelConverter,
-                versionConvertor,
-                storagePathCoordinator,
-                modelDao,
-                storageAccessService,
-                storageService,
-                userService,
-                projectService,
-                jobHolder,
-                trashService,
-                jobSpecParser);
-        bundleManager = mock(BundleManager.class);
-        given(bundleManager.getBundleId(any(BundleUrl.class)))
-                .willAnswer(invocation -> {
-                    BundleUrl bundleUrl = invocation.getArgument(0);
-                    switch (bundleUrl.getBundleUrl()) {
-                        case "m1":
-                            return 1L;
-                        case "m2":
-                            return 2L;
-                        case "m3":
-                            return 3L;
-                        default:
-                            throw new BundleException("");
-                    }
-                });
-
-        given(bundleManager.getBundleVersionId(any(BundleVersionUrl.class)))
-                .willAnswer((Answer<Long>) invocation -> {
-                    BundleVersionUrl url = invocation.getArgument(0);
-                    switch (url.getVersionUrl()) {
-                        case "v1":
-                            return 1L;
-                        case "v2":
-                            return 2L;
-                        case "v3":
-                            return 3L;
-                        default:
-                            throw new BundleException("");
-                    }
-                });
-
-        service.setBundleManager(bundleManager);
+        var token = new JwtLoginToken(this.user, "", List.of(new Role(0L, Role.NAME_OWNER, Role.CODE_OWNER)));
+        SecurityContextHolder.getContext().setAuthentication(token);
     }
 
     @Test
     public void testListModel() {
-        given(modelMapper.list(same(1L), anyString(), any(), any()))
-                .willReturn(List.of(
-                        ModelEntity.builder().id(1L).build(),
-                        ModelEntity.builder().id(2L).build()
-                ));
-        var res = service.listModel(ModelQuery.builder()
+        var res = modelService.listModel(ModelQuery.builder()
                 .projectUrl("1")
                 .namePrefix("")
                 .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),
-                hasProperty("list", hasItem(hasProperty("id", is("1")))),
-                hasProperty("list", hasItem(hasProperty("id", is("2"))))
+                hasProperty("list", hasItem(hasProperty("name", is("m")))),
+                hasProperty("list", hasItem(hasProperty("name", is("m1"))))
         ));
     }
 
     @Test
-    public void testFindBo() {
-        ModelEntity m1 = ModelEntity.builder().id(1L).modelName("model1").build();
-        ModelVersionEntity v1 = ModelVersionEntity.builder()
-                .id(2L)
-                .modelId(3L)
-                .versionName("v1")
-                .modelName("model1")
-                .ownerId(1L)
-                .versionMeta("test_meta")
-                .build();
-        given(modelDao.getModel(same(1L)))
-                .willReturn(m1);
-        given(modelDao.getModelVersion(same("v1")))
-                .willReturn(v1);
-        given(modelDao.findVersionById(same(2L)))
-                .willReturn(v1);
-
-        var res = service.findModel(1L);
+    public void testFindModel() {
+        var modelInfo = modelService.getModelInfo("1", "m", "v1");
+        var modelId = Long.parseLong(modelInfo.getId());
+        var versionId = Long.parseLong(modelInfo.getVersionId());
+        var res = modelService.findModel(modelId);
         assertThat(res, allOf(
                 notNullValue(),
-                hasProperty("id", is(1L)),
-                hasProperty("name", is("model1"))
+                hasProperty("id", is(modelId)),
+                hasProperty("name", is("m"))
         ));
 
-        var res1 = service.findModelVersion(2L);
-        assertThat(res1, allOf(
+        assertThat(modelService.findModelVersion(versionId), allOf(
                 notNullValue(),
-                hasProperty("id", is(v1.getId())),
-                hasProperty("modelId", is(v1.getModelId())),
-                hasProperty("name", is(v1.getVersionName())),
-                hasProperty("ownerId", is(v1.getOwnerId())),
-                hasProperty("meta", is(v1.getVersionMeta()))
+                hasProperty("id", is(versionId)),
+                hasProperty("modelId", is(modelId)),
+                hasProperty("name", is("v1")),
+                hasProperty("ownerId", is(2L))
         ));
 
-        var res2 = service.findModelVersion("v1");
-        assertThat(res2, equalTo(res1));
+        assertThat(modelService.findModelVersion("v2"), allOf(
+                notNullValue(),
+                hasProperty("modelId", is(modelId)),
+                hasProperty("name", is("v2")),
+                hasProperty("ownerId", is(2L))
+        ));
     }
 
     @Test
     public void testDeleteModel() {
-        RemoveManager removeManager = mock(RemoveManager.class);
-        given(removeManager.removeBundle(argThat(
-                url -> Objects.equals(url.getProjectUrl(), "p1") && Objects.equals(url.getBundleUrl(), "m1")
-        ))).willReturn(true);
-        try (var mock = mockStatic(RemoveManager.class)) {
-            mock.when(() -> RemoveManager.create(any(), any()))
-                    .thenReturn(removeManager);
-            var res = service.deleteModel(ModelQuery.builder().projectUrl("p1").modelUrl("m1").build());
-            assertThat(res, is(true));
-
-            res = service.deleteModel(ModelQuery.builder().projectUrl("p2").modelUrl("m2").build());
-            assertThat(res, is(false));
-        }
+        modelService.deleteModel(ModelQuery.builder().projectUrl("1").modelUrl("m1").build());
+        var res = modelService.listModel(ModelQuery.builder().projectUrl("1").build(), new PageParams(1, 5));
+        assertThat(res, allOf(
+                hasProperty("size", is(1)),
+                hasProperty("list", hasItem(hasProperty("name", is("m"))))
+        ));
     }
 
     @Test
     public void testRevertVersionTo() {
-        RevertManager revertManager = mock(RevertManager.class);
-        given(revertManager.revertVersionTo(argThat(
-                url ->
-                        Objects.equals(url.getBundleUrl().getProjectUrl(), "p1")
-                                && Objects.equals(url.getBundleUrl().getBundleUrl(), "m1")
-                                && Objects.equals(url.getVersionUrl(), "v1")
-        ))).willReturn(true);
-        try (var mock = mockStatic(RevertManager.class)) {
-            mock.when(() -> RevertManager.create(any(), any()))
-                    .thenReturn(revertManager);
-
-            var res = service.revertVersionTo("p1", "m1", "v1");
-            assertThat(res, is(true));
-
-            res = service.revertVersionTo("p1", "m1", "v2");
-            assertThat(res, is(false));
-        }
+        modelService.revertVersionTo("1", "m", "v1");
+        modelService.revertVersionTo("1", "m", "v2");
+        var res = modelService.listModelVersionHistory(
+                ModelVersionQuery.builder()
+                        .projectUrl("1")
+                        .modelUrl("m")
+                        .build(),
+                new PageParams(1, 10));
+        assertThat(res, allOf(
+                hasProperty("list", hasItems(
+                        hasProperty("name", is("v1")),
+                        hasProperty("name", is("v2")),
+                        hasProperty("name", is("v3")),
+                        hasProperty("name", is("v4")),
+                        hasProperty("name", is("v1")),
+                        hasProperty("name", is("v2"))))
+        ));
     }
 
     @Test
-    public void testListModelInfo() throws IOException {
-        given(modelMapper.findByName(same("m1"), same(1L), any()))
-                .willReturn(ModelEntity.builder().id(1L).build());
-        given(modelVersionMapper.list(same(1L), any(), any()))
-                .willReturn(List.of(ModelVersionEntity.builder().versionOrder(2L).build()));
-        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
-        given(storageAccessService.get(any())).willReturn(is);
-
-        var res = service.listModelInfo("1", "m1");
+    public void testListModelInfo() {
+        var res = modelService.listModelInfo("1", "m1");
         assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+                hasProperty("name", is("m1")),
+                hasProperty("versionAlias", is("v1")))));
 
-        given(projectService.findProject(same("1")))
-                .willReturn(Project.builder().id(1L).build());
-        given(modelMapper.list(same(1L), any(), any(), any()))
-                .willReturn(List.of(ModelEntity.builder().id(1L).build()));
-
-        res = service.listModelInfo("1", "");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        res = modelService.listModelInfo("1", "");
+        assertThat(res, allOf(
+                iterableWithSize(5),
+                hasItem(allOf(hasProperty("name", is("m")),
+                        hasProperty("versionAlias", is("v1")))),
+                hasItem(allOf(hasProperty("name", is("m1")),
+                        hasProperty("versionAlias", is("v1"))))));
 
         assertThrows(SwNotFoundException.class,
-                () -> service.listModelInfo("2", "m1"));
+                () -> modelService.listModelInfo("1", "m2"));
+        assertThrows(SwNotFoundException.class,
+                () -> modelService.listModelInfo("2", "m"));
     }
 
     @Test
-    public void testGetModelInfo() throws IOException {
-        given(modelMapper.find(same(1L)))
-                .willReturn(ModelEntity.builder().id(1L).build());
-
-        given(modelMapper.find(same(2L)))
-                .willReturn(ModelEntity.builder().id(2L).build());
-
+    public void testGetModelInfo() {
         assertThrows(SwNotFoundException.class,
-                () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m3").build()));
+                () -> modelService.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("m3").build()));
 
-        given(modelVersionMapper.find(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
-
-        given(modelVersionMapper.findByLatest(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
-
-        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
-        given(storageAccessService.get(any())).willReturn(is);
-        var res = service.getModelInfo(ModelQuery.builder()
-                .projectUrl("p1")
-                .modelUrl("m1")
+        var res = modelService.getModelInfo(ModelQuery.builder()
+                .projectUrl("1")
+                .modelUrl("m")
                 .modelVersionUrl("v1")
                 .build());
 
         assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+                hasProperty("name", is("m")),
+                hasProperty("versionAlias", is("v1"))));
 
-        given(modelVersionMapper.findByLatest(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(1L).versionOrder(2L).build());
-
-        res = service.getModelInfo(ModelQuery.builder()
-                .projectUrl("p1")
+        res = modelService.getModelInfo(ModelQuery.builder()
+                .projectUrl("1")
                 .modelUrl("m1")
                 .build());
 
         assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
-
-        assertThrows(BundleException.class,
-                () -> service.getModelInfo(ModelQuery.builder().projectUrl("1").modelUrl("2").build()));
+                hasProperty("name", is("m1")),
+                hasProperty("versionAlias", is("v1"))));
     }
 
     @Test
     public void testModifyModelVersion() {
-        given(modelVersionMapper.update(argThat(entity -> entity.getId() == 1L)))
-                .willReturn(1);
-
-        assertThrows(SwValidationException.class, () -> service.modifyModelVersion("1", "1", "v1", new ModelVersion()));
-
-        var res = service.modifyModelVersion("1", "1", "v1", ModelVersion.builder().tag("v1").build());
+        var res = modelService.modifyModelVersion("1", "m", "v1", ModelVersion.builder().tag("a").build());
         assertThat(res, is(true));
-
-        res = service.modifyModelVersion("1", "1", "v2", ModelVersion.builder().tag("v1").build());
-        assertThat(res, is(false));
     }
 
     @Test
-    public void testListModelVersionHistory() throws IOException {
-        given(modelVersionMapper.list(anyLong(), anyString(), anyString()))
-                .willReturn(List.of(ModelVersionEntity.builder().id(1L).build()));
-        var is = new LengthAbleInputStream(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)), 0);
-        given(storageAccessService.get(any())).willReturn(is);
-        var res = service.listModelVersionHistory(
+    public void testListModelVersionHistory() {
+        var res = modelService.listModelVersionHistory(
                 ModelVersionQuery.builder()
                         .projectUrl("1")
-                        .modelUrl("m1")
-                        .versionName("v1")
-                        .versionTag("tag1")
+                        .modelUrl("m")
                         .build(),
                 PageParams.builder().build()
         );
         assertThat(res, allOf(
-                hasProperty("list", iterableWithSize(1))
+                hasProperty("list", iterableWithSize(4))
         ));
-    }
-
-    @Test
-    public void testFindModelByVersionId() {
-        given(modelVersionMapper.findByIds(anyString()))
-                .willReturn(List.of(
-                        ModelVersionEntity.builder().modelId(1L).build(),
-                        ModelVersionEntity.builder().modelId(2L).build()
-                ));
-
-        given(modelMapper.findByIds(anyString()))
-                .willAnswer(invocation -> {
-                    String ids = invocation.getArgument(0);
-                    return Stream.of(ids.split(","))
-                            .map(id -> ModelEntity.builder().id(Long.valueOf(id)).build())
-                            .collect(Collectors.toList());
-                });
-
-        var res = service.findModelByVersionId(List.of());
-        assertThat(res, allOf(
-                iterableWithSize(2),
-                hasItem(hasProperty("id", is("1"))),
-                hasItem(hasProperty("id", is("2")))
-        ));
-    }
-
-    @Test
-    public void testUpload() throws IOException {
-        given(projectService.findProject(anyString()))
-                .willReturn(Project.builder().id(1L).build());
-        given(modelMapper.findByName(anyString(), same(1L), any()))
-                .willReturn(ModelEntity.builder().id(1L).build());
-        given(modelVersionMapper.findByNameAndModelId(anyString(), same(1L)))
-                .willReturn(ModelVersionEntity.builder()
-                        .id(1L)
-                        .storagePath("path1")
-                        .jobs("job1")
-                        .build());
-        given(jobHolder.ofStatus(anySet()))
-                .willReturn(List.of(
-                        Job.builder().model(Model.builder().name("m1").version("v1").build()).build(),
-                        Job.builder().model(Model.builder().name("m2").version("v2").build()).build()
-                ));
-
-        try (var mockIOUtils = mockStatic(IOUtils.class); var mockTarFileUtil = mockStatic(TarFileUtil.class)) {
-            mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
-                    .thenReturn("");
-            given(modelVersionMapper.find(3L))
-                    .willReturn(ModelVersionEntity.builder()
-                            .id(1L)
-                            .storagePath("path1")
-                            .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
-                            .build()
-                    );
-
-            ModelUploadRequest request = new ModelUploadRequest();
-            request.setProject("1");
-            request.setSwmp("m1:v1");
-
-            // case1: upload manifest
-            MultipartFile manifestFile = new MockMultipartFile("modelFile", new byte[10]);
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(manifestFile, request));
-
-            request.setForce("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadManifest(manifestFile, request));
-
-            request.setSwmp("m3:v3");
-            var manifestContent = "build:\n"
-                    + "  os: Linux\n"
-                    + "  sw_version: 0.0.0.dev0\n"
-                    + "created_at: 2022-12-01 22:17:19 CST\n"
-                    + "resources:\n"
-                    + "- name: empty.pt\n"
-                    + "  path: src/model/empty.pt\n"
-                    + "  signature: 786a02f742015903c6\n"
-                    + "version: kjvunxjq24iif5grsbazgae7xwbe3om7ogd65eey\n";
-            mockIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
-                    .thenReturn(manifestContent);
-
-            service.uploadManifest(manifestFile, request);
-            verify(storageAccessService, times(1)).put(eq("path1/_manifest.yaml"), any(InputStream.class), eq(10L));
-
-            // case2: upload src.tar
-            MultipartFile srcTar = new MockMultipartFile("src", "src.tar", null, new byte[20]);
-            mockTarFileUtil.when(() -> TarFileUtil.getContentFromTarFile(any(), any(), any()))
-                    .thenReturn("".getBytes());
-            service.uploadSrc(3L, srcTar, request);
-            mockTarFileUtil.verify(() -> TarFileUtil.extract(any(), any(ArchiveFileConsumer.class)), times(1));
-            verify(storageAccessService, times(1)).put(eq("path1/src.tar"), any(InputStream.class), eq(20L));
-
-            // case3: upload model
-            given(storagePathCoordinator.allocateCommonModelPoolPath(any(), any()))
-                    .willReturn("test/project/1/common-model/1");
-            MultipartFile modelFile = new MockMultipartFile("model.pth", "src/model/model.pth", null, new byte[100]);
-            service.uploadModel(3L, "123456", modelFile, request);
-            verify(storageAccessService, times(1))
-                    .put(eq("test/project/1/common-model/1"), any(InputStream.class), eq(100L));
-
-            given(modelVersionMapper.find(3L))
-                    .willReturn(ModelVersionEntity.builder()
-                            .id(3L)
-                            .status(ModelVersionEntity.STATUS_AVAILABLE)
-                            .build()
-                    );
-            request.setProject("1");
-            assertThrows(StarwhaleApiException.class, () -> service.uploadSrc(3L, manifestFile, request));
-            assertThrows(StarwhaleApiException.class, () -> service.uploadModel(3L, "", manifestFile, request));
-
-        }
-    }
-
-    @Test
-    public void testPullFile() {
-        HttpServletResponse response = new MockHttpServletResponse();
-        var is = new LengthAbleInputStream(new ByteArrayInputStream(new byte[10]), 10);
-        service.pullFile("mnist.pth", () -> is, response);
-        assertThat("write to response", response.getHeader("Content-Length").equals("10"));
-    }
-
-    @Test
-    public void testPullSrcTar() throws IOException {
-        HttpServletResponse response = new MockHttpServletResponse();
-        String fileName = "src.tar";
-
-        // case1: oss error test
-        var srcPath1 = "path1";
-        given(storageAccessService.get(srcPath1 + "/" + fileName))
-                .willReturn(new LengthAbleInputStream(new ByteArrayInputStream(new byte[]{}), 0));
-        service.pullSrcTar(fileName, srcPath1, response);
-        verify(storageAccessService, times(1)).get(any());
-        verify(storageAccessService, times(0)).list(any());
-
-        assertThat("response head", response.containsHeader(HttpHeaders.CONTENT_DISPOSITION));
-        assertThat("response head file name",
-                response.getHeader(HttpHeaders.CONTENT_DISPOSITION),
-                is("attachment; filename=\"" + fileName + "\"")
-        );
-
-    }
-
-    @Test
-    public void testPullSrcTarFromRecompress() throws IOException {
-        HttpServletResponse response = new MockHttpServletResponse();
-        String fileName = "src.tar";
-
-        // case1: oss error test
-        var srcPath1 = "path1";
-        given(storageAccessService.get(srcPath1 + "/" + fileName)).willThrow(IOException.class);
-        given(storageAccessService.list(srcPath1 + "/src")).willThrow(IOException.class);
-        assertThrows(SwProcessException.class, () -> service.pullSrcTar(fileName, srcPath1, response));
-        verify(storageAccessService, times(1)).list(srcPath1 + "/src");
-        verify(storageAccessService, times(1)).get(srcPath1 + "/" + fileName);
-
-        // case2: empty files test
-        var srcPath2 = "path";
-        given(storageAccessService.get(srcPath2 + "/" + fileName)).willThrow(IOException.class);
-        given(storageAccessService.list(srcPath2 + "/src")).willReturn(Stream.of());
-        assertThrows(SwValidationException.class, () -> service.pullSrcTar(fileName, srcPath2, response));
-        verify(storageAccessService, times(1)).list(srcPath2 + "/src");
-        verify(storageAccessService, times(1)).get(srcPath2 + "/" + fileName);
-
-        // case3 : full workflow test
-        try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
-            // case 1: download file
-            given(storageAccessService.list(srcPath2 + "/src"))
-                    .willReturn(Stream.of("path/src/file1", "path/src/file2"));
-
-            service.pullSrcTar(fileName, srcPath2, response);
-
-            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
-        }
-    }
-
-    @Test
-    public void testPull() throws IOException {
-        var manifestContent = "build:\n"
-                + "  os: Linux\n"
-                + "  sw_version: 0.0.0.dev0\n"
-                + "created_at: 2022-12-01 22:17:19 CST\n"
-                + "resources:\n"
-                + "- name: empty.pt\n"
-                + "  duplicate_check: true\n"
-                + "  path: src/model/empty.pt\n"
-                + "  desc: MODEL\n"
-                + "  signature: uuuuuuuuuu\n"
-                + "- name: dataset.yaml\n"
-                + "  duplicate_check: true\n"
-                + "  path: src/src/dataset.yaml\n"
-                + "  desc: SRC\n"
-                + "  signature: 66666666666\n"
-                + "version: m1\n";
-
-        given(modelVersionMapper.find(same(1L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path1").build());
-        given(modelVersionMapper.find(same(2L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path2").build());
-        given(modelVersionMapper.find(same(3L))).willReturn(
-                ModelVersionEntity.builder().storagePath("path3").build());
-        // case 1: not exist version test
-        var responseForManifest = new MockHttpServletResponse();
-        assertThrows(BundleException.class,
-                () -> service.pull(
-                        FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v4",
-                        responseForManifest));
-        // case 2: guess name and path error
-        assertThrows(SwValidationException.class,
-                () -> service.pull(
-                        null, "", "", "", "1", "m1", "v1",
-                        responseForManifest));
-        var is = new ByteArrayInputStream(manifestContent.getBytes());
-        var manifestInputStream = new LengthAbleInputStream(is, manifestContent.getBytes().length);
-        manifestInputStream.mark(0);
-        given(storageAccessService.get(any())).willReturn(manifestInputStream);
-        assertThrows(SwNotFoundException.class,
-                () -> service.pull(
-                        null, "empty1.pt", "src/model/empty1.pt", "", "1", "m1", "v1",
-                        responseForManifest));
-
-        // case 3: validation error test
-        given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/file1"));
-        given(storageAccessService.list("path2/src")).willReturn(Stream.of());
-        given(storageAccessService.list("path3/src")).willThrow(IOException.class);
-        manifestInputStream.reset();
-        service.pull(
-                FileDesc.MANIFEST, "_manifest.yaml", "_manifest.yaml", "", "1", "m1", "v1",
-                responseForManifest);
-        assertThat("upload manifest to response",
-                Objects.equals(responseForManifest.getHeader("Content-Length"),
-                        String.valueOf(manifestContent.getBytes().length)));
-
-        // case 4: pull model file
-        var modelPath = "sw/controller/project/foo/model/iiiiii";
-        given(projectService.findProject("foo")).willReturn(Project.builder().id(1L).name("foo").build());
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("iiiiii"))).willReturn(modelPath);
-        given(storageAccessService.get(modelPath)).willThrow(IOException.class);
-        var responseForModel = new MockHttpServletResponse();
-        manifestInputStream.reset();
-        assertThrows(SwProcessException.class,
-                () -> service.pull(
-                        FileDesc.MODEL, "empty.pt", "src/model/empty.pt", "iiiiii", "foo", "m1", "v3",
-                        responseForModel));
-
-        modelPath = "sw/controller/project/foo/model/uuuuuuuuuu";
-        given(storagePathCoordinator.allocateCommonModelPoolPath(eq(1L), eq("uuuuuuuuuu"))).willReturn(modelPath);
-        given(storageAccessService.get(modelPath)).willReturn(
-                new LengthAbleInputStream(new ByteArrayInputStream(new byte[100]), 100));
-        manifestInputStream.reset();
-        service.pull(
-                null, "empty.pt", "src/model/empty.pt", "uuuuuuuuuu", "foo", "m1", "v1",
-                responseForModel
-        );
-        assertThat("upload model to response", Objects.equals(responseForModel.getHeader("Content-Length"), "100"));
-
-        // case 5: pull src as tar
-        var responseForNormal = new MockHttpServletResponse();
-        try (MockedStatic<TarFileUtil> tarFileUtilMockedStatic = mockStatic(TarFileUtil.class)) {
-            given(storageAccessService.get("path1/src.tar")).willThrow(IOException.class);
-            given(storageAccessService.list("path1/src")).willReturn(Stream.of("path1/src/a.py", "path1/src/b.py"));
-            manifestInputStream.reset();
-            service.pull(
-                    FileDesc.SRC_TAR, "src.tar", "", "", "foo", "m1", "v1",
-                    responseForNormal);
-
-            tarFileUtilMockedStatic.verify(() -> TarFileUtil.archiveAndTransferTo(any(), any()), times(1));
-            assertThat("upload src.tar to response",
-                    Objects.equals(responseForNormal.getHeader("Content-Length"), "0"));
-        }
     }
 
     @Test
     public void testQuery() {
-        given(modelVersionMapper.find(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(1L).versionName("v1").build());
-
-        var res = service.query("p1", "m1", "v1");
+        var res = modelService.query("1", "m1", "v1");
         assertThat(res, is("v1"));
 
         assertThrows(SwNotFoundException.class,
-                () -> service.query("p1", "m2", "v2"));
+                () -> modelService.query("1", "m2", "v2"));
 
         assertThrows(SwNotFoundException.class,
-                () -> service.query("p1", "m1", "v3"));
-
+                () -> modelService.query("1", "m1", "v3"));
     }
 
     @Test
     public void testShareModelVersion() {
-        service.shareModelVersion("1", "d1", "v1", true);
-        service.shareModelVersion("1", "d1", "v1", false);
+        modelService.shareModelVersion("1", "m", "v1", true);
+        modelService.shareModelVersion("1", "m1", "v1", false);
     }
 
     @Test
-    public void testListModelVersionView() throws IOException {
-        given(modelVersionMapper.findByLatest(same(1L)))
-                .willReturn(ModelVersionEntity.builder().id(5L).build());
-        given(modelVersionMapper.findByLatest(same(3L)))
-                .willReturn(ModelVersionEntity.builder().id(2L).build());
-        given(modelVersionMapper.listModelVersionViewByProject(same(1L)))
-                .willReturn(List.of(
-                    ModelVersionViewEntity.builder().id(5L).modelId(1L).versionOrder(4L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(4L).modelId(1L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(3L).modelId(1L).versionOrder(3L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model1").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(2L).modelId(3L).versionOrder(2L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(1L).modelId(3L).versionOrder(1L).projectName("sw")
-                        .userName("sw").shared(false).modelName("model3").storagePath("any").build()
-                ));
+    public void testListModelVersionView() {
+        var res = modelService.listModelVersionView("1");
+        assertThat(res, hasItems(
+                allOf(hasProperty("projectName", is("starwhale")),
+                        hasProperty("modelName", is("m")),
+                        hasProperty("versions", hasItems(
+                                allOf(hasProperty("versionName", is("v1")),
+                                        hasProperty("alias", is("v1"))),
+                                allOf(hasProperty("versionName", is("v2")),
+                                        hasProperty("alias", is("v2"))),
+                                allOf(hasProperty("versionName", is("v3")),
+                                        hasProperty("alias", is("v3"))),
+                                allOf(hasProperty("versionName", is("v4")),
+                                        hasProperty("alias", is("latest")))))),
+                allOf(hasProperty("projectName", is("starwhale")),
+                        hasProperty("modelName", is("m1")),
+                        hasProperty("versions", hasItems(
+                                allOf(hasProperty("versionName", is("v1")),
+                                        hasProperty("alias", is("latest"))))))));
+    }
 
-        given(modelVersionMapper.listModelVersionViewByShared(same(1L)))
-                .willReturn(List.of(
-                    ModelVersionViewEntity.builder().id(8L).modelId(2L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(7L).modelId(2L).versionOrder(2L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model2").storagePath("any").build(),
-                    ModelVersionViewEntity.builder().id(6L).modelId(4L).versionOrder(3L).projectName("sw2")
-                        .userName("sw2").shared(true).modelName("model4").storagePath("any").build()
-                ));
+    @Test
+    public void testUploadBlob() throws IOException {
+        var data = "test";
+        var result = this.modelService.initUploadBlob(new InitUploadBlobRequest(DigestUtils.md5Hex(data), 4L));
+        assertThat(result.getStatus(), is(Status.OK));
+        assertThat(result.getSignedUrl(), is("blob/" + result.getBlobId()));
 
-        var res = service.listModelVersionView("1");
-        assertEquals(4, res.size());
-        assertEquals("model1", res.get(0).getModelName());
-        assertEquals("model3", res.get(1).getModelName());
-        assertEquals("model2", res.get(2).getModelName());
-        assertEquals("model4", res.get(3).getModelName());
-        assertEquals(3, res.get(0).getVersions().size());
-        assertEquals(2, res.get(1).getVersions().size());
-        assertEquals(2, res.get(2).getVersions().size());
-        assertEquals(1, res.get(3).getVersions().size());
-        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
-        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
-        assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
-        assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+        var result2 = this.modelService.initUploadBlob(new InitUploadBlobRequest(DigestUtils.md5Hex(data), 4L));
+        assertThat(result2.getStatus(), is(Status.OK));
+        assertThat(result2.getSignedUrl(), is("blob/" + result2.getBlobId()));
+
+        this.storageAccessService.put(result.getSignedUrl(),
+                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+        this.storageAccessService.put(result2.getSignedUrl(),
+                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(this.modelService.completeUploadBlob(result.getBlobId()), is(result.getBlobId()));
+        assertThat(this.modelService.completeUploadBlob(result2.getBlobId()), is(result.getBlobId()));
+    }
+
+    @Test
+    public void testUploadBlobMultiThreads() throws InterruptedException {
+        var threads = new Thread[100];
+        var idSetList = new ArrayList<Set<String>>();
+        for (int i = 0; i < threads.length; ++i) {
+            var idSet = new HashSet<String>();
+            idSetList.add(idSet);
+            threads[i] = new Thread(() -> {
+                var random = new Random();
+                for (int j = 0; j < 100000; ++j) {
+                    try {
+                        var data = Ints.toByteArray(random.nextInt(10000));
+                        var result = this.modelService.initUploadBlob(
+                                new InitUploadBlobRequest(DigestUtils.md5Hex(data), 10L));
+                        this.storageAccessService.put(result.getSignedUrl(), data);
+                        idSet.add(this.modelService.completeUploadBlob(result.getBlobId()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            threads[i].start();
+        }
+        for (var thread : threads) {
+            thread.join();
+        }
+        assertThat(idSetList.stream().flatMap(Collection::stream).distinct()
+                        .map(id -> {
+                            try {
+                                return Ints.fromByteArray(
+                                        this.storageAccessService.get("blob/" + id)
+                                                .readAllBytes());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .collect(Collectors.toSet()),
+                is(IntStream.range(0, 10000).boxed().collect(Collectors.toSet())));
+    }
+
+    @Test
+    public void testListFiles() {
+        assertThat(this.modelService.listFiles("1", "m", "v1", "").getFiles(),
+                hasItems(allOf(hasProperty("name", is("src")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
+                        allOf(hasProperty("name", is("0")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
+                        allOf(hasProperty("name", is("t")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
+                        allOf(hasProperty("name", is("v")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
+                        allOf(hasProperty("name", is("readme")),
+                                hasProperty("type", is(Type.FILE)),
+                                hasProperty("size", is(String.valueOf(this.readmeFile.length))),
+                                hasProperty("signature", is(DigestUtils.md5Hex(this.readmeFile)))),
+                        allOf(hasProperty("name", is("model")),
+                                hasProperty("type", is(Type.FILE)),
+                                hasProperty("size", is(String.valueOf(this.modelFile.length))),
+                                hasProperty("signature", is(DigestUtils.md5Hex(this.modelFile))))));
+        assertThat(this.modelService.listFiles("1", "m", "v1", "t").getFiles(),
+                allOf(iterableWithSize(10002),
+                        hasItem(allOf(hasProperty("name", is("d0")),
+                                hasProperty("type", is(Type.DIRECTORY)))),
+                        hasItem(allOf(hasProperty("name", is("d4999")),
+                                hasProperty("type", is(Type.DIRECTORY)))),
+                        hasItem(allOf(hasProperty("name", is("f0")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("f4999")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("z")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("empty")),
+                                hasProperty("type", is(Type.FILE))))));
+        assertThat(this.modelService.listFiles("1", "m", "v1",
+                        IntStream.range(0, 99).mapToObj(String::valueOf).collect(Collectors.joining("/"))).getFiles(),
+                hasItems(allOf(hasProperty("name", is("99")),
+                        hasProperty("type", is(Type.FILE)))));
+        assertThat(this.modelService.listFiles("1", "m", "v1", "v/1/2/3/4").getFiles(),
+                allOf(hasItem(allOf(hasProperty("name", is("0")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("1")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("2")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("3")),
+                                hasProperty("type", is(Type.FILE)))),
+                        hasItem(allOf(hasProperty("name", is("4")),
+                                hasProperty("type", is(Type.FILE))))));
+    }
+
+    @Test
+    public void testGetFileData() throws IOException {
+        assertThat(this.modelService.getFileData("1", "m", "v1", "readme").readAllBytes(),
+                is(this.readmeFile));
+        assertThat(this.modelService.getFileData("1", "m", "v1",
+                                IntStream.range(0, 100)
+                                        .mapToObj(String::valueOf)
+                                        .collect(Collectors.joining("/")))
+                        .readAllBytes(),
+                is(this.file99));
+        assertThat(DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "t/z").readAllBytes()),
+                is(this.tzMd5));
+        assertThat(DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "model").readAllBytes()),
+                is(this.modelMd5));
+
+        assertThat(this.modelService.getFileData("1", "m", "v1", "t/empty").readAllBytes(), is(new byte[0]));
+
+        assertThat(this.modelService.getFileData("1", "m1", "v1", "s").readAllBytes(), is(this.fileS));
+    }
+
+    private void checkDiff(FileNode f, String path, List<String> added, List<String> deleted, List<String> modified) {
+        switch (f.getFlag()) {
+            case ADDED:
+                assertThat(added, hasItem(path + f.getName()));
+                break;
+            case DELETED:
+                assertThat(deleted, hasItem(path + f.getName()));
+                break;
+            case UPDATED:
+                assertThat(modified, hasItem(path + f.getName()));
+                break;
+            case UNCHANGED:
+                assertThat(added, not(hasItem(path + f.getName())));
+                assertThat(deleted, not(hasItem(path + f.getName())));
+                assertThat(modified, not(hasItem(path + f.getName())));
+                break;
+            default:
+                break;
+        }
+        if (f.getType() == Type.DIRECTORY) {
+            for (var child : f.getFiles()) {
+                checkDiff(child, path + f.getName() + "/", added, deleted, modified);
+            }
+        }
+    }
+
+    @Test
+    public void testGetModelDiff() {
+        for (var f : this.modelService.getModelDiff("1", "m", "v1", "v2").get("compareVersion")) {
+            this.checkDiff(f, "", List.of("test"), List.of("v/1/1/1/1/1"), List.of("t/d3/x"));
+        }
+        for (var f : this.modelService.getModelDiff("1", "m", "v2", "v3").get("compareVersion")) {
+            this.checkDiff(f, "", List.of(), List.of(), List.of());
+        }
+        for (var f : this.modelService.getModelDiff("1", "m", "v3", "v4").get("compareVersion")) {
+            this.checkDiff(f, "",
+                    List.of("0/1/2/3/5", "0/1/2/3/5/6", "0/1/2/3/5/6/7"),
+                    List.of("test", "0/1/2/3/4"),
+                    List.of());
+        }
+    }
+
+    @Test
+    public void testBlobUsage() {
+        assertThat(this.modelService.getModelMetaBlob("1", "m", "v2", ""),
+                is(this.modelService.getModelMetaBlob("1", "m", "v3", "")));
     }
 }

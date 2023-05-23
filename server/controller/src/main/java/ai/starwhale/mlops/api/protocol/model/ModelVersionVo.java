@@ -44,12 +44,6 @@ public class ModelVersionVo implements Serializable {
     @JsonProperty("tag")
     private String tag;
 
-    @JsonProperty("meta")
-    private Object meta;
-
-    @JsonProperty("manifest")
-    private String manifest;
-
     @JsonProperty("size")
     private Long size;
 
@@ -65,7 +59,6 @@ public class ModelVersionVo implements Serializable {
     private List<StepSpec> stepSpecs;
 
     public static ModelVersionVo empty() {
-        return new ModelVersionVo("", "", "", "", "{}", "",
-                0L, -1L, UserVo.empty(), "", List.of());
+        return new ModelVersionVo("", "", "", "", 0L, -1L, UserVo.empty(), "", List.of());
     }
 }

@@ -41,6 +41,7 @@ import com.aliyun.oss.model.PartETag;
 import com.aliyun.oss.model.UploadPartRequest;
 import com.google.common.collect.Streams;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -139,7 +140,10 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
         try {
             var resp = this.ossClient.getObject(this.bucket, path);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
-        } catch (Exception e) {
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                throw new FileNotFoundException(path);
+            }
             log.error("get object fails", e);
             throw new IOException(e);
         }
@@ -151,7 +155,10 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
             var req = new GetObjectRequest(bucket, path).withRange(offset, offset + size - 1);
             var resp = this.ossClient.getObject(req);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
-        } catch (Exception e) {
+        } catch (OSSException e) {
+            if (e.getErrorCode().equals(OSSErrorCode.NO_SUCH_KEY)) {
+                throw new FileNotFoundException(path);
+            }
             log.error("get object fails", e);
             throw new IOException(e);
         }
@@ -183,7 +190,7 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     }
 
     @Override
-    public String signedUrl(String path, Long expTimeMillis) throws IOException {
+    public String signedUrl(String path, Long expTimeMillis) {
         return ossClient.generatePresignedUrl(this.bucket, path, new Date(System.currentTimeMillis() + expTimeMillis))
                 .toString();
     }

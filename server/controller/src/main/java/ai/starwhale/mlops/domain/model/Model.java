@@ -39,11 +39,6 @@ public class Model {
 
     String version;
 
-    /**
-     * The storage path of the model, it could be a directory or a single file
-     */
-    String path;
-
     List<StepSpec> stepSpecs;
 
     public static Model fromEntity(ModelEntity entity) {

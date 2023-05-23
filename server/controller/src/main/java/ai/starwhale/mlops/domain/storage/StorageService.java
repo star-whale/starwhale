@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,8 +39,11 @@ import org.springframework.util.StringUtils;
 @Service
 public class StorageService {
 
-    @Resource
-    private StorageAccessService storageAccessService;
+    private final StorageAccessService storageAccessService;
+
+    public StorageService(StorageAccessService storageAccessService) {
+        this.storageAccessService = storageAccessService;
+    }
 
     public List<FlattenFileVo> listStorageFile(String storagePath) throws IOException {
         if (!StringUtils.hasText(storagePath)) {

@@ -23,6 +23,7 @@ import ai.starwhale.mlops.storage.autofit.fs.CompatibleStorageAccessServiceBuild
 import ai.starwhale.mlops.storage.autofit.minio.CompatibleStorageAccessServiceBuilderMinio;
 import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceBuilderS3;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
+import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -78,4 +79,9 @@ public class StorageAccessConfig {
         return new StorageAccessServiceMinio(storageProperties.getS3Config());
     }
 
+    @Bean
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "memory")
+    public StorageAccessService memory(StorageProperties storageProperties) {
+        return new StorageAccessServiceMemory();
+    }
 }

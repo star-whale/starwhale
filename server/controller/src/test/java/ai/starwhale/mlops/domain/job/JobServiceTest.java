@@ -392,7 +392,8 @@ public class JobServiceTest {
         verify(svc, never()).cancelJob(any());
 
         // cancel job 2
-        var theJob = Job.builder().id(2L).autoReleaseTime(new Date()).status(JobStatus.RUNNING).build();
+        var theJob = Job.builder().id(2L).autoReleaseTime(new Date(System.currentTimeMillis() - 1))
+                .status(JobStatus.RUNNING).build();
         when(jobDao.findJobByStatusIn(eq(List.of(JobStatus.RUNNING)))).thenReturn(List.of(theJob));
         when(jobDao.getJobId(eq("2"))).thenReturn(theJob.getId());
         when(hotJobHolder.ofIds(eq(List.of(theJob.getId())))).thenReturn(List.of(theJob));

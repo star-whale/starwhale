@@ -33,6 +33,7 @@ class BaseStorage(metaclass=ABCMeta):
         self.uri = uri
         self.sw_config = SWCliConfigMixed()
         self.project_dir = self.sw_config.rootdir / self.uri.project.name
+        self.blob_dir = self.sw_config.rootdir / ".swblob"
         self.loc, self.id = self._guess()
 
         self.building = False

@@ -79,10 +79,7 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .modelId(model.getId())
                 .versionName("vn")
                 .ownerId(user.getId())
-                .manifest("mf")
                 .jobs("jobs")
-                .versionMeta("mt")
-                .storagePath("s")
                 .versionOrder(1L)
                 .build();
         modelVersionMapper.insert(modelVersionEntity);
@@ -246,7 +243,6 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(expected.getModelId(), target.getModelId());
         Assertions.assertEquals(expected.getOwnerId(), target.getOwnerId());
         Assertions.assertEquals(expected.getVersionName(), target.getVersionName());
-        Assertions.assertEquals(expected.getStoragePath(), target.getStoragePath());
         Assertions.assertEquals(expected.getVersionTag(), target.getVersionTag());
         Assertions.assertNotNull(target.getVersionOrder());
         Assertions.assertEquals("model", target.getModelName());

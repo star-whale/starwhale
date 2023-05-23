@@ -114,7 +114,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
         user.setRoles(roles);
         // Build jwt token with user
-        JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getAuthorities());
+        JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getRoles());
         jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
         SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         filterChain.doFilter(httpServletRequest, httpServletResponse);

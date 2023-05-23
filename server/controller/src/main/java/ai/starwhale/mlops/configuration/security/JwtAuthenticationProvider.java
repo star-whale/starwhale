@@ -46,7 +46,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         user.additionalAuthenticationChecks(jwtLoginToken);
         // Create authenticated authentication
         JwtLoginToken authenticatedToken = new JwtLoginToken(user, jwtLoginToken.getCredentials(),
-                user.getAuthorities());
+                user.getRoles());
         authenticatedToken.setDetails(jwtLoginToken.getDetails());
         return authenticatedToken;
     }

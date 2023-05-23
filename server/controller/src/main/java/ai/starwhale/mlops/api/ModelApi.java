@@ -19,29 +19,26 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.model.CompleteUploadBlobResult;
+import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
+import ai.starwhale.mlops.api.protocol.model.ListFilesResult;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
-import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import com.github.pagehelper.PageInfo;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,327 +52,148 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Model")
 @Validated
 public interface ModelApi {
 
-    @Operation(summary = "Get the list of models")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/model", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.QUERY, description = "Model versionId", schema = @Schema())
-            @Valid
-            @RequestParam(value = "versionId", required = false)
-            String versionId,
-            @Parameter(
-                    in = ParameterIn.QUERY,
-                    description = "Model name prefix to search for",
-                    schema = @Schema())
-            @Valid @RequestParam(value = "name", required = false) String name,
-            @Valid @RequestParam(value = "owner", required = false) String owner,
-            @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-            Integer pageNum,
-            @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-            Integer pageSize);
+            @PathVariable String projectUrl,
+            @Valid @RequestParam(required = false) String versionId,
+            @Valid @RequestParam(required = false) String name,
+            @Valid @RequestParam(required = false) String owner,
+            @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize);
 
-    @Operation(
-            summary = "Revert model version",
-            description =
-                    "Select a historical version of the model and revert the latest version of the current model to "
-                            + "this version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/revert",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/revert", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Model Url",
-                    required = true,
-                    schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Valid
-            @RequestBody RevertModelVersionRequest revertRequest);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestBody RevertModelVersionRequest revertRequest);
 
-    @Operation(summary = "Delete a model")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteModel(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-                    String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-                    String modelUrl);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl);
 
-    @Operation(summary = "Recover a model")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/recover",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/recover", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverModel(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-                    String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-                    String modelUrl);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl);
 
-    @Operation(summary = "Model information",
-            description = "Return the file information in the model package of the latest version of the current model")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Parameter(in = ParameterIn.QUERY,
-                    description = "Model versionUrl. "
-                            + "(Return the current version as default when the versionUrl is not set.)",
-                    schema = @Schema())
-            @Valid
-            @RequestParam(value = "versionUrl", required = false)
-            String versionUrl);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam(required = false) String versionUrl);
 
-
-    @Operation(summary = "Model Diff information",
-            description = "Return the diff information between the base version and the compare version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/diff",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/diff", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
-            @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Parameter(in = ParameterIn.QUERY, description = "Model version of base. ", schema = @Schema())
-            @Valid
-            @RequestParam(value = "baseVersion")
-            String baseVersion,
-            @Parameter(in = ParameterIn.QUERY, description = "Model version of compare. ", schema = @Schema())
-            @Valid
-            @RequestParam(value = "compareVersion")
-            String compareVersion);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam String baseVersion,
+            @Valid @RequestParam String compareVersion);
 
-    @Operation(summary = "Get the list of model versions")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/version",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project Url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, description = "Model Url", required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Parameter(in = ParameterIn.QUERY,
-                    description = "Model version name prefix to search for",
-                    schema = @Schema())
-            @Valid
-            @RequestParam(value = "name", required = false)
-            String name,
-            @Parameter(
-                    in = ParameterIn.QUERY,
-                    description = "Model version tag",
-                    schema = @Schema())
-            @RequestParam(value = "tag", required = false)
-            String tag,
-            @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageNum", required = false, defaultValue = "1")
-            Integer pageNum,
-            @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
-            @Valid
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10")
-            Integer pageSize);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @Valid @RequestParam(required = false) String name,
+            @RequestParam(required = false) String tag,
+            @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize);
 
-    @Operation(summary = "Share or unshare the model version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/shared",
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/shared",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> shareModelVersion(
-            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl") String modelUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl") String versionUrl,
-            @Parameter(
-                in = ParameterIn.QUERY,
-                required = true,
-                description = "1 or true - shared, 0 or false - unshared",
-                schema = @Schema())
-            @RequestParam(value = "shared") Boolean shared
-    );
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @RequestParam Boolean shared);
 
-    @Operation(summary = "List Model tree including global models")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model-tree",
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/model-tree", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<ModelViewVo>>> listModelTree(
-            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl);
+            @PathVariable String projectUrl);
 
-    @Operation(summary = "Set tag of the model version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyModel(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl")
-            String versionUrl,
-            @Valid @RequestBody ModelUpdateRequest request);
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @Valid @RequestBody ModelUpdateRequest modelUpdateRequest);
 
-    @Operation(summary = "Manage tag of the model version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageModelTag(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl")
-            String modelUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl")
-            String versionUrl,
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
             @Valid @RequestBody ModelTagRequest modelTagRequest);
 
-    @Operation(summary = "Create a new model version",
-            description = "Create a new version of the model. "
-                    + "The data resources can be selected by uploading the file package or entering the server path.")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-            value = "/project/{projectUrl}/model/{modelName}/version/{versionName}/file",
+    @PostMapping(value = "/blob", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
+            @Valid @RequestBody InitUploadBlobRequest initUploadBlobRequest);
+
+    @PostMapping(value = "/blob/{blobId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<CompleteUploadBlobResult>> completeUploadBlob(
+            @PathVariable String blobId);
+
+    @PostMapping(value = "/project/{project}/model/{model}/version/{version}/completeUpload",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<Object>> upload(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+    void createModelVersion(
+            @PathVariable String project,
             @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.")
-            @PathVariable("modelName") String modelName,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionName") String versionName,
-            @Parameter(description = "file detail") @RequestPart(value = "file", required = false) MultipartFile file,
-            ModelUploadRequest uploadRequest);
+            @PathVariable String model,
+            @PathVariable String version,
+            @Valid @RequestBody CreateModelVersionRequest createModelVersionRequest);
 
-    @Operation(summary = "Pull file of a model version",
-            description = "Create a new version of the model. ")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-            value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/file",
+    @GetMapping(value = "/project/{project}/model/{model}/version/{version}/meta",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
+            @PathVariable String project,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @PathVariable String version,
+            @RequestParam(required = false, defaultValue = "") String blobId);
+
+    @GetMapping(value = "/project/{project}/model/{model}/listFiles", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
+            @PathVariable String project,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @RequestParam(required = false, defaultValue = "latest") String version,
+            @RequestParam(required = false, defaultValue = "") String path);
+
+    @GetMapping(value = "/project/{project}/model/{model}/getFileData",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void pull(
-            @RequestParam(name = "desc", required = false) FileDesc fileDesc,
-            @RequestParam(name = "partName", required = false) String name,
-            @RequestParam(name = "path", required = false) String path,
-            @RequestParam(name = "signature", required = false) String signature,
-            @PathVariable("projectUrl") String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is not invalid.")
-            @PathVariable("modelUrl") String modelUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl") String versionUrl,
-            HttpServletResponse httpResponse);
+    ResponseEntity<InputStreamResource> getFileData(
+            @PathVariable String project,
+            @Pattern(regexp = BUNDLE_NAME_REGEX, message = "Model name is invalid.") @PathVariable String model,
+            @RequestParam(required = false, defaultValue = "latest") String version,
+            @RequestParam String path);
 
-
-    @Operation(summary = "head for model info ",
-            description = "head for model info")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
             value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
             produces = MediaType.APPLICATION_JSON_VALUE,
             method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<?> headModel(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("modelUrl") String modelUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl") String versionUrl);
-
-
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl);
 }

@@ -16,6 +16,7 @@ exclude = '''
     | dist
     | \.history
     | example/LLM/belle-bloom/BELLE
+    | starwhale/proto_gen
   )/
 )
 '''
@@ -29,6 +30,7 @@ exclude = [
     "tests/",
     "dummy/setup.py",
     "example/LLM/belle-bloom/BELLE/",
+    "starwhale/proto_gen/",
 ]
 show_column_numbers = true
 ignore_missing_imports = true
@@ -43,6 +45,7 @@ disallow_subclassing_any = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 strict_optional = true
+plugins = [ "trio_typing.plugin" ]
 
 [tool.isort]
 profile = "black"
@@ -50,4 +53,4 @@ multi_line_output = 3
 length_sort = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
-extend_skip_glob="../example/LLM/belle-bloom/BELLE/*"
+extend_skip_glob="../example/LLM/belle-bloom/BELLE/*,starwhale/proto_gen/*"

@@ -21,6 +21,7 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.util.MetaHelper;
 import com.google.common.collect.Streams;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -247,6 +248,8 @@ public class StorageAccessServiceS3 implements StorageAccessService {
             var req = GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
             var resp = s3client.getObject(req);
             return new LengthAbleInputStream(resp, resp.response().contentLength());
+        } catch (NoSuchKeyException e) {
+            throw new FileNotFoundException(path);
         } catch (Exception e) {
             log.error("get object fails", e);
             throw new IOException(e);
@@ -270,6 +273,8 @@ public class StorageAccessServiceS3 implements StorageAccessService {
                     .build();
             var resp = s3client.getObject(req);
             return new LengthAbleInputStream(resp, resp.response().contentLength());
+        } catch (NoSuchKeyException e) {
+            throw new FileNotFoundException(path);
         } catch (Exception e) {
             log.error("get object fails", e);
             throw new IOException(e);

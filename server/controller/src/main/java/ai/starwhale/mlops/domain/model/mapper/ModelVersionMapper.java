@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.model.mapper;
 
-import static ai.starwhale.mlops.domain.model.po.ModelVersionEntity.STATUS_AVAILABLE;
-
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import cn.hutool.core.util.StrUtil;
@@ -36,11 +34,11 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface ModelVersionMapper {
 
-    String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, created_time, modified_time, jobs, status, shared, built_in_runtime";
+    String COLUMNS = "id, version_order, model_id, owner_id, version_name, version_tag, "
+            + " created_time, modified_time, jobs, status, meta_blob_id, storage_size, shared, built_in_runtime";
 
     String VERSION_VIEW_COLUMNS = "u.user_name, p.project_name, m.model_name, m.id as model_id,"
-            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.storage_path, built_in_runtime,"
+            + " v.id, v.version_order, v.version_name, v.jobs, v.shared, v.storage_size, built_in_runtime,"
             + " v.created_time, v.modified_time";
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
@@ -66,7 +64,6 @@ public interface ModelVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
-            + " and v.status = " + STATUS_AVAILABLE
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and m.is_deleted = 0"
@@ -78,7 +75,6 @@ public interface ModelVersionMapper {
     @Select("select " + VERSION_VIEW_COLUMNS
             + " from model_info as m, model_version as v, project_info as p, user_info as u"
             + " where v.model_id = m.id"
-            + " and v.status = " + STATUS_AVAILABLE
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and p.is_deleted = 0"
@@ -99,10 +95,10 @@ public interface ModelVersionMapper {
     @Update("update model_version set version_order = #{versionOrder} where id = #{id}")
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
-    @Insert("insert into model_version (model_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, jobs)"
-            + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta},"
-            + " #{storagePath}, #{jobs})")
+    @Insert("insert into model_version "
+            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id)"
+            + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{jobs}, "
+            + "#{builtInRuntime}, #{metaBlobId})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 
@@ -140,7 +136,6 @@ public interface ModelVersionMapper {
                     if (StrUtil.isNotEmpty(tag)) {
                         WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
-                    WHERE("status = " + STATUS_AVAILABLE);
                     ORDER_BY("version_order desc");
                 }
             }.toString();
@@ -172,9 +167,6 @@ public interface ModelVersionMapper {
                     }
                     if (StrUtil.isNotEmpty(version.getJobs())) {
                         SET("jobs=#{jobs}");
-                    }
-                    if (Objects.nonNull(version.getStatus())) {
-                        SET("status=#{status}");
                     }
                     WHERE("id = #{id}");
                 }

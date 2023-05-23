@@ -35,13 +35,14 @@ public class ModelVersionVoConverter {
     private final JobSpecParser jobSpecParser;
 
     public ModelVersionVoConverter(IdConverter idConvertor,
-            VersionAliasConverter versionAliasConvertor, JobSpecParser jobSpecParser) {
+            VersionAliasConverter versionAliasConvertor,
+            JobSpecParser jobSpecParser) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.jobSpecParser = jobSpecParser;
     }
 
-    public ModelVersionVo convert(ModelVersionEntity entity, String manifest)
+    public ModelVersionVo convert(ModelVersionEntity entity)
             throws ConvertException {
         try {
             return ModelVersionVo.builder()
@@ -49,11 +50,10 @@ public class ModelVersionVoConverter {
                     .name(entity.getVersionName())
                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                     .tag(entity.getVersionTag())
-                    .meta(entity.getVersionMeta())
-                    .manifest(manifest)
                     .builtInRuntime(entity.getBuiltInRuntime())
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
+                    .size(entity.getStorageSize())
                     .build();
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);

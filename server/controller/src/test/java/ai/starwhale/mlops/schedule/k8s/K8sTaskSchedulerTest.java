@@ -86,9 +86,7 @@ public class K8sTaskSchedulerTest {
         RunTimeProperties runTimeProperties = new RunTimeProperties(
                 "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH"));
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
-        when(storageAccessService.list(eq("path_swmp"))).thenReturn(Stream.of("path_swmp"));
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
-        when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
         return new K8sTaskScheduler(k8sClient,
                 taskTokenValidator,
@@ -223,7 +221,7 @@ public class K8sTaskSchedulerTest {
     private Task mockTask(boolean devMode) {
         Job job = Job.builder()
                 .id(1L)
-                .model(Model.builder().path("path_swmp").build())
+                .model(Model.builder().build())
                 .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)

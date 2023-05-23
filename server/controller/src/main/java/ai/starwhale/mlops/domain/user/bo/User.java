@@ -44,7 +44,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class User implements UserDetails, Serializable {
 
     private Long id;
-    private Long idTableKey;
     private String name;
     private String password;
     private String salt;
@@ -91,7 +90,6 @@ public class User implements UserDetails, Serializable {
         setPassword(entity.getUserPwd());
         setSalt(entity.getUserPwdSalt());
         setActive(entity.getUserEnabled() == 1);
-        setIdTableKey(entity.getId());
         setCreatedTime(entity.getCreatedTime());
         return this;
     }

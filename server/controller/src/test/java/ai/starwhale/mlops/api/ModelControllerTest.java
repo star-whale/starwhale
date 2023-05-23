@@ -35,13 +35,10 @@ import static org.mockito.BDDMockito.same;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
-import ai.starwhale.mlops.api.protocol.storage.FileDesc;
-import ai.starwhale.mlops.api.protocol.upload.UploadPhase;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.model.ModelService;
@@ -201,48 +198,6 @@ public class ModelControllerTest {
         reqeust.setTag("no-tag");
         assertThrows(StarwhaleApiException.class,
                 () -> controller.manageModelTag("p1", "m1", "v1", reqeust));
-    }
-
-    @Test
-    public void testUpload() {
-        var request = new ModelUploadRequest();
-        request.setPhase(UploadPhase.MANIFEST);
-        request.setUploadId(1L);
-        request.setDesc(FileDesc.MANIFEST);
-        request.setSignature("");
-        var resp = controller.upload(
-                "p1", "m1", "v1", null, request);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        request.setPhase(UploadPhase.BLOB);
-        request.setDesc(FileDesc.SRC_TAR);
-        resp = controller.upload(
-                "p1", "m1", "v1", null, request);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        request.setDesc(FileDesc.MODEL);
-        resp = controller.upload(
-                "p1", "m1", "v1", null, request);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        request.setPhase(UploadPhase.CANCEL);
-        assertThrows(StarwhaleApiException.class, () -> controller.upload(
-                "p1", "m1", "v1", null, request));
-
-        request.setPhase(UploadPhase.END);
-        controller.upload(
-                "p1", "m1", "v1", null, request);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-    }
-
-    @Test
-    public void testPull() {
-        controller.pull(
-                FileDesc.MANIFEST, "manifest.yaml", "manifest.yaml", "", "p1", "m1", "v1", null);
-        controller.pull(
-                FileDesc.SRC_TAR, "model.yaml", "src/model.yaml", "", "p1", "m1", "v1", null);
-        controller.pull(
-                FileDesc.MODEL, "mnist.pth", "src/models/mnist.pth", "qwer", "p1", "m1", "v1", null);
     }
 
     @Test

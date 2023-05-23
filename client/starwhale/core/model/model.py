@@ -74,7 +74,7 @@ from starwhale.base.scheduler import Step, Scheduler
 from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.blob.store import LocalFileStore, BuiltinPyExcludes
-from starwhale.core.model.copy import ModelCopy
+from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project
 from starwhale.core.model.store import ModelStorage
 from starwhale.api._impl.service import Hijack
@@ -176,7 +176,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         force: bool = False,
         dest_local_project_uri: str = "",
     ) -> None:
-        bc = ModelCopy(
+        bc = BundleCopy(
             src_uri,
             dest_uri,
             ResourceType.model,

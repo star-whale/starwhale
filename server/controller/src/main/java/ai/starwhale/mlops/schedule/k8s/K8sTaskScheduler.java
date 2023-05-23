@@ -37,8 +37,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -314,48 +311,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                                         new V1ObjectFieldSelector().fieldPath("metadata.name")))
         );
         return envs;
-    }
-
-    @NotNull
-    private List<V1EnvVar> getInitContainerEnvs(Task task) {
-        Job swJob = task.getStep().getJob();
-        JobRuntime jobRuntime = swJob.getJobRuntime();
-
-        List<String> downloads = new ArrayList<>();
-        try {
-            storageAccessService.list(swJob.getModel().getPath()).forEach(path -> {
-                try {
-                    String modelSignedUrl = storageAccessService.signedUrl(path, 1000 * 60 * 60L);
-                    downloads.add(modelSignedUrl);
-                } catch (IOException e) {
-                    throw new SwProcessException(ErrorType.STORAGE, "sign model url failed for " + path, e);
-                }
-            });
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE,
-                    "list model files failed for " + swJob.getModel().getPath(),
-                    e);
-        }
-        try {
-            storageAccessService.list(jobRuntime.getStoragePath()).forEach(path -> {
-                try {
-                    String runtimeSignedUrl = storageAccessService.signedUrl(path,
-                            1000 * 60 * 60L);
-                    downloads.add(runtimeSignedUrl);
-                } catch (IOException e) {
-                    throw new SwProcessException(ErrorType.STORAGE,
-                            "sign runtime url failed for " + path,
-                            e);
-                }
-
-            });
-
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE,
-                    "list runtime url failed for " + jobRuntime.getStoragePath(),
-                    e);
-        }
-        return mapToEnv(Map.of("DOWNLOADS", Strings.join(downloads, ' ')));
     }
 
     @NotNull
