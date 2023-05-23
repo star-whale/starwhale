@@ -195,16 +195,20 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
+        var runtimeResources = getPatchedResources(task);
+        if (!CollectionUtils.isEmpty(runtimeResources)) {
+            return new ResourceOverwriteSpec(runtimeResources);
+        }
+        return null;
+    }
+
+    private List<RuntimeResource> getPatchedResources(Task task) {
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
         var pool = task.getStep().getJob().getResourcePool();
         if (pool != null) {
             runtimeResources = pool.patchResources(runtimeResources);
         }
-        if (!CollectionUtils.isEmpty(runtimeResources)) {
-            return new ResourceOverwriteSpec(runtimeResources);
-        }
-        return null;
-
+        return runtimeResources;
     }
 
     @NotNull
@@ -250,7 +254,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
 
         // GPU resource
-        var resources = task.getTaskRequest().getRuntimeResources().stream();
+        var resources = getPatchedResources(task).stream();
         var gpu = resources.anyMatch(r -> r.getType().equals(ResourceOverwriteSpec.RESOURCE_GPU) && r.getRequest() > 0);
         // overwrite visible devices to none
         if (!gpu) {
