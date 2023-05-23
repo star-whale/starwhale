@@ -311,9 +311,8 @@ main() {
   check_controller_service
   client_test
   api_test
+  console_test
   kubectl scale deployment controller -n $SWNS --replicas=0
-
-  # console_test
 
 }
 

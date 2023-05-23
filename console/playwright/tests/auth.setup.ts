@@ -12,7 +12,6 @@ USERS.map(async (user) => {
     if (fs.existsSync(fileName)) return
 
     setup(`authenticate as ${user.role}`, async ({ page }) => {
-        console.log('-----------------------')
         await page.goto(config.use?.baseURL as string)
         await expect(page).toHaveTitle(/Starwhale Console/)
         await page.locator(SELECTOR.loginName).fill(user.username)
@@ -40,8 +39,4 @@ setup.afterAll(async ({ page }) => {
         await wait(5000)
         await page.context().close()
     }
-})
-
-setup.afterEach(async ({ page }) => {
-    await takeScreenshot({ testcase: page, route: page.url() })
 })

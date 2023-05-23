@@ -3,7 +3,6 @@ import { devices } from '@playwright/test'
 import * as fse from 'fs-extra'
 import path from 'path'
 
-// process.env.PROXY = 'http://e2e.pre.intra.starwhale.ai/'
 const proxy = process.env.PROXY ?? ''
 
 /**
@@ -12,10 +11,7 @@ const proxy = process.env.PROXY ?? ''
  */
 require('dotenv').config()
 fse.ensureDir('test-storage')
-fse.ensureDir('test-storage')
-// fse.emptyDirSync('test-video')
-if (process.env.CLEAN_AUTH === 'true') fse.emptyDirSync('test-storage')
-
+fse.ensureDir('test-video')
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -40,7 +36,7 @@ const config: PlaywrightTestConfig = {
     /* Opt out of parallel tests on CI. */
     workers: process.env.CI ? 2 : 1,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-    reporter: 'html',
+    reporter: process.env.CI ? 'github' : [['html', { open: 'never' }], ['list']],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         viewport: { width: 1280, height: 960 },

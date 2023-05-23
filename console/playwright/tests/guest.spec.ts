@@ -12,6 +12,10 @@ test.beforeAll(async ({ guest }) => {
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
+// page.afterEach(async ({ page }) => {
+//     await takeScreenshot({ testcase: page, route: page.url() })
+// })
+
 test.describe('Login', () => {
     test('default route should be projects', async ({}) => {
         await page.waitForURL(/\/projects/, { timeout: 20000 })
