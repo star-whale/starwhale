@@ -6,13 +6,11 @@ import config from '../playwright.config'
 import { USERS, SELECTOR } from '../tests/config'
 export { expect } from '@playwright/test'
 
-console.log('---')
-
 export const test = baseTest.extend({
     admin: async ({ browser }, use) => {
         await use(await AdminPage.create(browser, 'admin'))
     },
-    user: async ({ browser }, use) => {
-        await use(await UserPage.create(browser, 'maintainer'))
+    guest: async ({ browser }, use) => {
+        await use(await UserPage.create(browser, 'guest'))
     },
 })

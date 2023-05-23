@@ -3,6 +3,7 @@ import fs from 'fs'
 import { test as setup, expect, Page } from '@playwright/test'
 import config from '../playwright.config'
 import { USERS, SELECTOR } from './config'
+import { takeScreenshot, wait } from './utils'
 
 USERS.map(async (user) => {
     // testInfo.project.outputDir
@@ -31,4 +32,16 @@ USERS.map(async (user) => {
             })
         }
     })
+})
+
+setup.afterAll(async ({ page }) => {
+    // if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/admin.webm`)
+    if (process.env.CLOSE_AFTER_TEST === 'true') {
+        await wait(5000)
+        await page.context().close()
+    }
+})
+
+setup.afterEach(async ({ page }) => {
+    await takeScreenshot({ testcase: page, route: page.url() })
 })

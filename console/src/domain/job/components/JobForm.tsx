@@ -218,7 +218,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
             <Divider orientation='top'>{t('Model Information')}</Divider>
             <div className={styles.rowModel}>
-                <FormItem label={t('Version')} required name='modelVersionUrl'>
+                <FormItem label={t('Model Version')} required name='modelVersionUrl'>
                     <ModelTreeSelector projectId={projectId} onDataChange={setModelTree} />
                 </FormItem>
                 {modelVersionId && (

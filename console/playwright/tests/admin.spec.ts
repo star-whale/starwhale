@@ -1,7 +1,7 @@
 import { expect, Page } from '@playwright/test'
 import { test } from '../setup'
-import { CONST, ROUTES, SELECTOR } from './config'
-import { takeScreenshot, wait } from './utils'
+import { API, CONST, ROUTES, SELECTOR } from './config'
+import { getLastestRowID, selectOption, selectTreeOption, takeScreenshot, wait } from './utils'
 
 // used as one page
 let page: Page
@@ -15,20 +15,7 @@ test.beforeAll(async ({ admin }) => {
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
-test.afterAll(async ({}) => {
-    await wait(5000)
-
-    if (process.env.CLOSE_AFTER_TEST === 'true') {
-        await page.context().close()
-        if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/admin.webm`)
-    }
-})
-
-test.describe('Login', () => {
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
-
+test.describe('Project with admin setttings', () => {
     test('logined, check homepage & token', async ({}) => {
         await page.waitForURL(/\/projects/)
         await expect(page).toHaveURL(/\/projects/)
@@ -42,13 +29,32 @@ test.describe('Login', () => {
         await page.mouse.move(0, 0)
         await expect(page).toHaveURL(ROUTES.adminUsers)
     })
+
+    test('project set to public', async ({ request }) => {
+        const token = await page.evaluate(() => localStorage.getItem('token'))
+        await request.put(API.project, {
+            data: {
+                description: '',
+                ownerId: '1',
+                privacy: 'PUBLIC',
+                projectName: 'starwhale',
+            },
+            headers: {
+                Authorization: token as string,
+            },
+        })
+        // expect(resp.ok()).toBeTruthy()
+        const resp = await request.get(API.project, {
+            headers: {
+                Authorization: token as string,
+            },
+        })
+        const obj = await resp.json()
+        expect(obj.data.privacy).toBe('PUBLIC')
+    })
 })
 
 test.describe('Admin', () => {
-    test.afterAll(async () => {
-        await takeScreenshot({ testcase: page, route: page.url() })
-    })
-
     test.describe('Users', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.adminUsers)) await page.goto(ROUTES.adminUsers)
@@ -107,26 +113,45 @@ test.describe('Admin', () => {
     })
 
     test.describe('Settings', () => {
-        // test.beforeAll(async ({ request }) => {
-        //     const token = await page.evaluate(() => localStorage.getItem('token'))
-        //     const resp = await request.post('/api/v1/system/setting', {
-        //         data: '---\ndockerSetting:\n registry: "abcd.com"\n',
-        //         headers: {
-        //             'Content-Type': 'text/plain',
-        //             'Authorization': token as string,
-        //         },
-        //     })
-        //     expect(resp.ok()).toBeTruthy()
-        //     if (!page.url().includes(ROUTES.adminSettings)) await page.goto(ROUTES.adminSettings)
-        // })
-        // test('should show system settings', async ({}) => {
-        //     await page.waitForSelector('.monaco-editor')
-        //     expect(page.locator('.view-lines')).toHaveText(/docker\-registry\.starwhale\.ai/)
-        // })
-        // test('should setting be successful updated', async ({}) => {
-        //     await page.waitForSelector('.monaco-editor')
-        //     await page.getByRole('button', { name: 'Update' }).click()
-        //     await expect(page.getByText('Success')).toBeVisible()
-        // })
+        test.beforeAll(async ({ request }) => {
+            if (!page.url().includes(ROUTES.adminSettings)) await page.goto(ROUTES.adminSettings)
+        })
+        test('should show system settings', async ({}) => {
+            await page.waitForSelector('.monaco-editor')
+            expect(page.locator('.view-lines')).toHaveText(/resourcePoolSetting/)
+        })
     })
+})
+
+test.describe('Evaluation Create', () => {
+    let rowCount: any
+
+    test.beforeAll(async () => {
+        await page.goto(ROUTES.evaluations)
+        await wait(500)
+        rowCount = await getLastestRowID(page)
+        await page.getByRole('button', { name: /Create$/ }).click()
+        await expect(page).toHaveURL(ROUTES.evaluationNewJob)
+    })
+
+    test('should form be selected', async () => {
+        await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
+        await selectTreeOption(page, SELECTOR.formItem('Model Version'), /starwhale/)
+        await page.getByRole('button', { name: 'Select...' }).click()
+        await selectTreeOption(page, SELECTOR.formItem('Dataset Version'), /starwhale/)
+        // await selectTreeOption(page, SELECTOR.formItem('Runtime'), /starwhale/)
+        const versions = page.locator(SELECTOR.formItem('Version'))
+        const count = await versions.count()
+        for (let i = 0; i < count; i++) {
+            await expect(versions.nth(i)).not.toBeEmpty()
+        }
+    })
+
+    // test.describe('Submit', () => {
+    //     test('should select lastest versions', async () => {
+    //         await page.getByRole('button', { name: 'Submit' }).click()
+    //         await expect(page).toHaveURL(ROUTES.evaluations)
+    //         await expect(await getLastestRowID(page)).toBeGreaterThan(rowCount)
+    //     })
+    // })
 })
