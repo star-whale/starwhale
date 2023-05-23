@@ -28,6 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RunTimeProperties {
 
     String imageDefault;
+    String imageForBuild;
     Pypi pypi;
 
     @Data

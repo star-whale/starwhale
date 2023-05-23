@@ -193,7 +193,7 @@ public class RuntimeServiceTest {
                 k8sJobTemplate,
                 runtimeTokenValidator,
                 new DockerSetting("localhost:8083", "admin", "admin123"),
-                new RunTimeProperties("",
+                new RunTimeProperties("", "",
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);
