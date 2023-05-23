@@ -35,6 +35,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
@@ -63,13 +64,13 @@ public class K8sTaskSchedulerTest {
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
-        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
+        K8sTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         scheduler.schedule(Set.of(mockTask(false)));
         verify(k8sClient).deployJob(any());
     }
 
     @NotNull
-    private K8sTaskScheduler buildK8sSheduler(K8sClient k8sClient) throws IOException {
+    private K8sTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties("", "", new Pypi("indexU", "extraU", "trustedH"));
@@ -94,7 +95,7 @@ public class K8sTaskSchedulerTest {
     public void testException() throws ApiException, IOException {
         K8sClient k8sClient = mock(K8sClient.class);
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
-        K8sTaskScheduler scheduler = buildK8sSheduler(k8sClient);
+        K8sTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         Task task = mockTask(false);
         scheduler.schedule(Set.of(task));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
@@ -132,6 +133,45 @@ public class K8sTaskSchedulerTest {
         Assertions.assertTrue(jobs.get(0).getSpec().getTemplate().getSpec()
                 .getContainers().get(0).getEnv().contains(expectedEnv));
         Assertions.assertFalse(jobs.get(1).getSpec().getTemplate().getSpec()
+                .getContainers().get(0).getEnv().contains(expectedEnv));
+    }
+
+    @Test
+    public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
+        var client = mock(K8sClient.class);
+
+        var runTimeProperties = new RunTimeProperties("", "", new Pypi("", "", ""));
+        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
+        var scheduler = new K8sTaskScheduler(
+                client,
+                mock(TaskTokenValidator.class),
+                runTimeProperties,
+                k8sJobTemplate,
+                null,
+                null,
+                null, "",
+                50,
+                "OnFailure",
+                10,
+                mock(StorageAccessService.class)
+        );
+        var task = mockTask(false);
+        var pool = task.getStep().getJob().getResourcePool();
+        // add GPU resource
+        var resources = List.of(new Resource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f, 1f));
+        pool.setResources(resources);
+
+        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
+        // set no resource spec in task
+        task.getTaskRequest().setRuntimeResources(List.of());
+        scheduler.schedule(Set.of(task));
+
+        verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
+        var jobs = jobArgumentCaptor.getAllValues();
+        var expectedEnv = new V1EnvVar().name("NVIDIA_VISIBLE_DEVICES").value("");
+
+        // should use the GPU resource by default
+        Assertions.assertFalse(jobs.get(0).getSpec().getTemplate().getSpec()
                 .getContainers().get(0).getEnv().contains(expectedEnv));
     }
 
