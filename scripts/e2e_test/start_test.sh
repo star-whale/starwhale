@@ -251,6 +251,7 @@ api_test() {
 console_test() {
   pushd ../../console/playwright
   yarn install
+  npx playwright install
   PROXY=$CONTROLLER_URL yarn test
   popd
 }
