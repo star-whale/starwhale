@@ -6,7 +6,15 @@ import { CONFIG } from './config'
 export async function selectOption(page: Page, selector: string, text: string | RegExp) {
     const ops = page.locator(selector)
     await ops.locator('div').first().click()
-    await page.getByRole('option').getByText(text).click()
+    await page.getByRole('option').getByText(text).first().click()
+    await expect(ops.getByText(text)).toBeTruthy()
+}
+
+export async function selectTreeOption(page: Page, selector: string, text: string | RegExp) {
+    const ops = page.locator(selector)
+    await ops.locator('div').first().click()
+    await page.getByRole('treeitem').first().locator('label').first().click()
+    await page.keyboard.press('Escape')
     await expect(ops.getByText(text)).toBeTruthy()
 }
 
@@ -35,5 +43,5 @@ export async function takeScreenshot({ testcase, route }: any) {
     await fse.ensureDir(path.dirname(screenshotPath))
     // const explicitScreenshotTarget = await page.$('[data-testid="screenshot-target"]');
     const screenshotTarget = testcase
-    await screenshotTarget.screenshot({ path: screenshotPath, type: 'jpg', fullPage: true })
+    await screenshotTarget.screenshot({ path: screenshotPath, type: 'jpeg', fullPage: true })
 }

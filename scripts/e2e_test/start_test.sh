@@ -251,6 +251,7 @@ api_test() {
 console_test() {
   pushd ../../console/playwright
   yarn install
+  npx playwright install
   PROXY=$CONTROLLER_URL yarn test
   popd
 }
@@ -311,9 +312,8 @@ main() {
   check_controller_service
   client_test
   api_test
+  console_test
   kubectl scale deployment controller -n $SWNS --replicas=0
-
-  # console_test
 
 }
 

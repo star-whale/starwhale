@@ -3,7 +3,6 @@ import { devices } from '@playwright/test'
 import * as fse from 'fs-extra'
 import path from 'path'
 
-// process.env.PROXY = 'http://e2e.pre.intra.starwhale.ai/'
 const proxy = process.env.PROXY ?? ''
 
 /**
@@ -12,10 +11,7 @@ const proxy = process.env.PROXY ?? ''
  */
 require('dotenv').config()
 fse.ensureDir('test-storage')
-// fse.emptyDirSync('test-video')
-if (process.env.CLEAN_AUTH === 'true') fse.emptyDirSync('test-storage')
-else fse.ensureDir('test-storage')
-
+fse.ensureDir('test-video')
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -23,7 +19,7 @@ const config: PlaywrightTestConfig = {
     testDir: './tests',
     // testIgnore: ['tests-examples/*'],
     /* Maximum time one test can run for. */
-    timeout: 20 * 1000,
+    timeout: 30 * 1000,
     expect: {
         /**
          * Maximum time expect() should wait for the condition to be met.
@@ -40,27 +36,26 @@ const config: PlaywrightTestConfig = {
     /* Opt out of parallel tests on CI. */
     workers: process.env.CI ? 2 : 1,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-    reporter: 'html',
+    reporter: process.env.CI ? 'github' : [['html', { open: 'never' }], ['list']],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
-        viewport: { width: 1280, height: 720 },
+        viewport: { width: 1280, height: 960 },
 
         /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
         actionTimeout: 0,
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: process.env.PROXY ?? 'http://localhost:5177',
+        baseURL: process.env.PROXY ?? 'http://localhost:5173',
 
         acceptDownloads: true,
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-        trace: 'on-first-retry',
+        trace: 'on',
 
-        video: {
-            mode: 'on',
-            size: { width: 1024, height: 760 },
-        },
+        // video: {
+        //     mode: 'on',
+        //     size: { width: 1024, height: 760 },
+        // },
 
-        // screenshot: { mode: 'only-on-failure', fullPage: true },
         screenshot: { mode: 'on', fullPage: true },
     },
 

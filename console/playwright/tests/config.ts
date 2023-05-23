@@ -3,7 +3,7 @@ export const CONFIG = {
 }
 export const USERS = [
     { role: 'admin', username: 'starwhale', password: 'abcd1234' },
-    { role: 'maintainer', username: 'lwz1', password: 'abcd1234' },
+    { role: 'guest', username: 'lwz1', password: 'abcd1234' },
 ]
 export const CONST = {
     user: {
@@ -21,6 +21,7 @@ export const CONST = {
     newUserName: 'lwz1',
     newUserPassword: 'abcd1234',
     datasetName: 'mnist_bin',
+    runtimeName: 'pytorch37',
 }
 export const ROUTES = {
     evaluations: `/projects/${CONST.projectId}/evaluations`,
@@ -37,6 +38,9 @@ export const ROUTES = {
     datasetVersionFiles: `/projects/${CONST.projectId}/datasets/1/versions/10/files`,
     adminUsers: `/admin/users`,
     adminSettings: `/admin/settings`,
+}
+export const API = {
+    project: `/api/v1/project/${CONST.projectId}`,
 }
 export const SELECTOR = {
     loginName: 'input[type="text"]',
@@ -67,8 +71,8 @@ export const SELECTOR = {
     tableCompare: '[class*=tableComparable]',
     headerFirst: '.table-headers .header-cell >> nth=0',
     headerFocused: '.header-cell--focused',
-    row1column1: '[data-row-index="0"] [data-column-index="0"]',
-    row2column1: '[data-row-index="1"] [data-column-index="0"]',
+    row1column1: '[data-row-index="0"][data-column-index="0"]',
+    row2column1: '[data-row-index="1"][data-column-index="0"]',
     // --- list ----
     listCreate: '[class*=cardHeadWrapper] >> :has-text("Create")',
     // --- evaluation result ----

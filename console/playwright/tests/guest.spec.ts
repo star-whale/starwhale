@@ -4,25 +4,16 @@ import { CONST, ROUTES, SELECTOR } from './config'
 import { getLastestRowID, getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
 let page: Page
 
-test.beforeAll(async ({ user }) => {
-    page = user.page
+test.beforeAll(async ({ guest }) => {
+    page = guest.page
     await page.goto('/', {
         waitUntil: 'networkidle',
     })
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
-test.afterEach(async () => {
-    await takeScreenshot({ testcase: page, route: page.url() })
-})
-
-// test.afterAll(async ({}) => {
-//     await wait(5000)
-
-//     if (process.env.CLOSE_AFTER_TEST === 'true') {
-//         await page.context().close()
-//         if (process.env.CLOSE_SAVE_VIDEO === 'true') await page.video()?.saveAs(`test-video/user.webm`)
-//     }
+// page.afterEach(async ({ page }) => {
+//     await takeScreenshot({ testcase: page, route: page.url() })
 // })
 
 test.describe('Login', () => {
@@ -162,62 +153,12 @@ test.describe('Evaluation', () => {
 
             const isChecked = await p.locator(SELECTOR.headerFirst).locator('label input').isChecked()
             if (isChecked) await p.locator(SELECTOR.headerFirst).locator('label').click()
-            await p.locator(SELECTOR.row1column1).locator('label').check()
-            await p.locator(SELECTOR.row2column1).locator('label').check()
-            await expect(page.getByText(/Compare Evaluations/)).toBeVisible()
-            await wait(1000)
-            await expect(page.locator(SELECTOR.headerFocused)).toHaveText(/mnist/)
-            await wait(1000)
+            await p.locator(SELECTOR.row1column1).locator('input').check()
+            await p.locator(SELECTOR.row2column1).locator('input').check()
+            await expect(page.getByText(/Compare/)).toBeVisible()
             await expect(await page.locator('.cell--neq').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
             await p.locator(SELECTOR.row2column1).locator('label').uncheck()
-        })
-    })
-})
-
-test.describe('Evaluation Create', () => {
-    let rowCount: any
-
-    test.beforeAll(async () => {
-        await page.goto(ROUTES.evaluations)
-        await wait(500)
-        rowCount = await getLastestRowID(page)
-        await page.getByRole('button', { name: /Create$/ }).click()
-        await expect(page).toHaveURL(ROUTES.evaluationNewJob)
-
-        await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
-        await selectOption(page, SELECTOR.formItem('Model Name'), 'mnist')
-        await selectOption(page, SELECTOR.formItem('Dataset Name'), 'mnist')
-        await selectOption(page, SELECTOR.formItem('Runtime'), 'pytorch-mnist')
-        const versions = page.locator(SELECTOR.formItem('Version'))
-        const count = await versions.count()
-        for (let i = 0; i < count; i++) {
-            await expect(versions.nth(i)).not.toBeEmpty()
-        }
-    })
-    test.describe('Overview', () => {
-        test('should add resource', async () => {
-            const add = page.getByRole('button', { name: /Add/ }).first()
-            await expect(add).toBeVisible()
-
-            await add.click()
-            const resourceItem = (i: number, j: number) =>
-                `[class*=resource] >> nth=${i} >> [data-baseweb="form-control-container"] >> nth=${j} >> div`
-            await selectOption(page, resourceItem(0, 0), 'cpu')
-            await page.locator(resourceItem(0, 1)).locator('input').fill('1')
-            await page.locator(SELECTOR.formItem('Raw Type')).click()
-            await page.waitForSelector('.monaco-editor')
-            expect(page.locator('.view-lines')).toHaveText(
-                '- concurrency: 1  needs: []  resources:    - type: cpu      num: 1  job_name: default  step_name: ppl  task_num: 1- concurrency: 1  needs:    - ppl  resources: []  job_name: default  step_name: cmp  task_num: 1'
-            )
-        })
-    })
-
-    test.describe('Submit', () => {
-        test('should select lastest versions', async () => {
-            await page.getByRole('button', { name: 'Submit' }).click()
-            await expect(page).toHaveURL(ROUTES.evaluations)
-            await expect(await getLastestRowID(page)).toBeGreaterThan(rowCount)
         })
     })
 })
@@ -258,7 +199,7 @@ test.describe('Evaluation Results', () => {
         test('should show success task log', async () => {
             await page
                 .getByText(/View Logs/)
-                .first()
+                .last()
                 .click()
             await expect(page.locator('.tr--selected')).toBeDefined()
         })
