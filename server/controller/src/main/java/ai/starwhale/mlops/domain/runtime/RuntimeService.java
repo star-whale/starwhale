@@ -623,6 +623,7 @@ public class RuntimeService {
 
             k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
+                containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
                 containerOverwriteSpec.setEnvs(envVars);
                 containerOverwriteSpec.setCmds(List.of(
                         "--dockerfile=Dockerfile",
