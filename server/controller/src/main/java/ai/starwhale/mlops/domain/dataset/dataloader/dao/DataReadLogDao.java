@@ -54,8 +54,7 @@ public class DataReadLogDao {
     }
 
     public boolean updateToProcessed(Long sid, String consumerId, String start, String end) {
-        return mapper.updateToProcessed(sid, consumerId, start, end,
-                Status.DataStatus.PROCESSED.name()) > 0;
+        return mapper.updateToProcessed(sid, consumerId, start, end, Status.DataStatus.PROCESSED.name()) > 0;
     }
 
     public boolean updateUnProcessedToUnAssigned(Long sid, String consumerId) {
@@ -72,7 +71,12 @@ public class DataReadLogDao {
         return entity == null ? null : converter.revert(entity);
     }
 
-    public long getMaxProcessedMicrosecondTime(Long sid) {
+    public DataReadLog selectTop1UnProcessedDataBelongToOtherConsumers(Long sid, String consumerId) {
+        var entity = mapper.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
+        return entity == null ? null : converter.revert(entity);
+    }
+
+    public Long getMaxProcessedMicrosecondTime(Long sid) {
         return mapper.selectMaxProcessedMicrosecondTime(sid, Status.DataStatus.PROCESSED.name());
     }
 }

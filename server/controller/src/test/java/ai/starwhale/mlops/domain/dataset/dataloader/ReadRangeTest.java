@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -147,27 +148,31 @@ public class ReadRangeTest {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-                Arguments.of(true, 2),
-                Arguments.of(false, 0)
+                Arguments.of(true, 2, ReadMode.AT_LEAST_ONCE),
+                Arguments.of(false, 0, ReadMode.AT_LEAST_ONCE),
+                Arguments.of(true, 2, ReadMode.AT_MOST_ONCE),
+                Arguments.of(false, 0, ReadMode.AT_MOST_ONCE)
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideMultiParams")
-    public void testNextDataRangeWithSerial(boolean isSerial, int executeCount) {
+    public void testNextDataRange(boolean isSerial, int executeCount, ReadMode readMode) {
         var sid = 2L;
         var sessionId = "1-session";
         var datasetName = "test-name";
         var datasetVersion = "test-version";
         var tableName = "test-table-name";
-        var consumerId = "1";
+        var consumerIdFor1 = "1";
+        var consumerIdFor2 = "2";
         var request = DataReadRequest.builder()
                 .sessionId(sessionId)
-                .consumerId(consumerId)
+                .consumerId(consumerIdFor1)
                 .tableName(tableName)
                 .datasetName(datasetName)
                 .datasetVersion(datasetVersion)
                 .isSerial(isSerial)
+                .readMode(readMode)
                 .processedData(List.of())
                 .batchSize(2)
                 .start("0000-000")
@@ -234,20 +239,20 @@ public class ReadRangeTest {
                 is(DataReadLog.builder()
                         .id(1L)
                         .sessionId(sid)
-                        .consumerId(consumerId) // update consumer id
+                        .consumerId(consumerIdFor1) // update consumer id
                         .start("0000-000").startInclusive(true)
                         .end("0000-001").endInclusive(true)
+                        .assignedNum(1)
                         .size(2)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()
                 ));
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(1)).updateToAssigned(any());
-        verify(dataReadLogDao, times(0))
-                .updateToProcessed(any(), any(), any(), any());
+        verify(dataReadLogDao, times(0)).updateToProcessed(any(), any(), any(), any());
         verify(sessionDao, times(1)).insert(any());
 
-        // case 2
+        // case 2: get next data with exist session and consumer 1
         request.setProcessedData(List.of(
                 DataIndexDesc.builder().start("0000-000").end("0000-001").build()
         ));
@@ -256,10 +261,8 @@ public class ReadRangeTest {
                 .datasetName("test-name")
                 .datasetVersion("test-version")
                 .tableName("test-table-name")
-                .start("0000-000")
-                .startInclusive(true)
-                .end("0000-008")
-                .endInclusive(true)
+                .start("0000-000").startInclusive(true)
+                .end("0000-008").endInclusive(true)
                 .batchSize(2)
                 .build();
 
@@ -281,18 +284,56 @@ public class ReadRangeTest {
                 is(DataReadLog.builder()
                         .id(2L)
                         .sessionId(sid)
-                        .consumerId(consumerId)
+                        .consumerId(consumerIdFor1)
                         .start("0000-002").startInclusive(true)
                         .end("0000-003").endInclusive(true)
                         .size(2)
+                        .assignedNum(1)
                         .status(Status.DataStatus.UNPROCESSED)
                         .build()));
 
         verify(dataStore, times(1)).scan(any());
         verify(dataReadLogDao, times(2)).updateToAssigned(any());
-        verify(dataReadLogDao, times(executeCount)).updateUnProcessedToUnAssigned(any(), any());
+        verify(dataReadLogDao, times(executeCount)).updateUnProcessedToUnAssigned(eq(sid), eq(consumerIdFor1));
         verify(dataReadLogDao, times(1))
-                .updateToProcessed(sid, consumerId, "0000-000", "0000-001");
+                .updateToProcessed(sid, consumerIdFor1, "0000-000", "0000-001");
         verify(sessionDao, times(1)).insert(any());
+
+        // case 3: get next data with exist session and consumer 2
+        request.setConsumerId(consumerIdFor2);
+        given(dataReadLogDao.selectTop1UnAssignedData(sid)).willReturn(null);
+        switch (readMode) {
+            case AT_LEAST_ONCE:
+                given(dataReadLogDao.getMaxProcessedMicrosecondTime(sid)).willReturn(null);
+                given(dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerIdFor2))
+                        .willReturn(DataReadLog.builder()
+                            .id(2L)
+                            .sessionId(sid)
+                            .start("0000-002").startInclusive(true)
+                            .end("0000-003").endInclusive(true)
+                            .size(2)
+                            .assignedNum(1) // previous data belong to consumer 1
+                            .build());
+
+                dataRange = dataLoader.next(request);
+                assertThat("get data range 2", dataRange,
+                        is(DataReadLog.builder()
+                            .id(2L)
+                            .sessionId(sid)
+                            .consumerId(consumerIdFor2) // change to 2
+                            .start("0000-002").startInclusive(true)
+                            .end("0000-003").endInclusive(true)
+                            .size(2)
+                            .assignedNum(2)
+                            .status(Status.DataStatus.UNPROCESSED)
+                            .build()));
+                break;
+            case AT_MOST_ONCE:
+                dataRange = dataLoader.next(request);
+                assertThat("get data range 2", dataRange == null);
+                break;
+            default:
+        }
+
     }
 }

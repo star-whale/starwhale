@@ -102,9 +102,15 @@ public interface DataReadLogMapper {
             + "LIMIT 1")
     DataReadLogEntity selectTop1TimeoutData(Long sessionId, String status, long microsecondTimeout);
 
+    @Select("SELECT * from dataset_read_log "
+            + "WHERE session_id=#{sessionId} and status='UNPROCESSED' and consumer_id !=#{consumerId} "
+            + "ORDER BY id "
+            + "LIMIT 1")
+    DataReadLogEntity selectTop1UnProcessedDataBelongToOtherConsumers(Long sessionId, String consumerId);
+
     @Select("SELECT MAX(TIMESTAMPDIFF(MICROSECOND, assigned_time, finished_time)) from dataset_read_log "
             + "WHERE session_id=#{sessionId} and status=#{status} ")
-    long selectMaxProcessedMicrosecondTime(Long sessionId, String status);
+    Long selectMaxProcessedMicrosecondTime(Long sessionId, String status);
 
     @Select("SELECT * from dataset_read_log "
             + "WHERE session_id in "

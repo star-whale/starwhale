@@ -111,8 +111,17 @@ public class DataReadManager {
 
     }
 
+    /**
+     * Assign data for consumer
+     * Message Delivery Semantics: At least once
+     *
+     * @param consumerId consumer
+     * @param session session
+     * @param readMode read mode
+     * @return data
+     */
     @Transactional(propagation = REQUIRES_NEW)
-    DataReadLog assignmentData(String consumerId, Session session) {
+    DataReadLog assignmentData(String consumerId, Session session, ReadMode readMode) {
         var sid = session.getId();
 
         var sessionId = session.getSessionId();
@@ -125,15 +134,27 @@ public class DataReadManager {
             // get first
             var dataRange = dataReadLogDao.selectTop1UnAssignedData(sid);
 
-            if (Objects.isNull(dataRange)) {
-                // find timeout data to consume
-                var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
-                dataRange = dataReadLogDao.selectTop1TimeoutData(
-                    sid, maxProcessedTime * timeoutTolerance);
+            switch (readMode) {
+                case AT_LEAST_ONCE:
+                    if (Objects.isNull(dataRange)) {
+                        // find timeout data to consume
+                        var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
+                        dataRange = maxProcessedTime == null ?  null : dataReadLogDao.selectTop1TimeoutData(
+                            sid, maxProcessedTime * timeoutTolerance);
+                    }
+
+                    if (Objects.isNull(dataRange)) {
+                        // find unprocessed data to consume(only lead to repeat consume, but it doesn't matter)
+                        dataRange = dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
+                    }
+                    break;
+                case AT_MOST_ONCE:
+                default:
             }
 
             if (Objects.nonNull(dataRange)) {
                 dataRange.setConsumerId(consumerId);
+                dataRange.setAssignedNum(dataRange.getAssignedNum() + 1);
                 dataReadLogDao.updateToAssigned(dataRange);
             }
             return dataRange;
@@ -152,8 +173,7 @@ public class DataReadManager {
             // update processed data
             if (CollectionUtils.isNotEmpty(processedData)) {
                 for (DataIndexDesc indexDesc : processedData) {
-                    dataReadLogDao.updateToProcessed(
-                            sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+                    dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
                 }
             }
             // Whether to process serially under the same consumer,
