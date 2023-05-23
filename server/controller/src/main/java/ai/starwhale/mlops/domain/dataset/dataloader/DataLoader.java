@@ -33,6 +33,6 @@ public class DataLoader {
 
         dataReadManager.handleConsumerData(consumerId, request.isSerial(), request.getProcessedData(), session);
 
-        return dataReadManager.assignmentData(consumerId, session);
+        return dataReadManager.assignmentData(consumerId, session, request.getReadMode());
     }
 }

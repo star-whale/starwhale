@@ -117,10 +117,11 @@ public class DataReadManager {
      *
      * @param consumerId consumer
      * @param session session
+     * @param readMode read mode
      * @return data
      */
     @Transactional(propagation = REQUIRES_NEW)
-    DataReadLog assignmentData(String consumerId, Session session) {
+    DataReadLog assignmentData(String consumerId, Session session, ReadMode readMode) {
         var sid = session.getId();
 
         var sessionId = session.getSessionId();
@@ -133,19 +134,27 @@ public class DataReadManager {
             // get first
             var dataRange = dataReadLogDao.selectTop1UnAssignedData(sid);
 
-            if (Objects.isNull(dataRange)) {
-                // find timeout data to consume
-                var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
-                dataRange = maxProcessedTime == null ?  null : dataReadLogDao.selectTop1TimeoutData(
-                    sid, maxProcessedTime * timeoutTolerance);
+            switch (readMode) {
+                case AT_LEAST_ONCE:
+                    if (Objects.isNull(dataRange)) {
+                        // find timeout data to consume
+                        var maxProcessedTime = dataReadLogDao.getMaxProcessedMicrosecondTime(sid);
+                        dataRange = maxProcessedTime == null ?  null : dataReadLogDao.selectTop1TimeoutData(
+                            sid, maxProcessedTime * timeoutTolerance);
+                    }
+
+                    if (Objects.isNull(dataRange)) {
+                        // find unprocessed data to consume(only lead to repeat consume, but it doesn't matter)
+                        dataRange = dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
+                    }
+                    break;
+                case AT_MOST_ONCE:
+                default:
             }
 
-            if (Objects.isNull(dataRange)) {
-                // find unprocessed data to consume(only lead to repeat consume, but it doesn't matter)
-                dataRange = dataReadLogDao.selectTop1UnProcessedDataBelongToOtherConsumers(sid, consumerId);
-            }
             if (Objects.nonNull(dataRange)) {
                 dataRange.setConsumerId(consumerId);
+                dataRange.setAssignedNum(dataRange.getAssignedNum() + 1);
                 dataReadLogDao.updateToAssigned(dataRange);
             }
             return dataRange;

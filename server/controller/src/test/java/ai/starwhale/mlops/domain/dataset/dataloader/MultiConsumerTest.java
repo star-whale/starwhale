@@ -103,7 +103,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
     @ParameterizedTest
     @MethodSource("provideMultiParams")
-    public void testMultiConsumerRead(int errorNumPerConsumer, boolean isSerial, int datasetNum)
+    public void testMultiConsumerReadAtLeastOnce(int errorNumPerConsumer, boolean isSerial, int datasetNum)
             throws InterruptedException, ExecutionException {
 
         var sessionId = "session" + errorNumPerConsumer + isSerial + datasetNum;
@@ -138,6 +138,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             .sessionId(sessionId)
                             .consumerId(consumerId)
                             .isSerial(isSerial)
+                            .readMode(ReadMode.AT_LEAST_ONCE)
                             .datasetName(datasetName)
                             .datasetVersion(datasetVersion)
                             .tableName("test-table-name")

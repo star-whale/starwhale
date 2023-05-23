@@ -31,6 +31,7 @@ public class DataReadRequest {
     private String sessionId;
     private String consumerId;
     private boolean isSerial = false;
+    private ReadMode readMode = ReadMode.AT_LEAST_ONCE;
 
     private String datasetName;
     private String datasetVersion;
