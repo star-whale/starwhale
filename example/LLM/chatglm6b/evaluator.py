@@ -27,6 +27,7 @@ ds_input_keys = {
 @evaluation.predict(
     log_mode="plain",
     log_dataset_features=["query", "text", "question", "rawquestion", "prompt"],
+    replicas=1,
 )
 def ppl(data: dict, external: dict):
     ds_name = external["dataset_uri"].name
@@ -44,6 +45,8 @@ def ppl(data: dict, external: dict):
         text = data["query"]
     else:
         raise ValueError(f"dataset {ds_name} does not fit this model")
+    if not os.path.exists(ROOTDIR / "models"):
+        import download_model  # noqa: F401
     global tokenizer
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -54,6 +57,7 @@ def ppl(data: dict, external: dict):
         chatglm = AutoModel.from_pretrained(
             str(ROOTDIR / "models"), trust_remote_code=True
         )
+
         if os.path.exists(ROOTDIR / "models" / "chatglm-6b-lora.pt"):
             chatglm = load_lora_config(chatglm)
             chatglm.load_state_dict(
@@ -267,6 +271,8 @@ ds_key_selectors = {
 def fine_tune(
     context: Context,
 ) -> None:
+    if not os.path.exists(ROOTDIR / "models"):
+        import download_model  # noqa: F401
     tokenizer = AutoTokenizer.from_pretrained(
         str(ROOTDIR / "models"), trust_remote_code=True
     )
@@ -278,7 +284,7 @@ def fine_tune(
         )
     sw_dataset = dataset(context.dataset_uris[0], readonly=True, create="forbid")
     sw_dataset = sw_dataset.with_loader_config(
-        field_transformer=ds_key_selectors.get(sw_dataset.name, None)
+        field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )
     train_dataset = QADataset(
         sw_dataset,
