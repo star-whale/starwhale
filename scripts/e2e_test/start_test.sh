@@ -249,10 +249,8 @@ api_test() {
 }
 
 console_test() {
-  pushd ../../console/playwright
-  yarn install
-  npx playwright install
-  PROXY=$CONTROLLER_URL yarn test
+  pushd ../../console
+  docker run --rm --ipc=host -w /app -e PROXY=$CONTROLLER_URL -v ./playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy yarn test || exit
   popd
 }
 

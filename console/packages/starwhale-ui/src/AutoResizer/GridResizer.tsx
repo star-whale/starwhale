@@ -134,7 +134,7 @@ export function GridResizer({
                         flex: 1,
                     }}
                 >
-                    {right()}
+                    {gridMode !== 2 && right()}
                 </div>
             )}
         </div>

@@ -95,7 +95,7 @@ export default function EvaluationListCard() {
                         return <TextLink to={`/projects/${projectId}/evaluations/${id}/results`}>{id}</TextLink>
                     },
                 })
-            if (column.key === 'sys/duration')
+            if (column.key === 'sys/duration_ms')
                 return CustomColumn<RecordAttr, any>({
                     ...column,
                     renderCell: ({ value }) => <p title={value.toString()}>{durationToStr(value.value)}</p>,
