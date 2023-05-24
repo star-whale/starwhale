@@ -259,11 +259,10 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
+        if (null == offset || null == size || offset < 0 || size <= 0) {
+            return get(path);
+        }
         try {
-            if (null == offset || null == size || offset < 0 || size <= 0) {
-                return get(path);
-            }
-
             var req = GetObjectRequest.builder()
                     .range(String.format(RANGE_FORMAT, offset, offset + size - 1))
                     .bucket(s3Config.getBucket())
