@@ -18,6 +18,7 @@ package ai.starwhale.mlops.storage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.fs.FsConfig;
@@ -29,6 +30,7 @@ import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +86,8 @@ public class StorageAccessServiceTest {
                         is(Arrays.copyOfRange(data, data.length - off5m, data.length - off5m + 100)));
             }
         }
+        assertThrows(IOException.class, () -> storageAccessService.get("non-exists"));
+        assertThrows(IOException.class, () -> storageAccessService.get("non-exists", 1L, 1L));
     }
 
     @Test
