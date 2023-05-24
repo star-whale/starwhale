@@ -46,7 +46,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StorageAccessServiceAliyun implements StorageAccessService {
 
     private final String bucket;
@@ -134,15 +136,25 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
 
     @Override
     public LengthAbleInputStream get(String path) throws IOException {
-        var resp = this.ossClient.getObject(this.bucket, path);
-        return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
+        try {
+            var resp = this.ossClient.getObject(this.bucket, path);
+            return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
+        } catch (Exception e) {
+            log.error("get object fails", e);
+            throw new IOException(e);
+        }
     }
 
     @Override
     public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
-        var req = new GetObjectRequest(bucket, path).withRange(offset, offset + size - 1);
-        var resp = this.ossClient.getObject(req);
-        return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
+        try {
+            var req = new GetObjectRequest(bucket, path).withRange(offset, offset + size - 1);
+            var resp = this.ossClient.getObject(req);
+            return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
+        } catch (Exception e) {
+            log.error("get object fails", e);
+            throw new IOException(e);
+        }
     }
 
     @Override

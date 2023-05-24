@@ -242,10 +242,15 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     @Override
-    public LengthAbleInputStream get(String path) {
-        var req = GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
-        var resp = s3client.getObject(req);
-        return new LengthAbleInputStream(resp, resp.response().contentLength());
+    public LengthAbleInputStream get(String path) throws IOException {
+        try {
+            var req = GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
+            var resp = s3client.getObject(req);
+            return new LengthAbleInputStream(resp, resp.response().contentLength());
+        } catch (Exception e) {
+            log.error("get object fails", e);
+            throw new IOException(e);
+        }
     }
 
 
@@ -257,11 +262,18 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         if (null == offset || null == size || offset < 0 || size <= 0) {
             return get(path);
         }
-
-        var req = GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
-                .bucket(s3Config.getBucket()).key(path).build();
-        var resp = s3client.getObject(req);
-        return new LengthAbleInputStream(resp, resp.response().contentLength());
+        try {
+            var req = GetObjectRequest.builder()
+                    .range(String.format(RANGE_FORMAT, offset, offset + size - 1))
+                    .bucket(s3Config.getBucket())
+                    .key(path)
+                    .build();
+            var resp = s3client.getObject(req);
+            return new LengthAbleInputStream(resp, resp.response().contentLength());
+        } catch (Exception e) {
+            log.error("get object fails", e);
+            throw new IOException(e);
+        }
     }
 
     @Override
