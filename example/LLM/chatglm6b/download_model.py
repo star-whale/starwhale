@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from transformers import AutoModel, AutoTokenizer
+
 ROOTDIR = Path(__file__).parent
 print(str(ROOTDIR / "models"))
 tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)

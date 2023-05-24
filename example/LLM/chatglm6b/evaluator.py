@@ -46,7 +46,7 @@ def ppl(data: dict, external: dict):
     else:
         raise ValueError(f"dataset {ds_name} does not fit this model")
     if not os.path.exists(ROOTDIR / "models"):
-        import download_model
+        import download_model  # noqa: F401
     global tokenizer
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -55,9 +55,9 @@ def ppl(data: dict, external: dict):
     global chatglm
     if chatglm is None:
         chatglm = AutoModel.from_pretrained(
-                str(ROOTDIR / "models"), trust_remote_code=True
-            )
-            
+            str(ROOTDIR / "models"), trust_remote_code=True
+        )
+
         if os.path.exists(ROOTDIR / "models" / "chatglm-6b-lora.pt"):
             chatglm = load_lora_config(chatglm)
             chatglm.load_state_dict(
@@ -272,7 +272,7 @@ def fine_tune(
     context: Context,
 ) -> None:
     if not os.path.exists(ROOTDIR / "models"):
-        import download_model
+        import download_model  # noqa: F401
     tokenizer = AutoTokenizer.from_pretrained(
         str(ROOTDIR / "models"), trust_remote_code=True
     )
