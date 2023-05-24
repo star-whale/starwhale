@@ -249,8 +249,8 @@ api_test() {
 }
 
 console_test() {
-  pushd ../../console/playwright
-  docker run --rm --ipc=host -w /app -e PROXY=$CONTROLLER_URL -v /mnt/data/code/starwhale/console/playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy yarn test || exit
+  pushd ../../console
+  docker run --rm --ipc=host -w /app -e PROXY=$CONTROLLER_URL -v ./playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy yarn test || exit
   popd
 }
 
