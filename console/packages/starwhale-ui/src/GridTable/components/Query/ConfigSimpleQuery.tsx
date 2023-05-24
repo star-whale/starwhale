@@ -54,7 +54,7 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
                     noStyle
                     style={{
                         marginBottom: 0,
-                        minWidth: '170px',
+                        minWidth: '190px',
                     }}
                 >
                     {/* @ts-ignore */}

@@ -9,6 +9,13 @@ install-dev-tools:
 install-dependencies:
 	yarn
 
+e2e-local:
+	cd playwright && yarn && npx playwright install && \
+		yarn test
+
+e2e-docker:
+	docker run -it --rm --ipc=host -w /app -e PROXY=${PROXY} -v playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy yarn test || exit
+
 prepare:
 	mkdir -p extensions && \
 		([ ! -f "extensions/index.tsx" ] && echo 'export default {}' > extensions/index.tsx) || echo 'extensions exists'
