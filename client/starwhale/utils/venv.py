@@ -295,7 +295,10 @@ def pip_freeze_by_pybin(
     if not include_local_wheel:
         content = []
         for line in lock_fpath.read_text().splitlines():
-            if line.endswith(".whl") and "@ file://" in line:
+            # local wheel case:
+            # example @ file:///path/to/example-0.0.0-cp39-cp39-linux_x86_64.whl
+            # example @ file:///path/to/example-0.0.0-cp39-cp39-linux_x86_64.whl#sha256=23627
+            if "@ file://" in line and (line.endswith(".whl") or ".whl#" in line):
                 continue
             content.append(line)
         ensure_file(lock_fpath, "\n".join(content))
