@@ -1,4 +1,5 @@
 .PHONY: *
+PROXY ?= http://127.0.0.1:5173
 
 ut:
 	yarn test:coverage
@@ -14,7 +15,7 @@ e2e-local:
 		yarn test
 
 e2e-docker:
-	docker run -it --rm --ipc=host -w /app -e PROXY=${PROXY} -v playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy yarn test || exit
+	docker run -it --rm --ipc=host -w /app -e PROXY=${PROXY} -v ./playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy /bin/bash -c "yarn && yarn test" || exit 1
 
 prepare:
 	mkdir -p extensions && \
