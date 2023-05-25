@@ -249,7 +249,7 @@ api_test() {
 }
 
 console_test() {
-  docker run --rm --ipc=host -w /app -e PROXY=$CONTROLLER_URL -v $SWROOT/console/playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy /bin/bash -c "yarn && yarn test" || exit 1
+  docker run --rm --ipc=host -w /app -e PROXY=${SWNAME//./-}.pre.intra.starwhale.ai -v $SWROOT/console/playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy /bin/bash -c "yarn && yarn test" || exit 1
 }
 
 restore_env() {
