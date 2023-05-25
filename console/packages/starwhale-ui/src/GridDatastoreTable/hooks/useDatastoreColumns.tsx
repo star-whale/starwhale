@@ -30,7 +30,17 @@ export function RenderMixedCell({ value, columnKey, ...props }: { value: RecordA
     return <StringCell {...props} lineClamp={1} value={value.toString()} />
 }
 
-export function useDatastoreColumns(columnTypes?: { name: string; type: string }[], options = {}): ColumnT[] {
+export function useDatastoreColumns(
+    columnTypes?: { name: string; type: string }[],
+    options: {
+        fillWidth?: boolean
+        parseLink?: (link: string) => (str: any) => string
+        showPrivate?: boolean
+        showLink?: boolean
+    } = {
+        fillWidth: false,
+    }
+): ColumnT[] {
     const columns = React.useMemo(() => {
         const columnsWithAttrs: ColumnT[] = []
 
@@ -46,7 +56,7 @@ export function useDatastoreColumns(columnTypes?: { name: string; type: string }
                         columnType: column,
                         key: column.name,
                         title: column.name,
-                        fillWidth: false,
+                        fillWidth: options.fillWidth,
                         renderCell: RenderMixedCell as any,
                         mapDataToValue: (record: Record<string, RecordSchemaT>): RecordAttr => {
                             return RecordAttr.decode(record, column.name, options)

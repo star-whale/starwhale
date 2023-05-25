@@ -1,5 +1,6 @@
 import moment from 'moment-timezone'
 import { dateTimeFormat } from '@/consts'
+import _ from 'lodash'
 
 export function formateDate(s: string, format = 'YYYY-MM-DD'): string {
     return moment(s, format).tz(moment.tz.guess()).format(format)
@@ -16,6 +17,8 @@ export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DD HH:mm:ss
 
 export function durationToStr(v: number) {
     if (v < 0) return '-'
+    if (_.isNaN(v)) return v
+
     const units = ['μs', 'ms', 's', 'm', 'h', 'd']
     let basic = 1000
     let unitIdx = 1
@@ -31,5 +34,5 @@ export function durationToStr(v: number) {
         }
     }
 
-    return `${newV.toFixed(2)}${units[unitIdx]}`
+    return `${Number(newV).toFixed(2)}${units[unitIdx]}`
 }
