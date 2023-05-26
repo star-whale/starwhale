@@ -21,6 +21,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     selectable?: boolean
     previewable?: boolean
     queryinline?: boolean
+    fillable?: boolean
     id?: string
     columns?: any[]
     storeRef?: React.MutableRefObject<ITableState | undefined>
