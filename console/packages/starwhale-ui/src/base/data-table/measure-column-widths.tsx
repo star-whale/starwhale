@@ -135,11 +135,11 @@ export default function MeasureColumnWidths({
             )
             const prevWidth = widthMap.get(columnIndex) ?? 0
 
-            //1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
+            // 1. Refresh only when there is a width updating ,and the minised of the width is more than 2px
             if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 5) {
                 widthMap.set(columnIndex, nextWidth)
 
-                const widths = columns.map((column, i) => widthMap.get(column.key)).filter(Boolean)
+                const widths = columns.map((tmp) => widthMap.get(tmp.key)).filter(Boolean)
 
                 // 1.Refresh at 100% of done
                 if (widths.length === columns.length) {
@@ -167,7 +167,7 @@ export default function MeasureColumnWidths({
                 />
             )
         })
-    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes])
+    }, [columns, rows, isSelectable, handleDimensionsChange, sampleIndexes, isQueryInline])
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props

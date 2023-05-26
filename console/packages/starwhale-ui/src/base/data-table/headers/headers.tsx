@@ -125,14 +125,12 @@ export default function Headers({ width }: { width: number }) {
             compare,
             setResizeIndex,
             resizeIndex,
-            locale,
             theme,
             ctx.columnHighlightIndex,
             ctx.isSelectable,
             ctx.isSelectedAll,
             ctx.isSelectedIndeterminate,
             queryinline,
-            ctx.measuredWidths,
             ctx.onMouseEnter,
             ctx.onMouseLeave,
             ctx.onResize,
@@ -144,6 +142,8 @@ export default function Headers({ width }: { width: number }) {
             ctx.tableHeight,
             ctx.widths,
             renderConfigQueryInline,
+            ctx.compareable,
+            width,
         ]
     )
 

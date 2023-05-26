@@ -39,6 +39,7 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
             storeKey={id}
             queryinline
             previewable
+            fillable
             onCurrentViewChange={onCurrentViewChange}
             onInit={onInit}
         />

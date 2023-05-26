@@ -66,6 +66,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 title={t('evaluation.detail.title')}
                 titleOfCompare={t('evaluation.detail.compare')}
                 selectable
+                fillable
                 records={records}
                 columnTypes={columnTypes}
                 getId={getId}
