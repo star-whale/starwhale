@@ -205,6 +205,12 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [setStepSpecOverWrites]
     )
 
+    useEffect(() => {
+        if (!modelVersionHandler) {
+            setModelVersionHandler(fullStepSource?.find((v) => v)?.job_name ?? '')
+        }
+    }, [fullStepSource, modelVersionHandler])
+
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='top'>{t('Environment')}</Divider>
