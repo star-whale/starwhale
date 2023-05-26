@@ -55,17 +55,19 @@ class CloudRequestMixed:
             method=HTTPMethod.GET,
             use_raise=True,
             **kw,
+            stream=True,
         )
-        total = float(r.headers.get("content-length", 0))
+        total = float(r.headers.get("Content-Length", 0))
         ensure_dir(dest_path.parent)
         with dest_path.open("wb") as f:
             for chunk in r.iter_content(chunk_size=_TMP_FILE_BUFSIZE):
                 if progress:
-                    progress.update(task_id, total=total, advance=len(chunk))
+                    progress.update(
+                        task_id, total=total, advance=len(chunk), refresh=True
+                    )
                 f.write(chunk)
-        if progress:
-            # TODO: remove the hack code when api support content-length header
-            progress.update(task_id, total=1, completed=1)
+        # TODO make do_http_request support __exit__ and use with statement
+        r.close()
 
     def do_multipart_upload_file(
         self,
