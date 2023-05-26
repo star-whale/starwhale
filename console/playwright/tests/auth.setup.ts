@@ -9,7 +9,7 @@ USERS.map(async (user) => {
     // testInfo.project.outputDir
     const fileName = path.join('test-storage', 'storage-' + user.role + '.json')
 
-    if (fs.existsSync(fileName)) return
+    if (fs.existsSync(fileName) && process.env.CLEAN_AUTH !== 'true') return
 
     setup(`authenticate as ${user.role}`, async ({ page }) => {
         await page.goto(config.use?.baseURL as string)

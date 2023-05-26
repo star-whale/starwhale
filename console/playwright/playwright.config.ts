@@ -75,6 +75,7 @@ const config: PlaywrightTestConfig = {
                 },
             },
             dependencies: ['setup'],
+            testMatch: ['**/admin.spec.ts', '**/*.spec.ts'],
         },
 
         // {
