@@ -1,16 +1,20 @@
-name: belle
-mode: venv
+name: belle_conda
+mode: conda
 environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.7
   python: 3.9
-  docker:
-    image: docker-registry.starwhale.cn/star-whale/starwhale:0.4.5-cuda11.7
 configs:
-  pip:
-    index_url: https://mirrors.aliyun.com/pypi/simple
+  conda:
+    channels:
+      - conda-forge
+      - nvidia/label/cuda-11.7.1
 dependencies:
+  - conda:
+      # conda dependencies according to the following requirements:
+      # - https://github.com/LianjiaTech/BELLE/blob/main/models/gptq/README.md
+      - cuda-toolkit=11.7.1
   - pip:
       # pip dependencies according to the following requirements:
       # - https://github.com/LianjiaTech/BELLE/blob/main/train/requirements.txt

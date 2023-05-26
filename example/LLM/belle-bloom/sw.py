@@ -145,7 +145,11 @@ def _do_pre_process(data: dict, external: dict) -> str:
         "webqsp": "rawquestion",
     }
     ds_name = external["dataset_uri"].name
-    keyword = supported_datasets.get(ds_name, "question")
+    keyword = "question"
+    for k, v in supported_datasets.items():
+        if ds_name.startswith(k):
+            keyword = v
+            break
     return data[keyword]
 
 
