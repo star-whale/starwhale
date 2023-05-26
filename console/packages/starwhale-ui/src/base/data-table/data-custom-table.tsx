@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useReducer } from 'react'
 import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { SORT_DIRECTIONS } from './constants'
@@ -10,7 +10,7 @@ import Headers from './headers/headers'
 import InnerTableElement from './inner-table-element'
 import CellPlacementMemo from './cells/cell-placement'
 import { DataTablePropsT } from './types'
-import { useEvent } from '@starwhale/core'
+import { useEvent, useEventCallback } from '@starwhale/core'
 import _ from 'lodash'
 
 const STYLE = { overflow: 'auto' }
@@ -100,7 +100,7 @@ export function DataTable({
         visibleRowStopIndex: 0,
     })
 
-    const handleItemsRendered = React.useCallback(
+    const handleItemsRendered = useEventCallback(
         _.throttle(
             ({
                 overscanColumnStartIndex,
@@ -124,48 +124,45 @@ export function DataTable({
                 })
             },
             200
-        ),
-        []
+        )
     )
+
     const columnKeys = React.useMemo(() => columns.map((c) => c.key).join(','), [columns])
+
     useEffect(() => {
         if (gridRef) {
-            // console.log('reset grid when columns change reorder')
+            // console.log('reset grid when columns change reorder', columnKeys)
             gridRef.resetAfterIndices({
-                columnIndex: itemIndexs.overscanColumnStartIndex,
-                rowIndex: itemIndexs.overscanRowStartIndex,
+                columnIndex: 0,
+                rowIndex: 0,
+                shouldForceUpdate: true,
             })
         }
     }, [gridRef, columnKeys])
 
     const [scrollLeft, setScrollLeft] = React.useState(0)
-    const resetAfterColumnIndex = React.useCallback(
+    const resetAfterColumnIndex = useEventCallback(
         _.debounce((columnIndex) => {
             if (gridRef) {
                 gridRef.resetAfterColumnIndex?.(columnIndex, true)
             }
-        }, 10),
-        [gridRef]
+        }, 10)
     )
-    const handleWidthsChange = React.useCallback(
-        (nextWidths) => {
-            setMeasuredWidths(new Map(nextWidths))
-            resetAfterColumnIndex(itemIndexs.overscanColumnStartIndex)
-        },
-        [setMeasuredWidths, resetAfterColumnIndex, itemIndexs]
-    )
-    const handleColumnResize = React.useCallback(
-        (columnIndex, delta) => {
-            const column = columns[columnIndex]
-            setResizeDeltas((prev) => {
-                const v = prev.has(column.key) ? prev.get(column.key) : 0
-                prev.set(column.key, Math.max(v + delta, 0))
-                return new Map(prev)
-            })
-            resetAfterColumnIndex(columnIndex)
-        },
-        [columns, setResizeDeltas, resetAfterColumnIndex]
-    )
+
+    const handleWidthsChange = useEventCallback((nextWidths) => {
+        setMeasuredWidths(new Map(nextWidths))
+        resetAfterColumnIndex(itemIndexs.overscanColumnStartIndex)
+    })
+
+    const handleColumnResize = useEventCallback((columnIndex, delta) => {
+        const column = columns[columnIndex]
+        setResizeDeltas((prev) => {
+            const v = prev.has(column.key) ? prev.get(column.key) : 0
+            prev.set(column.key, Math.max(v + delta, 0))
+            return new Map(prev)
+        })
+        resetAfterColumnIndex(columnIndex)
+    })
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
     React.useLayoutEffect(() => {
@@ -274,6 +271,8 @@ export function DataTable({
     React.useImperativeHandle(controlRef, () => ({ getRows: () => rows }), [rows])
 
     const [browserScrollbarWidth, setBrowserScrollbarWidth] = React.useState(0)
+    const [gridWidth, setGridWidth] = React.useState(0)
+
     const normalizedWidths = React.useMemo(() => {
         const resizedWidths = columns.map((c, i) => {
             const w =
@@ -299,7 +298,7 @@ export function DataTable({
 
             const scrollbarWidth = isContentTallerThanContainer ? browserScrollbarWidth : 0
 
-            const remainder = Math.max(gridProps.width - sum(resizedWidths) - scrollbarWidth, 0)
+            const remainder = Math.max(gridWidth - sum(resizedWidths) - scrollbarWidth, 0)
             const filledColumnsLen = columns.filter((c) => c.fillWidth).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
@@ -313,9 +312,8 @@ export function DataTable({
                         result.push(resizedWidths[i])
                     }
                 }
-                result.push(gridProps.width - sum(result) - scrollbarWidth - 2)
+                result.push(gridWidth - sum(result) - scrollbarWidth - 2)
 
-                resetAfterColumnIndex(0)
                 return result.reduce((acc, width, i) => {
                     acc.set(columns[i].key, width)
                     return acc
@@ -323,21 +321,24 @@ export function DataTable({
             }
         }
 
+        resetAfterColumnIndex(0)
         // turn to map
         return resizedWidths.reduce((acc, width, i) => {
             acc.set(columns[i].key, width)
             return acc
         }, new Map())
     }, [
+        resetAfterColumnIndex,
         gridRef,
+        gridWidth,
         measuredWidths,
         resizeDeltas,
         browserScrollbarWidth,
         rows.length,
         columns,
-        resetAfterColumnIndex,
         rowHeightAtIndex,
     ])
+
     const isSelectable = selectable
     const isQueryInline = queryinline
     const handleSort = React.useCallback(
@@ -438,7 +439,7 @@ export function DataTable({
 
     const InnerElement = React.useMemo(() => {
         // @ts-ignore
-        return (props, ref) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
+        return (props) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
     }, [itemData, gridRef])
 
     // const $background = React.useMemo(() => {
@@ -461,6 +462,12 @@ export function DataTable({
     //     })
     // }, [gridRef, rowHighlightIndex])
 
+    // useIfChanged({
+    //     normalizedWidths,
+    //     columnWidth,
+    //     gridWidth,
+    // })
+
     const $columnsShowed = React.useMemo(() => {
         return columns.filter(
             (c, i) => i >= itemIndexs.overscanColumnStartIndex && i <= itemIndexs.overscanColumnStopIndex
@@ -478,7 +485,12 @@ export function DataTable({
             />
             <MeasureScrollbarWidth onWidthChange={(w) => setBrowserScrollbarWidth(w)} />
             {/* don't assign with to auto sizer */}
-            <AutoSizer className='table-auto-resizer'>
+            <AutoSizer
+                className='table-auto-resizer'
+                onResize={(args) => {
+                    setGridWidth(args.width)
+                }}
+            >
                 {({ height, width }) => (
                     <HeaderContext.Provider
                         value={{
@@ -495,7 +507,6 @@ export function DataTable({
                             isSelectedAll,
                             isSelectedIndeterminate,
                             isQueryInline,
-                            measuredWidths,
                             onMouseEnter: handleColumnHeaderMouseEnter,
                             onMouseLeave: handleColumnHeaderMouseLeave,
                             onResize: handleColumnResize,

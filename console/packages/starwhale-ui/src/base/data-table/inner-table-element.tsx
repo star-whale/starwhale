@@ -6,7 +6,6 @@ import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
 import _ from 'lodash'
-import { useIfChanged } from '@starwhale/core'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -67,9 +66,9 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         if (list.length === 0) return cells
 
         // @ts-ignore
-        const rowStartIndex = list[0]?.props?.['rowIndex']
+        const rowStartIndex = list[0]?.props?.rowIndex
         // @ts-ignore
-        const rowStopIndex = list[list.length - 1]?.props?.['rowIndex']
+        const rowStopIndex = list[list.length - 1]?.props?.rowIndex
 
         $columns.forEach((column: any, columnIndex: number) => {
             for (let rowIndex = rowStartIndex; rowIndex <= rowStopIndex; rowIndex++) {
@@ -90,13 +89,18 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         })
 
         return cells
-    }, [$columns, data, props.children, ctx.widths])
+    }, [$columns, data, props.children, ctx.widths, gridRef])
 
     const $children = React.useMemo(() => {
         return props.children
     }, [props.children])
 
-    if (ctx.widths.size == 0) {
+    // useIfChanged({
+    //     $childrenPinned,
+    //     $children,
+    // })
+
+    if (ctx.widths.size === 0) {
         return null
     }
 
@@ -151,6 +155,5 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         </>
     )
 })
-InnerTableElement.displayName = 'InnerTableElement'
 
 export default InnerTableElement

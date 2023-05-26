@@ -144,6 +144,7 @@ export default function DatasetVersionFiles() {
                 columnable
                 // viewable
                 // queryable
+                fillable
                 selectable
                 previewable
                 records={records}
