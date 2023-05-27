@@ -1959,9 +1959,7 @@ class StandaloneRuntimeTestCase(TestCase):
         target_dir = "/home/starwhale/workdir"
         ensure_dir(target_dir)
         yaml_path = os.path.join(target_dir, DefaultYAMLName.RUNTIME)
-        lock_fname = os.path.join(
-            target_dir, ".starwhale", "lock", RuntimeLockFileType.VENV
-        )
+        lock_fpath = Path(target_dir) / ".starwhale" / "lock" / RuntimeLockFileType.VENV
         self.fs.create_file(os.path.join(target_dir, "dummy.whl"))
         self.fs.create_file(
             yaml_path,
@@ -1973,6 +1971,23 @@ class StandaloneRuntimeTestCase(TestCase):
                 }
             ),
         )
+
+        def _patch_pip_freeze(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            if "pip freeze" in args[0]:
+                lock_file = args[0].split(">>")[1].strip()
+                ensure_file(
+                    lock_file,
+                    "\n".join(
+                        [
+                            "a==0.0.1",
+                            "b @ file:///home/starwhale/workdir/dummy.whl",
+                            "c @ file:///home/starwhale/workdir/dummy.whl#sha=1234567890",
+                        ]
+                    ),
+                )
+            return MagicMock()
+
+        m_call.side_effect = _patch_pip_freeze
 
         venv_dir = "/tmp/venv"
         ensure_dir(venv_dir)
@@ -2034,12 +2049,19 @@ class StandaloneRuntimeTestCase(TestCase):
             "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
         ]
 
-        assert os.path.exists(lock_fname)
+        assert lock_fpath.exists()
         content = load_yaml(yaml_path)
+        assert lock_fpath.read_text() == "a==0.0.1"
         assert RuntimeLockFileType.VENV not in content["dependencies"]
         del os.environ[ENV_VENV]
 
-        StandaloneRuntime.lock(target_dir, yaml_path, env_prefix_path=venv_dir)
+        StandaloneRuntime.lock(
+            target_dir,
+            yaml_path,
+            env_prefix_path=venv_dir,
+            include_editable=True,
+            include_local_wheel=True,
+        )
         assert m_call.call_args[0][0].startswith(
             " ".join(
                 [
@@ -2048,13 +2070,13 @@ class StandaloneRuntimeTestCase(TestCase):
                     "pip",
                     "freeze",
                     "--require-virtualenv",
-                    "--exclude-editable",
                     ">>",
                     f"{tempfile.gettempdir()}/starwhale-lock-",
                 ]
             )
         )
-        assert os.path.exists(lock_fname)
+        assert lock_fpath.exists()
+        assert "dummy.whl" in lock_fpath.read_text()
 
         m_output.reset_mock()
         m_call.reset_mock()
@@ -2077,6 +2099,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert os.path.exists(sw_venv_dir)
         assert os.path.exists(venv_cfg)
+        assert lock_fpath.exists()
 
     def test_abnormal_lock(self) -> None:
         with self.assertRaises(NotFoundError):
