@@ -72,6 +72,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -688,9 +689,9 @@ public class ModelService {
         String filePath;
         switch (fileDesc) {
             case MANIFEST:
-                this.pullFile(
-                        name, () -> new ByteArrayInputStream(manifest.getBytes()), httpResponse
-                );
+                var content = manifest.getBytes();
+                var is = new LengthAbleInputStream(new ByteArrayInputStream(content), content.length);
+                this.pullFile(name, () -> is, httpResponse);
                 return;
             case SRC:
                 filePath = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), path);
@@ -730,15 +731,19 @@ public class ModelService {
         }
     }
 
-    public void pullFile(String name, Supplier<InputStream> streamSupplier, HttpServletResponse httpResponse) {
-        try (InputStream fileInputStream = streamSupplier.get();
+    public void pullFile(
+            String name,
+            Supplier<LengthAbleInputStream> streamSupplier,
+            HttpServletResponse httpResponse
+    ) {
+        try (var fileInputStream = streamSupplier.get();
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             if (fileInputStream == null) {
                 return;
             }
-            long length = fileInputStream.transferTo(outputStream);
             httpResponse.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
+            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileInputStream.getSize()));
+            fileInputStream.transferTo(outputStream);
             outputStream.flush();
         } catch (IOException e) {
             log.error("download manifest file failed", e);

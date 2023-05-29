@@ -531,7 +531,8 @@ public class ModelServiceTest {
     @Test
     public void testPullFile() {
         HttpServletResponse response = new MockHttpServletResponse();
-        service.pullFile("mnist.pth", () -> new ByteArrayInputStream(new byte[10]), response);
+        var is = new LengthAbleInputStream(new ByteArrayInputStream(new byte[10]), 10);
+        service.pullFile("mnist.pth", () -> is, response);
         assertThat("write to response", response.getHeader("Content-Length").equals("10"));
     }
 
