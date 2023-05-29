@@ -5,6 +5,11 @@ environment:
   os: ubuntu:20.04
   cuda: 11.7
   python: 3.9
+  docker:
+    image: docker-registry.starwhale.cn/star-whale/starwhale:0.4.5-cuda11.7
+configs:
+  pip:
+    index_url: https://mirrors.aliyun.com/pypi/simple
 dependencies:
   - pip:
       # pip dependencies according to the following requirements:
