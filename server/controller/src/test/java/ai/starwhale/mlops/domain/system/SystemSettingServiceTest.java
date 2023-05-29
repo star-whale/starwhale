@@ -27,6 +27,8 @@ import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -57,7 +59,9 @@ public class SystemSettingServiceTest {
             + "    min: null\n"
             + "    defaults: null\n"
             + "  tolerations: null\n"
-            + "  metadata: null";
+            + "  metadata: null\n"
+            + "  isPrivate: null\n"
+            + "  visibleUserIds: null";
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
             + "  registry: \"abcd1.com\"\n"
@@ -79,11 +83,14 @@ public class SystemSettingServiceTest {
         systemSettingMapper = mock(SystemSettingMapper.class);
         when(systemSettingMapper.get()).thenReturn(new SystemSettingEntity(1L, YAML));
         listener = mock(SystemSettingListener.class);
+        var userService = mock(UserService.class);
+        when(userService.currentUserDetail()).thenReturn(User.builder().id(2L).build());
         systemSettingService = new SystemSettingService(
                 systemSettingMapper,
                 List.of(listener),
                 new RunTimeProperties("", "", new Pypi("url1", "url2", "host1")),
-                new DockerSetting("", "", ""));
+                new DockerSetting("", "", ""),
+                userService);
         systemSettingService.run();
     }
 
@@ -147,7 +154,10 @@ public class SystemSettingServiceTest {
                 + "    min: null\n"
                 + "    defaults: null\n"
                 + "  tolerations: null\n"
-                + "  metadata: null", systemSettingService.querySetting().trim());
+                + "  metadata: null\n"
+                + "  isPrivate: null\n"
+                + "  visibleUserIds: null",
+                systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
@@ -165,7 +175,8 @@ public class SystemSettingServiceTest {
                         mock(SystemSettingMapper.class),
                         List.of(listener),
                         new RunTimeProperties("", "", new Pypi("", "", "")),
-                        new DockerSetting("abcd.com", "admin", "admin123"));
+                        new DockerSetting("abcd.com", "admin", "admin123"),
+                        mock(UserService.class));
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
@@ -189,7 +200,10 @@ public class SystemSettingServiceTest {
                 + "    min: null\n"
                 + "    defaults: null\n"
                 + "  tolerations: null\n"
-                + "  metadata: null", systemSettingService.querySetting().trim());
+                + "  metadata: null\n"
+                + "  isPrivate: null\n"
+                + "  visibleUserIds: null",
+                systemSettingService.querySetting().trim());
         ResourcePool resourcePool = systemSettingService.queryResourcePool("abc");
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
@@ -205,5 +219,23 @@ public class SystemSettingServiceTest {
         Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
         Assertions.assertEquals(pool, systemSettingService.queryResourcePool("foo"));
         verify(listener, times(2)).onUpdate(systemSettingService.getSystemSetting());
+    }
+
+    @Test
+    public void testPrivateResourcePool() {
+        // private pool should not be visible to any users
+        var pool = ResourcePool.builder().name("foo").isPrivate(true).build();
+        systemSettingService.updateResourcePools(List.of(pool));
+        Assertions.assertEquals(0, systemSettingService.getResourcePools().size());
+
+        // update pool to be visible to user 2
+        pool.setVisibleUserIds(List.of(2L));
+        systemSettingService.updateResourcePools(List.of(pool));
+        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(pool, systemSettingService.queryResourcePool("foo"));
+
+        // get the rendered yaml, should contain visibleUserIds
+        var yaml = systemSettingService.querySetting();
+        Assertions.assertTrue(yaml.contains("visibleUserIds:\n  - 2"));
     }
 }

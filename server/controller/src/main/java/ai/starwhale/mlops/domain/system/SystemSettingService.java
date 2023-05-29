@@ -23,12 +23,15 @@ import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.system.po.SystemSettingEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -45,15 +48,18 @@ public class SystemSettingService implements CommandLineRunner {
     private final List<SystemSettingListener> listeners;
     private final RunTimeProperties runTimeProperties;
     private final DockerSetting dockerSetting;
+    private final UserService userService;
     @Getter
     protected SystemSetting systemSetting;
 
     public SystemSettingService(SystemSettingMapper systemSettingMapper, List<SystemSettingListener> listeners,
-                                RunTimeProperties runTimeProperties, DockerSetting dockerSetting) {
+                                RunTimeProperties runTimeProperties, DockerSetting dockerSetting,
+                                UserService userService) {
         this.systemSettingMapper = systemSettingMapper;
         this.listeners = listeners;
         this.runTimeProperties = runTimeProperties;
         this.dockerSetting = dockerSetting;
+        this.userService = userService;
     }
 
     public String querySetting() {
@@ -94,8 +100,10 @@ public class SystemSettingService implements CommandLineRunner {
     }
 
     public List<ResourcePool> getResourcePools() {
-        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting()) ? List.of(ResourcePool.defaults())
-                : this.systemSetting.getResourcePoolSetting();
+        User user = userService.currentUserDetail();
+        var pools = CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting())
+                ? List.of(ResourcePool.defaults()) : this.systemSetting.getResourcePoolSetting();
+        return pools.stream().filter(rp -> rp.allowUser(user.getId())).collect(Collectors.toList());
     }
 
     public void updateResourcePools(List<ResourcePool> resourcePools) {

@@ -46,6 +46,10 @@ public class ResourcePool {
     // currently used for k8s annotations
     Map<String, String> metadata;
 
+    // private pool only used for internal
+    Boolean isPrivate;
+    List<Long> visibleUserIds;
+
     public static ResourcePool defaults() {
         return ResourcePool
                 .builder()
@@ -123,5 +127,15 @@ public class ResourcePool {
     public List<RuntimeResource> validateAndPatchResource(List<RuntimeResource> runtimeResources) {
         validateResources(runtimeResources);
         return patchResources(runtimeResources);
+    }
+
+    public boolean allowUser(Long userId) {
+        if (isPrivate != null && isPrivate) {
+            if (visibleUserIds == null || visibleUserIds.isEmpty()) {
+                return false;
+            }
+            return visibleUserIds.contains(userId);
+        }
+        return true;
     }
 }

@@ -226,6 +226,11 @@ public class JobService {
             for (var step : steps) {
                 pool.validateResources(step.getResources());
             }
+            if (!pool.allowUser(user.getId())) {
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.JOB, "user is not allowed to use this resource pool"),
+                        HttpStatus.BAD_REQUEST);
+            }
         }
 
         JobFlattenEntity jobEntity = JobFlattenEntity.builder()

@@ -201,6 +201,15 @@ public class ModelServingService {
         if (StringUtils.isEmpty(resourcePool)) {
             resourcePool = ResourcePool.DEFAULT_NAME;
         }
+        var pool = systemSettingService.queryResourcePool(resourcePool);
+        if (pool == null) {
+            var swExp = new SwValidationException(ONLINE_EVAL, "resource pool not found");
+            throw new StarwhaleApiException(swExp, HttpStatus.BAD_REQUEST);
+        }
+        if (!pool.allowUser(user.getId())) {
+            var swExp = new SwValidationException(ONLINE_EVAL, "user not allowed to use this resource pool");
+            throw new StarwhaleApiException(swExp, HttpStatus.BAD_REQUEST);
+        }
 
         long id;
         synchronized (this) {
@@ -240,7 +249,7 @@ public class ModelServingService {
         log.info("Model serving job has been created. ID={}", id);
 
         try {
-            deploy(runtime, model, projectId.toString(), user, id, modelServingSpec, resourcePool);
+            deploy(runtime, model, projectId.toString(), user, id, modelServingSpec, pool);
         } catch (ApiException e) {
             log.error(e.getResponseBody(), e);
             throw new SwProcessException(SwProcessException.ErrorType.SYSTEM, e.getResponseBody(), e);
@@ -258,7 +267,7 @@ public class ModelServingService {
             User owner,
             long id,
             ModelServingSpec modelServingSpec,
-            String resourcePool
+            ResourcePool resourcePool
     ) throws ApiException {
         // fast path
         if (availableWorkloads.get(id) != null) {
@@ -297,12 +306,11 @@ public class ModelServingService {
         if (modelServingSpec != null && modelServingSpec.getResources() != null) {
             resources = modelServingSpec.getResources();
         }
-        var pool = systemSettingService.queryResourcePool(resourcePool);
-        resources = pool.validateAndPatchResource(resources);
-        log.info("using resource pool {}, patched resources {}", pool, resources);
+        resources = resourcePool.validateAndPatchResource(resources);
+        log.info("using resource pool {}, patched resources {}", resourcePool, resources);
         var resourceOverwriteSpec = new ResourceOverwriteSpec(resources);
 
-        var nodeSelectors = pool.getNodeSelector();
+        var nodeSelectors = resourcePool.getNodeSelector();
         var ss = k8sJobTemplate.renderModelServingOrch(name, image, envs, resourceOverwriteSpec, nodeSelectors);
         try {
             ss = k8sClient.deployStatefulSet(ss);
