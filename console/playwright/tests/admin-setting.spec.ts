@@ -122,36 +122,3 @@ test.describe('Admin', () => {
         })
     })
 })
-
-test.describe('Evaluation Create', () => {
-    let rowCount: any
-
-    test.beforeAll(async () => {
-        await page.goto(ROUTES.evaluations)
-        await wait(500)
-        rowCount = await getLastestRowID(page)
-        await page.getByRole('button', { name: /Create$/ }).click()
-        await expect(page).toHaveURL(ROUTES.evaluationNewJob)
-    })
-
-    test('should form be selected', async () => {
-        await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
-        await selectTreeOption(page, SELECTOR.formItem('Model Version'), /starwhale/)
-        await page.getByRole('button', { name: 'Select...' }).click()
-        await selectTreeOption(page, SELECTOR.formItem('Dataset Version'), /starwhale/)
-        // await selectTreeOption(page, SELECTOR.formItem('Runtime'), /starwhale/)
-        const versions = page.locator(SELECTOR.formItem('Version'))
-        const count = await versions.count()
-        for (let i = 0; i < count; i++) {
-            await expect(versions.nth(i)).not.toBeEmpty()
-        }
-    })
-
-    // test.describe('Submit', () => {
-    //     test('should select lastest versions', async () => {
-    //         await page.getByRole('button', { name: 'Submit' }).click()
-    //         await expect(page).toHaveURL(ROUTES.evaluations)
-    //         await expect(await getLastestRowID(page)).toBeGreaterThan(rowCount)
-    //     })
-    // })
-})

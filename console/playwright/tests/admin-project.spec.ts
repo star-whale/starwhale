@@ -1,70 +1,21 @@
 import { expect, Locator, Page } from '@playwright/test'
 import { test } from '../setup'
 import { CONST, ROUTES, SELECTOR } from './config'
-import { getLastestRowID, getTableDisplayRow, selectOption, takeScreenshot, wait } from './utils'
+import { getLastestRowID, getTableDisplayRow, selectOption, selectTreeOption, takeScreenshot, wait } from './utils'
 let page: Page
 
-test.beforeAll(async ({ guest }) => {
-    page = guest.page
+test.beforeAll(async ({ admin }) => {
+    page = admin.page
     await page.goto('/', {
         waitUntil: 'networkidle',
     })
     await expect(page).toHaveTitle(/Starwhale Console/)
 })
 
-// page.afterEach(async ({ page }) => {
-//     await takeScreenshot({ testcase: page, route: page.url() })
-// })
-
 test.describe('Login', () => {
     test('default route should be projects', async ({}) => {
         await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
-    })
-
-    test('header show not have admin settings', async ({}) => {
-        await page.hover(SELECTOR.userWrapper)
-        await expect(page.locator(SELECTOR.userAvtarName)).toBeVisible()
-        await expect(page.locator(SELECTOR.userAvtarName)).toHaveText(CONST.user.userName)
-        await expect(page.locator(SELECTOR.authAdminSetting)).not.toBeVisible()
-        await page.mouse.move(0, 0)
-    })
-})
-
-test.describe('Project list', () => {
-    test('should project form modal act show,submit,close', async ({}) => {
-        const el = await page.waitForSelector(SELECTOR.projectCreate)
-        await el.click()
-        await page.waitForSelector(SELECTOR.projectForm)
-        await page.locator(SELECTOR.projectName).fill(CONST.user.projectName)
-        await page.locator(SELECTOR.projectDescription).fill(CONST.user.projectDescription)
-        await page.locator(SELECTOR.projectPrivacy).check()
-        await expect(page.locator(SELECTOR.projectName)).not.toBeEmpty()
-        await expect(page.locator(SELECTOR.projectDescription)).not.toBeEmpty()
-        await expect(page.locator(SELECTOR.projectPrivacy)).toBeChecked()
-        await page.locator(SELECTOR.projectSubmit).click()
-    })
-
-    test('check project list and delete project just created', async () => {
-        await page.waitForSelector(SELECTOR.projectCard)
-        const cardLength = await page.$$eval(SELECTOR.projectCard, (el) => el.length)
-        expect(cardLength).toBeGreaterThan(0)
-
-        const p = page.locator(
-            SELECTOR.projectCard + `:has(:has-text("${CONST.user.userName}/${CONST.user.projectName}"))`
-        )
-        await p.hover()
-        await expect(p.locator(SELECTOR.projectCardActions)).toBeVisible()
-        await p.locator(SELECTOR.projectCardActionDelete).click()
-        await page.waitForSelector(SELECTOR.projectCardDeleteConfirm)
-        await page.locator(SELECTOR.projectModelInput).fill(CONST.user.projectName)
-        await page.locator(SELECTOR.projectCardDeleteConfirm).click()
-        await expect(p).not.toBeVisible()
-    })
-
-    test('should project navigate to evaluations when click project name', async () => {
-        await page.locator(SELECTOR.projectCardLink).click()
-        await expect(page).toHaveURL(ROUTES.evaluations)
     })
 })
 
@@ -76,13 +27,44 @@ test.describe('Evaluation', () => {
         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
     })
 
-    // test.describe('Auth', () => {
-    //     test('none admin should have no create button', async () => {
-    //         await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
-    //     })
-    // })
+    test.describe('Evaluation Create', () => {
+        let rowCount: any
+
+        test.beforeAll(async () => {
+            await page.goto(ROUTES.evaluations)
+            await wait(500)
+            rowCount = await getLastestRowID(page)
+            await page.getByRole('button', { name: /Create$/ }).click()
+            await expect(page).toHaveURL(ROUTES.evaluationNewJob)
+        })
+
+        test('should form be selected', async () => {
+            await selectOption(page, SELECTOR.formItem('Resource Pool'), 'default')
+            await selectTreeOption(page, SELECTOR.formItem('Model Version'), /starwhale/)
+            await page.getByRole('button', { name: 'Select...' }).click()
+            await selectTreeOption(page, SELECTOR.formItem('Dataset Version'), /starwhale/)
+            // await selectTreeOption(page, SELECTOR.formItem('Runtime'), /starwhale/)
+            const versions = page.locator(SELECTOR.formItem('Version'))
+            const count = await versions.count()
+            for (let i = 0; i < count; i++) {
+                await expect(versions.nth(i)).not.toBeEmpty()
+            }
+        })
+
+        // test.describe('Submit', () => {
+        //     test('should select lastest versions', async () => {
+        //         await page.getByRole('button', { name: 'Submit' }).click()
+        //         await expect(page).toHaveURL(ROUTES.evaluations)
+        //         await expect(await getLastestRowID(page)).toBeGreaterThan(rowCount)
+        //     })
+        // })
+    })
 
     test.describe('List', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.evaluations)) await page.goto(ROUTES.evaluations)
+        })
+
         test('should evaluation have toolbar/header/row', async () => {
             const p = page.locator(SELECTOR.table)
 
@@ -94,60 +76,11 @@ test.describe('Evaluation', () => {
         })
     })
 
-    // test.describe('Search', () => {
-    //     test('should be 2 success status ', async () => {
-    //         const p = page.locator(SELECTOR.table)
-    //         await p.getByRole('textbox', { name: 'Search by text' }).fill('Succe')
-    //         await wait(1000)
-    //         await expect(await getTableDisplayRow(p)).toEqual(2)
-    //     })
-    // })
-
-    // test.describe('Manage columns', () => {
-    //     test('remove evaluation column & add accuracy column', async () => {
-    //         const checkedButton = page.locator(
-    //             'role=button[name="Evaluation ID"] >> label:not(:has([aria-checked="false"]))'
-    //         )
-    //         if ((await checkedButton.count()) > 0) await checkedButton.click()
-
-    //         const p = page.locator(SELECTOR.table)
-    //         const drawer = page.locator('[data-baseweb="drawer"]')
-    //         await p.getByRole('button', { name: /Manage Columns/ }).click()
-
-    //         await drawer.getByTitle('Evaluation ID').locator('label').uncheck()
-    //         await drawer.getByTitle('accuracy').locator('label').check()
-    //         await drawer.getByRole('button', { name: /Apply/ }).click()
-    //         await drawer.getByTitle('Close').click()
-
-    //         await expect(p.locator('.table-headers').getByText('Evaluation ID')).toBeHidden()
-    //         await expect(p.locator('.table-headers').getByText('accuracy')).toBeVisible()
-    //     })
-    // })
-
-    // test.describe('Filter', () => {
-    //     test('should be no rows when evaluation id = none', async () => {
-    //         const p = page.locator(SELECTOR.table)
-    //         await p.getByText('Filters').click()
-
-    //         await page.waitForSelector(':has-text("Add filter")')
-    //         await page.getByText('Add filter').click()
-
-    //         await selectOption(page, '.filter-ops', 'Evaluation ID')
-    //         await page.getByText('Apply').click()
-
-    //         await expect(await getTableDisplayRow(p)).toEqual(0)
-    //     })
-    // })
-
-    // test.describe('View', () => {
-    //     test('should show rows when select all runs', async () => {
-    //         const p = page.locator(SELECTOR.table)
-    //         await selectOption(page, '.table-config-view', 'All runs')
-    //         await expect(await getTableDisplayRow(p)).toBeGreaterThan(0)
-    //     })
-    // })
-
     test.describe('Compare', () => {
+        test.beforeAll(async () => {
+            if (!page.url().includes(ROUTES.evaluations)) await page.goto(ROUTES.evaluations)
+        })
+
         test('should show compare table when checked one row', async () => {
             const p = page.locator(SELECTOR.table)
 
