@@ -506,6 +506,7 @@ class TestDataLoader(TestCase):
                 "local": {"uri": "local"},
             },
         }
+        rm.get("http://localhost/api/v1/project/x/dataset/mnist", json={})
         m_summary.return_value = DatasetSummary(rows=4)
         tdsc = m_sc()
         tdsc.get_scan_range.side_effect = [["a", "d"], None]

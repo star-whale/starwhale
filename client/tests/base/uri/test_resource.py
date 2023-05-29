@@ -191,14 +191,25 @@ class TestResource(TestCase):
         for url, expect in tests.items():
             assert expect == Resource(url)
 
-        get.return_value.json.return_value = {
-            "data": {"name": "name in server", "versionName": "version in server"}
-        }
+        def response_of_get(*args, **kwargs):
+            ret = type("", (), {})()
+            ret.raise_for_status = lambda: None
+            ver = "version in server"
+            if kwargs.get("params", {}).get("versionUrl", "") == "latest":
+                ver = "latest of the version"
+            ret.json = lambda: {"data": {"name": "name in server", "versionName": ver}}
+            return ret
+
+        get.side_effect = response_of_get
+
         for url, expect in tests.items():
             # only the resource with name and version will be parsed
-            if expect.name and expect.version:
+            if expect.name:
                 expect.name = "name in server"
-                expect.version = "version in server"
+                if expect.version:
+                    expect.version = "version in server"
+                else:
+                    expect.version = "latest of the version"
             assert expect == Resource(url)
 
         with self.assertRaises(Exception):
@@ -221,7 +232,7 @@ class TestResource(TestCase):
         }
 
         for uri, expect in tests.items():
-            p = Resource(uri, typ=ResourceType.runtime)
+            p = Resource(uri, typ=ResourceType.runtime, refine=False)
             assert p.name == expect[0]
             assert p.project.name == expect[1]
             assert p.instance.alias == expect[2]

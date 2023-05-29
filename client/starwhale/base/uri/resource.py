@@ -102,7 +102,8 @@ class Resource:
             self.typ = ResourceType(info["rc_type"][:-1])  # remove the last 's'
             self.name = info.get("rc_id") or ""
             self.version = info.get("rc_version") or ""
-            self._refine_remote_rc_info()
+            if refine:
+                self._refine_remote_rc_info()
             return
 
         if project:
@@ -226,9 +227,9 @@ class Resource:
     def _refine_remote_rc_info(self) -> None:
         if self.project.instance.is_local:
             raise VerifyException("only used for remote resources")
-        if not self.name or not self.version:
-            # TODO guess by name or version only
+        if not self.name or self.typ in {ResourceType.job, ResourceType.evaluation}:
             return
+        ver = self.version or "latest"
         if self._remote_info:
             # have remote info, assume it is already refined
             return
@@ -236,7 +237,7 @@ class Resource:
         base_path = f"{self.instance.url}/api/{SW_API_VERSION}/project/{self.project.name}/{self.typ.value}/{self.name}"
         headers = {"Authorization": self.instance.token}
         resp = requests.get(
-            base_path, timeout=60, params={"versionUrl": self.version}, headers=headers
+            base_path, timeout=60, params={"versionUrl": ver}, headers=headers
         )
         resp.raise_for_status()
         self._remote_info = resp.json().get("data", {})
