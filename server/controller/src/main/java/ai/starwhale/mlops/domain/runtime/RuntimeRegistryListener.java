@@ -43,10 +43,7 @@ public class RuntimeRegistryListener implements SystemSettingListener {
     }
 
     private boolean validateDockerSetting(DockerSetting setting) {
-        return null != setting
-            && StringUtils.hasText(setting.getRegistry())
-            && StringUtils.hasText(setting.getUserName())
-            && StringUtils.hasText(setting.getPassword());
+        return null != setting && StringUtils.hasText(setting.getRegistry());
     }
 
     @Override

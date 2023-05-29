@@ -192,7 +192,7 @@ public class RuntimeServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeTokenValidator,
-                new DockerSetting("localhost:8083", "admin", "admin123"),
+                new DockerSetting("localhost:8083", "admin", "admin123", false),
                 new RunTimeProperties("", "",
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
                 "http://mock-controller");

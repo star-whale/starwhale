@@ -625,6 +625,15 @@ public class RuntimeService {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
                 containerOverwriteSpec.setEnvs(envVars);
+                var cmd = new ArrayList<>(List.of(
+                        "--dockerfile=Dockerfile",
+                        "--context=dir:///workspace",
+                        "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
+                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
+                        "--destination=" + image));
+                if (dockerSetting.isInsecure()) {
+                    cmd.add("--insecure=" + dockerSetting.getRegistry());
+                }
                 containerOverwriteSpec.setCmds(List.of(
                         "--dockerfile=Dockerfile",
                         "--context=dir:///workspace",
@@ -659,10 +668,7 @@ public class RuntimeService {
     }
 
     private boolean validateDockerSetting(DockerSetting setting) {
-        return null != setting
-                && StringUtils.hasText(setting.getRegistry())
-                && StringUtils.hasText(setting.getUserName())
-                && StringUtils.hasText(setting.getPassword());
+        return null != setting && StringUtils.hasText(setting.getRegistry());
     }
 
     public boolean updateBuiltImage(String version, String image) {

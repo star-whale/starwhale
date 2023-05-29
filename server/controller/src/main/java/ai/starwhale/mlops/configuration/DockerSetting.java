@@ -30,9 +30,10 @@ public class DockerSetting {
     String registry;
     String userName;
     String password;
+    boolean insecure;
 
     public static DockerSetting empty() {
-        return new DockerSetting("", "", "");
+        return new DockerSetting("", "", "",  false);
     }
 
 }
