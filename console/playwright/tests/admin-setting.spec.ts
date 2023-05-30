@@ -112,8 +112,10 @@ test.describe('Admin Users', () => {
 })
 
 test.describe('Admin Settings', () => {
-    test.beforeAll(async ({ request }) => {
-        await page.goto(ROUTES.adminSettings)
+    test.beforeAll(async ({}) => {
+        await page.goto(ROUTES.adminSettings, {
+            waitUntil: 'networkidle',
+        })
     })
     test('should show system settings', async ({}) => {
         // timeout online, so disable for now
