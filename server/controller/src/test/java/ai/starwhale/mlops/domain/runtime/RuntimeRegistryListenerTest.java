@@ -54,7 +54,7 @@ public class RuntimeRegistryListenerTest {
     public void testUpdateDockerSettingWithValueAndExistedSecret() throws ApiException {
         given(k8sClient.getSecret(anyString())).willReturn(new V1Secret());
         var setting = new SystemSetting();
-        setting.setDockerSetting(new DockerSetting("mockRegistry", "admin", "admin", false));
+        setting.setDockerSetting(new DockerSetting("mockRegistry", "mockRegistry", "admin", "admin", false));
         listener.onUpdate(setting);
 
         verify(k8sClient, times(1)).replaceSecret(anyString(), any());
@@ -64,7 +64,7 @@ public class RuntimeRegistryListenerTest {
     public void testUpdateDockerSettingWithValueAndNonExistedSecret() throws ApiException {
         given(k8sClient.getSecret(anyString())).willThrow(new ApiException(HttpServletResponse.SC_NOT_FOUND, ""));
         var setting = new SystemSetting();
-        setting.setDockerSetting(new DockerSetting("mockRegistry", "admin", "admin", false));
+        setting.setDockerSetting(new DockerSetting("mockRegistry", "mockRegistry", "admin", "admin", false));
         listener.onUpdate(setting);
 
         verify(k8sClient, times(1)).createSecret(any());

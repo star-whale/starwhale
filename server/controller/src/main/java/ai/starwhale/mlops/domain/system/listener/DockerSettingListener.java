@@ -33,6 +33,8 @@ public class DockerSettingListener implements SystemSettingListener {
     @Override
     public void onUpdate(SystemSetting systemSetting) {
         this.dockerSetting.setRegistry(systemSetting.getDockerSetting().getRegistry());
+        this.dockerSetting.setRegistryForPush(systemSetting.getDockerSetting().getRegistryForPush());
+        this.dockerSetting.setInsecure(systemSetting.getDockerSetting().isInsecure());
         this.dockerSetting.setUserName(systemSetting.getDockerSetting().getUserName());
         this.dockerSetting.setPassword(systemSetting.getDockerSetting().getPassword());
     }

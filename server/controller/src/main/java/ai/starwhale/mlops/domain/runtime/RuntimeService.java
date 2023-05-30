@@ -610,7 +610,7 @@ public class RuntimeService {
                             runtimeTokenValidator.getToken(user, runtimeVersion.getId())))
             );
             if (null != runConfig && null != runConfig.getEnvVars()) {
-                List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(e -> K8sJobTemplate.toEnvVar(e))
+                List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(K8sJobTemplate::toEnvVar)
                         .collect(Collectors.toList());
                 envVars.addAll(collect);
             }
@@ -625,21 +625,21 @@ public class RuntimeService {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
                 containerOverwriteSpec.setEnvs(envVars);
-                var cmd = new ArrayList<>(List.of(
+                var registry = StringUtils.hasText(dockerSetting.getRegistryForPush())
+                        ? dockerSetting.getRegistryForPush() : dockerSetting.getRegistry();
+                var cmds = new ArrayList<>(List.of(
                         "--dockerfile=Dockerfile",
                         "--context=dir:///workspace",
                         "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
-                        "--destination=" + image));
+                        "--cache-repo=" + new DockerImage(registry, "cache"),
+                        "--verbosity=debug",
+                        "--destination=" + new DockerImage(registry,
+                            String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()))
+                ));
                 if (dockerSetting.isInsecure()) {
-                    cmd.add("--insecure");
+                    cmds.add("--insecure");
                 }
-                containerOverwriteSpec.setCmds(List.of(
-                        "--dockerfile=Dockerfile",
-                        "--context=dir:///workspace",
-                        "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
-                        "--destination=" + image));
+                containerOverwriteSpec.setCmds(cmds);
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 

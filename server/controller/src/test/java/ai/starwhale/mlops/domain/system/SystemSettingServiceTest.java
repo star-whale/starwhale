@@ -89,7 +89,7 @@ public class SystemSettingServiceTest {
                 systemSettingMapper,
                 List.of(listener),
                 new RunTimeProperties("", "", new Pypi("url1", "url2", "host1")),
-                new DockerSetting("", "", "", false),
+                new DockerSetting("", "", "", "", false),
                 userService);
         systemSettingService.run();
     }
@@ -175,7 +175,7 @@ public class SystemSettingServiceTest {
                         mock(SystemSettingMapper.class),
                         List.of(listener),
                         new RunTimeProperties("", "", new Pypi("", "", "")),
-                        new DockerSetting("abcd.com", "admin", "admin123", false),
+                        new DockerSetting("abcd.com", "abcd.com", "admin", "admin123", false),
                         mock(UserService.class));
         systemSettingService.run();
         Assertions.assertEquals("---\n"

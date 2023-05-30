@@ -49,8 +49,11 @@ public class RuntimeRegistryListener implements SystemSettingListener {
     @Override
     public void onUpdate(SystemSetting systemSetting) {
         if (null != systemSetting && validateDockerSetting(systemSetting.getDockerSetting())) {
+            var dockerSetting = systemSetting.getDockerSetting();
+            var registry = StringUtils.hasText(dockerSetting.getRegistryForPush())
+                        ? dockerSetting.getRegistryForPush() : dockerSetting.getRegistry();
             var dockerConfigJson = JSONUtil.toJsonStr(
-                    Map.of("auths", Map.of(systemSetting.getDockerSetting().getRegistry(), Map.of(
+                    Map.of("auths", Map.of(registry, Map.of(
                         "username", systemSetting.getDockerSetting().getUserName(),
                         "password", systemSetting.getDockerSetting().getPassword()))));
             try {
