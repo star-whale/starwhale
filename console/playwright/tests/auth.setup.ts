@@ -5,32 +5,54 @@ import config from '../playwright.config'
 import { USERS, SELECTOR } from './config'
 import { takeScreenshot, wait } from './utils'
 
-USERS.map(async (user) => {
-    // testInfo.project.outputDir
-    const fileName = path.join('test-storage', 'storage-' + user.role + '.json')
+setup(`authenticate as ${USERS[0].role}`, async ({ page }) => {
+    const fileName = path.join('test-storage', 'storage-' + USERS[0].role + '.json')
 
     if (fs.existsSync(fileName) && process.env.CLEAN_AUTH !== 'true') return
 
-    setup(`authenticate as ${user.role}`, async ({ page }) => {
-        await page.goto(config.use?.baseURL as string)
-        await expect(page).toHaveTitle(/Starwhale Console/)
-        await page.locator(SELECTOR.loginName).fill(user.username)
-        await page.locator(SELECTOR.loginPassword).fill(user.password)
-        await page.getByRole('button', { name: 'Log in' }).click()
-        await page.context().storageState({ path: fileName })
-        await page.close()
+    await page.goto(config.use?.baseURL as string)
+    await expect(page).toHaveTitle(/Starwhale Console/)
+    await page.locator(SELECTOR.loginName).fill(USERS[0].username)
+    await page.locator(SELECTOR.loginPassword).fill(USERS[0].password)
+    await page.getByRole('button', { name: 'Log in' }).click()
+    await page.context().storageState({ path: fileName })
+    await page.close()
 
-        if (process.env.LITE === 'true') {
-            await page.route(/./, async (route, request) => {
-                const type = await request.resourceType()
-                if (type === 'image' || type === 'font') {
-                    route.abort()
-                } else {
-                    route.continue()
-                }
-            })
-        }
-    })
+    if (process.env.LITE === 'true') {
+        await page.route(/./, async (route, request) => {
+            const type = await request.resourceType()
+            if (type === 'image' || type === 'font') {
+                route.abort()
+            } else {
+                route.continue()
+            }
+        })
+    }
+})
+
+setup(`authenticate as ${USERS[1].role}`, async ({ page }) => {
+    const fileName = path.join('test-storage', 'storage-' + USERS[1].role + '.json')
+
+    if (fs.existsSync(fileName) && process.env.CLEAN_AUTH !== 'true') return
+
+    await page.goto(config.use?.baseURL as string)
+    await expect(page).toHaveTitle(/Starwhale Console/)
+    await page.locator(SELECTOR.loginName).fill(USERS[1].username)
+    await page.locator(SELECTOR.loginPassword).fill(USERS[1].password)
+    await page.getByRole('button', { name: 'Log in' }).click()
+    await page.context().storageState({ path: fileName })
+    await page.close()
+
+    if (process.env.LITE === 'true') {
+        await page.route(/./, async (route, request) => {
+            const type = await request.resourceType()
+            if (type === 'image' || type === 'font') {
+                route.abort()
+            } else {
+                route.continue()
+            }
+        })
+    }
 })
 
 setup.afterAll(async ({ page }) => {
