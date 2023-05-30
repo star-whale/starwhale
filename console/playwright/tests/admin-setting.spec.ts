@@ -8,6 +8,9 @@ let page: Page
 
 test.beforeAll(async ({ admin }) => {
     page = admin.page
+    page.on('pageerror', (err) => {
+        console.log(err.message)
+    })
     await wait(1000)
     await page.goto('/', {
         waitUntil: 'networkidle',
