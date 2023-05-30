@@ -1,0 +1,14 @@
+api_version: '1.1'
+dependencies:
+- pip:
+  - transformers
+  - accelerate
+  - starwhale
+environment:
+  arch: noarch
+  cuda: '11.7'
+  cudnn: ''
+  os: ubuntu:20.04
+  python: '3.8'
+mode: venv
+name: bloom
