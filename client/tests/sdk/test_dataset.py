@@ -1703,6 +1703,7 @@ class TestMappingDatasetBuilder(BaseTestCase):
                 "mnist",
                 project=Project("cloud://foo/project/self"),
                 typ=ResourceType.dataset,
+                refine=False,
             ),
         )
         mdb.put(
