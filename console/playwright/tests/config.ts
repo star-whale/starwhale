@@ -18,7 +18,7 @@ export const CONST = {
     },
     adminSettings: 'Admin Settings',
     projectId: '1',
-    newUserName: 'lwz1',
+    newUserName: 'lwz2',
     newUserPassword: 'abcd1234',
     datasetName: 'mnist_bin',
     runtimeName: 'pytorch37',

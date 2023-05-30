@@ -14,5 +14,5 @@ download-data:
 	[ -f data/t10k-labels-idx1-ubyte ] || ([ -z $(CN) ] && curl -o data/t10k-labels-idx1-ubyte https://starwhale-examples.s3.us-west-1.amazonaws.com/dataset/mnist/t10k-labels-idx1-ubyte) || curl -o data/t10k-labels-idx1-ubyte https://starwhale-examples.oss-cn-beijing.aliyuncs.com/dataset/mnist/t10k-labels-idx1-ubyte
 
 .POHNY: prepare
-prepare: download-model download-model
+prepare: download-model download-data
 	python3 -m pip install -r requirements.txt

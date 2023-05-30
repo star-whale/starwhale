@@ -54,71 +54,71 @@ test.describe('Project with admin setttings', () => {
     })
 })
 
-test.describe('Admin', () => {
-    test.describe('Users', () => {
-        test.beforeAll(async () => {
-            if (!page.url().includes(ROUTES.adminUsers)) await page.goto(ROUTES.adminUsers)
-        })
-
-        test('should show add button & user list', async ({}) => {
-            await expect(page.getByText(/Add User/)).toBeVisible()
-            await expect(await page.locator('tr').count()).toBeGreaterThan(0)
-        })
-
-        test('should new user be success added & showing in list', async () => {
-            const user = await page.$$(`tr:has-text("${CONST.newUserName}")`)
-            test.skip(user.length > 0, 'user exists, skip')
-
-            await page.getByText(/Add User/).click()
-            await page.locator(SELECTOR.formItem('Username')).locator('input').fill(CONST.newUserName)
-            await page.locator(SELECTOR.formItem('New Password')).first().locator('input').fill(CONST.newUserPassword)
-            await page.locator(SELECTOR.formItem('Confirm New Password')).locator('input').fill(CONST.newUserPassword)
-            await page.locator(SELECTOR.userSubmit).click()
-            await expect(page.locator(SELECTOR.userForm)).toBeHidden()
-            await expect(page.locator('td').getByText(CONST.newUserName)).toBeDefined()
-        })
-
-        test('disable new user, user should login fail', async ({ request }) => {
-            const user = await page.$$(`tr:has-text("${CONST.newUserName}") button:has-text("Enable")`)
-            test.skip(user.length > 0, 'user disabled, skip')
-
-            page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Disable' }).click()
-            await page.waitForSelector(SELECTOR.userDisableConfirm)
-            await page.locator(SELECTOR.userDisableConfirm).click()
-
-            const resp = await request.post('/api/v1/login', {
-                multipart: {
-                    userName: CONST.newUserName,
-                    userPwd: CONST.newUserPassword,
-                    agreement: true,
-                },
-            })
-            expect(resp.ok()).toBeFalsy()
-        })
-
-        test('enable new user, user should login success', async ({ request }) => {
-            page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Enable' }).click()
-            await page.waitForSelector(SELECTOR.userDisableConfirm)
-            await page.locator(SELECTOR.userDisableConfirm).click()
-
-            const resp = await request.post('/api/v1/login', {
-                multipart: {
-                    userName: CONST.newUserName,
-                    userPwd: CONST.newUserPassword,
-                    agreement: true,
-                },
-            })
-            expect(resp.ok()).toBeTruthy()
-        })
+test.describe('Admin Users', () => {
+    test.beforeAll(async () => {
+        if (!page.url().includes(ROUTES.adminUsers)) await page.goto(ROUTES.adminUsers)
     })
 
-    test.describe('Settings', () => {
-        test.beforeAll(async ({ request }) => {
-            if (!page.url().includes(ROUTES.adminSettings)) await page.goto(ROUTES.adminSettings)
+    test('should show add button & user list', async ({}) => {
+        await expect(page.getByText(/Add User/)).toBeVisible()
+        await expect(await page.locator('tr').count()).toBeGreaterThan(0)
+    })
+
+    test('should new user be success added & showing in list', async () => {
+        const user = await page.$$(`tr:has-text("${CONST.newUserName}")`)
+        test.skip(user.length > 0, 'user exists, skip')
+
+        await page.getByText(/Add User/).click()
+        await page.locator(SELECTOR.formItem('Username')).locator('input').fill(CONST.newUserName)
+        await page.locator(SELECTOR.formItem('New Password')).first().locator('input').fill(CONST.newUserPassword)
+        await page.locator(SELECTOR.formItem('Confirm New Password')).locator('input').fill(CONST.newUserPassword)
+        await page.locator(SELECTOR.userSubmit).click()
+        await expect(page.locator(SELECTOR.userForm)).toBeHidden()
+        await expect(page.locator('td').getByText(CONST.newUserName)).toBeDefined()
+    })
+
+    test('disable new user, user should login fail', async ({ request }) => {
+        const user = await page.$$(`tr:has-text("${CONST.newUserName}") button:has-text("Enable")`)
+        test.skip(user.length > 0, 'user disabled, skip')
+
+        page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Disable' }).click()
+        await page.waitForSelector(SELECTOR.userDisableConfirm)
+        await page.locator(SELECTOR.userDisableConfirm).click()
+
+        const resp = await request.post('/api/v1/login', {
+            multipart: {
+                userName: CONST.newUserName,
+                userPwd: CONST.newUserPassword,
+                agreement: true,
+            },
         })
-        test('should show system settings', async ({}) => {
-            await page.waitForSelector('.monaco-editor')
-            expect(page.locator('.view-lines')).toHaveText(/resourcePoolSetting/)
+        expect(resp.ok()).toBeFalsy()
+    })
+
+    test('enable new user, user should login success', async ({ request }) => {
+        page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Enable' }).click()
+        await page.waitForSelector(SELECTOR.userDisableConfirm)
+        await page.locator(SELECTOR.userDisableConfirm).click()
+        page.waitForResponse((response) => response.status() === 200)
+        const resp = await request.post('/api/v1/login', {
+            multipart: {
+                userName: CONST.newUserName,
+                userPwd: CONST.newUserPassword,
+                agreement: true,
+            },
         })
+        expect(resp.ok()).toBeTruthy()
+    })
+})
+
+test.describe('Admin Settings', () => {
+    test.beforeAll(async ({ request }) => {
+        if (!page.url().includes(ROUTES.adminSettings)) await page.goto(ROUTES.adminSettings)
+    })
+    test('should show system settings', async ({}) => {
+        await page.waitForSelector('.monaco-editor', {
+            timeout: 50000,
+        })
+        expect(page.locator('.view-lines')).toHaveText(/resourcePoolSetting/)
     })
 })
