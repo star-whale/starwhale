@@ -355,16 +355,12 @@ class CondaPkgDependency(ASDictMixin, BaseDependency):
         return DependencyType.CONDA_PKG
 
     def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
-        _conda_pkgs = " ".join([repr(_p) for _p in self.deps if _p])
-        _conda_pkgs = _conda_pkgs.strip()
-        if _conda_pkgs:
-            console.debug(f"conda install: {_conda_pkgs}")
-            conda_install_req(
-                req=_conda_pkgs,
-                prefix_path=env_dir,
-                use_pip_install=False,
-                configs=configs,
-            )
+        conda_install_req(
+            req=self.deps,
+            prefix_path=env_dir,
+            use_pip_install=False,
+            configs=configs,
+        )
 
     def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
         console.warning("no support install conda pkg in the venv environment")

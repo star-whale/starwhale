@@ -62,7 +62,7 @@ class PythonVersionField(t.NamedTuple):
 
 
 def conda_install_req(
-    req: t.Union[str, Path],
+    req: t.Union[str, Path, t.List],
     env_name: str = "",
     prefix_path: t.Optional[Path] = None,
     enable_pre: bool = False,
@@ -71,6 +71,9 @@ def conda_install_req(
 ) -> None:
     if not req:
         return
+
+    if not isinstance(req, list):
+        req = [req]
 
     configs = configs or {}
     prefix_cmd = [get_conda_bin()]
@@ -94,13 +97,12 @@ def conda_install_req(
             prefix_cmd += ["--channel", _c]
 
         prefix_cmd += ["--yes", "--override-channels"]
-        check_call(prefix_cmd + [str(req)])
+        check_call(prefix_cmd + [str(r) for r in req])
 
 
 def _do_pip_install_req(
-    # TODO: support multiple reqs
     prefix_cmd: t.List[t.Any],
-    req: t.Union[str, Path],
+    req: t.Union[str, Path, t.List],
     enable_pre: bool = False,
     pip_config: _PipConfigT = None,
 ) -> None:
@@ -149,16 +151,20 @@ def _do_pip_install_req(
     if enable_pre:
         cmd += ["--pre"]
 
-    if isinstance(req, PurePath):
-        if not req.name.endswith(WHEEL_FILE_EXTENSION):
-            cmd += ["-r"]
-        cmd += [str(req.absolute())]  # type: ignore
-    elif os.path.isfile(req):
-        if not req.endswith(WHEEL_FILE_EXTENSION):
-            cmd += ["-r"]
-        cmd += [req]
-    else:
-        cmd += [req]
+    if not isinstance(req, list):
+        req = [req]
+
+    for r in req:
+        if isinstance(r, PurePath):
+            if not r.name.endswith(WHEEL_FILE_EXTENSION):
+                cmd += ["-r"]
+            cmd += [str(r.absolute())]  # type: ignore
+        elif os.path.isfile(r):
+            if not r.endswith(WHEEL_FILE_EXTENSION):
+                cmd += ["-r"]
+            cmd += [r]
+        else:
+            cmd += [r]
 
     check_call(cmd)
 
