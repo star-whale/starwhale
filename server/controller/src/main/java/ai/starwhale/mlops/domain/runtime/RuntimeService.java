@@ -632,7 +632,7 @@ public class RuntimeService {
                         "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
                         "--destination=" + image));
                 if (dockerSetting.isInsecure()) {
-                    cmd.add("--insecure=" + dockerSetting.getRegistry());
+                    cmd.add("--insecure");
                 }
                 containerOverwriteSpec.setCmds(List.of(
                         "--dockerfile=Dockerfile",
