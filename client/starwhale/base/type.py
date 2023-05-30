@@ -40,6 +40,7 @@ class RuntimeArtifactType:
     DEPEND = "dependencies"
     WHEELS = "wheels"
     FILES = "files"
+    CONFIGS = "configs"
 
 
 class RuntimeLockFileType:

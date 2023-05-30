@@ -11,3 +11,8 @@ environment:
   os: ubuntu:20.04
 mode: conda
 name: simple-test-conda
+config:
+  conda:
+    condarc:
+      ssl_verify: false
+      default_threads: 4

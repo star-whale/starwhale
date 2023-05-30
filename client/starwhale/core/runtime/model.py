@@ -575,8 +575,14 @@ class PipConfig(ASDictMixin):
 
 
 class CondaConfig(ASDictMixin):
-    def __init__(self, channels: t.Optional[t.List[str]] = None, **kw: t.Any) -> None:
+    def __init__(
+        self,
+        channels: t.Optional[t.List[str]] = None,
+        condarc: t.Optional[t.Dict] = None,
+        **kw: t.Any,
+    ) -> None:
         self.channels = channels or [DEFAULT_CONDA_CHANNEL]
+        self.condarc = condarc or {}
 
 
 class Configs(ASDictMixin):
@@ -746,6 +752,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
+        emit_pip_options: bool = False,
+        emit_condarc: bool = False,
     ) -> None:
         raise NotImplementedError
 
@@ -761,6 +769,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
+        emit_pip_options: bool = False,
+        emit_condarc: bool = False,
     ) -> None:
         raise NotImplementedError
 
@@ -897,6 +907,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
+        emit_pip_options: bool = False,
+        emit_condarc: bool = False,
     ) -> None:
         if conda_name or conda_prefix:
             prefix_path = (
@@ -951,6 +963,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=conda_name,
                 env_prefix_path=conda_prefix or venv_prefix,
                 env_use_shell=env_use_shell,
+                emit_pip_options=emit_pip_options,
+                emit_condarc=emit_condarc,
             )
         finally:
             empty_dir(workdir)
@@ -967,6 +981,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
+        emit_pip_options: bool = False,
+        emit_condarc: bool = False,
     ) -> None:
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
@@ -987,6 +1003,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
                 env_use_shell=env_use_shell,
+                emit_pip_options=emit_pip_options,
             )
             # try getting starwhale version
             for line in content.splitlines():
@@ -1001,10 +1018,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (
-                self._dump_context,
+                self._dump_configs,
                 5,
-                "dump environment and configs",
-                dict(config=swrt_config),
+                "dump configs",
+                dict(config=swrt_config, emit_condarc=emit_condarc),
             ),
             (
                 self._lock_environment,
@@ -1057,9 +1074,34 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
-    def _dump_context(self, config: RuntimeConfig) -> None:
-        # TODO: refactor docker image in environment
+    @staticmethod
+    def _prepare_configs(workdir: Path, mode: str) -> None:
+        if mode == PythonRunEnv.CONDA:
+            condarc_path = workdir / RuntimeArtifactType.CONFIGS / "condarc"
+            if condarc_path.exists():
+                # CONDARC env only works in the current process and subprocess by the starwhale.utils.process.check_call function
+                os.environ["CONDARC"] = str(condarc_path)
+
+    def _dump_configs(self, config: RuntimeConfig, emit_condarc: bool = False) -> None:
         self._manifest["configs"] = config.configs.asdict()
+
+        condarc_path = Path.home() / ".condarc"
+        if (
+            config.mode == PythonRunEnv.CONDA
+            and not emit_condarc
+            and condarc_path.exists()
+        ):
+            local_condarc = load_yaml(condarc_path)
+            local_condarc.update(config.configs.conda.condarc)
+            self._manifest["configs"]["conda"]["condarc"] = local_condarc
+
+        condarc = self._manifest["configs"]["conda"]["condarc"]
+        if condarc:
+            ensure_file(
+                self.store.snapshot_workdir / RuntimeArtifactType.CONFIGS / "condarc",
+                yaml.safe_dump(condarc, default_flow_style=False),
+                parents=True,
+            )
 
     def _copy_src(
         self,
@@ -1795,6 +1837,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         else:
             operations.extend(
                 [
+                    (
+                        cls._prepare_configs,
+                        5,
+                        "prepare configs",
+                        dict(workdir=workdir, mode=_env["mode"]),
+                    ),
                     (
                         cls._setup_python_env,
                         20,
