@@ -17,6 +17,8 @@ USERS.map(async (user) => {
         await page.locator(SELECTOR.loginName).fill(user.username)
         await page.locator(SELECTOR.loginPassword).fill(user.password)
         await page.getByRole('button', { name: 'Log in' }).click()
+        await page.waitForResponse((response) => response.status() === 200)
+        await wait(500)
         await page.context().storageState({ path: fileName })
         await page.close()
 
