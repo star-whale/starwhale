@@ -99,6 +99,9 @@ test.describe('Admin Users', () => {
     })
 
     test('enable new user, user should login success', async ({ request }) => {
+        const user = await page.$$(`tr:has-text("${CONST.newUserName}") button:has-text("Disable")`)
+        test.skip(user.length > 0, 'user enabled, skip')
+
         page.locator(`tr:has-text("${CONST.newUserName}")`).getByRole('button', { name: 'Enable' }).click()
         await page.waitForSelector(SELECTOR.userDisableConfirm)
         await page.locator(SELECTOR.userDisableConfirm).click()
