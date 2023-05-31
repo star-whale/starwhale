@@ -407,14 +407,14 @@ def _recover(model: str, force: bool) -> None:
     "-fs",
     "--forbid-snapshot",
     is_flag=True,
-    help="[ONLY STANDALONE]Forbid to use model run snapshot dir, use model src dir directly",
+    help="[ONLY STANDALONE]Forbid to use model run snapshot dir, use model src dir directly. When the `--workdir` option is set, this option will be ignored.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--cleanup-snapshot/--no-cleanup-snapshot",
     is_flag=True,
     default=True,
     show_default=True,
-    help="[ONLY STANDALONE]Cleanup snapshot dir after model run",
+    help="[ONLY STANDALONE]Cleanup snapshot dir after model run. When the `--workdir` option is set, this option will be ignored.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--resource-pool",
@@ -553,6 +553,11 @@ def _run(
             docker_image=image,
         )
     else:
+        if workdir:
+            # when workdir is set, snapshot mechanism is forbidden.
+            forbid_snapshot = True
+            cleanup_snapshot = False
+
         ModelTermView.run_in_host(
             model_src_dir=model_src_dir,
             model_config=model_config,
