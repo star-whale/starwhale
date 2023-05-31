@@ -174,7 +174,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 var workerContainer = k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0);
                 workerContainer.setArgs(null);
                 k8sJob.getSpec().setActiveDeadlineSeconds(null);
-                workerContainer.setCommand(List.of("tail", "-f", "/dev/null"));
+                workerContainer.setCommand(List.of("debug_by_vscode"));
             }
 
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
