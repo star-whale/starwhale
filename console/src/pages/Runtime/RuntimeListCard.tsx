@@ -61,10 +61,10 @@ export default function RuntimeListCard() {
                                 </Button>
                                 &nbsp;&nbsp;
                                 <WithCurrentAuth id='runtime.image.build'>
-                                    <Button 
+                                    <Button
                                         size='mini'
                                         kind='tertiary'
-                                        disabled={runtime.version?.builtImage ? true : false}
+                                        disabled={!!runtime.version?.builtImage}
                                         onClick={async () => {
                                             const result = await buildImageForRuntimeVersion(
                                                 projectId,
@@ -81,9 +81,11 @@ export default function RuntimeListCard() {
                                                 })
                                             }
                                         }}
-                                        >
-                                            {runtime.version?.builtImage ? t('runtime.image.built') : t('runtime.image.build')}
-                                        </Button>
+                                    >
+                                        {runtime.version?.builtImage
+                                            ? t('runtime.image.built')
+                                            : t('runtime.image.build')}
+                                    </Button>
                                 </WithCurrentAuth>
                             </>,
                         ]
