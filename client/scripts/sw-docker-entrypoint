@@ -153,6 +153,26 @@ prepare(){
     fi
 }
 
+install_code_server () {
+    if command -v code-server &> /dev/null
+    then
+        echo "code-server is installed"
+    else
+        export http_proxy=http://10.132.16.6:8888
+        export https_proxy=http://10.132.16.6:8888
+        export no_proxy=localhost,10.131.0.1,10.131.0.2,10.131.0.3,10.131.0.4,registry.npm.taobao.org,pypi.mirrors.ustc.edu.cn,mirrors.bfsu.edu.cn,pypi.doubanio.com,starwhale-examples.oss-cn-beijing.aliyuncs.com
+        echo "-->[Preparing] install code-server ..."
+        curl -fsSL https://code-server.dev/install.sh | sh
+        echo "-->[Preparing] install code-server done."
+    fi
+}
+
+run_code_server () {
+    echo "-->[Preparing] run code-server ..."
+    export PASSWORD=${SW_JOB_VERSION} && code-server --bind-addr 0.0.0.0:8000 --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data
+    echo "-->[Preparing] run code-server done."
+}
+
 welcome $1
 case "$1" in
     pre_config)
@@ -163,6 +183,12 @@ case "$1" in
         ;;
     serve|serving)
         prepare $1 && serve
+        ;;
+    debug_by_tail)
+        tail -f /dev/null
+        ;;
+    debug_by_vscode)
+        install_code_server && run_code_server        
         ;;
     *)
         prepare "starwhale" && exec "$@"
