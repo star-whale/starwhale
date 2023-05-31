@@ -15,22 +15,23 @@ function setupUser(user: typeof admin) {
     // testInfo.project.outputDir
     const fileName = path.join('test-storage', 'storage-' + user.role + '.json')
 
-    if (fs.existsSync(fileName) && process.env.CLEAN_AUTH !== 'true') return
-
     setup(`authenticate as ${user.role}`, async ({ page, request }) => {
         await page.goto(config.use?.baseURL as string)
         await expect(page).toHaveTitle(/Starwhale Console/)
         await page.locator(SELECTOR.loginName).fill(user.username)
         await page.locator(SELECTOR.loginPassword).fill(user.password)
         await page.getByRole('button', { name: 'Log in' }).click()
-        await page.waitForURL('**/projects')
         await page.context().storageState({ path: fileName })
         // create user for admin
         if (user.role === 'admin') {
+            const token = await page.evaluate(() => localStorage.getItem('token'))
             await request.post(API.user, {
                 data: {
                     userName: guest.username,
                     userPwd: guest.password,
+                },
+                headers: {
+                    Authorization: token as string,
                 },
             })
         }

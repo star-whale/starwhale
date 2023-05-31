@@ -3,11 +3,11 @@ export const CONFIG = {
 }
 export const USERS = [
     { role: 'admin', username: 'starwhale', password: 'abcd1234' },
-    { role: 'guest', username: 'guest', password: 'abcd1234' },
+    { role: 'guest', username: 'guest2', password: 'abcd1234' },
 ]
 export const CONST = {
     user: {
-        userName: 'guest',
+        userName: 'guest2',
         projectName: 'e2e',
         projectDescription: 'testing',
     },
@@ -18,7 +18,7 @@ export const CONST = {
     },
     adminSettings: 'Admin Settings',
     projectId: '1',
-    newUserName: 'lwz2',
+    newUserName: 'new_user',
     newUserPassword: 'abcd1234',
     datasetName: 'mnist_bin',
     runtimeName: 'pytorch37',
