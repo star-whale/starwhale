@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from copy import deepcopy
 from http import HTTPStatus
@@ -31,6 +33,12 @@ from starwhale.base.uri.resource import Resource, ResourceType
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
 _UPLOAD_CHUNK_SIZE = 20 * 1024 * 1024
+
+# TODO: support users to set ssl_verify
+# Current http request disable ssl verify, because of the self-signed certificates, so disable the warning.
+# https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+_urllib3 = requests.packages.urllib3  # type: ignore
+_urllib3.disable_warnings(_urllib3.exceptions.InsecureRequestWarning)
 
 
 class CloudRequestMixed:
@@ -131,17 +139,26 @@ class CloudRequestMixed:
     @http_retry
     def do_http_request(
         path: str,
-        instance: Instance,
+        instance: Instance | str,
         method: str = HTTPMethod.GET,
         timeout: int = _DEFAULT_TIMEOUT_SECS,
         headers: t.Optional[t.Dict[str, t.Any]] = None,
         disable_default_content_type: bool = False,
         **kw: t.Any,
     ) -> requests.Response:
-        _url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
-        _headers = {
-            "Authorization": instance.token,
-        }
+        if isinstance(instance, Instance):
+            server = instance.url
+            token = instance.token
+        else:
+            server = instance
+            token = None
+
+        _url = f"{server}/api/{SW_API_VERSION}/{path.lstrip('/')}"
+        _headers = {}
+
+        if token:
+            _headers["Authorization"] = token
+
         if not disable_default_content_type:
             _headers["Content-Type"] = "application/json"
 

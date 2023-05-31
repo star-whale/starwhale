@@ -8,15 +8,16 @@ from rich.panel import Panel
 from rich.table import Table
 
 from starwhale.utils import console, fmt_http_server
-from starwhale.consts import UserRoleType, SW_API_VERSION, STANDALONE_INSTANCE
+from starwhale.consts import HTTPMethod, UserRoleType, STANDALONE_INSTANCE
 from starwhale.base.view import BaseTermView
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.base.uri.instance import Instance
 
 DEFAULT_HTTP_TIMEOUT = 90
 
 
-class InstanceTermView(BaseTermView):
+class InstanceTermView(BaseTermView, CloudRequestMixed):
     def __init__(self) -> None:
         super().__init__()
 
@@ -64,22 +65,22 @@ class InstanceTermView(BaseTermView):
             wrap_sw_error_resp(r, "login failed!", exit=True)
 
     def _login_request_by_token(self, server: str, token: str) -> requests.Response:
-        url = f"{server}/api/{SW_API_VERSION}/user/current"
-        return requests.get(
-            url,
+        return self.do_http_request(  # type: ignore[no-any-return]
+            path="/user/current",
+            instance=Instance(uri=server, token=token),
+            method=HTTPMethod.GET,
             timeout=DEFAULT_HTTP_TIMEOUT,
-            verify=False,
-            headers={"Authorization": token},
         )
 
     def _login_request_by_username(
         self, server: str, auth_request: t.Dict[str, str]
     ) -> requests.Response:
-        url = f"{server}/api/{SW_API_VERSION}/login"
-        return requests.post(
-            url,
-            verify=False,
+        return self.do_http_request(  # type: ignore[no-any-return]
+            path="/login",
+            instance=server,
+            method=HTTPMethod.POST,
             timeout=DEFAULT_HTTP_TIMEOUT,
+            disable_default_content_type=True,
             data={
                 "userName": auth_request["username"],
                 "userPwd": auth_request["password"],
