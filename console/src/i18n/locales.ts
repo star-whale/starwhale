@@ -86,6 +86,10 @@ const runtime = {
         en: 'Build Image',
         zh: '构建镜像',
     },
+    'runtime.image.built': {
+        en: 'Built Image',
+        zh: '镜像已构建',
+    },
 }
 
 const model = {

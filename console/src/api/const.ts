@@ -12,6 +12,7 @@ export const Privileges = {
     'model.version.serve': true,
     'dataset.version.revert': true,
     'evaluation.panel.save': true,
+    'runtime.image.build': true,
 }
 export type IPrivileges = typeof Privileges
 
