@@ -17,7 +17,7 @@ USERS.map((user) => {
         await page.locator(SELECTOR.loginName).fill(user.username)
         await page.locator(SELECTOR.loginPassword).fill(user.password)
         await page.getByRole('button', { name: 'Log in' }).click()
-        await page.waitForURL(/\/projects/)
+        await page.waitForURL('**/projects')
         await page.context().storageState({ path: fileName })
         await page.close()
 
