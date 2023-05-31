@@ -586,8 +586,7 @@ public class RuntimeService {
             log.debug("start to build image for runtime:{}-{} on k8s.", runtime.getName(), runtimeVersion.getName());
             var project = projectService.findProject(projectUrl);
             var user = userService.currentUserDetail();
-            var image = new DockerImage(
-                    dockerSetting.getRegistry(),
+            var image = new DockerImage(dockerSetting.getRegistryForPull(),
                     String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()));
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
@@ -625,8 +624,7 @@ public class RuntimeService {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
                 containerOverwriteSpec.setEnvs(envVars);
-                var registry = StringUtils.hasText(dockerSetting.getRegistryForPush())
-                        ? dockerSetting.getRegistryForPush() : dockerSetting.getRegistry();
+                var registry = dockerSetting.getRegistryForPush();
                 var cmds = new ArrayList<>(List.of(
                         "--dockerfile=Dockerfile",
                         "--context=dir:///workspace",
@@ -668,7 +666,9 @@ public class RuntimeService {
     }
 
     private boolean validateDockerSetting(DockerSetting setting) {
-        return null != setting && StringUtils.hasText(setting.getRegistry());
+        return null != setting
+                && StringUtils.hasText(setting.getRegistryForPull())
+                && StringUtils.hasText(setting.getRegistryForPush());
     }
 
     public boolean updateBuiltImage(String version, String image) {

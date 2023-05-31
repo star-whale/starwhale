@@ -39,7 +39,7 @@ public class SystemSettingServiceTest {
 
     static String YAML = "---\n"
             + "dockerSetting:\n"
-            + "  registry: \"abcd.com\"\n"
+            + "  registryForPull: \"abcd.com\"\n"
             + "  registryForPush: \"abcd2.com\"\n"
             + "  userName: \"guest\"\n"
             + "  password: \"guest123\"\n"
@@ -66,7 +66,7 @@ public class SystemSettingServiceTest {
             + "  visibleUserIds: null";
     static String YAML2 = "---\n"
             + "dockerSetting:\n"
-            + "  registry: \"abcd1.com\"\n"
+            + "  registryForPull: \"abcd1.com\"\n"
             + "  registryForPush: \"abcd2.com\"\n"
             + "  userName: \"admin\"\n"
             + "  password: \"admin123\"\n"
@@ -101,7 +101,7 @@ public class SystemSettingServiceTest {
     @Test
     public void testAppStartWithSetting() {
         Assertions.assertEquals("abcd.com",
-                systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+                systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
 
     }
@@ -110,7 +110,7 @@ public class SystemSettingServiceTest {
     public void testUpdate() {
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
-                systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+                systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
         Assertions.assertEquals("abcd2.com",
                 systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPush());
         Assertions.assertEquals("admin",
@@ -131,7 +131,7 @@ public class SystemSettingServiceTest {
     public void testUpdateWithData() {
         systemSettingService.updateSetting(YAML2);
         Assertions.assertEquals("abcd1.com",
-                systemSettingService.getSystemSetting().getDockerSetting().getRegistry());
+                systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
@@ -141,11 +141,11 @@ public class SystemSettingServiceTest {
         systemSettingService.updateSetting("--- {}");
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
-                + "  registry: \"\"\n"
+                + "  registryForPull: \"\"\n"
                 + "  registryForPush: \"\"\n"
                 + "  userName: \"\"\n"
                 + "  password: \"\"\n"
-                + "  insecure: false\n"
+                + "  insecure: true\n"
                 + "pypiSetting:\n"
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
@@ -189,7 +189,7 @@ public class SystemSettingServiceTest {
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
-                + "  registry: \"abcd.com\"\n"
+                + "  registryForPull: \"abcd.com\"\n"
                 + "  registryForPush: \"abcd2.com\"\n"
                 + "  userName: \"admin\"\n"
                 + "  password: \"admin123\"\n"

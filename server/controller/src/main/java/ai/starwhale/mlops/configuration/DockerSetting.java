@@ -30,18 +30,18 @@ public class DockerSetting {
     /**
      * registry for pull image
      */
-    String registry;
+    String registryForPull;
 
     /**
      * registry for push image
      */
     String registryForPush;
-    String userName;
-    String password;
-    boolean insecure;
+    String userName = "";
+    String password = "";
+    boolean insecure = true;
 
     public static DockerSetting empty() {
-        return new DockerSetting("", "", "", "", false);
+        return new DockerSetting("", "", "", "", true);
     }
 
 }
