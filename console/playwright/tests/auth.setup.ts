@@ -5,8 +5,8 @@ import config from '../playwright.config'
 import { USERS, SELECTOR, API, CONST } from './config'
 import { takeScreenshot, wait } from './utils'
 
-const admin = CONST[0]
-const guest = CONST[1]
+const admin = USERS[0]
+const guest = USERS[1]
 
 setupUser(admin)
 setupUser(guest)
