@@ -18,6 +18,7 @@ from starwhale.consts import (
     ENV_CONDA,
     SupportArch,
     PythonRunEnv,
+    ENV_LOG_LEVEL,
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
     ENV_CONDA_PREFIX,
@@ -68,6 +69,7 @@ class StandaloneRuntimeTestCase(TestCase):
         self._clear_cache()
 
     def _clear_cache(self) -> None:
+        os.environ.pop(ENV_LOG_LEVEL, None)
         sw_config._config = {}
         get_conda_bin.cache_clear()
 
@@ -1721,7 +1723,6 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "env",
                 "update",
-                "--verbose",
                 "--quiet",
                 "--file",
                 req_lock_fpath,
@@ -1829,6 +1830,7 @@ class StandaloneRuntimeTestCase(TestCase):
             Runtime.restore(Path(workdir))
 
         m_machine.return_value = "arm64"
+        os.environ[ENV_LOG_LEVEL] = "TRACE"
         Runtime.restore(Path(workdir))
 
         assert m_call.call_count == 8
@@ -1842,13 +1844,14 @@ class StandaloneRuntimeTestCase(TestCase):
                 "--quiet",
                 "--prefix",
                 conda_prefix_dir,
+                "-vvv",
                 "python=3.7",
             ],
             [
                 "conda",
                 "env",
                 "update",
-                "--verbose",
+                "-vvv",
                 "--quiet",
                 "--file",
                 conda_env_fpath,
@@ -1859,6 +1862,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
+                "-vvv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1874,6 +1878,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
+                "-vvv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1888,6 +1893,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
+                "-vvv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1902,6 +1908,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
+                "-vvv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1915,6 +1922,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [
                 "conda",
                 "install",
+                "-vvv",
                 "--prefix",
                 conda_prefix_dir,
                 "--channel",
