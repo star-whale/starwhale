@@ -333,8 +333,18 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "ghcr.io/star-whale/starwhale:latest-cuda11.4-cudnn8"
+            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8"
         )
+        assert _manifest["docker"] == {
+            "builtin_run_image": {
+                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8",
+                "name": "starwhale",
+                "repo": "docker-registry.starwhale.cn/star-whale",
+                "tag": "latest-cuda11.4-cudnn8",
+            },
+            "custom_run_image": "",
+        }
+
         assert _manifest["dependencies"] == {
             "conda_files": [],
             "conda_pkgs": [],
@@ -456,7 +466,10 @@ class StandaloneRuntimeTestCase(TestCase):
             "runtime_yaml": "runtime.yaml",
             "wheels": [],
         }
-        assert _manifest["base_image"] == "ghcr.io/star-whale/starwhale:latest-cuda11.4"
+        assert (
+            _manifest["base_image"]
+            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4"
+        )
         assert _manifest["dependencies"] == {
             "conda_files": [],
             "conda_pkgs": [],
@@ -568,7 +581,19 @@ class StandaloneRuntimeTestCase(TestCase):
             "runtime_yaml": "runtime.yaml",
             "wheels": [],
         }
-        assert _manifest["base_image"] == "ghcr.io/star-whale/starwhale:latest"
+        assert (
+            _manifest["base_image"]
+            == "docker-registry.starwhale.cn/star-whale/starwhale:latest"
+        )
+        assert _manifest["docker"] == {
+            "builtin_run_image": {
+                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
+                "name": "starwhale",
+                "repo": "docker-registry.starwhale.cn/star-whale",
+                "tag": "latest",
+            },
+            "custom_run_image": "",
+        }
         assert _manifest["dependencies"] == {
             "conda_files": [],
             "conda_pkgs": [],
@@ -840,7 +865,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert (
             _manifest["base_image"]
-            == "ghcr.io/star-whale/starwhale:latest-cuda11.5-cudnn8"
+            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.5-cudnn8"
         )
 
         assert (
@@ -1287,7 +1312,7 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_dependencies")
-    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_base_image")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_docker_image")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._copy_src")
     @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tar")
     @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_auto_tags")
@@ -1375,6 +1400,15 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         assert _manifest["base_image"] == docker_image
+        assert _manifest["docker"] == {
+            "builtin_run_image": {
+                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
+                "name": "starwhale",
+                "repo": "docker-registry.starwhale.cn/star-whale",
+                "tag": "latest",
+            },
+            "custom_run_image": "user-defined-image:latest",
+        }
         assert _manifest["artifacts"] == {
             "dependencies": [],
             "files": [],
@@ -2483,7 +2517,7 @@ class StandaloneRuntimeTestCase(TestCase):
         return {
             "name": "rttest",
             "version": "112233",
-            "base_image": "ghcr.io/star-whale/starwhale:latest-cuda11.4",
+            "base_image": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4",
             "dependencies": {
                 "conda_files": [],
                 "conda_pkgs": [],
