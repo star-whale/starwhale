@@ -16,7 +16,6 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
-import { ConfirmButton } from '@starwhale/ui'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -93,10 +92,11 @@ export default function RuntimeVersionListCard() {
                                 </WithCurrentAuth>
                             ) : null}
                             &nbsp;&nbsp;
-                            {runtime.builtImage ?? (
-                                <ConfirmButton
-                                    as='transparent'
-                                    title={t('runtime.image.build.confirm')}
+                            <WithCurrentAuth id='runtime.image.build'>
+                                <Button
+                                    size='mini'
+                                    kind='tertiary'
+                                    disabled={!!runtime.builtImage}
                                     onClick={async () => {
                                         const result = await buildImageForRuntimeVersion(
                                             projectId,
@@ -114,9 +114,9 @@ export default function RuntimeVersionListCard() {
                                         }
                                     }}
                                 >
-                                    {t('runtime.image.build')}
-                                </ConfirmButton>
-                            )}
+                                    {runtime.builtImage ? t('runtime.image.built') : t('runtime.image.build')}
+                                </Button>
+                            </WithCurrentAuth>
                         </>,
                     ]
                 }) ?? []
