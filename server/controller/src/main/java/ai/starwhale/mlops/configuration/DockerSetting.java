@@ -27,12 +27,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "sw.docker")
 public class DockerSetting {
 
-    String registry;
-    String userName;
-    String password;
+    /**
+     * registry for pull image
+     */
+    String registryForPull;
+
+    /**
+     * registry for push image
+     */
+    String registryForPush;
+    String userName = "";
+    String password = "";
+    boolean insecure = true;
 
     public static DockerSetting empty() {
-        return new DockerSetting("", "", "");
+        return new DockerSetting("", "", "", "", true);
     }
 
 }

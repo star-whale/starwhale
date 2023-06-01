@@ -44,18 +44,18 @@ public class RuntimeRegistryListener implements SystemSettingListener {
 
     private boolean validateDockerSetting(DockerSetting setting) {
         return null != setting
-            && StringUtils.hasText(setting.getRegistry())
-            && StringUtils.hasText(setting.getUserName())
-            && StringUtils.hasText(setting.getPassword());
+            && StringUtils.hasText(setting.getRegistryForPull())
+            && StringUtils.hasText(setting.getRegistryForPush());
     }
 
     @Override
     public void onUpdate(SystemSetting systemSetting) {
         if (null != systemSetting && validateDockerSetting(systemSetting.getDockerSetting())) {
+            var dockerSetting = systemSetting.getDockerSetting();
             var dockerConfigJson = JSONUtil.toJsonStr(
-                    Map.of("auths", Map.of(systemSetting.getDockerSetting().getRegistry(), Map.of(
-                        "username", systemSetting.getDockerSetting().getUserName(),
-                        "password", systemSetting.getDockerSetting().getPassword()))));
+                    Map.of("auths", Map.of(dockerSetting.getRegistryForPush(), Map.of(
+                        "username", dockerSetting.getUserName(),
+                        "password", dockerSetting.getPassword()))));
             try {
                 var secret = k8sClient.getSecret(DOCKER_REGISTRY_SECRET);
                 if (secret != null) {

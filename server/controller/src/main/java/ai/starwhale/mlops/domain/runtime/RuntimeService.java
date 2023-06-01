@@ -586,8 +586,7 @@ public class RuntimeService {
             log.debug("start to build image for runtime:{}-{} on k8s.", runtime.getName(), runtimeVersion.getName());
             var project = projectService.findProject(projectUrl);
             var user = userService.currentUserDetail();
-            var image = new DockerImage(
-                    dockerSetting.getRegistry(),
+            var image = new DockerImage(dockerSetting.getRegistryForPull(),
                     String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()));
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
@@ -610,7 +609,7 @@ public class RuntimeService {
                             runtimeTokenValidator.getToken(user, runtimeVersion.getId())))
             );
             if (null != runConfig && null != runConfig.getEnvVars()) {
-                List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(e -> K8sJobTemplate.toEnvVar(e))
+                List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(K8sJobTemplate::toEnvVar)
                         .collect(Collectors.toList());
                 envVars.addAll(collect);
             }
@@ -625,12 +624,20 @@ public class RuntimeService {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
                 containerOverwriteSpec.setEnvs(envVars);
-                containerOverwriteSpec.setCmds(List.of(
+                var registry = dockerSetting.getRegistryForPush();
+                var cmds = new ArrayList<>(List.of(
                         "--dockerfile=Dockerfile",
                         "--context=dir:///workspace",
                         "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
-                        "--cache-repo=" + new DockerImage(dockerSetting.getRegistry(), "cache"),
-                        "--destination=" + image));
+                        "--cache-repo=" + new DockerImage(registry, "cache"),
+                        "--verbosity=debug",
+                        "--destination=" + new DockerImage(registry,
+                            String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()))
+                ));
+                if (dockerSetting.isInsecure()) {
+                    cmds.add("--insecure");
+                }
+                containerOverwriteSpec.setCmds(cmds);
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
@@ -660,9 +667,8 @@ public class RuntimeService {
 
     private boolean validateDockerSetting(DockerSetting setting) {
         return null != setting
-                && StringUtils.hasText(setting.getRegistry())
-                && StringUtils.hasText(setting.getUserName())
-                && StringUtils.hasText(setting.getPassword());
+                && StringUtils.hasText(setting.getRegistryForPull())
+                && StringUtils.hasText(setting.getRegistryForPush());
     }
 
     public boolean updateBuiltImage(String version, String image) {

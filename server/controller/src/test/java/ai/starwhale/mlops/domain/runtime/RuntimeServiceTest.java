@@ -30,6 +30,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -192,7 +194,7 @@ public class RuntimeServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeTokenValidator,
-                new DockerSetting("localhost:8083", "admin", "admin123"),
+                new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
                 new RunTimeProperties("", "",
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
                 "http://mock-controller");
@@ -576,12 +578,29 @@ public class RuntimeServiceTest {
                         .initContainers(List.of(new V1Container().name("prepare-runtime")))
                         .containers(List.of(new V1Container().name("image-builder"))))));
         given(k8sJobTemplate.loadJob(anyString())).willReturn(job);
+        given(k8sJobTemplate.getInitContainerTemplates(any()))
+                .willReturn(job.getSpec().getTemplate().getSpec().getInitContainers());
+        given(k8sJobTemplate.getContainersTemplates(any()))
+                .willReturn(job.getSpec().getTemplate().getSpec().getContainers());
         given(k8sClient.deployJob(any())).willReturn(job);
 
         var res = service.buildImage("project-1", "r1", "v1", null);
 
         verify(k8sJobTemplate, times(1)).loadJob(any());
+        verify(k8sJobTemplate, times(1)).updateAnnotations(any(), any());
+        verify(k8sJobTemplate, times(1)).renderJob(
+                any(), eq("n1"), eq("OnFailure"), eq(2), any(), isNull(), isNull(), isNull());
         verify(k8sClient, times(1)).deployJob(any());
+        verify(k8sJobTemplate).renderJob(
+                any(), eq("n1"), eq("OnFailure"), eq(2),
+                argThat(containerOverwriteSpecMap -> {
+                    var prepareBuilder = containerOverwriteSpecMap.get("prepare-runtime");
+                    var imageBuilder = containerOverwriteSpecMap.get("image-builder");
+                    return prepareBuilder.getEnvs().size() == 7
+                        && imageBuilder.getEnvs().size() == 7
+                        && imageBuilder.getCmds().size() == 6;
+                }),
+                isNull(), isNull(), isNull());
         assertThat(res.getSuccess(), is(true));
 
         res = service.buildImage("project-1", "r1", "v2", null);
