@@ -1,9 +1,17 @@
+import os
 import typing as t
 from pathlib import Path
 
-from starwhale.consts import DEFAULT_MANIFEST_NAME, DEFAULT_SW_TASK_RUN_IMAGE
+from starwhale.consts import (
+    SW_IMAGE_FMT,
+    ENV_SW_IMAGE_REPO,
+    DEFAULT_IMAGE_REPO,
+    DEFAULT_MANIFEST_NAME,
+    DEFAULT_SW_TASK_RUN_IMAGE,
+)
 from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import ResourceType
 
 
@@ -47,5 +55,27 @@ class RuntimeStorage(BaseStorage):
             uri_type=self.uri_type,
         )
 
-    def get_docker_base_image(self) -> str:
-        return self.manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)
+    def get_docker_run_image(self) -> str:
+        return get_docker_run_image_by_manifest(self.manifest)
+
+
+def get_docker_run_image_by_manifest(manifest: t.Dict) -> str:
+    if "docker" in manifest:
+        custom_run_image = manifest["docker"]["custom_run_image"]
+        if custom_run_image:
+            image = custom_run_image
+        else:
+            _builtin = manifest["docker"]["builtin_run_image"]
+            _repo = (
+                os.environ.get(ENV_SW_IMAGE_REPO)
+                or SWCliConfigMixed().docker_builtin_image_repo
+                or _builtin["repo"]
+                or DEFAULT_IMAGE_REPO
+            )
+            image = SW_IMAGE_FMT.format(
+                repo=_repo, name=_builtin["name"], tag=_builtin["tag"]
+            )
+    else:
+        image = manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)
+
+    return image  # type: ignore[no-any-return]

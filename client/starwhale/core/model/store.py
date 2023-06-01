@@ -8,7 +8,6 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     RESOURCE_FILES_NAME,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.base.type import BundleType
 from starwhale.base.store import BaseStorage
@@ -97,10 +96,12 @@ class ModelStorage(BaseStorage):
     def packaged_runtime_bundle_path(self) -> Path:
         return self.hidden_sw_dir / "runtime" / f"packaged{BundleType.RUNTIME}"
 
-    def get_packaged_runtime_base_image(self) -> str:
+    def get_packaged_runtime_docker_run_image(self) -> str:
+        from starwhale.core.runtime.store import get_docker_run_image_by_manifest
+
         manifest = self.get_manifest_by_path(
             fpath=self.packaged_runtime_bundle_path,
             bundle_type=BundleType.RUNTIME,
             uri_type=ResourceType.runtime.value,
         )
-        return manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)
+        return get_docker_run_image_by_manifest(manifest)
