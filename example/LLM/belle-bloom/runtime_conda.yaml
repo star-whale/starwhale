@@ -10,6 +10,22 @@ environment:
 configs:
   pip:
     index_url: https://mirrors.aliyun.com/pypi/simple
+  conda:
+    condarc: # custom condarc config file
+      channels:
+        - defaults
+      show_channel_urls: true
+      default_channels:
+        - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+        - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
+        - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2
+      custom_channels:
+        conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+        pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+        pytorch-lts: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+        nvidia: https://mirrors.aliyun.com/anaconda/cloud
+      ssl_verify: false
+      default_threads: 10
 dependencies:
   - pip:
       # pip dependencies according to the following requirements:

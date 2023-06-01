@@ -70,6 +70,7 @@ class StandaloneRuntimeTestCase(TestCase):
     def _clear_cache(self) -> None:
         sw_config._config = {}
         get_conda_bin.cache_clear()
+        os.environ.pop("CONDARC", None)
 
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -405,6 +406,11 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(os.path.join(conda_prefix, "conda-meta"))
         conda_name = "starwhale"
 
+        self.fs.create_file(
+            Path.home() / ".condarc",
+            contents=yaml.safe_dump({"ssl_verify": False}, default_flow_style=False),
+        )
+
         lock_fpath = Path("/tmp/conda-sw-lock.yaml")
         lock_content = "numpy==1.19.5\nPillow==8.3.1"
         ensure_file(lock_fpath, content=lock_content, parents=True)
@@ -479,6 +485,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "mode": "conda",
             "python": "3.8",
         }
+        assert _manifest["configs"] == {
+            "conda": {"channels": ["conda-forge"], "condarc": {"ssl_verify": False}},
+            "docker": {"image": ""},
+            "pip": {"extra_index_url": [""], "index_url": "", "trusted_host": [""]},
+        }
         assert _manifest["version"] == uri.version
 
         _runtime_yaml = load_yaml(os.path.join(runtime_workdir, "runtime.yaml"))
@@ -495,6 +506,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "mode": "conda",
             "name": "test",
         }
+        _condarc = load_yaml(os.path.join(runtime_workdir, "configs", "condarc"))
+        assert _condarc == {"ssl_verify": False}
 
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.utils.venv.check_call")
@@ -820,7 +833,7 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
         assert _manifest["configs"] == {
-            "conda": {"channels": ["conda-forge"]},
+            "conda": {"channels": ["conda-forge"], "condarc": {}},
             "docker": {"image": ""},
             "pip": {"extra_index_url": [""], "index_url": "", "trusted_host": [""]},
         }
@@ -1083,6 +1096,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "pip_pkgs": ["starwhale"],
             "raw_deps": [{"deps": ["starwhale"], "kind": "pip_pkg"}],
         }
+        assert _manifest["configs"] == {
+            "conda": {"channels": ["conda-forge"], "condarc": {}},
+            "docker": {"image": ""},
+            "pip": {"extra_index_url": [""], "index_url": "", "trusted_host": [""]},
+        }
 
         _env = _manifest["environment"]
         assert _env["auto_lock_dependencies"]
@@ -1094,6 +1112,8 @@ class StandaloneRuntimeTestCase(TestCase):
 
         for p in _manifest["artifacts"]["dependencies"]:
             assert os.path.exists(os.path.join(runtime_workdir, p))
+
+        assert not os.path.exists(os.path.join(runtime_workdir, "configs", "condarc"))
 
     @patch("starwhale.core.runtime.model.conda_export")
     @patch("starwhale.utils.venv.check_call")
@@ -1263,7 +1283,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
     @patch("starwhale.base.bundle.LocalStorageBundleMixin._gen_version")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._prepare_snapshot")
-    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_context")
+    @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_configs")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_dependencies")
@@ -1649,6 +1669,13 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         ensure_dir(workdir)
 
+        self.fs.create_dir(os.path.join(workdir, "configs"))
+        condarc_path = os.path.join(workdir, "configs", "condarc")
+        self.fs.create_file(
+            condarc_path,
+            contents=yaml.safe_dump({"verbosity": 3}, default_flow_style=False),
+        )
+
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             contents=yaml.safe_dump(
@@ -1701,9 +1728,11 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(req_lock_fpath, contents="fake content")
         self.fs.create_file(wheel_fpath, contents="")
 
+        assert "CONDARC" not in os.environ
         m_machine.return_value = "arm64"
         Runtime.restore(Path(workdir))
 
+        assert os.environ["CONDARC"] == condarc_path
         assert m_call.call_count == 4
         conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
         conda_prefix_dir = os.path.join(export_dir, "conda")
@@ -1831,6 +1860,7 @@ class StandaloneRuntimeTestCase(TestCase):
         m_machine.return_value = "arm64"
         Runtime.restore(Path(workdir))
 
+        assert "CONDARC" not in os.environ
         assert m_call.call_count == 8
         conda_cmds = [cm[0][0] for cm in m_call.call_args_list]
         conda_prefix_dir = os.path.join(export_dir, "conda")

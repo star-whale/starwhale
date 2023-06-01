@@ -249,6 +249,18 @@ def _quickstart(
     hidden=True,
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "-epo",
+    "--emit-pip-options",
+    is_flag=True,
+    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-ecc",
+    "--emit-condarc",
+    is_flag=True,
+    help="Emit to dump ~/.condarc from the local machine, default is False",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-ilw",
     "--include-local-wheel",
     is_flag=True,
@@ -280,6 +292,8 @@ def _build(
     shell: bool,
     yaml: str,
     docker: str,
+    emit_pip_options: bool,
+    emit_condarc: bool,
 ) -> None:
     """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
     Runtime build only works in the Standalone instance.
@@ -346,6 +360,8 @@ def _build(
             download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
+            emit_condarc=emit_condarc,
+            emit_pip_options=emit_pip_options,
         )
     else:
         RuntimeTermView.build_from_runtime_yaml(
@@ -358,6 +374,8 @@ def _build(
             include_local_wheel=include_local_wheel,
             no_cache=no_cache,
             disable_env_lock=disable_env_lock,
+            emit_condarc=emit_condarc,
+            emit_pip_options=emit_pip_options,
         )
 
 
