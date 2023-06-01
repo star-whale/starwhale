@@ -1951,7 +1951,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda-forge",
                 "--yes",
                 "--override-channels",
-                "'c' 'd'",
+                "c",
+                "d",
             ],
             [
                 f"{conda_prefix_dir}/bin/python3",
@@ -2184,7 +2185,7 @@ class StandaloneRuntimeTestCase(TestCase):
             ensure_file(
                 path,
                 content=yaml.safe_dump(
-                    {"name": "test", "dependencies": ["b", {"pip": ["a"]}]}
+                    {"name": "test", "dependencies": ["b", "d", {"pip": ["a", "c"]}]}
                 ),
             )
 
@@ -2198,7 +2199,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 {
                     "name": "test",
                     "mode": "conda",
-                    "dependencies": [{"pip": ["a"]}, {"conda": ["b"]}],
+                    "dependencies": [{"pip": ["a", "c"]}, {"conda": ["b", "d"]}],
                 }
             ),
         )
@@ -2226,7 +2227,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         StandaloneRuntime.lock(target_dir, yaml_path)
 
-        assert m_call.call_count == 3
+        assert m_call.call_count == 4
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "run",
@@ -2243,6 +2244,20 @@ class StandaloneRuntimeTestCase(TestCase):
         ]
         assert m_call.call_args_list[1][0][0] == [
             "conda",
+            "run",
+            "--live-stream",
+            "--prefix",
+            sw_conda_dir,
+            "python3",
+            "-m",
+            "pip",
+            "install",
+            "--exists-action",
+            "w",
+            "c",
+        ]
+        assert m_call.call_args_list[2][0][0] == [
+            "conda",
             "install",
             "--prefix",
             sw_conda_dir,
@@ -2250,10 +2265,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "conda-forge",
             "--yes",
             "--override-channels",
-            "'b'",
+            "b",
+            "d",
         ]
 
-        assert m_call.call_args_list[2][0][0][:6] == [
+        assert m_call.call_args_list[3][0][0][:6] == [
             "conda",
             "env",
             "export",
@@ -2266,7 +2282,10 @@ class StandaloneRuntimeTestCase(TestCase):
             target_dir, ".starwhale", "lock", RuntimeLockFileType.CONDA
         )
         content = load_yaml(lock_yaml_path)
-        assert content == {"dependencies": ["b", {"pip": ["a"]}], "name": "test"}
+        assert content == {
+            "dependencies": ["b", "d", {"pip": ["a"]}],
+            "name": "test",
+        }
 
     @patch("os.environ", {})
     @patch("starwhale.core.runtime.model.get_conda_prefix_path")
@@ -2309,6 +2328,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert content == {
             "dependencies": [
                 "b",
+                "d",
                 {
                     "pip": [
                         "a",
@@ -2356,7 +2376,7 @@ class StandaloneRuntimeTestCase(TestCase):
             target_dir, ".starwhale", "lock", RuntimeLockFileType.CONDA
         )
         content = load_yaml(lock_yaml_path)
-        assert content == {"dependencies": ["b"], "name": "test"}
+        assert content == {"dependencies": ["b", "d"], "name": "test"}
 
     @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_call")
@@ -2399,6 +2419,20 @@ class StandaloneRuntimeTestCase(TestCase):
         ]
         assert m_call.call_args_list[1][0][0] == [
             "conda",
+            "run",
+            "--live-stream",
+            "--prefix",
+            conda_dir,
+            "python3",
+            "-m",
+            "pip",
+            "install",
+            "--exists-action",
+            "w",
+            "c",
+        ]
+        assert m_call.call_args_list[2][0][0] == [
+            "conda",
             "install",
             "--prefix",
             conda_dir,
@@ -2406,10 +2440,11 @@ class StandaloneRuntimeTestCase(TestCase):
             "conda-forge",
             "--yes",
             "--override-channels",
-            "'b'",
+            "b",
+            "d",
         ]
 
-        assert m_call.call_args_list[2][0][0][:6] == [
+        assert m_call.call_args_list[3][0][0][:6] == [
             "conda",
             "env",
             "export",
@@ -2440,6 +2475,7 @@ class StandaloneRuntimeTestCase(TestCase):
         content = load_yaml(lock_yaml_path)
         assert content["dependencies"] == [
             "b",
+            "d",
             {"pip": ["a", "mock @ git+https://abc.com/mock.git@main"]},
         ]
 
