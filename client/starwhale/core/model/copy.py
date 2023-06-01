@@ -77,11 +77,12 @@ class ModelCopy(BundleCopy):
                 continue
             _sign = _m["signature"]
             _dest = workdir / _m["path"]
+            _size = _m.get("size", 0)
 
             yield FileNode(
                 path=_dest,
                 signature=_sign,
-                size=0,
+                size=_size,
                 name=_m["name"],
                 file_desc=FileDesc.MODEL,
             )
