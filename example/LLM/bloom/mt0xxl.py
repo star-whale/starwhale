@@ -20,7 +20,8 @@ model = None
 def ppl(data: dict, external: dict):
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
-        import download_model  # noqa: F401
+        from download_model import download
+        download()
     global tokenizer
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained(checkpoint)
