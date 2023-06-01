@@ -299,8 +299,9 @@ class BundleCopy(CloudRequestMixed):
             if fd.signature:
                 f = self._object_store.get(fd.signature)
                 if f is not None and f.exists():
-                    f.link(_workdir / fd.path / fd.name)
-                    progress.update(_tid, completed=fd.size)
+                    console.trace(f"link {fd.signature} to {fd.path}")
+                    f.link(_workdir / fd.path)
+                    progress.update(_tid, total=fd.size, advance=fd.size)
                     return
 
             self.do_download_file(
