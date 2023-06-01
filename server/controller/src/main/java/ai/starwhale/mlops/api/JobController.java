@@ -120,6 +120,11 @@ public class JobController implements JobApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<TaskVo>> getTask(String projectUrl, String jobUrl, String taskUrl) {
+        return ResponseEntity.ok(Code.success.asResponse(taskService.getTask(taskUrl)));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> createJob(
             String projectUrl,
             JobRequest jobRequest

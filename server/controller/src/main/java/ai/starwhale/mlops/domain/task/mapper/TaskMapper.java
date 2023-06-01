@@ -41,6 +41,9 @@ public interface TaskMapper {
     @Select("select " + COLUMNS + " from task_info where id = #{taskId}")
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 
+    @Select("select " + COLUMNS + " from task_info where task_uuid = #{uuid}")
+    TaskEntity findTaskByUuid(@Param("taskUuid") String uuid);
+
 
     @Insert("insert into task_info(task_uuid, step_id, task_status, task_request, output_path)"
             + " values (#{task.taskUuid}, #{task.stepId}, #{task.taskStatus}, #{task.taskRequest}, #{task.outputPath})")

@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.task;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -132,4 +133,29 @@ public class TaskServiceTest {
 
     }
 
+    @Test
+    public void testGetTask() {
+        var startedTime = new Date();
+        var finishedTime = new Date();
+        var task = TaskEntity.builder()
+                .id(1L)
+                .startedTime(startedTime)
+                .finishedTime(finishedTime)
+                .taskUuid("uuid1")
+                .taskStatus(TaskStatus.RUNNING)
+                .build();
+        when(taskMapper.findTaskById(1L)).thenReturn(task);
+        when(taskMapper.findTaskByUuid("uuid1")).thenReturn(task);
+
+        var taskVo = TaskVo.builder()
+                .id("1")
+                .createdTime(startedTime.getTime())
+                .endTime(finishedTime.getTime())
+                .taskStatus(TaskStatus.RUNNING)
+                .uuid("uuid1")
+                .stepName("ppl")
+                .build();
+        assertThat("by id", taskService.getTask("1"), is(taskVo));
+        assertThat("by uuid", taskService.getTask("uuid1"), is(taskVo));
+    }
 }

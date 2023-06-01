@@ -110,6 +110,20 @@ public interface JobApi {
             @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
+    @Operation(summary = "Get task info")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/task/{taskUrl}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<TaskVo>> getTask(
+            @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, description = "Job Url", schema = @Schema())
+            @PathVariable("jobUrl") String jobUrl,
+            @Parameter(in = ParameterIn.PATH, description = "Task Url", schema = @Schema())
+            @PathVariable("taskUrl") String taskUrl);
+
     @Operation(summary = "Create a new job")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
