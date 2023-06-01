@@ -43,6 +43,7 @@ from starwhale.consts import (
     SW_PYPI_PKG_NAME,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
+    DEFAULT_IMAGE_NAME,
     DEFAULT_IMAGE_REPO,
     STANDALONE_INSTANCE,
     SW_DEV_DUMMY_VERSION,
@@ -1045,9 +1046,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 ),
             ),
             (
-                self._dump_base_image,
+                self._dump_docker_image,
                 5,
-                "dump base image",
+                "dump docker image settings",
                 dict(config=swrt_config),
             ),
             (
@@ -1192,30 +1193,51 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 _dest_name,
             )
 
-    def _dump_base_image(self, config: RuntimeConfig) -> None:
-        # prefer using image configured in runtime.yaml
-        base_image = config.environment.docker.image
+    def _dump_docker_image(self, config: RuntimeConfig) -> None:
+        custom_run_image = config.environment.docker.image
 
-        if not base_image:
-            _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-            _tag = config._starwhale_version or LATEST_TAG
-            base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
-
-            _cuda = config.environment.cuda
-            _cudnn = config.environment.cudnn
+        tag = config._starwhale_version or LATEST_TAG
+        _cuda = config.environment.cuda
+        _cudnn = config.environment.cudnn
+        if _cuda:
             _suffix = []
-            if _cuda:
-                _suffix.append(f"-cuda{_cuda}")
+            _suffix.append(f"-cuda{_cuda}")
 
-                if _cudnn:
-                    _suffix.append(f"-cudnn{_cudnn}")
+            if _cudnn:
+                _suffix.append(f"-cudnn{_cudnn}")
 
-            base_image += "".join(_suffix)
+            tag += "".join(_suffix)
 
-        console.print(
-            f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"
+        repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
+        builtin_run_image = SW_IMAGE_FMT.format(
+            repo=repo, name=DEFAULT_IMAGE_NAME, tag=tag
         )
-        self._manifest["base_image"] = base_image
+
+        if custom_run_image:
+            console.print(
+                f":rainbow: runtime uses custom docker image: [red]{custom_run_image}[/]  :rainbow:"
+            )
+        else:
+            console.print(
+                f":rainbow: runtime uses builtin docker image: [red]{builtin_run_image}[/]  :rainbow:"
+            )
+
+        # Deprecated: base_image field works for controller server <=0.4.6. Prefer using image configured in runtime.yaml
+        self._manifest["base_image"] = custom_run_image or builtin_run_image
+        self._manifest["docker"] = {
+            "custom_run_image": custom_run_image,
+            # builtin run image example:
+            # - fullname = docker-registry.starwhale.cn/star-whale/starwhale:0.4.5-cuda11.7
+            # - repo = docker-registry.starwhale.cn/star-whale
+            # - name = starwhale
+            # - tag = 0.4.5-cuda11.7
+            "builtin_run_image": {
+                "repo": repo,
+                "name": DEFAULT_IMAGE_NAME,
+                "tag": tag,
+                "fullname": builtin_run_image,
+            },
+        }
 
     def _lock_environment(
         self,

@@ -192,9 +192,12 @@ LATEST_TAG = "latest"
 
 YAML_TYPES = (".yaml", ".yml")
 
-DEFAULT_IMAGE_REPO = "ghcr.io/star-whale"
-SW_IMAGE_FMT = "{repo}/starwhale:{tag}"
-DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(repo=DEFAULT_IMAGE_REPO, tag=LATEST_TAG)
+DEFAULT_IMAGE_REPO = "docker-registry.starwhale.cn/star-whale"
+DEFAULT_IMAGE_NAME = "starwhale"
+SW_IMAGE_FMT = "{repo}/{name}:{tag}"
+DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(
+    repo=DEFAULT_IMAGE_REPO, name=DEFAULT_IMAGE_NAME, tag=LATEST_TAG
+)
 SW_IGNORE_FILE_NAME = ".swignore"
 
 CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"
