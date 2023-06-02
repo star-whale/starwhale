@@ -15,6 +15,8 @@ ARG SW_PYPI_EXTRA_INDEX_URL=https://pypi.org/simple
 COPY external/config-e2e-pypi-repo.sh /tmp/
 RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENABLE_E2E_TEST_PYPI_REPO} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS} ${SW_PYPI_EXTRA_INDEX_URL}
 
+RUN curl -fsSL --compressed  https://code-server.dev/install.sh | sh
+
 RUN rm -rf /opt/starwhale.venv \
     && virtualenv /opt/starwhale.venv --python 3.8 \
     && /opt/starwhale.venv/bin/python -m pip install starwhale==${SW_VERSION} \
