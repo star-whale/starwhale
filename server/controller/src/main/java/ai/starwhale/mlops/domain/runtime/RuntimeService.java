@@ -63,6 +63,8 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -115,6 +117,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class RuntimeService {
 
+    private final String imageBuildResourcePool = "image-build";
     private final RuntimeMapper runtimeMapper;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
@@ -135,20 +138,32 @@ public class RuntimeService {
     private final K8sClient k8sClient;
     private final K8sJobTemplate k8sJobTemplate;
     private final RuntimeTokenValidator runtimeTokenValidator;
+    private final SystemSettingService systemSettingService;
     private final DockerSetting dockerSetting;
     private final RunTimeProperties runTimeProperties;
     private final String instanceUri;
 
-    public RuntimeService(RuntimeMapper runtimeMapper, RuntimeVersionMapper runtimeVersionMapper,
-            StorageService storageService, ProjectService projectService,
-            RuntimeConverter runtimeConvertor,
-            RuntimeVersionConverter versionConvertor, RuntimeDao runtimeDao,
-            StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService,
-            HotJobHolder jobHolder, UserService userService, IdConverter idConvertor,
-            VersionAliasConverter versionAliasConvertor, TrashService trashService,
-            K8sClient k8sClient, K8sJobTemplate k8sJobTemplate,
-            RuntimeTokenValidator runtimeTokenValidator, DockerSetting dockerSetting,
-            RunTimeProperties runTimeProperties, @Value("${sw.instance-uri}") String instanceUri) {
+    public RuntimeService(RuntimeMapper runtimeMapper,
+                          RuntimeVersionMapper runtimeVersionMapper,
+                          StorageService storageService,
+                          ProjectService projectService,
+                          RuntimeConverter runtimeConvertor,
+                          RuntimeVersionConverter versionConvertor,
+                          RuntimeDao runtimeDao,
+                          StoragePathCoordinator storagePathCoordinator,
+                          StorageAccessService storageAccessService,
+                          HotJobHolder jobHolder,
+                          UserService userService,
+                          IdConverter idConvertor,
+                          VersionAliasConverter versionAliasConvertor,
+                          TrashService trashService,
+                          K8sClient k8sClient,
+                          K8sJobTemplate k8sJobTemplate,
+                          RuntimeTokenValidator runtimeTokenValidator,
+                          SystemSettingService systemSettingService,
+                          DockerSetting dockerSetting,
+                          RunTimeProperties runTimeProperties,
+                          @Value("${sw.instance-uri}") String instanceUri) {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.storageService = storageService;
@@ -166,6 +181,7 @@ public class RuntimeService {
         this.k8sClient = k8sClient;
         this.k8sJobTemplate = k8sJobTemplate;
         this.runtimeTokenValidator = runtimeTokenValidator;
+        this.systemSettingService = systemSettingService;
         this.dockerSetting = dockerSetting;
         this.runTimeProperties = runTimeProperties;
         this.instanceUri = instanceUri;
@@ -641,7 +657,11 @@ public class RuntimeService {
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            k8sJobTemplate.renderJob(job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, null, null, null);
+            var pool = systemSettingService.queryResourcePool(imageBuildResourcePool);
+            Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
+            List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
+            k8sJobTemplate.renderJob(
+                    job, runtimeVersion.getVersionName(), "OnFailure", 2, ret, nodeSelector, tolerations, null);
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);

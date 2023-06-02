@@ -75,6 +75,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionViewEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -194,6 +195,7 @@ public class RuntimeServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeTokenValidator,
+                mock(SystemSettingService.class),
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
                 new RunTimeProperties("", "",
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
@@ -589,7 +591,7 @@ public class RuntimeServiceTest {
         verify(k8sJobTemplate, times(1)).loadJob(any());
         verify(k8sJobTemplate, times(1)).updateAnnotations(any(), any());
         verify(k8sJobTemplate, times(1)).renderJob(
-                any(), eq("n1"), eq("OnFailure"), eq(2), any(), isNull(), isNull(), isNull());
+                any(), eq("n1"), eq("OnFailure"), eq(2), any(), any(), any(), isNull());
         verify(k8sClient, times(1)).deployJob(any());
         verify(k8sJobTemplate).renderJob(
                 any(), eq("n1"), eq("OnFailure"), eq(2),
@@ -600,7 +602,7 @@ public class RuntimeServiceTest {
                         && imageBuilder.getEnvs().size() == 7
                         && imageBuilder.getCmds().size() == 6;
                 }),
-                isNull(), isNull(), isNull());
+                any(), any(), isNull());
         assertThat(res.getSuccess(), is(true));
 
         res = service.buildImage("project-1", "r1", "v2", null);
