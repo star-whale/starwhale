@@ -201,8 +201,7 @@ public class K8sTaskSchedulerTest {
         verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
         var container = jobs.get(0).getSpec().getTemplate().getSpec().getContainers().get(0);
-        Assertions.assertNull(container.getArgs());
-        Assertions.assertEquals(List.of("tail", "-f", "/dev/null"), container.getCommand());
+        Assertions.assertEquals(List.of("debug"), container.getArgs());
     }
 
     private Task mockTask(boolean debugMode) {
