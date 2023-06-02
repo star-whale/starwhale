@@ -172,9 +172,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             if (job.isDebugMode()) {
                 log.info("debug mode of job {} is on, will not run the job, just tail -f /dev/null", job.getId());
                 var workerContainer = k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0);
-                workerContainer.setArgs(null);
+                workerContainer.setArgs(List.of("debug"));
                 k8sJob.getSpec().setActiveDeadlineSeconds(null);
-                workerContainer.setCommand(List.of("debug"));
             }
 
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
