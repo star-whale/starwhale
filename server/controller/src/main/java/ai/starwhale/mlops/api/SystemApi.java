@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.system.FeaturesVo;
 import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
@@ -121,4 +122,9 @@ public interface SystemApi {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> querySetting();
+
+    @Operation(summary = "Get system features", description = "Get system features list")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/system/features", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<FeaturesVo>> queryFeatures();
 }

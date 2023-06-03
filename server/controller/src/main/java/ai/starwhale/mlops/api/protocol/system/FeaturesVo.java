@@ -17,18 +17,15 @@
 package ai.starwhale.mlops.api.protocol.system;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "System version", title = "Version")
+@Schema(description = "System features", title = "Features")
 @Validated
-public class SystemVersionVo implements Serializable {
-
-    private String id;
-
-    private String version;
+public class FeaturesVo {
+    List<String> disabled;
 }

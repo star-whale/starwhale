@@ -23,7 +23,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "Latest verion", title = "Version")
+@Schema(description = "Latest version", title = "Version")
 @Validated
 public class LatestVersionVo {
 
