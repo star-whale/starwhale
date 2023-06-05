@@ -22,6 +22,7 @@ from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
     PythonRunEnv,
+    ENV_LOG_LEVEL,
     ENV_CONDA_PREFIX,
     SW_PYPI_PKG_NAME,
     SW_DEV_DUMMY_VERSION,
@@ -82,6 +83,10 @@ def conda_install_req(
         prefix_cmd += ["run", "--live-stream"]
     else:
         prefix_cmd += ["install"]
+
+    verbose = get_conda_log_verbose()
+    if verbose:
+        prefix_cmd += [verbose]
 
     if env_name:
         prefix_cmd += ["--name", env_name]
@@ -395,20 +400,21 @@ def conda_setup(
     python_version: str,
     name: str = "",
     prefix: t.Union[str, Path] = "",
-    quiet: bool = False,
 ) -> None:
     if not name and not prefix:
         raise ParameterError("conda setup must set name or prefix")
 
     cmd = [get_conda_bin(), "create", "--yes", "--quiet"]
+
     if name:
         cmd += ["--name", name]
 
     if prefix:
         cmd += ["--prefix", str(prefix)]
 
-    if quiet:
-        cmd += ["--quiet"]
+    verbose = get_conda_log_verbose()
+    if verbose:
+        cmd += [verbose]
 
     cmd += [f"python={trunc_python_version(python_version)}"]
     check_call(cmd)
@@ -476,11 +482,12 @@ def conda_env_update(
     env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
 ) -> None:
     target_env = Path(target_env).resolve()
-    cmd = [
-        get_conda_bin(),
-        "env",
-        "update",
-        "--verbose",
+    cmd = [get_conda_bin(), "env", "update"]
+    verbose = get_conda_log_verbose()
+    if verbose:
+        cmd += [verbose]
+
+    cmd += [
         "--quiet",
         "--file",
         str(env_fpath),
@@ -559,6 +566,19 @@ def get_conda_prefix_path(name: str = "") -> str:
     cmd += ["printenv", "CONDA_PREFIX"]
     output = subprocess.check_output(cmd)
     return output.decode().strip()
+
+
+def get_conda_log_verbose(lvl_name: str = "") -> str:
+    lvl_name = lvl_name or os.environ.get(ENV_LOG_LEVEL, "")
+    lvl_name = lvl_name.upper()
+    if lvl_name == "TRACE":
+        return "-vvv"
+    elif lvl_name == "DEBUG":
+        return "-vv"
+    elif lvl_name == "INFO":
+        return "-v"
+    else:
+        return ""
 
 
 @lru_cache()
