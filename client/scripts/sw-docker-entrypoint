@@ -166,7 +166,6 @@ install_code_server () {
 
 run_code_server () {
     echo "-->[Preparing] run code-server ..."
-    if kill -9 `ps -ef|grep code-server | grep -v grep | awk '{print $2}'` ; then echo "kill success and restart code-server"; fi
     PASSWORD=${SW_DEBUG_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:8000 --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/debug.log 2>&1 &
     echo "-->[Preparing] run code-server done."
 }
