@@ -20,10 +20,12 @@ import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class TaskConverter {
@@ -46,6 +48,16 @@ public class TaskConverter {
             throw new SwProcessException(ErrorType.DB,
                     String.format("bad task data: no step for task %s", entity.getId()));
         }
+        var pool = "";
+        if (StringUtils.hasText(step.getPoolInfo())) {
+            try {
+                pool = ResourcePool.fromJson(step.getPoolInfo()).getName();
+            } catch (Exception e) {
+                throw new SwProcessException(ErrorType.DB,
+                        String.format("bad task data: can not unmarshal pool %s", entity.getId()), e);
+            }
+        }
+
         return TaskVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
@@ -54,6 +66,7 @@ public class TaskConverter {
                 .endTime(entity.getFinishedTime().getTime())
                 .stepName(step.getName())
                 .createdTime(entity.getStartedTime().getTime())
+                .resourcePool(pool)
                 .build();
     }
 

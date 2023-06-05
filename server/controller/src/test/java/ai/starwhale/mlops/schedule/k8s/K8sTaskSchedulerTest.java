@@ -156,7 +156,7 @@ public class K8sTaskSchedulerTest {
                 mock(StorageAccessService.class)
         );
         var task = mockTask(false);
-        var pool = task.getStep().getJob().getResourcePool();
+        var pool = task.getStep().getResourcePool();
         // add GPU resource
         var resources = List.of(new Resource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f, 1f));
         pool.setResources(resources);
@@ -224,6 +224,7 @@ public class K8sTaskSchedulerTest {
         step.setId(1L);
         step.setName("cmp");
         step.setJob(job);
+        step.setResourcePool(job.getResourcePool());
         return Task.builder()
                 .id(1L)
                 .taskRequest(TaskRequest.builder().index(1).total(2).build())

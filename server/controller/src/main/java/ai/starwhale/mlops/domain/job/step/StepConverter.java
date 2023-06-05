@@ -18,8 +18,11 @@ package ai.starwhale.mlops.domain.job.step;
 
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 @Slf4j
@@ -28,12 +31,17 @@ public class StepConverter {
     public StepConverter() {
     }
 
-    public Step fromEntity(StepEntity entity) {
+    public Step fromEntity(StepEntity entity) throws IOException {
         log.debug("from step entity");
+        ResourcePool pool = null;
+        if (StringUtils.hasText(entity.getPoolInfo())) {
+            pool = ResourcePool.fromJson(entity.getPoolInfo());
+        }
         Step step = Step.builder()
                 .id(entity.getId())
                 .status(entity.getStatus())
                 .name(entity.getName())
+                .resourcePool(pool)
                 .build();
         step.setStartTime(entity.getStartedTime().getTime());
         step.setFinishTime(entity.getFinishedTime().getTime());

@@ -30,20 +30,21 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface StepMapper {
 
-    @Insert("insert into step(step_uuid, step_name, job_id, last_step_id, step_status, concurrency, task_num)"
+    @Insert("insert into step(step_uuid, step_name, job_id, last_step_id, step_status, concurrency, task_num,"
+            + " pool_info)"
             + " values (#{step.uuid}, #{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, "
-            + " #{step.concurrency}, #{step.taskNum})")
+            + " #{step.concurrency}, #{step.taskNum}, #{step.poolInfo})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     void save(@Param("step") StepEntity stepEntity);
 
     @Select("select id, step_uuid as uuid, step_name as name, job_id, last_step_id, step_status as status,"
-            + " finished_time, started_time, created_time, modified_time, concurrency, task_num from step"
+            + " finished_time, started_time, created_time, modified_time, concurrency, task_num, pool_info from step"
             + " where job_id = #{jobId}"
             + " order by id")
     List<StepEntity> findByJobId(@Param("jobId") Long jobId);
 
     @Select("select id, step_uuid as uuid, step_name as name, job_id, last_step_id, step_status as status,"
-            + " finished_time, started_time, created_time, modified_time, concurrency, task_num from step"
+            + " finished_time, started_time, created_time, modified_time, concurrency, task_num, pool_info from step"
             + " where id = #{id}")
     StepEntity findById(@Param("id") Long id);
 

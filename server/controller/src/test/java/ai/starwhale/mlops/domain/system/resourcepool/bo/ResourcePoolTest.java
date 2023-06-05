@@ -20,6 +20,7 @@ package ai.starwhale.mlops.domain.system.resourcepool.bo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,5 +110,14 @@ class ResourcePoolTest {
         // request gpu, but pool does not have gpu, should not be patched
         ret = resourcePool.patchResources(gpuResources);
         Assertions.assertEquals(List.of(), ret);
+    }
+
+    @Test
+    public void marshalAndUnMarshall() throws IOException {
+        var resources = List.of(new Resource("cpu", 3f, 1f, 2f), new Resource("memory", 7f, 5f, 6f));
+        resourcePool = ResourcePool.builder().resources(resources).build();
+        var json = resourcePool.toJson();
+        var unmarshalled = ResourcePool.fromJson(json);
+        Assertions.assertEquals(resourcePool, unmarshalled);
     }
 }

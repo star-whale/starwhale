@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.job.split.JobSpliteratorImpl;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -82,6 +83,7 @@ public class JobSpliteratorImplTest {
         Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorImpl.split(mockJob));
 
         mockJob.setStepSpec("123");
+        mockJob.setResourcePool(ResourcePool.builder().name("test").build());
         var stepEntities = jobSpliteratorImpl.split(mockJob);
         assertEquals(stepEntities.size(), 2);
         verify(stepMapper, times(2)).save(any());

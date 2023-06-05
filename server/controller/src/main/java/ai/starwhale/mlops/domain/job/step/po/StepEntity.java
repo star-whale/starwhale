@@ -51,6 +51,8 @@ public class StepEntity extends BaseEntity {
 
     Integer taskNum = 1;
 
+    String poolInfo;
+
     @Builder.Default
     Date startedTime = defaultDate;
 
