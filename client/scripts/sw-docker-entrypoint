@@ -153,6 +153,23 @@ prepare(){
     fi
 }
 
+install_code_server () {
+    if command -v code-server &> /dev/null
+    then
+        echo "code-server is installed"
+    else
+        echo "-->[Preparing] install code-server ..."
+        curl -fsSL https://code-server.dev/install.sh | sh
+        echo "-->[Preparing] install code-server done."
+    fi
+}
+
+run_code_server () {
+    echo "-->[Preparing] run code-server ..."
+    PASSWORD=${SW_DEBUG_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:8000 --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/debug.log 2>&1 &
+    echo "-->[Preparing] run code-server done."
+}
+
 welcome $1
 case "$1" in
     pre_config)
@@ -163,6 +180,10 @@ case "$1" in
         ;;
     serve|serving)
         prepare $1 && serve
+        ;;
+    debug)
+        install_code_server && run_code_server   
+        tail -f /var/log/debug.log
         ;;
     *)
         prepare "starwhale" && exec "$@"
