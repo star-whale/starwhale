@@ -53,7 +53,7 @@ import OnlineEval from '@/pages/Project/OnlineEval'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 
-const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
+// const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -149,11 +149,6 @@ const Routes = () => {
                                             path='/projects/:projectId/evaluations/:jobId/tasks'
                                             component={JobTasks}
                                         />
-                                        <Route
-                                            exact
-                                            path='/projects/:projectId/evaluations/:jobId/actions'
-                                            component={JobDAG}
-                                        />
                                         {/* <Redirect
                                             from='/projects/:projectId/evaluations/:jobId'
                                             to='/projects/:projectId/evaluations/:jobId/results'
@@ -174,11 +169,6 @@ const Routes = () => {
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/results'
                                             component={JobResults}
-                                        />
-                                        <Route
-                                            exact
-                                            path='/projects/:projectId/jobs/:jobId/actions'
-                                            component={JobDAG}
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'
