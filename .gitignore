@@ -117,3 +117,6 @@ gradio
 console/src/assets/GradioWidget/
 /example/**/models/
 /example/**/data/
+
+/example/**/pretrained_models/
+

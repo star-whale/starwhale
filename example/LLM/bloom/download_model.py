@@ -14,8 +14,6 @@ def download():
     print(str(ROOTDIR / "models"))
     tokenizer.save_pretrained(str(ROOTDIR / "models"))
     model.save_pretrained(str(ROOTDIR / "models"))
-    del model
-    del tokenizer
 
 
 if __name__ == "main":
