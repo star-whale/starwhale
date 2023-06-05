@@ -124,6 +124,7 @@ public class RuntimeServiceTest {
     private UserService userService;
     private HotJobHolder jobHolder;
     private TrashService trashService;
+    private SystemSettingService systemSettingService;
     private K8sClient k8sClient;
     private K8sJobTemplate k8sJobTemplate;
     private RuntimeTokenValidator runtimeTokenValidator;
@@ -172,6 +173,7 @@ public class RuntimeServiceTest {
         runtimeDao = mock(RuntimeDao.class);
         jobHolder = mock(HotJobHolder.class);
 
+        systemSettingService = mock(SystemSettingService.class);
         trashService = mock(TrashService.class);
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
@@ -195,9 +197,9 @@ public class RuntimeServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 runtimeTokenValidator,
-                mock(SystemSettingService.class),
+                systemSettingService,
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
-                new RunTimeProperties("", "",
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild("rc", ""),
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io")),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);
@@ -603,6 +605,7 @@ public class RuntimeServiceTest {
                         && imageBuilder.getCmds().size() == 6;
                 }),
                 any(), any(), isNull());
+        verify(systemSettingService, times(1)).queryResourcePool(eq("rc"));
         assertThat(res.getSuccess(), is(true));
 
         res = service.buildImage("project-1", "r1", "v2", null);

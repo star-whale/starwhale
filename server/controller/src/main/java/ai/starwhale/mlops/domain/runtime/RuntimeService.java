@@ -117,7 +117,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class RuntimeService {
 
-    private final String imageBuildResourcePool = "image-build";
     private final RuntimeMapper runtimeMapper;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
@@ -638,7 +637,7 @@ public class RuntimeService {
 
             k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
-                containerOverwriteSpec.setImage(runTimeProperties.getImageForBuild());
+                containerOverwriteSpec.setImage(runTimeProperties.getImageBuild().getImage());
                 containerOverwriteSpec.setEnvs(envVars);
                 var registry = dockerSetting.getRegistryForPush();
                 var cmds = new ArrayList<>(List.of(
@@ -656,8 +655,8 @@ public class RuntimeService {
                 containerOverwriteSpec.setCmds(cmds);
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
-
-            var pool = systemSettingService.queryResourcePool(imageBuildResourcePool);
+            var rp = runTimeProperties.getImageBuild().getResourcePool();
+            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
             k8sJobTemplate.renderJob(
