@@ -95,5 +95,14 @@ public class MysqlBackupServiceTest extends MySqlContainerHolder {
                 var statement = connection.createStatement()) {
             count.test(statement, 5);
         }
+
+        // drop the temp table
+        try (var connection = mySqlDB.createConnection("");
+                var statement = connection.createStatement()) {
+            String dropTestTable = "drop table test_r";
+            statement.addBatch(dropTestTable);
+            var res = statement.executeBatch();
+            log.debug("{} queries were executed:{}", res.length, Arrays.toString(res));
+        }
     }
 }
