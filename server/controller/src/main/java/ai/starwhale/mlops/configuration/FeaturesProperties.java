@@ -16,46 +16,29 @@
 
 package ai.starwhale.mlops.configuration;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ConfigurationProperties(prefix = "sw.runtime")
-public class RunTimeProperties {
+@ConfigurationProperties(prefix = "sw.features")
+public class FeaturesProperties {
+    public static final String FEATURE_ONLINE_EVAL = "online-eval";
+    public static final String FEATURE_JOB_PAUSE = "job-pause";
+    public static final String FEATURE_JOB_RESUME = "job-resume";
 
-    String imageDefault;
-    ImageBuild imageBuild;
-    Pypi pypi;
+    List<String> disabled;
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ImageBuild {
-
-        String resourcePool;
-        String image;
-
-        public static ImageBuild empty() {
-            return new ImageBuild("", "");
-        }
+    public boolean featureEnabled(String feat) {
+        return disabled == null || !disabled.contains(feat);
     }
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Pypi {
-
-        String indexUrl;
-        String extraIndexUrl;
-        String trustedHost;
-
-        public static Pypi empty() {
-            return new Pypi("", "", "");
-        }
+    public boolean isOnlineEvalEnabled() {
+        return featureEnabled(FEATURE_ONLINE_EVAL);
     }
-
 }

@@ -92,7 +92,7 @@ public class SystemSettingServiceTest {
         systemSettingService = new SystemSettingService(
                 systemSettingMapper,
                 List.of(listener),
-                new RunTimeProperties("", "", new Pypi("url1", "url2", "host1")),
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("url1", "url2", "host1")),
                 new DockerSetting("", "", "", "", false),
                 userService);
         systemSettingService.run();
@@ -183,7 +183,7 @@ public class SystemSettingServiceTest {
                 new SystemSettingService(
                         mock(SystemSettingMapper.class),
                         List.of(listener),
-                        new RunTimeProperties("", "", new Pypi("", "", "")),
+                        new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "")),
                         new DockerSetting("abcd.com", "abcd2.com", "admin", "admin123", false),
                         mock(UserService.class));
         systemSettingService.run();

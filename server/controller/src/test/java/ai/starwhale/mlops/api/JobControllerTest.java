@@ -42,6 +42,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
@@ -70,6 +71,8 @@ public class JobControllerTest {
 
     private RuntimeSuggestionService runtimeSuggestionService;
 
+    private FeaturesProperties featuresProperties;
+
     @BeforeEach
     public void setUp() {
         jobService = mock(JobService.class);
@@ -77,13 +80,15 @@ public class JobControllerTest {
         modelServingService = mock(ModelServingService.class);
         dagQuerier = mock(DagQuerier.class);
         runtimeSuggestionService = mock(RuntimeSuggestionService.class);
+        featuresProperties = new FeaturesProperties();
         controller = new JobController(
                 jobService,
                 taskService,
                 modelServingService,
                 runtimeSuggestionService,
                 new IdConverter(),
-                dagQuerier
+                dagQuerier,
+                featuresProperties
         );
     }
 
@@ -264,5 +269,15 @@ public class JobControllerTest {
         given(runtimeSuggestionService.getSuggestions(2L, null)).willReturn(List.of(rt));
         var resp = controller.getRuntimeSuggestion(2L, null);
         assertThat(resp.getBody().getData(), is(vo));
+    }
+
+    @Test
+    public void testModelServingWithFeatureDisabled() {
+        var disabled = List.of("online-eval");
+        featuresProperties.setDisabled(disabled);
+        assertThrows(StarwhaleApiException.class,
+                () -> controller.createModelServing("foo", new ModelServingRequest()));
+        assertThrows(StarwhaleApiException.class,
+                () -> controller.getModelServingStatus(1L, 2L));
     }
 }

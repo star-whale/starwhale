@@ -129,7 +129,7 @@ public class SystemSettingService implements CommandLineRunner {
                 }
                 listeners.forEach(l -> l.onUpdate(systemSetting));
             } catch (JsonProcessingException e) {
-                log.error("corrupted system setting yaml");
+                log.error("corrupted system setting yaml {}", setting.getContent());
                 throw new SwValidationException(ValidSubject.SETTING);
             }
         } else {
