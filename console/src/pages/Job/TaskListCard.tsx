@@ -10,6 +10,7 @@ import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
 import qs from 'qs'
 import moment from 'moment'
+import JobStatus from '@/domain/job/components/JobStatus'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -53,7 +54,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
-                            task.uuid,
+                            task.id,
                             task.stepName,
                             task.resourcePool,
                             task.createdTime && formatTimestampDateTime(task.createdTime),
@@ -61,7 +62,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
                                 ? moment.duration(task.stopTime - task.createdTime, 'milliseconds').humanize()
                                 : '-',
-                            task.taskStatus,
+                            <JobStatus key='status' status={task.taskStatus as any} />,
                             <StyledLink
                                 key={task.uuid}
                                 onClick={(e: any) => {

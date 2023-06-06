@@ -3404,6 +3404,46 @@
     node-addon-api "^3.2.1"
     node-gyp-build "^4.3.0"
 
+"@patternfly/react-core@^4.273.1", "@patternfly/react-core@^4.276.8":
+  version "4.276.8"
+  resolved "https://registry.npmmirror.com/@patternfly/react-core/-/react-core-4.276.8.tgz#7ef52830dcdda954bd5bec40132da6eef49aba6f"
+  integrity sha512-dn322rEzBeiVztZEuCZMUUittNb8l1hk30h9ZN31FLZLLVtXGlThFNV9ieqOJYA9zrYxYZrHMkTnOxSWVacMZg==
+  dependencies:
+    "@patternfly/react-icons" "^4.93.6"
+    "@patternfly/react-styles" "^4.92.6"
+    "@patternfly/react-tokens" "^4.94.6"
+    focus-trap "6.9.2"
+    react-dropzone "9.0.0"
+    tippy.js "5.1.2"
+    tslib "^2.0.0"
+
+"@patternfly/react-icons@^4.93.4", "@patternfly/react-icons@^4.93.6":
+  version "4.93.6"
+  resolved "https://registry.npmmirror.com/@patternfly/react-icons/-/react-icons-4.93.6.tgz#4aff18724afa30157e3ffd6a6414951dbb39dcb3"
+  integrity sha512-ZrXegc/81oiuTIeWvoHb3nG/eZODbB4rYmekBEsrbiysyO7m/sUFoi/RLvgFINrRoh6YCJqL5fj06Jg6d7jX1g==
+
+"@patternfly/react-log-viewer@^4.87.100":
+  version "4.87.100"
+  resolved "https://registry.npmmirror.com/@patternfly/react-log-viewer/-/react-log-viewer-4.87.100.tgz#7cc81c886ad805fb7bce3640f69aaeeb31bcbb25"
+  integrity sha512-FG+oZDnymvtWNTSSNSQ573NCikpCKr1Iq0Fz5FOSeqW/rLxvuJPqBnlK+A4nUORvxvYc3DhBri2ycCaZMoZfPg==
+  dependencies:
+    "@patternfly/react-core" "^4.273.1"
+    "@patternfly/react-icons" "^4.93.4"
+    "@patternfly/react-styles" "^4.92.4"
+    memoize-one "^5.1.0"
+    resize-observer-polyfill "^1.5.1"
+    tslib "^2.0.0"
+
+"@patternfly/react-styles@^4.92.4", "@patternfly/react-styles@^4.92.6":
+  version "4.92.6"
+  resolved "https://registry.npmmirror.com/@patternfly/react-styles/-/react-styles-4.92.6.tgz#a72c5f0b7896ce1c419d1db79f8e39ba6632057d"
+  integrity sha512-b8uQdEReMyeoMzjpMri845QxqtupY/tIFFYfVeKoB2neno8gkcW1RvDdDe62LF88q45OktCwAe/8A99ker10Iw==
+
+"@patternfly/react-tokens@^4.94.6":
+  version "4.94.6"
+  resolved "https://registry.npmmirror.com/@patternfly/react-tokens/-/react-tokens-4.94.6.tgz#47c715721ad3dd315a523f352ba1a0de2b03f0bc"
+  integrity sha512-tm7C6nat+uKMr1hrapis7hS3rN9cr41tpcCKhx6cod6FLU8KwF2Yt5KUxakhIOCEcE/M/EhXhAw/qejp8w0r7Q==
+
 "@phenomnomnominal/tsquery@4.1.1":
   version "4.1.1"
   resolved "https://registry.npmmirror.com/@phenomnomnominal/tsquery/-/tsquery-4.1.1.tgz"
@@ -12295,6 +12335,13 @@ focus-lock@^0.8.0:
   dependencies:
     tslib "^1.9.3"
 
+focus-trap@6.9.2:
+  version "6.9.2"
+  resolved "https://registry.npmmirror.com/focus-trap/-/focus-trap-6.9.2.tgz#a9ef72847869bd2cbf62cb930aaf8e138fef1ca9"
+  integrity sha512-gBEuXOPNOKPrLdZpMFUSTyIo1eT2NSZRrwZ9r/0Jqw5tmT3Yvxfmu8KBHw8xW2XQkw6E/JoG+OlEq7UDtSUNgw==
+  dependencies:
+    tabbable "^5.3.2"
+
 follow-redirects@^1.0.0, follow-redirects@^1.14.0:
   version "1.14.9"
   resolved "https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.14.9.tgz"
@@ -16519,7 +16566,7 @@ memfs@^3.1.2:
   dependencies:
     fs-monkey "1.0.3"
 
-"memoize-one@>=3.1.1 <6", memoize-one@^5.1.1:
+"memoize-one@>=3.1.1 <6", memoize-one@^5.1.0, memoize-one@^5.1.1:
   version "5.2.1"
   resolved "https://registry.npmmirror.com/memoize-one/-/memoize-one-5.2.1.tgz"
   integrity sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==
@@ -22352,6 +22399,11 @@ synchronous-promise@^2.0.15:
   resolved "https://registry.npmmirror.com/synchronous-promise/-/synchronous-promise-2.0.15.tgz"
   integrity sha512-k8uzYIkIVwmT+TcglpdN50pS2y1BDcUnBPK9iJeGu0Pl1lOI8pD6wtzgw91Pjpe+RxtTncw32tLxs/R0yNL2Mg==
 
+tabbable@^5.3.2:
+  version "5.3.3"
+  resolved "https://registry.npmmirror.com/tabbable/-/tabbable-5.3.3.tgz#aac0ff88c73b22d6c3c5a50b1586310006b47fbf"
+  integrity sha512-QD9qKY3StfbZqWOPLp0++pOrAVb/HbUi5xCc8cUo4XjP19808oaMiDzn0leBY5mCespIBM0CIZePzZjgzR83kA==
+
 table@^6.0.9:
   version "6.8.0"
   resolved "https://registry.npmmirror.com/table/-/table-6.8.0.tgz"
@@ -22618,6 +22670,13 @@ tinyqueue@^2.0.3:
   version "2.0.3"
   resolved "https://registry.npmmirror.com/tinyqueue/-/tinyqueue-2.0.3.tgz"
   integrity sha512-ppJZNDuKGgxzkHihX8v9v9G5f+18gzaTfrukGrq6ueg0lmH4nqVnA2IPG0AEH3jKEk2GRJCUhDoqpoiw3PHLBA==
+
+tippy.js@5.1.2:
+  version "5.1.2"
+  resolved "https://registry.npmmirror.com/tippy.js/-/tippy.js-5.1.2.tgz#5ac91233c59ab482ef5988cffe6e08bd26528e66"
+  integrity sha512-Qtrv2wqbRbaKMUb6bWWBQWPayvcDKNrGlvihxtsyowhT7RLGEh1STWuy6EMXC6QLkfKPB2MLnf8W2mzql9VDAw==
+  dependencies:
+    popper.js "^1.16.0"
 
 tlds@^1.203.0:
   version "1.231.0"

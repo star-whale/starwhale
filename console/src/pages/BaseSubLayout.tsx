@@ -34,6 +34,7 @@ export default function BaseSubLayout({
                 <>
                     <BaseNavTabs navItems={navItems} />
                     <div
+                        data-type='sub-layout'
                         style={{
                             paddingTop: 15,
                             paddingBottom: 15,

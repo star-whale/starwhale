@@ -386,6 +386,18 @@ const ui = {
         en: 'Select...',
         zh: '请选择',
     },
+    'log.resume': {
+        en: 'Resume',
+        zh: '继续',
+    },
+    'log.pause': {
+        en: 'Pause',
+        zh: '暂停',
+    },
+    'log.behind.lines': {
+        en: 'and show {{0}} lines',
+        zh: '并显示 {{0}} 行',
+    },
 }
 
 const widget = {

@@ -72,7 +72,10 @@ export default function ApiHeader() {
                 }
 
                 // allow non-exist model file in the eval result page
-                if (error.response?.status === 404 && winLocation.pathname.endsWith('results')) {
+                if (
+                    error.response?.status === 404 &&
+                    error.response.config.params?.partName?.includes('eval_panel_layout.json')
+                ) {
                     return Promise.reject(error)
                 }
 

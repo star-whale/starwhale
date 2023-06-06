@@ -51,7 +51,10 @@ export default function useWebSocket({ wsUrl, onOpen, onClose, onMessage }: IWeb
             onClose?.()
         }
 
-        ws.onopen = () => heartbeat()
+        ws.onopen = () => {
+            heartbeat()
+            onOpen?.()
+        }
         ws.onclose = (e) => {
             log('WebSocket closed', e)
         }

@@ -50,7 +50,7 @@ type FileNodeWithPathT = FileNode & {
     path: string[]
 }
 
-const isText = (file?: FileNodeWithPathT) => (file ? file.desc === 'SRC' || file.mime === 'text/plain' : false)
+const isText = (file?: FileNodeWithPathT) => (file ? file.desc === 'SRC' || file.mime?.startsWith('text') : false)
 const FILEFLAGES = {
     unchanged: 'rgba(2,16,43,0.20)',
     added: '#00B368',

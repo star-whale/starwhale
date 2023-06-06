@@ -1,0 +1,62 @@
+.pf-c-log-viewer {
+    --pf-c-log-viewer__text--FontSize: 16px;
+    --pf-c-button--LineHeight: 1;
+
+    .pf-c-log-viewer__scroll-container {
+        &::-webkit-scrollbar {
+            width: 16px;
+            border-radius: 4px;
+            background: inherit;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: inherit;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(121, 121, 121, 0.4);
+            border-radius: 4px;
+            width: 16px;
+            cursor: pointer !important;
+        }
+    }
+
+    .pf-c-toolbar {
+        .pf-c-button {
+            height: 32px;
+        }
+        .pf-c-text-input-group__text-input {
+            height: 34px;
+            padding: 0;
+            font-size: 16px;
+            padding-left: 30px;
+
+            &:focus {
+                border-color: blue;
+            }
+        }
+        .pf-c-text-input-group__text::before {
+            border: 1px solid rgb(207, 215, 230);
+            border-radius: 4px;
+        }
+        .pf-c-text-input-group__text::after {
+            border-width: 0;
+        }
+    }
+
+    .pf-c-select {
+        height: 32px;
+        font-size: 16px;
+    }
+
+    .pf-c-button {
+        height: 40px;
+        padding: 0 10px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+        gap: 10px;
+    }
+}
