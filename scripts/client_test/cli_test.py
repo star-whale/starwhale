@@ -477,6 +477,7 @@ class TestCli:
             "src.evaluator:evaluate",
             "src.evaluator:predict",
             "src.sdk_model_build:context_handle",
+            "src.sdk_model_build:ft",
         }, ctx_handle_info["basic"]["handlers"]
 
         ctx_handle_no_modules_info = self.model_api.info("ctx_handle_no_modules")
@@ -484,6 +485,7 @@ class TestCli:
             "src.evaluator:evaluate",
             "src.evaluator:predict",
             "src.sdk_model_build:context_handle",
+            "src.sdk_model_build:ft",
         }, ctx_handle_no_modules_info["basic"]["handlers"]
 
 

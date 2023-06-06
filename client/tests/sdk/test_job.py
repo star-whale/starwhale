@@ -664,6 +664,54 @@ def handle(context): ...
             ]
         }
 
+    def test_fine_tune_deco(self) -> None:
+        content = """
+from starwhale import fine_tune
+
+@fine_tune
+def ft1(): ...
+
+@fine_tune(needs=[ft1], resources={'nvidia.com/gpu': 1})
+def ft2(): ...
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
+
+        jobs_info = load_yaml(yaml_path)
+        assert jobs_info == {
+            "mock_user_module:ft1": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "extra_args": [],
+                    "extra_kwargs": {},
+                    "func_name": "ft1",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:ft1",
+                    "needs": [],
+                    "replicas": 1,
+                    "resources": [],
+                    "show_name": "fine_tune",
+                }
+            ],
+            "mock_user_module:ft2": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "extra_args": [],
+                    "extra_kwargs": {},
+                    "func_name": "ft2",
+                    "module_name": "mock_user_module",
+                    "name": "mock_user_module:ft2",
+                    "needs": [],
+                    "replicas": 1,
+                    "resources": [{"limit": 1, "request": 1, "type": "nvidia.com/gpu"}],
+                    "show_name": "fine_tune",
+                }
+            ],
+        }
+
     def test_handler_deco(self) -> None:
         content = """
 from starwhale import handler

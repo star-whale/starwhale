@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from typing import Any, Dict, List, Callable, Optional
 
 from starwhale.consts import DecoratorInjectAttr
@@ -23,7 +22,7 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     def ft():
         ...
 
-    @experiment.fine_tune(resources={"gpu": 1}, needs=[prepare_handler])
+    @experiment.fine_tune(resources={"nvidia.com/gpu": 1}, needs=[prepare_handler])
     def ft():
         ...
     ```
@@ -44,9 +43,6 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     return _wrap
 
 
-_registered_ft_func = threading.local()
-
-
 def _register_ft(
     func: Callable,
     resources: Optional[Dict[str, Any]] = None,
@@ -54,15 +50,7 @@ def _register_ft(
 ) -> None:
     from .job import Handler
 
-    try:
-        val = _registered_ft_func.value
-    except AttributeError:
-        val = None
-
-    if val is not None:
-        return
-
-    _registered_ft_func.value = Handler.register(
+    Handler.register(
         name="fine_tune",
         resources=resources,
         concurrency=1,
