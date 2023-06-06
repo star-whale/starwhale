@@ -1,6 +1,5 @@
 # pip install -q transformers accelerate starwhale
 import os
-import sys
 from typing import Any
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from transformers import (
 )
 
 from starwhale import Context, dataset, fine_tune, evaluation, pass_context
+from starwhale.api import model as swmp
 
 ROOTDIR = Path(__file__).parent
 
@@ -76,14 +76,11 @@ ds_key_selectors = {
 
 @pass_context
 @fine_tune()
-def ft(
-    context: Context = None,
-    swds: str = "mkqa/version/latest",
-) -> None:
-    fine_tune(context=context, swds=swds)
+def ft(context: Context) -> None:
+    ft_inner(context=context)
 
 
-def fine_tune(
+def ft_inner(
     context: Context = None,
     swds: str = "mkqa/version/latest",
 ) -> None:
@@ -127,7 +124,7 @@ def fine_tune(
         )
         .train_test_split(test_size=0.1)
     )
-    batch_size = 32
+    batch_size = os.getenv("MT0_TRAIN_BATCH_SIZE") or 16
 
     hgds = hgds["train"]
 
@@ -143,8 +140,9 @@ def fine_tune(
                 datas["labels"]
             ).cuda()
 
-    n_epochs = 8
-    batch_size = 16
+    n_epochs = int(os.getenv("MT0_TRAIN_EPOCHS")) or 8
+    print(f"epochs is {n_epochs}")
+    # batch_size = 16
     print_freq = 50
     lr = 5e-4
     n_batches = int(np.ceil(len(hgds) / batch_size))
@@ -183,12 +181,12 @@ def fine_tune(
                     )
                 )
 
-            # if (batch_idx + 1) % checkpoint_freq == 0:
-            #     test_loss = eval_model(model, test_dataset)
-            #     print('Saving model with test loss of {:.3f}'.format(test_loss))
-            #     torch.save(model.state_dict(), model_path)
-
     torch.save(model.state_dict(), str(ROOTDIR / "models" / "pytorch_model.bin"))
+    swmp.build(
+        workdir=ROOTDIR,
+        name="mt0",
+        modules=[ft, ppl],
+    )
 
 
 def swds2hgds(swds) -> Any:
@@ -202,4 +200,4 @@ def swds2hgds(swds) -> Any:
 
 
 if __name__ == "__main__":
-    fine_tune()
+    ft_inner()
