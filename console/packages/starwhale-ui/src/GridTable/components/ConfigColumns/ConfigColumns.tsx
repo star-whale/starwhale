@@ -85,7 +85,6 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                             style: {
                                 zIndex: '102',
                                 margin: 0,
-                                paddingBottom: '4px',
                             },
                         },
                         DrawerContainer: {
