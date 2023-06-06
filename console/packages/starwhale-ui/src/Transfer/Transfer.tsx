@@ -29,6 +29,7 @@ const useStyles = createUseStyles({
             flex: 1,
             display: 'flex',
             overflow: 'hidden',
+            maxWidth: '314px',
         },
         '& .transfer-list-content': {
             borderRadius: '4px',
@@ -36,6 +37,7 @@ const useStyles = createUseStyles({
             flex: '1',
             display: 'flex',
             flexDirection: 'column',
+            minWidth: 0,
         },
         '& .transfer-list-toolbar': {
             display: 'flex',

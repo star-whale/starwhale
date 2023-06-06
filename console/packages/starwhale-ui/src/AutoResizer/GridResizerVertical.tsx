@@ -91,7 +91,6 @@ export function GridResizerVertical({
             style={{
                 display: 'grid',
                 gridTemplateRows: isResizeable ? gridLayout[gridMode] : '1fr',
-                overflow: 'hidden',
                 width: '100%',
                 height: '100%',
                 flex: 1,
@@ -119,7 +118,7 @@ export function GridResizerVertical({
                     onModeChange={setGridMode}
                 />
             )}
-            {isResizeable && bottom()}
+            {isResizeable && gridMode !== 0 && bottom()}
         </div>
     )
 }
