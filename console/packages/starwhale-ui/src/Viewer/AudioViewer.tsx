@@ -77,7 +77,13 @@ export default function AudioViewer({ isZoom = false, data }: IAudioViewerProps)
         return (
             <div
                 className='dataset-viewer audio '
-                style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                style={{
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                }}
             >
                 {/* eslint-disable jsx-a11y/media-has-caption */}
                 <audio controls style={{ width: '100%' }}>
