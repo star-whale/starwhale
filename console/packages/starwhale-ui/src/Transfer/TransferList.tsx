@@ -88,11 +88,18 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                                 style: {
                                     flex: 1,
                                     height: '100%',
+                                    minWidth: '0',
+                                    overflow: 'hidden',
+                                },
+                            },
+                            Label: {
+                                style: {
+                                    overflow: 'hidden',
                                 },
                             },
                         }}
                     >
-                        <LabelSmall $style={{ overflow: 'hidden', lineHeight: '1.2' }} className='line-clamp'>
+                        <LabelSmall $style={{ overflow: 'hidden', lineHeight: '1.2', textOverflow: 'ellipsis' }}>
                             {column.title}
                         </LabelSmall>
                     </Checkbox>
