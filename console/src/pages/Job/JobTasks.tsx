@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import _, { isPlainObject } from 'lodash'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
-import { LazyLog } from 'react-lazylog'
+import { LazyLog, ScrollFollow } from 'react-lazylog'
 import { Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
@@ -11,6 +11,9 @@ import Accordion from '@starwhale/ui/Accordion'
 import TaskListCard from './TaskListCard'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { toaster } from 'baseui/toast'
+import { BusyPlaceholder, Button } from '@starwhale/ui'
+
+const ComplexToolbarLogViewer = React.lazy(() => import('@/components/LogViewer/LogViewer'))
 
 export interface IScrollProps {
     scrollTop: number
@@ -41,7 +44,7 @@ export default function JobTasks() {
             toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
         }
         if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
-            files[task?.uuid] = 'ws'
+            files[task?.stepName] = 'ws'
             setCurrentLogFiles({
                 ...files,
             })
@@ -141,65 +144,35 @@ export default function JobTasks() {
         }?Authorization=${getToken()}`
     }, [currentTask])
 
+    const sources = React.useMemo(() => {
+        return Object.entries(currentLogFiles).map(([fileName, content]) => {
+            return {
+                id: fileName,
+                type: '',
+                data: content.startsWith('ws') ? '' : content,
+                ws: content.startsWith('ws') ? currentOnlineLogUrl : undefined,
+            }
+        })
+    }, [currentLogFiles, currentOnlineLogUrl])
+
+    console.log(sources)
+
     return (
         <>
             <div
                 style={{
                     width: '100%',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
                 <TaskListCard header={null} onAction={onAction} />
 
-                <Card outTitle={t('Logs collected')} style={{ padding: 0 }}>
-                    {Object.entries(currentLogFiles).map(([fileName, content]) => (
-                        <Accordion
-                            key={fileName}
-                            overrides={{
-                                Header: {
-                                    style: {
-                                        borderRadius: '8px',
-                                    },
-                                },
-                                Content: {
-                                    style: {
-                                        height: '800px',
-                                        paddingBottom: '0px',
-                                        paddingTop: '0px',
-                                        backgroundColor: theme.brandBgSecondary,
-                                    },
-                                },
-                            }}
-                            onChange={({ expanded }) => {
-                                setExpanded(expanded.includes('0'))
-                            }}
-                        >
-                            <Panel key={fileName} title={`${t('Execution id')}: ${fileName}`}>
-                                {!content.startsWith('ws') ? (
-                                    <LazyLog
-                                        enableSearch
-                                        selectableLines
-                                        text={content || ' '}
-                                        follow={follow}
-                                        formatPart={formatContent}
-                                        onScroll={handleScroll}
-                                        extraLines={1}
-                                    />
-                                ) : (
-                                    <LazyLog
-                                        enableSearch
-                                        selectableLines
-                                        url={currentOnlineLogUrl}
-                                        websocket
-                                        websocketOptions={{
-                                            formatMessage: formatContent,
-                                        }}
-                                        follow={follow}
-                                        onScroll={handleScroll}
-                                    />
-                                )}
-                            </Panel>
-                        </Accordion>
-                    ))}
+                <Card outTitle={t('Logs collected')} style={{ padding: 0, flex: 1 }}>
+                    <React.Suspense fallback={<BusyPlaceholder />}>
+                        <ComplexToolbarLogViewer sources={sources} />
+                    </React.Suspense>
                 </Card>
             </div>
         </>
