@@ -1,16 +1,16 @@
 # pip install -q transformers accelerate starwhale
 import os
 from typing import Any
-import torch
-from datasets import Dataset
-import tqdm
 from pathlib import Path
 
+import tqdm
+import torch
+from datasets import Dataset
 from transformers import (
-    BloomTokenizerFast,
-    BloomForCausalLM,
     Trainer,
+    BloomForCausalLM,
     TrainingArguments,
+    BloomTokenizerFast,
 )
 
 from starwhale import Context, dataset, fine_tune, evaluation, pass_context
@@ -85,7 +85,6 @@ def ft_inner(
     context: Context = None,
     swds: str = "mkqa/version/latest",
 ) -> None:
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     checkpoint = str(ROOTDIR / "models")
     if not os.path.exists(checkpoint):
         from download_model import download
@@ -102,7 +101,6 @@ def ft_inner(
         field_transformer=ds_key_selectors.get(sw_dataset._uri.name, None)
     )
     hgds = swds2hgds(sw_dataset)
-    batch_size = os.getenv("MT0_TRAIN_BATCH_SIZE") or 16
     input_ids = tokenise_data(hgds, tokeniser)
 
     model.gradient_checkpointing_enable()
@@ -115,9 +113,9 @@ def ft_inner(
         train_dataset=input_ids,
         args=TrainingArguments(
             output_dir=checkpoint,
-            per_device_train_batch_size=4,
+            per_device_train_batch_size=int(os.getenv("BLOOM_TRAIN_BATCH_SIZE")) or 8,
             gradient_accumulation_steps=1,
-            num_train_epochs=2,
+            num_train_epochs=int(os.getenv("BLOOM_TRAIN_EPOCHES")) or 4,
             learning_rate=2e-5,
             fp16=True,
             logging_steps=10,

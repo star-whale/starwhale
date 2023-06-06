@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from transformers import BloomTokenizerFast, BloomForCausalLM
+from transformers import BloomForCausalLM, BloomTokenizerFast
 
 ROOTDIR = Path(__file__).parent
 
-def download(checkpoint :str = "bigscience/bloom-560m"):
+
+def download(checkpoint: str = "bigscience/bloom-560m"):
     tokenizer = BloomTokenizerFast.from_pretrained(
         f"{checkpoint}", add_prefix_space=True
     )
