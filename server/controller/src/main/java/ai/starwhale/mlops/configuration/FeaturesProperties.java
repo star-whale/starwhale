@@ -41,4 +41,12 @@ public class FeaturesProperties {
     public boolean isOnlineEvalEnabled() {
         return featureEnabled(FEATURE_ONLINE_EVAL);
     }
+
+    public boolean isJobPauseEnabled() {
+        return featureEnabled(FEATURE_JOB_PAUSE);
+    }
+
+    public boolean isJobResumeEnabled() {
+        return featureEnabled(FEATURE_JOB_RESUME);
+    }
 }
