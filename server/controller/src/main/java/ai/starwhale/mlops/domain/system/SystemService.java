@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.system;
 
+import ai.starwhale.mlops.api.protocol.system.FeaturesVo;
 import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.upgrade.UpgradeService;
 import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
@@ -32,13 +34,16 @@ public class SystemService {
 
     private final UpgradeService upgradeService;
     private final String controllerVersion;
+    private final FeaturesProperties featuresProperties;
 
     public SystemService(SystemSettingService systemSettingService,
-            UpgradeService upgradeService,
-            @Value("${sw.version}") String controllerVersion) {
+                         UpgradeService upgradeService,
+                         @Value("${sw.version}") String controllerVersion,
+                         FeaturesProperties featuresProperties) {
         this.systemSettingService = systemSettingService;
         this.upgradeService = upgradeService;
         this.controllerVersion = controllerVersion;
+        this.featuresProperties = featuresProperties;
     }
 
     public String upgrade(String version, String image) {
@@ -71,5 +76,11 @@ public class SystemService {
 
     public void updateResourcePools(List<ResourcePool> resourcePools) {
         systemSettingService.updateResourcePools(resourcePools);
+    }
+
+    public FeaturesVo queryFeatures() {
+        return FeaturesVo.builder()
+                .disabled(featuresProperties.getDisabled())
+                .build();
     }
 }

@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.system.FeaturesVo;
 import ai.starwhale.mlops.api.protocol.system.LatestVersionVo;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVo;
 import ai.starwhale.mlops.api.protocol.system.UpgradeRequest;
@@ -39,7 +40,7 @@ public class SystemController implements SystemApi {
     private final SystemSettingService systemSettingService;
 
     public SystemController(SystemService systemService,
-            SystemSettingService systemSettingService) {
+                            SystemSettingService systemSettingService) {
         this.systemService = systemService;
         this.systemSettingService = systemSettingService;
     }
@@ -96,5 +97,10 @@ public class SystemController implements SystemApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> querySetting() {
         return ResponseEntity.ok(Code.success.asResponse(systemSettingService.querySetting()));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<FeaturesVo>> queryFeatures() {
+        return ResponseEntity.ok(Code.success.asResponse(systemService.queryFeatures()));
     }
 }

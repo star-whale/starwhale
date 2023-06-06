@@ -29,6 +29,7 @@ import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
@@ -59,6 +60,7 @@ public class JobController implements JobApi {
     private final IdConverter idConvertor;
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
+    private final FeaturesProperties  featuresProperties;
 
     public JobController(
             JobService jobService,
@@ -66,7 +68,8 @@ public class JobController implements JobApi {
             ModelServingService modelServingService,
             RuntimeSuggestionService runtimeSuggestionService,
             IdConverter idConvertor,
-            DagQuerier dagQuerier
+            DagQuerier dagQuerier,
+            FeaturesProperties featuresProperties
     ) {
         this.jobService = jobService;
         this.taskService = taskService;
@@ -79,6 +82,7 @@ public class JobController implements JobApi {
                 .addInvoker("pause", jobService::pauseJob)
                 .addInvoker("resume", jobService::resumeJob)
                 .unmodifiable();
+        this.featuresProperties = featuresProperties;
     }
 
     @Override
@@ -205,6 +209,11 @@ public class JobController implements JobApi {
             String projectUrl,
             ModelServingRequest request
     ) {
+        if (!featuresProperties.isOnlineEvalEnabled()) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "Online evaluation is not enabled."),
+                    HttpStatus.BAD_REQUEST);
+        }
         var resp = modelServingService.create(
                 projectUrl,
                 request.getModelVersionUrl(),
@@ -218,6 +227,11 @@ public class JobController implements JobApi {
 
     @Override
     public ResponseEntity<ResponseMessage<ModelServingStatusVo>> getModelServingStatus(Long projectId, Long servingId) {
+        if (!featuresProperties.isOnlineEvalEnabled()) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, "Online evaluation is not enabled."),
+                    HttpStatus.BAD_REQUEST);
+        }
         return ResponseEntity.ok(Code.success.asResponse(modelServingService.getStatus(servingId)));
     }
 
