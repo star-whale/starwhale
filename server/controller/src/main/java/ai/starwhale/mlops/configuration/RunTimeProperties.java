@@ -28,8 +28,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RunTimeProperties {
 
     String imageDefault;
-    String imageForBuild;
+    ImageBuild imageBuild;
     Pypi pypi;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ImageBuild {
+
+        String resourcePool;
+        String image;
+
+        public static ImageBuild empty() {
+            return new ImageBuild("", "");
+        }
+    }
 
     @Data
     @AllArgsConstructor
