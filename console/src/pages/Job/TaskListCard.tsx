@@ -53,7 +53,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
-                            task.uuid,
+                            task.id,
                             task.stepName,
                             task.resourcePool,
                             task.createdTime && formatTimestampDateTime(task.createdTime),

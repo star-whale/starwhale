@@ -2,6 +2,25 @@
     --pf-c-log-viewer__text--FontSize: 16px;
     --pf-c-button--LineHeight: 1;
 
+    .pf-c-log-viewer__scroll-container {
+        &::-webkit-scrollbar {
+            width: 16px;
+            border-radius: 4px;
+            background: inherit;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: inherit;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(121, 121, 121, 0.4);
+            border-radius: 4px;
+            width: 16px;
+            cursor: pointer !important;
+        }
+    }
+
     .pf-c-toolbar {
         .pf-c-button {
             height: 32px;

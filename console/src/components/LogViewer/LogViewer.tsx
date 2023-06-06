@@ -1,13 +1,9 @@
 import '@patternfly/react-core/dist/styles/base.css'
 
 import React from 'react'
-// import { data } from '../examples/realTestData'
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer'
 import {
-    Badge,
     Button,
-    Select,
-    SelectOption,
     Tooltip,
     Toolbar,
     ToolbarContent,
@@ -21,17 +17,17 @@ import PauseIcon from '@patternfly/react-icons/dist/esm/icons/pause-icon'
 import PlayIcon from '@patternfly/react-icons/dist/esm/icons/play-icon'
 import EllipsisVIcon from '@patternfly/react-icons/dist/esm/icons/ellipsis-v-icon'
 import DownloadIcon from '@patternfly/react-icons/dist/esm/icons/download-icon'
+import HistoryIcon from '@patternfly/react-icons/dist/esm/icons/history-icon'
 import useWebSocket from '@/hooks/useWebSocket'
-import SWSelect, { ISelectProps } from '@starwhale/ui/Select'
+import SWSelect from '@starwhale/ui/Select'
 import './LogView.scss'
+import useTranslation from '@/hooks/useTranslation'
 
 const empty: any[] = []
 const RESUME_HEIGHT = 32
 
-function useSourceData({ ws = '', data }: { ws: string; data?: string }) {
+function useSourceData({ ws = '', data }: { ws?: string; data?: string }) {
     const [content, setContent] = React.useState<any[]>([])
-
-    console.log(ws)
 
     React.useEffect(() => {
         if (data) {
@@ -69,28 +65,25 @@ const ComplexToolbarLogViewer = ({
 }) => {
     const [isPaused, setIsPaused] = React.useState(false)
     const [isFullScreen, setIsFullScreen] = React.useState(false)
-    const [itemCount, setItemCount] = React.useState(1)
     const [currentItemCount, setCurrentItemCount] = React.useState(0)
     const [renderData, setRenderData] = React.useState('')
     const [selectedDataSource, setSelectedDataSource] = React.useState(dataSources[0]?.id)
-    const [selectDataSourceOpen, setSelectDataSourceOpen] = React.useState(false)
-    const [timer, setTimer] = React.useState(null)
     const [buffer, setBuffer] = React.useState([])
     const [linesBehind, setLinesBehind] = React.useState(0)
     const logViewerRef = React.useRef<any>()
+    const [t] = useTranslation()
 
     const selectedDataSourceObj = dataSources?.find((d) => d.id === selectedDataSource) || {}
     const { content: selectedData } = useSourceData(selectedDataSourceObj)
 
-    console.log(dataSources)
-    console.log(selectedData, selectedDataSourceObj)
+    // console.log(dataSources)
+    // console.log(selectedData, selectedDataSourceObj)
 
     const reset = React.useCallback(() => {
         setLinesBehind(0)
-        setBuffer([])
-        setItemCount(1)
         setCurrentItemCount(0)
-        setSelectDataSourceOpen(false)
+        setBuffer([])
+        setCurrentItemCount(0)
         if (logViewerRef && logViewerRef.current) {
             logViewerRef.current?.scrollToBottom()
         }
@@ -103,8 +96,9 @@ const ComplexToolbarLogViewer = ({
     }, [dataSources])
 
     React.useEffect(() => {
-        setItemCount(selectedData.length)
-        setBuffer(selectedData)
+        setCurrentItemCount(selectedData.length)
+        setBuffer(selectedData as any)
+        setRenderData(selectedData.join('\n'))
     }, [selectedData])
 
     React.useEffect(() => {
@@ -121,26 +115,34 @@ const ComplexToolbarLogViewer = ({
         }
     }, [isPaused, buffer, currentItemCount])
 
+    // @ts-ignore
     const onExpandClick = () => {
         const element = document.querySelector('#complex-toolbar-demo')
-
         if (!isFullScreen) {
             if (element?.requestFullscreen) {
                 element.requestFullscreen()
+                // @ts-ignore
             } else if (element?.mozRequestFullScreen) {
+                // @ts-ignore
                 element?.mozRequestFullScreen()
+                // @ts-ignore
             } else if (element?.webkitRequestFullScreen) {
+                // @ts-ignore
                 element?.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
             }
             setIsFullScreen(true)
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen()
+                // @ts-ignore
             } else if (document.webkitExitFullscreen) {
                 /* Safari */
+                // @ts-ignore
                 document.webkitExitFullscreen()
+                // @ts-ignore
             } else if (document.msExitFullscreen) {
                 /* IE11 */
+                // @ts-ignore
                 document.msExitFullscreen()
             }
             setIsFullScreen(false)
@@ -158,7 +160,14 @@ const ComplexToolbarLogViewer = ({
         document.body.removeChild(element)
     }
 
-    const onScroll = ({ scrollOffsetToBottom, _scrollDirection, scrollUpdateWasRequested }) => {
+    const onScrollTop = () => {
+        if (logViewerRef && logViewerRef.current) {
+            logViewerRef.current?.scrollToItem(1)
+        }
+    }
+
+    // @ts-ignore
+    const onScroll = ({ scrollOffsetToBottom, scrollUpdateWasRequested }) => {
         if (!scrollUpdateWasRequested) {
             if (scrollOffsetToBottom > 0) {
                 setIsPaused(true)
@@ -168,41 +177,26 @@ const ComplexToolbarLogViewer = ({
         }
     }
 
-    const selectDataSourceMenu = dataSources?.map(({ type, id: value }) => (
-        <SelectOption
-            key={value}
-            value={value}
-            isSelected={selectedDataSource === value}
-            isChecked={selectedDataSource === value}
-        >
-            <Badge key={value}>{type}</Badge>
-            {` ${value}`}
-        </SelectOption>
-    ))
-
-    const selectDataSourcePlaceholder = (
-        <>
-            <Badge>{selectedDataSourceObj?.type}</Badge>
-            {` ${selectedDataSource}`}
-        </>
-    )
-
     const ControlButton = () => (
         <Button
             variant={isPaused ? 'plain' : 'link'}
             onClick={() => {
                 setIsPaused(!isPaused)
+                if (!isPaused)
+                    if (logViewerRef && logViewerRef.current) {
+                        logViewerRef.current?.scrollToBottom()
+                    }
             }}
         >
             {isPaused ? <PlayIcon /> : <PauseIcon />}
-            {isPaused ? ' Resume Log' : ' Pause Log'}
+            {isPaused ? t('log.resume') : t('log.pause')}
         </Button>
     )
 
     const leftAlignedToolbarGroup = (
         <>
             <ToolbarToggleGroup toggleIcon={<EllipsisVIcon />} breakpoint='md'>
-                <ToolbarItem variant='search-filter' style={{ width: '200px' }}>
+                <ToolbarItem variant='search-filter' style={{ minWidth: '280px', maxWidth: '500px' }}>
                     <SWSelect
                         clearable={false}
                         options={dataSources.map(({ id }) => ({ label: id, id }))}
@@ -240,6 +234,13 @@ const ComplexToolbarLogViewer = ({
         <>
             <ToolbarGroup variant='icon-button-group'>
                 <ToolbarItem>
+                    <Tooltip position='top' content={<div>Top</div>}>
+                        <Button onClick={onScrollTop} variant='plain' aria-label='Scroll to TOP'>
+                            <HistoryIcon />
+                        </Button>
+                    </Tooltip>
+                </ToolbarItem>
+                <ToolbarItem>
                     <Tooltip position='top' content={<div>Download</div>}>
                         <Button onClick={onDownloadClick} variant='plain' aria-label='Download current logs'>
                             <DownloadIcon />
@@ -258,13 +259,13 @@ const ComplexToolbarLogViewer = ({
     )
 
     const FooterButton = () => {
-        const handleClick = (_e) => {
+        const handleClick = () => {
             setIsPaused(false)
         }
         return (
             <Button onClick={handleClick} isBlock style={{}}>
                 <OutlinedPlayCircleIcon />
-                resume {linesBehind === 0 ? null : `and show ${linesBehind} lines`}
+                {t('log.resume')} {linesBehind === 0 ? null : t('log.behind.lines', [linesBehind])}
             </Button>
         )
     }
@@ -272,6 +273,7 @@ const ComplexToolbarLogViewer = ({
         <LogViewer
             data={renderData}
             theme='dark'
+            // @ts-ignore
             id='complex-toolbar-demo'
             scrollToRow={currentItemCount}
             innerRef={logViewerRef}
