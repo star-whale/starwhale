@@ -35,6 +35,7 @@ sw:
     load:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:
+    debug-port: ${SW_TASK_DEBUG_PORT:8000}
     deletion-delay-minutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
   online-eval:
     max-time-to-live-in-seconds: ${SW_ONLINE_EVAL_MAX_TTL_SECS:43200} # 12h

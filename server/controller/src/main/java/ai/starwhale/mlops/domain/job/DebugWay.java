@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.reporting;
+package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+public enum DebugWay {
+    VS_CODE;
 
-/**
- * convert taskReport to
- */
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class ReportedTask {
-
-    final Long id;
-    final TaskStatus status;
-    final Integer retryCount;
-    final String ip;
+    public String toDebugUrl(String ip, int port) {
+        switch (this) {
+            case VS_CODE:
+                return "http://" + ip + ":" + port;
+            default:
+                return "";
+        }
+    }
 }

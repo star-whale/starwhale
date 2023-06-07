@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.reporting;
+ALTER TABLE job_info
+    ADD debug_password VARCHAR(255) NULL,
+    ADD debug_way VARCHAR(255) NULL;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-
-/**
- * convert taskReport to
- */
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class ReportedTask {
-
-    final Long id;
-    final TaskStatus status;
-    final Integer retryCount;
-    final String ip;
-}
+ALTER TABLE task_info
+    ADD ip VARCHAR(255) NULL,
+    ADD debug_password VARCHAR(255) NULL,
+    ADD debug_way VARCHAR(255) NULL;

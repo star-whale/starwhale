@@ -48,5 +48,6 @@ public class TaskVo implements Serializable {
     private String resourcePool;
 
     private String stepName;
+    private String debugUrl;
 
 }

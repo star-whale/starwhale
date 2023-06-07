@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.domain.job.DebugWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
@@ -56,4 +57,10 @@ public class JobRequest implements Serializable {
     // jobs will not auto start if debug is true
     @JsonProperty("debugMode")
     private boolean debugMode = false;
+
+    @JsonProperty("debugPassword")
+    private String debugPassword;
+
+    @JsonProperty("debugWay")
+    private DebugWay debugWay = DebugWay.VS_CODE;
 }

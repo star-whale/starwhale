@@ -173,7 +173,8 @@ public class JobService {
     public Long createJob(String projectUrl,
             String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
             String comment, String resourcePool,
-            String handler, String stepSpecOverWrites, JobType type, boolean debugMode) {
+            String handler, String stepSpecOverWrites, JobType type,
+            DebugWay debugWay, boolean debugMode, String debugPassword) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
@@ -254,6 +255,7 @@ public class JobService {
                 .createdTime(new Date())
                 .modifiedTime(new Date())
                 .debugMode(debugMode)
+                .debugPassword(debugPassword)
                 .build();
 
         jobDao.addJob(jobEntity);

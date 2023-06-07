@@ -55,6 +55,8 @@ public class TaskBoConverter {
                 .uuid(entity.getTaskUuid())
                 .resultRootPath(new ResultPath(entity.getOutputPath()))
                 .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))
+                .ip(entity.getIp())
+                .debugWay(entity.getDebugWay())
                 .build();
         task.setStartTime(entity.getStartedTime().getTime());
         task.setFinishTime(entity.getFinishedTime().getTime());

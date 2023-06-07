@@ -24,19 +24,20 @@ import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 /**
  * the processor for every report from Agent
  */
 @Slf4j
 @Service
-public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
+public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
 
     final HotJobHolder jobHolder;
 
     final TaskMapper taskMapper;
 
-    public SimpleTaskStatusReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
+    public SimpleTaskModifyReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
         this.jobHolder = jobHolder;
         this.taskMapper = taskMapper;
     }
@@ -52,6 +53,9 @@ public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
                 }
+                if (StringUtils.hasText(reportedTask.getIp())) {
+                    taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
+                }
                 if (reportedTask.status != TaskStatus.UNKNOWN) {
                     taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
                 }
@@ -59,6 +63,11 @@ public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
             }
             if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                 optionalTasks.forEach(task -> task.setRetryNum(reportedTask.getRetryCount()));
+                taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
+            }
+            if (StringUtils.hasText(reportedTask.getIp())) {
+                optionalTasks.forEach(task -> task.setIp(reportedTask.getIp()));
+                taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
             }
             if (reportedTask.status != TaskStatus.UNKNOWN) {
                 optionalTasks.forEach(task -> task.updateStatus(reportedTask.getStatus()));

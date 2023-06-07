@@ -156,6 +156,8 @@ public class JobSpliteratorImpl implements JobSpliterator {
                                         .build()))
                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
                         .taskUuid(taskUuid)
+                        .debugWay(job.getDebugWay())
+                        .debugPassword(job.getDebugPassword())
                         .build());
             }
 

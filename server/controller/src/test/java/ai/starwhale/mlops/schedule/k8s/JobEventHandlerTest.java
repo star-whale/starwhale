@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskStatusReceiver;
+import ai.starwhale.mlops.reporting.TaskModifyReceiver;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -36,13 +36,13 @@ import org.junit.jupiter.api.Test;
 
 public class JobEventHandlerTest {
 
-    TaskStatusReceiver taskStatusReceiver;
+    TaskModifyReceiver taskModifyReceiver;
     JobEventHandler jobEventHandler;
 
     @BeforeEach
     public void setUp() {
-        taskStatusReceiver = mock(TaskStatusReceiver.class);
-        jobEventHandler = new JobEventHandler(taskStatusReceiver, mock(RuntimeService.class));
+        taskModifyReceiver = mock(TaskModifyReceiver.class);
+        jobEventHandler = new JobEventHandler(taskModifyReceiver, mock(RuntimeService.class));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0)));
+        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0, null)));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1)));
+        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1, null)));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0)));
+        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0, null)));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1)));
+        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1, null)));
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskStatusReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.UNKNOWN, 0)));
+        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.UNKNOWN, 0, null)));
     }
 
 }

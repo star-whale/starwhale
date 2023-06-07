@@ -64,7 +64,7 @@ public class TaskServiceTest {
                 setName("ppl");
             }
         });
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper);
+        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000);
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobDao = mock(JobDao.class);

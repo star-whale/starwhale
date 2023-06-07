@@ -28,6 +28,8 @@
     j.resource_pool,
     j.is_deleted as job_is_deleted,
     j.debug_mode,
+    j.debug_way,
+    j.debug_password,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -159,7 +161,9 @@
     result_output_path,
     step_spec,
     resource_pool,
-    debug_mode)
+    debug_mode,
+    debug_way,
+    debug_password)
     values (#{job.jobUuid},
     #{job.projectId},
     #{job.modelVersionId},
@@ -171,7 +175,9 @@
     #{job.resultOutputPath},
     #{job.stepSpec},
     #{job.resourcePool},
-    #{job.debugMode}
+    #{job.debugMode},
+    #{job.debugWay},
+    #{job.debugPassword}
     )
   </insert>
 
@@ -194,6 +200,8 @@
     <result property="runtimeVersionId" column="runtime_version_id"/>
     <result property="resourcePool" column="resource_pool"/>
     <result property="debugMode" column="debug_mode"/>
+    <result property="debugWay" column="debug_way"/>
+    <result property="debugPassword" column="debug_password"/>
     <association property="project" resultMap="projectResultMap"/>
     <association property="modelVersion" resultMap="modelVersionResultMap"/>
     <association property="owner" resultMap="userResultMap"/>

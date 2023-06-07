@@ -166,7 +166,7 @@ install_code_server () {
 
 run_code_server () {
     echo "-->[Preparing] run code-server ..."
-    PASSWORD=${SW_DEBUG_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:8000 --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/debug.log 2>&1 &
+    PASSWORD=${SW_DEBUG_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:${SW_DEBUG_PORT:-8000} --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/debug.log 2>&1 &
     echo "-->[Preparing] run code-server done."
 }
 
@@ -182,7 +182,7 @@ case "$1" in
         prepare $1 && serve
         ;;
     debug)
-        install_code_server && run_code_server   
+        install_code_server && run_code_server
         tail -f /var/log/debug.log
         ;;
     *)

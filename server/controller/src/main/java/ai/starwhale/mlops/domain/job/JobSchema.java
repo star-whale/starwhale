@@ -51,6 +51,8 @@ public interface JobSchema {
     String StepSpecColumn = "sys/step_spec";
     String ResourcePoolColumn = "sys/resource_pool";
     String CommentColumn = "sys/job_comment";
+    String DebugModeColumn = "sys/debug_mode";
+    String DebugWayColumn = "sys/debug_way";
     String IsDeletedColumn = "sys/_is_deleted";
     TableSchemaDesc tableSchemaDesc = new TableSchemaDesc(KeyColumn, List.of(
             ColumnSchemaDesc.builder().name(KeyColumn).type(STRING).build(),
@@ -79,6 +81,8 @@ public interface JobSchema {
             ColumnSchemaDesc.builder().name(StepSpecColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(ResourcePoolColumn).type(STRING).build(),
             ColumnSchemaDesc.builder().name(CommentColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(DebugWayColumn).type(STRING).build(),
+            ColumnSchemaDesc.builder().name(DebugModeColumn).type(INT32).build(),
             ColumnSchemaDesc.builder().name(IsDeletedColumn).type(INT32).build()
     ));
 }

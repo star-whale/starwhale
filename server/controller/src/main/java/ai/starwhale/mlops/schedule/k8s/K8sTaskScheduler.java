@@ -65,6 +65,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final K8sJobTemplate k8sJobTemplate;
 
     final String instanceUri;
+    final int debugPort;
     final int datasetLoadBatchSize;
     final String restartPolicy;
     final int backoffLimit;
@@ -77,6 +78,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
             @Value("${sw.instance-uri}") String instanceUri,
+            @Value("${sw.task.debug-port}") int debugPort,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
@@ -87,6 +89,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.instanceUri = instanceUri;
+        this.debugPort = debugPort;
         this.storageAccessService = storageAccessService;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
@@ -270,6 +273,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         if (!gpu) {
             // https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration
             coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
+        }
+
+        if (swJob.isDebugMode()) {
+            coreContainerEnvs.put("SW_DEBUG_TOKEN", swJob.getDebugPassword());
+            coreContainerEnvs.put("SW_DEBUG_PORT", String.valueOf(debugPort));
         }
 
         var envs = mapToEnv(coreContainerEnvs);

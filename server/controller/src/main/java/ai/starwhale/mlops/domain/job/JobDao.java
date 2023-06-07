@@ -108,6 +108,8 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .createdTime(flattenEntity.getCreatedTime())
                 .modifiedTime(flattenEntity.getModifiedTime())
                 .debugMode(flattenEntity.isDebugMode())
+                .debugWay(flattenEntity.getDebugWay())
+                .debugPassword(flattenEntity.getDebugPassword())
                 .build();
     }
 
