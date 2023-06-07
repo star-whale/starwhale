@@ -11,7 +11,7 @@ export interface IProjectLayoutProps {
     children: React.ReactNode
 }
 
-export default function ProjectLayout({ children }: IProjectLayoutProps) {
+function ProjectLayout({ children }: IProjectLayoutProps) {
     const { projectId } = useParams<{ projectId: string }>()
     const projectInfo = useQuery(`fetchProject:${projectId}`, () => fetchProject(projectId))
     const { project, setProject } = useProject()
@@ -38,3 +38,6 @@ export default function ProjectLayout({ children }: IProjectLayoutProps) {
 
     return <BaseSubLayout>{children}</BaseSubLayout>
 }
+
+ProjectLayout.displayName = 'ProjectLayout'
+export default ProjectLayout

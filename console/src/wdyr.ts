@@ -1,14 +1,15 @@
-import * as React from 'react'
+/// <reference types="@welldone-software/why-did-you-render" />
+
+import React from 'react'
 
 if (import.meta.env.DEV) {
-    import('@welldone-software/why-did-you-render').then((m) => {
-        if (window.location.search.indexOf('why-render') === -1) return
-
-        m.default(React, {
+    if (window.location.search.indexOf('why-render') !== -1) {
+        const whyDidYouRender = await import('@welldone-software/why-did-you-render')
+        whyDidYouRender.default(React, {
             include: [/.*/],
-            exclude: [/^BrowserRouter/, /^Link/, /^Route/],
+            exclude: [/^BrowserRouter/, /^Router/, /^Link/, /^Styled/, /^Unknown/, /^WithTheme/, /^Popover/],
             trackHooks: true,
             trackAllPureComponents: true,
         })
-    })
+    }
 }

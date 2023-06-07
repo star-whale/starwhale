@@ -13,6 +13,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -52,12 +53,14 @@ export default function ModelListCard() {
                                     {t('Version History')}
                                 </Button>
                                 &nbsp;&nbsp;
-                                <Button
-                                    kind='tertiary'
-                                    onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
-                                >
-                                    {t('online eval')}
-                                </Button>
+                                <WithCurrentAuth id='online-eval'>
+                                    <Button
+                                        kind='tertiary'
+                                        onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
+                                    >
+                                        {t('online eval')}
+                                    </Button>
+                                </WithCurrentAuth>
                             </>,
                         ]
                     }) ?? []

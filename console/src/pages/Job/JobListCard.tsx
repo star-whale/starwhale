@@ -86,12 +86,14 @@ export default function JobListCard() {
                                             {t('Cancel')}
                                         </Button>
                                         &nbsp;&nbsp;
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                        >
-                                            {t('Pause')}
-                                        </Button>
+                                        <WithCurrentAuth id='job-pause'>
+                                            <Button
+                                                kind='tertiary'
+                                                onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                            >
+                                                {t('Pause')}
+                                            </Button>
+                                        </WithCurrentAuth>
                                     </>
                                 ),
                                 [JobStatusType.RUNNING]: (
@@ -103,12 +105,14 @@ export default function JobListCard() {
                                             {t('Cancel')}
                                         </Button>
                                         &nbsp;&nbsp;
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                        >
-                                            {t('Pause')}
-                                        </Button>
+                                        <WithCurrentAuth id='job-pause'>
+                                            <Button
+                                                kind='tertiary'
+                                                onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                            >
+                                                {t('Pause')}
+                                            </Button>
+                                        </WithCurrentAuth>
                                     </>
                                 ),
                                 [JobStatusType.PAUSED]: (
@@ -120,22 +124,26 @@ export default function JobListCard() {
                                             {t('Cancel')}
                                         </Button>
                                         &nbsp;&nbsp;
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                        >
-                                            {t('Resume')}
-                                        </Button>
+                                        <WithCurrentAuth id='job-resume'>
+                                            <Button
+                                                kind='tertiary'
+                                                onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                            >
+                                                {t('Resume')}
+                                            </Button>
+                                        </WithCurrentAuth>
                                     </>
                                 ),
                                 [JobStatusType.FAIL]: (
                                     <>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                        >
-                                            {t('Resume')}
-                                        </Button>
+                                        <WithCurrentAuth id='job-resume'>
+                                            <Button
+                                                kind='tertiary'
+                                                onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                            >
+                                                {t('Resume')}
+                                            </Button>
+                                        </WithCurrentAuth>
                                     </>
                                 ),
                                 [JobStatusType.SUCCESS]: (

@@ -7,22 +7,10 @@ import { listProjectRole } from '../services/project'
 export function useFetchProjectRole(projectId: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
-    const members = useQuery(
-        ['fetchProjectMembers', projectId],
-        () => {
-            if (!projectId) return
-            // eslint-disable-next-line consistent-return
-            return listProjectRole(projectId)
-        },
-        { refetchOnWindowFocus: true, enabled: true }
-    )
-
-    React.useEffect(() => {
-        if (projectId) {
-            members.refetch()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId])
+    const members = useQuery(['fetchProjectMembers', projectId], () => listProjectRole(projectId), {
+        refetchOnWindowFocus: true,
+        enabled: !!projectId,
+    })
 
     const role = React.useMemo(() => {
         if (!members.data) return Role.NONE
