@@ -22,8 +22,11 @@ from starwhale.consts import (
     DefaultYAMLName,
     SW_AUTO_DIRNAME,
     ENV_CONDA_PREFIX,
+    ENV_SW_IMAGE_REPO,
+    DEFAULT_IMAGE_REPO,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import BundleType, DependencyType, RuntimeLockFileType
@@ -54,7 +57,10 @@ from starwhale.core.runtime.model import (
     RuntimeInfoFilter,
     StandaloneRuntime,
 )
-from starwhale.core.runtime.store import RuntimeStorage
+from starwhale.core.runtime.store import (
+    RuntimeStorage,
+    get_docker_run_image_by_manifest,
+)
 
 _runtime_data_dir = f"{ROOT_DIR}/data/runtime"
 _swrt = open(f"{_runtime_data_dir}/pytorch.swrt").read()
@@ -2744,6 +2750,61 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not m_extract.called
         assert m_restore.called
         assert m_restore.call_args[0][0] == snapshot_dir
+
+    @patch("starwhale.core.runtime.store.SWCliConfigMixed")
+    def test_docker_run_image(self, m_config: MagicMock) -> None:
+        manifest = {
+            "docker": {
+                "custom_run_image": "user-faked-image:v1",
+                "builtin_run_image": {
+                    "repo": "docker-registry.starwhale.cn",
+                    "name": "starwhale",
+                    "tag": "latest",
+                },
+            }
+        }
+        assert manifest["docker"][
+            "custom_run_image"
+        ] == get_docker_run_image_by_manifest(manifest)
+
+        manifest = {
+            "docker": {
+                "custom_run_image": "",
+                "builtin_run_image": {
+                    "repo": "test-registry.starwhale.cn",
+                    "name": "starwhale",
+                    "tag": "latest",
+                },
+            }
+        }
+
+        m_config.return_value.docker_builtin_image_repo = ""
+        assert (
+            "test-registry.starwhale.cn/starwhale:latest"
+            == get_docker_run_image_by_manifest(manifest)
+        )
+
+        repo_from_env = "ghcr.io/repo-from-env"
+        os.environ[ENV_SW_IMAGE_REPO] = repo_from_env
+        image = get_docker_run_image_by_manifest(manifest)
+        assert image == f"{repo_from_env}/starwhale:latest"
+
+        repo_from_config = "docker.io/image-from-config"
+        m_config.return_value.docker_builtin_image_repo = repo_from_config
+        os.environ.pop(ENV_SW_IMAGE_REPO, None)
+        image = get_docker_run_image_by_manifest(manifest)
+        assert image == f"{repo_from_config}/starwhale:latest"
+
+        m_config.return_value.docker_builtin_image_repo = ""
+        manifest["docker"]["builtin_run_image"]["repo"] = ""
+        image = get_docker_run_image_by_manifest(manifest)
+        assert image.startswith(DEFAULT_IMAGE_REPO)
+
+        manifest = {"base_image": "old_version_faked_image"}
+        assert manifest["base_image"] == get_docker_run_image_by_manifest(manifest)
+
+        manifest = {}
+        assert DEFAULT_SW_TASK_RUN_IMAGE == get_docker_run_image_by_manifest(manifest)
 
     def test_property(self) -> None:
         name = "rttest"

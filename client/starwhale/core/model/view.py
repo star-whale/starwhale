@@ -271,15 +271,17 @@ class ModelTermView(BaseTermView):
         if runtime_uri:
             if runtime_uri.typ == ResourceType.runtime:
                 runtime = StandaloneRuntime(runtime_uri)
-                docker_image = runtime.store.get_docker_base_image()
+                docker_image = runtime.store.get_docker_run_image()
             elif runtime_uri.typ == ResourceType.model:
                 model = StandaloneModel(runtime_uri)
-                docker_image = model.store.get_packaged_runtime_base_image()
+                docker_image = model.store.get_packaged_runtime_docker_run_image()
             else:
                 raise NoSupportError(f"not support {runtime_uri} to fetch docker image")
 
         mounts = [str(model_src_dir.resolve().absolute())]
-        envs = {SWEnv.runtime_version: str(runtime_uri)} if runtime_uri else {}
+        envs = {"SW_INSTANCE_URI": "local"}
+        if runtime_uri:
+            envs[SWEnv.runtime_version] = str(runtime_uri)
         cmd = docker.gen_swcli_docker_cmd(
             docker_image,
             envs=envs,

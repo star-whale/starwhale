@@ -743,7 +743,9 @@ class StandaloneModelTestCase(TestCase):
             m_gencmd.return_value = "hi"
             m_call.return_value = 0
             ModelTermView.run_in_container(model_src_dir=Path(d), docker_image="img1")
-            m_gencmd.assert_called_once_with("img1", envs={}, mounts=[d])
+            m_gencmd.assert_called_once_with(
+                "img1", envs={"SW_INSTANCE_URI": "local"}, mounts=[d]
+            )
             m_call.assert_called_once_with("hi", shell=True)
 
     @patch("starwhale.core.model.model.ModelConfig.do_validate")

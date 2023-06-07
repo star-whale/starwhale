@@ -16,6 +16,7 @@ from starwhale.consts import (
     DEFAULT_INSTANCE,
     ENV_SW_CLI_CONFIG,
     DATA_STORE_DIRNAME,
+    DEFAULT_IMAGE_REPO,
     STANDALONE_INSTANCE,
     ENV_SW_LOCAL_STORAGE,
     LOCAL_CONFIG_VERSION,
@@ -69,7 +70,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
     from starwhale.base.type import InstanceType
 
     env_root = os.environ.get(ENV_SW_LOCAL_STORAGE)
-    c = dict(
+    c: t.Dict = dict(
         version=LOCAL_CONFIG_VERSION,
         instances={
             STANDALONE_INSTANCE: dict(
@@ -82,6 +83,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
         },
         current_instance=DEFAULT_INSTANCE,
         storage=dict(root=env_root or str(DEFAULT_SW_LOCAL_STORAGE.resolve())),
+        docker=dict(builtin_image_repo=DEFAULT_IMAGE_REPO),
     )
     render_swcli_config(c, fpath)
     return c
@@ -155,6 +157,10 @@ class SWCliConfigMixed:
     @property
     def link_auths(self) -> t.Any:
         return self._config.get("link_auths")
+
+    @property
+    def docker_builtin_image_repo(self) -> str:
+        return self._config.get("docker", {}).get("builtin_image_repo", "")  # type: ignore[no-any-return]
 
     def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
         instance = self._get_instance_alias(instance)

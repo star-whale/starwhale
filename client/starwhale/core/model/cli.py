@@ -548,7 +548,7 @@ def _run(
 
     if in_container:
         ModelTermView.run_in_container(
-            workdir=model_src_dir,
+            model_src_dir=model_src_dir,
             runtime_uri=runtime_uri,
             docker_image=image,
         )
