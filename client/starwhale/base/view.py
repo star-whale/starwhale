@@ -135,7 +135,7 @@ class BaseTermView(SWCliConfigMixed):
     def prepare_build_bundle(
         project: str, bundle_name: str, typ: ResourceType, auto_gen_version: bool = True
     ) -> Resource:
-        console.print(f":construction: start to build {typ} bundle...")
+        console.print(f":construction: start to build {typ.value} bundle...")
         project_uri = Project(project)
         if not bundle_name:
             raise FieldTypeOrValueError("no bundle_name")
