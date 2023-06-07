@@ -24,7 +24,6 @@ import './LogView.scss'
 import useTranslation from '@/hooks/useTranslation'
 
 const empty: any[] = []
-const RESUME_HEIGHT = 32
 
 function useSourceData({ ws = '', data }: { ws?: string; data?: string }) {
     const [content, setContent] = React.useState<any[]>([])
@@ -39,8 +38,7 @@ function useSourceData({ ws = '', data }: { ws?: string; data?: string }) {
         wsUrl: ws,
         onMessage: React.useCallback((d) => {
             setContent((prev) => {
-                prev.push(d)
-                return prev
+                return [...prev, d]
             })
         }, []),
         onClose: React.useCallback(() => {
@@ -81,7 +79,6 @@ const ComplexToolbarLogViewer = ({
 
     const reset = React.useCallback(() => {
         setLinesBehind(0)
-        setCurrentItemCount(0)
         setBuffer([])
         setCurrentItemCount(0)
         if (logViewerRef && logViewerRef.current) {
@@ -96,10 +93,12 @@ const ComplexToolbarLogViewer = ({
     }, [dataSources])
 
     React.useEffect(() => {
-        setCurrentItemCount(selectedData.length)
-        setBuffer(selectedData as any)
-        setRenderData(selectedData.join('\n'))
-    }, [selectedData])
+        if (currentItemCount !== selectedData.length) {
+            setCurrentItemCount(selectedData.length)
+            setBuffer(selectedData as any)
+            setRenderData(selectedData.join('\n'))
+        }
+    }, [selectedData, currentItemCount])
 
     React.useEffect(() => {
         if (!isPaused && buffer.length > 0) {
@@ -162,7 +161,7 @@ const ComplexToolbarLogViewer = ({
 
     const onScrollTop = () => {
         if (logViewerRef && logViewerRef.current) {
-            logViewerRef.current?.scrollToItem(1)
+            logViewerRef.current?.scrollToItem(0)
         }
     }
 
@@ -263,7 +262,13 @@ const ComplexToolbarLogViewer = ({
             setIsPaused(false)
         }
         return (
-            <Button onClick={handleClick} isBlock style={{}}>
+            <Button
+                onClick={handleClick}
+                isBlock
+                style={{
+                    visibility: isPaused ? 'visible' : 'hidden',
+                }}
+            >
                 <OutlinedPlayCircleIcon />
                 {t('log.resume')} {linesBehind === 0 ? null : t('log.behind.lines', [linesBehind])}
             </Button>
@@ -279,9 +284,13 @@ const ComplexToolbarLogViewer = ({
             innerRef={logViewerRef}
             height='100%'
             style={{
-                flexGrow: 0,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 minHeight: '500px',
-                flexBasis: isPaused ? `calc(100% - ${RESUME_HEIGHT}px)` : '100%',
+                flex: 'auto',
             }}
             toolbar={
                 <Toolbar>

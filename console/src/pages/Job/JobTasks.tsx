@@ -26,21 +26,8 @@ export default function JobTasks() {
     const onAction = useCallback(
         async (type, task: ITaskSchema) => {
             setCurrentTask(task)
-            const data = await fetchTaskOfflineLogFiles(task?.id)
             const files: Record<string, string> = {}
-            if (!_.isEmpty(data)) {
-                data.map(async (v: string) => {
-                    const content = await fetchTaskOfflineFileLog(task?.id, v)
-                    const key = [task?.stepName, v].join('@')
-                    files[key] = content ?? ''
-                    setCurrentLogFiles({
-                        ...currentLogFiles,
-                        ...files,
-                    })
-                })
-            } else {
-                toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
-            }
+
             if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
                 const key = [task?.stepName, task?.id].join('@')
                 files[key] = 'ws'
@@ -48,6 +35,21 @@ export default function JobTasks() {
                     ...currentLogFiles,
                     ...files,
                 })
+            } else {
+                const data = await fetchTaskOfflineLogFiles(task?.id)
+                if (!_.isEmpty(data)) {
+                    data.map(async (v: string) => {
+                        const content = await fetchTaskOfflineFileLog(task?.id, v)
+                        const key = [task?.stepName, v].join('@')
+                        files[key] = content ?? ''
+                        setCurrentLogFiles({
+                            ...currentLogFiles,
+                            ...files,
+                        })
+                    })
+                } else {
+                    toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
+                }
             }
 
             setExpanded(true)
@@ -149,17 +151,22 @@ export default function JobTasks() {
 
     return (
         <div
+            data-type='job-tasks'
             style={{
                 width: '100%',
-                flex: 1,
+                flex: '1',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
+                minHeight: 0,
             }}
         >
             <TaskListCard header={null} onAction={onAction} />
 
-            <Card outTitle={t('Logs collected')} style={{ padding: 0, flex: 1, margin: 0 }}>
+            <Card
+                outTitle={t('Logs collected')}
+                style={{ padding: 0, flex: 1, margin: 0, position: 'relative', flexDirection: 'column' }}
+            >
                 <React.Suspense fallback={<BusyPlaceholder />}>
                     <ComplexToolbarLogViewer sources={sources} />
                 </React.Suspense>

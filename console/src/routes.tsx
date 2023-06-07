@@ -172,7 +172,7 @@ const Routes = () => {
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'
-                                            to='/projects/:projectId/jobs/:jobId/actions'
+                                            to='/projects/:projectId/jobs/:jobId/tasks'
                                         />
                                     </Switch>
                                 </JobOverviewLayout>
