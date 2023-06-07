@@ -59,7 +59,6 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     @Override
     public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) {
-        collectLog(obj);
     }
 
     private Long getTaskId(V1Pod pod) {
