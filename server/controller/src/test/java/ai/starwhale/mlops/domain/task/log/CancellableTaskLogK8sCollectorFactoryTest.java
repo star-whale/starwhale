@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.task.log;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,7 +48,7 @@ public class CancellableTaskLogK8sCollectorFactoryTest {
         when(respBody.byteStream()).thenReturn(new ByteArrayInputStream("".getBytes()));
         when(resp.body()).thenReturn(respBody);
         when(call.execute()).thenReturn(resp);
-        when(k8sClient.readLog(anyString(), anyString())).thenReturn(call);
+        when(k8sClient.readLog(anyString(), anyString(), anyBoolean())).thenReturn(call);
         var factory = new CancellableTaskLogK8sCollectorFactory(k8sClient);
         var collector = factory.make(1L);
         Assertions.assertNotNull(collector);

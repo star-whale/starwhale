@@ -278,7 +278,7 @@ public class K8sClient {
         InputStream is = null;
         Response response = null;
         try {
-            Call call = readLog(pod.getMetadata().getName(), containerName);
+            Call call = readLog(pod.getMetadata().getName(), containerName, false);
             response = call.execute();
             if (!response.isSuccessful()) {
                 throw new ApiException(response.code(), "Logs request failed: " + response.code());
@@ -304,12 +304,12 @@ public class K8sClient {
         log.debug("log for container {} collected", containerName);
     }
 
-    public Call readLog(String pod, String container) throws IOException, ApiException {
+    public Call readLog(String pod, String container, boolean follow) throws IOException, ApiException {
         return coreV1Api.readNamespacedPodLogCall(
                 pod,
                 ns,
                 container,
-                true,
+                follow,
                 null,
                 null,
                 "false",

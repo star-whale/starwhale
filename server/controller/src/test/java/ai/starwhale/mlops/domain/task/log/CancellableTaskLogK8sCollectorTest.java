@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.task.log;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -60,7 +61,7 @@ public class CancellableTaskLogK8sCollectorTest {
         when(resp.body()).thenReturn(respBody);
         when(call.execute()).thenReturn(resp);
 
-        when(k8sClient.readLog(anyString(), anyString())).thenReturn(call);
+        when(k8sClient.readLog(anyString(), anyString(), anyBoolean())).thenReturn(call);
         var ins = new CancellableTaskLogK8sCollector(k8sClient, 1L);
 
         assertThat(ins.readLine(), is(line));

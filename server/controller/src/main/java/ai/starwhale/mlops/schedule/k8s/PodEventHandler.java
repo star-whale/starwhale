@@ -131,6 +131,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     }
 
     private void collectLog(V1Pod pod) {
+        log.debug("collect log for pod {} status {}", pod.getMetadata().getName(), pod.getStatus());
         if (null == pod.getStatus()
                 || null == pod.getStatus().getContainerStatuses()
                 || null == pod.getStatus().getContainerStatuses().get(0)
