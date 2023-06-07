@@ -45,7 +45,7 @@ public interface TaskMapper {
     @Insert("insert into task_info"
             + " (task_uuid, step_id, task_status, task_request, output_path, debug_way, debug_password)"
             + " values (#{task.taskUuid}, #{task.stepId}, #{task.taskStatus},"
-            + " #{task.taskRequest}, #{task.outputPath}, #{task.debugWay}, #{task.debugPassword)")
+            + " #{task.taskRequest}, #{task.outputPath}, #{task.debugWay}, #{task.debugPassword})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int addTask(@Param("task") TaskEntity task);
 
