@@ -41,7 +41,7 @@ public interface TaskMapper {
     @Select("select " + COLUMNS + " from task_info where id = #{taskId}")
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 
-    @Select("select " + COLUMNS + " from task_info where task_uuid = #{uuid}")
+    @Select("select " + COLUMNS + " from task_info where task_uuid = #{taskUuid}")
     TaskEntity findTaskByUuid(@Param("taskUuid") String uuid);
 
 
