@@ -19,7 +19,7 @@ def download(checkpoint: str = "bigscience/mt0-xxl"):
 
 
 if __name__ == "__main__":
-    if sys.argv[1]:
+    if len(sys.argv) == 2:
         download(sys.argv[1])
     else:
         download()
