@@ -36,6 +36,7 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageInfo;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -71,7 +72,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testListTaskWithResourcePool() {
+    public void testListTaskWithJobResourcePool() {
         when(jobDao.findJob(any())).thenReturn(
                 Job.builder().id(1L).resourcePool(ResourcePool.builder().name("a").build()).build());
         var startedTime = new Date();
@@ -102,9 +103,9 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testListTaskWithoutResourcePool() {
+    public void testListTaskWithStepResourcePool() throws IOException {
         when(jobDao.findJob(any())).thenReturn(
-                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("rp").build()).build());
+                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("pool from job").build()).build());
         var startedTime = new Date();
         var finishedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
@@ -116,6 +117,14 @@ public class TaskServiceTest {
                                 .taskUuid("uuid2")
                                 .taskStatus(
                                         TaskStatus.SUCCESS).build()));
+        when(stepMapper.findById(any())).thenReturn(new StepEntity() {
+            {
+                setName("ppl");
+                // resource pool from step will equal to job's resource pool normally
+                // we use this to test the priority of resource pool
+                setPoolInfo(ResourcePool.builder().name("job from step").build().toJson());
+            }
+        });
         PageInfo<TaskVo> taskVoPageInfo = taskService.listTasks("1",
                 PageParams.builder().pageNum(0).pageSize(3).build());
         Assertions.assertEquals(1, taskVoPageInfo.getPages());
@@ -124,10 +133,10 @@ public class TaskServiceTest {
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
                         .uuid("uuid1")
-                        .taskStatus(TaskStatus.RUNNING).resourcePool("rp").stepName("ppl").build(),
+                        .taskStatus(TaskStatus.RUNNING).resourcePool("job from step").stepName("ppl").build(),
                 TaskVo.builder().id("2").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
                         .uuid("uuid2")
-                        .taskStatus(TaskStatus.SUCCESS).resourcePool("rp").stepName("ppl").build()));
+                        .taskStatus(TaskStatus.SUCCESS).resourcePool("job from step").stepName("ppl").build()));
 
 
     }

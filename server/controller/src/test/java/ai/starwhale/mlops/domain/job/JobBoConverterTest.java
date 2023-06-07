@@ -53,7 +53,7 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -67,7 +67,7 @@ public class JobBoConverterTest {
     final DatasetBoConverter converter = mock(DatasetBoConverter.class);
 
     @Test
-    public void testJobBoConverter() throws JsonProcessingException {
+    public void testJobBoConverter() throws IOException {
 
         JobEntity jobEntity = JobEntity.builder()
                 .id(1L)

@@ -45,8 +45,10 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -169,19 +171,30 @@ public class JobBoConverter {
 
     public Job fillStepsAndTasks(Job job) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
-        List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
-                .peek(step -> {
-                    step.setJob(job);
-                    List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
-                    List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);
-                    step.setTasks(tasks);
-                    if (step.getStatus() == StepStatus.RUNNING) {
-                        if (job.getCurrentStep() != null) {
-                            log.error("ERROR!!!!! A job has two running steps job id: {}", job.getId());
-                        }
-                        job.setCurrentStep(step);
-                    }
-                }).collect(Collectors.toList());
+        List<Step> steps = stepEntities.stream().map(entity -> {
+            try {
+                var step = stepConverter.fromEntity(entity);
+                if (step.getResourcePool() == null) {
+                    // backward compatibility
+                    step.setResourcePool(job.getResourcePool());
+                }
+                return step;
+            } catch (IOException e) {
+                log.error("can not convert step entity to step", e);
+                return null;
+            }
+        }).filter(Objects::nonNull).peek(step -> {
+            step.setJob(job);
+            List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
+            List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);
+            step.setTasks(tasks);
+            if (step.getStatus() == StepStatus.RUNNING) {
+                if (job.getCurrentStep() != null) {
+                    log.error("ERROR!!!!! A job has two running steps job id: {}", job.getId());
+                }
+                job.setCurrentStep(step);
+            }
+        }).collect(Collectors.toList());
         linkSteps(steps, stepEntities);
         job.setSteps(steps);
         return job;

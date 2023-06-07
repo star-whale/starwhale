@@ -142,7 +142,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 containerSpecMap.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
-            var pool = job.getResourcePool();
+            var pool = task.getStep().getResourcePool();
+            if (pool == null) {
+                // backward compatibility
+                pool = task.getStep().getJob().getResourcePool();
+            }
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             List<Toleration> tolerations = pool != null ? pool.getTolerations() : null;
             Map<String, String> annotations = new HashMap<>();
@@ -203,7 +207,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
     private List<RuntimeResource> getPatchedResources(Task task) {
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
-        var pool = task.getStep().getJob().getResourcePool();
+        var pool = task.getStep().getResourcePool();
+        if (pool == null) {
+            // use resource pool of job, for backward compatibility
+            pool = task.getStep().getJob().getResourcePool();
+        }
         if (pool != null) {
             runtimeResources = pool.patchResources(runtimeResources);
         }

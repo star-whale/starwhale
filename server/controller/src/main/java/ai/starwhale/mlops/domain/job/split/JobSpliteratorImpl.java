@@ -100,6 +100,14 @@ public class JobSpliteratorImpl implements JobSpliterator {
             throw new SwValidationException(ValidSubject.MODEL);
         }
 
+        var poolInfo = "";
+        try {
+            poolInfo = job.getResourcePool().toJson();
+        } catch (Exception e) {
+            log.error("parsing pool info error", e);
+            throw new SwValidationException(ValidSubject.MODEL);
+        }
+
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
         Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();
@@ -114,6 +122,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
                     .taskNum(stepSpec.getReplicas())
                     .concurrency(stepSpec.getConcurrency())
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
+                    .poolInfo(poolInfo)
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);

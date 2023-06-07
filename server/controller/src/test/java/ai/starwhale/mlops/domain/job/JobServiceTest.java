@@ -24,7 +24,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -289,25 +288,6 @@ public class JobServiceTest {
         res = service.createJob("1", "3", "1", "2",
                 "", "1", "", overviewJobSpec, JobType.FINE_TUNE, false);
         assertThat(res, is(1L));
-    }
-
-    @Test
-    public void testSplitNewCreatedJobs() {
-        given(jobDao.findJobByStatusIn(any()))
-                .willReturn(List.of(Job.builder().id(1L).build()));
-        given(jobDao.findJobById(same(1L)))
-                .willReturn(Job.builder().id(1L).build());
-        final List<Job> jobs = new ArrayList<>();
-        doAnswer(invocation -> {
-            jobs.add(invocation.getArgument(0));
-            return invocation.getArgument(0);
-        }).when(jobLoader).load(any(), anyBoolean());
-
-        service.splitNewCreatedJobs();
-        assertThat(jobs, allOf(
-                is(iterableWithSize(1)),
-                is(hasItem(hasProperty("id", is(1L))))
-        ));
     }
 
     @Test

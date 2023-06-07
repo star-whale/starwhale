@@ -16,8 +16,10 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
+import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -137,5 +139,13 @@ public class ResourcePool {
             return visibleUserIds.contains(userId);
         }
         return true;
+    }
+
+    public static ResourcePool fromJson(String content) throws IOException {
+        return Constants.objectMapper.readValue(content, ResourcePool.class);
+    }
+
+    public String toJson() throws IOException {
+        return Constants.objectMapper.writeValueAsString(this);
     }
 }

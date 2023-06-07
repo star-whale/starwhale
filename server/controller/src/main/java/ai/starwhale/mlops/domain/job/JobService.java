@@ -71,7 +71,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -258,31 +257,16 @@ public class JobService {
                 .build();
 
         jobDao.addJob(jobEntity);
-        log.info("Job has been created. ID={}", jobEntity.getId());
+        var jobId = jobEntity.getId();
+        log.info("Job has been created. ID={}", jobId);
 
-        return jobEntity.getId();
-    }
+        var job = jobDao.findJobById(jobId);
+        jobSpliterator.split(job);
+        jobBoConverter.fillStepsAndTasks(job);
+        jobLoader.load(job, false);
+        jobUpdateHelper.updateJob(job);
 
-    /**
-     * load created jobs from user at fixed delay
-     */
-    @Scheduled(initialDelay = 10000, fixedDelay = 10000)
-    public void splitNewCreatedJobs() {
-        jobDao.findJobByStatusIn(List.of(JobStatus.CREATED))
-                .forEach(job -> {
-                    //one transaction
-                    try {
-                        jobSpliterator.split(job);
-                        jobBoConverter.fillStepsAndTasks(job);
-                        jobLoader.load(job, false);
-                        jobUpdateHelper.updateJob(job);
-                    } catch (Exception e) {
-                        log.error("splitting job error {}", job.getId(), e);
-                        jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
-                    }
-
-                });
-
+        return jobId;
     }
 
     /**

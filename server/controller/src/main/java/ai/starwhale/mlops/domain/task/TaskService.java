@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -62,8 +63,12 @@ public class TaskService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Job job = jobDao.findJob(jobUrl);
         List<TaskVo> tasks = taskMapper.listTasks(job.getId()).stream().map(taskConvertor::convert)
-                .peek(taskVo -> taskVo.setResourcePool(job.getResourcePool().getName())).collect(
-                        Collectors.toList());
+                .peek(taskVo -> {
+                    if (!StringUtils.hasText(taskVo.getResourcePool())) {
+                        taskVo.setResourcePool(job.getResourcePool().getName());
+                    }
+                })
+                .collect(Collectors.toList());
         return PageInfo.of(tasks);
 
     }
