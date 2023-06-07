@@ -77,12 +77,16 @@ public class JobController implements JobApi {
         this.runtimeSuggestionService = runtimeSuggestionService;
         this.idConvertor = idConvertor;
         this.dagQuerier = dagQuerier;
-        this.jobActions = InvokerManager.<String, String>create()
-                .addInvoker("cancel", jobService::cancelJob)
-                .addInvoker("pause", jobService::pauseJob)
-                .addInvoker("resume", jobService::resumeJob)
-                .unmodifiable();
         this.featuresProperties = featuresProperties;
+        var actions = InvokerManager.<String, String>create()
+                .addInvoker("cancel", jobService::cancelJob);
+        if (featuresProperties.isJobPauseEnabled()) {
+            actions.addInvoker("pause", jobService::pauseJob);
+        }
+        if (featuresProperties.isJobResumeEnabled()) {
+            actions.addInvoker("resume", jobService::resumeJob);
+        }
+        this.jobActions = actions.unmodifiable();
     }
 
     @Override

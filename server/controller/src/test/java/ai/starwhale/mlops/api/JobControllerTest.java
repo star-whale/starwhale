@@ -280,4 +280,44 @@ public class JobControllerTest {
         assertThrows(StarwhaleApiException.class,
                 () -> controller.getModelServingStatus(1L, 2L));
     }
+
+    @Test
+    public void testJobPauseDisabled() {
+        var disabled = List.of("job-pause");
+        featuresProperties.setDisabled(disabled);
+        var controller = new JobController(
+                jobService,
+                taskService,
+                modelServingService,
+                runtimeSuggestionService,
+                new IdConverter(),
+                dagQuerier,
+                featuresProperties
+        );
+        assertThrows(StarwhaleApiException.class,
+                () -> controller.action("", "job1", "pause"));
+
+        // resume is not disabled
+        controller.action("", "job1", "resume");
+    }
+
+    @Test
+    public void testJobResumeDisabled() {
+        var disabled = List.of("job-resume");
+        featuresProperties.setDisabled(disabled);
+        var controller = new JobController(
+                jobService,
+                taskService,
+                modelServingService,
+                runtimeSuggestionService,
+                new IdConverter(),
+                dagQuerier,
+                featuresProperties
+        );
+        assertThrows(StarwhaleApiException.class,
+                () -> controller.action("", "job1", "resume"));
+
+        // pause is not disabled
+        controller.action("", "job1", "pause");
+    }
 }
