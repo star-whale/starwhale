@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.domain.job;
 
-public enum DebugWay {
+public enum DevWay {
     VS_CODE;
 
-    public String toDebugUrl(String ip, int port) {
+    public String toDevUrl(String ip, int port) {
         switch (this) {
             case VS_CODE:
                 return "http://" + ip + ":" + port;

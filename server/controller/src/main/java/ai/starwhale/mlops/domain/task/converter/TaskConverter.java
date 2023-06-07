@@ -35,13 +35,13 @@ public class TaskConverter {
 
     private final StepMapper stepMapper;
 
-    private final int debugPort;
+    private final int devPort;
 
     public TaskConverter(IdConverter idConvertor, StepMapper stepMapper,
-                         @Value("${sw.task.debug-port}") int debugPort) {
+                         @Value("${sw.task.dev-port}") int devPort) {
         this.idConvertor = idConvertor;
         this.stepMapper = stepMapper;
-        this.debugPort = debugPort;
+        this.devPort = devPort;
     }
 
     public TaskVo convert(TaskEntity entity) {
@@ -70,8 +70,8 @@ public class TaskConverter {
                 .retryNum(entity.getRetryNum())
                 .endTime(entity.getFinishedTime().getTime())
                 .stepName(step.getName())
-                .debugUrl(entity.getDebugWay() != null
-                        ? entity.getDebugWay().toDebugUrl(entity.getIp(), debugPort) : null)
+                .devUrl(entity.getDevWay() != null
+                        ? entity.getDevWay().toDevUrl(entity.getIp(), devPort) : null)
                 .createdTime(entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .build();

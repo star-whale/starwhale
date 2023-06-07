@@ -31,7 +31,7 @@ public class FeaturesProperties {
     public static final String FEATURE_ONLINE_EVAL = "online-eval";
     public static final String FEATURE_JOB_PAUSE = "job-pause";
     public static final String FEATURE_JOB_RESUME = "job-resume";
-    public static final String FEATURE_JOB_DEBUG = "job-debug";
+    public static final String FEATURE_JOB_DEV = "job-dev";
 
     List<String> disabled;
 
@@ -51,7 +51,7 @@ public class FeaturesProperties {
         return featureEnabled(FEATURE_JOB_RESUME);
     }
 
-    public boolean isJobDebugEnabled() {
-        return featureEnabled(FEATURE_JOB_DEBUG);
+    public boolean isJobDevEnabled() {
+        return featureEnabled(FEATURE_JOB_DEV);
     }
 }

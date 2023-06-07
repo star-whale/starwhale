@@ -180,7 +180,7 @@ public class K8sTaskSchedulerTest {
     }
 
     @Test
-    public void testDebugMode() throws IOException, ApiException {
+    public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
         var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", ""));
@@ -205,16 +205,16 @@ public class K8sTaskSchedulerTest {
         verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
         var container = jobs.get(0).getSpec().getTemplate().getSpec().getContainers().get(0);
-        Assertions.assertEquals(List.of("debug"), container.getArgs());
+        Assertions.assertEquals(List.of("dev"), container.getArgs());
     }
 
-    private Task mockTask(boolean debugMode) {
+    private Task mockTask(boolean devMode) {
         Job job = Job.builder()
                 .id(1L)
                 .model(Model.builder().path("path_swmp").build())
                 .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
                 .type(JobType.EVALUATION)
-                .debugMode(debugMode)
+                .devMode(devMode)
                 .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")

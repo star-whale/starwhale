@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api;
 
-import static ai.starwhale.mlops.configuration.FeaturesProperties.FEATURE_JOB_DEBUG;
+import static ai.starwhale.mlops.configuration.FeaturesProperties.FEATURE_JOB_DEV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
@@ -45,7 +45,7 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.dag.DagQuerier;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
@@ -149,7 +149,7 @@ public class JobControllerTest {
     @Test
     public void testCreatJob() {
         given(jobService.createJob(anyString(), anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), any(), any(), eq(DebugWay.VS_CODE), eq(false), anyString())).willReturn(1L);
+                anyString(), anyString(), any(), any(), eq(DevWay.VS_CODE), eq(false), anyString())).willReturn(1L);
         JobRequest jobRequest = new JobRequest();
         jobRequest.setHandler("eval");
         jobRequest.setComment("");
@@ -157,8 +157,8 @@ public class JobControllerTest {
         jobRequest.setDatasetVersionUrls("");
         jobRequest.setRuntimeVersionUrl("");
         jobRequest.setResourcePool("");
-        jobRequest.setDebugWay(DebugWay.VS_CODE);
-        jobRequest.setDebugPassword("");
+        jobRequest.setDevWay(DevWay.VS_CODE);
+        jobRequest.setDevPassword("");
         var resp = controller.createJob("p1", jobRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
@@ -167,8 +167,8 @@ public class JobControllerTest {
         ));
 
         // debug is disabled
-        featuresProperties.setDisabled(List.of(FEATURE_JOB_DEBUG));
-        jobRequest.setDebugMode(true);
+        featuresProperties.setDisabled(List.of(FEATURE_JOB_DEV));
+        jobRequest.setDevMode(true);
         assertThrows(StarwhaleApiException.class, () -> controller.createJob("p1", jobRequest));
     }
 

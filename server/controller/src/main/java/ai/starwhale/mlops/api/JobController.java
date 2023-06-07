@@ -132,8 +132,8 @@ public class JobController implements JobApi {
             String projectUrl,
             JobRequest jobRequest
     ) {
-        if (jobRequest.isDebugMode() && !featuresProperties.isJobDebugEnabled()) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "debug mode is not enabled"),
+        if (jobRequest.isDevMode() && !featuresProperties.isJobDevEnabled()) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
                     HttpStatus.BAD_REQUEST);
         }
         Long jobId = jobService.createJob(projectUrl,
@@ -145,9 +145,9 @@ public class JobController implements JobApi {
                 jobRequest.getHandler(),
                 jobRequest.getStepSpecOverWrites(),
                 jobRequest.getType(),
-                jobRequest.getDebugWay(),
-                jobRequest.isDebugMode(),
-                jobRequest.getDebugPassword());
+                jobRequest.getDevWay(),
+                jobRequest.isDevMode(),
+                jobRequest.getDevPassword());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

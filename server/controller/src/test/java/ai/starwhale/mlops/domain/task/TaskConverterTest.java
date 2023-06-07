@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
@@ -84,7 +84,7 @@ public class TaskConverterTest {
                 .taskUuid("uuid")
                 .taskStatus(TaskStatus.SUCCESS)
                 .retryNum(1)
-                .debugWay(DebugWay.VS_CODE)
+                .devWay(DevWay.VS_CODE)
                 .ip("127.0.0.1")
                 .build();
         TaskVo taskVo = taskConvertor.convert(taskEntity);
@@ -94,7 +94,7 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getCreatedTime(), taskEntity.getStartedTime().getTime());
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
-        Assertions.assertEquals(taskVo.getDebugUrl(), "http://127.0.0.1:8000");
+        Assertions.assertEquals(taskVo.getDevUrl(), "http://127.0.0.1:8000");
 
     }
 

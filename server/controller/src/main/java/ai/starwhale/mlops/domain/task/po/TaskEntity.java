@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.task.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -50,9 +50,9 @@ public class TaskEntity extends BaseEntity {
 
     private String ip;
 
-    private String debugPassword;
+    private String devPassword;
 
-    private DebugWay debugWay;
+    private DevWay devWay;
 
     @Builder.Default
     private Date startedTime = defaultDate;

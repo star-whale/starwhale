@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.common.TimeConcern;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Objects;
@@ -65,7 +65,7 @@ public class Task extends TimeConcern {
     Step step;
 
     String ip;
-    DebugWay debugWay;
+    DevWay devWay;
 
     public void updateStatus(TaskStatus status) {
         this.status = status;

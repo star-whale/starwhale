@@ -15,10 +15,11 @@
  */
 
 ALTER TABLE job_info
-    ADD debug_password VARCHAR(255) NULL,
-    ADD debug_way VARCHAR(255) NULL;
+    ADD dev_password VARCHAR(255) NULL,
+    ADD dev_way VARCHAR(255) NULL,
+    CHANGE debug_mode dev_mode TINYINT DEFAULT 0 NULL;
 
 ALTER TABLE task_info
     ADD ip VARCHAR(255) NULL,
-    ADD debug_password VARCHAR(255) NULL,
-    ADD debug_way VARCHAR(255) NULL;
+    ADD dev_password VARCHAR(255) NULL,
+    ADD dev_way VARCHAR(255) NULL;

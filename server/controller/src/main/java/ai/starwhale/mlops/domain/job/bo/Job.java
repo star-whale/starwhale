@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -91,9 +91,9 @@ public class Job extends TimeConcern {
     Long durationMs;
     String comment;
 
-    boolean debugMode;
-    DebugWay debugWay;
-    String debugPassword;
+    boolean devMode;
+    DevWay devWay;
+    String devPassword;
 
     @Override
     public boolean equals(Object o) {

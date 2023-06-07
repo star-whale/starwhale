@@ -161,9 +161,9 @@ public class JobBoConverter {
                     .finishedTime(jobEntity.getFinishedTime())
                     .durationMs(jobEntity.getDurationMs())
                     .comment(jobEntity.getComment())
-                    .debugMode(jobEntity.isDebugMode())
-                    .debugWay(jobEntity.getDebugWay())
-                    .debugPassword(jobEntity.getDebugPassword())
+                    .devMode(jobEntity.isDevMode())
+                    .devWay(jobEntity.getDevWay())
+                    .devPassword(jobEntity.getDevPassword())
                     .build();
         } catch (JsonProcessingException e) {
             throw new SwValidationException(ValidSubject.JOB, e.getMessage());

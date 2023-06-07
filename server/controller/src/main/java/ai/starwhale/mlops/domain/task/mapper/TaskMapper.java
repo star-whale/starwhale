@@ -32,7 +32,7 @@ public interface TaskMapper {
 
     String COLUMNS = "task_info.id, task_uuid, step_id, agent_id, task_status, task_request, "
             + " task_info.finished_time, task_info.started_time, task_info.created_time, task_info.modified_time,"
-            + " retry_num, output_path, ip, debug_way, debug_password";
+            + " retry_num, output_path, ip, dev_way, dev_password";
 
     @Select("select " + COLUMNS + " from task_info"
             + " left join step s on s.id = task_info.step_id where s.job_id = #{jobId} order by id desc")
@@ -43,18 +43,18 @@ public interface TaskMapper {
 
 
     @Insert("insert into task_info"
-            + " (task_uuid, step_id, task_status, task_request, output_path, debug_way, debug_password)"
+            + " (task_uuid, step_id, task_status, task_request, output_path, dev_way, dev_password)"
             + " values (#{task.taskUuid}, #{task.stepId}, #{task.taskStatus},"
-            + " #{task.taskRequest}, #{task.outputPath}, #{task.debugWay}, #{task.debugPassword})")
+            + " #{task.taskRequest}, #{task.outputPath}, #{task.devWay}, #{task.devPassword})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int addTask(@Param("task") TaskEntity task);
 
     @Insert("<script>"
             + "insert into task_info"
-            + "(task_uuid, step_id, task_status, task_request, output_path, debug_way, debug_password) values "
+            + "(task_uuid, step_id, task_status, task_request, output_path, dev_way, dev_password) values "
             + "<foreach collection='taskList' item='task' index='index' open='(' separator='),(' close=')'>"
             + "  #{task.taskUuid}, #{task.stepId}, #{task.taskStatus},"
-            + "  #{task.taskRequest}, #{task.outputPath}, #{task.debugWay}, #{task.debugPassword}"
+            + "  #{task.taskRequest}, #{task.outputPath}, #{task.devWay}, #{task.devPassword}"
             + "</foreach>"
             + "</script>")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")

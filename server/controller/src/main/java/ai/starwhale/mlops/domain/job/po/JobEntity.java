@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.job.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.job.DebugWay;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -80,9 +80,9 @@ public class JobEntity extends BaseEntity implements BundleEntity {
 
     private String stepSpec;
 
-    private boolean debugMode;
-    private DebugWay debugWay;
-    private String debugPassword;
+    private boolean devMode;
+    private DevWay devWay;
+    private String devPassword;
 
     @Override
     public String getName() {

@@ -65,7 +65,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final K8sJobTemplate k8sJobTemplate;
 
     final String instanceUri;
-    final int debugPort;
+    final int devPort;
     final int datasetLoadBatchSize;
     final String restartPolicy;
     final int backoffLimit;
@@ -78,7 +78,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
             @Value("${sw.instance-uri}") String instanceUri,
-            @Value("${sw.task.debug-port}") int debugPort,
+            @Value("${sw.task.dev-port}") int devPort,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
@@ -89,7 +89,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
         this.instanceUri = instanceUri;
-        this.debugPort = debugPort;
+        this.devPort = devPort;
         this.storageAccessService = storageAccessService;
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
@@ -179,10 +179,10 @@ public class K8sTaskScheduler implements SwTaskScheduler {
 
             // clear the args and activeDeadlineSeconds and make tail -f cmd if debug mode is on
             // this makes the job running forever
-            if (job.isDebugMode()) {
-                log.info("debug mode of job {} is on, will not run the job, just tail -f /dev/null", job.getId());
+            if (job.isDevMode()) {
+                log.info("dev mode of job {} is on, will not run the job, just tail -f /dev/null", job.getId());
                 var workerContainer = k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0);
-                workerContainer.setArgs(List.of("debug"));
+                workerContainer.setArgs(List.of("dev"));
                 k8sJob.getSpec().setActiveDeadlineSeconds(null);
             }
 
@@ -275,9 +275,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
         }
 
-        if (swJob.isDebugMode()) {
-            coreContainerEnvs.put("SW_DEBUG_TOKEN", swJob.getDebugPassword());
-            coreContainerEnvs.put("SW_DEBUG_PORT", String.valueOf(debugPort));
+        if (swJob.isDevMode()) {
+            coreContainerEnvs.put("SW_DEV_TOKEN", swJob.getDevPassword());
+            coreContainerEnvs.put("SW_DEV_PORT", String.valueOf(devPort));
         }
 
         var envs = mapToEnv(coreContainerEnvs);

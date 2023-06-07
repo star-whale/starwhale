@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.job.storage;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
-import static ai.starwhale.mlops.domain.job.JobSchema.DebugModeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.INT32;
@@ -156,7 +156,7 @@ public class JobRepo {
         if (Objects.nonNull(jobEntity.getStepSpec())) {
             record.put(StepSpecColumn, jobEntity.getStepSpec());
         }
-        record.put(DebugModeColumn, jobEntity.isDebugMode() ? "1" : "0");
+        record.put(DevModeColumn, jobEntity.isDevMode() ? "1" : "0");
         record.put(IsDeletedColumn, "0");
         record.put(ProjectIdColumn,
                 BaseValue.encode(new Int64Value(jobEntity.getProjectId()), false, false));
