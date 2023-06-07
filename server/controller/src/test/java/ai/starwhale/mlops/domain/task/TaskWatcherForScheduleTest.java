@@ -53,7 +53,7 @@ public class TaskWatcherForScheduleTest {
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
         verify(taskScheduler).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stop(List.of(task));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class TaskWatcherForScheduleTest {
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(2)).stop(List.of(task.getId()));
+        verify(taskScheduler, times(2)).stop(List.of(task));
     }
 
     @Test
@@ -93,10 +93,10 @@ public class TaskWatcherForScheduleTest {
         task.updateStatus(TaskStatus.SUCCESS);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
         taskWatcherForSchedule.processTaskDeletion();
-        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stop(List.of(task));
         Thread.sleep(1000 * 60L);
         taskWatcherForSchedule.processTaskDeletion();
-        verify(taskScheduler, times(1)).stop(List.of(task.getId(), task.getId()));
+        verify(taskScheduler, times(1)).stop(List.of(task, task));
     }
 
     @Test
@@ -116,6 +116,6 @@ public class TaskWatcherForScheduleTest {
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(0)).stop(List.of(task.getId()));
+        verify(taskScheduler, times(0)).stop(List.of(task));
     }
 }

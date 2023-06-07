@@ -43,6 +43,7 @@ import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -85,11 +86,10 @@ public class K8sTaskSchedulerTest {
                 taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
-                null,
-                null,
-                null, "http://instanceUri", 50,
+                "http://instanceUri", 50,
                 "OnFailure", 10,
-                storageAccessService);
+                storageAccessService,
+                mock(TaskLogK8sCollector.class));
         return scheduler;
     }
 
@@ -114,13 +114,12 @@ public class K8sTaskSchedulerTest {
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
-                null,
-                null,
-                null, "",
+                "",
                 50,
                 "OnFailure",
                 10,
-                mock(StorageAccessService.class)
+                mock(StorageAccessService.class),
+                mock(TaskLogK8sCollector.class)
         );
         var task = mockTask(false);
         scheduler.schedule(Set.of(task));
@@ -149,13 +148,12 @@ public class K8sTaskSchedulerTest {
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
-                null,
-                null,
-                null, "",
+                "",
                 50,
                 "OnFailure",
                 10,
-                mock(StorageAccessService.class)
+                mock(StorageAccessService.class),
+                mock(TaskLogK8sCollector.class)
         );
         var task = mockTask(false);
         var pool = task.getStep().getResourcePool();
@@ -188,13 +186,12 @@ public class K8sTaskSchedulerTest {
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
                 k8sJobTemplate,
-                null,
-                null,
-                null, "",
+                "",
                 50,
                 "OnFailure",
                 10,
-                mock(StorageAccessService.class)
+                mock(StorageAccessService.class),
+                mock(TaskLogK8sCollector.class)
         );
         var task = mockTask(true);
         scheduler.schedule(Set.of(task));

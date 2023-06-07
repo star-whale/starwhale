@@ -26,19 +26,17 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
+import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
-import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
-import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,17 +70,18 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final int backoffLimit;
     final StorageAccessService storageAccessService;
 
+    private final TaskLogK8sCollector taskLogK8sCollector;
+
     public K8sTaskScheduler(K8sClient k8sClient,
             TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
-            ResourceEventHandler<V1Job> eventHandlerJob,
-            ResourceEventHandler<V1Node> eventHandlerNode,
-            ResourceEventHandler<V1Pod> eventHandlerPod, @Value("${sw.instance-uri}") String instanceUri,
+            @Value("${sw.instance-uri}") String instanceUri,
             @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
-            StorageAccessService storageAccessService) {
+            StorageAccessService storageAccessService,
+            TaskLogK8sCollector taskLogK8sCollector) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
@@ -92,6 +91,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
+        this.taskLogK8sCollector = taskLogK8sCollector;
     }
 
     @Override
@@ -100,12 +100,15 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     }
 
     @Override
-    public void stop(Collection<Long> taskIds) {
-        taskIds.forEach(id -> {
+    public void stop(Collection<Task> tasks) {
+        tasks.forEach(task -> {
             try {
-                k8sClient.deleteJob(id.toString());
+                // K8s do not support job suspend before 1.24, so we collect logs and delete job directly
+                // https://kubernetes.io/docs/concepts/workloads/controllers/job/#suspending-a-job
+                taskLogK8sCollector.collect(task);
+                k8sClient.deleteJob(task.getId().toString());
             } catch (ApiException e) {
-                log.warn("delete k8s job failed {}", id, e);
+                log.warn("delete k8s job failed {}, {}", task.getId(), e.getResponseBody(), e);
             }
         });
     }

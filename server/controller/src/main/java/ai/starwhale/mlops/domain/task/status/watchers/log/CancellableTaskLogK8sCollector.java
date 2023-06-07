@@ -35,7 +35,7 @@ public class CancellableTaskLogK8sCollector implements CancellableTaskLogCollect
     public CancellableTaskLogK8sCollector(K8sClient k8sClient, Long taskId)
             throws IOException, ApiException {
         this.k8sClient = k8sClient;
-        call = k8sClient.readLog(getPodName(taskId), WORKER_CONTAINER);
+        call = k8sClient.readLog(getPodName(taskId), WORKER_CONTAINER, true);
         resp = call.execute();
         bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
     }
