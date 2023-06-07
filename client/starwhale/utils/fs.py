@@ -5,6 +5,7 @@ import typing as t
 import difflib
 import hashlib
 import tarfile
+import tempfile
 from enum import IntEnum
 from pathlib import Path
 
@@ -42,8 +43,7 @@ def ensure_file(
             raise
 
     if _saved != content or not p.exists():
-        # TODO: add timestamp for tmp file
-        _tmp_f = p.parent / f".{p.name}.tmp"
+        _tmp_f = Path(tempfile.mktemp(dir=p.parent, suffix=f".{p.name}.tmp"))
         if isinstance(content, bytes):
             _tmp_f.write_bytes(content)
         elif isinstance(content, str):
