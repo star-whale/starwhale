@@ -50,9 +50,10 @@ public class TaskWatcherForPersistTest {
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.RUNNING)
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
+                .startTime(7L)
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskMapper).updateTaskStartedTime(eq(task.getId()), argThat(d -> d.getTime() > 0));
+        verify(taskMapper).updateTaskStartedTime(eq(task.getId()), argThat(d -> d.getTime() == 7));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
@@ -66,10 +67,11 @@ public class TaskWatcherForPersistTest {
                 .status(TaskStatus.SUCCESS)
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
                         .build()).build()).build())
+                .finishTime(8L)
                 .build();
         taskWatcherForPersist.onTaskStatusChange(task, TaskStatus.RUNNING);
         verify(taskMapper).updateTaskFinishedTime(eq(task.getId()),
-                argThat(d -> d.getTime() > 0));
+                argThat(d -> d.getTime() == 8L));
         verify(taskMapper).updateTaskStatus(List.of(task.getId()), task.getStatus());
 
     }

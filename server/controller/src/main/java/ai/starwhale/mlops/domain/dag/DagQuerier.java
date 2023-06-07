@@ -35,9 +35,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -112,7 +112,7 @@ public class DagQuerier {
     }
 
     @Data
-    @Builder
+    @SuperBuilder
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TaskNodeContent extends TimeConcern {
@@ -133,7 +133,7 @@ public class DagQuerier {
     }
 
     @Data
-    @Builder
+    @SuperBuilder
     @AllArgsConstructor
     @NoArgsConstructor
     public static class JobNodeContent extends TimeConcern {
@@ -152,7 +152,7 @@ public class DagQuerier {
     }
 
     @Data
-    @Builder
+    @SuperBuilder
     @AllArgsConstructor
     @NoArgsConstructor
     public static class StepNodeContent extends TimeConcern {

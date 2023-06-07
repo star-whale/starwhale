@@ -81,53 +81,53 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
             return;
         }
+
         Long tid = getTaskId(pod);
-        if (tid != null) {
-            TaskStatus taskStatus;
-            var phase = pod.getStatus().getPhase();
-            if (StringUtils.hasText(phase)) {
-                switch (phase) {
-                    /*
-                    Pending The Pod has been accepted by the Kubernetes cluster,
-                    but one or more of the containers has not been set up and made ready to run.
-                    This includes time a Pod spends waiting to be scheduled
-                    as well as the time spent downloading container images over the network.
-                     */
-                    case "Pending":
-                        taskStatus = TaskStatus.PREPARING;
-                        break;
-                    /*
-                    Running The Pod has been bound to a node, and all of the containers have been created.
-                    At least one container is still running, or is in the process of starting or restarting.
-                     */
-                    case "Running":
-                        taskStatus = TaskStatus.RUNNING;
-                        break;
-                    default:
-                        return;
-
-                }
-            } else {
-                return;
-            }
-
-            // make status as running when pod condition contains PodScheduled
-            // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions
-            if (pod.getStatus().getConditions() != null) {
-                var podScheduled = pod.getStatus().getConditions().stream()
-                        .filter(c -> StringUtils.hasText(c.getStatus())
-                                && c.getStatus().equals("True")
-                                && StringUtils.hasText(c.getType())
-                                && c.getType().equals("PodScheduled"))
-                        .findAny();
-                if (podScheduled.isPresent()) {
-                    taskStatus = TaskStatus.RUNNING;
-                }
-            }
-
-            log.debug("task:{} status changed to {}.", tid, taskStatus);
-            taskModifyReceiver.receive(List.of(new ReportedTask(tid, taskStatus, null, pod.getStatus().getPodIP())));
+        if (tid == null) {
+            return;
         }
+
+        TaskStatus taskStatus;
+        var phase = pod.getStatus().getPhase();
+        if (StringUtils.hasText(phase)) {
+            switch (phase) {
+                /*
+                Pending The Pod has been accepted by the Kubernetes cluster,
+                but one or more of the containers has not been set up and made ready to run.
+                This includes time a Pod spends waiting to be scheduled
+                as well as the time spent downloading container images over the network.
+                 */
+                case "Pending":
+                    taskStatus = TaskStatus.PREPARING;
+                    break;
+                /*
+                Running The Pod has been bound to a node, and all the containers have been created.
+                At least one container is still running, or is in the process of starting or restarting.
+                 */
+                case "Running":
+                    taskStatus = TaskStatus.RUNNING;
+                    break;
+                default:
+                    return;
+
+            }
+        } else {
+            return;
+        }
+
+        Long startTime = null;
+        if (pod.getStatus() != null) {
+            startTime = Util.k8sTimeToMs(pod.getStatus().getStartTime());
+        }
+        log.debug("task:{} status changed to {}.", tid, taskStatus);
+        var report = ReportedTask.builder()
+                .id(tid)
+                .status(taskStatus)
+                .ip(pod.getStatus().getPodIP())
+                .startTimeMillis(startTime)
+                .stopTimeMillis(null)
+                .build();
+        taskModifyReceiver.receive(List.of(report));
     }
 
     private void collectLog(V1Pod pod) {

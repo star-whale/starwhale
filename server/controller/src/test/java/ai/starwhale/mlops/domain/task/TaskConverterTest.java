@@ -90,8 +90,8 @@ public class TaskConverterTest {
         TaskVo taskVo = taskConvertor.convert(taskEntity);
         Assertions.assertEquals(taskVo.getTaskStatus(), taskEntity.getTaskStatus());
         Assertions.assertEquals(taskVo.getUuid(), taskEntity.getTaskUuid());
-        Assertions.assertEquals(taskVo.getEndTime(), taskEntity.getFinishedTime().getTime());
-        Assertions.assertEquals(taskVo.getCreatedTime(), taskEntity.getStartedTime().getTime());
+        Assertions.assertEquals(taskVo.getFinishedTime(), taskEntity.getFinishedTime().getTime());
+        Assertions.assertEquals(taskVo.getStartedTime(), taskEntity.getStartedTime().getTime());
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
         Assertions.assertEquals(taskVo.getDevUrl(), "http://127.0.0.1:8000");

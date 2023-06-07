@@ -50,14 +50,21 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         log.debug("persisting task for {} ", task.getId());
         TaskStatus status = task.getStatus();
-        var now = new Date();
         if (taskStatusMachine.isFinal(status)) {
-            task.setFinishTime(now.getTime());
-            taskMapper.updateTaskFinishedTime(task.getId(), now);
+            var tm = task.getFinishTime();
+            if (tm == null) {
+                taskMapper.updateTaskFinishedTimeIfNotSet(task.getId(), new Date());
+            } else {
+                taskMapper.updateTaskFinishedTime(task.getId(), new Date(tm));
+            }
         }
         if (status == TaskStatus.RUNNING) {
-            task.setStartTime(now.getTime());
-            taskMapper.updateTaskStartedTime(task.getId(), now);
+            var tm = task.getStartTime();
+            if (tm == null) {
+                taskMapper.updateTaskStartedTimeIfNotSet(task.getId(), new Date());
+            } else {
+                taskMapper.updateTaskStartedTime(task.getId(), new Date(tm));
+            }
         }
         taskMapper.updateTaskStatus(List.of(task.getId()), status);
         log.debug("task {} status persisted to {} ", task.getId(), status);

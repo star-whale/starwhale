@@ -48,13 +48,9 @@ public class TaskServiceTest {
 
     TaskService taskService;
     TaskConverter taskConvertor;
-
     TaskMapper taskMapper;
-
     StorageAccessService storageAccessService;
-
     JobDao jobDao;
-
     StepMapper stepMapper;
 
     @BeforeEach
@@ -93,14 +89,12 @@ public class TaskServiceTest {
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
-                TaskVo.builder().id("1").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
+                TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid1")
                         .taskStatus(TaskStatus.RUNNING).resourcePool("a").stepName("ppl").build(),
-                TaskVo.builder().id("2").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
+                TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid2")
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("a").stepName("ppl").build()));
-
-
     }
 
     @Test
@@ -132,14 +126,12 @@ public class TaskServiceTest {
         Assertions.assertEquals(2, taskVoPageInfo.getSize());
         Assertions.assertEquals(2, taskVoPageInfo.getList().size());
         assertThat(taskVoPageInfo.getList(), containsInAnyOrder(
-                TaskVo.builder().id("1").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
+                TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid1")
                         .taskStatus(TaskStatus.RUNNING).resourcePool("job from step").stepName("ppl").build(),
-                TaskVo.builder().id("2").createdTime(startedTime.getTime()).endTime(finishedTime.getTime())
+                TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                         .uuid("uuid2")
                         .taskStatus(TaskStatus.SUCCESS).resourcePool("job from step").stepName("ppl").build()));
-
-
     }
 
     @Test
@@ -158,8 +150,8 @@ public class TaskServiceTest {
 
         var taskVo = TaskVo.builder()
                 .id("1")
-                .createdTime(startedTime.getTime())
-                .endTime(finishedTime.getTime())
+                .startedTime(startedTime.getTime())
+                .finishedTime(finishedTime.getTime())
                 .taskStatus(TaskStatus.RUNNING)
                 .uuid("uuid1")
                 .stepName("ppl")

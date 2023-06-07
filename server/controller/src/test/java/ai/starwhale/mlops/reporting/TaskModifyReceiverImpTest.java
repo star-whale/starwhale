@@ -52,7 +52,12 @@ public class TaskModifyReceiverImpTest {
     @Test
     public void testFreezeTask() {
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Collections.emptySet());
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null, "127.0.0.1")));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.READY)
+                .ip("127.0.0.1")
+                .build();
+        taskStatusReceiver.receive(List.of(expected));
         verify(taskMapper).updateTaskStatus(List.of(1L), TaskStatus.READY);
     }
 
@@ -60,7 +65,12 @@ public class TaskModifyReceiverImpTest {
     public void testHotTask() {
         Task task = new Task();
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Set.of(task));
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null, "127.0.0.1")));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.READY)
+                .ip("127.0.0.1")
+                .build();
+        taskStatusReceiver.receive(List.of(expected));
         verify(taskMapper, times(0)).updateTaskStatus(List.of(1L), TaskStatus.READY);
         Assertions.assertEquals(TaskStatus.READY, task.getStatus());
 
