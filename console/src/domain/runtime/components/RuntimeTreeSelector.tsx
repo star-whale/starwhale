@@ -1,12 +1,13 @@
 import { findTreeNode } from '@starwhale/ui/base/tree-view/utils'
 import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelector'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
-import React from 'react'
+import React, { useEffect } from 'react'
 import RuntimeLabel from './RuntimeLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchRuntimeTree } from '../hooks/useFetchRuntimeTree'
+import _ from 'lodash'
 
 const RuntimeTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -17,10 +18,24 @@ const RuntimeTreeNode = themedStyled('div', () => ({
     width: '100%',
 }))
 
-export function RuntimeTreeSelector(props: any) {
+export function RuntimeTreeSelector(
+    props: any & {
+        projectId: string
+        onDataChange?: (data: any) => void
+        getId?: (obj: any) => any
+        multiple?: boolean
+    }
+) {
     const [t] = useTranslation()
-    const { projectId } = props
+    const { projectId, getId = (obj: any) => obj.id, multiple = false } = props
+
     const runtimeInfo = useFetchRuntimeTree(projectId)
+
+    useEffect(() => {
+        props.onDataChange?.(runtimeInfo.data)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [runtimeInfo?.data])
+
     const $treeData = React.useMemo(() => {
         if (!runtimeInfo.isSuccess) return []
 
@@ -32,7 +47,7 @@ export function RuntimeTreeSelector(props: any) {
                 children:
                     runtime.versions?.map((item) => {
                         return {
-                            id: item.id,
+                            id: getId(item),
                             label: (
                                 <RuntimeTreeNode>
                                     <RuntimeLabel version={item} runtime={runtime} />
@@ -65,7 +80,7 @@ export function RuntimeTreeSelector(props: any) {
         })
 
         return treeData
-    }, [runtimeInfo, projectId, t])
+    }, [runtimeInfo, projectId, getId, t])
 
     const options = React.useMemo(() => {
         return [
@@ -74,7 +89,7 @@ export function RuntimeTreeSelector(props: any) {
                 info: {
                     data: $treeData,
                 },
-                multiple: false,
+                multiple,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
                 getDataToLabelView: (data: any) => data?.labelView,
                 getDataToLabelTitle: (data: any) => data?.labelTitle,
@@ -82,9 +97,16 @@ export function RuntimeTreeSelector(props: any) {
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [$treeData])
+    }, [$treeData, multiple])
 
-    return <DynamicSelector {...props} options={options} />
+    return (
+        <DynamicSelector
+            {...props}
+            value={props.value && !_.isArray(props.value) ? [props.value] : props.value}
+            onChange={(v) => props.onChange?.(multiple ? v : v[0])}
+            options={options}
+        />
+    )
 }
 
 export default RuntimeTreeSelector

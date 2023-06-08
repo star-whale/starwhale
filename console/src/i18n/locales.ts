@@ -269,6 +269,26 @@ const job = {
         en: 'Select Job Status',
         zh: '选择任务状态',
     },
+    'job.advanced': {
+        en: 'Advanced',
+        zh: '高级配置',
+    },
+    'job.debug.mode': {
+        en: 'Debug Mode',
+        zh: '调试模式',
+    },
+    'job.debug.password': {
+        en: 'Debug Password',
+        zh: '调试密码',
+    },
+    'job.debug.generate': {
+        en: 'Generate',
+        zh: '生成密码',
+    },
+    'job.debug.notice': {
+        zh: '调试模式已开启，请记住您的调试密码，以便后续调试。您也可以修改为自己的密码。',
+        en: 'Debug mode is on, please remember the debug password for later debugging. You can also change it to your own password.',
+    },
 }
 
 const evaluation = {
@@ -931,6 +951,14 @@ const locales0 = {
     'Started': {
         en: 'Started',
         zh: '已开始',
+    },
+    'Debug': {
+        en: 'Debug',
+        zh: '调试',
+    },
+    'To Debug': {
+        en: 'To Debug',
+        zh: '去调试',
     },
     'Password': {
         en: 'Password',
