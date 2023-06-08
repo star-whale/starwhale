@@ -19,6 +19,8 @@ package ai.starwhale.mlops.domain.job.po;
 import static ai.starwhale.mlops.domain.job.JobSchema.CommentColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.CreatedTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DataSetIdVersionMapColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DevModeColumn;
+import static ai.starwhale.mlops.domain.job.JobSchema.DevWayColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.DurationColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.FinishTimeColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.IsDeletedColumn;
@@ -41,6 +43,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
@@ -142,5 +145,12 @@ public class JobFlattenEntity {
     @JsonProperty(IsDeletedColumn)
     private Integer isDeleted;
 
-    private boolean debugMode;
+    @JsonProperty(DevModeColumn)
+    private boolean devMode;
+
+    @JsonProperty(DevWayColumn)
+    private DevWay devWay;
+
+    // don't sync it to datastore
+    private String devPassword;
 }

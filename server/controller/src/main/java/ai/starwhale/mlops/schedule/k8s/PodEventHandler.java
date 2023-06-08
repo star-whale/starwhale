@@ -21,7 +21,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
 import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskStatusReceiver;
+import ai.starwhale.mlops.reporting.TaskModifyReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.Collection;
@@ -36,13 +36,13 @@ import org.springframework.util.StringUtils;
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     final TaskLogK8sCollector taskLogK8sCollector;
-    final TaskStatusReceiver taskStatusReceiver;
+    final TaskModifyReceiver taskModifyReceiver;
     final HotJobHolder jobHolder;
 
     public PodEventHandler(
-            TaskLogK8sCollector taskLogK8sCollector, TaskStatusReceiver taskStatusReceiver, HotJobHolder jobHolder) {
+            TaskLogK8sCollector taskLogK8sCollector, TaskModifyReceiver taskModifyReceiver, HotJobHolder jobHolder) {
         this.taskLogK8sCollector = taskLogK8sCollector;
-        this.taskStatusReceiver = taskStatusReceiver;
+        this.taskModifyReceiver = taskModifyReceiver;
         this.jobHolder = jobHolder;
     }
 
@@ -126,7 +126,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             }
 
             log.debug("task:{} status changed to {}.", tid, taskStatus);
-            taskStatusReceiver.receive(List.of(new ReportedTask(tid, taskStatus, null)));
+            taskModifyReceiver.receive(List.of(new ReportedTask(tid, taskStatus, null, pod.getStatus().getPodIP())));
         }
     }
 

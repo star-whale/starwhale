@@ -33,11 +33,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * test for {@link SimpleTaskStatusReceiver}
+ * test for {@link SimpleTaskModifyReceiver}
  */
-public class TaskStatusReceiverImpTest {
+public class TaskModifyReceiverImpTest {
 
-    SimpleTaskStatusReceiver taskStatusReceiver;
+    SimpleTaskModifyReceiver taskStatusReceiver;
     HotJobHolder jobHolder;
 
     TaskMapper taskMapper;
@@ -46,13 +46,13 @@ public class TaskStatusReceiverImpTest {
     public void setup() {
         jobHolder = mock(HotJobHolder.class);
         taskMapper = mock(TaskMapper.class);
-        taskStatusReceiver = new SimpleTaskStatusReceiver(jobHolder, taskMapper);
+        taskStatusReceiver = new SimpleTaskModifyReceiver(jobHolder, taskMapper);
     }
 
     @Test
     public void testFreezeTask() {
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Collections.emptySet());
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null)));
+        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null, "127.0.0.1")));
         verify(taskMapper).updateTaskStatus(List.of(1L), TaskStatus.READY);
     }
 
@@ -60,7 +60,7 @@ public class TaskStatusReceiverImpTest {
     public void testHotTask() {
         Task task = new Task();
         when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Set.of(task));
-        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null)));
+        taskStatusReceiver.receive(List.of(new ReportedTask(1L, TaskStatus.READY, null, "127.0.0.1")));
         verify(taskMapper, times(0)).updateTaskStatus(List.of(1L), TaskStatus.READY);
         Assertions.assertEquals(TaskStatus.READY, task.getStatus());
 

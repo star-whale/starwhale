@@ -166,7 +166,7 @@ install_code_server () {
 
 run_code_server () {
     echo "-->[Preparing] run code-server ..."
-    PASSWORD=${SW_DEBUG_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:8000 --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/debug.log 2>&1 &
+    PASSWORD=${SW_DEV_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:${SW_DEV_PORT:-8000} --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/dev.log 2>&1 &
     echo "-->[Preparing] run code-server done."
 }
 
@@ -181,9 +181,9 @@ case "$1" in
     serve|serving)
         prepare $1 && serve
         ;;
-    debug)
-        install_code_server && run_code_server   
-        tail -f /var/log/debug.log
+    dev)
+        install_code_server && run_code_server
+        tail -f /var/log/dev.log
         ;;
     *)
         prepare "starwhale" && exec "$@"

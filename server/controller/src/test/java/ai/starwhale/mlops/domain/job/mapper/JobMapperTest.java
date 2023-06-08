@@ -95,7 +95,7 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .resourcePool("rp").runtimeVersionId(1L).modelVersionId(modelVersionEntity.getId())
                 .resultOutputPath("").type(JobType.EVALUATION)
                 .stepSpec("stepSpec2")
-                .debugMode(true)
+                .devMode(true)
                 .projectId(project.getId()).ownerId(user.getId()).build();
         jobMapper.addJob(jobPaused);
         jobMapper.addJob(jobCreated);
@@ -221,7 +221,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals("model", jobEntity.getModelName());
         Assertions.assertEquals(expectedJob.getStepSpec(), jobEntity.getStepSpec());
         Assertions.assertEquals(expectedJob.getComment(), jobEntity.getComment());
-        Assertions.assertEquals(expectedJob.isDebugMode(), jobEntity.isDebugMode());
+        Assertions.assertEquals(expectedJob.isDevMode(), jobEntity.isDevMode());
         Assertions.assertNotNull(jobEntity.getCreatedTime());
         final int milli500 = 5;
         if (null != expectedJob.getFinishedTime()) {

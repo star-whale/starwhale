@@ -19,7 +19,7 @@ package ai.starwhale.mlops.schedule.k8s;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskStatusReceiver;
+import ai.starwhale.mlops.reporting.TaskModifyReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -35,11 +35,11 @@ import org.springframework.util.StringUtils;
 @Component
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
-    private final TaskStatusReceiver taskStatusReceiver;
+    private final TaskModifyReceiver taskModifyReceiver;
     private final RuntimeService runtimeService;
 
-    public JobEventHandler(TaskStatusReceiver taskStatusReceiver, RuntimeService runtimeService) {
-        this.taskStatusReceiver = taskStatusReceiver;
+    public JobEventHandler(TaskModifyReceiver taskModifyReceiver, RuntimeService runtimeService) {
+        this.taskModifyReceiver = taskModifyReceiver;
         this.runtimeService = runtimeService;
     }
 
@@ -141,7 +141,8 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
-        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum)));
+        taskModifyReceiver.receive(List.of(
+                new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum, null)));
     }
 
     private String conditionsLogString(List<V1JobCondition> conditions) {

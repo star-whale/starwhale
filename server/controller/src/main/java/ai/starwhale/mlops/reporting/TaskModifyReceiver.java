@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * receive task status from agents
  */
-public interface TaskStatusReceiver {
+public interface TaskModifyReceiver {
 
     /**
      * process the report from Agent

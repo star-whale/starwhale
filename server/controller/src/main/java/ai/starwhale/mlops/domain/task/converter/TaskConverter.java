@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -34,9 +35,13 @@ public class TaskConverter {
 
     private final StepMapper stepMapper;
 
-    public TaskConverter(IdConverter idConvertor, StepMapper stepMapper) {
+    private final int devPort;
+
+    public TaskConverter(IdConverter idConvertor, StepMapper stepMapper,
+                         @Value("${sw.task.dev-port}") int devPort) {
         this.idConvertor = idConvertor;
         this.stepMapper = stepMapper;
+        this.devPort = devPort;
     }
 
     public TaskVo convert(TaskEntity entity) {
@@ -65,6 +70,8 @@ public class TaskConverter {
                 .retryNum(entity.getRetryNum())
                 .endTime(entity.getFinishedTime().getTime())
                 .stepName(step.getName())
+                .devUrl(entity.getDevWay() != null
+                        ? entity.getDevWay().toDevUrl(entity.getIp(), devPort) : null)
                 .createdTime(entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .build();

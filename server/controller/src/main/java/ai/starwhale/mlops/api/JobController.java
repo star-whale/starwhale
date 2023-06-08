@@ -60,7 +60,7 @@ public class JobController implements JobApi {
     private final IdConverter idConvertor;
     private final DagQuerier dagQuerier;
     private final InvokerManager<String, String> jobActions;
-    private final FeaturesProperties  featuresProperties;
+    private final FeaturesProperties featuresProperties;
 
     public JobController(
             JobService jobService,
@@ -137,6 +137,10 @@ public class JobController implements JobApi {
             String projectUrl,
             JobRequest jobRequest
     ) {
+        if (jobRequest.isDevMode() && !featuresProperties.isJobDevEnabled()) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB, "dev mode is not enabled"),
+                    HttpStatus.BAD_REQUEST);
+        }
         Long jobId = jobService.createJob(projectUrl,
                 jobRequest.getModelVersionUrl(),
                 jobRequest.getDatasetVersionUrls(),
@@ -146,7 +150,9 @@ public class JobController implements JobApi {
                 jobRequest.getHandler(),
                 jobRequest.getStepSpecOverWrites(),
                 jobRequest.getType(),
-                jobRequest.isDebugMode());
+                jobRequest.getDevWay(),
+                jobRequest.isDevMode(),
+                jobRequest.getDevPassword());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

@@ -128,6 +128,10 @@ public class WatchableTask extends Task implements TaskWrapper {
         originalTask.setTaskRequest(taskRequest);
     }
 
+    public void setIp(String ip) {
+        originalTask.setIp(ip);
+    }
+
     @Override
     public int hashCode() {
         return originalTask.hashCode();

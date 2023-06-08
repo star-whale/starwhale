@@ -273,20 +273,20 @@ public class JobServiceTest {
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
-                "", "1", "", "", JobType.EVALUATION, false));
+                "", "1", "", "", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
 
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
-                "", "1", "h", "s", JobType.EVALUATION, false));
+                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
 
         assertThrows(SwValidationException.class, () -> service.createJob("1", "3", "1", "",
-                "", "1", "h", "s", JobType.EVALUATION, false));
+                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, false);
+                 "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "");
         assertThat(res, is(1L));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, false);
+                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, false, "");
         assertThat(res, is(1L));
     }
 
