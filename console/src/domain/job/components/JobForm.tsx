@@ -18,6 +18,10 @@ import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector
 import RuntimeTreeSelector from '@runtime/components/RuntimeTreeSelector'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
+import Input from '@starwhale/ui/Input'
+import generatePassword from '@/utils/passwordGenerator'
+import CopyToClipboard from 'react-copy-to-clipboard'
+import { IconFont } from '@starwhale/ui'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateJobFormSchema>()
 
@@ -77,39 +81,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [builtInRuntime, setBuiltInRuntime] = useState<string>('')
     const [type, setType] = useState(builtInRuntime ? RuntimeType.BUILTIN : '')
 
-    const handleValuesChange = useCallback(
-        (_changes, values_) => {
-            if ('modelVersionUrl' in _changes) {
-                setModelVersionHandler('')
-            }
-            if (values_.modelVersionUrl) {
-                setModelVersionId(values_.modelVersionUrl[0])
-            }
-            if (values_.modelVersionHandler) {
-                setModelVersionHandler(values_.modelVersionHandler)
-            }
-            let rawTypeTmp = values_.rawType
-            if ('rawType' in _changes && !_changes.rawType) {
-                try {
-                    yaml.load(stepSpecOverWrites)
-                    rawTypeTmp = false
-                } catch (e) {
-                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
-                    form.setFieldsValue({
-                        rawType: true,
-                    })
-                    rawTypeTmp = true
-                }
-            }
-            setRawType(rawTypeTmp)
-            setValues({
-                ...values_,
-                rawType: rawTypeTmp,
-            })
-        },
-        [stepSpecOverWrites, form, t]
-    )
-
     const modelVersion: IModelVersionSchema | undefined = React.useMemo(() => {
         if (!modelTree || !modelVersionId) return undefined
         let version: IModelVersionSchema | undefined
@@ -146,14 +117,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
-    const handleModelHandlerChange = useCallback(
-        (value) => {
-            setModelVersionHandler(value)
-            setStepSpecOverWrites(yaml.dump(fullStepSource?.filter((v: StepSpec) => v?.job_name === value)))
-        },
-        [setModelVersionHandler, fullStepSource]
-    )
-
     const checkStepSource = useCallback(
         (value) => {
             try {
@@ -185,8 +148,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'modelVersionHandler',
                         'modelVersionUrl',
                     ]),
-                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl[0],
-                    modelVersionUrl: values_.modelVersionUrl[0],
+                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
+                    modelVersionUrl: values_.modelVersionUrl,
                     datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                     stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(stepSource),
                 })
@@ -205,11 +168,63 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         [setStepSpecOverWrites]
     )
 
+    const handleModelHandlerChange = useCallback(
+        (value) => {
+            setModelVersionHandler(value)
+        },
+        [setModelVersionHandler]
+    )
+
+    const handleValuesChange = useCallback(
+        (_changes, values_) => {
+            if ('modelVersionUrl' in _changes) {
+                setModelVersionHandler('')
+            }
+            if (values_.modelVersionUrl) {
+                setModelVersionId(values_.modelVersionUrl[0])
+            }
+            if ('devMode' in _changes && _changes.devMode) {
+                form.setFieldsValue({
+                    devPassword: generatePassword(),
+                })
+            }
+            if (values_.modelVersionHandler) {
+                setModelVersionHandler(values_.modelVersionHandler)
+            }
+            let rawTypeTmp = values_.rawType
+            if ('rawType' in _changes && !_changes.rawType) {
+                try {
+                    yaml.load(stepSpecOverWrites)
+                    rawTypeTmp = false
+                } catch (e) {
+                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
+                    form.setFieldsValue({
+                        rawType: true,
+                    })
+                    rawTypeTmp = true
+                }
+            }
+            setRawType(rawTypeTmp)
+            setValues({
+                ...values_,
+                rawType: rawTypeTmp,
+            })
+        },
+        [stepSpecOverWrites, form, t]
+    )
+
     useEffect(() => {
         if (!modelVersionHandler) {
             setModelVersionHandler(fullStepSource?.find((v) => v)?.job_name ?? '')
         }
+        if (modelVersionHandler) {
+            setStepSpecOverWrites(
+                yaml.dump(fullStepSource?.filter((v: StepSpec) => v?.job_name === modelVersionHandler))
+            )
+        }
     }, [fullStepSource, modelVersionHandler])
+
+    console.log('values', values)
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -217,9 +232,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             <div className={styles.row3}>
                 <FormItem label={t('Resource Pool')} name='resourcePool' required>
                     <ResourcePoolSelector autoSelected />
-                </FormItem>
-                <FormItem label={t('eval debug mode')} name='debugMode'>
-                    <Toggle />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Model Information')}</Divider>
@@ -325,12 +337,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     />
                 </div>
             </div>
+            {/* dataset config */}
             <Divider orientation='top'>{t('Datasets')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
                 <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
-                    <DatasetTreeSelector projectId={projectId} />
+                    <DatasetTreeSelector projectId={projectId} multiple />
                 </FormItem>
             </div>
+            {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
                 {!!builtInRuntime && (
@@ -378,6 +392,32 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 {(type === RuntimeType.OTHER || !builtInRuntime) && (
                     <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
                         <RuntimeTreeSelector projectId={projectId} />
+                    </FormItem>
+                )}
+            </div>
+            {/* debug config */}
+            <Divider orientation='top'>{t('job.advanced')}</Divider>
+            {form.getFieldValue('devMode') && <p style={{ marginBottom: '10px' }}>{t('job.debug.notice')}</p>}
+            <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
+                <FormItem label={t('job.debug.mode')} name='devMode'>
+                    <Toggle />
+                </FormItem>
+                {form.getFieldValue('devMode') && (
+                    <FormItem label={t('job.debug.password')} name='devPassword' required>
+                        <Input
+                            endEnhancer={
+                                <CopyToClipboard
+                                    text={form.getFieldValue('devPassword') as string}
+                                    onCopy={() => {
+                                        toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                                    }}
+                                >
+                                    <span style={{ cursor: 'pointer' }}>
+                                        <IconFont type='overview' />
+                                    </span>
+                                </CopyToClipboard>
+                            }
+                        />
                     </FormItem>
                 )}
             </div>

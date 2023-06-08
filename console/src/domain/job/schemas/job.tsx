@@ -48,6 +48,8 @@ export interface ICreateJobSchema {
     runtimeVersionUrl?: string
     resourcePool?: string
     stepSpecOverWrites?: string
+    devMode?: boolean
+    devPassword?: string
 }
 
 export interface IJobFormSchema extends IJobSchema {
@@ -70,7 +72,8 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOv
     stepSpecOverWrites: StepSpec[]
     rawType: boolean
     modelVersionHandler: string
-    debugMode: boolean
+    devMode: boolean
+    devPassword: string
 }
 
 export type IJobResultSchema = any

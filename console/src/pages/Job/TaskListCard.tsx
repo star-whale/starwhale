@@ -11,6 +11,7 @@ import _ from 'lodash'
 import qs from 'qs'
 import moment from 'moment'
 import JobStatus from '@/domain/job/components/JobStatus'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -45,6 +46,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     t('Task ID'),
                     t('Step'),
                     t('Resource Pool'),
+                    t('Debug'),
                     t('Started'),
                     t('End Time'),
                     t('Duration'),
@@ -57,6 +59,17 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.id,
                             task.stepName,
                             task.resourcePool,
+                            <WithCurrentAuth id='job-dev' key='devUrl'>
+                                {(bool: boolean) =>
+                                    bool && task.devUrl ? (
+                                        <a target='_blank' href={task.devUrl} rel='noreferrer'>
+                                            {t('To Debug')}
+                                        </a>
+                                    ) : (
+                                        '-'
+                                    )
+                                }
+                            </WithCurrentAuth>,
                             task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.stopTime && formatTimestampDateTime(task.stopTime),
                             task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1

@@ -17,6 +17,7 @@ export const Privileges = {
     'online-eval': true,
     'job-pause': true,
     'job-resume': true,
+    'job-dev': true,
 }
 export type IPrivileges = typeof Privileges
 

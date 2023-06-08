@@ -103,7 +103,7 @@ SelectItemContainer.displayName = 'SelectItemContainer'
 
 export const LabelsContainer = themedStyled('div', ({ $multiple }: any) => ({
     display: 'Grid',
-    gridTemplateColumns: !$multiple ? '1fr' : 'repeat(2, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(auto, 1fr))',
     gap: '1px',
 }))
 LabelsContainer.displayName = 'LabelsContainer'

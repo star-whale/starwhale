@@ -27,7 +27,7 @@ export function ModelTreeSelector(
     }
 ) {
     const [t] = useTranslation()
-    const { projectId, getId = (obj: any) => obj.id, multiple = true } = props
+    const { projectId, getId = (obj: any) => obj.id, multiple = false } = props
     const modelInfo = useFetchModelTree(projectId)
 
     useEffect(() => {
@@ -88,7 +88,7 @@ export function ModelTreeSelector(
                 info: {
                     data: $treeData,
                 },
-                multiple: false,
+                multiple,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
                 getDataToLabelView: (data: any) => data?.labelView,
                 getDataToLabelTitle: (data: any) => data?.labelTitle,
@@ -96,7 +96,7 @@ export function ModelTreeSelector(
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [$treeData, getId])
+    }, [$treeData, getId, multiple])
 
     return (
         <DynamicSelector
