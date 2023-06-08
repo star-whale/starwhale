@@ -22,6 +22,8 @@ export interface ITaskSchema extends IResourceSchema {
     stepName: string
     retryNum: number
     devUrl?: string
+    startedTime: number
+    finishedTime: number
 }
 
 export type ITaskDetailSchema = ITaskSchema

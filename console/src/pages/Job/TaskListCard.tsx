@@ -70,10 +70,10 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                     )
                                 }
                             </WithCurrentAuth>,
-                            task.createdTime && formatTimestampDateTime(task.createdTime),
-                            task.stopTime && formatTimestampDateTime(task.stopTime),
-                            task.stopTime && task.createdTime && task.stopTime !== -1 && task.createdTime !== -1
-                                ? moment.duration(task.stopTime - task.createdTime, 'milliseconds').humanize()
+                            task.startedTime && formatTimestampDateTime(task.startedTime),
+                            task.finishedTime && formatTimestampDateTime(task.finishedTime),
+                            task.finishedTime && task.startedTime && task.finishedTime !== -1 && task.startedTime !== -1
+                                ? moment.duration(task.finishedTime - task.startedTime, 'milliseconds').humanize()
                                 : '-',
                             <JobStatus key='status' status={task.taskStatus as any} />,
                             <StyledLink
