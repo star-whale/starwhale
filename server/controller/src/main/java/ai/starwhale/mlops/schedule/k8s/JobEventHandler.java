@@ -150,10 +150,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#jobstatus-v1-batch
         // get the start time of the job to fill in the task status, beware that the start time is not reliable
         // we only use it to fill in the task start time when the start time filed is not set
-        Long startTime = null;
-        if (null != status.getStartTime()) {
-            startTime = status.getStartTime().toInstant().toEpochMilli();
-        }
+        Long startTime = Util.k8sTimeToMs(status.getStartTime());
 
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
