@@ -102,7 +102,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -526,6 +529,33 @@ public class RuntimeService {
 
         @JsonProperty("base_image")
         String baseImage;
+
+        @JsonProperty("docker")
+        Docker docker;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        static
+        class Docker {
+            @JsonProperty("builtin_run_image")
+            BuiltinImage builtinImage;
+
+            @JsonProperty("custom_run_image")
+            String customImage;
+        }
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        static
+        class BuiltinImage {
+            @JsonProperty("fullname")
+            String fullName;
+            String name;
+            String repo;
+            String tag;
+        }
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
