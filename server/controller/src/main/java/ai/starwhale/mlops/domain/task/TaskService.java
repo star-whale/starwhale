@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -51,6 +52,8 @@ public class TaskService {
 
     private final JobDao jobDao;
 
+    private final IdConverter idConverter = new IdConverter();
+
     public TaskService(TaskConverter taskConvertor, TaskMapper taskMapper,
             StorageAccessService storageAccessService, JobDao jobDao) {
         this.taskConvertor = taskConvertor;
@@ -71,6 +74,14 @@ public class TaskService {
                 .collect(Collectors.toList());
         return PageInfo.of(tasks);
 
+    }
+
+    public TaskVo getTask(String taskUrl) {
+        if (idConverter.isId(taskUrl)) {
+            return taskConvertor.convert(taskMapper.findTaskById(idConverter.revert(taskUrl)));
+        } else {
+            return taskConvertor.convert(taskMapper.findTaskByUuid(taskUrl));
+        }
     }
 
     public List<String> offLineLogFiles(Long taskId) {
