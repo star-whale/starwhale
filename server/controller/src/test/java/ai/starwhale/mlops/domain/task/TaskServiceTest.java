@@ -163,6 +163,7 @@ public class TaskServiceTest {
                 .taskStatus(TaskStatus.RUNNING)
                 .uuid("uuid1")
                 .stepName("ppl")
+                .resourcePool("")
                 .build();
         assertThat("by id", taskService.getTask("1"), is(taskVo));
         assertThat("by uuid", taskService.getTask("uuid1"), is(taskVo));
