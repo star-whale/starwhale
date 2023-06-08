@@ -1,3 +1,4 @@
+import { IPrivileges } from '@/api/const'
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 
 export type IBaseImageSchema = IResourceSchema
@@ -33,4 +34,8 @@ export type ISystemResourcePool = {
     name: string
     nodeSelector: Record<string, string>
     resources: ISystemResource[]
+}
+
+export type ISystemFeaturesSchema = {
+    disabled?: Array<keyof IPrivileges>
 }

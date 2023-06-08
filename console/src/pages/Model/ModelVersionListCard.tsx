@@ -67,14 +67,16 @@ export default function ModelVersionListCard() {
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}
                                 />
                                 &nbsp;&nbsp;
-                                <Button
-                                    kind='tertiary'
-                                    onClick={() =>
-                                        history.push(`/projects/${projectId}/online_eval/${modelId}/${model.id}`)
-                                    }
-                                >
-                                    {t('online eval')}
-                                </Button>
+                                <WithCurrentAuth id='online-eval'>
+                                    <Button
+                                        kind='tertiary'
+                                        onClick={() =>
+                                            history.push(`/projects/${projectId}/online_eval/${modelId}/${model.id}`)
+                                        }
+                                    >
+                                        {t('online eval')}
+                                    </Button>
+                                </WithCurrentAuth>
                                 &nbsp;&nbsp;
                                 {i ? (
                                     <WithCurrentAuth id='model.version.revert'>

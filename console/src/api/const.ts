@@ -13,6 +13,10 @@ export const Privileges = {
     'dataset.version.revert': true,
     'evaluation.panel.save': true,
     'runtime.image.build': true,
+    // global
+    'online-eval': true,
+    'job-pause': true,
+    'job-resume': true,
 }
 export type IPrivileges = typeof Privileges
 

@@ -10,8 +10,10 @@ import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import qs from 'qs'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { useFetchSystemFeatures } from '@/domain/setting/hooks/useSettings'
+import { useSystemFeatures } from '@/domain/setting/hooks/useSystemFeatures'
 
-export default function ApiHeader() {
+function ApiHeader() {
     const location = useLocation()
     const errMsgExpireTimeSeconds = 5
     const lastErrMsgRef = useRef<Record<string, number>>({})
@@ -21,7 +23,9 @@ export default function ApiHeader() {
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
     const { role: projectRole } = useFetchProjectRole(projectId as string)
+    const systemFeaturesInfo = useFetchSystemFeatures()
     const { setRole } = useProjectRole()
+    const { setSystemFeatures } = useSystemFeatures()
 
     useFirstRender(() => {
         // @ts-ignore
@@ -133,5 +137,13 @@ export default function ApiHeader() {
         }
     }, [projectRole, setRole])
 
+    useEffect(() => {
+        if (systemFeaturesInfo.data) {
+            setSystemFeatures(systemFeaturesInfo?.data)
+        }
+    }, [systemFeaturesInfo?.data, setSystemFeatures])
+
     return <></>
 }
+
+export default ApiHeader

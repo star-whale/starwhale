@@ -10,6 +10,7 @@ import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { Role } from '@/api/const'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import { ThemeType } from '@starwhale/ui/theme'
+import { ISystemFeaturesSchema } from '@/domain/setting/schemas/system'
 
 const initialState = {
     token: undefined as string | undefined,
@@ -38,6 +39,7 @@ const initialState = {
     drawerExpanded: false,
     role: Role.NONE as Role,
     vscodeTheme: 'light' as string,
+    systemFeatures: { disabled: [] } as ISystemFeaturesSchema,
 }
 
 const { useGlobalState } = createGlobalState(initialState)

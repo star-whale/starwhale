@@ -3,6 +3,7 @@ import axios from 'axios'
 import {
     IAgentSchema,
     IDeviceSchema,
+    ISystemFeaturesSchema,
     ISystemResourcePool,
     ISystemSettingSchema,
     ISystemVersionSchema,
@@ -48,5 +49,10 @@ export async function updateSystemSetting(data: string): Promise<any> {
 
 export async function fetchSystemResourcePool(): Promise<ISystemResourcePool[]> {
     const resp = await axios.get('/api/v1/system/resourcePool')
+    return resp.data
+}
+
+export async function fetchSystemFeatures(): Promise<ISystemFeaturesSchema> {
+    const resp = await axios.get('/api/v1/system/features')
     return resp.data
 }
