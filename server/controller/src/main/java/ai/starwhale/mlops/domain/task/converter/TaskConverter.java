@@ -70,7 +70,7 @@ public class TaskConverter {
                 .retryNum(entity.getRetryNum())
                 .endTime(entity.getFinishedTime().getTime())
                 .stepName(step.getName())
-                .devUrl(entity.getDevWay() != null
+                .devUrl(entity.getDevWay() != null && StringUtils.hasText(entity.getIp())
                         ? entity.getDevWay().toDevUrl(entity.getIp(), devPort) : null)
                 .createdTime(entity.getStartedTime().getTime())
                 .resourcePool(pool)

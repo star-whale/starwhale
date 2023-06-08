@@ -96,6 +96,9 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
         Assertions.assertEquals(taskVo.getDevUrl(), "http://127.0.0.1:8000");
 
+        taskEntity.setIp("");
+        taskVo = taskConvertor.convert(taskEntity);
+        Assertions.assertNull(taskVo.getDevUrl());
     }
 
 }
