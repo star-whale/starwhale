@@ -22,6 +22,7 @@ import Input from '@starwhale/ui/Input'
 import generatePassword from '@/utils/passwordGenerator'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { IconFont } from '@starwhale/ui'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateJobFormSchema>()
 
@@ -224,8 +225,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         }
     }, [fullStepSource, modelVersionHandler])
 
-    console.log('values', values)
-
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='top'>{t('Environment')}</Divider>
@@ -396,31 +395,33 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 )}
             </div>
             {/* debug config */}
-            <Divider orientation='top'>{t('job.advanced')}</Divider>
-            {form.getFieldValue('devMode') && <p style={{ marginBottom: '10px' }}>{t('job.debug.notice')}</p>}
-            <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
-                <FormItem label={t('job.debug.mode')} name='devMode'>
-                    <Toggle />
-                </FormItem>
-                {form.getFieldValue('devMode') && (
-                    <FormItem label={t('job.debug.password')} name='devPassword' required>
-                        <Input
-                            endEnhancer={
-                                <CopyToClipboard
-                                    text={form.getFieldValue('devPassword') as string}
-                                    onCopy={() => {
-                                        toaster.positive(t('Copied'), { autoHideDuration: 1000 })
-                                    }}
-                                >
-                                    <span style={{ cursor: 'pointer' }}>
-                                        <IconFont type='overview' />
-                                    </span>
-                                </CopyToClipboard>
-                            }
-                        />
+            <WithCurrentAuth id='job-dev'>
+                <Divider orientation='top'>{t('job.advanced')}</Divider>
+                {form.getFieldValue('devMode') && <p style={{ marginBottom: '10px' }}>{t('job.debug.notice')}</p>}
+                <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
+                    <FormItem label={t('job.debug.mode')} name='devMode'>
+                        <Toggle />
                     </FormItem>
-                )}
-            </div>
+                    {form.getFieldValue('devMode') && (
+                        <FormItem label={t('job.debug.password')} name='devPassword' required>
+                            <Input
+                                endEnhancer={
+                                    <CopyToClipboard
+                                        text={form.getFieldValue('devPassword') as string}
+                                        onCopy={() => {
+                                            toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                                        }}
+                                    >
+                                        <span style={{ cursor: 'pointer' }}>
+                                            <IconFont type='overview' />
+                                        </span>
+                                    </CopyToClipboard>
+                                }
+                            />
+                        </FormItem>
+                    )}
+                </div>
+            </WithCurrentAuth>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <div style={{ flexGrow: 1 }} />
