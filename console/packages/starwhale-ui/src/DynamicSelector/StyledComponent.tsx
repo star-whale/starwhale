@@ -101,7 +101,7 @@ export const SelectItemContainer = themedStyled('div', ({ $isGrid }: any) => {
 })
 SelectItemContainer.displayName = 'SelectItemContainer'
 
-export const LabelsContainer = themedStyled('div', ({ $multiple }: any) => ({
+export const LabelsContainer = themedStyled('div', () => ({
     display: 'Grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(auto, 1fr))',
     gap: '1px',

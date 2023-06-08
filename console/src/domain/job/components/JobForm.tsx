@@ -182,7 +182,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setModelVersionHandler('')
             }
             if (values_.modelVersionUrl) {
-                setModelVersionId(values_.modelVersionUrl[0])
+                setModelVersionId(values_.modelVersionUrl)
             }
             if ('devMode' in _changes && _changes.devMode) {
                 form.setFieldsValue({
