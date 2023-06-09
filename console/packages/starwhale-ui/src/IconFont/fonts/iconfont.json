@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "35913528",
+      "name": "vscode",
+      "font_class": "vscode",
+      "unicode": "e66b",
+      "unicode_decimal": 58987
+    },
+    {
+      "icon_id": "35869570",
+      "name": "WeChat2",
+      "font_class": "WeChat2",
+      "unicode": "e66a",
+      "unicode_decimal": 58986
+    },
+    {
       "icon_id": "35478546",
       "name": "layout-1",
       "font_class": "layout-1",

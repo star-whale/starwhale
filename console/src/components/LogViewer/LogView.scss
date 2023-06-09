@@ -1,6 +1,12 @@
 .pf-c-log-viewer {
-    --pf-c-log-viewer__text--FontSize: 16px;
+    // --pf-c-log-viewer__text--FontSize: 12px;
+    // --pf-c-log-viewer__text--FontFamily: 'Monaco', monospace;
+    // --pf-c-log-viewer__index--FontFamily: 'Monaco', monospace;
     --pf-c-button--LineHeight: 1;
+    .pf-c-log-viewer__list {
+        font-size: 12px;
+        font-family: 'Roboto Mono', monospace;
+    }
 
     .pf-c-log-viewer__scroll-container {
         &::-webkit-scrollbar {
