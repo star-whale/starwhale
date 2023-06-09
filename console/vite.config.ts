@@ -23,6 +23,7 @@ export const alias = {
     'react-query': path.resolve(__dirname, './node_modules/react-query'),
     'lodash': path.resolve(__dirname, './node_modules/lodash'),
     'react-qr-code': path.resolve(__dirname, './node_modules/react-qr-code'),
+    'react-copy-to-clipboard': path.resolve(__dirname, './node_modules/react-copy-to-clipboard'),
     'js-yaml': path.resolve(__dirname, './node_modules/js-yaml'),
     'qs': path.resolve(__dirname, './node_modules/qs'),
     'axios': path.resolve(__dirname, './node_modules/axios'),
@@ -86,6 +87,7 @@ export default defineConfig({
     build: {
         outDir: 'build',
         manifest: true,
+        target: 'esnext',
         // minify: false,
         // sourcemap: true,
     },
