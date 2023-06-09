@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import copy
 import typing as t
 from pathlib import Path
@@ -25,14 +26,16 @@ from starwhale.utils.debug import init_logger
 
 init_logger(3)
 torch.backends.cuda.matmul.allow_tf32 = True
+default_compute_dtype = torch.float16  # only A100 supports bfloat16
 
 ROOTDIR = Path(__file__).parent
 PRETRAINED_MODELS_DIR = ROOTDIR / "pretrained_models"
 MODEL_NAME_PATH = ROOTDIR / ".model_name"
-DEFAULT_MODEL_NAME = "33b"
+DEFAULT_MODEL_NAME = "7b"
 
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 @fine_tune(resources={"nvidia.com/gpu": 1})
@@ -63,7 +66,7 @@ def _get_model_name() -> str:
         model_name = MODEL_NAME_PATH.read_text()
     else:
         model_name = DEFAULT_MODEL_NAME
-    return model_name
+    return model_name.strip()
 
 
 def _get_base_and_adapter_model_path() -> t.Tuple[Path, Path]:
@@ -77,16 +80,21 @@ def get_accelerate_model(
     base_model_path: Path,
     adapter_model_path: Path,
     bits: int = 4,
-    compute_dtype: torch.dtype = torch.bfloat16,
+    compute_dtype: torch.dtype = default_compute_dtype,
 ) -> transformers.PreTrainedModel:
     print(f"loading base model: {base_model_path}")
     load_in_4bit = bits == 4
     load_in_8bit = bits == 8
 
+    if compute_dtype == torch.bfloat16:
+        torch_dtype = torch.bfloat16
+    else:
+        torch_dtype = torch.float32
+
     # https://huggingface.co/blog/4bit-transformers-bitsandbytes
     # QLoRA = nf4 + double quantization + load in 4bit
     model = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
+        str(base_model_path),
         load_in_4bit=load_in_4bit,
         load_in_8bit=load_in_8bit,
         device_map="auto",  # make trainer use multi gpu devices
@@ -99,26 +107,32 @@ def get_accelerate_model(
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_type="nf4",
         ),
-        torch_dtype=compute_dtype,
+        torch_dtype=torch_dtype,
     )
     setattr(model, "model_parallel", True)
     setattr(model, "is_parallelizable", True)
-    model.config.torch_dtype = compute_dtype
+    model.config.torch_dtype = torch_dtype
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     model.gradient_checkpointing_enable()
 
     print(f"Loading adapters {adapter_model_path}...")
-    model = PeftModel.from_pretrained(model, adapter_model_path, is_trainable=True)
+    model = PeftModel.from_pretrained(model, str(adapter_model_path), is_trainable=True)
 
     for name, module in model.named_modules():
         if isinstance(module, LoraLayer):
-            module = module.to(compute_dtype)
+            if compute_dtype == torch.bfloat16:
+                module = module.to(torch.bfloat16)
 
         if "norm" in name:
             module = module.to(torch.float32)
 
         if "lm_head" in name or "embed_tokens" in name:
-            if hasattr(module, "weight") and module.weight.dtype == torch.float32:
+            if (
+                hasattr(module, "weight")
+                and compute_dtype == torch.bfloat16
+                and module.weight.dtype == torch.float32
+            ):
+                print(f"--> name:{name} to bfloat16")
                 module = module.to(torch.bfloat16)
 
     model.config.use_cache = False
@@ -135,7 +149,7 @@ def train_guanaco(
         base_model_path=base_model_path,
         adapter_model_path=adapter_model_path,
         bits=4,
-        compute_dtype=torch.bfloat16,
+        compute_dtype=default_compute_dtype,
     )
     print("model loaded")
     set_seed(0)
@@ -169,6 +183,43 @@ def train_guanaco(
         }
     )
 
+    # ref: https://github.com/artidoro/qlora/blob/main/scripts/finetune_guanaco_33b.sh
+    training_args = TrainingArguments(
+        output_dir=adapter_model_path,
+        logging_steps=10,
+        save_strategy="steps",
+        save_steps=200,
+        save_total_limit=40,
+        evaluation_strategy="steps",
+        weight_decay=0.0,
+        learning_rate=0.0001,
+        max_steps=1875,
+        eval_steps=187,
+        max_grad_norm=0.3,
+        gradient_accumulation_steps=16,
+        per_device_eval_batch_size=1,
+        warmup_ratio=0.03,
+        lr_scheduler_type="constant",
+        gradient_checkpointing=True,
+        remove_unused_columns=False,
+        optim="paged_adamw_32bit",
+        adam_beta2=0.999,
+    )
+    training_args.generation_config = transformers.GenerationConfig(
+        max_new_tokens=32,
+        do_sample=False,
+        num_beams=1,
+        num_beam_groups=1,
+        temperature=1.0,
+        top_k=50,
+        top_p=1.0,
+        typical_p=1.0,
+        diversity_penalty=0.0,
+        repetition_penalty=1.0,
+        length_penalty=1.0,
+        no_repeat_ngram_size=0,
+    )
+
     trainer = Seq2SeqTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -178,43 +229,32 @@ def train_guanaco(
             tokenizer=tokenizer,
             source_max_len=16,
             target_max_len=512,
-            train_on_source=False,
         ),
-        # ref: https://github.com/artidoro/qlora/blob/main/scripts/finetune_guanaco_33b.sh
-        args=TrainingArguments(
-            output_dir=adapter_model_path,
-            logging_steps=10,
-            save_strategy="steps",
-            save_steps=200,
-            save_total_limit=40,
-            evaluation_strategy="steps",
-            weight_decay=0.0,
-            lora_dropout=0.05,
-            lora_r=64,
-            lora_alpha=16,
-            lora_modules="all",
-            learning_rate=0.0001,
-            max_steps=1875,
-            eval_steps=187,
-            max_grad_norm=0.3,
-            gradient_accumulation_steps=16,
-            per_device_eval_batch_size=1,
-            warmup_ratio=0.03,
-            group_by_length=True,
-            lr_scheduler_type="constant",
-            gradient_checkpointing=True,
-            remove_unused_columns=False,
-            optim="paged_adamw_32bit",
-            adam_beta2=0.999,
-        ),
+        args=training_args,
     )
-    trainer.add_callback()
-    train_result = trainer.train()
+    print("Verifying the datatypes...")
+    # Verifying the datatypes.
+    dtypes = {}
+    for _, p in model.named_parameters():
+        dtype = p.dtype
+        if dtype not in dtypes:
+            dtypes[dtype] = 0
+        dtypes[dtype] += p.numel()
+    total = 0
+    for k, v in dtypes.items():
+        total += v
+    for k, v in dtypes.items():
+        print(k, v, v / total)
+
+    print("Starting model training...")
+    train_result = trainer.train(resume_from_checkpoint=None)
     print(train_result.metrics)
     trainer.save_state()
     if eval_dataset is not None:
         metrics = trainer.evaluate(metric_key_prefix="eval")
         print(metrics)
+
+    model.save_pretrained(adapter_model_path)
 
 
 def _print_trainable_parameters(bits: int, model) -> None:
@@ -268,7 +308,6 @@ class DataCollatorForCausalLM:
     tokenizer: transformers.PreTrainedTokenizer
     source_max_len: int
     target_max_len: int
-    train_on_source: bool
 
     def __call__(self, instances: t.Sequence[t.Dict]) -> t.Dict[str, torch.Tensor]:
         # Extract elements
@@ -306,17 +345,12 @@ class DataCollatorForCausalLM:
             tokenized_sources_with_prompt["input_ids"], tokenized_targets["input_ids"]
         ):
             input_ids.append(torch.tensor(tokenized_source + tokenized_target))
-            if not self.train_on_source:
-                labels.append(
-                    torch.tensor(
-                        [IGNORE_INDEX for _ in range(len(tokenized_source))]
-                        + copy.deepcopy(tokenized_target)
-                    )
+            labels.append(
+                torch.tensor(
+                    [IGNORE_INDEX for _ in range(len(tokenized_source))]
+                    + copy.deepcopy(tokenized_target)
                 )
-            else:
-                labels.append(
-                    torch.tensor(copy.deepcopy(tokenized_source + tokenized_target))
-                )
+            )
         # Apply padding
         input_ids = pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
