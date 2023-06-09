@@ -23,39 +23,34 @@ export default function JobTasks() {
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
 
-    const onAction = useCallback(
-        async (type, task: ITaskSchema) => {
-            setCurrentTask(task)
-            const files: Record<string, string> = {}
+    const onAction = useCallback(async (type, task: ITaskSchema) => {
+        setCurrentTask(task)
+        const files: Record<string, string> = {}
 
-            if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
-                const key = [task?.stepName, task?.id].join('@')
-                files[key] = 'ws'
-                setCurrentLogFiles({
-                    ...currentLogFiles,
-                    ...files,
+        if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
+            const key = [task?.stepName, task?.id].join('@')
+            files[key] = 'ws'
+            setCurrentLogFiles({
+                ...files,
+            })
+        } else {
+            const data = await fetchTaskOfflineLogFiles(task?.id)
+            if (!_.isEmpty(data)) {
+                data.map(async (v: string) => {
+                    const content = await fetchTaskOfflineFileLog(task?.id, v)
+                    const key = [task?.stepName, v].join('@')
+                    files[key] = content ?? ''
+                    setCurrentLogFiles({
+                        ...files,
+                    })
                 })
             } else {
-                const data = await fetchTaskOfflineLogFiles(task?.id)
-                if (!_.isEmpty(data)) {
-                    data.map(async (v: string) => {
-                        const content = await fetchTaskOfflineFileLog(task?.id, v)
-                        const key = [task?.stepName, v].join('@')
-                        files[key] = content ?? ''
-                        setCurrentLogFiles({
-                            ...currentLogFiles,
-                            ...files,
-                        })
-                    })
-                } else {
-                    toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
-                }
+                toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
             }
+        }
 
-            setExpanded(true)
-        },
-        [currentLogFiles]
-    )
+        setExpanded(true)
+    }, [])
 
     const currentOnlineLogUrl = useMemo(() => {
         return `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}/api/v1/log/online/${
