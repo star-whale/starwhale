@@ -58,8 +58,10 @@ public class TaskBoConverter {
                 .ip(entity.getIp())
                 .devWay(entity.getDevWay())
                 .build();
-        task.setStartTime(entity.getStartedTime().getTime());
-        task.setFinishTime(entity.getFinishedTime().getTime());
+        Long start = entity.getStartedTime() == null ? null : entity.getStartedTime().getTime();
+        Long finish = entity.getFinishedTime() == null ? null : entity.getFinishedTime().getTime();
+        task.setStartTime(start);
+        task.setFinishTime(finish);
         return task;
     }
 

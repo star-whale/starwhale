@@ -21,7 +21,6 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Date;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -54,10 +53,8 @@ public class TaskEntity extends BaseEntity {
 
     private DevWay devWay;
 
-    @Builder.Default
-    private Date startedTime = defaultDate;
+    private Date startedTime;
 
-    @Builder.Default
-    private Date finishedTime = defaultDate;
+    private Date finishedTime;
 
 }
