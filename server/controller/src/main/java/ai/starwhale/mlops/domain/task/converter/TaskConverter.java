@@ -68,11 +68,11 @@ public class TaskConverter {
                 .uuid(entity.getTaskUuid())
                 .taskStatus(entity.getTaskStatus())
                 .retryNum(entity.getRetryNum())
-                .finishedTime(entity.getFinishedTime().getTime())
+                .finishedTime(entity.getFinishedTime() == null ? null : entity.getFinishedTime().getTime())
                 .stepName(step.getName())
                 .devUrl(entity.getDevWay() != null && StringUtils.hasText(entity.getIp())
                         ? entity.getDevWay().toDevUrl(entity.getIp(), devPort) : null)
-                .startedTime(entity.getStartedTime().getTime())
+                .startedTime(entity.getStartedTime() == null ? null : entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .build();
     }
