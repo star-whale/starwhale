@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,12 +50,20 @@ public class JobEventHandlerTest {
     public void testOnAddSuccess() {
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
+        var completeTime = OffsetDateTime.now();
         V1JobStatus v1JobStatus = new V1JobStatus();
         v1JobStatus.setSucceeded(1);
-        v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
+        v1JobStatus.setConditions(
+                List.of(new V1JobCondition().status("True").type("Complete").lastTransitionTime(completeTime)));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0, null)));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.SUCCESS)
+                .retryCount(0)
+                .stopTimeMillis(completeTime.toInstant().toEpochMilli())
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected));
     }
 
     @Test
@@ -67,7 +76,12 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onAdd(v1Job);
-        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1, null)));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.FAIL)
+                .retryCount(1)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected));
     }
 
     @Test
@@ -79,7 +93,13 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.SUCCESS, 0, null)));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.SUCCESS)
+                .retryCount(0)
+                .ip(null)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected));
     }
 
     @Test
@@ -92,7 +112,12 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("True").type("Failed")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.FAIL, 1, null)));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.FAIL)
+                .retryCount(1)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected));
     }
 
     @Test
@@ -104,7 +129,12 @@ public class JobEventHandlerTest {
         v1JobStatus.setConditions(List.of(new V1JobCondition().status("False").type("Complete")));
         v1Job.setStatus(v1JobStatus);
         jobEventHandler.onUpdate(null, v1Job);
-        verify(taskModifyReceiver).receive(List.of(new ReportedTask(1L, TaskStatus.UNKNOWN, 0, null)));
+        var expected = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.UNKNOWN)
+                .retryCount(0)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected));
     }
 
 }

@@ -18,6 +18,7 @@ package ai.starwhale.mlops.reporting;
 
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -27,10 +28,13 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
+@Builder
 public class ReportedTask {
 
     final Long id;
     final TaskStatus status;
     final Integer retryCount;
     final String ip;
+    final Long startTimeMillis;
+    final Long stopTimeMillis;
 }

@@ -60,12 +60,12 @@ public class PodEventHandlerTest {
         taskModifyReceiver = mock(TaskModifyReceiver.class);
         podEventHandler = new PodEventHandler(taskLogK8sCollector, taskModifyReceiver, hotJobHolder);
         v1Pod = new V1Pod()
-            .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")))
-            .status(new V1PodStatus()
-                .containerStatuses(List.of(
-                    new V1ContainerStatus().state(
-                        new V1ContainerState().terminated(new V1ContainerStateTerminated()))
-                )));
+                .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")))
+                .status(new V1PodStatus()
+                        .containerStatuses(List.of(
+                                new V1ContainerStatus().state(
+                                        new V1ContainerState().terminated(new V1ContainerStateTerminated()))
+                        )));
     }
 
     @Test
@@ -86,9 +86,9 @@ public class PodEventHandlerTest {
         verify(taskModifyReceiver, times(1)).receive(any());
         verify(taskModifyReceiver).receive(argThat(tasks ->
                 tasks.size() == 1
-                    && tasks.get(0).getId() == 3L
-                    && tasks.get(0).getStatus() == TaskStatus.PREPARING
-                    && Objects.equals(tasks.get(0).getIp(), "127.0.0.1")));
+                        && tasks.get(0).getId() == 3L
+                        && tasks.get(0).getStatus() == TaskStatus.PREPARING
+                        && Objects.equals(tasks.get(0).getIp(), "127.0.0.1")));
     }
 
     @Test
@@ -105,7 +105,10 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().conditions(List.of(new V1PodCondition().status("True").type("PodScheduled")));
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector, times(0)).collect(any());
-        var expect = List.of(new ReportedTask(3L, TaskStatus.RUNNING, null, null));
-        verify(taskModifyReceiver, times(1)).receive(expect);
+        var expect = ReportedTask.builder()
+                .id(3L)
+                .status(TaskStatus.PREPARING)
+                .build();
+        verify(taskModifyReceiver, times(1)).receive(List.of(expect));
     }
 }

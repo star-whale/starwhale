@@ -91,8 +91,14 @@ public interface TaskMapper {
     @Update("update task_info set finished_time = #{finishedTime} where id = #{taskId}")
     void updateTaskFinishedTime(@Param("taskId") Long taskId, @Param("finishedTime") Date finishedTime);
 
+    @Update("update task_info set finished_time = #{finishedTime} where id = #{taskId} and finished_time is null")
+    void updateTaskFinishedTimeIfNotSet(@Param("taskId") Long taskId, @Param("finishedTime") Date finishedTime);
+
     @Update("update task_info set started_time = #{startedTime} where id = #{taskId}")
     void updateTaskStartedTime(@Param("taskId") Long taskId, @Param("startedTime") Date startedTime);
+
+    @Update("update task_info set started_time = #{startedTime} where id = #{taskId} and started_time is null")
+    void updateTaskStartedTimeIfNotSet(@Param("taskId") Long taskId, @Param("startedTime") Date startedTime);
 
     @Select("select " + COLUMNS + " from task_info where step_id = #{stepId}")
     List<TaskEntity> findByStepId(@Param("stepId") Long stepId);

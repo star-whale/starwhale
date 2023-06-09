@@ -120,6 +120,16 @@ public class WatchableTask extends Task implements TaskWrapper {
         originalTask.setRetryNum(retryNum);
     }
 
+    @Override
+    public void setStartTime(Long startTime) {
+        originalTask.setStartTime(startTime);
+    }
+
+    @Override
+    public void setFinishTime(Long finishTime) {
+        originalTask.setFinishTime(finishTime);
+    }
+
     public void setResultRootPath(ResultPath resultRootPath) {
         originalTask.setResultRootPath(resultRootPath);
     }

@@ -22,16 +22,16 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Tasks are derived from a Job. Tasks are the executing units of a Job.
  */
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Getter
 public class Task extends TimeConcern {
 

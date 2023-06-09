@@ -88,13 +88,14 @@ public class TaskWatcherForScheduleTest {
                 .status(TaskStatus.FAIL)
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
                         .build()).build()).build())
+                .startTime(System.currentTimeMillis() - 1000 * 60L + 1000) // +1s prevent immediately deletion
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
         task.updateStatus(TaskStatus.SUCCESS);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
         taskWatcherForSchedule.processTaskDeletion();
         verify(taskScheduler, times(0)).stop(List.of(task));
-        Thread.sleep(1000 * 60L);
+        Thread.sleep(2000);
         taskWatcherForSchedule.processTaskDeletion();
         verify(taskScheduler, times(1)).stop(List.of(task, task));
     }

@@ -107,6 +107,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (status == null) {
             return;
         }
+        Long stopTime = null;
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
@@ -126,12 +127,15 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                     log.warn("multiple True status conditions for job received {} random one is chosen",
                             conditionsLogString(conditions));
                 }
-                String type = collect.get(0).getType();
+                var condition = collect.get(0);
+                String type = condition.getType();
                 if ("Failed".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.FAIL;
+                    stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
                     log.debug("job status changed for {} is failed {}", jobName(job), status);
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
+                    stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
                 } else if ("Suspended".equalsIgnoreCase(type)) {
                     log.warn("unexpected task status detected {}", type);
                 } else {
@@ -139,10 +143,25 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 }
             }
         }
+        // warning: Represents time when the job controller started processing a job.
+        // When a Job is created in the suspended state, this field is not set until the first time it is resumed.
+        // This field is reset every time a Job is resumed from suspension.
+        // It is represented in RFC3339 form and is in UTC.
+        // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#jobstatus-v1-batch
+        // get the start time of the job to fill in the task status, beware that the start time is not reliable
+        // we only use it to fill in the task start time when the start time filed is not set
+        Long startTime = Util.k8sTimeToMs(status.getStartTime());
+
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
-        taskModifyReceiver.receive(List.of(
-                new ReportedTask(Long.parseLong(jobName(job)), taskStatus, retryNum, null)));
+        var report = ReportedTask.builder()
+                .id(Long.parseLong(jobName(job)))
+                .status(taskStatus)
+                .startTimeMillis(startTime)
+                .stopTimeMillis(stopTime)
+                .retryCount(retryNum)
+                .build();
+        taskModifyReceiver.receive(List.of(report));
     }
 
     private String conditionsLogString(List<V1JobCondition> conditions) {

@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.schedule.k8s;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import java.time.OffsetDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@SuperBuilder
-public class TimeConcern {
-
-    Long startTime = System.currentTimeMillis();
-    Long finishTime;
-
+public class Util {
+    public static Long k8sTimeToMs(OffsetDateTime time) {
+        if (time == null) {
+            return null;
+        }
+        return time.toInstant().toEpochMilli();
+    }
 }

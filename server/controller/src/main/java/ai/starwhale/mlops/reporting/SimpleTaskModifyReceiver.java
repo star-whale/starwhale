@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,20 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 if (reportedTask.status != TaskStatus.UNKNOWN) {
                     taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
                 }
+                // update start time
+                if (reportedTask.getStartTimeMillis() != null) {
+                    var tm = new Date(reportedTask.getStartTimeMillis());
+                    // prefer using the reported start time when the status is RUNNING
+                    if (reportedTask.getStatus() == TaskStatus.RUNNING) {
+                        taskMapper.updateTaskStartedTime(reportedTask.getId(), tm);
+                    } else {
+                        taskMapper.updateTaskStartedTimeIfNotSet(reportedTask.getId(), tm);
+                    }
+                }
+                if (reportedTask.getStopTimeMillis() != null) {
+                    var tm = new Date(reportedTask.getStopTimeMillis());
+                    taskMapper.updateTaskFinishedTime(reportedTask.getId(), tm);
+                }
                 return;
             }
             if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
@@ -70,7 +85,17 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
             }
             if (reportedTask.status != TaskStatus.UNKNOWN) {
-                optionalTasks.forEach(task -> task.updateStatus(reportedTask.getStatus()));
+                optionalTasks.forEach(task -> {
+                    // update time before status because only the updateStatus will trigger the watcher
+                    // TODO optimize the update time logic
+                    if (task.getStartTime() == null) {
+                        task.setStartTime(reportedTask.getStartTimeMillis());
+                    }
+                    if (task.getFinishTime() == null) {
+                        task.setFinishTime(reportedTask.getStopTimeMillis());
+                    }
+                    task.updateStatus(reportedTask.getStatus());
+                });
             }
         });
 

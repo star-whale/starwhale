@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.api.protocol.task;
 
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;
@@ -36,10 +35,9 @@ public class TaskVo implements Serializable {
 
     private String uuid;
 
-    private Long createdTime;
+    private Long startedTime;
 
-    @JsonProperty("stopTime")
-    private Long endTime;
+    private Long finishedTime;
 
     private TaskStatus taskStatus;
 
