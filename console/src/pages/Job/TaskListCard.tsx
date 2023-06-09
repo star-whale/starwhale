@@ -12,6 +12,7 @@ import qs from 'qs'
 import moment from 'moment'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { IconFont } from '@starwhale/ui'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -46,7 +47,6 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     t('Task ID'),
                     t('Step'),
                     t('Resource Pool'),
-                    t('Debug'),
                     t('Started'),
                     t('End Time'),
                     t('Duration'),
@@ -59,41 +59,43 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.id,
                             task.stepName,
                             task.resourcePool,
-                            <WithCurrentAuth id='job-dev' key='devUrl'>
-                                {(bool: boolean) =>
-                                    bool && task.devUrl ? (
-                                        <a target='_blank' href={task.devUrl} rel='noreferrer'>
-                                            {t('To Debug')}
-                                        </a>
-                                    ) : (
-                                        '-'
-                                    )
-                                }
-                            </WithCurrentAuth>,
                             task.startedTime && formatTimestampDateTime(task.startedTime),
                             task.finishedTime && formatTimestampDateTime(task.finishedTime),
                             task.finishedTime && task.startedTime && task.finishedTime !== -1 && task.startedTime !== -1
                                 ? moment.duration(task.finishedTime - task.startedTime, 'milliseconds').humanize()
                                 : '-',
                             <JobStatus key='status' status={task.taskStatus as any} />,
-                            <StyledLink
-                                key={task.uuid}
-                                onClick={(e: any) => {
-                                    // eslint-disalbe-next-line no-unused-expressions
-                                    const trDom = e.currentTarget.closest('tr')
-                                    const trDoms = trDom?.parentElement?.children
-                                    _.forEach(trDoms, (d) => {
-                                        d?.classList.remove('tr--selected')
-                                    })
-                                    trDom?.classList.add('tr--selected')
+                            <p key='action' style={{ display: 'flex', gap: '10px' }}>
+                                <StyledLink
+                                    key={task.uuid}
+                                    onClick={(e: any) => {
+                                        // eslint-disalbe-next-line no-unused-expressions
+                                        const trDom = e.currentTarget.closest('tr')
+                                        const trDoms = trDom?.parentElement?.children
+                                        _.forEach(trDoms, (d) => {
+                                            d?.classList.remove('tr--selected')
+                                        })
+                                        trDom?.classList.add('tr--selected')
 
-                                    onAction?.('viewlog', {
-                                        ...task,
-                                    })
-                                }}
-                            >
-                                {t('View Log')}
-                            </StyledLink>,
+                                        onAction?.('viewlog', {
+                                            ...task,
+                                        })
+                                    }}
+                                >
+                                    {t('View Log')}
+                                </StyledLink>
+                                <WithCurrentAuth id='job-dev' key='devUrl'>
+                                    {(bool: boolean) =>
+                                        bool && task.devUrl ? (
+                                            <a target='_blank' href={task.devUrl} rel='noreferrer' title='debug'>
+                                                <IconFont type='vscode' size={14} />
+                                            </a>
+                                        ) : (
+                                            ''
+                                        )
+                                    }
+                                </WithCurrentAuth>
+                            </p>,
                         ]
                     }) ?? []
                 }

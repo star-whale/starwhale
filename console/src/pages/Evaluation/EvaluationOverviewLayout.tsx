@@ -80,26 +80,34 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 <>
                     <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
                     &nbsp;&nbsp;
-                    <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                    <WithCurrentAuth id='job-pause'>
+                        <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                    </WithCurrentAuth>
                 </>
             ),
             [JobStatusType.RUNNING]: (
                 <>
                     <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
                     &nbsp;&nbsp;
-                    <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                    <WithCurrentAuth id='job-pause'>
+                        <Button onClick={() => handleAction(job.id, JobActionType.PAUSE)}>{t('Pause')}</Button>
+                    </WithCurrentAuth>
                 </>
             ),
             [JobStatusType.PAUSED]: (
                 <>
                     <Button onClick={() => handleAction(job.id, JobActionType.CANCEL)}>{t('Cancel')}</Button>
                     &nbsp;&nbsp;
-                    <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                    <WithCurrentAuth id='job-resume'>
+                        <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                    </WithCurrentAuth>
                 </>
             ),
             [JobStatusType.FAIL]: (
                 <>
-                    <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                    <WithCurrentAuth id='job-resume'>
+                        <Button onClick={() => handleAction(job.id, JobActionType.RESUME)}>{t('Resume')}</Button>
+                    </WithCurrentAuth>
                 </>
             ),
         }
