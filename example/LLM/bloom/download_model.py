@@ -1,11 +1,11 @@
+import sys
 from pathlib import Path
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 
-def download():
+def download(checkpoint: str = "bigscience/mt0-xxl"):
     ROOTDIR = Path(__file__).parent
-    checkpoint = "bigscience/mt0-xxl"
 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     model = AutoModelForSeq2SeqLM.from_pretrained(
@@ -18,5 +18,8 @@ def download():
     del tokenizer
 
 
-if __name__ == "main":
-    download()
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        download(sys.argv[1])
+    else:
+        download()
