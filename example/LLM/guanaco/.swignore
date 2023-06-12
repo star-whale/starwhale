@@ -1,1 +1,7 @@
 */.git/*
+pretrained_models/base-7b/*
+pretrained_models/base-33b/*
+pretrained_models/adapter-33b/*
+pretrained_models/adapter-7b.bak/*
+pretrained_models/adapter-7b/run/*
+pretrained_models/adapter-7b/checkpoint*

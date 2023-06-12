@@ -7,15 +7,16 @@ from pathlib import Path
 from dataclasses import dataclass
 
 import torch
+import bitsandbytes as bnb
 import transformers
-from peft import PeftModel, prepare_model_for_kbit_training
+from peft import PeftModel, LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     set_seed,
     AutoTokenizer,
     Seq2SeqTrainer,
-    TrainingArguments,
     BitsAndBytesConfig,
     AutoModelForCausalLM,
+    Seq2SeqTrainingArguments,
 )
 from peft.tuners.lora import LoraLayer
 from torch.nn.utils.rnn import pad_sequence
@@ -94,7 +95,8 @@ def get_accelerate_model(
     # https://huggingface.co/blog/4bit-transformers-bitsandbytes
     # QLoRA = nf4 + double quantization + load in 4bit
     model = AutoModelForCausalLM.from_pretrained(
-        str(base_model_path),
+        # str(base_model_path),
+        "huggyllama/llama-7b",
         load_in_4bit=load_in_4bit,
         load_in_8bit=load_in_8bit,
         device_map="auto",  # make trainer use multi gpu devices
@@ -117,6 +119,19 @@ def get_accelerate_model(
 
     print(f"Loading adapters {adapter_model_path}...")
     model = PeftModel.from_pretrained(model, str(adapter_model_path), is_trainable=True)
+
+    """
+    modules = find_all_linear_names(bits, model)
+    config = LoraConfig(
+        r=64,
+        lora_alpha=16,
+        target_modules=modules,
+        lora_dropout=0.05,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, config)
+    """
 
     for name, module in model.named_modules():
         if isinstance(module, LoraLayer):
@@ -184,17 +199,17 @@ def train_guanaco(
     )
 
     # ref: https://github.com/artidoro/qlora/blob/main/scripts/finetune_guanaco_33b.sh
-    training_args = TrainingArguments(
+    training_args = Seq2SeqTrainingArguments(
         output_dir=adapter_model_path,
         logging_steps=10,
         save_strategy="steps",
-        save_steps=200,
+        save_steps=2,  # 200,
         save_total_limit=40,
         evaluation_strategy="steps",
         weight_decay=0.0,
         learning_rate=0.0001,
-        max_steps=1875,
-        eval_steps=187,
+        max_steps=2,  # 1875,
+        eval_steps=1,  # 187,
         max_grad_norm=0.3,
         gradient_accumulation_steps=16,
         per_device_eval_batch_size=1,
@@ -363,3 +378,20 @@ class DataCollatorForCausalLM:
         if labels is not None:
             data_dict["labels"] = labels
         return data_dict
+
+
+def find_all_linear_names(bits, model):
+    cls = (
+        bnb.nn.Linear4bit
+        if bits == 4
+        else (bnb.nn.Linear8bitLt if bits == 8 else torch.nn.Linear)
+    )
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split(".")
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+
+    if "lm_head" in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove("lm_head")
+    return list(lora_module_names)
