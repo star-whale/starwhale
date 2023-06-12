@@ -1,0 +1,26 @@
+name: llama
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: 3.9
+configs:
+  pip:
+    index_url: https://mirrors.aliyun.com/pypi/simple
+dependencies:
+  - pip:
+      - torch==1.13.1 # https://github.com/artidoro/qlora/issues/82
+      - bitsandbytes==0.39.0 # this version supports QLoRA
+      # make transformers, peft and accelerate pkgs from source code to support QLoRA(bitsandbytes==0.39.0)
+      - transformers @ git+https://github.com/huggingface/transformers.git@3c3108972af74246bc3a0ecf3259fd2eafbacdef
+      - peft @ git+https://github.com/huggingface/peft.git@fcff23f005fc7bfb816ad1f55360442c170cd5f5
+      - accelerate @ git+https://github.com/huggingface/accelerate.git@eba6eb79dc2ab652cd8b44b37165a4852768a8ac
+      - einops==0.6.1
+      - evaluate==0.4.0
+      - scikit-learn==1.2.2
+      - sentencepiece==0.1.99
+      # download repo from huggingface hub
+      - huggingface-hub
+      # external starwhale dependencies
+      - starwhale >= 0.4.6
