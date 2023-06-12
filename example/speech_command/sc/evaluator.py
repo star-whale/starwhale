@@ -80,7 +80,7 @@ def get_m5_model():
 @torch.no_grad()
 @evaluation.predict(resources={"nvidia.com/gpu": 1}, replicas=2)
 def predict_speech(data):
-    _audio = io.BytesIO(data.speech.to_bytes())
+    _audio = io.BytesIO(data["speech"].to_bytes())
     waveform, _ = torchaudio.load(_audio)
     waveform = torch.nn.utils.rnn.pad_sequence(
         [waveform.t()], batch_first=True, padding_value=0.0
@@ -112,14 +112,11 @@ def evaluate_speech(ppl_result):
 
 
 @api(
-    [
-        gradio.Audio(type="filepath"),
-        gradio.Audio(source="microphone", type="filepath"),
-    ],
+    gradio.Audio(type="filepath"),
     gradio.Label(),
 )
 def online_eval(file: str):
     with open(file, "rb") as f:
         data = f.read()
-    _, prob = predict_speech(Audio(fp=data))
+    _, prob = predict_speech({"speech": Audio(fp=data)})
     return {ALL_LABELS[i]: p for i, p in enumerate(prob)}

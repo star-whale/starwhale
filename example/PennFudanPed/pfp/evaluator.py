@@ -108,7 +108,7 @@ def handler(file: str):
     with open(file, "rb") as f:
         data = f.read()
     img = Image(data, mime_type=MIMEType.PNG)
-    _, res = predict_mask_rcnn({"image": img}, 0)
+    _, res = predict_mask_rcnn({"image": img}, {"index": 0})
 
     bbox = res["bbox"]
     _img = PILImage.open(file)

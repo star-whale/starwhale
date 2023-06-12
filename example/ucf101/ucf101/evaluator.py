@@ -240,5 +240,5 @@ class UCF101PipelineHandler(PipelineHandler):
     def online_eval(self, file: str):
         with open(file, "rb") as f:
             data = f.read()
-        prob = self.ppl([Video(fp=data)])[0]
+        prob = self.ppl([{"video": Video(fp=data)}])[0]
         return {_LABELS[i]: p for i, p in enumerate(prob[1])}

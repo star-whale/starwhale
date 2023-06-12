@@ -4,7 +4,7 @@ import torch
 import gradio
 from torchtext.data.utils import get_tokenizer, ngrams_iterator
 
-from starwhale import Text, PipelineHandler, multi_classification
+from starwhale import PipelineHandler, multi_classification
 from starwhale.api.service import api
 
 from .model import TextClassificationModel
@@ -24,7 +24,6 @@ class TextClassificationHandler(PipelineHandler):
 
     @torch.no_grad()
     def ppl(self, data: dict, **kw):
-        print(f"index: {kw['external']['index']}")
         ngrams = list(ngrams_iterator(self.tokenizer(data["text"]), 2))
         tensor = torch.tensor(self.vocab(ngrams)).to(self.device)
         output = self.model(tensor, torch.tensor([0]).to(self.device))
@@ -69,5 +68,5 @@ class TextClassificationHandler(PipelineHandler):
         ],
     )
     def online_eval(self, content: str):
-        _, prob = self.ppl(Text(content))
+        _, prob = self.ppl({"text": content})
         return {_LABEL_NAMES[i]: p for i, p in enumerate(prob)}

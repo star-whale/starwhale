@@ -95,4 +95,4 @@ class NMTPipeline(PipelineHandler):
         examples=["i m not afraid to die .", "i study mathematics ."],
     )
     def online_eval(self, content: str):
-        return self.ppl(Text(content))
+        return self.ppl({"english": Text(content)})
