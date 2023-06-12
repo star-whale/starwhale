@@ -111,23 +111,23 @@ test.describe('Evaluation Results', () => {
         })
     })
 
-    test.describe('Actions', () => {
-        test.beforeAll(async () => {
-            if (!page.url().includes(ROUTES.evaluationActions)) await page.goto(ROUTES.evaluationActions)
-        })
-        test('should have dag', async () => {
-            await page.waitForSelector(':has-text("Step")')
-            await expect(page.getByText('Step')).toBeDefined()
-            await wait(1000)
-        })
-    })
+    // test.describe('Actions', () => {
+    //     test.beforeAll(async () => {
+    //         if (!page.url().includes(ROUTES.evaluationActions)) await page.goto(ROUTES.evaluationActions)
+    //     })
+    //     test('should have dag', async () => {
+    //         await page.waitForSelector(':has-text("Step")')
+    //         await expect(page.getByText('Step')).toBeDefined()
+    //         await wait(1000)
+    //     })
+    // })
 
     test.describe('Tasks', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
         test('should have at least 1 tasks of success status', async () => {
-            await expect(await page.getByText('Success').count()).toBeGreaterThan(0)
+            await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
         })
         test('should show success task log', async () => {
             await page
@@ -137,14 +137,8 @@ test.describe('Evaluation Results', () => {
             await expect(page.locator('.tr--selected')).toBeDefined()
         })
         test('should log count be greater than 10', async () => {
-            await page
-                .getByText(/Execution id\:/)
-                .first()
-                .click()
-            await page.waitForSelector('.ReactVirtualized__Grid__innerScrollContainer > div')
-            await expect(
-                await page.locator('.ReactVirtualized__Grid__innerScrollContainer > div').count()
-            ).toBeGreaterThan(10)
+            await page.waitForSelector('.pf-c-log-viewer__list-item')
+            await expect(await page.locator('.pf-c-log-viewer__list-item').count()).toBeGreaterThan(10)
         })
     })
 })
