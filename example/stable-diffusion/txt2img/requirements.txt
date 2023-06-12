@@ -147,7 +147,7 @@ torchmetrics==0.6.0
 torchvision==0.14.1
 tornado==6.2
 tqdm==4.64.1
-transformers==4.26.1
+transformers==4.30.0
 typing-inspect==0.8.0
 tzdata==2022.7
 tzlocal==4.2
