@@ -91,6 +91,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -108,6 +109,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -120,6 +122,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class RuntimeService {
 
+    static final String RUNTIME_MANIFEST = "_manifest.yaml";
     private final RuntimeMapper runtimeMapper;
     private final RuntimeVersionMapper runtimeVersionMapper;
     private final StorageService storageService;
@@ -495,15 +498,12 @@ public class RuntimeService {
         }
         /* create new entity */
         if (!entityExists) {
-            RuntimeManifest runtimeManifestObj;
             String runtimeManifest;
             try (final InputStream inputStream = dsFile.getInputStream()) {
-                // only extract the eval job file content
+                // extract the manifest file content
                 runtimeManifest = new String(
                         Objects.requireNonNull(
-                                TarFileUtil.getContentFromTarFile(inputStream, "", "_manifest.yaml")));
-                runtimeManifestObj = Constants.yamlMapper.readValue(runtimeManifest,
-                        RuntimeManifest.class);
+                                TarFileUtil.getContentFromTarFile(inputStream, "", RUNTIME_MANIFEST)));
             } catch (IOException e) {
                 log.error("upload runtime failed {}", uploadRequest.getRuntime(), e);
                 throw new StarwhaleApiException(new SwProcessException(ErrorType.SYSTEM),
@@ -515,7 +515,8 @@ public class RuntimeService {
                     .runtimeId(entity.getId())
                     .versionName(uploadRequest.version())
                     .versionMeta(runtimeManifest)
-                    .image(null == runtimeManifestObj ? null : runtimeManifestObj.getBaseImage())
+                    // TODO: deprecated this set operation
+                    .image(RuntimeVersionEntity.extractImage(runtimeManifest, null))
                     .build();
             runtimeVersionMapper.insert(version);
             RevertManager.create(bundleManager, runtimeDao)
@@ -536,7 +537,8 @@ public class RuntimeService {
         @Data
         @NoArgsConstructor
         @AllArgsConstructor
-        static
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static
         class Docker {
             @JsonProperty("builtin_run_image")
             BuiltinImage builtinImage;
@@ -548,7 +550,8 @@ public class RuntimeService {
         @Data
         @NoArgsConstructor
         @AllArgsConstructor
-        static
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static
         class BuiltinImage {
             @JsonProperty("fullname")
             String fullName;
@@ -639,7 +642,10 @@ public class RuntimeService {
             k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("image", image.toString()));
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
+            // TODO add SW_IMAGE_REPO env for build
             List<V1EnvVar> envVars = new ArrayList<>(List.of(
+                    new V1EnvVar().name("SW_IMAGE_REPO").value(
+                            new DockerImage(runtimeVersion.getImage(dockerSetting.getRegistryForPull())).getRegistry()),
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(

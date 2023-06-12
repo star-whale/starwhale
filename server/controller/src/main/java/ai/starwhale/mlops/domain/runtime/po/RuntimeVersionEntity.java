@@ -17,15 +17,23 @@
 package ai.starwhale.mlops.domain.runtime.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.common.Constants;
+import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.exception.SwValidationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Slf4j
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,6 +55,7 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private String storagePath;
 
+    @Deprecated
     private String image;
 
     private String builtImage;
@@ -56,5 +65,38 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
     @Override
     public String getName() {
         return versionName;
+    }
+
+    public static String extractImage(String manifest, String replaceableBuiltinRegistry) {
+        try {
+            var manifestObj = Constants.yamlMapper.readValue(
+                    manifest, RuntimeService.RuntimeManifest.class);
+            if (manifestObj == null) {
+                return null;
+            }
+            if (manifestObj.getDocker() != null) {
+                var docker = manifestObj.getDocker();
+                if (StringUtils.hasText(docker.getCustomImage())) {
+                    return docker.getCustomImage();
+                } else {
+                    var dockerImage = new DockerImage(docker.getBuiltinImage().getFullName());
+                    return StringUtils.hasText(replaceableBuiltinRegistry) ?
+                            dockerImage.resolve(replaceableBuiltinRegistry) : dockerImage.toString();
+                }
+            } else {
+                return manifestObj.getBaseImage();
+            }
+        } catch (JsonProcessingException e) {
+            log.error("runtime manifest parse error", e);
+            throw new SwValidationException(SwValidationException.ValidSubject.RUNTIME, "manifest parse error");
+        }
+    }
+
+    public String getImage() {
+        return extractImage(this.versionMeta, null);
+    }
+
+    public String getImage(String newRegistry) {
+        return extractImage(this.versionMeta, newRegistry);
     }
 }
