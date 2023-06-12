@@ -2622,6 +2622,17 @@ class StandaloneRuntimeTestCase(TestCase):
         manifest["version"] = version
         manifest["configs"]["docker"]["image"] = image
 
+        custom_image = "docker.io/sw/base:v1"
+        manifest["docker"] = {
+            "custom_run_image": custom_image,
+            "builtin_run_image": {
+                "repo": "self-registry/sw",
+                "name": "starwhale",
+                "tag": "v2-cuda11.7",
+                "fullname": "self-registry/sw/starwhale:v2",
+            },
+        }
+
         sr = StandaloneRuntime(uri)
 
         ensure_dir(sr.store.snapshot_workdir)
@@ -2640,7 +2651,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert dockerfile_path.exists()
         assert dockerignore_path.exists()
         dockerfile_content = dockerfile_path.read_text()
-        assert f"BASE_IMAGE={manifest['base_image']}" in dockerfile_content
+        assert f"BASE_IMAGE={custom_image}" in dockerfile_content
         assert f"starwhale_runtime_version={version}" in dockerfile_content
 
         assert m_check.call_count == 3

@@ -1751,6 +1751,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self.extract(force=True)
 
         def _render_dockerfile(_manifest: t.Dict[str, t.Any]) -> None:
+            from starwhale.core.runtime.store import get_docker_run_image_by_manifest
+
             console.print(f":wolf_face: render Dockerfile @{dockerfile_path}")
             _env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(searchpath=_TEMPLATE_DIR)
@@ -1758,7 +1760,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             _template = _env.get_template("Dockerfile.tmpl")
             _pip = _manifest["configs"].get("pip", {})
             _out = _template.render(
-                base_image=_manifest["base_image"],
+                base_image=get_docker_run_image_by_manifest(manifest=_manifest),
                 runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
                 pypi_index_url=_pip.get("index_url", ""),
