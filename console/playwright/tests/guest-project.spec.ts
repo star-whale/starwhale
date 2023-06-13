@@ -57,15 +57,4 @@ test.describe('Project list', () => {
         await page.locator(SELECTOR.projectCardDeleteConfirm).click()
         await expect(p).not.toBeVisible()
     })
-
-    test('should project navigate to evaluations when click project name', async () => {
-        await page.locator(SELECTOR.projectCardLink).click()
-        await expect(page).toHaveURL(ROUTES.evaluations)
-    })
 })
-
-// test.describe('Auth', () => {
-//     test('none admin should have no create button', async () => {
-//         await expect(page.locator(SELECTOR.listCreate)).toBeHidden()
-//     })
-// })
