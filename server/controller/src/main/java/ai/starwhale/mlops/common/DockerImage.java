@@ -16,12 +16,11 @@
 
 package ai.starwhale.mlops.common;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.springframework.util.StringUtils;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Getter
 @EqualsAndHashCode

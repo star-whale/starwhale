@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
@@ -147,7 +148,11 @@ public class ModelServingServiceTest {
                 .resourcePool(resourcePool)
                 .build();
         when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
-        var runtimeVer = RuntimeVersionEntity.builder().id(8L).versionName("rt-8").image("img").build();
+        var runtimeVer = RuntimeVersionEntity.builder()
+                .id(8L)
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .versionName("rt-8")
+                .build();
         when(runtimeDao.getRuntimeVersion("8")).thenReturn(runtimeVer);
         var modelVer = ModelVersionEntity.builder().id(9L).versionName("mp-9").build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
@@ -188,7 +193,7 @@ public class ModelServingServiceTest {
         expectedEnvs.put("a", "b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
-                "img",
+                RuntimeTestConstants.BUILTIN_IMAGE,
                 expectedEnvs,
                 expectedResource,
                 Map.of("foo", "bar"));

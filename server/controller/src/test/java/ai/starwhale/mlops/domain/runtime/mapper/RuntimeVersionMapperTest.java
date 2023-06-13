@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime.mapper;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import java.util.List;
@@ -48,7 +49,7 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
                 .runtimeId(runtimeEntity.getId())
                 .ownerId(1L)
                 .versionName("version 1")
-                .versionMeta("version meta")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .storagePath("storage path")
                 .image("image")
                 .build();
@@ -59,7 +60,7 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
                 .runtimeId(runtimeEntity.getId())
                 .ownerId(1L)
                 .versionName("version 2")
-                .versionMeta("version meta")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                 .storagePath("storage path")
                 .image("image")
                 .build();
@@ -71,11 +72,14 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
         var rt = runtimeVersionMapper.findLatestByProjectId(2L, null);
         Assertions.assertEquals(2, rt.size());
         Assertions.assertEquals("version 2", rt.get(0).getVersionName());
+        Assertions.assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
         Assertions.assertEquals("version 1", rt.get(1).getVersionName());
+        Assertions.assertEquals(RuntimeTestConstants.BUILTIN_IMAGE, rt.get(1).getImage());
 
         rt = runtimeVersionMapper.findLatestByProjectId(2L, 1);
         Assertions.assertEquals(1, rt.size());
         Assertions.assertEquals("version 2", rt.get(0).getVersionName());
+        Assertions.assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
 
         rt = runtimeVersionMapper.findLatestByProjectId(3L, null);
         Assertions.assertEquals(List.of(), rt);

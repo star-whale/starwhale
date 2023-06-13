@@ -91,7 +91,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,13 +102,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -515,8 +512,6 @@ public class RuntimeService {
                     .runtimeId(entity.getId())
                     .versionName(uploadRequest.version())
                     .versionMeta(runtimeManifest)
-                    // TODO: deprecated this set operation
-                    .image(RuntimeVersionEntity.extractImage(runtimeManifest, null))
                     .build();
             runtimeVersionMapper.insert(version);
             RevertManager.create(bundleManager, runtimeDao)
@@ -538,8 +533,7 @@ public class RuntimeService {
         @NoArgsConstructor
         @AllArgsConstructor
         @JsonIgnoreProperties(ignoreUnknown = true)
-        public static
-        class Docker {
+        public static class Docker {
             @JsonProperty("builtin_run_image")
             BuiltinImage builtinImage;
 
@@ -551,8 +545,7 @@ public class RuntimeService {
         @NoArgsConstructor
         @AllArgsConstructor
         @JsonIgnoreProperties(ignoreUnknown = true)
-        public static
-        class BuiltinImage {
+        public static class BuiltinImage {
             @JsonProperty("fullname")
             String fullName;
             String name;
@@ -642,7 +635,6 @@ public class RuntimeService {
             k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("image", image.toString()));
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-            // TODO add SW_IMAGE_REPO env for build
             List<V1EnvVar> envVars = new ArrayList<>(List.of(
                     new V1EnvVar().name("SW_IMAGE_REPO").value(
                             new DockerImage(runtimeVersion.getImage(dockerSetting.getRegistryForPull())).getRegistry()),

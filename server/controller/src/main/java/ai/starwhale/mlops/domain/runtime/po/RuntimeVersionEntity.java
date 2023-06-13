@@ -80,8 +80,8 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
                     return docker.getCustomImage();
                 } else {
                     var dockerImage = new DockerImage(docker.getBuiltinImage().getFullName());
-                    return StringUtils.hasText(replaceableBuiltinRegistry) ?
-                            dockerImage.resolve(replaceableBuiltinRegistry) : dockerImage.toString();
+                    return StringUtils.hasText(replaceableBuiltinRegistry)
+                            ? dockerImage.resolve(replaceableBuiltinRegistry) : dockerImage.toString();
                 }
             } else {
                 return manifestObj.getBaseImage();
