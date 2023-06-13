@@ -210,7 +210,7 @@ def train_llama(
         per_device_eval_batch_size=1,
         warmup_ratio=0.03,
         lr_scheduler_type="constant",
-        gradient_checkpointing=True,
+        gradient_checkpointing=False,
         remove_unused_columns=False,
         optim="paged_adamw_32bit",
         adam_beta2=0.999,
