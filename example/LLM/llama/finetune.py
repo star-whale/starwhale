@@ -25,9 +25,17 @@ from starwhale import model as starwhale_model
 from starwhale import Context, dataset, fine_tune
 
 try:
-    from .utils import get_model_name, get_base_and_adapter_model_path
+    from .utils import (
+        get_model_name,
+        prepare_model_package,
+        get_base_and_adapter_model_path,
+    )
 except ImportError:
-    from utils import get_model_name, get_base_and_adapter_model_path
+    from utils import (
+        get_model_name,
+        prepare_model_package,
+        get_base_and_adapter_model_path,
+    )
 
 torch.backends.cuda.matmul.allow_tf32 = True
 default_compute_dtype = torch.float16  # only A100 supports bfloat16
@@ -36,8 +44,8 @@ default_compute_dtype = torch.float16  # only A100 supports bfloat16
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-max_train_steps = os.environ.get("MAX_TRAIN_STEPS", 187)  # 1875
-max_eval_steps = os.environ.get("MAX_EVAL_STEPS", 18)  # 187
+max_train_steps = os.environ.get("MAX_TRAIN_STEPS", 18)  # 1875
+max_eval_steps = os.environ.get("MAX_EVAL_STEPS", 1)  # 187
 
 
 @fine_tune(resources={"nvidia.com/gpu": 1})
@@ -59,8 +67,9 @@ def llama_fine_tuning():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
     )
-
-    starwhale_model.build(name=f"llama-{get_model_name()}-qlora-ft")
+    model_name = get_model_name()
+    prepare_model_package(model_name, skip_adapter=False)
+    starwhale_model.build(name=f"llama-{model_name}-qlora-ft")
 
 
 def get_accelerate_model(
