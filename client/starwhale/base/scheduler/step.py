@@ -59,6 +59,8 @@ class Step(ASDictMixin):
         self.needs = needs or []
         self.extra_args = extra_args or []
         self.extra_kwargs = extra_kwargs or {}
+        self.expose = kw.get("expose", 0)
+        self.virtual = kw.get("virtual", False)
 
         # TODO: add validation
 
@@ -66,7 +68,7 @@ class Step(ASDictMixin):
         return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}"
 
     def __repr__(self) -> str:
-        return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}, needs-{self.needs}"
+        return f"Step[{self.name}]: handler-{self.module_name}:{self.cls_name}.{self.func_name}, {self.asdict()}"
 
     @classmethod
     def get_steps_from_yaml(
@@ -102,6 +104,8 @@ class Step(ASDictMixin):
           module_name: mnist.evaluator
           replicas: 2
           resources: []
+          expose: 0
+          virtual: false
         """
         steps = []
         for v in job:
@@ -117,6 +121,8 @@ class Step(ASDictMixin):
                 func_name=v["func_name"],
                 extra_args=v.get("extra_args"),
                 extra_kwargs=v.get("extra_kwargs"),
+                expose=v.get("expose"),
+                virtual=v.get("virtual"),
             )
             steps.append(step)
         return steps

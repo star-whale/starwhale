@@ -193,14 +193,12 @@ def video_evaluate_handler(*args, **kwargs): ...
         assert yaml_path.exists()
         jobs_info = load_yaml(yaml_path)
 
-        assert set(
-            [
-                "mock_user_module:img_evaluate_handler",
-                "mock_user_module:img_predict_handler",
-                "mock_user_module:video_evaluate_handler",
-                "mock_user_module:video_predict_handler",
-            ]
-        ) == set(jobs_info.keys())
+        assert {
+            "mock_user_module:img_evaluate_handler",
+            "mock_user_module:img_predict_handler",
+            "mock_user_module:video_evaluate_handler",
+            "mock_user_module:video_predict_handler",
+        } == set(jobs_info.keys())
         assert jobs_info["mock_user_module:img_evaluate_handler"] == [
             {
                 "cls_name": "",
@@ -221,6 +219,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "",
@@ -234,6 +234,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "replicas": 1,
                 "resources": [],
                 "show_name": "evaluate",
+                "expose": 0,
+                "virtual": False,
             },
         ]
 
@@ -257,6 +259,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "",
@@ -270,6 +274,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "replicas": 1,
                 "resources": [],
                 "show_name": "evaluate",
+                "expose": 0,
+                "virtual": False,
             },
         ]
 
@@ -317,6 +323,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "replicas": 2,
                     "resources": [],
                     "show_name": "predict",
+                    "expose": 0,
+                    "virtual": False,
                 },
                 {
                     "cls_name": "",
@@ -330,6 +338,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "replicas": 1,
                     "resources": [],
                     "show_name": "evaluate",
+                    "expose": 0,
+                    "virtual": False,
                 },
             ],
             "mock_user_module:predict_handler": [
@@ -352,6 +362,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "replicas": 2,
                     "resources": [],
                     "show_name": "predict",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ],
         }
@@ -447,6 +459,8 @@ class MockHandler(PipelineHandler):
                 "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "MockHandler",
@@ -460,6 +474,8 @@ class MockHandler(PipelineHandler):
                 "replicas": 1,
                 "resources": [],
                 "show_name": "evaluate",
+                "expose": 0,
+                "virtual": False,
             },
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -475,6 +491,8 @@ class MockHandler(PipelineHandler):
                 "replicas": 1,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             }
         ]
         steps = Step.get_steps_from_yaml(
@@ -541,6 +559,8 @@ class MockHandler:
                 "replicas": 4,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             }
         ]
 
@@ -564,6 +584,8 @@ class MockHandler:
                 "replicas": 4,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "MockHandler",
@@ -577,6 +599,8 @@ class MockHandler:
                 "replicas": 1,
                 "resources": [],
                 "show_name": "evaluate",
+                "expose": 0,
+                "virtual": False,
             },
         ]
 
@@ -628,6 +652,8 @@ def run(): ...
                     "replicas": 10,
                     "resources": [],
                     "show_name": "run",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ]
         }
@@ -660,6 +686,8 @@ def handle(context): ...
                     "replicas": 2,
                     "resources": [],
                     "show_name": "handle",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ]
         }
@@ -693,6 +721,8 @@ def ft2(): ...
                     "replicas": 1,
                     "resources": [],
                     "show_name": "fine_tune",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ],
             "mock_user_module:ft2": [
@@ -708,6 +738,8 @@ def ft2(): ...
                     "replicas": 1,
                     "resources": [{"limit": 1, "request": 1, "type": "nvidia.com/gpu"}],
                     "show_name": "fine_tune",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ],
         }
@@ -751,6 +783,8 @@ class MockReport:
             "replicas": 1,
             "resources": [],
             "show_name": "prepare",
+            "expose": 0,
+            "virtual": False,
         } in report_handler
 
         assert {
@@ -765,6 +799,8 @@ class MockReport:
             "replicas": 1,
             "resources": [],
             "show_name": "evaluate",
+            "expose": 0,
+            "virtual": False,
         } in report_handler
 
         assert {
@@ -782,6 +818,8 @@ class MockReport:
             "replicas": 1,
             "resources": [],
             "show_name": "report",
+            "expose": 0,
+            "virtual": False,
         } in report_handler
 
         assert {
@@ -796,6 +834,8 @@ class MockReport:
             "replicas": 10,
             "resources": [],
             "show_name": "predict",
+            "expose": 0,
+            "virtual": False,
         } in report_handler
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
@@ -811,6 +851,8 @@ class MockReport:
                 "replicas": 1,
                 "resources": [],
                 "show_name": "prepare",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "",
@@ -824,6 +866,8 @@ class MockReport:
                 "replicas": 1,
                 "resources": [],
                 "show_name": "evaluate",
+                "expose": 0,
+                "virtual": False,
             },
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
@@ -839,6 +883,8 @@ class MockReport:
                 "replicas": 1,
                 "resources": [],
                 "show_name": "prepare",
+                "expose": 0,
+                "virtual": False,
             },
             {
                 "cls_name": "",
@@ -852,6 +898,8 @@ class MockReport:
                 "replicas": 10,
                 "resources": [],
                 "show_name": "predict",
+                "expose": 0,
+                "virtual": False,
             },
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
@@ -867,6 +915,8 @@ class MockReport:
                 "replicas": 1,
                 "resources": [],
                 "show_name": "prepare",
+                "expose": 0,
+                "virtual": False,
             }
         ]
 

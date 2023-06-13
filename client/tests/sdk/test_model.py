@@ -181,6 +181,8 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                         "replicas": 1,
                         "resources": [],
                         "show_name": "handle",
+                        "expose": 0,
+                        "virtual": False,
                     }
                 ]
             }

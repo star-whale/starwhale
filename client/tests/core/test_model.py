@@ -117,7 +117,7 @@ class StandaloneModelTestCase(TestCase):
         m_copy_dir.return_value = 0
 
         svc = MagicMock(spec=Service)
-        svc.get_spec.return_value = {}
+        svc.get_spec.return_value = {"foo": "bar"}
         svc.example_resources = []
         m_get_service.return_value = svc
 
@@ -164,6 +164,8 @@ class StandaloneModelTestCase(TestCase):
                     "replicas": 1,
                     "resources": [],
                     "show_name": "t1",
+                    "expose": 0,
+                    "virtual": False,
                 }
             ],
             "depend": [
@@ -179,6 +181,8 @@ class StandaloneModelTestCase(TestCase):
                     "replicas": 1,
                     "resources": [],
                     "show_name": "t1",
+                    "expose": 0,
+                    "virtual": False,
                 },
                 {
                     "cls_name": "",
@@ -192,7 +196,28 @@ class StandaloneModelTestCase(TestCase):
                     "replicas": 1,
                     "resources": [],
                     "show_name": "t2",
+                    "expose": 0,
+                    "virtual": False,
                 },
+            ],
+            "serving": [
+                {
+                    "cls_name": "",
+                    "concurrency": 1,
+                    "expose": 8000,
+                    "extra_args": [],
+                    "extra_kwargs": {
+                        "search_modules": ["mnist.evaluator:MNISTInference"]
+                    },
+                    "func_name": "StandaloneModel._serve_handler",
+                    "module_name": "starwhale.core.model.model",
+                    "name": "serving",
+                    "needs": [],
+                    "replicas": 1,
+                    "resources": [],
+                    "show_name": "virtual handler for model serving",
+                    "virtual": True,
+                }
             ],
         }
 
@@ -1110,7 +1135,7 @@ def test_build_with_custom_config_file(
     ensure_file(example, "fake image content")
 
     svc = MagicMock(spec=Service)
-    svc.get_spec.return_value = {}
+    svc.get_spec.return_value = {"foo": "bar"}
     svc.example_resources = [example]
     m_get_service.return_value = svc
 
