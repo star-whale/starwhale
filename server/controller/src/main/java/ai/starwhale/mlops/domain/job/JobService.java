@@ -255,8 +255,8 @@ public class JobService {
                 .createdTime(new Date())
                 .modifiedTime(new Date())
                 .devMode(devMode)
-                .devWay(devWay)
-                .devPassword(devPassword)
+                .devWay(devMode ? devWay : null)
+                .devPassword(devMode ? devPassword : null)
                 .build();
 
         jobDao.addJob(jobEntity);
