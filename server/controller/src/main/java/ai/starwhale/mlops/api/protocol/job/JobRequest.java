@@ -63,4 +63,6 @@ public class JobRequest implements Serializable {
 
     @JsonProperty("devWay")
     private DevWay devWay = DevWay.VS_CODE;
+
+    private Long timeToLiveInSec;
 }

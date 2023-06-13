@@ -27,12 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
@@ -69,6 +73,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -274,22 +279,22 @@ public class JobServiceTest {
                 .willReturn(DatasetVersion.builder().id(1L).versionName("a1s2d3f4g5h6").build());
 
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
-                "", "1", "", "", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
+                "", "1", "", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L));
 
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
-                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
+                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L));
 
         assertThrows(SwValidationException.class, () -> service.createJob("1", "3", "1", "",
-                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, ""));
+                "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L));
 
         var res = service.createJob("1", "3", "1", "2",
-                 "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "");
+                "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L);
         assertThat(res, is(1L));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> !jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == null && jobFlattenEntity.getDevPassword() == null));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "");
+                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "", 1L);
         assertThat(res, is(1L));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().equals("")));
@@ -365,4 +370,23 @@ public class JobServiceTest {
                 () -> service.resumeJob("2"));
     }
 
+    @Test
+    public void testAutoReleaseJob() {
+        // nothing to do
+        when(jobDao.findJobByStatusIn(eq(List.of(JobStatus.RUNNING))))
+                .thenReturn(List.of(Job.builder().id(1L).status(JobStatus.RUNNING).build()));
+
+        var svc = spy(service);
+        svc.gc();
+        verify(svc, never()).cancelJob(any());
+
+        // cancel job 2
+        var theJob = Job.builder().id(2L).autoReleaseTime(new Date()).status(JobStatus.RUNNING).build();
+        when(jobDao.findJobByStatusIn(eq(List.of(JobStatus.RUNNING)))).thenReturn(List.of(theJob));
+        when(jobDao.getJobId(eq("2"))).thenReturn(theJob.getId());
+        when(hotJobHolder.ofIds(eq(List.of(theJob.getId())))).thenReturn(List.of(theJob));
+
+        svc.gc();
+        verify(svc).cancelJob("2");
+    }
 }

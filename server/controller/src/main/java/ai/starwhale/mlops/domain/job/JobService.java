@@ -67,10 +67,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -174,7 +176,7 @@ public class JobService {
                           String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
                           String comment, String resourcePool,
                           String handler, String stepSpecOverWrites, JobType type,
-                          DevWay devWay, boolean devMode, String devPassword) {
+                          DevWay devWay, boolean devMode, String devPassword, Long ttlInSec) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         var project = projectService.findProject(projectUrl);
@@ -257,6 +259,7 @@ public class JobService {
                 .devMode(devMode)
                 .devWay(devMode ? devWay : null)
                 .devPassword(devMode ? devPassword : null)
+                .autoReleaseTime(ttlInSec == null ? null : new Date(System.currentTimeMillis() + ttlInSec * 1000))
                 .build();
 
         jobDao.addJob(jobEntity);
@@ -270,6 +273,32 @@ public class JobService {
         jobUpdateHelper.updateJob(job);
 
         return jobId;
+    }
+
+    @Transactional
+    @Scheduled(initialDelay = 10, fixedDelay = 10, timeUnit = TimeUnit.SECONDS)
+    public void gc() {
+        List<Job> runningJobs = jobDao.findJobByStatusIn(List.of(JobStatus.RUNNING));
+        if (CollectionUtils.isEmpty(runningJobs)) {
+            log.debug("no running job");
+            return;
+        }
+        // check if the auto release time is reached
+        List<Job> jobsToRelease = runningJobs.stream()
+                .filter(job -> job.getAutoReleaseTime() != null && job.getAutoReleaseTime().before(new Date()))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(jobsToRelease)) {
+            log.debug("no job to release");
+            return;
+        }
+        for (Job job : jobsToRelease) {
+            try {
+                log.info("release job: {}", job.getId());
+                cancelJob(job.getId().toString());
+            } catch (Exception e) {
+                log.error("failed to release job: {}", job.getId(), e);
+            }
+        }
     }
 
     /**

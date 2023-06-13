@@ -153,4 +153,6 @@ public class JobFlattenEntity {
 
     // don't sync it to datastore
     private String devPassword;
+
+    private Date autoReleaseTime;
 }

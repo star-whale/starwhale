@@ -152,7 +152,8 @@ public class JobController implements JobApi {
                 jobRequest.getType(),
                 jobRequest.getDevWay(),
                 jobRequest.isDevMode(),
-                jobRequest.getDevPassword());
+                jobRequest.getDevPassword(),
+                jobRequest.getTimeToLiveInSec());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }

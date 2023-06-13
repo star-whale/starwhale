@@ -110,6 +110,7 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
                 .devMode(flattenEntity.isDevMode())
                 .devWay(flattenEntity.getDevWay())
                 .devPassword(flattenEntity.getDevPassword())
+                .autoReleaseTime(flattenEntity.getAutoReleaseTime())
                 .build();
     }
 
