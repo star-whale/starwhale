@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,8 +39,8 @@ public class RuntimeVersionConverterTest {
     public void setUp() {
         runtimeVersionConvertor = new RuntimeVersionConverter(
                 new IdConverter(),
-                new VersionAliasConverter()
-        );
+                new VersionAliasConverter(),
+                new DockerSetting());
     }
 
     @Test

@@ -119,7 +119,8 @@ public class JobBoConverter {
         RuntimeEntity runtimeEntity = runtimeMapper.find(
                 runtimeVersionEntity.getRuntimeId());
         String builtImage = runtimeVersionEntity.getBuiltImage();
-        String image = StringUtils.hasText(builtImage) ? builtImage : runtimeVersionEntity.getImage();
+        String image = StringUtils.hasText(builtImage) ? builtImage : runtimeVersionEntity.getImage(
+                    systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
 
         Job job;
         try {

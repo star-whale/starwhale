@@ -634,10 +634,11 @@ public class RuntimeService {
             // record image to annotations
             k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("image", image.toString()));
 
+            var baseImage = runtimeVersion.getImage(dockerSetting.getRegistryForPull());
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             List<V1EnvVar> envVars = new ArrayList<>(List.of(
                     new V1EnvVar().name("SW_IMAGE_REPO").value(
-                            new DockerImage(runtimeVersion.getImage(dockerSetting.getRegistryForPull())).getRegistry()),
+                            new DockerImage(baseImage).getRegistry()),
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
@@ -659,7 +660,7 @@ public class RuntimeService {
             k8sJobTemplate.getInitContainerTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(envVars);
-                containerOverwriteSpec.setImage(runtimeVersion.getImage());
+                containerOverwriteSpec.setImage(baseImage);
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
 
