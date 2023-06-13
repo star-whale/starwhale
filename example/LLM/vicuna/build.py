@@ -11,12 +11,14 @@ try:
         PRETRAINED_MODELS_DIR,
         prepare_build_model_package,
     )
+    from .evaluation import copilot_predict
 except ImportError:
     from utils import (
         SUPPORTED_MODELS,
         PRETRAINED_MODELS_DIR,
         prepare_build_model_package,
     )
+    from evaluation import copilot_predict
 
 debug.init_logger(4)
 
@@ -42,7 +44,7 @@ def build_starwhale_model(model_name: str) -> None:
         )
 
     prepare_build_model_package(model_name)
-    starwhale_model.build(name=name)
+    starwhale_model.build(name=name, modules=[copilot_predict])
 
 
 if __name__ == "__main__":
