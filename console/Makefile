@@ -34,7 +34,7 @@ rebuild-gradio:
 	export NODE_OPTIONS="--max_old_space_size=4096" && \
 	export NODE_OPTIONS="--max-old-space-size=4096" && \
 	cd gradio/ui && \
-		pnpm i --fix-lockfile && \
+		pnpm i --fix-lockfile --force && \
 		pnpm build && \
 		cd ../.. && \
 		rm -rf src/assets/GradioWidget && mkdir -p src/assets/GradioWidget && \
