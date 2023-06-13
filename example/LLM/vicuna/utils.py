@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import DEFAULT
 
 SUPPORTED_MODELS = {
     "7b": ("huggyllama/llama-7b", "lmsys/vicuna-7b-delta-v1.1"),
