@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useContext } from 'react'
+import React, { useCallback, useState, useContext, useEffect } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { headerHeight } from '@/consts'
@@ -19,7 +19,7 @@ import { Role } from '@/api/const'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import Button from '@starwhale/ui/Button'
 import Input from '@starwhale/ui/Input'
-import { useFetchSystemVersion } from '@/domain/setting/hooks/useSettings'
+import { useFetchSystemFeatures, useFetchSystemVersion } from '@/domain/setting/hooks/useSettings'
 import { IThemedStyleProps } from '@starwhale/ui/theme'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import IconFont from '@starwhale/ui/IconFont'
@@ -27,6 +27,7 @@ import Logo from './Logo'
 import Avatar from '../Avatar'
 import LanguageSelector from './LanguageSelector'
 import { HeaderExtends } from '../Extensions'
+import { useSystemFeatures } from '@/domain/setting/hooks/useSystemFeatures'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: (props: IThemedStyleProps) => ({
@@ -290,6 +291,15 @@ export default function Header() {
         const [v, ...rest] = versionInfo?.data?.version.split(':') ?? []
         return [v, rest.join('')]
     }, [versionInfo])
+
+    const systemFeaturesInfo = useFetchSystemFeatures()
+    const { setSystemFeatures } = useSystemFeatures()
+
+    useEffect(() => {
+        if (systemFeaturesInfo.data) {
+            setSystemFeatures(systemFeaturesInfo?.data)
+        }
+    }, [systemFeaturesInfo?.data, setSystemFeatures])
 
     return (
         <header className={headerStyles.headerWrapper}>
