@@ -117,7 +117,7 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project as ProjectURI
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .store import RuntimeStorage
+from .store import RuntimeStorage, get_docker_run_image_by_manifest
 
 RUNTIME_API_VERSION = "1.1"
 _TEMPLATE_DIR = Path(__file__).parent / "template"
@@ -1751,8 +1751,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self.extract(force=True)
 
         def _render_dockerfile(_manifest: t.Dict[str, t.Any]) -> None:
-            from starwhale.core.runtime.store import get_docker_run_image_by_manifest
-
             console.print(f":wolf_face: render Dockerfile @{dockerfile_path}")
             _env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(searchpath=_TEMPLATE_DIR)
