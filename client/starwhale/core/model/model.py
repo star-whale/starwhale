@@ -69,7 +69,7 @@ from starwhale.api.service import Service
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
 from starwhale.base.context import Context
-from starwhale.api._impl.job import generate_jobs_yaml
+from starwhale.api._impl.job import Handler, generate_jobs_yaml
 from starwhale.base.scheduler import Step, Scheduler
 from starwhale.core.job.store import JobStorage
 from starwhale.utils.progress import run_with_progress_bar
@@ -227,6 +227,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, ignore_errors)
 
     def _gen_model_serving(self, search_modules: t.List[str], workdir: Path) -> None:
+        console.debug(f"generating model serving config for {self.uri} ...")
         rc_dir = str(
             self.store.hidden_sw_dir.relative_to(self.store.snapshot_workdir)
             / SW_EVALUATION_EXAMPLE_DIR
@@ -234,7 +235,26 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         # render spec
         svc = self._get_service(search_modules, workdir, hijack=Hijack(True, rc_dir))
         file = self.store.hidden_sw_dir / EVALUATION_SVC_META_FILE_NAME
-        ensure_file(file, json.dumps(svc.get_spec(), indent=4), parents=True)
+        spec = svc.get_spec()
+        ensure_file(file, json.dumps(spec, indent=4), parents=True)
+        if len(spec) == 0:
+            return
+
+        # make virtual handler to make the model serving can be used in model run
+        func = self._serve_handler
+        cls_name, _, func_name = func.__qualname__.rpartition(".")
+        h = Handler(
+            name="serving",
+            show_name="virtual handler for model serving",
+            func_name=func.__qualname__,
+            module_name=func.__module__,
+            expose=8080,
+            virtual=True,
+            extra_kwargs={
+                "search_modules": search_modules,
+            },
+        )
+        Handler._register(h, func)
 
         if len(svc.example_resources) == 0:
             return
@@ -472,7 +492,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "project": self.uri.project.name,
                 "path": str(self.store.bundle_path),
                 "tags": StandaloneTag(self.uri).list(),
-                "handlers": sorted(job_yaml.keys()),
+                "handlers": sorted(
+                    {k for k, v in job_yaml.items() if not v[0].get("virtual", False)}
+                ),
             }
         )
 
@@ -601,6 +623,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         operations += [
             (
+                self._gen_model_serving,
+                10,
+                "generate model serving",
+                dict(search_modules=model_config.run.modules, workdir=workdir),
+            ),
+            (
                 generate_jobs_yaml,
                 5,
                 "generate jobs yaml",
@@ -611,12 +639,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     / SW_AUTO_DIRNAME
                     / DEFAULT_JOBS_FILE_NAME,
                 ),
-            ),
-            (
-                self._gen_model_serving,
-                10,
-                "generate model serving",
-                dict(search_modules=model_config.run.modules, workdir=workdir),
             ),
             (
                 self._render_eval_layout,
@@ -829,6 +851,22 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         svc = cls._get_service(model_config.run.modules, model_src_dir)
         svc.serve(host, port, model_config.name)
+
+    @classmethod
+    def _serve_handler(cls, **kwargs: t.Any) -> None:
+        # https://github.com/star-whale/starwhale/pull/2350
+        # kwargs see cls._gen_model_serving
+        search_modules = kwargs.get("extra_kwargs", {}).get("search_modules", [])
+        if len(search_modules) == 0:
+            raise ValueError("search_modules is empty")
+
+        workdir = kwargs.get("workdir", "")
+        if not workdir:
+            raise ValueError("workdir is empty")
+
+        port = kwargs.get("expose", 8080)
+        svc = cls._get_service(search_modules, Path(workdir))
+        svc.serve("0.0.0.0", port)
 
 
 class CloudModel(CloudBundleModelMixin, Model):

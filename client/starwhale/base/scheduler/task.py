@@ -101,21 +101,31 @@ class TaskExecutor:
     def _do_execute(self) -> None:
         from starwhale.api._impl.evaluation import PipelineHandler
 
+        console.debug(f"start to execute step: {repr(self.step)}")
+
         module = load_module(self.step.module_name, self.workdir)
         cls_ = getattr(module, self.step.cls_name, None)
 
         if cls_ is None:
-            func = getattr(module, self.step.func_name)
-            if getattr(func, DecoratorInjectAttr.Evaluate, False):
-                self._run_in_pipeline_handler_cls(func, "evaluate")
-            elif getattr(func, DecoratorInjectAttr.Predict, False):
-                self._run_in_pipeline_handler_cls(func, "predict")
-            elif getattr(func, DecoratorInjectAttr.Step, False):
-                func()
+            # for internal function
+            if "." in self.step.func_name:
+                # execute class method
+                cls_name, func_name = self.step.func_name.split(".")
+                cls_ = getattr(module, cls_name)
+                func = getattr(cls_, func_name)
+                func(**self.step.asdict(), workdir=self.workdir)
             else:
-                raise NoSupportError(
-                    f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
-                )
+                func = getattr(module, self.step.func_name)
+                if getattr(func, DecoratorInjectAttr.Evaluate, False):
+                    self._run_in_pipeline_handler_cls(func, "evaluate")
+                elif getattr(func, DecoratorInjectAttr.Predict, False):
+                    self._run_in_pipeline_handler_cls(func, "predict")
+                elif getattr(func, DecoratorInjectAttr.Step, False):
+                    func()
+                else:
+                    raise NoSupportError(
+                        f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
+                    )
         else:
             # TODO: support user custom class and function with arguments
             if issubclass(cls_, PipelineHandler):

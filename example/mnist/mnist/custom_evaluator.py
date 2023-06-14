@@ -19,12 +19,14 @@ from starwhale import (
     pass_context,
     multi_classification,
 )
-from starwhale.api.service import api
-from starwhale.base.uricomponents.resource import Resource, ResourceType
+from starwhale.api.service import Service
+from starwhale.base.uri.resource import Resource, ResourceType
 
 from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
+
+svc = Service()
 
 
 class CustomPipelineHandler:
@@ -114,7 +116,6 @@ class CustomPipelineHandler:
         output = self.model(data_tensor)
         return output.argmax(1).flatten().tolist(), np.exp(output.tolist()).tolist()
 
-    @api(gradio.Sketchpad(shape=(28, 28), image_mode="L"), gradio.Label())
     def draw(self, data: np.ndarray) -> t.Any:
         _image_array = PILImage.fromarray(data.astype("int8"), mode="L")
         _image = transforms.Compose(
@@ -123,9 +124,19 @@ class CustomPipelineHandler:
         output = self.model(torch.stack([_image]).to(self.device))
         return {i: p for i, p in enumerate(np.exp(output.tolist()).tolist()[0])}
 
-    @api(gradio.File(), gradio.Label())
     def upload_bin_file(self, file: t.Any) -> t.Any:
         with open(file.name, "rb") as f:
             data = Image(f.read(), shape=(28, 28, 1))
         _, prob = self.ppl({"img": data})
         return {i: p for i, p in enumerate(prob[0])}
+
+    @handler(name="custom_service", expose=8080)
+    def custom_service(self) -> None:
+        svc.add_api(
+            gradio.Sketchpad(shape=(28, 28), image_mode="L"),
+            gradio.Label(),
+            self.draw,
+            "sketchpad",
+        )
+        svc.add_api(gradio.File(), gradio.Label(), self.upload_bin_file, "file")
+        svc.serve(addr="0.0.0.0", port=8080)

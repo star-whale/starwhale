@@ -37,6 +37,8 @@ class Handler(ASDictMixin):
         replicas: int = 1,
         extra_args: t.Optional[t.List] = None,
         extra_kwargs: t.Optional[t.Dict] = None,
+        expose: int = 0,
+        virtual: bool = False,
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -50,6 +52,9 @@ class Handler(ASDictMixin):
         self.replicas = replicas
         self.extra_args = extra_args or []
         self.extra_kwargs = extra_kwargs or {}
+        self.expose = expose
+        # virtual marks that the handler is not a real user handler and can not find in the user's code
+        self.virtual = virtual
 
     def __str__(self) -> str:
         return f"Handler[{self.name}]: name-{self.show_name}"
@@ -120,6 +125,7 @@ class Handler(ASDictMixin):
         extra_args: t.Optional[t.List] = None,
         extra_kwargs: t.Optional[t.Dict] = None,
         name: str = "",
+        expose: int = 0,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control concurrency and replicas of handler run.
@@ -132,6 +138,10 @@ class Handler(ASDictMixin):
             needs: [List[Callable], optional] The list of the functions that need to be executed before the handler function.
               The depends callable objects must be decorated by `@handler`, `@evaluation.predict`, `@evaluation.evaluate` and `@experiment.fine_tune` .
             name: [str, optional] The user-friendly name of the handler. Default is the function name.
+            expose: [int, optional] The expose port of the handler. Only used for the handler run as a service.
+              Default is 0. If expose is 0, there is no expose port.
+              Users must set the expose port when the handler run as a service on the server or cloud instance.
+
 
         Example:
         ```python
@@ -186,12 +196,10 @@ class Handler(ASDictMixin):
                 resources=resources,
                 extra_args=extra_args,
                 extra_kwargs=extra_kwargs,
+                expose=expose,
             )
 
-            with cls._registering_lock:
-                cls._registered_handlers[key_name] = _handler
-                cls._registered_functions[key_name] = func
-
+            cls._register(_handler, func)
             setattr(func, DecoratorInjectAttr.Step, True)
             return func
 
@@ -272,6 +280,12 @@ class Handler(ASDictMixin):
                         needs=[predict_func],
                         name="evaluate",
                     )(evaluate_func)
+
+    @classmethod
+    def _register(cls, handler: Handler, func: t.Callable) -> None:
+        with cls._registering_lock:
+            cls._registered_handlers[handler.name] = handler
+            cls._registered_functions[handler.name] = func
 
 
 def generate_jobs_yaml(
