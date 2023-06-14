@@ -86,6 +86,14 @@ const runtime = {
         en: 'Image Built',
         zh: '镜像已构建',
     },
+    'runtime.image.builtin': {
+        en: 'Built-in',
+        zh: '内置',
+    },
+    'runtime.image.other': {
+        en: 'Other',
+        zh: '其他',
+    },
 }
 
 const model = {
