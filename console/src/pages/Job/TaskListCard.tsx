@@ -13,6 +13,7 @@ import moment from 'moment'
 import JobStatus from '@/domain/job/components/JobStatus'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { IconFont } from '@starwhale/ui'
+import { TaskStatusType } from '@/domain/job/schemas/task'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -86,7 +87,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 </StyledLink>
                                 <WithCurrentAuth id='job-dev' key='devUrl'>
                                     {(bool: boolean) =>
-                                        bool && task.devUrl ? (
+                                        bool && task.devUrl && task.taskStatus === TaskStatusType.RUNNING ? (
                                             <a target='_blank' href={task.devUrl} rel='noreferrer' title='debug'>
                                                 <IconFont type='vscode' size={14} />
                                             </a>
