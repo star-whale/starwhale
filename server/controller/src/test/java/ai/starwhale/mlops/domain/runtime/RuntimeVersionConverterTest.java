@@ -22,8 +22,10 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +39,8 @@ public class RuntimeVersionConverterTest {
     public void setUp() {
         runtimeVersionConvertor = new RuntimeVersionConverter(
                 new IdConverter(),
-                new VersionAliasConverter()
-        );
+                new VersionAliasConverter(),
+                new DockerSetting());
     }
 
     @Test
@@ -48,7 +50,7 @@ public class RuntimeVersionConverterTest {
                 .versionName("name1")
                 .versionOrder(2L)
                 .versionTag("tag1")
-                .versionMeta("meta1")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .image("image1")
                 .shared(true)
                 .build());
@@ -57,10 +59,31 @@ public class RuntimeVersionConverterTest {
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("tag", is("tag1")),
-                hasProperty("meta", is("meta1")),
+                hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),
-                hasProperty("image", is("image1"))
+                hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
+        assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
+    }
+
+    @Test
+    public void testImageParse() {
+        var runtime = RuntimeVersionEntity.builder()
+                .id(1L)
+                .versionName("123456")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .build();
+        // case 1: use builtin
+        var dockerImage = new DockerImage(runtime.getImage("self.registry:5000"));
+        assertThat("registry", dockerImage.getRegistry(), is("self.registry:5000"));
+        assertThat("image", dockerImage.toString(), is("self.registry:5000/starwhale:0.4.7.builtin"));
+
+        // case 2: use custom
+        runtime.setVersionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE);
+
+        dockerImage = new DockerImage(runtime.getImage("self.registry:5000"));
+        assertThat("registry", dockerImage.getRegistry(), is(RuntimeTestConstants.CUSTOM_REPO));
+        assertThat("image", dockerImage.toString(), is(RuntimeTestConstants.CUSTOM_IMAGE));
     }
 
 }

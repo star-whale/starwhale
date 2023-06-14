@@ -21,6 +21,7 @@ import static cn.hutool.core.util.BooleanUtil.toInt;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import org.springframework.stereotype.Component;
@@ -31,10 +32,14 @@ public class RuntimeVersionConverter {
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
 
+    private final DockerSetting dockerSetting;
+
     public RuntimeVersionConverter(IdConverter idConvertor,
-            VersionAliasConverter versionAliasConvertor) {
+                                   VersionAliasConverter versionAliasConvertor,
+                                   DockerSetting dockerSetting) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
+        this.dockerSetting = dockerSetting;
     }
 
     public RuntimeVersionVo convert(RuntimeVersionEntity entity)
@@ -50,7 +55,7 @@ public class RuntimeVersionConverter {
                 .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
                 .tag(entity.getVersionTag())
                 .meta(entity.getVersionMeta())
-                .image(entity.getImage())
+                .image(entity.getImage(dockerSetting.getRegistryForPull()))
                 .builtImage(entity.getBuiltImage())
                 .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())

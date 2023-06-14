@@ -22,6 +22,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -43,12 +44,13 @@ import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
@@ -81,7 +83,7 @@ public class JobBoConverterTest {
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
-                .resourcePool("rp")
+                .resourcePool("fool")
                 .owner(UserEntity.builder().userName("naf").id(1232L).build())
                 .build();
         DatasetDao datasetDao = mock(DatasetDao.class);
@@ -99,8 +101,12 @@ public class JobBoConverterTest {
                 jobEntity.getModelVersion().getModelId())).thenReturn(modelEntity);
 
         RuntimeVersionMapper runtimeVersionMapper = mock(RuntimeVersionMapper.class);
-        RuntimeVersionEntity runtimeVersionEntity = RuntimeVersionEntity.builder().versionName("name_swrt_version")
-                .runtimeId(1L).storagePath("swrt_path").build();
+        RuntimeVersionEntity runtimeVersionEntity = RuntimeVersionEntity.builder()
+                .versionName("name_swrt_version")
+                .runtimeId(1L)
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .storagePath("swrt_path")
+                .build();
         when(runtimeVersionMapper.find(
                 jobEntity.getRuntimeVersionId())).thenReturn(runtimeVersionEntity);
 
@@ -135,8 +141,24 @@ public class JobBoConverterTest {
         when(taskMapper.findByStepId(any())).thenReturn(
                 List.of(TaskEntity.builder().build(), TaskEntity.builder().build()));
 
-        SystemSettingService systemSettingService = mock(SystemSettingService.class);
-        when(systemSettingService.queryResourcePool("rp")).thenReturn(ResourcePool.builder().name("fool").build());
+        SystemSettingService systemSettingService = new SystemSettingService(
+                mock(SystemSettingMapper.class), List.of(), null, new DockerSetting(), null);
+        systemSettingService.updateSetting("---\n"
+                + "dockerSetting:\n"
+                + "  registryForPull: \"\"\n"
+                + "  registryForPush: \"\"\n"
+                + "  userName: \"\"\n"
+                + "  password: \"\"\n"
+                + "  insecure: true\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"fool\"\n"
+                + "  nodeSelector: \n"
+                + "    foo: \"bar\"\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: 5.0");
         JobBoConverter jobBoConverter = new JobBoConverter(datasetDao, modelMapper, runtimeMapper,
                 runtimeVersionMapper,
                 converter,

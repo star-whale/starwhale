@@ -278,7 +278,8 @@ public class ModelServingService {
         var name = getServiceName(id);
 
         String builtImage = runtime.getBuiltImage();
-        String image = StringUtils.isNotEmpty(builtImage) ? builtImage : runtime.getImage();
+        String image = StringUtils.isNotEmpty(builtImage) ? builtImage :
+                runtime.getImage(systemSettingService.getSystemSetting().getDockerSetting().getRegistryForPull());
 
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());

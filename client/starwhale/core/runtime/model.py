@@ -117,7 +117,7 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project as ProjectURI
 from starwhale.base.uri.resource import Resource, ResourceType
 
-from .store import RuntimeStorage
+from .store import RuntimeStorage, get_docker_run_image_by_manifest
 
 RUNTIME_API_VERSION = "1.1"
 _TEMPLATE_DIR = Path(__file__).parent / "template"
@@ -1758,7 +1758,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             _template = _env.get_template("Dockerfile.tmpl")
             _pip = _manifest["configs"].get("pip", {})
             _out = _template.render(
-                base_image=_manifest["base_image"],
+                base_image=get_docker_run_image_by_manifest(manifest=_manifest),
                 runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
                 pypi_index_url=_pip.get("index_url", ""),

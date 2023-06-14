@@ -242,14 +242,14 @@ public class RuntimeServiceTest {
                                     .id(1L)
                                     .versionName("n1")
                                     .storagePath("path1")
-                                    .image("origin-image1")
+                                    .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                                     .build();
                         case "v2":
                             return RuntimeVersionEntity.builder()
                                     .id(2L)
                                     .versionName("n2")
                                     .storagePath("path2")
-                                    .image("origin-image2")
+                                    .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                                     .builtImage("build-image")
                                 .build();
 
@@ -257,6 +257,7 @@ public class RuntimeServiceTest {
                             return RuntimeVersionEntity.builder()
                                     .id(3L)
                                     .versionName("n3")
+                                    .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                                     .storagePath("path3")
                                     .build();
                         default:
@@ -600,8 +601,8 @@ public class RuntimeServiceTest {
                 argThat(containerOverwriteSpecMap -> {
                     var prepareBuilder = containerOverwriteSpecMap.get("prepare-runtime");
                     var imageBuilder = containerOverwriteSpecMap.get("image-builder");
-                    return prepareBuilder.getEnvs().size() == 7
-                        && imageBuilder.getEnvs().size() == 7
+                    return prepareBuilder.getEnvs().size() == 8
+                        && imageBuilder.getEnvs().size() == 8
                         && imageBuilder.getCmds().size() == 6;
                 }),
                 any(), any(), isNull());

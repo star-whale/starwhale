@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
@@ -39,12 +40,12 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
-import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.system.mapper.SystemSettingMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
@@ -83,13 +84,30 @@ public class ModelServingServiceTest {
     private final K8sJobTemplate k8sJobTemplate = mock(K8sJobTemplate.class);
     private final RuntimeMapper runtimeMapper = mock(RuntimeMapper.class);
     private final ModelMapper modelMapper = mock(ModelMapper.class);
-    private final SystemSettingService systemSettingService = mock(SystemSettingService.class);
+    private final SystemSettingService systemSettingService = new SystemSettingService(
+            mock(SystemSettingMapper.class), List.of(), null, new DockerSetting(), null);
     private final RunTimeProperties runTimeProperties = mock(RunTimeProperties.class);
     private final ModelServingTokenValidator modelServingTokenValidator = mock(ModelServingTokenValidator.class);
     private final ResourceEventHolder resourceEventHolder = mock(ResourceEventHolder.class);
 
     @BeforeEach
     public void setUp() {
+        systemSettingService.updateSetting("---\n"
+                + "dockerSetting:\n"
+                + "  registryForPull: \"\"\n"
+                + "  registryForPush: \"\"\n"
+                + "  userName: \"\"\n"
+                + "  password: \"\"\n"
+                + "  insecure: true\n"
+                + "resourcePoolSetting:\n"
+                + "- name: \"default\"\n"
+                + "  nodeSelector: \n"
+                + "    foo: \"bar\"\n"
+                + "  resources:\n"
+                + "  - name: \"cpu\"\n"
+                + "    max: null\n"
+                + "    min: null\n"
+                + "    defaults: 5.0");
         svc = new ModelServingService(
                 modelServingMapper,
                 runtimeDao,
@@ -147,16 +165,14 @@ public class ModelServingServiceTest {
                 .resourcePool(resourcePool)
                 .build();
         when(modelServingMapper.list(2L, 9L, 8L, resourcePool)).thenReturn(List.of(entity));
-        var runtimeVer = RuntimeVersionEntity.builder().id(8L).versionName("rt-8").image("img").build();
+        var runtimeVer = RuntimeVersionEntity.builder()
+                .id(8L)
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .versionName("rt-8")
+                .build();
         when(runtimeDao.getRuntimeVersion("8")).thenReturn(runtimeVer);
         var modelVer = ModelVersionEntity.builder().id(9L).versionName("mp-9").build();
         when(modelDao.getModelVersion("9")).thenReturn(modelVer);
-        when(systemSettingService.queryResourcePool("default")).thenReturn(
-                ResourcePool.builder()
-                        .name("default")
-                        .nodeSelector(Map.of("foo", "bar"))
-                        .resources(List.of(new Resource("cpu")))
-                        .build());
 
         var spec = "---\n"
                 + "resources:\n"
@@ -188,7 +204,7 @@ public class ModelServingServiceTest {
         expectedEnvs.put("a", "b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
-                "img",
+                RuntimeTestConstants.BUILTIN_IMAGE,
                 expectedEnvs,
                 expectedResource,
                 Map.of("foo", "bar"));
