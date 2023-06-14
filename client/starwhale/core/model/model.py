@@ -248,7 +248,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             show_name="virtual handler for model serving",
             func_name=func.__qualname__,
             module_name=func.__module__,
-            expose=8000,
+            expose=8080,
             virtual=True,
             extra_kwargs={
                 "search_modules": search_modules,
@@ -492,7 +492,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "project": self.uri.project.name,
                 "path": str(self.store.bundle_path),
                 "tags": StandaloneTag(self.uri).list(),
-                "handlers": sorted(job_yaml.keys()),
+                "handlers": sorted(
+                    {k for k, v in job_yaml.items() if not v[0].get("virtual", False)}
+                ),
             }
         )
 
@@ -862,7 +864,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if not workdir:
             raise ValueError("workdir is empty")
 
-        port = kwargs.get("expose", 8000)
+        port = kwargs.get("expose", 8080)
         svc = cls._get_service(search_modules, Path(workdir))
         svc.serve("0.0.0.0", port)
 
