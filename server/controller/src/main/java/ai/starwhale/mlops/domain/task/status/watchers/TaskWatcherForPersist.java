@@ -50,6 +50,7 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         log.debug("persisting task for {} ", task.getId());
         TaskStatus status = task.getStatus();
+
         if (taskStatusMachine.isFinal(status)) {
             var tm = task.getFinishTime();
             if (tm == null) {
@@ -57,7 +58,11 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
             } else {
                 taskMapper.updateTaskFinishedTime(task.getId(), new Date(tm));
             }
+
+            var start = task.getStartTime() == null ? new Date() : new Date(task.getStartTime());
+            taskMapper.updateTaskStartedTimeIfNotSet(task.getId(), start);
         }
+
         if (status == TaskStatus.RUNNING) {
             var tm = task.getStartTime();
             if (tm == null) {
