@@ -58,8 +58,8 @@ export interface IJobFormProps {
 }
 
 const RuntimeType = {
-    BUILTIN: 'builtIn',
-    OTHER: 'other',
+    BUILTIN: 'Built-in',
+    OTHER: 'Other',
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
