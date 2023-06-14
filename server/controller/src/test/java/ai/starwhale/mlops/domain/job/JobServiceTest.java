@@ -32,6 +32,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
@@ -284,10 +285,14 @@ public class JobServiceTest {
         var res = service.createJob("1", "3", "1", "2",
                  "", "1", "mnist.evaluator:MNISTInference.cmp", "", JobType.EVALUATION, DevWay.VS_CODE, false, "");
         assertThat(res, is(1L));
+        verify(jobDao).addJob(argThat(jobFlattenEntity -> !jobFlattenEntity.isDevMode()
+                && jobFlattenEntity.getDevWay() == null && jobFlattenEntity.getDevPassword() == null));
 
         res = service.createJob("1", "3", "1", "2",
-                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, false, "");
+                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "");
         assertThat(res, is(1L));
+        verify(jobDao).addJob(argThat(jobFlattenEntity -> jobFlattenEntity.isDevMode()
+                && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().equals("")));
     }
 
     @Test
