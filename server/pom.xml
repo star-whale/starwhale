@@ -23,7 +23,7 @@
         <jwt-version>0.9.1</jwt-version>
         <mybatis.starter.version>2.2.2</mybatis.starter.version>
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
-        <guava.version>31.1-jre</guava.version>
+        <guava.version>32.0.0-jre</guava.version>
         <json-flattener.version>0.13.0</json-flattener.version>
         <junit.version>5.8.2</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
