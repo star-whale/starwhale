@@ -204,7 +204,7 @@ class StandaloneModelTestCase(TestCase):
                 {
                     "cls_name": "",
                     "concurrency": 1,
-                    "expose": 8000,
+                    "expose": 8080,
                     "extra_args": [],
                     "extra_kwargs": {
                         "search_modules": ["mnist.evaluator:MNISTInference"]
