@@ -1,0 +1,16 @@
+# from https://github.com/facebookresearch/audiocraft/tree/main#installation
+name: musicgen
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: 3.9
+configs:
+  pip:
+    index_url: https://mirrors.aliyun.com/pypi/simple
+dependencies:
+  - pip:
+      # use the fixed commit of audiocraft
+      - audiocraft @ git+https://github.com/facebookresearch/audiocraft.git@c9179f87d9f560c96cf6ec4de65a8fcf374c91c5
+      - torch >= 2.0
