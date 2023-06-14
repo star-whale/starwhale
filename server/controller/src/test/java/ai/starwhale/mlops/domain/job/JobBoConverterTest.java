@@ -159,7 +159,6 @@ public class JobBoConverterTest {
                 + "    max: null\n"
                 + "    min: null\n"
                 + "    defaults: 5.0");
-        // when(systemSettingService.queryResourcePool("rp")).thenReturn(ResourcePool.builder().name("fool").build());
         JobBoConverter jobBoConverter = new JobBoConverter(datasetDao, modelMapper, runtimeMapper,
                 runtimeVersionMapper,
                 converter,
