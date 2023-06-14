@@ -57,11 +57,6 @@ export interface IJobFormProps {
     onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
-const RuntimeType = {
-    BUILTIN: 'Built-in',
-    OTHER: 'Other',
-}
-
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const styles = useStyles()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
@@ -73,6 +68,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [stepSpecOverWrites, setStepSpecOverWrites] = React.useState('')
     const [t] = useTranslation()
     // const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
+
+    const RuntimeType = {
+        BUILTIN: t('runtime.image.builtin'),
+        OTHER: t('runtime.image.other'),
+    }
 
     const [form] = useForm()
     const history = useHistory()
