@@ -20,6 +20,7 @@ def test_static_faked_response():
     apis = [
         "user/current",
         "system/version",
+        "system/features",
         "project/1",  # project/project_id
         "project/1/job/1",  # project/project_id/job/job_id
         "project/1/role",  # project/project_id/role
