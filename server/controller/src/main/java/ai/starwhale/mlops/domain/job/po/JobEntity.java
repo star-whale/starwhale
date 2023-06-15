@@ -83,6 +83,7 @@ public class JobEntity extends BaseEntity implements BundleEntity {
     private boolean devMode;
     private DevWay devWay;
     private String devPassword;
+    private Date autoReleaseTime;
 
     @Override
     public String getName() {

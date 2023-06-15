@@ -30,6 +30,7 @@
     j.dev_mode,
     j.dev_way,
     j.dev_password,
+    j.auto_release_time,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -163,7 +164,8 @@
     resource_pool,
     dev_mode,
     dev_way,
-    dev_password)
+    dev_password,
+    auto_release_time)
     values (#{job.jobUuid},
     #{job.projectId},
     #{job.modelVersionId},
@@ -177,7 +179,8 @@
     #{job.resourcePool},
     #{job.devMode},
     #{job.devWay},
-    #{job.devPassword}
+    #{job.devPassword},
+    #{job.autoReleaseTime}
     )
   </insert>
 
@@ -202,6 +205,7 @@
     <result property="devMode" column="dev_mode"/>
     <result property="devWay" column="dev_way"/>
     <result property="devPassword" column="dev_password"/>
+    <result property="autoReleaseTime" column="auto_release_time"/>
     <association property="project" resultMap="projectResultMap"/>
     <association property="modelVersion" resultMap="modelVersionResultMap"/>
     <association property="owner" resultMap="userResultMap"/>

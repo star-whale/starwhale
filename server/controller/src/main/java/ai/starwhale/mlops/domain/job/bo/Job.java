@@ -94,6 +94,7 @@ public class Job extends TimeConcern {
     boolean devMode;
     DevWay devWay;
     String devPassword;
+    Date autoReleaseTime;
 
     @Override
     public boolean equals(Object o) {

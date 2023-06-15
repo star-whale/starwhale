@@ -149,7 +149,8 @@ public class JobControllerTest {
     @Test
     public void testCreatJob() {
         given(jobService.createJob(anyString(), anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), any(), any(), eq(DevWay.VS_CODE), eq(false), anyString())).willReturn(1L);
+                anyString(), anyString(), any(), any(), eq(DevWay.VS_CODE), eq(false), anyString(),
+                any())).willReturn(1L);
         JobRequest jobRequest = new JobRequest();
         jobRequest.setHandler("eval");
         jobRequest.setComment("");
