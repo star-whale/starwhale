@@ -1,0 +1,20 @@
+name: vicuna
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: 3.9
+configs:
+  pip:
+    index_url: https://mirrors.aliyun.com/pypi/simple
+dependencies:
+  - pip:
+      - fschat==0.1.2
+      - torch==1.13.1
+      - bitsandbytes==0.39.0
+      - transformers==4.28.0
+      - peft==0.3.0
+      - accelerate==0.20.3
+      # external starwhale dependencies
+      - starwhale >= 0.4.8
