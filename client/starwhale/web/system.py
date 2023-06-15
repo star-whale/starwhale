@@ -10,3 +10,8 @@ prefix = "system"
 @router.get("/version")
 def version() -> SuccessResp:
     return success(STARWHALE_VERSION)
+
+
+@router.get("/features")
+def features() -> SuccessResp:
+    return success({"disabled": []})
