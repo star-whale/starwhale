@@ -311,8 +311,6 @@ main() {
   client_test
   api_test
   console_test
-  kubectl scale deployment controller -n $SWNS --replicas=0
-
 }
 
 declare_env
