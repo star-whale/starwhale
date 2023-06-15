@@ -202,7 +202,17 @@ public interface JobApi {
                     schema = @Schema())
             @PathVariable("jobUrl")
                     String jobUrl,
-            @Valid @RequestBody JobModifyRequest jobRequest);
+                    @Valid @RequestBody JobModifyRequest jobRequest);
+            
+    @Operation(summary = "Pin Job")
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "ok") })
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/pin", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
+            @Parameter(in = ParameterIn.PATH, description = "Project url", schema = @Schema()) 
+            @PathVariable("projectUrl") String projectUrl,
+            @Parameter(in = ParameterIn.PATH, description = "Job id or uuid", required = true, schema = @Schema())
+            @PathVariable("jobUrl") String jobUrl);
 
     @Operation(summary = "DAG of Job")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

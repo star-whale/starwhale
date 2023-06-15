@@ -196,6 +196,21 @@ public class JobController implements JobApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
+            String projectUrl,
+            String jobUrl,
+            JobRequest jobRequest
+    ) {
+        Boolean res = jobService.updateJobPinStatus(projectUrl, jobUrl, jobRequest.getPinned());
+
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job pin status failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<Graph>> getJobDag(String projectUrl, String jobUrl) {
         return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl)));
     }

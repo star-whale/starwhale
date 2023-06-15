@@ -54,4 +54,8 @@ public interface JobMapper {
     int recoverJob(@Param("id") Long id);
 
     int recoverJobByUuid(@Param("uuid") String uuid);
+
+    int updateJobPinStatus(@Param("id") Long id, @Param("pinned") Boolean pinned, @Param("pinnedTime") Date pinnedTime);
+    
+    int updateJobPinStatusByUuid(@Param("uuid") String uuid, @Param("pinned") Boolean pinned, @Param("pinnedTime") Date pinnedTime);
 }
