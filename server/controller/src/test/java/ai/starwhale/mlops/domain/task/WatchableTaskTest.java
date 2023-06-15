@@ -136,4 +136,21 @@ public class WatchableTaskTest {
         Assertions.assertTrue(declaredField.get(watchableTask3) == originalTask);
     }
 
+    @Test
+    public void testCancelFromPreparing() {
+        var originalTask = Task.builder()
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.PREPARING).build();
+        var taskWatcherForSchedule = mock(TaskWatcherForSchedule.class);
+        var taskWatcherForPersist = mock(TaskWatcherForPersist.class);
+        var taskWatcherForJobStatus = mock(TaskWatcherForJobStatus.class);
+
+        var watchers = List.of(taskWatcherForSchedule, taskWatcherForJobStatus, taskWatcherForPersist);
+        WatchableTask watchableTask = new WatchableTask(originalTask, watchers, new TaskStatusMachine());
+        watchableTask.updateStatus(TaskStatus.CANCELED);
+        Assertions.assertEquals(TaskStatus.CANCELED, originalTask.getStatus());
+        verify(taskWatcherForSchedule).onTaskStatusChange(watchableTask, TaskStatus.PREPARING);
+        verify(taskWatcherForPersist).onTaskStatusChange(watchableTask, TaskStatus.PREPARING);
+        verify(taskWatcherForJobStatus).onTaskStatusChange(watchableTask, TaskStatus.PREPARING);
+    }
 }

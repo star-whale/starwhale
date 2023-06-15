@@ -31,10 +31,13 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -142,6 +145,30 @@ public class JobUpdateHelperTest {
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
         Assertions.assertEquals(JobStatus.RUNNING, mockJob.getStatus());
+        verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
+    }
+
+    @Test
+    public void testCancel() {
+        var hotJobHolder = mock(HotJobHolder.class);
+        var jobStatusCalculator = new JobStatusCalculator();
+
+        var jobStatusMachine = new JobStatusMachine();
+        var jobDao = mock(JobDao.class);
+        var swTaskScheduler = mock(SwTaskScheduler.class);
+
+        var jobUpdateHelper = new JobUpdateHelper(hotJobHolder, jobStatusCalculator, jobDao,
+                jobStatusMachine, swTaskScheduler, taskStatusMachine);
+        var mockJob = new JobMockHolder().mockJob();
+        var step = Step.builder()
+                .status(StepStatus.CANCELED)
+                .build();
+        mockJob.setSteps(List.of(step));
+
+        mockJob.setStatus(JobStatus.RUNNING);
+        var desiredStatus = JobStatus.CANCELED;
+        jobUpdateHelper.updateJob(mockJob);
+        Assertions.assertEquals(JobStatus.CANCELED, mockJob.getStatus());
         verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
     }
 }

@@ -105,4 +105,27 @@ public class TaskWatcherForJobStatusTest {
 
     }
 
+    @Test
+    public void testJobCanceled() {
+        JobMockHolder jobMockHolder = new JobMockHolder();
+        Job job = jobMockHolder.mockJob();
+        List<Task> tasks = job.getCurrentStep().getTasks();
+        tasks.get(0).updateStatus(TaskStatus.SUCCESS);
+        Task task = tasks.get(1);
+        StepTrigger stepTriggerContext = mock(StepTrigger.class);
+
+        StepMapper stepMapper = mock(StepMapper.class);
+        JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);
+
+        TaskWatcherForJobStatus taskWatcherForJobStatus = new TaskWatcherForJobStatus(new StepHelper(),
+                new StepStatusMachine(),
+                stepMapper, stepTriggerContext, jobUpdateHelper);
+
+        task.updateStatus(TaskStatus.CANCELED);
+        taskWatcherForJobStatus.onTaskStatusChange(task, TaskStatus.PREPARING);
+
+        Step step = task.getStep();
+        verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.CANCELED);
+        verify(jobUpdateHelper).updateJob(step.getJob());
+    }
 }
