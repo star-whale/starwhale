@@ -16,5 +16,3 @@ dependencies:
       - transformers==4.28.0
       - peft==0.3.0
       - accelerate==0.20.3
-      # external starwhale dependencies
-      - starwhale >= 0.4.8
