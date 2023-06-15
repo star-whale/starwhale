@@ -1333,6 +1333,10 @@ const locales0 = {
         en: 'Google',
         zh: 'Google',
     },
+    'Wechat': {
+        en: 'Wechat',
+        zh: '微信',
+    },
     'agreePolicy': {
         en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',
         zh: '我同意 <1>服务条款</1> 和 <3>隐私政策</3>',
