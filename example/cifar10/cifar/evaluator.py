@@ -22,7 +22,6 @@ class CIFAR10Inference(PipelineHandler):
         self.model = self._load_model(self.device)
 
     def predict(self, data, external):
-        print(f"index: {external['index']}")
         data_tensor = self._pre(data["image"])
         output = self.model(data_tensor)
         return self._post(output)
@@ -86,5 +85,5 @@ class CIFAR10Inference(PipelineHandler):
             "ship",
             "truck",
         )
-        _, prob = self.predict(Image(fp=buf.getvalue()))
+        _, prob = self.predict({"image": Image(fp=buf.getvalue())}, {})
         return {classes[i]: p for i, p in enumerate(prob[0])}
