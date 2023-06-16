@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -199,9 +200,9 @@ public class JobController implements JobApi {
     public ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
             String projectUrl,
             String jobUrl,
-            JobRequest jobRequest
+            JobModifyPinRequest jobRequest
     ) {
-        Boolean res = jobService.updateJobPinStatus(projectUrl, jobUrl, jobRequest.getPinned());
+        Boolean res = jobService.updateJobPinStatus(projectUrl, jobUrl, jobRequest.isPinned());
 
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job pin status failed."),

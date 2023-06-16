@@ -297,6 +297,14 @@ const job = {
         zh: '调试模式已开启，请记住您的调试密码，以便后续调试。您也可以修改为自己的密码。',
         en: 'Debug mode is on, please remember the debug password for later debugging. You can also change it to your own password.',
     },
+    'job.pin': {
+        en: 'Pin the job',
+        zh: '置顶',
+    },
+    'job.unpin': {
+        en: 'Unpin the job',
+        zh: '取消置顶',
+    },
 }
 
 const evaluation = {

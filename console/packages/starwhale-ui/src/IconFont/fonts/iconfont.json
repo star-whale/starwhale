@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "36036106",
+      "name": "top2",
+      "font_class": "top2",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "36036107",
+      "name": "top",
+      "font_class": "top",
+      "unicode": "e66d",
+      "unicode_decimal": 58989
+    },
+    {
       "icon_id": "35913528",
       "name": "vscode",
       "font_class": "vscode",

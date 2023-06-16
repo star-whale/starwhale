@@ -31,6 +31,8 @@
     j.dev_way,
     j.dev_password,
     j.auto_release_time,
+    j.pinned,
+    j.pinned_time,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -73,7 +75,7 @@
     <if test="modelId != null and modelId != ''">
       and model_version_id = #{modelId}
     </if>
-    order by job_id desc
+    order by pinned desc, pinned_time desc, job_id desc
   </select>
 
   <select id="findJobById" resultMap="jobResultMap">

@@ -96,6 +96,9 @@ public class Job extends TimeConcern {
     String devPassword;
     Date autoReleaseTime;
 
+    boolean pinned;
+    Date pinnedTime;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -77,6 +77,7 @@ public class JobConverter {
                 .duration(job.getDurationMs())
                 .comment(job.getComment())
                 .resourcePool(job.getResourcePool().getName())
+                .pinned(job.isPinned())
                 .build();
     }
 
@@ -106,6 +107,7 @@ public class JobConverter {
                 .duration(jobEntity.getDurationMs())
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
+                .pinned(job.isPinned())
                 .build();
     }
 

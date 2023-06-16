@@ -2,7 +2,16 @@ import { StatefulTooltip } from 'baseui/tooltip'
 import IconFont, { IconTypesT } from '../IconFont'
 import { themedUseStyletron } from '../theme/styletron'
 
-function IconTooltip({ content, icon, ...props }: { content: React.ReactNode; icon: IconTypesT }) {
+function IconTooltip({
+    content,
+    icon,
+    iconStyle,
+    ...props
+}: {
+    content: React.ReactNode
+    icon: IconTypesT
+    iconStyle: React.CSSProperties
+}) {
     const [css] = themedUseStyletron()
 
     return (
@@ -16,7 +25,7 @@ function IconTooltip({ content, icon, ...props }: { content: React.ReactNode; ic
                     },
                 })}
             >
-                <IconFont type={icon} />
+                <IconFont type={icon} style={iconStyle} />
             </p>
         </StatefulTooltip>
     )

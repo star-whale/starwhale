@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createJob, doJobAction } from '@job/services/job'
+import { createJob, doJobAction, pinJob } from '@job/services/job'
 import { usePage } from '@/hooks/usePage'
 import { ICreateJobSchema, JobActionType, JobStatusType } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
@@ -17,6 +17,7 @@ import { MonoText } from '@/components/Text'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button from '@starwhale/ui/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { IconTooltip } from '@starwhale/ui/Tooltip'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -28,8 +29,8 @@ export default function JobListCard() {
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
             await createJob(projectId, data)
-            await jobsInfo.refetch()
             setIsCreateJobOpen(false)
+            jobsInfo.refetch()
         },
         [jobsInfo, projectId]
     )
@@ -37,10 +38,18 @@ export default function JobListCard() {
         async (jobId, type: JobActionType) => {
             await doJobAction(projectId, jobId, type)
             toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-            await jobsInfo.refetch()
             setIsCreateJobOpen(false)
+            jobsInfo.refetch()
         },
         [jobsInfo, projectId, t]
+    )
+
+    const handlePin = useCallback(
+        async (jobId, pinned) => {
+            await pinJob(projectId, jobId, pinned)
+            jobsInfo.refetch()
+        },
+        [jobsInfo, projectId]
     )
 
     return (
@@ -157,9 +166,20 @@ export default function JobListCard() {
                             }
 
                             return [
-                                <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
-                                    <MonoText>{job.uuid}</MonoText>
-                                </TextLink>,
+                                <div key='id' style={{ display: 'flex', gap: '8px' }}>
+                                    <Button key='pin' as='link' onClick={() => handlePin(job.id, !job.pinned)}>
+                                        <IconTooltip
+                                            content={job.pinned ? t('job.unpin') : t('job.pin')}
+                                            icon={job.pinned ? 'top' : 'top2'}
+                                            iconStyle={{
+                                                color: job.pinned ? '#FF9A00' : 'rgba(2,16,43,0.40)',
+                                            }}
+                                        />
+                                    </Button>
+                                    <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
+                                        <MonoText>{job.id}</MonoText>
+                                    </TextLink>
+                                </div>,
                                 job.resourcePool,
                                 job.modelName,
                                 <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
