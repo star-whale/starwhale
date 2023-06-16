@@ -39,7 +39,7 @@ public class JobStatusMachine {
             CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
             READY, Set.of(PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
             PAUSED, Set.of(READY, RUNNING, CANCELED, FAIL),
-            RUNNING, Set.of(PAUSED, SUCCESS, FAIL),
+            RUNNING, Set.of(PAUSED, SUCCESS, CANCELED, FAIL),
             SUCCESS, Set.of(),
             FAIL, Set.of(READY, RUNNING, SUCCESS),
             TO_CANCEL, Set.of(CANCELLING, CANCELED, FAIL),
