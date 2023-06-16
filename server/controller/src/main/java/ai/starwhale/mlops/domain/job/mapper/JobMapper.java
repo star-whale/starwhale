@@ -18,10 +18,8 @@ package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-
 import java.util.Date;
 import java.util.List;
-
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -41,9 +39,9 @@ public interface JobMapper {
     void updateJobStatus(@Param("jobIds") List<Long> jobIds, @Param("jobStatus") JobStatus jobStatus);
 
     void updateJobFinishedTime(
-        @Param("jobIds") List<Long> jobIds,
-        @Param("finishedTime") Date finishedTime,
-        @Param("duration") Long duration);
+            @Param("jobIds") List<Long> jobIds,
+            @Param("finishedTime") Date finishedTime,
+            @Param("duration") Long duration);
 
     int updateJobComment(@Param("id") Long id, @Param("comment") String comment);
 
@@ -59,7 +57,8 @@ public interface JobMapper {
 
     int updateJobPinStatus(@Param("id") Long id, @Param("pinned") Boolean pinned, @Param("pinnedTime") Date pinnedTime);
 
-    int updateJobPinStatusByUuid(@Param("uuid") String uuid,
-                                 @Param("pinned") Boolean pinned,
-                                 @Param("pinnedTime") Date pinnedTime);
+    int updateJobPinStatusByUuid(
+            @Param("uuid") String uuid,
+            @Param("pinned") Boolean pinned,
+            @Param("pinnedTime") Date pinnedTime);
 }
