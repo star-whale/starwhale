@@ -35,8 +35,8 @@ export async function fetchJobDAG(projectId: string, jobId: string): Promise<IJo
 }
 
 export async function pinJob(projectId: string, jobId: string, pinned: boolean): Promise<IJobSchema> {
-    const resp = await axios.post<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/pin`, { 
-        pinned 
+    const resp = await axios.post<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/pin`, {
+        pinned,
     })
     return resp.data
 }
