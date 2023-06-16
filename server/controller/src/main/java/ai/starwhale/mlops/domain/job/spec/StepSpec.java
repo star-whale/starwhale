@@ -57,6 +57,10 @@ public class StepSpec {
     private List<Env> env;
 
     private Integer replicas = 1;
+
+    // https://github.com/star-whale/starwhale/pull/2350
+    private Integer expose;
+    private Boolean virtual;
 }
 
 

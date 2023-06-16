@@ -64,6 +64,8 @@ public class JobSpecTest {
             + "  name: ppl\n"
             + "  show_name: ppl\n"
             + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n"
             + "- cls_name: ''\n"
             + "  concurrency: 1\n"
             + "  job_name: default\n"
@@ -76,7 +78,9 @@ public class JobSpecTest {
             + "  env: []\n"
             + "  name: cmp\n"
             + "  show_name: cmp\n"
-            + "  replicas: 1\n";
+            + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n";
 
     static final String YAML2 = "---\n"
             + "default:\n"
@@ -88,6 +92,8 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
@@ -100,6 +106,8 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
             + "  show_name: \"cmp\"\n";
@@ -113,6 +121,8 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
@@ -125,6 +135,8 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
+            + "  expose: null\n"
+            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
             + "  show_name: \"cmp\"\n";
