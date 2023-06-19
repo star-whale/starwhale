@@ -17,6 +17,8 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.job.ExecRequest;
+import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -282,4 +284,28 @@ public interface JobApi {
             @Valid @RequestParam(value = "projectId") Long projectId,
             @Valid @RequestParam(value = "modelVersionId", required = false) Long modelVersionId
     );
+
+    @Operation(summary = "Execute command in running task")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+            value = "/project/{projectUrl}/job/{jobUrl}/task/{taskId}/exec",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<ExecResponse>> exec(
+            @Parameter(in = ParameterIn.PATH, description = "Project Url", schema = @Schema())
+            @PathVariable("projectUrl")
+            String projectUrl,
+
+            @Parameter(in = ParameterIn.PATH, description = "Job Url", schema = @Schema())
+            @PathVariable("jobUrl")
+            String jobUrl,
+
+            @Parameter(in = ParameterIn.PATH, description = "Task id", schema = @Schema())
+            @PathVariable("taskId")
+            String taskId,
+
+            @Valid
+            @RequestBody
+            ExecRequest execRequest
+        );
 }

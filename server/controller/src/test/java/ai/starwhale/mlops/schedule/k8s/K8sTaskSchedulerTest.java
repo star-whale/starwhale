@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -44,22 +46,28 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 public class K8sTaskSchedulerTest {
 
@@ -82,7 +90,7 @@ public class K8sTaskSchedulerTest {
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_swmp"), any())).thenReturn("s3://bucket/path_swmp");
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
-        K8sTaskScheduler scheduler = new K8sTaskScheduler(k8sClient,
+        return new K8sTaskScheduler(k8sClient,
                 taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
@@ -91,8 +99,9 @@ public class K8sTaskSchedulerTest {
                  50,
                 "OnFailure", 10,
                 storageAccessService,
-                mock(TaskLogK8sCollector.class));
-        return scheduler;
+                mock(TaskLogK8sCollector.class),
+                mock(ThreadPoolTaskScheduler.class)
+        );
     }
 
     @Test
@@ -122,7 +131,8 @@ public class K8sTaskSchedulerTest {
                 "OnFailure",
                 10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class)
+                mock(TaskLogK8sCollector.class),
+                mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(false);
         scheduler.schedule(Set.of(task));
@@ -157,7 +167,8 @@ public class K8sTaskSchedulerTest {
                 "OnFailure",
                 10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class)
+                mock(TaskLogK8sCollector.class),
+                mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(false);
         var pool = task.getStep().getResourcePool();
@@ -196,7 +207,8 @@ public class K8sTaskSchedulerTest {
                 "OnFailure",
                 10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class)
+                mock(TaskLogK8sCollector.class),
+                mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(true);
         scheduler.schedule(Set.of(task));
@@ -292,4 +304,51 @@ public class K8sTaskSchedulerTest {
         }
     }
 
+    @Test
+    public void testExec() throws ApiException, IOException, InterruptedException, ExecutionException {
+        var client = mock(K8sClient.class);
+        var instanceUri = "";
+        var devPort = 8080;
+        var datasetLoadBatchSize = 10;
+        var restartPolicy = "";
+        var backoffLimit = 2;
+
+        var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+        threadPoolTaskScheduler.initialize();
+
+        var scheduler = new K8sTaskScheduler(
+                client,
+                mock(TaskTokenValidator.class),
+                mock(RunTimeProperties.class),
+                mock(K8sJobTemplate.class),
+                instanceUri,
+                devPort,
+                datasetLoadBatchSize,
+                restartPolicy,
+                backoffLimit,
+                mock(StorageAccessService.class),
+                mock(TaskLogK8sCollector.class),
+                threadPoolTaskScheduler
+        );
+
+        var task = Task.builder().id(7L).build();
+        var podList = new V1PodList();
+        podList.setItems(List.of());
+        when(client.getPodsByJobName("7")).thenReturn(podList);
+
+        // exec will throw exception if pod not found
+        assertThrows(SwProcessException.class, () -> scheduler.exec(task, "ls"));
+
+        var pod = new V1Pod();
+        pod.setMetadata(new V1ObjectMeta());
+        pod.getMetadata().setName("7");
+        podList.setItems(List.of(pod));
+
+        when(client.getPodsByJobName("7")).thenReturn(podList);
+        when(client.execInPod("7", null, "ls")).thenReturn(new String[] {"stdout", "stderr"});
+        var resp = scheduler.exec(task, "ls").get();
+        verify(client).execInPod("7", null, "ls");
+        assertEquals("stdout", resp[0]);
+        assertEquals("stderr", resp[1]);
+    }
 }

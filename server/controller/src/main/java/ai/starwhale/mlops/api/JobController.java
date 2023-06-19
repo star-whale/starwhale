@@ -18,6 +18,8 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.job.ExecRequest;
+import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -261,5 +263,16 @@ public class JobController implements JobApi {
                         .runtimes(runtimeSuggestionService.getSuggestions(projectId, modelVersionId))
                         .build())
         );
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ExecResponse>> exec(
+            String projectUrl,
+            String jobUrl,
+            String taskId,
+            ExecRequest execRequest
+    ) {
+        var resp = jobService.exec(projectUrl, jobUrl, taskId, execRequest);
+        return ResponseEntity.ok(Code.success.asResponse(resp));
     }
 }

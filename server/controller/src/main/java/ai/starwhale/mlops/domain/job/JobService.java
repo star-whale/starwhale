@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.api.protocol.job.ExecRequest;
+import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.PageParams;
@@ -52,10 +54,12 @@ import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
@@ -67,6 +71,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,6 +92,7 @@ public class JobService {
     private final JobSpliterator jobSpliterator;
     private final HotJobHolder hotJobHolder;
     private final JobLoader jobLoader;
+    private final SwTaskScheduler swTaskScheduler;
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
@@ -101,13 +107,16 @@ public class JobService {
     private final SystemSettingService systemSettingService;
     private final JobSpecParser jobSpecParser;
 
-    public JobService(TaskMapper taskMapper, JobConverter jobConvertor,
+    public JobService(
+            TaskMapper taskMapper, JobConverter jobConvertor,
             JobBoConverter jobBoConverter, RuntimeService runtimeService,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
             ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
-            ResultQuerier resultQuerier, DatasetService datasetService, StoragePathCoordinator storagePathCoordinator,
+            ResultQuerier resultQuerier, DatasetService datasetService,
+            StoragePathCoordinator storagePathCoordinator,
             UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
-            SystemSettingService systemSettingService, JobSpecParser jobSpecParser) {
+            SystemSettingService systemSettingService, JobSpecParser jobSpecParser,
+            SwTaskScheduler swTaskScheduler) {
         this.taskMapper = taskMapper;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
@@ -126,6 +135,7 @@ public class JobService {
         this.trashService = trashService;
         this.systemSettingService = systemSettingService;
         this.jobSpecParser = jobSpecParser;
+        this.swTaskScheduler = swTaskScheduler;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -407,4 +417,35 @@ public class JobService {
         jobUpdateHelper.updateJob(job);
     }
 
+    public ExecResponse exec(
+            String projectUrl,
+            String jobUrl,
+            String taskId,
+            ExecRequest execRequest
+    ) {
+        Long jobId = jobDao.getJobId(jobUrl);
+        Job job = jobDao.findJobById(jobId);
+        if (null == job) {
+            throw new SwValidationException(ValidSubject.JOB, "job not exists");
+        }
+        if (job.getStatus() != JobStatus.RUNNING) {
+            throw new SwValidationException(ValidSubject.JOB, "only running job can be executed");
+        }
+        Task task = job.getSteps().stream()
+                .map(Step::getTasks)
+                .flatMap(Collection::stream)
+                .filter(t -> t.getId().equals(Long.valueOf(taskId)))
+                .findAny()
+                .orElseThrow(() -> new SwValidationException(ValidSubject.TASK, "task not exists"));
+        if (task.getStatus() != TaskStatus.RUNNING) {
+            throw new SwValidationException(ValidSubject.TASK, "only running task can be executed");
+        }
+
+        try {
+            var resp = swTaskScheduler.exec(task, execRequest.getCommand()).get();
+            return ExecResponse.builder().stdout(resp[0]).stderr(resp[1]).build();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new SwProcessException(SwProcessException.ErrorType.K8S, "exec task failed", e);
+        }
+    }
 }
