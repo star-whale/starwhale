@@ -14,6 +14,9 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { IconFont } from '@starwhale/ui'
 import { TaskStatusType } from '@/domain/job/schemas/task'
+import Button from '@starwhale/ui/Button'
+import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
+import ExecutorForm from '@job/components/ExecutorForm'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -28,6 +31,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
 
     const tasksInfo = useFetchTasks(projectId, jobId, page)
     const [t] = useTranslation()
+    const [currentTaskExecutor, setCurrentTaskExecutor] = React.useState<string>('')
 
     useEffect(() => {
         if (id && tasksInfo.data?.list) {
@@ -96,6 +100,13 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                         )
                                     }
                                 </WithCurrentAuth>
+                                <WithCurrentAuth id='task.execute'>
+                                    {task.taskStatus === TaskStatusType.RUNNING && (
+                                        <Button onClick={() => setCurrentTaskExecutor(task.id)} as='link'>
+                                            <IconFont type='docker' size={14} />
+                                        </Button>
+                                    )}
+                                </WithCurrentAuth>
                             </p>,
                         ]
                     }) ?? []
@@ -109,6 +120,29 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     },
                 }}
             />
+
+            <Modal
+                isOpen={currentTaskExecutor !== ''}
+                onClose={() => setCurrentTaskExecutor('')}
+                overrides={{
+                    Dialog: {
+                        style: {
+                            width: '50vw',
+                            height: '50vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        },
+                    },
+                }}
+                closeable
+                animate
+                autoFocus
+            >
+                <ModalHeader>{t('job.task.executor')}</ModalHeader>
+                <ModalBody>
+                    <ExecutorForm project={projectId} job={jobId} task={currentTaskExecutor} />
+                </ModalBody>
+            </Modal>
         </Card>
     )
 }

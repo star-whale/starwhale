@@ -33,7 +33,7 @@ export default function WithAuth({
     if (!currentUser) return <Empty />
     if (isWrongKey(id)) return <Empty str='wrong key' />
 
-    // prirority: system global > admin > role
+    // priority: system global > admin > role
     if (systemFeatures.disabled?.includes(id)) isPrivileged = false
     else if (isAdmin(currentUser)) isPrivileged = true
     else isPrivileged = hasPrivilege(role, id)
