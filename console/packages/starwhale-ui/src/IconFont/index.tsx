@@ -109,6 +109,8 @@ export type IconTypesT =
     | 'WeChat2'
     | 'vscode'
     | 'docker'
+    | 'top'
+    | 'top2'
 
 interface IIconFontProps {
     style?: React.CSSProperties

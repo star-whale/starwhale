@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -188,6 +189,22 @@ public class JobServiceTest {
         assertThat(res, is(true));
 
         res = service.updateJobComment("", "2", "comment");
+        assertThat(res, is(false));
+    }
+
+    @Test
+    public void testUpdateJobPinStatus() {
+        given(jobDao.updateJobPinStatus(same("1"), anyBoolean()))
+                .willReturn(true);
+        given(jobDao.updateJobPinStatus(same("uuid1"), anyBoolean()))
+                .willReturn(true);
+        var res = service.updateJobPinStatus("", "1", true);
+        assertThat(res, is(true));
+
+        res = service.updateJobPinStatus("", "uuid1", true);
+        assertThat(res, is(true));
+
+        res = service.updateJobPinStatus("", "2", true);
         assertThat(res, is(false));
     }
 

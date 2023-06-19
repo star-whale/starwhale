@@ -31,6 +31,8 @@
     j.dev_way,
     j.dev_password,
     j.auto_release_time,
+    j.pinned,
+    j.pinned_time,
     p.project_name,
     p.is_deleted as project_is_deleted,
     p.is_default as project_is_default,
@@ -70,7 +72,7 @@
     <if test="modelId != null and modelId != ''">
       and model_version_id = #{modelId}
     </if>
-    order by job_id desc
+    order by pinned desc, pinned_time desc, job_id desc
   </select>
 
   <select id="findJobById" resultMap="jobResultMap">
@@ -146,6 +148,16 @@
     where job_uuid = #{uuid}
   </update>
 
+  <update id="updateJobPinStatus">
+    update job_info set pinned = #{pinned}, pinned_time = #{pinnedTime}
+    where id = #{id}
+  </update>
+
+  <update id="updateJobPinStatusByUuid">
+    update job_info set pinned = #{pinned}, pinned_time = #{pinnedTime}
+    where job_uuid = #{uuid}
+  </update>
+
   <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity"
     useGeneratedKeys="true" keyProperty="id">
     insert into job_info(job_uuid,
@@ -203,6 +215,8 @@
     <result property="devWay" column="dev_way"/>
     <result property="devPassword" column="dev_password"/>
     <result property="autoReleaseTime" column="auto_release_time"/>
+    <result property="pinned" column="pinned"/>
+    <result property="pinnedTime" column="pinned_time"/>
     <association property="project" resultMap="projectResultMap"/>
     <association property="modelVersion" resultMap="modelVersionResultMap"/>
     <association property="owner" resultMap="userResultMap"/>

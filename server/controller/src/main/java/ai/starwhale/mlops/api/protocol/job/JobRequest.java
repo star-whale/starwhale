@@ -65,4 +65,8 @@ public class JobRequest implements Serializable {
     private DevWay devWay = DevWay.VS_CODE;
 
     private Long timeToLiveInSec;
+
+    @JsonProperty("pinned")
+    private boolean pinned = false;
+
 }
