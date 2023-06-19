@@ -10,6 +10,7 @@ import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import qs from 'qs'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { cliMateServer } from '@/consts'
 
 function ApiHeader() {
     const location = useLocation()
@@ -39,7 +40,7 @@ function ApiHeader() {
 
                 const reqUrl = error.config.url
                 // ignore cli mate detection error
-                if (reqUrl?.includes('127.0.0.1:8007/alive')) return Promise.reject(error)
+                if (reqUrl?.includes(`${cliMateServer}/alive`)) return Promise.reject(error)
 
                 if (error.response?.status === 401) {
                     setToken(undefined)

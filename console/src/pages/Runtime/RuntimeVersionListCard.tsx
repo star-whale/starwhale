@@ -16,6 +16,7 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
+import useCliMate from '@/hooks/useCliMate'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -30,6 +31,7 @@ export default function RuntimeVersionListCard() {
         },
         [runtimesInfo, projectId, runtimeId, t]
     )
+    const { hasCliMate, doPull } = useCliMate()
 
     return (
         <Table
@@ -117,6 +119,19 @@ export default function RuntimeVersionListCard() {
                                     {runtime.builtImage ? t('runtime.image.built') : t('runtime.image.build')}
                                 </Button>
                             </WithCurrentAuth>
+                            &nbsp;&nbsp;
+                            {hasCliMate && (
+                                <Button
+                                    size='mini'
+                                    kind='tertiary'
+                                    onClick={() => {
+                                        const url = `projects/${projectId}/runtimes/${runtimeId}/versions/${runtime.id}/`
+                                        doPull({ resourceUri: url })
+                                    }}
+                                >
+                                    {t('Pull resource to local with cli mate')}
+                                </Button>
+                            )}
                         </>,
                     ]
                 }) ?? []

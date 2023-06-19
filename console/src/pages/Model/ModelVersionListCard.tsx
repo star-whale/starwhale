@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createModelVersion, revertModelVersion } from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
@@ -17,7 +17,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
-import axios from 'axios'
+import useCliMate from '@/hooks/useCliMate'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -35,16 +35,7 @@ export default function ModelVersionListCard() {
         [modelsInfo, projectId, modelId]
     )
     const [t] = useTranslation()
-    const cliMateUrl = 'http://127.0.0.1:8007'
-    const [hasCliMate, setHasCliMate] = useState(false)
-    useEffect(() => {
-        axios
-            .get(`${cliMateUrl}/alive`)
-            .then(() => {
-                setHasCliMate(true)
-            })
-            .catch(() => {})
-    })
+    const { hasCliMate, doPull } = useCliMate()
 
     const handleAction = useCallback(
         async (modelVersionId) => {
@@ -99,21 +90,14 @@ export default function ModelVersionListCard() {
                                 &nbsp;&nbsp;
                                 {hasCliMate && (
                                     <Button
+                                        size='mini'
                                         kind='tertiary'
-                                        onClick={() =>
-                                            axios
-                                                .post(`${cliMateUrl}/resource`, {
-                                                    url: `${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`,
-                                                    token: localStorage.getItem('token'),
-                                                })
-                                                .then((res) => {
-                                                    const { data } = res
-                                                    toaster.positive(data.message, { autoHideDuration: 2000 })
-                                                })
-                                                .catch((e) => toaster.negative(e.message, { autoHideDuration: 2000 }))
-                                        }
+                                        onClick={() => {
+                                            const url = `projects/${projectId}/models/${modelId}/versions/${model.id}/`
+                                            doPull({ resourceUri: url })
+                                        }}
                                     >
-                                        To Local
+                                        {t('Pull resource to local with cli mate')}
                                     </Button>
                                 )}
                             </>,

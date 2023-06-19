@@ -99,7 +99,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         if (!modelVersion) return
         setBuiltInRuntime(modelVersion?.builtInRuntime ?? '')
         setType(modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER)
-    }, [modelVersion])
+    }, [RuntimeType.BUILTIN, RuntimeType.OTHER, modelVersion])
 
     const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!modelVersion) return undefined
@@ -159,7 +159,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource, type]
+        [checkStepSource, stepSpecOverWrites, onSubmit, type, RuntimeType.BUILTIN, stepSource, history]
     )
 
     const handleEditorChange = React.useCallback(
