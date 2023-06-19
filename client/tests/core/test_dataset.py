@@ -19,7 +19,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import BundleType
+from starwhale.base.type import BundleType, DatasetFolderSourceType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
@@ -76,29 +76,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert m_setitem.call_count == 1
 
     @patch("starwhale.core.dataset.cli.import_object")
-    def test_build_only_cli(self, m_import: MagicMock) -> None:
-        workdir = "/tmp/workdir"
-        ensure_dir(workdir)
-
-        assert not (Path(workdir) / DefaultYAMLName.DATASET).exists()
-
-        mock_obj = MagicMock()
-        runner = CliRunner()
-        result = runner.invoke(
-            build_cli,
-            [workdir, "--name", "mnist", "--handler", "mnist:test"],
-            obj=mock_obj,
-        )
-
-        assert result.exit_code == 0
-        assert mock_obj.build.call_count == 1
-        call_args = mock_obj.build.call_args[0]
-        assert call_args[0] == workdir
-        assert call_args[1].name == "mnist"
-        assert m_import.call_args[0][1] == "mnist:test"
-
-    @patch("starwhale.core.dataset.cli.import_object")
-    def test_build_only_yaml(self, m_import: MagicMock) -> None:
+    def test_build_from_yaml(self, m_import: MagicMock) -> None:
         workdir = "/tmp/workdir"
         ensure_dir(workdir)
 
@@ -111,7 +89,8 @@ class StandaloneDatasetTestCase(TestCase):
         result = runner.invoke(
             build_cli,
             [
-                workdir,
+                "--yaml",
+                str(yaml_path),
             ],
             obj=mock_obj,
         )
@@ -130,36 +109,70 @@ class StandaloneDatasetTestCase(TestCase):
         mock_obj.reset_mock()
         m_import.reset_mock()
         result = runner.invoke(
-            build_cli, [new_workdir, "-f", "dataset-new.yaml"], obj=mock_obj
+            build_cli,
+            ["-f", os.path.join(new_workdir, "dataset-new.yaml")],
+            obj=mock_obj,
         )
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
 
-    @patch("starwhale.core.dataset.cli.import_object")
-    def test_build_mixed_cli_yaml(self, m_import: MagicMock) -> None:
-        handler_func = lambda: 1
-        m_import.return_value = handler_func
-        workdir = "/tmp/workdir"
-        ensure_dir(workdir)
-        config = DatasetConfig(
-            name="mnist-error",
-            handler="dataset:not_found",
-        )
-        yaml_path = Path(workdir) / DefaultYAMLName.DATASET
-        ensure_file(yaml_path, yaml.safe_dump(config.asdict()))
+    def test_build_from_image_folder(self) -> None:
+        image_folder = Path("/tmp/workdir/images")
+        ensure_file(image_folder / "1.jpg", "1", parents=True)
+        ensure_file(image_folder / "1.txt", "1", parents=True)
+        ensure_file(image_folder / "dog" / "1.jpg", "1", parents=True)
+        ensure_file(image_folder / "cat" / "2.jpg", "2", parents=True)
 
         mock_obj = MagicMock()
         runner = CliRunner()
         result = runner.invoke(
             build_cli,
             [
-                workdir,
+                "--name",
+                "image-folder-test",
+                "--image-folder",
+                str(image_folder),
+                "--auto-label",
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_folder.call_count == 1
+        call_args = mock_obj.build_from_folder.call_args
+        assert call_args[1]["name"] == "image-folder-test"
+        assert call_args[0][0] == image_folder
+        assert call_args[0][1] == DatasetFolderSourceType.IMAGE
+
+        DatasetTermView.build_from_folder(
+            folder=image_folder,
+            kind=DatasetFolderSourceType.IMAGE,
+            name="image-folder-test",
+            project_uri="",
+            auto_label=True,
+            alignment_size="128",
+            volume_size="128M",
+        )
+
+    @patch("starwhale.core.dataset.cli.import_object")
+    def test_build_from_handler(self, m_import: MagicMock) -> None:
+        handler_func = lambda: 1
+        m_import.return_value = handler_func
+        workdir = "/tmp/workdir"
+        ensure_dir(workdir)
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
                 "--name",
                 "mnist",
-                "--handler",
+                "--python-handler",
                 "dataset:buildFunction",
+                "--workdir",
+                workdir,
                 "--project",
                 "self",
             ],

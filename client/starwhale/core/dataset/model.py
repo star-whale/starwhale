@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
+from pathlib import Path
 from collections import defaultdict
 
 import yaml
@@ -19,7 +20,12 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir
-from starwhale.base.type import BundleType, InstanceType, DatasetChangeMode
+from starwhale.base.type import (
+    BundleType,
+    InstanceType,
+    DatasetChangeMode,
+    DatasetFolderSourceType,
+)
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -29,7 +35,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.api._impl.dataset.loader import DataRow
 
-from .type import DatasetConfig, DatasetSummary
+from .type import DatasetConfig, DatasetSummary, D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 from .store import DatasetStorage
 
 if t.TYPE_CHECKING:
@@ -64,6 +70,16 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
 
     def diff(self, compare_uri: Resource) -> t.Dict[str, t.Any]:
         # TODO: standalone or cloud dataset diff by datastore diff feature
+        raise NotImplementedError
+
+    def build_from_folder(
+        self,
+        folder: Path,
+        kind: DatasetFolderSourceType,
+        auto_label: bool = True,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -217,6 +233,30 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             )
 
         return rs, {}
+
+    def build_from_folder(
+        self,
+        folder: Path,
+        kind: DatasetFolderSourceType,
+        auto_label: bool = True,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> None:
+        from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+        ds = SDKDataset.from_folder(
+            folder=folder,
+            kind=kind,
+            name=self.uri,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+            auto_label=auto_label,
+        )
+
+        console.print(
+            ":hibiscus: congratulation! you can run "
+            f"[red bold blink] swcli dataset info {self.name}/version/{ds.committed_version[:SHORT_VERSION_CNT]}[/]"
+        )
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset

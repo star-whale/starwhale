@@ -144,11 +144,10 @@ class Dataset(BaseArtifact):
             CLI,
             "dataset",
             "build",
-            workdir,
             "--name",
             name,
             "--dataset-yaml",
-            dataset_yaml,
+            os.path.join(workdir, dataset_yaml),
         ]
         version = gen_uniq_version()
         ret_code, res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})

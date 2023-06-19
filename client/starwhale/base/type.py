@@ -79,3 +79,10 @@ class DatasetChangeMode(Enum):
 class PredictLogMode(Enum):
     PLAIN = "plain"
     PICKLE = "pickle"
+
+
+@unique
+class DatasetFolderSourceType(Enum):
+    IMAGE = "image"
+    VIDEO = "video"
+    AUDIO = "audio"

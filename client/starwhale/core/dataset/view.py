@@ -9,7 +9,7 @@ from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
-from starwhale.base.type import DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.view import BaseTermView
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -160,9 +160,36 @@ class DatasetTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
+    def build_from_folder(
+        cls,
+        folder: Path,
+        kind: DatasetFolderSourceType,
+        name: str,
+        project_uri: str,
+        auto_label: bool,
+        alignment_size: int | str,
+        volume_size: int | str,
+    ) -> None:
+        dataset_uri = cls.prepare_build_bundle(
+            project=project_uri,
+            bundle_name=name,
+            typ=ResourceType.dataset,
+            auto_gen_version=False,
+        )
+        ds = Dataset.get_dataset(dataset_uri)
+        ds.build_from_folder(
+            folder=folder,
+            kind=kind,
+            auto_label=auto_label,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+        )
+
+    @classmethod
+    @BaseTermView._only_standalone
     def build(
         cls,
-        workdir: str,
+        workdir: str | Path,
         config: DatasetConfig,
     ) -> None:
         if config.runtime_uri:
