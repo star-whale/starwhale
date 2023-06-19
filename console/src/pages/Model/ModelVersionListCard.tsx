@@ -17,6 +17,7 @@ import { WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
+import useCliMate from '@/hooks/useCliMate'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -34,6 +35,7 @@ export default function ModelVersionListCard() {
         [modelsInfo, projectId, modelId]
     )
     const [t] = useTranslation()
+    const { hasCliMate, doPull } = useCliMate()
 
     const handleAction = useCallback(
         async (modelVersionId) => {
@@ -85,6 +87,19 @@ export default function ModelVersionListCard() {
                                         </Button>
                                     </WithCurrentAuth>
                                 ) : null}
+                                &nbsp;&nbsp;
+                                {hasCliMate && (
+                                    <Button
+                                        size='mini'
+                                        kind='tertiary'
+                                        onClick={() => {
+                                            const url = `projects/${projectId}/models/${modelId}/versions/${model.id}/`
+                                            doPull({ resourceUri: url })
+                                        }}
+                                    >
+                                        {t('Pull resource to local with cli mate')}
+                                    </Button>
+                                )}
                             </>,
                         ]
                     }) ?? []

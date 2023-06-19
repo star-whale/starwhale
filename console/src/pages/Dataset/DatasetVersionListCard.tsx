@@ -18,6 +18,7 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
 import { Shared } from '../../components/Shared'
 import { Alias } from '@/components/Alias'
+import useCliMate from '@/hooks/useCliMate'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -43,6 +44,8 @@ export default function DatasetVersionListCard() {
         },
         [datasetVersionsInfo, projectId, datasetId, t]
     )
+
+    const { hasCliMate, doPull } = useCliMate()
 
     return (
         <>
@@ -79,6 +82,19 @@ export default function DatasetVersionListCard() {
                                             </Button>
                                         </WithCurrentAuth>
                                     ) : null}
+                                    &nbsp;&nbsp;
+                                    {hasCliMate && (
+                                        <Button
+                                            size='mini'
+                                            kind='tertiary'
+                                            onClick={() => {
+                                                const url = `projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/`
+                                                doPull({ resourceUri: url })
+                                            }}
+                                        >
+                                            {t('Pull resource to local with cli mate')}
+                                        </Button>
+                                    )}
                                 </>,
                             ]
                         }) ?? []

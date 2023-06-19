@@ -7,6 +7,7 @@ from starwhale.utils.cli import AliasedGroup
 
 from .host import CommandRetriever
 from .remote import CommandRunner
+from .wait_console import start
 
 
 @click.group("assistance", cls=AliasedGroup, help="Remote assistance")
@@ -47,3 +48,11 @@ def remote(broker: str, args: Tuple[str]) -> None:
         console.print("stopping...")
         runner.stop()
         runner.join()
+
+
+@assistance_cmd.command(
+    "wait-console",
+    help="Wait for Starwhale Console to connect to the standalone instance",
+)
+def wait_console() -> None:
+    start()

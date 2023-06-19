@@ -100,12 +100,14 @@ class DatasetCopy(BundleCopy):
                 name=self.src_uri.name,
                 project=self.src_uri.project.name,
                 instance_name=self.src_uri.instance.url,
+                token=self.src_uri.instance.token,
             )
 
             dest = TabularDataset(
                 name=self.dest_uri.name or self.src_uri.name,
                 project=self.dest_uri.project.name,
                 instance_name=self.dest_uri.instance.url,
+                token=self.dest_uri.instance.token,
             )
             try:
                 self._do_dataset_copy(src=src, dest=dest, progress=progress)

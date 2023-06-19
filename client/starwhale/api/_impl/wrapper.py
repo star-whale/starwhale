@@ -80,6 +80,7 @@ def _gen_storage_table_name(
         _instance_uri is None
         or _instance_uri == STANDALONE_INSTANCE
         or isinstance(project, int)
+        or (isinstance(project, str) and project.isnumeric())
     ):
         return table_name_formatter(project, table)
     else:

@@ -1481,6 +1481,10 @@ const locales0 = {
         en: 'Update Setting Success',
         zh: '更新设置成功',
     },
+    'Pull resource to local with cli mate': {
+        en: 'Push to local',
+        zh: '拉取到本地',
+    },
     ...basic,
     ...dataset,
     ...model,

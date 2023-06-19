@@ -10,6 +10,7 @@ import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import qs from 'qs'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 import { useFetchProjectRole } from '@/domain/project/hooks/useFetchProjectRole'
+import { cliMateServer } from '@/consts'
 
 function ApiHeader() {
     const location = useLocation()
@@ -36,6 +37,10 @@ function ApiHeader() {
                 // eslint-disable-next-line no-restricted-globals
                 // eslint-disable-next-line prefer-destructuring
                 const winLocation = window.location
+
+                const reqUrl = error.config.url
+                // ignore cli mate detection error
+                if (reqUrl?.includes(`${cliMateServer}/alive`)) return Promise.reject(error)
 
                 if (error.response?.status === 401) {
                     setToken(undefined)
