@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import csv
 import copy
 import json
 import typing as t
@@ -14,6 +15,7 @@ from functools import wraps, lru_cache
 from itertools import islice
 
 import yaml
+import jsonlines
 
 from starwhale.utils import console, now_str, convert_to_bytes, gen_uniq_version
 from starwhale.consts import (
@@ -28,13 +30,14 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
+    MIMEType,
     DatasetSummary,
     D_ALIGNMENT_SIZE,
     D_FILE_VOLUME_SIZE,
@@ -322,8 +325,8 @@ class Dataset:
 
     def with_builder_blob_config(
         self,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str | None = D_FILE_VOLUME_SIZE,
+        alignment_size: int | str | None = D_ALIGNMENT_SIZE,
     ) -> Dataset:
         """Config blob attributes for the dataset builder.
 
@@ -354,7 +357,10 @@ class Dataset:
                 raise RuntimeError(
                     "dataset has already accept some changed rows, forbid to config dataset blob attributes"
                 )
-
+            volume_size = D_FILE_VOLUME_SIZE if volume_size is None else volume_size
+            alignment_size = (
+                D_ALIGNMENT_SIZE if alignment_size is None else alignment_size
+            )
             self._builder_blob_volume_size = convert_to_bytes(volume_size)
             self._builder_blob_alignment_size = convert_to_bytes(alignment_size)
 
@@ -1056,24 +1062,28 @@ class Dataset:
     @classmethod
     def from_json(cls, name: str, json_text: str, field_selector: str = "") -> Dataset:
         """Create a new dataset from a dict.
+
         Arguments:
             name: (str, required) The dataset name you would like to use.
             json_text: (str, required) The json text from which you would like to create this dataset
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the dict is an array contains all the items.
-            Returns:
+
+        Returns:
                 A Dataset Object
-            Examples:
-            ```python
-            from starwhale import Dataset
-            myds = Dataset.from_json("translation", '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]')
-            print(myds[0].features.en)
-            ```
-            ```python
-            from starwhale import Dataset
-            myds = Dataset.from_json("translation", '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',"content.child_content")
-            print(myds[0].features["zh-cn"])
-            ```
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+        myds = Dataset.from_json("translation", '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]')
+        print(myds[0].features.en)
+        ```
+
+        ```python
+        from starwhale import Dataset
+        myds = Dataset.from_json("translation", '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',"content.child_content")
+        print(myds[0].features["zh-cn"])
+        ```
         """
         data_items = json.loads(json_text)
         if field_selector:
@@ -1096,4 +1106,172 @@ class Dataset:
             ds.append(item)
         ds.commit()
         ds.close()
+        return ds
+
+    @classmethod
+    def from_folder(
+        cls,
+        folder: str | Path,
+        kind: str | DatasetFolderSourceType,
+        name: str | Resource = "",
+        auto_label: bool = True,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> Dataset:
+        """Create a dataset from a folder of image files.
+
+        The image folder building supports the following features:
+
+        - search the folder recursively.
+        - support three kinds of folder type:
+          - `image`: png/jpg/jpeg/webp/svg/apng types. The image file will be converted to Starwhale.Image type.
+          - `video`: mp4/webm/avi types. The video file will be converted to Starwhale.Video type.
+          - `audio`: mp3/wav types. The audio file will be converted to Starwhale.Audio type.
+        - auto labeling by the common prefix parent dir name.
+        - auto fill caption with the txt file which is named the same as the image file, and located in the same folder.
+        - auto import metadata.csv or metadata.jsonl as the additional metadata information.
+
+        When the auto_label is True, the function will try to ingest the label from the image folder(sub-folder) name.
+        If the image file's folder is equal to the root folder, the label is empty.
+        For example, the following structure will create a dataset with 2 labels: "cat" and "dog", 4 images in total.
+
+        ```
+        folder/dog/1.png
+        folder/cat/2.png
+        folder/dog/3.png
+        folder/cat/4.png
+        ```
+
+        metadata.csv example:
+
+        ```
+        file_name, caption
+        1.png, dog
+        2.png, cat
+        ```
+
+        metadata.jsonl example:
+
+        ```
+        {"file_name": "1.png", "caption": "dog"}
+        {"file_name": "2.png", "caption": "cat"}
+        ```
+
+        Metadata.csv and metadata.jsonl are mutually exclusive, if both exist, the exception will be raised.
+        Metadata.csv or metadata.jsonl file must be located in the root folder.
+        The metadata should include the file_name field which is the same as the image file path.
+        Metadata.csv or metadata.jsonl file is optional for dataset.
+
+        auto caption example: 1.txt content will be used as the caption of 1.png.
+
+        ```
+        folder/dog/1.png
+        folder/dog/1.txt
+        ```
+
+        Arguments:
+            folder: (str|Path, required) The folder path from which you would like to create this dataset.
+            kind: (str|DatasetFolderSourceType, required) The dataset source type you would like to use, the choices are: image, video and audio.
+            name: (str|Resource, optional) The dataset name you would like to use. If not specified, the name is the folder name.
+            auto_label: (bool, optional) Whether to auto label by the sub-folder name. The default value is True.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+
+        Returns:
+            A Dataset Object.
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+
+        ds = Dataset.from_folder("/path/to/image", "image", "my-image-dataset")  # create a my-image-dataset dataset from /path/to/image folder.
+        ```
+        """
+        rootdir = Path(folder)
+        if not rootdir.exists():
+            raise RuntimeError(f"folder {rootdir} doesn't exist")
+
+        name = name or rootdir.name
+
+        def _read_meta() -> t.Dict:
+            # TODO: support multi metadata files
+            _meta_csv_path = rootdir / "metadata.csv"
+            _meta_jsonl_path = rootdir / "metadata.jsonl"
+
+            if _meta_csv_path.exists() and _meta_jsonl_path.exists():
+                raise RuntimeError(
+                    "metadata.csv and metadata.jsonl are mutually exclusive"
+                )
+
+            _meta = {}
+            if _meta_csv_path.exists():
+                with _meta_csv_path.open() as f:
+                    for record in csv.DictReader(f):
+                        _meta[record["file_name"]] = record
+            elif _meta_jsonl_path.exists():
+                with jsonlines.open(_meta_jsonl_path) as reader:
+                    for record in reader:
+                        _meta[record["file_name"]] = record
+            return _meta
+
+        def _iter_records() -> t.Iterator[t.Dict]:
+            from starwhale.core.dataset.type import Audio, Image, Video
+
+            _dfst = DatasetFolderSourceType
+            file_types_map = {
+                _dfst.IMAGE: (
+                    (".png", ".jpg", ".jpeg", ".webp", ".svg", ".apng"),
+                    Image,
+                ),
+                _dfst.AUDIO: ((".mp3", ".wav"), Audio),
+                _dfst.VIDEO: ((".mp4", ".webm", ".avi"), Video),
+            }
+
+            meta = _read_meta()
+            accepted_file_types, file_cls = file_types_map[_dfst(kind)]
+
+            for p in rootdir.rglob("*"):
+                if not p.is_file():
+                    continue
+
+                if p.suffix not in accepted_file_types:
+                    continue
+
+                file_name = str(p.relative_to(rootdir))
+                record = {
+                    "file_name": file_name,
+                }
+                record.update(meta.get(file_name, {}))
+                if auto_label:
+                    # TODO: support more complicated label pattern
+                    relative_name = str(p.parent.relative_to(rootdir))
+                    if relative_name and relative_name != ".":
+                        record["label"] = p.parent.name
+
+                caption_path = p.parent / f"{p.stem}.txt"
+                if caption_path.exists():
+                    record["caption"] = caption_path.read_text().strip()
+
+                record["file"] = file_cls(
+                    fp=p,
+                    display_name=p.name,
+                    mime_type=MIMEType.create_by_file_suffix(p),
+                )
+                yield record
+
+        with cls.dataset(name) as ds:
+            console.print(f":ocean: creating dataset {ds.uri} from folder {rootdir}...")
+            ds = ds.with_builder_blob_config(
+                volume_size=volume_size,
+                alignment_size=alignment_size,
+            )
+
+            total = 0
+            for record in _iter_records():
+                ds[record["file_name"]] = record
+                total += 1
+
+            console.print(f":butterfly: update {total} records into dataset")
+            ds.commit()
+
         return ds

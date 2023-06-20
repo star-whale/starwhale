@@ -162,7 +162,7 @@ def _quickstart(
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-y",
     "--yaml",
-    help="from runtime yaml format file path.Default use runtime.yaml in the work directory(pwd)",
+    help="from runtime yaml format file path.Default uses runtime.yaml in the work directory(pwd)",
     default=DefaultYAMLName.RUNTIME,
 )
 @optgroup.option(  # type: ignore[no-untyped-call]

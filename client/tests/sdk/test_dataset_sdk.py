@@ -14,6 +14,7 @@ import yaml
 import numpy
 import torch
 import pytest
+import jsonlines
 import torch.utils.data as tdata
 from PIL import Image as PILImage
 from requests_mock import Mocker
@@ -21,6 +22,7 @@ from requests_mock import Mocker
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
+from starwhale.utils.fs import ensure_file
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -30,6 +32,7 @@ from starwhale.core.dataset.type import (
     Image,
     Video,
     Binary,
+    MIMEType,
     BoundingBox,
     DatasetSummary,
     GrayscaleImage,
@@ -913,6 +916,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert "label" in item.features
             assert item.features["lbl"] == item.features["label"]
             assert "data" in item.features
+
+    def test_from_json(self) -> None:
         Dataset.from_json(
             "translation",
             '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
@@ -932,6 +937,142 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             myds[0].features["en-us"]
             == myds[0].features["content"]["child_content"][0]["en"]
         )
+
+    def test_from_image_folder_only_images(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        ensure_file(image_folder / "1.jpg", "1", parents=True)
+        ensure_file(image_folder / "2.jpg", "2")
+        ensure_file(image_folder / "sub" / "3.jpg", "3", parents=True)
+        ensure_file(image_folder / "4.mp3", "4")
+
+        ds = Dataset.from_folder(folder=image_folder, kind="image")
+        assert len(ds) == 3
+        assert ds.uri.name == "images"
+        img = ds["1.jpg"].features.file
+        assert isinstance(img, Image)
+        assert img.mime_type == MIMEType.JPEG
+        assert ds["1.jpg"].features.file_name == "1.jpg"
+        assert "label" not in ds["1.jpg"].features
+
+        assert ds["sub/3.jpg"] is not None
+        assert ds["4.mp3"] is None
+
+    def test_from_image_folder_with_labels(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        ensure_file(image_folder / "dog" / "1.jpg", "1", parents=True)
+        ensure_file(image_folder / "dog" / "2.jpg", "2", parents=True)
+        ensure_file(image_folder / "cat" / "3.jpg", "3", parents=True)
+        ensure_file(image_folder / "4.jpg", "4", parents=True)
+        ensure_file(
+            image_folder / "cat" / "sub" / "mini-cat" / "5.jpg", "5", parents=True
+        )
+
+        ds = Dataset.from_folder(folder=image_folder, kind="image")
+        assert len(ds) == 5
+        assert ds["dog/1.jpg"].features.label == "dog"
+        assert ds["dog/2.jpg"].features.label == "dog"
+        assert ds["cat/3.jpg"].features.label == "cat"
+        assert ds["cat/sub/mini-cat/5.jpg"].features.label == "mini-cat"
+        assert "label" not in ds["4.jpg"].features
+
+        non_label_ds = Dataset.from_folder(
+            folder=image_folder, kind="image", auto_label=False, name="non_label_ds"
+        )
+        for row in non_label_ds:
+            assert "label" not in row.features
+
+    def test_from_image_folder_with_caption(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        ensure_file(image_folder / "1.jpg", "1", parents=True)
+        ensure_file(image_folder / "1.txt", "caption 1")
+        ensure_file(image_folder / "sub" / "2.jpg", "2", parents=True)
+        ensure_file(image_folder / "sub" / "2.txt", "caption 2")
+        ensure_file(image_folder / "3.jpg", "3")
+
+        ds = Dataset.from_folder(folder=image_folder, kind="image")
+        assert len(ds) == 3
+        assert ds["1.jpg"].features.caption == "caption 1"
+        assert ds["sub/2.jpg"].features.caption == "caption 2"
+        assert "caption" not in ds["3.jpg"].features
+
+    def test_from_image_folder_with_metadata_csv(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        csv_content = "\n".join(
+            ["file_name,size,format", "1.jpg,1,JPEG", "2.jpg,2,JPEG", "4.jpg,4,JPEG"]
+        )
+        ensure_file(image_folder / "metadata.csv", csv_content, parents=True)
+        ensure_file(image_folder / "1.jpg", "1")
+        ensure_file(image_folder / "2.jpg", "2")
+        ensure_file(image_folder / "3.jpg", "3")
+
+        ds = Dataset.from_folder(folder=image_folder, kind="image")
+        assert len(ds) == 3
+        assert ds["1.jpg"].features.size == "1"
+        assert ds["1.jpg"].features.format == "JPEG"
+        assert "size" not in ds["3.jpg"].features
+
+    def test_from_image_folder_with_metadata_jsonl(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        path = image_folder / "metadata.jsonl"
+        ensure_file(path, "", parents=True)
+        with path.open("w+") as f:
+            writer = jsonlines.Writer(f)
+            writer.write_all(
+                [
+                    {"file_name": "1.jpg", "size": "1", "format": "JPEG"},
+                    {"file_name": "2.jpg", "size": "2", "format": "JPEG"},
+                ]
+            )
+            writer.close()
+
+        ensure_file(image_folder / "1.jpg", "1")
+        ensure_file(image_folder / "2.jpg", "2")
+
+        ds = Dataset.from_folder(folder=image_folder, kind="image")
+        assert len(ds) == 2
+        assert ds["1.jpg"].features.size == "1"
+        assert ds["1.jpg"].features.format == "JPEG"
+        assert ds["2.jpg"].features.format == "JPEG"
+        assert ds["2.jpg"].features.size == "2"
+
+    def test_from_image_folder_with_metadata_exceptions(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        ensure_file(image_folder / "metadata.csv", "", parents=True)
+        ensure_file(image_folder / "metadata.jsonl", "", parents=True)
+        with self.assertRaisesRegex(
+            RuntimeError, "metadata.csv and metadata.jsonl are mutually exclusive"
+        ):
+            Dataset.from_folder(folder=image_folder, kind="image")
+
+        new_image_folder = Path(self.local_storage) / "new_images"
+        csv_content = "\n".join(["file_name2,size,format", "1.jpg,1,JPEG"])
+        ensure_file(new_image_folder / "metadata.csv", csv_content, parents=True)
+        with self.assertRaisesRegex(KeyError, "file_name"):
+            Dataset.from_folder(folder=new_image_folder, kind="image")
+
+    def test_from_audio_folder(self) -> None:
+        audio_folder = Path(self.local_storage) / "audio"
+        ensure_file(audio_folder / "1.wav", "1", parents=True)
+        ensure_file(audio_folder / "2.mp3", "2")
+        ensure_file(audio_folder / "3.mp4", "3")
+
+        ds = Dataset.from_folder(folder=audio_folder, kind="audio")
+        assert len(ds) == 2
+        assert ds["1.wav"].features.file.mime_type == MIMEType.WAV
+        assert ds["2.mp3"].features.file.mime_type == MIMEType.MP3
+
+    def test_from_video_folder(self) -> None:
+        video_folder = Path(self.local_storage) / "video"
+        ensure_file(video_folder / "1.wav", "1", parents=True)
+        ensure_file(video_folder / "3.mp4", "3")
+        ensure_file(video_folder / "4.avi", "4")
+        ensure_file(video_folder / "5.webm", "5")
+
+        ds = Dataset.from_folder(folder=video_folder, kind="video")
+        assert len(ds) == 3
+        assert ds["3.mp4"].features.file.mime_type == MIMEType.MP4
+        assert ds["4.avi"].features.file.mime_type == MIMEType.AVI
+        assert ds["5.webm"].features.file.mime_type == MIMEType.WEBM
 
     def test_loader_config_exception(self) -> None:
         existed_ds_uri = self._init_simple_dataset_with_str_id()

@@ -140,7 +140,7 @@ class MIMEType(Enum):
     UNDEFINED = "x/undefined"
 
     @classmethod
-    def create_by_file_suffix(cls, name: str) -> MIMEType:
+    def create_by_file_suffix(cls, name: str | Path) -> MIMEType:
         # ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
         _map = {
             ".png": cls.PNG,
@@ -395,7 +395,6 @@ class Image(BaseArtifact, SwObject):
             MIMEType.JPEG,
             MIMEType.WEBP,
             MIMEType.SVG,
-            MIMEType.GIF,
             MIMEType.APNG,
             MIMEType.PPM,
             MIMEType.GRAYSCALE,
@@ -925,14 +924,20 @@ class DatasetSummary(ASDictMixin):
         )
 
 
+_size_t = t.Union[int, str, None]
+
+
 # TODO: use attr to tune code
 class DatasetAttr(ASDictMixin):
     def __init__(
         self,
-        volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
-        alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
+        volume_size: _size_t = D_FILE_VOLUME_SIZE,
+        alignment_size: _size_t = D_ALIGNMENT_SIZE,
         **kw: t.Any,
     ) -> None:
+        volume_size = D_FILE_VOLUME_SIZE if volume_size is None else volume_size
+        alignment_size = D_ALIGNMENT_SIZE if alignment_size is None else alignment_size
+
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
         self.kw = kw

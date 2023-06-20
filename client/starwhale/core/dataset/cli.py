@@ -1,4 +1,5 @@
-import os
+from __future__ import annotations
+
 import typing as t
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import click
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.type import DatasetChangeMode
+from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.utils.load import import_object
 from starwhale.utils.error import NotFoundError
@@ -26,42 +27,83 @@ def dataset_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@dataset_cmd.command("build", help="[Only Standalone]Build Starwhale Dataset")
-@click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option(
+@dataset_cmd.command("build")
+@optgroup.group(
+    "\n  ** Acceptable build sources",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of the dataset build source, default is dataset.yaml source",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "image_folder",
+    "-if",
+    "--image",
+    "--image-folder",
+    help="Build dataset from image folder, the folder should contain the image files.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "audio_folder",
+    "-af",
+    "--audio",
+    "--audio-folder",
+    help="Build dataset from audio folder, the folder should contain the audio files.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "video_folder",
+    "-vf",
+    "--video",
+    "--video-folder",
+    help="Build dataset from video folder, the folder should contain the video files.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "python_handler",
     "-h",
     "--handler",
-    help="Dataset build executor handler: [module path]:[class or function name]",
+    "--python-handler",
+    help="Build dataset from python executor handler, the handler format is [module path]:[class or function name].",
 )
-@click.option("-n", "--name", help="Dataset name")
-@click.option(
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "dataset_yaml",
+    "-f",
+    "--yaml",
+    "--dataset-yaml",
+    default=DefaultYAMLName.DATASET,
+    help="Build dataset from dataset.yaml file. Default uses dataset.yaml in the work directory(pwd).",
+)
+@optgroup.group("\n  ** Global Configurations")
+@optgroup.option("-n", "--name", help="Dataset name")  # type: ignore[no-untyped-call]
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-p",
     "--project",
+    default="",
     help="Project URI, the default is the current selected project. The dataset will store in the specified project",
 )
-@click.option("--desc", help="Dataset description")
-@click.option(
+@optgroup.option("-d", "--desc", help="Dataset description")  # type: ignore[no-untyped-call]
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-as",
     "--alignment-size",
     help="swds-bin format dataset: alignment size",
 )
-@click.option(
+@optgroup.option(  # type: ignore[no-untyped-call]
     "-vs",
     "--volume-size",
     help="swds-bin format dataset: volume size",
 )
-@click.option(
-    "-f",
-    "--dataset-yaml",
-    default=DefaultYAMLName.DATASET,
-    help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
+@optgroup.option("-r", "--runtime", help="runtime uri")  # type: ignore[no-untyped-call]
+@optgroup.group("\n  ** Handler Build Source Configurations")
+@optgroup.option("-w", "--workdir", default=".", help="work dir to search handler, the option only works for the handler build source.")  # type: ignore[no-untyped-call]
+@optgroup.group("\n  ** Folder(Video/Image/Audio) Build Configurations")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--auto-label/--no-auto-label",
+    is_flag=True,
+    show_default=True,
+    default=True,
+    help="Whether to auto label by the sub-folder name. The default value is True",
 )
-@click.option("-r", "--runtime", help="runtime uri")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
     workdir: str,
-    handler: str,
+    python_handler: str,
     name: str,
     project: str,
     desc: str,
@@ -69,32 +111,106 @@ def _build(
     alignment_size: str,
     volume_size: str,
     runtime: str,
+    image_folder: str,
+    audio_folder: str,
+    video_folder: str,
+    auto_label: bool,
 ) -> None:
+    """Build Starwhale Dataset.
+    This command only supports to build standalone dataset.
+
+    Acceptable build sources:
+
+        \b
+        - dataset.yaml file: The default build source. The dataset.yaml includes the dataset build config and build script entrypoint.
+            You should write some python code to build the dataset.
+        - handler: The handler is a python executor, it should be a python class or function. When use the handler build source, you should specify --workdir option.
+            if the workdir option is emitted, swcli will use the work directory(pwd) as the workdir.
+        - image folder: The image-folder is a starwhale dataset builder designed to quickly build an image dataset with a folder of images without requiring you to write any code.
+        - audio folder: The audio-folder is a starwhale dataset builder designed to quickly build an audio dataset with a folder of audios without requiring you to write any code.
+        - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without requiring you to write any code.
+
+    Examples:
+
+        \b
+        - from dataset.yaml
+        swcli dataset build  # build dataset from dataset.yaml in the current work directory(pwd)
+        swcli dataset build --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, all the involved files are related to the dataset.yaml file.
+
+        \b
+        - from handler
+        swcli dataset build --handler mnist.dataset:iter_mnist_item # build dataset from mnist.dataset:iter_mnist_item handler, the workdir is the current work directory(pwd).
+        # build dataset from mnist.dataset:LinkRawDatasetProcessExecutor handler, the workdir is example/mnist
+        swcli dataset build --handler mnist.dataset:LinkRawDatasetProcessExecutor --workdir example/mnist
+
+        \b
+        - from image folder
+        swcli dataset build --image-folder /path/to/image/folder  # build dataset from /path/to/image/folder, search all image type files.
+
+        \b
+        - from audio folder
+        swcli dataset build --audio-folder /path/to/audio/folder  # build dataset from /path/to/audio/folder, search all audio type files.
+
+        \b
+        - from video folder
+        swcli dataset build --video-folder /path/to/video/folder  # build dataset from /path/to/video/folder, search all video type files.
+    """
     # TODO: add dry-run
     # TODO: add compress args
-    if not os.path.exists(workdir):
-        raise NotFoundError(workdir)
 
-    yaml_path = Path(workdir) / dataset_yaml
-    config = DatasetConfig()
-    if yaml_path.exists():
+    folder: str | Path | None = image_folder or audio_folder or video_folder
+    if folder:
+        if image_folder:
+            kind = DatasetFolderSourceType.IMAGE
+        elif audio_folder:
+            kind = DatasetFolderSourceType.AUDIO
+        else:
+            kind = DatasetFolderSourceType.VIDEO
+
+        folder = Path(folder).absolute()
+        # TODO: support desc field
+        view.build_from_folder(
+            folder,
+            kind,
+            name=name or folder.name,
+            project_uri=project,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            auto_label=auto_label,
+        )
+    elif python_handler:
+        _workdir = Path(workdir).absolute()
+        config = DatasetConfig(
+            name=name or _workdir.name,
+            handler=import_object(_workdir, python_handler),
+            runtime_uri=runtime,
+            project_uri=project,
+            desc=desc,
+            attr={
+                "volume_size": volume_size,
+                "alignment_size": alignment_size,
+            },
+        )
+        config.do_validate()
+        view.build(_workdir, config)
+    else:
+        yaml_path = Path(dataset_yaml)
+        if not yaml_path.exists():
+            raise NotFoundError(yaml_path)
+
+        _workdir = yaml_path.parent
         config = DatasetConfig.create_by_yaml(yaml_path)
-
-    config.name = name or config.name or Path(workdir).absolute().name
-    handler = handler or config.handler
-    config.handler = import_object(workdir, handler)
-    config.runtime_uri = runtime or config.runtime_uri
-    config.project_uri = project or config.project_uri
-    # TODO: support README.md as the default desc
-    config.desc = desc or config.desc
-
-    config.attr = DatasetAttr(
-        volume_size=volume_size or config.attr.volume_size,
-        alignment_size=alignment_size or config.attr.alignment_size,
-    )
-
-    config.do_validate()
-    view.build(workdir, config)
+        config.name = name or config.name
+        config.handler = import_object(_workdir, config.handler)
+        config.desc = desc or config.desc
+        config.attr = DatasetAttr(
+            volume_size=volume_size or config.attr.volume_size,
+            alignment_size=alignment_size or config.attr.alignment_size,
+        )
+        config.runtime_uri = runtime or config.runtime_uri
+        config.project_uri = project or config.project_uri
+        config.do_validate()
+        view.build(_workdir, config)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
