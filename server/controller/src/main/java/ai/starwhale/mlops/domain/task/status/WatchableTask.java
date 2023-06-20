@@ -16,12 +16,10 @@
 
 package ai.starwhale.mlops.domain.task.status;
 
-import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
-import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import java.util.List;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,10 +27,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class WatchableTask extends Task implements TaskWrapper {
+    private interface Excludes {
+        void updateStatus(TaskStatus status);
+    }
 
     /**
      * original task
      */
+    @Delegate(excludes = Excludes.class)
     Task originalTask;
 
     List<TaskStatusChangeWatcher> watchers;
@@ -50,46 +52,6 @@ public class WatchableTask extends Task implements TaskWrapper {
 
         this.watchers = watchers;
         this.taskStatusMachine = taskStatusMachine;
-    }
-
-    @Override
-    public Long getId() {
-        return originalTask.getId();
-    }
-
-    @Override
-    public String getUuid() {
-        return originalTask.getUuid();
-    }
-
-    @Override
-    public TaskStatus getStatus() {
-        return originalTask.getStatus();
-    }
-
-    @Override
-    public ResultPath getResultRootPath() {
-        return originalTask.getResultRootPath();
-    }
-
-    @Override
-    public TaskRequest getTaskRequest() {
-        return originalTask.getTaskRequest();
-    }
-
-    @Override
-    public Step getStep() {
-        return originalTask.getStep();
-    }
-
-    @Override
-    public Long getStartTime() {
-        return originalTask.getStartTime();
-    }
-
-    @Override
-    public Long getFinishTime() {
-        return originalTask.getFinishTime();
     }
 
     @Override
@@ -113,33 +75,6 @@ public class WatchableTask extends Task implements TaskWrapper {
                     return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
                 }
         ).forEach(watcher -> watcher.onTaskStatusChange(originalTask, oldStatus));
-    }
-
-    @Override
-    public void setRetryNum(Integer retryNum) {
-        originalTask.setRetryNum(retryNum);
-    }
-
-    @Override
-    public void setStartTime(Long startTime) {
-        originalTask.setStartTime(startTime);
-    }
-
-    @Override
-    public void setFinishTime(Long finishTime) {
-        originalTask.setFinishTime(finishTime);
-    }
-
-    public void setResultRootPath(ResultPath resultRootPath) {
-        originalTask.setResultRootPath(resultRootPath);
-    }
-
-    public void setTaskRequest(TaskRequest taskRequest) {
-        originalTask.setTaskRequest(taskRequest);
-    }
-
-    public void setIp(String ip) {
-        originalTask.setIp(ip);
     }
 
     @Override
