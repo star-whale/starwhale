@@ -1060,12 +1060,19 @@ class Dataset:
         return ds
 
     @classmethod
-    def from_json(cls, name: str, json_text: str, field_selector: str = "") -> Dataset:
-        """Create a new dataset from a dict.
+    def from_json(
+        cls,
+        name: str,
+        json_text: str,
+        field_selector: str = "",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> Dataset:
+        """Create a new dataset from a json text.
 
         Arguments:
             name: (str, required) The dataset name you would like to use.
-            json_text: (str, required) The json text from which you would like to create this dataset
+            json_text: (str, required) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the dict is an array contains all the items.
 
@@ -1075,13 +1082,20 @@ class Dataset:
         Examples:
         ```python
         from starwhale import Dataset
-        myds = Dataset.from_json("translation", '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]')
+        myds = Dataset.from_json(
+            "translation",
+            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+        )
         print(myds[0].features.en)
         ```
 
         ```python
         from starwhale import Dataset
-        myds = Dataset.from_json("translation", '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',"content.child_content")
+        myds = Dataset.from_json(
+            "translation",
+            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
+            "content.child_content"
+        )
         print(myds[0].features["zh-cn"])
         ```
         """
@@ -1101,11 +1115,19 @@ class Dataset:
             raise ValueError(
                 f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
             )
-        ds = cls.dataset(name)
-        for item in data_items:
-            ds.append(item)
-        ds.commit()
-        ds.close()
+
+        with cls.dataset(name) as ds:
+            ds = ds.with_builder_blob_config(
+                volume_size=volume_size,
+                alignment_size=alignment_size,
+            )
+            total = 0
+            for item in data_items:
+                ds.append(item)
+                total += 1
+
+            console.print(f":butterfly: update {total} records into dataset")
+            ds.commit()
         return ds
 
     @classmethod
