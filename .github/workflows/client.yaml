@@ -85,7 +85,10 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.7"
+          # related issue: https://github.com/actions/setup-python/issues/682
+          # Python 3.7.17 in MacOSX will raise "No module named _bz2" exception.
+          # For Example: https://github.com/star-whale/starwhale/actions/runs/5318220340/jobs/9631411188?pr=2371
+          - "3.7.16"
           - "3.8"
           - "3.9"
           - "3.10"
