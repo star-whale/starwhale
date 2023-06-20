@@ -519,7 +519,9 @@ class Dependencies(ASDictMixin):
                 self._unparsed.append(d)
 
         if self._unparsed:
-            console.warning(f"unparsed dependencies:{self._unparsed}")
+            raise NoSupportError(
+                f"no support to parse the following dependencies:{self._unparsed}"
+            )
 
     def __str__(self) -> str:
         return f"Starwhale Runtime Dependencies: {len(self.deps)}, unparsed: {len(self._unparsed)}"

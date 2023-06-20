@@ -2941,10 +2941,10 @@ class DependenciesTestCase(TestCase):
             "requirements.out",
         ]
 
-        dep = Dependencies(deps_config)
-        assert len(dep.deps) == 0
-        assert len(dep._unparsed) == 4
-        assert "requirements" in dep._unparsed
+        with self.assertRaisesRegex(
+            NoSupportError, "no support to parse the following dependencies"
+        ):
+            Dependencies(deps_config)
 
         with self.assertRaises(NoSupportError):
             Dependencies([{"pip": "test"}])  # type: ignore
