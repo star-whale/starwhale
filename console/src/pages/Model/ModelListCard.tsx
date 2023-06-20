@@ -54,12 +54,33 @@ export default function ModelListCard() {
                                 </Button>
                                 &nbsp;&nbsp;
                                 <WithCurrentAuth id='online-eval'>
-                                    <Button
-                                        kind='tertiary'
-                                        onClick={() => history.push(`/projects/${projectId}/online_eval/${model.id}`)}
-                                    >
-                                        {t('online eval')}
-                                    </Button>
+                                    {(isPrivileged: boolean, isCommunity: boolean) => {
+                                        if (!isPrivileged) return null
+                                        if (!isCommunity)
+                                            return (
+                                                <Button
+                                                    kind='tertiary'
+                                                    onClick={() =>
+                                                        history.push(
+                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&handler=serving`
+                                                        )
+                                                    }
+                                                >
+                                                    {t('online eval')}
+                                                </Button>
+                                            )
+
+                                        return (
+                                            <Button
+                                                kind='tertiary'
+                                                onClick={() =>
+                                                    history.push(`/projects/${projectId}/online_eval/${model.id}`)
+                                                }
+                                            >
+                                                {t('online eval')}
+                                            </Button>
+                                        )
+                                    }}
                                 </WithCurrentAuth>
                             </>,
                         ]
