@@ -31,7 +31,6 @@
     j.dev_way,
     j.dev_password,
     j.auto_release_time,
-    j.pinned,
     j.pinned_time,
     p.project_name,
     p.is_deleted as project_is_deleted,
@@ -72,7 +71,7 @@
     <if test="modelId != null and modelId != ''">
       and model_version_id = #{modelId}
     </if>
-    order by pinned desc, pinned_time desc, job_id desc
+    order by pinned_time desc, job_id desc
   </select>
 
   <select id="findJobById" resultMap="jobResultMap">
@@ -149,12 +148,12 @@
   </update>
 
   <update id="updateJobPinStatus">
-    update job_info set pinned = #{pinned}, pinned_time = #{pinnedTime}
+    update job_info set pinned_time = #{pinnedTime}
     where id = #{id}
   </update>
 
   <update id="updateJobPinStatusByUuid">
-    update job_info set pinned = #{pinned}, pinned_time = #{pinnedTime}
+    update job_info set pinned_time = #{pinnedTime}
     where job_uuid = #{uuid}
   </update>
 

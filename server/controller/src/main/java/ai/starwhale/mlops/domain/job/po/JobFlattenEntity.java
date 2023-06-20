@@ -155,6 +155,4 @@ public class JobFlattenEntity {
     private String devPassword;
 
     private Date autoReleaseTime;
-
-    private boolean pinned;
 }

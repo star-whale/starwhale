@@ -16,5 +16,4 @@
 
 
 ALTER TABLE job_info
-    ADD pinned TINYINT NOT NULL DEFAULT 0,
     ADD pinned_time DATETIME NULL;

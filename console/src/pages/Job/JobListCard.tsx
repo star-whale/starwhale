@@ -169,10 +169,10 @@ export default function JobListCard() {
                                 <div key='id' style={{ display: 'flex', gap: '8px' }}>
                                     <Button key='pin' as='link' onClick={() => handlePin(job.id, !job.pinned)}>
                                         <IconTooltip
-                                            content={job.pinned ? t('job.unpin') : t('job.pin')}
-                                            icon={job.pinned ? 'top' : 'top2'}
+                                            content={job.pinnedTime ? t('job.unpin') : t('job.pin')}
+                                            icon={job.pinnedTime ? 'top' : 'top2'}
                                             iconStyle={{
-                                                color: job.pinned ? '#FF9A00' : 'rgba(2,16,43,0.40)',
+                                                color: job.pinnedTime ? '#FF9A00' : 'rgba(2,16,43,0.40)',
                                             }}
                                         />
                                     </Button>

@@ -181,9 +181,9 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         Date pinnedTime = pinned ? Date.from(Instant.now()) : null;
 
         if (idConvertor.isId(jobUrl)) {
-            return jobMapper.updateJobPinStatus(idConvertor.revert(jobUrl), pinned, pinnedTime) > 0;
+            return jobMapper.updateJobPinStatus(idConvertor.revert(jobUrl), pinnedTime) > 0;
         } else {
-            return jobMapper.updateJobPinStatusByUuid(jobUrl, pinned, pinnedTime) > 0;
+            return jobMapper.updateJobPinStatusByUuid(jobUrl, pinnedTime) > 0;
         }
     }
 

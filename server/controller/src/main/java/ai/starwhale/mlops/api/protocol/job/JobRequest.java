@@ -66,7 +66,4 @@ public class JobRequest implements Serializable {
 
     private Long timeToLiveInSec;
 
-    @JsonProperty("pinned")
-    private boolean pinned = false;
-
 }
