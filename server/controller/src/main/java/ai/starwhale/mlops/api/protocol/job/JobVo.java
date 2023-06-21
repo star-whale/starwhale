@@ -22,7 +22,6 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.Date;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Builder;
@@ -97,6 +96,6 @@ public class JobVo implements Serializable {
     }
 
     @JsonProperty("pinnedTime")
-    private Date pinnedTime;
+    private Long pinnedTime;
 
 }

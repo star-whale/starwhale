@@ -184,7 +184,7 @@ public class JobConverter {
                 .duration(job.getDurationMs())
                 .comment(job.getComment())
                 .resourcePool(job.getResourcePool().getName())
-                .pinnedTime(job.getPinnedTime())
+                .pinnedTime(job.getPinnedTime().getTime())
                 .exposedLinks(generateJobExposedLinks(job.getId()))
                 .build();
     }
@@ -208,7 +208,7 @@ public class JobConverter {
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
-                .pinnedTime(jobEntity.getPinnedTime())
+                .pinnedTime(jobEntity.getPinnedTime().getTime())
                 .build();
     }
 
