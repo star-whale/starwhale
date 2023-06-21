@@ -815,16 +815,15 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             },
         )
 
-        ds_version = "123456a"
         version_req = rm.request(
             HTTPMethod.HEAD,
-            f"http://1.1.1.1/api/v1/project/self/dataset/mnist/version/{ds_version}",
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist/version/latest",
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1/api/v1/project/self/dataset/mnist",
-            json={"data": {"id": 1, "versionName": ds_version, "versionId": 100}},
+            "http://1.1.1.1/api/v1/project/self/dataset/mnist?versionUrl=latest",
+            status_code=HTTPStatus.NOT_FOUND,
         )
         ds = dataset("http://1.1.1.1/projects/self/datasets/mnist/versions/latest")
         assert version_req.call_count == 1

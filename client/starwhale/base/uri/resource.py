@@ -3,11 +3,13 @@ from __future__ import annotations
 import re
 from enum import Enum
 from glob import glob
+from http import HTTPStatus
 from typing import Any, Dict, Optional
 from pathlib import Path
 from dataclasses import dataclass
 
 import requests
+from requests import HTTPError
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import SW_API_VERSION
@@ -142,6 +144,11 @@ class Resource:
                 self.refine()
             except (NoMatchException, VerifyException) as e:
                 console.warning(f"refine resource[{typ}] {uri} failed: {e}")
+            except HTTPError as e:
+                if e.response.status_code == HTTPStatus.NOT_FOUND:
+                    console.warning(f"refine remote resource[{typ}] {uri} failed: {e}")
+                else:
+                    raise
 
     def refine(self) -> "Resource":
         if not self.project.instance.is_local:
