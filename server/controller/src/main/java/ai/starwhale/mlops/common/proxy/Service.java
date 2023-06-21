@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.common.proxy;
 
+public interface Service {
+    /**
+     * get the fixed uri prefix of the service, this prefix will be used to identify the service
+     *
+     * @return uri prefix, e.g. "model-serving"
+     */
+    String getPrefix();
 
-public enum DevWay {
-    VS_CODE
+    /**
+     * get the target http host from the uri without prefix
+     *
+     * @param uri uri without prefix
+     * @return target http host, e.g. <a href="http://localhost:8080" />
+     */
+    String getTarget(String uri);
 }

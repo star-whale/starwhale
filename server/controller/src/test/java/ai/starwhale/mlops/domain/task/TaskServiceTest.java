@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
@@ -61,7 +62,7 @@ public class TaskServiceTest {
                 setName("ppl");
             }
         });
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000);
+        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, mock(FeaturesProperties.class));
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobDao = mock(JobDao.class);

@@ -138,6 +138,17 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     public static String SYSTEM_PROJECT = "0";
 
     private Set<String> projectsOfNoneDataStore(HttpServletRequest request) {
+        // this filter only works for project parameter in url or parameter
+        // we assume that no project parameter in post body
+        // and read project parameter from post body will interfere with the getInputStream() method,
+        // so we return empty set here if the request is a post request with form data or www-form-urlencoded
+        var method = request.getMethod();
+        var contentType = request.getContentType();
+        if ("POST".equalsIgnoreCase(method)
+                && (contentType.contains("form-data") || contentType.contains("www-form-urlencoded"))) {
+            return Set.of();
+        }
+
         String projectUrl = request.getParameter("project");
         if (!StrUtil.isEmpty(projectUrl)) {
             return Set.of(projectUrl);
