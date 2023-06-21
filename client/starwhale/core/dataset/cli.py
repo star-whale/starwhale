@@ -69,6 +69,15 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=DefaultYAMLName.DATASET,
     help="Build dataset from dataset.yaml file. Default uses dataset.yaml in the work directory(pwd).",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "json_file",
+    "-jf",
+    "--json-file",
+    help=(
+        "Build dataset from json file, the json file option is a json file path or a http downloaded url."
+        "The json content structure should be a list[dict] or tuple[dict]."
+    ),
+)
 @optgroup.group("\n  ** Global Configurations")
 @optgroup.option("-n", "--name", help="Dataset name")  # type: ignore[no-untyped-call]
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -99,6 +108,15 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=True,
     help="Whether to auto label by the sub-folder name. The default value is True",
 )
+@optgroup.group("\n  ** JsonFile Build Source Configurations")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "--field-selector",
+    default="",
+    help=(
+        "The filed from which you would like to extract dataset array items. The filed is split by the dot(.) symbol."
+        "The default value is empty str, which indicates that the dict is an array contains all the items."
+    ),
+)
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -115,6 +133,8 @@ def _build(
     audio_folder: str,
     video_folder: str,
     auto_label: bool,
+    json_file: str,
+    field_selector: str,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -129,6 +149,7 @@ def _build(
         - image folder: The image-folder is a starwhale dataset builder designed to quickly build an image dataset with a folder of images without requiring you to write any code.
         - audio folder: The audio-folder is a starwhale dataset builder designed to quickly build an audio dataset with a folder of audios without requiring you to write any code.
         - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without requiring you to write any code.
+        - json file: The json-file is a starwhale dataset builder designed to quickly build a dataset with a json file without requiring you to write any code.
 
     Examples:
 
@@ -154,6 +175,13 @@ def _build(
         \b
         - from video folder
         swcli dataset build --video-folder /path/to/video/folder  # build dataset from /path/to/video/folder, search all video type files.
+
+        \b
+        - from json file
+        swcli dataset build --json-file /path/to/example.json
+        swcli dataset build --json-file http://example.com/example.json
+        swcli dataset build --json-file /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
+        swcli dataset build --name qald9 --json-file https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
     """
     # TODO: add dry-run
     # TODO: add compress args
@@ -177,6 +205,16 @@ def _build(
             volume_size=volume_size,
             alignment_size=alignment_size,
             auto_label=auto_label,
+        )
+    elif json_file:
+        json_file = json_file.strip().rstrip("/")
+        view.build_from_json_file(
+            json_file,
+            name=name or json_file.split("/")[-1].split(".")[0],
+            project_uri=project,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            field_selector=field_selector,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()

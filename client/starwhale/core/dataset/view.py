@@ -160,6 +160,31 @@ class DatasetTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
+    def build_from_json_file(
+        cls,
+        json_file_path: str,
+        name: str,
+        project_uri: str,
+        alignment_size: int | str,
+        volume_size: int | str,
+        field_selector: str = "",
+    ) -> None:
+        dataset_uri = cls.prepare_build_bundle(
+            project=project_uri,
+            bundle_name=name,
+            typ=ResourceType.dataset,
+            auto_gen_version=False,
+        )
+        ds = Dataset.get_dataset(dataset_uri)
+        ds.build_from_json_file(
+            json_file_path=json_file_path,
+            field_selector=field_selector,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+        )
+
+    @classmethod
+    @BaseTermView._only_standalone
     def build_from_folder(
         cls,
         folder: Path,
