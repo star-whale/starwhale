@@ -78,3 +78,8 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOv
 }
 
 export type IJobResultSchema = any
+
+export interface IExecInTaskSchema {
+    stdout: string
+    stderr: string
+}

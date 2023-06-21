@@ -13,6 +13,7 @@ export const Privileges = {
     'dataset.version.revert': true,
     'evaluation.panel.save': true,
     'runtime.image.build': true,
+    'task.execute': true,
     // global
     'online-eval': true,
     'job-pause': true,

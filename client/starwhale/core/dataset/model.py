@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
@@ -7,6 +8,7 @@ from pathlib import Path
 from collections import defaultdict
 
 import yaml
+import requests
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
@@ -30,6 +32,7 @@ from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
+from starwhale.utils.retry import http_retry
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
@@ -77,6 +80,15 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         folder: Path,
         kind: DatasetFolderSourceType,
         auto_label: bool = True,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> None:
+        raise NotImplementedError
+
+    def build_from_json_file(
+        self,
+        json_file_path: str,
+        field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
     ) -> None:
@@ -233,6 +245,41 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             )
 
         return rs, {}
+
+    def build_from_json_file(
+        self,
+        json_file_path: str | Path,
+        field_selector: str = "",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+    ) -> None:
+        from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+        json_file_path = str(json_file_path)
+        if json_file_path.startswith(("http://", "https://")):
+
+            @http_retry
+            def _r(url: str) -> str:
+                return requests.get(url, verify=False, timeout=90).text
+
+            json_text = _r(json_file_path)
+        elif os.path.isfile(json_file_path):
+            json_text = Path(json_file_path).read_text()
+        else:
+            raise RuntimeError(f"json file path:{json_file_path} not exists")
+
+        ds = SDKDataset.from_json(
+            name=self.name,
+            json_text=json_text,
+            field_selector=field_selector,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+        )
+
+        console.print(
+            f":hibiscus: congratulation! dataset build from {json_file_path} has been built. You can run "
+            f"[red bold blink] swcli dataset info {self.name}/version/{ds.committed_version[:SHORT_VERSION_CNT]}[/]"
+        )
 
     def build_from_folder(
         self,

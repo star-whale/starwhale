@@ -23,7 +23,7 @@ export function useAuthPrivileged({ role, id }: { role: Role; id: keyof IPrivile
     const { currentUser } = useCurrentUser()
     const { systemFeatures } = useSystemFeatures()
 
-    // prirority: system global > admin > role
+    // priority: system global > admin > role
     const isPrivileged = useMemo(() => {
         if (!currentUser) return false
         if (isSystemDisablePrivilege(systemFeatures, id)) return false

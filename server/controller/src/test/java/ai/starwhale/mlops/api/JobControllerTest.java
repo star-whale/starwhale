@@ -31,7 +31,10 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.job.ExecRequest;
+import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -327,5 +330,15 @@ public class JobControllerTest {
 
         // pause is not disabled
         controller.action("", "job1", "pause");
+    }
+
+    @Test
+    public void testJobExec() {
+        when(jobService.exec(anyString(), anyString(), anyString(), any()))
+                .thenReturn(ExecResponse.builder().stdout("foo").stderr("bar").build());
+        var resp = controller.exec("p1", "j1", "t1", new ExecRequest());
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody().getData().getStdout(), is("foo"));
+        assertThat(resp.getBody().getData().getStderr(), is("bar"));
     }
 }

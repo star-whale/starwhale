@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import io.kubernetes.client.Exec;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
@@ -172,6 +173,38 @@ public class K8sClient {
 
     public V1PodList getPodList(String labelSelector) throws ApiException {
         return coreV1Api.listNamespacedPod(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
+    }
+
+    /**
+     * execute command in pod
+     *
+     * @param podName pod name
+     * @param containerName container name, if null, use the first container
+     * @param command command to execute
+     * @return stdout and stderr, it blocks until command finished
+     * @throws IOException when error occurs
+     * @throws ApiException when the k8s api call failed
+     * @throws InterruptedException when interrupted
+     */
+    public String[] execInPod(String podName, String containerName, String... command)
+            throws IOException, ApiException, InterruptedException {
+        var exec = new Exec();
+        var execCommand = List.of("sh", "-c", String.join(" ", command)).toArray(new String[0]);
+        var proc = exec.exec(
+                ns,
+                podName,
+                execCommand,
+                containerName,
+                false,
+                false
+        );
+        var stdout = proc.getInputStream();
+        var stderr = proc.getErrorStream();
+        proc.waitFor();
+        var out = Strings.fromByteArray(stdout.readAllBytes());
+        var err = Strings.fromByteArray(stderr.readAllBytes());
+        proc.destroy();
+        return new String[]{out, err};
     }
 
     public List<V1Pod> getNotReadyPods(String labelSelector) throws ApiException {

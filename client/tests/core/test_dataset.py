@@ -1,4 +1,5 @@
 import os
+import json
 import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -6,12 +7,14 @@ from unittest.mock import patch, MagicMock
 import yaml
 import numpy
 from click.testing import CliRunner
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from tests import ROOT_DIR
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
+    HTTPMethod,
     DefaultYAMLName,
     SW_TMP_DIR_NAME,
     VERSION_PREFIX_CNT,
@@ -151,6 +154,88 @@ class StandaloneDatasetTestCase(TestCase):
             name="image-folder-test",
             project_uri="",
             auto_label=True,
+            alignment_size="128",
+            volume_size="128M",
+        )
+
+    def test_build_from_json_file_local(self) -> None:
+        json_file = Path("/tmp/workdir/json.json")
+        content = json.dumps(
+            {
+                "sub": {
+                    "sub": [
+                        {"image": "1.jpg", "label": "dog"},
+                        {"image": "2.jpg", "label": "cat"},
+                    ]
+                }
+            }
+        )
+        ensure_file(json_file, content, parents=True)
+
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                "--name",
+                "json-file-test",
+                "--json-file",
+                str(json_file),
+                "--field-selector",
+                "sub.sub",
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_json_file.call_count == 1
+        call_args = mock_obj.build_from_json_file.call_args
+        assert call_args[1]["name"] == "json-file-test"
+        assert call_args[1]["field_selector"] == "sub.sub"
+        assert call_args[0][0] == str(json_file)
+
+        DatasetTermView.build_from_json_file(
+            json_file_path=json_file,
+            name="json-file-test",
+            project_uri="",
+            alignment_size="128",
+            volume_size="128M",
+            field_selector="sub.sub",
+        )
+
+    @Mocker()
+    def test_build_from_json_file_http_url(self, rm: Mocker) -> None:
+        url = "http://example.com/dataset.json"
+        rm.request(
+            HTTPMethod.GET,
+            url,
+            json=[
+                {"image": "1.jpg", "label": "dog"},
+                {"image": "2.jpg", "label": "cat"},
+            ],
+        )
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                "--name",
+                "json-file-test",
+                "--json-file",
+                url,
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_json_file.call_count == 1
+        call_args = mock_obj.build_from_json_file.call_args
+        assert call_args[1]["name"] == "json-file-test"
+        assert call_args[1]["field_selector"] == ""
+        assert call_args[0][0] == url
+
+        DatasetTermView.build_from_json_file(
+            json_file_path=url,
+            name="json-file-test",
+            project_uri="",
             alignment_size="128",
             volume_size="128M",
         )

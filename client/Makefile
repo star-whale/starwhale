@@ -21,7 +21,7 @@ upload-pypi:
 	twine upload dist/*
 
 install-sw:
-	python3 -m pip install -e .
+	python3 -m pip install -e '.[all]'
 
 install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
