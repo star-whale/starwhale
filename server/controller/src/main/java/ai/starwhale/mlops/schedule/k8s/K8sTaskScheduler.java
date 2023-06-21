@@ -44,11 +44,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -70,10 +72,12 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
+    final ThreadPoolTaskScheduler taskScheduler;
 
     private final TaskLogK8sCollector taskLogK8sCollector;
 
-    public K8sTaskScheduler(K8sClient k8sClient,
+    public K8sTaskScheduler(
+            K8sClient k8sClient,
             TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
@@ -83,7 +87,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
             StorageAccessService storageAccessService,
-            TaskLogK8sCollector taskLogK8sCollector) {
+            TaskLogK8sCollector taskLogK8sCollector,
+            ThreadPoolTaskScheduler taskScheduler
+    ) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;
         this.runTimeProperties = runTimeProperties;
@@ -95,6 +101,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
         this.taskLogK8sCollector = taskLogK8sCollector;
+        this.taskScheduler = taskScheduler;
     }
 
     @Override
@@ -114,6 +121,23 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 log.warn("delete k8s job failed {}, {}", task.getId(), e.getResponseBody(), e);
             }
         });
+    }
+
+    @Override
+    public Future<String[]> exec(Task task, String... command) {
+        try {
+            var pods = k8sClient.getPodsByJobName(task.getId().toString());
+            if (CollectionUtils.isEmpty(pods.getItems())) {
+                throw new SwProcessException(ErrorType.K8S, "no pod found for task " + task.getId());
+            }
+            if (pods.getItems().size() != 1) {
+                throw new SwProcessException(ErrorType.K8S, "multiple pods found for task " + task.getId());
+            }
+            return taskScheduler.submit(
+                    () -> k8sClient.execInPod(pods.getItems().get(0).getMetadata().getName(), null, command));
+        } catch (ApiException e) {
+            throw new SwProcessException(ErrorType.K8S, "exec command failed: " + e.getResponseBody(), e);
+        }
     }
 
     /**
@@ -239,13 +263,13 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // support multi dataset uris
         var datasetUri = swJob.getDataSets().stream()
-                    .map(dataSet -> String.format(
-                            FORMATTER_URI_DATASET,
-                            instanceUri,
-                            project.getName(),
-                            dataSet.getName(),
-                            dataSet.getVersion())
-                    ).collect(Collectors.joining(" "));
+                .map(dataSet -> String.format(
+                        FORMATTER_URI_DATASET,
+                        instanceUri,
+                        project.getName(),
+                        dataSet.getName(),
+                        dataSet.getVersion())
+                ).collect(Collectors.joining(" "));
         coreContainerEnvs.put("SW_DATASET_URI", datasetUri);
         coreContainerEnvs.put("SW_MODEL_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,

@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.schedule.k8s.K8sTaskScheduler;
+import java.io.Serializable;
+import javax.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
-/**
- * Test for {@link K8sTaskScheduler}
- */
-public class SimpleSwTaskSchedulerTest {
-
+@Data
+@Validated
+public class ExecRequest implements Serializable {
+    @NotNull
+    private String[] command;
 }

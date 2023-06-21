@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.Collection;
-import java.util.concurrent.Future;
+import java.io.Serializable;
+import lombok.Builder;
+import lombok.Data;
 
-/**
- * schedule tasks of jobs
- */
-public interface SwTaskScheduler {
-
-
-    /**
-     * scheduler should maintain the tasks to be scheduled
-     *
-     * @param tasks       tasks to be scheduled
-     */
-    void schedule(Collection<Task> tasks);
-
-    /**
-     * @param tasks tasks to be stop scheduled
-     */
-    void stop(Collection<Task> tasks);
-
-    Future<String[]> exec(Task task, String ...command);
+@Data
+@Builder
+public class ExecResponse implements Serializable {
+    private String stdout;
+    private String stderr;
 }

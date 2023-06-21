@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,11 +34,14 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.job.ExecRequest;
+import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
@@ -72,9 +76,13 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -98,6 +106,7 @@ public class JobServiceTest {
     private TrashService trashService;
     private SystemSettingService systemSettingService;
     private JobSpecParser jobSpecParser;
+    private SwTaskScheduler taskScheduler;
 
     @BeforeEach
     public void setUp() {
@@ -127,12 +136,13 @@ public class JobServiceTest {
         trashService = mock(TrashService.class);
         systemSettingService = mock(SystemSettingService.class);
         jobSpecParser = new JobSpecParser();
+        taskScheduler = mock(SwTaskScheduler.class);
 
         service = new JobService(
                 taskMapper, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
                 hotJobHolder, projectService, jobDao, jobLoader, modelService,
                 resultQuerier, datasetService, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
-                trashService, systemSettingService, jobSpecParser);
+                trashService, systemSettingService, jobSpecParser, taskScheduler);
     }
 
     @Test
@@ -377,6 +387,7 @@ public class JobServiceTest {
                 .thenReturn(List.of(Job.builder().id(1L).status(JobStatus.RUNNING).build()));
 
         var svc = spy(service);
+        doNothing().when(svc).cancelJob(any());
         svc.gc();
         verify(svc, never()).cancelJob(any());
 
@@ -388,5 +399,52 @@ public class JobServiceTest {
 
         svc.gc();
         verify(svc).cancelJob("2");
+    }
+
+    @Test
+    public void testExec() {
+        var req = new ExecRequest();
+        req.setCommand(new String[]{"ls"});
+
+        assertThrows(SwValidationException.class, () -> service.exec("1", "2", "3", req));
+
+        var task = Task.builder().id(3L).status(TaskStatus.RUNNING).build();
+        var step = Step.builder().id(3L).tasks(List.of(task)).build();
+        var job = Job.builder().id(2L).status(JobStatus.RUNNING).steps(List.of(step)).build();
+
+        when(jobDao.findJobById(eq(job.getId()))).thenReturn(job);
+        when(hotJobHolder.ofIds(eq(List.of(job.getId())))).thenReturn(List.of(job));
+        when(hotJobHolder.ofIds(eq(List.of(step.getId())))).thenReturn(List.of(job));
+        when(hotJobHolder.ofIds(eq(List.of(task.getId())))).thenReturn(List.of(job));
+
+        var expected = ExecResponse.builder().stdout("stdout").stderr("stderr").build();
+        when(taskScheduler.exec(eq(task), any())).thenReturn(new Future<>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return false;
+            }
+
+            @Override
+            public String[] get() {
+                return new String[]{"stdout", "stderr"};
+            }
+
+            @Override
+            public String[] get(long timeout, @NotNull TimeUnit unit) {
+                return get();
+            }
+        });
+        var resp = service.exec("1", "2", "3", req);
+        assertEquals(expected, resp);
     }
 }
