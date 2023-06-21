@@ -294,8 +294,12 @@ const job = {
         zh: '生成密码',
     },
     'job.debug.notice': {
-        zh: '调试模式已开启，请记住您的调试密码，以便后续调试。您也可以修改为自己的密码。',
         en: 'Debug mode is on, please remember the debug password for later debugging. You can also change it to your own password.',
+        zh: '调试模式已开启，请记住您的调试密码，以便后续调试。您也可以修改为自己的密码。',
+    },
+    'job.task.executor': {
+        en: 'Execute Cmd In Task Container',
+        zh: '在任务容器中执行命令',
     },
 }
 
