@@ -167,7 +167,7 @@ export default function JobListCard() {
 
                             return [
                                 <div key='id' style={{ display: 'flex', gap: '8px' }}>
-                                    <Button key='pin' as='link' onClick={() => handlePin(job.id, !job.pinned)}>
+                                    <Button key='pin' as='link' onClick={() => handlePin(job.id, !job.pinnedTime)}>
                                         <IconTooltip
                                             content={job.pinnedTime ? t('job.unpin') : t('job.pin')}
                                             icon={job.pinnedTime ? 'top' : 'top2'}
