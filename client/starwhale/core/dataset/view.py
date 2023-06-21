@@ -259,25 +259,28 @@ class DatasetTermView(BaseTermView):
             self.dataset.add_tags(tags, ignore_errors)
 
     @BaseTermView._header
-    def head(self, rows: int, show_raw_data: bool = False) -> None:
+    def head(
+        self, rows: int, show_raw_data: bool = False, show_types: bool = False
+    ) -> None:
         from starwhale.api._impl.data_store import _get_type
 
         for row in self.dataset.head(rows, show_raw_data):
             console.rule(f"row [{row['index']}]", align="left")
-            output = (
-                f":deciduous_tree: id: {row['index']} \n"
-                ":cyclone: data:\n"
-                f"\t :dim_button: type: {row['features']} \n"
-            )
+            output = f":deciduous_tree: id: {row['index']} \n" ":cyclone: features:\n"
             for _k, _v in row["features"].items():
-                ds_type: t.Any
-                try:
-                    ds_type = _get_type(_v)
-                except RuntimeError:
-                    ds_type = type(_v)
-                output += (
-                    f"\t :droplet: {_k}: value[{_v}], type[{ds_type} | {type(_v)}] \n"
-                )
+                output += f"\t :dim_button: [bold green]{_k}[/] : {_v} \n"
+
+            if show_types:
+                output += ":school_satchel: features types:\n"
+                for _k, _v in row["features"].items():
+                    ds_type: t.Any
+                    try:
+                        ds_type = _get_type(_v)
+                    except RuntimeError:
+                        ds_type = type(_v)
+                    output += (
+                        f"\t :droplet: [bold green]{_k}[/] : {ds_type} | {type(_v)} \n"
+                    )
 
             console.print(output)
 
@@ -329,8 +332,12 @@ class DatasetTermViewJson(DatasetTermView):
     def info(self) -> None:
         self.pretty_json(self.dataset.info())
 
-    def head(self, rows: int, show_raw_data: bool = False) -> None:
+    def head(
+        self, rows: int, show_raw_data: bool = False, show_types: bool = False
+    ) -> None:
         from starwhale.base.mixin import _do_asdict_convert
+
+        # TODO: support show_types in the json format output
 
         info = self.dataset.head(rows, show_raw_data)
         self.pretty_json(_do_asdict_convert(info))

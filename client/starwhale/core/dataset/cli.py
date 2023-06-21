@@ -487,14 +487,26 @@ def _tag(
     view(dataset).tag(tags, remove, quiet)
 
 
-@dataset_cmd.command("head", help="Print the first 5 rows of the dataset")
+@dataset_cmd.command("head")
 @click.argument("dataset")
-@click.option("-n", "--rows", default=5, help="Print the first NUM rows of the dataset")
 @click.option(
-    "-d",
+    "-n",
+    "--rows",
+    default=5,
+    show_default=True,
+    help="Print the first NUM rows of the dataset",
+)
+@click.option(
+    "-srd",
     "--show-raw-data",
     is_flag=True,
     help="Fetch raw data content",
+)
+@click.option(
+    "-st",
+    "--show-types",
+    is_flag=True,
+    help="Show data types",
 )
 @click.pass_obj
 def _head(
@@ -502,5 +514,33 @@ def _head(
     dataset: str,
     rows: int,
     show_raw_data: bool,
+    show_types: bool,
 ) -> None:
-    view(dataset).head(rows, show_raw_data)
+    """Print the first n rows of the dataset
+
+    DATASET: argument use the `Dataset URI` format, so you can remove the whole dataset or a specified-version dataset.
+
+    Examples:
+
+        \b
+        - print the first 5 rows of the mnist dataset
+        swcli dataset head -n 5 mnist
+
+        \b
+        - print the first 10 rows of the mnist(v0 version) dataset and show raw data
+        swcli dataset head -n 10 mnist/v0 --show-raw-data
+
+        \b
+        - print the data types of the mnist dataset
+        swcli dataset head mnist --show-types
+
+        \b
+        - print the remote cloud dataset's first 5 rows
+        swcli dataset head cloud://cloud-cn/project/test/dataset/mnist -n 5
+
+        \b
+        - print the first 5 rows in the json format
+        swcli -o json dataset head -n 5 mnist
+
+    """
+    view(dataset).head(rows, show_raw_data, show_types)
