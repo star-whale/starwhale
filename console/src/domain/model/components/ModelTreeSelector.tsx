@@ -8,7 +8,7 @@ import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import { useFetchModelTree } from '../hooks/useFetchModelTree'
 import _ from 'lodash'
-import { SelectorItemValueT } from '@starwhale/ui/DynamicSelector/types'
+import { DynamicSelectorPropsT, SelectorItemValueT } from '@starwhale/ui/DynamicSelector/types'
 
 const ModelTreeNode = themedStyled('div', () => ({
     display: 'flex',
@@ -19,14 +19,15 @@ const ModelTreeNode = themedStyled('div', () => ({
     width: '100%',
 }))
 
-export function ModelTreeSelector(props: {
-    projectId: string
-    onDataChange?: (data: any) => void
-    getId?: (obj: any) => any
-    multiple?: boolean
-    value?: string | number | any[]
-    onChange?: (args: any) => void
-}) {
+export function ModelTreeSelector(
+    props: {
+        projectId: string
+        onDataChange?: (data: any) => void
+        getId?: (obj: any) => any
+        multiple?: boolean
+        clearable?: boolean
+    } & Partial<DynamicSelectorPropsT<any>>
+) {
     const [t] = useTranslation()
     const { projectId, getId = (obj: any) => obj.id, multiple = false } = props
     const modelInfo = useFetchModelTree(projectId)
@@ -103,7 +104,7 @@ export function ModelTreeSelector(props: {
         <DynamicSelector
             {...props}
             value={(props.value && !_.isArray(props.value) ? [props.value] : props.value) as SelectorItemValueT[]}
-            onChange={(v) => props.onChange?.(multiple ? v : v[0])}
+            onChange={(v) => props.onChange?.((multiple ? v : v[0]) as any)}
             options={options as any}
         />
     )
