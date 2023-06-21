@@ -168,6 +168,7 @@ class DatasetTermView(BaseTermView):
         alignment_size: int | str,
         volume_size: int | str,
         field_selector: str = "",
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -181,6 +182,7 @@ class DatasetTermView(BaseTermView):
             field_selector=field_selector,
             alignment_size=alignment_size,
             volume_size=volume_size,
+            mode=mode,
         )
 
     @classmethod
@@ -194,6 +196,7 @@ class DatasetTermView(BaseTermView):
         auto_label: bool,
         alignment_size: int | str,
         volume_size: int | str,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -208,6 +211,7 @@ class DatasetTermView(BaseTermView):
             auto_label=auto_label,
             alignment_size=alignment_size,
             volume_size=volume_size,
+            mode=mode,
         )
 
     @classmethod
@@ -216,6 +220,7 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str | Path,
         config: DatasetConfig,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         if config.runtime_uri:
             RuntimeProcess(uri=config.runtime_uri).run()
@@ -227,7 +232,7 @@ class DatasetTermView(BaseTermView):
                 auto_gen_version=False,
             )
             ds = Dataset.get_dataset(dataset_uri)
-            ds.build(workdir=Path(workdir), config=config)
+            ds.build(workdir=Path(workdir), config=config, mode=mode)
 
     @classmethod
     def copy(
