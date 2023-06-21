@@ -66,7 +66,6 @@ def build_starwhale_model(model_name: str) -> None:
                     "git",
                     "clone",
                     "https://github.com/LianjiaTech/BELLE.git",
-                    "--depth=1",
                 ],
                 cwd=ROOTDIR,
             ).decode()
