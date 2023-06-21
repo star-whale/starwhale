@@ -31,17 +31,18 @@ install_requires = [
     "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
     "tenacity>=8.0.1",
-    "gradio~=3.15.0",
     # for system monitor
     "psutil>=5.5.0",
     "GitPython>=3.1.24",
-    "fastapi>=0.71.0",
     "filelock",
+    "fastapi",
 ]
 
 extras_require = {
     "image": ["pillow"],
     "audio": ["soundfile"],
+    "serve": ["gradio", "uvicorn"],
+    "online-serve": ["gradio~=3.15.0"],
 }
 
 all_requires = list(
