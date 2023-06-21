@@ -94,6 +94,7 @@ public class JobConverterTest {
                 .finishedTime(new Date(1001L))
                 .comment("job-comment")
                 .resourcePool("rp")
+                .pinnedTime(new Date(1002L))
                 .build();
 
         var res = jobConvertor.convert(entity);
@@ -110,7 +111,8 @@ public class JobConverterTest {
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),
                 hasProperty("comment", is("job-comment")),
-                hasProperty("resourcePool", is("default"))
+                hasProperty("resourcePool", is("default")),
+                hasProperty("pinnedTime", is(1002L))
         ));
     }
 
