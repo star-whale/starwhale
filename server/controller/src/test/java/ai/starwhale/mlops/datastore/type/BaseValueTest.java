@@ -236,6 +236,23 @@ public class BaseValueTest {
                 greaterThan(0));
         assertThat(BaseValue.compare(BaseValue.valueOf(List.of(1, 2, 3)), BaseValue.valueOf(List.of())),
                 greaterThan(0));
+        // compare list with null item
+        var left = new ArrayList<Integer>() {
+            {
+                add(1);
+                add(2);
+                add(null);
+            }
+        };
+        assertThat(BaseValue.compare(BaseValue.valueOf(left), BaseValue.valueOf(List.of(1, 2, 3))), lessThan(0));
+        var right = new ArrayList<Integer>() {
+            {
+                add(1);
+                add(2);
+                add(null);
+            }
+        };
+        assertThat(BaseValue.compare(BaseValue.valueOf(List.of(1, 2, 3)), BaseValue.valueOf(right)), greaterThan(0));
     }
 
     @Test

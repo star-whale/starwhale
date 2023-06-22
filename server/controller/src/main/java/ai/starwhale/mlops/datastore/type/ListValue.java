@@ -40,7 +40,16 @@ public class ListValue extends ArrayList<BaseValue> implements BaseValue {
             var iter2 = ((ListValue) other).iterator();
             for (; ; ) {
                 if (iter1.hasNext() && iter2.hasNext()) {
-                    var result = iter1.next().compareTo(iter2.next());
+                    var l = iter1.next();
+                    var r = iter2.next();
+                    if (l == null && r == null) {
+                        continue;
+                    } else if (l == null) {
+                        return -1;
+                    } else if (r == null) {
+                        return 1;
+                    }
+                    var result = l.compareTo(r);
                     if (result != 0) {
                         return result;
                     }
