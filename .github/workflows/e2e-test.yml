@@ -177,7 +177,7 @@ jobs:
         working-directory: ./scripts/e2e_test
         run: |
           minikube image ls --format table
-          bash start_test.sh show_minikube_jobs_log
+          bash start_test.sh show_minikube_logs
 
       - name: Test by api side
         working-directory: ./scripts/e2e_test

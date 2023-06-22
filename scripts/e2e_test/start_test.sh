@@ -49,11 +49,16 @@ start_minikube() {
     minikube -p e2e docker-env
 }
 
-show_minikube_jobs_log() {
-    echo "--> show pods events:"
+show_minikube_logs() {
+    echo "--> show jobs logs:"
     kubectl -n $SWNS get jobs -o wide
     kubectl -n $SWNS describe jobs
     kubectl -n $SWNS logs --tail 10000 -l job-name --all-containers --prefix
+
+    echo "--> show controller logs:"
+    kubectl -n $SWNS get deployments.apps -o wide
+    kubectl -n $SWNS describe deployments.apps controller
+    kubectl -n $SWNS logs --tail 10000 deployment/controller --all-containers --prefix
 }
 
 start_nexus() {
