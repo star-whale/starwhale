@@ -16,29 +16,26 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import lombok.Builder;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 
-@Data
-@Builder
-@Schema(description = "Model object", title = "Model")
+/**
+ * request protocol of client
+ */
 @Validated
-public class ModelVo implements Serializable {
+@Data
+@EqualsAndHashCode()
+@AllArgsConstructor
+@NoArgsConstructor
+public class InitUploadBlobRequest {
 
-    private String id;
+    @NotNull
+    String contentMd5;
 
-    private String name;
-
-    private Long createdTime;
-
-    private UserVo owner;
-
-    public static ModelVo empty() {
-        return new ModelVo("", "", -1L, UserVo.empty());
-    }
-
+    @NotNull
+    Long contentLength;
 }

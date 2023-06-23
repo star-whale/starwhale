@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Builder;
@@ -51,12 +50,6 @@ public class ModelInfoVo implements Serializable {
     @JsonProperty("versionTag")
     private String versionTag;
 
-    @JsonProperty("versionMeta")
-    private String versionMeta;
-
-    @JsonProperty("manifest")
-    private String manifest;
-
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -65,9 +58,7 @@ public class ModelInfoVo implements Serializable {
     private List<FileNode> files;
 
     public static ModelInfoVo empty() {
-        return new ModelInfoVo("", "",
-                "", "", "", "", "", "",
-                0L, new ArrayList<>());
+        return new ModelInfoVo("", "", "", "", "", "", 0L, List.of());
     }
 
 }

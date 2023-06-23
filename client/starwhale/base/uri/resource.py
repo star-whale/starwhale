@@ -280,7 +280,7 @@ class Resource:
             p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
             m = glob(p)
             if len(m) == 1:
-                _, _, self.name, _, version = m[0].rsplit("/", 4)
+                _, _, self.name, _, version = Path(m[0]).as_posix().rsplit("/", 4)
                 self.version = self.path_to_version(version)
             else:
                 raise NoMatchException(self.version, list(m))

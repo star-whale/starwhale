@@ -249,7 +249,7 @@ public class DatasetUploader {
             throw new StarwhaleApiException(new SwAuthException(SwAuthException.AuthType.DATASET_UPLOAD),
                     HttpStatus.FORBIDDEN);
         }
-        return currentUserDetail.getIdTableKey();
+        return currentUserDetail.getId();
     }
 
     public void end(Long uploadId) {

@@ -36,6 +36,12 @@ install_requires = [
     "GitPython>=3.1.24",
     "filelock",
     "fastapi",
+    "protobuf>=3.19.0",
+    "types-protobuf>=3.19.0",
+    "lz4>=3.1.10",
+    "trio>=0.22.0",
+    "trio_typing>=0.7.0",
+    "httpx>=0.22.0",
 ]
 
 extras_require = {

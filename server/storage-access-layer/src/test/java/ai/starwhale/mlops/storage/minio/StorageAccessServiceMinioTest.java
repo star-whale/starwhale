@@ -16,10 +16,13 @@
 
 package ai.starwhale.mlops.storage.minio;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -64,6 +67,8 @@ public class StorageAccessServiceMinioTest {
         LengthAbleInputStream lengthAbleInputStream = minio.get(path);
         Assertions.assertEquals(content.length(), lengthAbleInputStream.getSize());
         Assertions.assertEquals(content, new String(lengthAbleInputStream.readAllBytes()));
+        assertThrows(FileNotFoundException.class, () -> this.minio.get("non-exists"));
+        assertThrows(FileNotFoundException.class, () -> this.minio.get("non-exists", 1L, 1L));
     }
 
 

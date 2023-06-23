@@ -164,7 +164,7 @@ public class RuntimeServiceTest {
 
         userService = mock(UserService.class);
         given(userService.currentUserDetail())
-                .willReturn(User.builder().id(1L).idTableKey(1L).build());
+                .willReturn(User.builder().id(1L).build());
         projectService = mock(ProjectService.class);
         given(projectService.getProjectId(same("1")))
                 .willReturn(1L);

@@ -145,7 +145,6 @@ public class JobBoConverter {
                             .id(jobEntity.getModelVersionId())
                             .name(modelEntity.getModelName())
                             .version(jobEntity.getModelVersion().getVersionName())
-                            .path(jobEntity.getModelVersion().getStoragePath())
                             .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(jobEntity.getModelVersion().getJobs()))
                             .build()
                     )

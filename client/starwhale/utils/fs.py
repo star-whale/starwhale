@@ -52,8 +52,7 @@ def ensure_file(
             raise TypeError(
                 f"content({type(content)}-{content}) only accepts bytes or str type"
             )
-        # TODO: check whether rename atomic
-        _tmp_f.rename(path)
+        _tmp_f.replace(path)
 
     os.chmod(path, mode)
 

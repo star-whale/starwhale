@@ -112,7 +112,6 @@ public class ProjectServiceTest {
         given(userService.currentUserDetail()).willReturn(User.builder()
                 .name("starwhale")
                 .id(1L)
-                .idTableKey(1L)
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
         given(userService.getProjectRolesOfUser(any(), any()))

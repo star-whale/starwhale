@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
@@ -34,6 +35,14 @@ import org.apache.commons.codec.digest.DigestUtils;
 public class StorageAccessServiceMemory implements StorageAccessService {
 
     private final Map<String, byte[]> store = new ConcurrentSkipListMap<>();
+
+    public void clear(String prefix) {
+        new ArrayList<>(store.keySet()).forEach(key -> {
+            if (key.startsWith(prefix)) {
+                store.remove(key);
+            }
+        });
+    }
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {

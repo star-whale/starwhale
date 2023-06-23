@@ -16,29 +16,16 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
+import ai.starwhale.mlops.api.protocol.storage.FileNode;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.validation.annotation.Validated;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode
 @Builder
-@Schema(description = "Model object", title = "Model")
-@Validated
-public class ModelVo implements Serializable {
+public class ListFilesResult {
 
-    private String id;
-
-    private String name;
-
-    private Long createdTime;
-
-    private UserVo owner;
-
-    public static ModelVo empty() {
-        return new ModelVo("", "", -1L, UserVo.empty());
-    }
-
+    private List<FileNode> files;
 }

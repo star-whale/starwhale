@@ -69,7 +69,6 @@ public class ProjectControllerTest {
         given(userService.currentUserDetail()).willReturn(User.builder()
                 .name("starwhale")
                 .id(1L)
-                .idTableKey(1L)
                 .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
                 .build());
         IdConverter idConvertor = new IdConverter();

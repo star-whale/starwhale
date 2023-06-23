@@ -19,6 +19,8 @@ pyfakefs >= 4.5.6
 pytest-mock >= 3.7.0
 requests-mock >= 1.9.3
 isort >= 5.10.1
+trio-typing[mypy] >= 0.7.0
+respx >= 0.19.0
 # for integration test
 torch
 # TODO: wait for tensorflow release for python3.11

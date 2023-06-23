@@ -79,7 +79,7 @@ public class JobBoConverterTest {
                 .type(JobType.EVALUATION)
                 .modelVersionId(1L)
                 .modelVersion(ModelVersionEntity.builder().id(1L).modelId(1L).versionName("modelvname")
-                        .storagePath("model_path").jobs("stepspec").build())
+                        .jobs("stepspec").build())
                 .resultOutputPath("job_result")
                 .jobUuid(UUID.randomUUID().toString())
                 .runtimeVersionId(1L)
@@ -181,7 +181,6 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getModelVersion().getVersionName(), model.getVersion());
         Assertions.assertEquals(jobEntity.getModelVersion().getId(), model.getId());
         Assertions.assertEquals(modelEntity.getModelName(), model.getName());
-        Assertions.assertEquals(jobEntity.getModelVersion().getStoragePath(), model.getPath());
         Assertions.assertEquals(List.of(new StepSpec()), model.getStepSpecs());
 
         List<DataSet> dataSets = job.getDataSets();

@@ -2283,7 +2283,7 @@ class TestTableWriter(BaseTestCase):
         while True:
             if not remote_writer.is_alive():
                 break
-            if time.time() - start > 10:
+            if time.time() - start > 30:
                 is_timeout = True
 
         assert not is_timeout

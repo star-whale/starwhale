@@ -68,7 +68,10 @@ class LocalFileStore(ObjectStore):
         dst = Path(self.root) / file.hash[:2] / file.hash
         if dst.exists():
             return
-        file.link(dst)
+        try:
+            file.link(dst)
+        except FileExistsError:
+            pass
 
     def _put(self, path: PathLike, key: t.Optional[str] = None) -> BlakeFile:
         file = BlakeFile(path, key)

@@ -23,120 +23,58 @@ import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 import javax.activation.MimetypesFileTypeMap;
 import org.junit.jupiter.api.Test;
 
 
 public class FileNodeTest {
+
     private static MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
 
-    @Test
-    public void testParse() {
-        var node = FileNode.parse("a/b/c.yaml", (n) -> {
-            n.setSize("10KB");
-            n.setDesc("SRC");
-        });
-        assertThat("node info", node, is(
-                FileNode.builder()
-                    .name("a")
-                    .type(FileNode.Type.DIRECTORY)
-                    .files(List.of(
-                        FileNode.builder()
-                            .name("b")
-                            .type(FileNode.Type.DIRECTORY)
-                            .files(List.of(
-                                FileNode.builder()
-                                    .name("c.yaml")
-                                    .size("10KB")
-                                    .desc("SRC")
-                                    .mime(mimeTypesMap.getContentType("c.yaml"))
-                                    .type(FileNode.Type.FILE)
-                                    .build()
-                            )).build()
-                    )).build()));
+    public static FileNode parse(String path, Consumer<FileNode> filler) {
+        var names = path.split("/");
+        int index = 0;
+        FileNode root = null;
+        FileNode last = null;
+        for (String name : names) {
+            var node = FileNode.builder().name(name).build();
+            if (index == names.length - 1) {
+                node.setType(FileNode.Type.FILE);
+                node.setMime(mimeTypesMap.getContentType(name));
+                filler.accept(node);
+            }
+            if (last != null) {
+                last.getFiles().add(node);
+            } else {
+                root = node;
+            }
+            // update
+            last = node;
+            index++;
+        }
+        return root;
     }
 
-    @Test
-    public void testMerge() {
-        var paths = List.of(
-                "a/b/c.yaml",
-                "a/d.py",
-                "a/e/f.py",
-                "g.yaml",
-                "x/y.pth"
-        );
-        List<FileNode> files = new ArrayList<>();
-        paths.forEach(p -> {
-            var fork = FileNode.parse(p, (n) -> {
-                n.setSize("10KB");
-                n.setDesc("SRC");
-            });
-            FileNode.merge(files, fork);
-        });
+    public static void merge(List<FileNode> mainLayer, FileNode fork) {
+        if (Objects.isNull(fork)) {
+            return;
+        }
 
-        assertThat("merge file node", files, is(
-                List.of(
-                    FileNode.builder()
-                        .name("a")
-                        .type(FileNode.Type.DIRECTORY)
-                        .files(List.of(
-                            FileNode.builder()
-                                .name("b")
-                                .type(FileNode.Type.DIRECTORY)
-                                .files(List.of(
-                                    FileNode.builder()
-                                        .name("c.yaml")
-                                        .type(FileNode.Type.FILE)
-                                        .desc("SRC")
-                                        .mime(mimeTypesMap.getContentType("c.yaml"))
-                                        .size("10KB")
-                                        .build()
-                                ))
-                                .build(),
-                            FileNode.builder()
-                                .name("d.py")
-                                .type(FileNode.Type.FILE)
-                                .desc("SRC")
-                                .mime(mimeTypesMap.getContentType("d.py"))
-                                .size("10KB")
-                                .build(),
-                            FileNode.builder()
-                                .name("e")
-                                .type(FileNode.Type.DIRECTORY)
-                                .files(List.of(
-                                    FileNode.builder()
-                                        .name("f.py")
-                                        .type(FileNode.Type.FILE)
-                                        .desc("SRC")
-                                        .mime(mimeTypesMap.getContentType("f.py"))
-                                        .size("10KB")
-                                        .build()
-                                ))
-                                .build()
-                        ))
-                        .build(),
-                    FileNode.builder()
-                        .name("g.yaml")
-                        .type(FileNode.Type.FILE)
-                        .mime(mimeTypesMap.getContentType("g.yaml"))
-                        .desc("SRC")
-                        .size("10KB")
-                        .build(),
-                    FileNode.builder()
-                        .name("x")
-                        .type(FileNode.Type.DIRECTORY)
-                        .files(List.of(
-                            FileNode.builder()
-                                .name("y.pth")
-                                .type(FileNode.Type.FILE)
-                                .mime(mimeTypesMap.getContentType("y.pth"))
-                                .desc("SRC")
-                                .size("10KB")
-                                .build()
-                        ))
-                        .build()
-                    )
-        ));
+        for (FileNode mainNode : mainLayer) {
+            if (mainNode.getName().equals(fork.getName())) {
+                // deal sub nodes of the fork node
+                for (FileNode subForkNode : fork.getFiles()) {
+                    var nextLayer = mainNode.getFiles();
+                    merge(nextLayer, subForkNode);
+                }
+                return;
+            }
+        }
+
+        // if new then only add this fork and it's children
+        mainLayer.add(fork);
     }
 
     @Test
@@ -150,11 +88,11 @@ public class FileNodeTest {
         );
         List<FileNode> baseFiles = new ArrayList<>();
         basePaths.forEach(map -> {
-            var fork = FileNode.parse(map.get("path"), (n) -> {
+            var fork = parse(map.get("path"), (n) -> {
                 n.setSignature(map.get("sign"));
                 n.setDesc(map.get("desc"));
             });
-            FileNode.merge(baseFiles, fork);
+            merge(baseFiles, fork);
         });
 
         var comparePaths = List.of(
@@ -168,105 +106,105 @@ public class FileNodeTest {
         );
         List<FileNode> compareFiles = new ArrayList<>();
         comparePaths.forEach(map -> {
-            var fork = FileNode.parse(map.get("path"), (n) -> {
+            var fork = parse(map.get("path"), (n) -> {
                 n.setSignature(map.get("sign"));
                 n.setDesc(map.get("desc"));
             });
-            FileNode.merge(compareFiles, fork);
+            merge(compareFiles, fork);
         });
 
         FileNode.compare(baseFiles, compareFiles);
 
         assertThat("comapre info", compareFiles, is(
                 List.of(
-                    FileNode.builder()
-                        .name("a")
-                        .type(FileNode.Type.DIRECTORY)
-                        .files(List.of(
-                            FileNode.builder()
-                                .name("b")
+                        FileNode.builder()
+                                .name("a")
                                 .type(FileNode.Type.DIRECTORY)
                                 .files(List.of(
-                                    FileNode.builder()
-                                        .name("c.yaml")
-                                        .type(FileNode.Type.FILE)
-                                        .desc("SRC")
-                                        .mime(mimeTypesMap.getContentType("c.yaml"))
-                                        .flag(FileNode.Flag.UNCHANGED)
-                                        .signature("1")
-                                        .build()
+                                        FileNode.builder()
+                                                .name("b")
+                                                .type(FileNode.Type.DIRECTORY)
+                                                .files(List.of(
+                                                        FileNode.builder()
+                                                                .name("c.yaml")
+                                                                .type(FileNode.Type.FILE)
+                                                                .desc("SRC")
+                                                                .mime(mimeTypesMap.getContentType("c.yaml"))
+                                                                .flag(FileNode.Flag.UNCHANGED)
+                                                                .signature("1")
+                                                                .build()
+                                                ))
+                                                .build(),
+                                        FileNode.builder()
+                                                .name("b1")
+                                                .type(FileNode.Type.DIRECTORY)
+                                                .flag(FileNode.Flag.ADDED)
+                                                .files(List.of(
+                                                        FileNode.builder()
+                                                                .name("c1.yaml")
+                                                                .type(FileNode.Type.FILE)
+                                                                .desc("SRC")
+                                                                .mime(mimeTypesMap.getContentType("c.yaml"))
+                                                                .flag(FileNode.Flag.ADDED)
+                                                                .signature("12")
+                                                                .build()
+                                                ))
+                                                .build(),
+                                        FileNode.builder()
+                                                .name("d.py")
+                                                .type(FileNode.Type.FILE)
+                                                .desc("SRC")
+                                                .mime(mimeTypesMap.getContentType("d.py"))
+                                                .signature("2")
+                                                .flag(FileNode.Flag.UNCHANGED)
+                                                .build(),
+                                        FileNode.builder()
+                                                .name("e")
+                                                .type(FileNode.Type.DIRECTORY)
+                                                .flag(FileNode.Flag.DELETED)
+                                                /*.files(List.of(
+                                                    FileNode.builder()
+                                                        .name("f.py")
+                                                        .type(FileNode.Type.FILE)
+                                                        .desc("SRC")
+                                                        .mime(mimeTypesMap.getContentType("f.py"))
+                                                        .signature("3")
+                                                        .flag(FileNode.Flag.DELETED)
+                                                        .build()
+                                                )) */
+                                                .build()
                                 ))
                                 .build(),
-                            FileNode.builder()
-                                .name("b1")
-                                .type(FileNode.Type.DIRECTORY)
-                                .flag(FileNode.Flag.ADDED)
-                                .files(List.of(
-                                    FileNode.builder()
-                                        .name("c1.yaml")
-                                        .type(FileNode.Type.FILE)
-                                        .desc("SRC")
-                                        .mime(mimeTypesMap.getContentType("c.yaml"))
-                                        .flag(FileNode.Flag.ADDED)
-                                        .signature("12")
-                                        .build()
-                                ))
-                                .build(),
-                            FileNode.builder()
-                                .name("d.py")
+                        FileNode.builder()
+                                .name("g.yaml")
                                 .type(FileNode.Type.FILE)
+                                .mime(mimeTypesMap.getContentType("g.yaml"))
                                 .desc("SRC")
-                                .mime(mimeTypesMap.getContentType("d.py"))
-                                .signature("2")
+                                .signature("4")
                                 .flag(FileNode.Flag.UNCHANGED)
                                 .build(),
-                            FileNode.builder()
-                                .name("e")
+                        FileNode.builder()
+                                .name("x")
                                 .type(FileNode.Type.DIRECTORY)
-                                .flag(FileNode.Flag.DELETED) // parent deleted and subFiles no longer displayed
-                                /*.files(List.of(
-                                    FileNode.builder()
-                                        .name("f.py")
-                                        .type(FileNode.Type.FILE)
-                                        .desc("SRC")
-                                        .mime(mimeTypesMap.getContentType("f.py"))
-                                        .signature("3")
-                                        .flag(FileNode.Flag.DELETED)
-                                        .build()
-                                )) */
+                                .files(List.of(
+                                        FileNode.builder()
+                                                .name("y.pth")
+                                                .type(FileNode.Type.FILE)
+                                                .mime(mimeTypesMap.getContentType("y.pth"))
+                                                .desc("MODEL")
+                                                .signature("50")
+                                                .flag(FileNode.Flag.UPDATED)
+                                                .build(),
+                                        FileNode.builder()
+                                                .name("y1.pth")
+                                                .type(FileNode.Type.FILE)
+                                                .mime(mimeTypesMap.getContentType("y1.pth"))
+                                                .desc("MODEL")
+                                                .signature("51")
+                                                .flag(FileNode.Flag.ADDED)
+                                                .build()
+                                ))
                                 .build()
-                        ))
-                        .build(),
-                    FileNode.builder()
-                        .name("g.yaml")
-                        .type(FileNode.Type.FILE)
-                        .mime(mimeTypesMap.getContentType("g.yaml"))
-                        .desc("SRC")
-                        .signature("4")
-                        .flag(FileNode.Flag.UNCHANGED)
-                        .build(),
-                    FileNode.builder()
-                        .name("x")
-                        .type(FileNode.Type.DIRECTORY)
-                        .files(List.of(
-                            FileNode.builder()
-                                .name("y.pth")
-                                .type(FileNode.Type.FILE)
-                                .mime(mimeTypesMap.getContentType("y.pth"))
-                                .desc("MODEL")
-                                .signature("50")
-                                .flag(FileNode.Flag.UPDATED)
-                                .build(),
-                            FileNode.builder()
-                                .name("y1.pth")
-                                .type(FileNode.Type.FILE)
-                                .mime(mimeTypesMap.getContentType("y1.pth"))
-                                .desc("MODEL")
-                                .signature("51")
-                                .flag(FileNode.Flag.ADDED)
-                                .build()
-                        ))
-                        .build()
                 )
         ));
     }

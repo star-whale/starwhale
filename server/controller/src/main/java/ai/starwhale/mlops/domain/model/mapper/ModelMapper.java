@@ -43,7 +43,7 @@ public interface ModelMapper {
     @Insert("insert into model_info(model_name, project_id, owner_id)"
             + " values(#{modelName}, #{projectId}, #{ownerId})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    int insert(ModelEntity entity);
+    long insert(ModelEntity entity);
 
     @Update("update model_info set is_deleted = 1 where id = #{id}")
     int remove(@Param("id") Long id);

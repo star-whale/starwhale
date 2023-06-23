@@ -46,11 +46,8 @@
     mv.version_name as mv_version_name,
     mv.jobs as mv_jobs,
     mv.version_tag as mv_version_tag,
-    mv.version_meta as mv_version_meta,
     mv.created_time as mv_created_time,
     mv.modified_time as mv_modified_time,
-    mv.storage_path as mv_storage_path,
-    mv.manifest as mv_manifest,
     mv.version_order as mv_version_order,
     m.model_name as model_name
     from job_info as j,
@@ -229,9 +226,6 @@
     <result column="mv_version_order" property="versionOrder"/>
     <result column="mv_version_name" property="versionName"/>
     <result column="mv_version_tag" property="versionTag"/>
-    <result column="mv_version_meta" property="versionMeta"/>
-    <result column="mv_storage_path" property="storagePath"/>
-    <result column="mv_manifest" property="manifest"/>
     <result column="mv_jobs" property="jobs"/>
     <result column="mv_created_time" property="createdTime"/>
     <result column="mv_modified_time" property="modifiedTime"/>

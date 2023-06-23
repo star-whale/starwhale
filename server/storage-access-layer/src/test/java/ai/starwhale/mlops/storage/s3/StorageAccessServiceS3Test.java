@@ -21,9 +21,11 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -128,6 +130,8 @@ public class StorageAccessServiceS3Test {
     @Test
     public void testGet() throws IOException {
         assertThat(new String(this.s3.get("t1").readAllBytes()), is("a"));
+        assertThrows(FileNotFoundException.class, () -> this.s3.get("non-exists"));
+        assertThrows(FileNotFoundException.class, () -> this.s3.get("non-exists", 1L, 1L));
     }
 
     @Test

@@ -18,15 +18,18 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.model.CompleteUploadBlobResult;
+import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
+import ai.starwhale.mlops.api.protocol.model.ListFilesResult;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
-import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -41,18 +44,19 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -179,9 +183,9 @@ public class ModelController implements ModelApi {
             String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request) {
         Boolean res = modelService.modifyModelVersion(projectUrl, modelUrl, versionUrl,
                 ModelVersion.builder()
-                    .tag(request.getTag())
-                    .builtInRuntime(request.getBuiltInRuntime())
-                    .build());
+                        .tag(request.getTag())
+                        .builtInRuntime(request.getBuiltInRuntime())
+                        .build());
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -211,53 +215,46 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<Object>> upload(
-            String projectUrl, String modelUrl, String versionUrl,
-            MultipartFile file, ModelUploadRequest uploadRequest) {
-        uploadRequest.setProject(projectUrl);
-        uploadRequest.setSwmp(modelUrl + ":" + versionUrl);
-        FileDesc fileDesc = uploadRequest.getDesc();
-        String signature = uploadRequest.getSignature();
-        Long uploadId = uploadRequest.getUploadId();
-        switch (uploadRequest.getPhase()) {
-            case MANIFEST:
-                return ResponseEntity.ok(Code.success.asResponse(
-                        modelService.uploadManifest(file, uploadRequest)));
-            case BLOB:
-                switch (fileDesc) {
-                    case MODEL:
-                        modelService.uploadModel(uploadId, signature, file, uploadRequest);
-                        break;
-                    case SRC_TAR:
-                        modelService.uploadSrc(uploadId, file, uploadRequest);
-                        break;
-                    default:
-                        throw new StarwhaleApiException(
-                                new SwValidationException(ValidSubject.MODEL, "don't support fileType" + fileDesc),
-                                HttpStatus.BAD_REQUEST);
-                }
-                break;
-            case CANCEL:
-                // TODO need use a tmp record otherwise the origin record will be removed when use force
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "don't support cancel"),
-                        HttpStatus.BAD_REQUEST);
-            case END:
-                modelService.end(uploadId);
-                break;
-            default:
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "unknown phase " + uploadRequest.getPhase()),
-                        HttpStatus.BAD_REQUEST);
-        }
-        return ResponseEntity.ok(Code.success.asResponse(""));
+    public ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
+            InitUploadBlobRequest initUploadBlobRequest) {
+        var result = this.modelService.initUploadBlob(initUploadBlobRequest);
+        return ResponseEntity.ok(Code.success.asResponse(result));
     }
 
     @Override
-    public void pull(FileDesc fileDesc, String name, String path, String signature,
-                     String projectUrl, String modelUrl, String versionUrl,
-                     HttpServletResponse httpResponse) {
-        modelService.pull(fileDesc, name, path, signature, projectUrl, modelUrl, versionUrl, httpResponse);
+    public ResponseEntity<ResponseMessage<CompleteUploadBlobResult>> completeUploadBlob(String blobId) {
+        var result = this.modelService.completeUploadBlob(blobId);
+        return ResponseEntity.ok(Code.success.asResponse(CompleteUploadBlobResult.builder().blobId(result).build()));
+    }
+
+    @Override
+    public void createModelVersion(String project, String model, String version,
+            CreateModelVersionRequest createModelVersionRequest) {
+        this.modelService.createModelVersion(project, model, version, createModelVersionRequest);
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
+            String project, String model, String version, String blobId) {
+        var root = this.modelService.getModelMetaBlob(project, model, version, blobId);
+        try {
+            return ResponseEntity.ok(Code.success.asResponse(JsonFormat.printer().print(root)));
+        } catch (InvalidProtocolBufferException e) {
+            throw new SwProcessException(ErrorType.SYSTEM, "failed to print protobuf", e);
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
+            String project, String model, String version, String path) {
+        var result = this.modelService.listFiles(project, model, version, path);
+        return ResponseEntity.ok(Code.success.asResponse(result));
+    }
+
+    @Override
+    public ResponseEntity<InputStreamResource> getFileData(String project, String model, String version, String path) {
+        var result = this.modelService.getFileData(project, model, version, path);
+        return ResponseEntity.ok(new InputStreamResource(result));
     }
 
     @Override

@@ -18,22 +18,23 @@ package ai.starwhale.mlops.domain.model;
 
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
+import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
+import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
+import ai.starwhale.mlops.api.protocol.model.ListFilesResult;
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
-import ai.starwhale.mlops.api.protocol.model.ModelUploadRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelUploadResult;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.api.protocol.storage.FileDesc;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
-import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.blob.BlobService;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
@@ -41,9 +42,11 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.File;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
+import ai.starwhale.mlops.domain.model.ModelPackageStorage.MetaBlobIndex;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
@@ -55,10 +58,6 @@ import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.storage.MetaInfo;
-import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -71,49 +70,49 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.io.IOUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4SafeDecompressor;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 
 @Slf4j
 @Service
 public class ModelService {
 
-    static final String MODEL_MANIFEST = "_manifest.yaml";
+    private static final LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+    private static final LZ4SafeDecompressor lz4SafeDecompressor = lz4Factory.safeDecompressor();
 
     private final ModelMapper modelMapper;
     private final ModelVersionMapper modelVersionMapper;
@@ -121,41 +120,41 @@ public class ModelService {
     private final VersionAliasConverter versionAliasConvertor;
     private final ModelVoConverter modelVoConverter;
     private final ModelVersionVoConverter versionConvertor;
-    private final StoragePathCoordinator storagePathCoordinator;
-    private final StorageAccessService storageAccessService;
-    private final StorageService storageService;
     private final UserService userService;
     private final ProjectService projectService;
     private final ModelDao modelDao;
-    private final HotJobHolder jobHolder;
 
     private final TrashService trashService;
 
     private final JobSpecParser jobSpecParser;
 
+    private final BlobService blobService;
+
     @Setter
     private BundleManager bundleManager;
 
-    public ModelService(ModelMapper modelMapper, ModelVersionMapper modelVersionMapper,
-                        IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
-                        ModelVoConverter modelVoConverter, ModelVersionVoConverter versionConvertor,
-                        StoragePathCoordinator storagePathCoordinator, ModelDao modelDao,
-                        StorageAccessService storageAccessService, StorageService storageService,
-                        UserService userService, ProjectService projectService, HotJobHolder jobHolder,
-                        TrashService trashService, JobSpecParser jobSpecParser) {
+    public ModelService(
+            ModelMapper modelMapper,
+            ModelVersionMapper modelVersionMapper,
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor,
+            ModelVoConverter modelVoConverter,
+            ModelVersionVoConverter versionConvertor,
+            ModelDao modelDao,
+            UserService userService,
+            ProjectService projectService,
+            TrashService trashService,
+            JobSpecParser jobSpecParser,
+            BlobService blobService) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.modelVoConverter = modelVoConverter;
         this.versionConvertor = versionConvertor;
-        this.storagePathCoordinator = storagePathCoordinator;
         this.modelDao = modelDao;
-        this.storageAccessService = storageAccessService;
-        this.storageService = storageService;
         this.userService = userService;
         this.projectService = projectService;
-        this.jobHolder = jobHolder;
         this.trashService = trashService;
         this.jobSpecParser = jobSpecParser;
         this.bundleManager = new BundleManager(
@@ -165,6 +164,7 @@ public class ModelService {
                 modelDao,
                 modelDao
         );
+        this.blobService = blobService;
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
@@ -243,22 +243,15 @@ public class ModelService {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, List<FileNode>> getModelDiff(String projectUrl, String modelUrl, String baseVersion,
-                                                    String compareVersion) {
-        var baseModel = getModelVersion(projectUrl, modelUrl, baseVersion);
-        var compareModel = getModelVersion(projectUrl, modelUrl, compareVersion);
-        if (Objects.isNull(baseModel) || Objects.isNull(compareModel)) {
-            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                "Unable to find the compare version of model "), HttpStatus.BAD_REQUEST);
-        }
-        try {
-            var baseFiles = parseManifestFiles(getManifest(baseModel.getStoragePath()));
-            var compareFiles = parseManifestFiles(getManifest(compareModel.getStoragePath()));
-            FileNode.compare(baseFiles, compareFiles);
-            return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
-        } catch (JsonProcessingException e) {
-            throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
-        }
+    public Map<String, List<FileNode>> getModelDiff(
+            String projectUrl,
+            String modelUrl,
+            String baseVersion,
+            String compareVersion) {
+        var baseFiles = this.listModelFiles(projectUrl, modelUrl, baseVersion);
+        var compareFiles = this.listModelFiles(projectUrl, modelUrl, compareVersion);
+        FileNode.compare(baseFiles, compareFiles);
+        return Map.of("baseVersion", baseFiles, "compareVersion", compareFiles);
     }
 
     public ModelInfoVo getModelInfo(ModelQuery query) {
@@ -293,37 +286,16 @@ public class ModelService {
     }
 
     private ModelInfoVo toModelInfoVo(ModelEntity model, ModelVersionEntity version) {
-        try {
-            // Get file list from manifest
-            // TODO read from datastore
-            var manifest = getManifest(version.getStoragePath());
-
-            return ModelInfoVo.builder()
-                    .id(idConvertor.convert(model.getId()))
-                    .name(model.getModelName())
-                    .versionId(idConvertor.convert(version.getId()))
-                    .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
-                    .versionName(version.getVersionName())
-                    .versionTag(version.getVersionTag())
-                    .versionMeta(version.getVersionMeta())
-                    .manifest(manifest)
-                    .createdTime(version.getCreatedTime().getTime())
-                    .files(parseManifestFiles(manifest))
-                    .build();
-
-        } catch (IOException e) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list model storage", e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private List<FileNode> parseManifestFiles(String manifest) throws JsonProcessingException {
-        if (StringUtils.hasText(manifest)) {
-            var meta = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
-            return FileNode.makeTree(meta.getResources());
-        } else {
-            return List.of();
-        }
+        return ModelInfoVo.builder()
+                .id(idConvertor.convert(model.getId()))
+                .name(model.getModelName())
+                .versionId(idConvertor.convert(version.getId()))
+                .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
+                .versionName(version.getVersionName())
+                .versionTag(version.getVersionTag())
+                .createdTime(version.getCreatedTime().getTime())
+                .files(this.listModelFiles(this.getMetaBlob(version.getMetaBlobId())))
+                .build();
     }
 
     public Boolean modifyModelVersion(String projectUrl, String modelUrl, String versionUrl, ModelVersion version) {
@@ -351,9 +323,7 @@ public class ModelService {
                             BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
                             tagAction);
         } catch (TagException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL, "failed to create tag manager", e),
-                    HttpStatus.BAD_REQUEST);
+            throw new SwValidationException(ValidSubject.MODEL, "failed to create tag manager", e);
         }
     }
 
@@ -370,18 +340,16 @@ public class ModelService {
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity, getManifest(entity.getStoragePath()));
+            ModelVersionVo vo = versionConvertor.convert(entity);
             if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                //vo.setTag(TagUtil.addTags("latest", vo.getTag()));
                 vo.setAlias(VersionAliasConverter.LATEST);
             }
-            vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
         });
     }
 
     public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl,
-                                    Boolean shared) {
+            Boolean shared) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, modelUrl, versionUrl));
         modelVersionMapper.updateShared(versionId, shared);
@@ -402,30 +370,29 @@ public class ModelService {
             if (!map.containsKey(entity.getModelId())) {
                 map.put(entity.getModelId(),
                         ModelViewVo.builder()
-                            .ownerName(entity.getUserName())
-                            .projectName(entity.getProjectName())
-                            .modelId(idConvertor.convert(entity.getModelId()))
-                            .modelName(entity.getModelName())
-                            .shared(toInt(shared))
-                            .versions(new ArrayList<>())
-                            .build());
+                                .ownerName(entity.getUserName())
+                                .projectName(entity.getProjectName())
+                                .modelId(idConvertor.convert(entity.getModelId()))
+                                .modelName(entity.getModelName())
+                                .shared(toInt(shared))
+                                .versions(new ArrayList<>())
+                                .build());
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
             try {
                 map.get(entity.getModelId())
                         .getVersions()
                         .add(ModelVersionViewVo.builder()
-                            .id(idConvertor.convert(entity.getId()))
-                            .versionName(entity.getVersionName())
-                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                            .createdTime(entity.getCreatedTime().getTime())
-                            .shared(toInt(entity.getShared()))
-                            .builtInRuntime(entity.getBuiltInRuntime())
-                            .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                            .build()
-                        );
+                                .id(idConvertor.convert(entity.getId()))
+                                .versionName(entity.getVersionName())
+                                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                                .createdTime(entity.getCreatedTime().getTime())
+                                .shared(toInt(entity.getShared()))
+                                .builtInRuntime(entity.getBuiltInRuntime())
+                                .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
+                                .build());
             } catch (JsonProcessingException e) {
-                log.error("parse stepSpec error for model version:{}, error:{}", entity.getId(), e);
+                log.error("parse step spec error for model version:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
             }
         }
@@ -450,365 +417,382 @@ public class ModelService {
                 }).collect(Collectors.toList());
     }
 
-
-    /**
-     * prefix + / + fileName
-     */
-    static final String FORMATTER_STORAGE_PATH = "%s/%s";
-    static final String FORMATTER_STORAGE_SRC_FILE_PATH = "%s/src/%s";
-    static final String FORMATTER_STORAGE_SRC_PATH = "%s/src";
-
-    @Transactional
-    public ModelUploadResult uploadManifest(MultipartFile multipartFile, ModelUploadRequest uploadRequest) {
-        long startTime = System.currentTimeMillis();
-        log.debug("access received at {}", startTime);
-        Long projectId = null;
-        Project project = null;
-        if (!StrUtil.isEmpty(uploadRequest.getProject())) {
-            project = projectService.findProject(uploadRequest.getProject());
-            projectId = project.getId();
-        }
-        ModelEntity entity = modelMapper.findByName(uploadRequest.name(), projectId, true);
-        if (null == entity) {
-            //create
-            if (projectId == null) {
-                project = projectService.findProject(uploadRequest.getProject());
-                projectId = project.getId();
-            }
-            entity = ModelEntity.builder().isDeleted(0)
-                .ownerId(getOwner())
-                .projectId(projectId)
-                .modelName(uploadRequest.name())
-                .build();
-            modelMapper.insert(entity);
-        }
-        log.debug("model checked time use {}", System.currentTimeMillis() - startTime);
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(
-                uploadRequest.version(), entity.getId());
-        boolean entityExists = null != modelVersionEntity;
-        if (entityExists && !uploadRequest.force()) {
-            log.debug("model version checked time use {}", System.currentTimeMillis() - startTime);
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL, "model version duplicate" + uploadRequest.version()),
-                    HttpStatus.BAD_REQUEST);
-        } else if (entityExists && uploadRequest.force()) {
-            jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
-                    .parallelStream().forEach(job -> {
-                        Model model = job.getModel();
-                        if (model.getName().equals(uploadRequest.name())
-                                && model.getVersion().equals(uploadRequest.version())) {
-                            throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                                "job's are running on model version " + uploadRequest.version()
-                                    + " you can't force push now"),
-                                HttpStatus.BAD_REQUEST);
-                        }
-                    });
-        }
-        log.debug("model version checked time use {}", System.currentTimeMillis() - startTime);
-        // upload to storage
-        final String modelPackagePath = entityExists ? modelVersionEntity.getStoragePath()
-                : storagePathCoordinator.allocateModelPath(projectId, uploadRequest.name(),
-                uploadRequest.version());
-        String manifestContent;
-        Set<String> existed = new HashSet<>();
-        try (final InputStream inputStream = multipartFile.getInputStream()) {
-            manifestContent = IOUtils.toString(multipartFile.getInputStream(), StandardCharsets.UTF_8);
-
-            // parse model file's signature, valid if existed
-            var metaInfo = Constants.yamlMapper.readValue(manifestContent, MetaInfo.class);
-
-            for (MetaInfo.Resource file : metaInfo.getResources()) {
-                if (!file.isDuplicateCheck()) {
-                    continue;
-                }
-                String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                        projectId, file.getSignature());
-                var model = storageAccessService.list(modelPath).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(model)) {
-                    existed.add(file.getSignature());
-                }
-            }
-            // upload manifest to oss
-            // TODO: store to datastore
-            storageAccessService.put(
-                    String.format(FORMATTER_STORAGE_PATH, modelPackagePath, MODEL_MANIFEST),
-                    inputStream, multipartFile.getSize()
-            );
-        } catch (IOException e) {
-            log.error("upload model failed {}", uploadRequest.getSwmp(), e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
-                HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        if (entityExists) {
-            // update manifest
-            modelVersionEntity.setStatus(ModelVersionEntity.STATUS_UN_AVAILABLE);
-            modelVersionMapper.update(modelVersionEntity);
-        } else {
-            // create new entity
-            modelVersionEntity = ModelVersionEntity.builder()
-                .ownerId(getOwner())
-                .storagePath(modelPackagePath)
-                .modelId(entity.getId())
-                .versionName(uploadRequest.version())
-                .versionMeta(uploadRequest.getSwmp())
-                .jobs("")
-                .status(ModelVersionEntity.STATUS_UN_AVAILABLE)
-                .build();
-            modelVersionMapper.insert(modelVersionEntity);
-            RevertManager.create(bundleManager, modelDao)
-                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
-        }
-        return ModelUploadResult.builder()
-                .uploadId(modelVersionEntity.getId())
-                .existed(existed)
-                .build();
-    }
-
-    @Transactional
-    public void uploadModel(Long modelVersionId, String signature,
-                            MultipartFile modelFile, ModelUploadRequest uploadRequest) {
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(modelVersionId);
-        if (modelVersionEntity == null
-                || Objects.equals(modelVersionEntity.getStatus(), ModelVersionEntity.STATUS_AVAILABLE)) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL),
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-        Long projectId = projectService.getProjectId(uploadRequest.getProject());
-
-        String modelPath = storagePathCoordinator.allocateCommonModelPoolPath(
-                projectId, signature);
-
-        try {
-            storageAccessService.put(modelPath, modelFile.getInputStream(), modelFile.getSize());
-        } catch (IOException e) {
-            log.error("upload model failed {}", uploadRequest.getSwmp(), e);
-            throw new StarwhaleApiException(
-                    new SwProcessException(ErrorType.STORAGE),
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
-        }
-    }
-
-    @Transactional
-    public void uploadSrc(Long modelVersionId, MultipartFile multipartFile, ModelUploadRequest uploadRequest) {
-        ModelVersionEntity modelVersionEntity = modelVersionMapper.find(modelVersionId);
-        if (modelVersionEntity == null
-                || Objects.equals(modelVersionEntity.getStatus(), ModelVersionEntity.STATUS_AVAILABLE)) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL),
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-        // upload to storage
-        final String storagePath = modelVersionEntity.getStoragePath();
-        String jobContent = "";
-        try (final InputStream inputStream = multipartFile.getInputStream()) {
-            // only extract the eval job file content
-            // TODO: replace with oss path content
-            // but update only for job
-            jobContent = new String(
-                    Objects.requireNonNull(
-                            TarFileUtil.getContentFromTarFile(
-                                multipartFile.getInputStream(), ".starwhale", "jobs.yaml")
-                    )
-            );
-            TarFileUtil.extract(inputStream, (name, size, in) ->
-                    storageAccessService.put(
-                            String.format(FORMATTER_STORAGE_SRC_FILE_PATH, storagePath, name), in, size
-                    )
-            );
-            // upload src.tar to oss
-            storageAccessService.put(
-                    String.format(FORMATTER_STORAGE_PATH, storagePath, multipartFile.getOriginalFilename()),
-                    multipartFile.getInputStream(),
-                    multipartFile.getSize()
-            );
-        } catch (IOException | ArchiveException e) {
-            log.error("upload model src failed {}", uploadRequest.getSwmp(), e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        // update job content
-        modelVersionEntity.setJobs(jobContent);
-        modelVersionMapper.update(modelVersionEntity);
-    }
-
-    public void end(Long modelVersionId) {
-        modelVersionMapper.updateStatus(modelVersionId, ModelVersionEntity.STATUS_AVAILABLE);
-    }
-
     private Long getOwner() {
         User currentUserDetail = userService.currentUserDetail();
         if (null == currentUserDetail) {
             throw new SwAuthException(SwAuthException.AuthType.MODEL_UPLOAD);
         }
-        return currentUserDetail.getIdTableKey();
+        return currentUserDetail.getId();
     }
 
-    public void pull(FileDesc fileDesc, String name, String path, String signature,
-                     String projectUrl, String modelUrl, String versionUrl,
-                     HttpServletResponse httpResponse) {
-        ModelVersionEntity modelVersionEntity = getModelVersion(projectUrl, modelUrl, versionUrl);
-        if (null == modelVersionEntity) {
-            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "Model version not found");
-        }
-
-        if (!StringUtils.hasText(name) && !StringUtils.hasText(path)) {
-            throw new SwValidationException(ValidSubject.MODEL,
-                "at least one of name or path is not null when download");
-        }
-
-        String manifest = getManifest(modelVersionEntity.getStoragePath());
-        // read from manifest
+    public InitUploadBlobResult initUploadBlob(InitUploadBlobRequest initUploadBlobRequest) {
         try {
-            var metaInfo = Constants.yamlMapper.readValue(manifest, MetaInfo.class);
-            // get file type by path
-            for (MetaInfo.Resource file : metaInfo.getResources()) {
-                if (file.getPath().equals(path) || file.getName().equals(name)) {
-                    fileDesc = file.getDesc();
-                    // update correct attributes
-                    name = Objects.isNull(name) ? file.getName() : name;
-                    path = Objects.isNull(path) ? file.getPath() : path;
-                    signature = Objects.isNull(signature) ? file.getSignature() : signature;
-                    break;
-                }
-            }
-
-        } catch (JsonProcessingException e) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "can not parse manifest", e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        if (fileDesc == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE,
-                    String.format("can't find file:%s(path:%s) from model package", name, path));
-        }
-        String filePath;
-        switch (fileDesc) {
-            case MANIFEST:
-                var content = manifest.getBytes();
-                var is = new LengthAbleInputStream(new ByteArrayInputStream(content), content.length);
-                this.pullFile(name, () -> is, httpResponse);
-                return;
-            case SRC:
-                filePath = String.format(FORMATTER_STORAGE_PATH, modelVersionEntity.getStoragePath(), path);
-                break;
-            case MODEL:
-                var project = projectService.findProject(projectUrl);
-                filePath = storagePathCoordinator.allocateCommonModelPoolPath(project.getId(), signature);
-                break;
-            case SRC_TAR:
-                this.pullSrcTar(name, modelVersionEntity.getStoragePath(), httpResponse);
-                return;
-            default:
-                throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.MODEL, "unsupported type " + fileDesc),
-                        HttpStatus.BAD_REQUEST
-                );
-        }
-        // direct pull from oss
-        this.pullFile(
-                name, () -> {
-                    try {
-                        return storageAccessService.get(filePath);
-                    } catch (IOException e) {
-                        log.error("get file from storage failed {}", filePath, e);
-                        throw new SwProcessException(ErrorType.STORAGE);
-                    }
-                }, httpResponse);
-
-    }
-
-    private String getManifest(String storagePath) {
-        var p = String.format(FORMATTER_STORAGE_PATH, storagePath, MODEL_MANIFEST);
-        try (var is = storageAccessService.get(p)) {
-            return IOUtils.toString(is, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE, "get manifest error", e);
-        }
-    }
-
-    public void pullFile(
-            String name,
-            Supplier<LengthAbleInputStream> streamSupplier,
-            HttpServletResponse httpResponse
-    ) {
-        try (var fileInputStream = streamSupplier.get();
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            if (fileInputStream == null) {
-                return;
-            }
-            httpResponse.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileInputStream.getSize()));
-            fileInputStream.transferTo(outputStream);
-            outputStream.flush();
-        } catch (IOException e) {
-            log.error("download manifest file failed", e);
-            throw new SwProcessException(ErrorType.SYSTEM);
-        }
-    }
-
-    public void pullSrcTar(String name, String storagePath, HttpServletResponse httpResponse) {
-        pullFile(name, () -> {
             try {
-                return storageAccessService.get(String.format(FORMATTER_STORAGE_PATH, storagePath, name));
-            } catch (IOException e) {
-                log.error("pull original src tar failed, try to reCompress from files");
-                reCompressToTar(name, storagePath, httpResponse);
-                return null;
+                var blobId = this.blobService.readBlobRef(initUploadBlobRequest.getContentMd5(),
+                        initUploadBlobRequest.getContentLength());
+                return InitUploadBlobResult.builder()
+                        .status(Status.EXISTED)
+                        .blobId(blobId)
+                        .build();
+            } catch (FileNotFoundException e) {
+                // if not found, go on
             }
-        }, httpResponse);
+
+            var blobId = this.blobService.generateBlobId();
+            return InitUploadBlobResult.builder()
+                    .status(Status.OK)
+                    .blobId(blobId)
+                    .signedUrl(this.blobService.getSignedPutUrl(blobId))
+                    .build();
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "", e);
+        }
     }
 
-    private void reCompressToTar(String name, String storagePath, HttpServletResponse httpResponse) {
-        String srcPath = String.format(FORMATTER_STORAGE_SRC_PATH, storagePath);
-        List<String> files;
-        try {
-            files = storageAccessService.list(srcPath).collect(Collectors.toList());
+    public String completeUploadBlob(String blobId) {
+        return this.blobService.generateBlobRef(blobId);
+    }
+
+    @Transactional
+    public void createModelVersion(
+            String project, String model, String version, CreateModelVersionRequest createModelVersionRequest) {
+        var projectEntity = this.projectService.findProject(project);
+        if (projectEntity == null) {
+            throw new SwNotFoundException(ResourceType.PROJECT, "project not found");
+        }
+        var ownerId = this.getOwner();
+        var modelEntity = this.modelMapper.findByName(model, projectEntity.getId(), true);
+        if (modelEntity == null) {
+            modelEntity = ModelEntity.builder()
+                    .ownerId(ownerId)
+                    .projectId(projectEntity.getId())
+                    .modelName(model)
+                    .build();
+            this.modelMapper.insert(modelEntity);
+        }
+        var metaBlobId = createModelVersionRequest.getMetaBlobId();
+        var metaBlob = this.getMetaBlob(metaBlobId);
+        var metaBlobList = new ArrayList<ModelPackageStorage.MetaBlob>();
+        metaBlobList.add(metaBlob);
+        for (var index : metaBlob.getMetaBlobIndexesList()) {
+            metaBlobList.add(this.getMetaBlob(index.getBlobId()));
+        }
+        long storageSize = 0;
+        for (var blob : metaBlobList) {
+            storageSize += blob.getSerializedSize();
+            for (var file : blob.getFilesList()) {
+                storageSize += file.getSize();
+            }
+        }
+        String jobs;
+        try (var in = this.getFileData(metaBlob, "src/.starwhale/jobs.yaml")) {
+            jobs = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            log.error("listing file from storage failed {}", srcPath, e);
-            throw new SwProcessException(ErrorType.STORAGE);
+            throw new SwProcessException(ErrorType.STORAGE, "read jobs.yaml error", e);
         }
 
-        if (CollectionUtils.isEmpty(files)) {
-            log.error("file path:{} is empty", srcPath);
-            throw new SwValidationException(ValidSubject.MODEL, "model version empty folder");
-        }
+        var modelVersionEntity = ModelVersionEntity.builder()
+                .modelId(modelEntity.getId())
+                .ownerId(ownerId)
+                .versionName(version)
+                .metaBlobId(metaBlobId)
+                .builtInRuntime(createModelVersionRequest.getBuiltInRuntime())
+                .jobs(jobs)
+                .storageSize(storageSize)
+                .build();
+        this.modelVersionMapper.insert(modelVersionEntity);
+        RevertManager.create(this.bundleManager, this.modelDao)
+                .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
+    }
 
-        try (ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            final long[] length = {0L};
-            TarFileUtil.archiveAndTransferTo(new Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return !files.isEmpty();
+    public ModelPackageStorage.MetaBlob getModelMetaBlob(String project, String model, String version, String blobId) {
+        var modelVersionEntity = this.getModelVersion(project, model, version);
+        var root = this.getMetaBlob(modelVersionEntity.getMetaBlobId());
+        if (blobId.isEmpty()) {
+            return this.addSignedUrls(root);
+        }
+        for (var index : root.getMetaBlobIndexesList()) {
+            if (index.getBlobId().equals(blobId)) {
+                return this.addSignedUrls(this.getMetaBlob(blobId));
+            }
+        }
+        throw new SwValidationException(ValidSubject.MODEL, "blob " + blobId + " not found");
+    }
+
+    public List<FileNode> listModelFiles(String project, String model, String version) {
+        return this.listModelFiles(this.getModelMetaBlob(project, model, version, ""));
+    }
+
+    private List<FileNode> listModelFiles(ModelPackageStorage.MetaBlob metaBlob) {
+        var files = new ArrayList<>(metaBlob.getFilesList());
+        for (var index : metaBlob.getMetaBlobIndexesList()) {
+            files.addAll(this.getMetaBlob(index.getBlobId()).getFilesList());
+        }
+        return this.convertRecursively(files, 0).getFiles();
+    }
+
+    public ListFilesResult listFiles(String project, String model, String version, String path) {
+        return ListFilesResult.builder()
+                .files(this.getFile(this.getModelMetaBlob(project, model, version, ""), path).stream()
+                        .map(this::convert)
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    private FileNode convertRecursively(List<ModelPackageStorage.File> fileList, int index) {
+        var f = fileList.get(index);
+        var ret = this.convert(f);
+        if (ret.getType() == FileNode.Type.DIRECTORY) {
+            for (int i = f.getFromFileIndex(); i < f.getToFileIndex(); ++i) {
+                if (i < index) {
+                    throw new SwProcessException(ErrorType.SYSTEM,
+                            "invalid file index. current:" + index + " node:" + f);
                 }
+                ret.getFiles().add(this.convertRecursively(fileList, i));
+            }
+        }
+        return ret;
+    }
 
-                @Override
-                public TarFileUtil.TarEntry next() {
-                    var filePath = files.remove(0);
-                    try {
-                        var inputStream = storageAccessService.get(filePath);
-                        length[0] += inputStream.getSize();
-                        return TarFileUtil.TarEntry.builder()
-                                .inputStream(inputStream)
-                                .size(inputStream.getSize())
-                                .name(filePath.substring(srcPath.length() + 1))
-                                .build();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+    private FileNode convert(ModelPackageStorage.File file) {
+        if (file.getType() != FileType.FILE_TYPE_DIRECTORY) {
+            return FileNode.builder()
+                    .name(file.getName())
+                    .type(FileNode.Type.FILE)
+                    .size(String.valueOf(file.getSize()))
+                    .mime(URLConnection.guessContentTypeFromName(file.getName()))
+                    .signature(Hex.encodeHexString(file.getMd5().toByteArray(), true))
+                    .build();
+        }
+        return FileNode.builder()
+                .name(file.getName())
+                .type(FileNode.Type.DIRECTORY)
+                .build();
+    }
+
+    public InputStream getFileData(String project, String model, String version, String path) {
+        return this.getFileData(this.getModelMetaBlob(project, model, version, ""), path);
+    }
+
+    private InputStream getFileData(ModelPackageStorage.MetaBlob metaBlob, String path) {
+        var files = new LinkedList<>(this.getFile(metaBlob, path));
+        if (files.get(0).getSize() == 0) {
+            return new ByteArrayInputStream(new byte[0]);
+        }
+        var compressionAlgorithm = files.get(0).getCompressionAlgorithm();
+        if (files.get(0).getBlobIdsCount() == 0) {
+            files.removeFirst();
+        }
+        return new SequenceInputStream(new Enumeration<>() {
+            int index = 0;
+
+            @Override
+            public boolean hasMoreElements() {
+                return files.size() > 0;
+            }
+
+            @Override
+            public InputStream nextElement() {
+                if (files.isEmpty()) {
+                    throw new NoSuchElementException();
+                }
+                var file = files.getFirst();
+                if (index >= file.getBlobIdsCount()) {
+                    throw new SwProcessException(ErrorType.SYSTEM,
+                            "invalid index. max:" + file.getBlobIdsCount() + " current:" + index);
+                }
+                var blobId = file.getBlobIds(index);
+                ++index;
+                if (index == file.getBlobIdsCount()) {
+                    files.removeFirst();
+                    index = 0;
+                }
+                if (blobId.isEmpty()) {
+                    var array = metaBlob.getData().toByteArray();
+                    InputStream in;
+                    int size;
+                    if (file.getBlobOffset() == 0 && file.getBlobSize() == 0) {
+                        in = new ByteArrayInputStream(array);
+                        size = array.length;
+                    } else {
+                        in = new ByteArrayInputStream(array, file.getBlobOffset(), file.getBlobSize());
+                        size = file.getBlobSize();
                     }
+                    return readFileData(in, size, compressionAlgorithm);
                 }
-            }, outputStream);
+                try (var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize())) {
+                    return readFileData(data, data.getSize(), compressionAlgorithm);
+                } catch (IOException e) {
+                    throw new SwProcessException(ErrorType.STORAGE, "can not read data", e);
+                }
+            }
+        });
+    }
 
-            httpResponse.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"");
-            httpResponse.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(length[0]));
-            outputStream.flush();
-        } catch (IOException | ArchiveException e) {
-            log.error("download file from storage failed {}", srcPath, e);
-            throw new SwProcessException(ErrorType.STORAGE);
+    private InputStream readFileData(
+            InputStream in,
+            long totalSize,
+            ModelPackageStorage.CompressionAlgorithm compressionAlgorithm) {
+        if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_NO_COMPRESSION) {
+            return in;
+        }
+        return new SequenceInputStream(new Enumeration<>() {
+            final byte[] decompressBuf = new byte[65536];
+            final byte[] readBuf = new byte[65536];
+            long available = totalSize;
+            InputStream current = null;
+
+            @SneakyThrows
+            @Override
+            public boolean hasMoreElements() {
+                if (current == null) {
+                    if (available == 0) {
+                        return false;
+                    }
+                    var high = in.read();
+                    if (high < 0) {
+                        throw new SwProcessException(ErrorType.SYSTEM, "failed to read size");
+                    }
+                    var low = in.read();
+                    if (low < 0) {
+                        throw new SwProcessException(ErrorType.SYSTEM, "failed to read size");
+                    }
+                    var size = high * 256 + low;
+                    if (size == 0) {
+                        size = 65536;
+                    }
+                    for (int i = 0; i < size; ) {
+                        int n = in.read(this.readBuf, i, size - i);
+                        if (n < 0) {
+                            throw new SwProcessException(ErrorType.SYSTEM,
+                                    "not enough data. expected:" + size + " actual:" + i);
+                        }
+                        i += n;
+                    }
+                    if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_LZ4) {
+                        this.current = new ByteArrayInputStream(this.decompressBuf, 0,
+                                lz4SafeDecompressor.decompress(this.readBuf, 0, size, this.decompressBuf, 0));
+                    } else {
+                        throw new SwProcessException(ErrorType.SYSTEM, "invalid compression:" + compressionAlgorithm);
+                    }
+                    this.available -= size + 2;
+                }
+                return true;
+            }
+
+            @Override
+            public InputStream nextElement() {
+                var ret = this.current;
+                this.current = null;
+                return ret;
+            }
+        });
+
+    }
+
+    private ModelPackageStorage.MetaBlob addSignedUrls(ModelPackageStorage.MetaBlob metaBlob) {
+        var builder = metaBlob.toBuilder();
+        for (var file : builder.getFilesBuilderList()) {
+            for (var blobId : file.getBlobIdsList()) {
+                try {
+                    file.addSignedUrls(this.blobService.getSignedUrl(blobId));
+                } catch (IOException e) {
+                    throw new SwProcessException(ErrorType.STORAGE, "failed to sign url", e);
+                }
+            }
+        }
+        return builder.build();
+    }
+
+    private ModelPackageStorage.MetaBlob getMetaBlob(String blobId) {
+        try {
+            var data = this.blobService.readBlobAsByteArray(blobId);
+            return ModelPackageStorage.MetaBlob.parseFrom(data);
+        } catch (InvalidProtocolBufferException e) {
+            throw new SwProcessException(ErrorType.SYSTEM, "failed to parse meta blob", e);
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "failed to read blob " + blobId, e);
+        }
+    }
+
+    private List<ModelPackageStorage.File> getFile(ModelPackageStorage.MetaBlob firstMetaBlob, String path) {
+        var metaBlob = new AtomicReference<>(firstMetaBlob);
+        var indexes = new LinkedList<>(metaBlob.get().getMetaBlobIndexesList());
+        indexes.addFirst(MetaBlobIndex.newBuilder().setLastFileIndex(firstMetaBlob.getFilesCount() - 1).build());
+        var result = new AtomicReference<>(metaBlob.get().getFiles(0));
+        if (!StrUtil.isEmpty(path)) {
+            var currentPath = new StringBuilder();
+            for (var name : path.split("/")) {
+                if (currentPath.length() > 0) {
+                    currentPath.append("/");
+                }
+                currentPath.append(name);
+                AtomicBoolean found = new AtomicBoolean(false);
+                if (result.get().getType() == FileType.FILE_TYPE_DIRECTORY) {
+                    this.iterateDir(metaBlob, indexes, result.get(), file -> {
+                        if (file.getName().equals(name)) {
+                            result.set(file);
+                            found.set(true);
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+                if (!found.get()) {
+                    throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "file not found: " + currentPath);
+                }
+            }
+        }
+        var ret = new ArrayList<ModelPackageStorage.File>();
+        switch (result.get().getType()) {
+            case FILE_TYPE_DIRECTORY:
+                this.iterateDir(metaBlob, indexes, result.get(), file -> {
+                    ret.add(file);
+                    return false;
+                });
+                break;
+            case FILE_TYPE_HUGE:
+                ret.add(result.get());
+                this.iterateDir(metaBlob, indexes, result.get(), file -> {
+                    ret.add(file);
+                    return false;
+                });
+                break;
+            case FILE_TYPE_REGULAR:
+                ret.add(result.get());
+                break;
+            default:
+                throw new SwProcessException(ErrorType.SYSTEM, "unknown file type " + result.get().getType());
+        }
+        return ret;
+    }
+
+    private void iterateDir(AtomicReference<ModelPackageStorage.MetaBlob> metaBlob,
+            LinkedList<ModelPackageStorage.MetaBlobIndex> indexes,
+            ModelPackageStorage.File dir,
+            Function<File, Boolean> processor) {
+        var from = dir.getFromFileIndex();
+        var to = dir.getToFileIndex();
+        for (int i = from; i < to; ++i) {
+            if (i > indexes.getFirst().getLastFileIndex()) {
+                while (indexes.size() > 0 && i > indexes.getFirst().getLastFileIndex()) {
+                    indexes.removeFirst();
+                }
+                if (indexes.isEmpty()) {
+                    throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, "can not find file index " + i);
+                }
+                try {
+                    metaBlob.set(ModelPackageStorage.MetaBlob.parseFrom(
+                            this.blobService.readBlobAsByteArray(indexes.getFirst().getBlobId())));
+                } catch (IOException e) {
+                    throw new SwProcessException(ErrorType.STORAGE, "failed to read blob", e);
+                }
+            }
+            var file = metaBlob.get().getFiles(
+                    metaBlob.get().getFilesCount() - (indexes.getFirst().getLastFileIndex() - i) - 1);
+            if (processor.apply(file)) {
+                return;
+            }
         }
     }
 

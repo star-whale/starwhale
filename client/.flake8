@@ -21,3 +21,4 @@ exclude =
     build
     dist
     ../example/LLM/belle-bloom/BELLE/*
+    starwhale/proto_gen 

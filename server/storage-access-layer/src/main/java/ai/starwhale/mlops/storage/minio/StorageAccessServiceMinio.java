@@ -34,6 +34,7 @@ import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.http.Method;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
@@ -131,6 +132,9 @@ public class StorageAccessServiceMinio implements StorageAccessService {
     @Override
     public LengthAbleInputStream get(String path) throws IOException {
         StorageObjectInfo objectInfo = this.head(path);
+        if (!objectInfo.isExists()) {
+            throw new FileNotFoundException(path);
+        }
         try {
             GetObjectResponse resp = this.minioClient.getObject(GetObjectArgs.builder()
                     .bucket(this.bucket)
@@ -153,6 +157,13 @@ public class StorageAccessServiceMinio implements StorageAccessService {
                     .object(path)
                     .build());
             return new LengthAbleInputStream(resp, size);
+        } catch (ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
+                throw new FileNotFoundException(path);
+            } else {
+                log.error("get object fails", e);
+                throw new IOException(e);
+            }
         } catch (Exception e) {
             log.error("get object fails", e);
             throw new IOException(e);

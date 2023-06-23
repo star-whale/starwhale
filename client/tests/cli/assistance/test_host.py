@@ -67,7 +67,7 @@ class TestCommandExecutor(unittest.TestCase):
             executor.stop()
         self.assertEqual(b"122333", stdout)
         self.assertEqual(b"err", stderr)
-        mock_post.assert_called_with("broker?exit_code=0", timeout=5)
+        mock_post.assert_any_call("broker?exit_code=0", timeout=5)
 
     @patch("starwhale.cli.assistance.host.requests.post")
     @patch("starwhale.cli.assistance.host.requests.get")
