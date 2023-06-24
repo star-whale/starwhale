@@ -31,7 +31,7 @@ WORK_DIR = os.environ.get("WORK_DIR")
 if not WORK_DIR:
     raise RuntimeError("WORK_DIR NOT FOUND")
 STATUS_SUCCESS = {"SUCCESS", "success"}
-STATUS_FAIL = {"FAIL", "fail", "CANCELED"}
+STATUS_FAIL = {"fail", "CANCELED", "FAIL"}
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
