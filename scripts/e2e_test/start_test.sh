@@ -64,8 +64,8 @@ show_minikube_logs() {
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-  sudo cp /etc/hosts /etc/hosts.bak_e2e
-  sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
+  cp /etc/hosts /etc/hosts.bak_e2e
+  echo "127.0.0.1 $NEXUS_HOSTNAME" | tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -225,7 +225,7 @@ check_controller_service() {
     nohup kubectl port-forward --namespace $SWNS svc/minio $PORT_MINIO:$PORT_MINIO > /dev/null 2>&1 &
     DNS_RECORD='127.0.0.1 minio'
     if ! fgrep "$DNS_RECORD" /etc/hosts; then
-      echo "$DNS_RECORD" | sudo tee -a /etc/hosts
+      echo "$DNS_RECORD" | tee -a /etc/hosts
     fi
 }
 

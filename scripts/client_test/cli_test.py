@@ -30,7 +30,7 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 WORK_DIR = os.environ.get("WORK_DIR")
 if not WORK_DIR:
     raise RuntimeError("WORK_DIR NOT FOUND")
-STATUS_SUCCESS = {"SUCCESS", "success"}
+STATUS_SUCCESS = {"success", "SUCCESS"}
 STATUS_FAIL = {"FAIL", "fail", "CANCELED"}
 
 logging.basicConfig(level=logging.DEBUG)
