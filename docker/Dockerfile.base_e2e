@@ -7,8 +7,7 @@ ENV TZ=Etc/UTC
 
 # Install common tools/git/software-properties-common
 RUN apt-get update \
-    && apt-get install -y ca-certificates curl gnupg lsb-release wget jq vim rsync zip unzip\
-    && apt-get install -y git git-lfs\
+    && apt-get install -y ca-certificates curl gnupg lsb-release wget jq vim rsync zip unzip git git-lfs sudo \
     && git lfs install \
     && apt-get install -y software-properties-common
 
@@ -16,8 +15,8 @@ RUN apt-get update \
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     &&  echo \
-         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-         $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get update \
     && apt-get install -y docker-ce-cli
 
