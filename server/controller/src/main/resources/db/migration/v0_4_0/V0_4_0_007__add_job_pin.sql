@@ -18,5 +18,5 @@
 ALTER TABLE job_info
     ADD pinned_time DATETIME NULL;
 
-create index pinned_time_id_index
-    on job_info (pinned_time, id);
+create index pinned_time_index
+    on job_info (pinned_time);
