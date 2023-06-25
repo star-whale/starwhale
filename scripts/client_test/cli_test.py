@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 import typing as t
 import logging
 import subprocess
@@ -457,12 +458,15 @@ class TestCli:
 
     def smoke_commands(self) -> None:
         commands = [
-            "timeout 10 swcli --help",
+            "swcli --help",
             "swcli --version",
         ]
 
         for cmd in commands:
+            start = time.time()
             check_invoke(cmd.split())
+            if time.time() - start > 10:
+                raise RuntimeError(f"{cmd} timeout")
 
     def test_sdk(self) -> None:
         script_path = (
