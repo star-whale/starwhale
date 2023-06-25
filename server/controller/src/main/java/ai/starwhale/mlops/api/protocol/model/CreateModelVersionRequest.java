@@ -34,4 +34,6 @@ public class CreateModelVersionRequest {
     String metaBlobId;
 
     String builtInRuntime;
+
+    boolean force = false;
 }
