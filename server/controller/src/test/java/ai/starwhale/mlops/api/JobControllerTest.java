@@ -347,10 +347,12 @@ public class JobControllerTest {
     public void testModifyJobPinStatus() {
         given(jobService.updateJobPinStatus(same("p1"), same("j1"), same(true)))
                 .willReturn(true);
-        var resp = controller.modifyJobPinStatus("p1", "j1", true);
+        JobModifyRequest jobModifyRequest = new JobModifyRequest();
+        jobModifyRequest.setPinned(true);
+        var resp = controller.modifyJobPinStatus("p1", "j1", jobModifyRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
         assertThrows(StarwhaleApiException.class,
-                () -> controller.modifyJobPinStatus("p1", "j2", true));
+                () -> controller.modifyJobPinStatus("p1", "j2", jobModifyRequest
     }
 }
