@@ -1333,14 +1333,6 @@ const locales0 = {
         en: 'Log in with {{0}}',
         zh: '{{0}} ',
     },
-    'Github': {
-        en: 'Github',
-        zh: 'Github',
-    },
-    'Google': {
-        en: 'Google',
-        zh: 'Google',
-    },
     'agreePolicy': {
         en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',
         zh: '我同意 <1>服务条款</1> 和 <3>隐私政策</3>',
