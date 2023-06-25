@@ -50,6 +50,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
@@ -504,19 +505,23 @@ public class ModelServiceTest extends MySqlContainerHolder {
             }
         }
 
-        this.modelService.createModelVersion("1", "m", "v1", new CreateModelVersionRequest(modelBuilder.build(), null));
+        this.modelService.createModelVersion("1", "m", "v1",
+                new CreateModelVersionRequest(modelBuilder.build(), null, false));
 
         modelBuilder.generate("test", 10, 100, true);
         modelBuilder.remove("v/1/1/1/1/1");
         modelBuilder.generate("t/d3/x", 1, 10000, true);
-        this.modelService.createModelVersion("1", "m", "v2", new CreateModelVersionRequest(modelBuilder.build(), null));
+        this.modelService.createModelVersion("1", "m", "v2",
+                new CreateModelVersionRequest(modelBuilder.build(), null, false));
 
-        this.modelService.createModelVersion("1", "m", "v3", new CreateModelVersionRequest(modelBuilder.build(), null));
+        this.modelService.createModelVersion("1", "m", "v3",
+                new CreateModelVersionRequest(modelBuilder.build(), null, false));
 
         modelBuilder.remove("test");
         modelBuilder.remove("0/1/2/3/4");
         modelBuilder.add("0/1/2/3/5/6/7", "".getBytes(StandardCharsets.UTF_8));
-        this.modelService.createModelVersion("1", "m", "v4", new CreateModelVersionRequest(modelBuilder.build(), null));
+        this.modelService.createModelVersion("1", "m", "v4",
+                new CreateModelVersionRequest(modelBuilder.build(), null, false));
 
         modelBuilder.clear();
 
@@ -524,7 +529,11 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
         modelBuilder.add("src/.starwhale/jobs.yaml", "[]".getBytes(StandardCharsets.UTF_8));
         this.modelService.createModelVersion("1", "m1", "v1",
-                new CreateModelVersionRequest(modelBuilder.build(), null));
+                new CreateModelVersionRequest(modelBuilder.build(), null, false));
+        this.modelService.createModelVersion("1", "m1", "v1",
+                new CreateModelVersionRequest(modelBuilder.build(), null, true));
+        assertThrows(StarwhaleApiException.class, () -> this.modelService.createModelVersion("1", "m1", "v1",
+                new CreateModelVersionRequest(modelBuilder.build(), null, false)));
     }
 
     @AfterAll

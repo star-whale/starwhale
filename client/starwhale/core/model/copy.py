@@ -15,7 +15,7 @@ from rich.progress import TaskID, Progress
 from google.protobuf import json_format
 
 from starwhale.utils import console, convert_to_bytes
-from starwhale.consts import SW_API_VERSION
+from starwhale.consts import SW_API_VERSION, DEFAULT_MANIFEST_NAME
 from starwhale.proto_gen import model_package_storage_pb2 as pb2
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.base.uri.project import Instance
@@ -60,6 +60,15 @@ def _prepare_common_contextvars() -> None:
     _net_sem.set(trio.Semaphore(int(os.environ.get("SW_BUNDLE_COPY_NET_TASKS", "16"))))
     _blob_sem.set(
         trio.Semaphore(int(os.environ.get("SW_BUNDLE_COPY_BUFFER_BLOBS", "32")))
+    )
+    timeout = httpx.Timeout(10.0, connect=30.0)
+    limits = httpx.Limits(
+        max_keepalive_connections=_net_sem.get().value,
+        max_connections=_net_sem.get().value,
+    )
+    transport = httpx.AsyncHTTPTransport(retries=3, limits=limits)
+    _httpx_client.set(
+        httpx.AsyncClient(timeout=timeout, limits=limits, transport=transport)
     )
 
 
@@ -273,6 +282,8 @@ def _scan_dir(workdir: Path) -> t.List[_Node]:
     i = 0
     while i < len(nodes):
         for child in sorted(nodes[i].path.glob("*")):
+            if i == 0 and child.name != "src" and child.name != DEFAULT_MANIFEST_NAME:
+                continue
             stat = child.stat()
             if child.is_dir():
                 new_node = _Node(child)
@@ -379,8 +390,7 @@ async def upload_model(
     _progress.set(progress)
     _instance.set(dest_uri.instance)
     _prepare_common_contextvars()
-    async with httpx.AsyncClient() as client:
-        _httpx_client.set(client)
+    async with _httpx_client.get():
         async with trio.open_nursery() as nursery:
             runtime_version_send, runtime_version_recv = trio.open_memory_channel[
                 t.Optional[str]
@@ -644,8 +654,7 @@ async def download_model(
     _progress.set(progress)
     _instance.set(src_uri.instance)
     _prepare_common_contextvars()
-    async with httpx.AsyncClient() as client:
-        _httpx_client.set(client)
+    async with _httpx_client.get():
         console.print(":arrow_down: downloading metadata...")
         meta_blobs = await _download_meta_blobs(src_uri)
         console.print("metadata downloaded")
