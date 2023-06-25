@@ -336,19 +336,28 @@ class RuntimeTermView(BaseTermView):
     @classmethod
     @BaseTermView._only_standalone
     def restore(cls, target: str) -> None:
+        console.print(
+            f":golfer: try to restore python runtime environment: {target} ..."
+        )
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
+            Runtime.restore(workdir)
+            activate_script_path = workdir / "activate.host"
+            console.print(
+                f":ramen: runtime(from workdir:{target}) has been restored, activate it in the current shell: \n"
+                f"\t :stars: run command: [bold green]$(sh {str(activate_script_path)})[/]"
+            )
         else:
             _uri = Resource(target, ResourceType.runtime)
             _runtime = StandaloneRuntime(_uri)
             workdir = _runtime.store.snapshot_workdir
             if not workdir.exists():
                 _runtime.extract(force=True, target=workdir)
-
-        console.print(
-            f":golfer: try to restore python runtime environment: {workdir} ..."
-        )
-        Runtime.restore(workdir)
+            Runtime.restore(workdir)
+            console.print(
+                f":ramen: runtime(from uri:{_uri}) has been restored, activate it in the current shell: \n"
+                f"\t :stars: run command: [bold green]swcli runtime activate {target}[/]"
+            )
 
     @classmethod
     def copy(

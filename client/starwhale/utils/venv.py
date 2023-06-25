@@ -551,11 +551,8 @@ def _render_sw_activate(
 
     if verbose:
         console.print(
-            f" :clap: {_sw_path.name} and {_host_path.name} is generated at {workdir}"
+            f":clap: {_sw_path.name} and {_host_path.name} is generated at {workdir}"
         )
-        console.print(" :compass: run cmd:  ")
-        console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
-        console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
 
 
 def get_conda_prefix_path(name: str = "") -> str:
