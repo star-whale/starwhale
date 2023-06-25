@@ -1281,6 +1281,86 @@ const locales0 = {
         en: 'Edit',
         zh: '编辑',
     },
+    'Other Login Methods': {
+        en: 'Other Login Methods',
+        zh: '其他方式登录',
+    },
+    'emailPlaceholder for login': {
+        en: 'yours@example.com or your username',
+        zh: '您的电子邮件或用户名',
+    },
+    'emailPlaceholder for sing up': {
+        en: 'yours@example.com',
+        zh: '您的电子邮件',
+    },
+    'passwordPlaceholder': {
+        en: 'your password',
+        zh: '您的密码',
+    },
+    'Do Not Remember Your Password': {
+        en: "Don't remember your password?",
+        zh: '忘记密码？',
+    },
+    'Reset Password Email Send Success': {
+        en: 'You should receive an email shortly with further instructions.',
+        zh: '您应该会很快收到一封电子邮件，其中包含进一步的说明。',
+    },
+    'Reset Password Success': {
+        en: 'Reset password success!',
+        zh: '密码重置成功！',
+    },
+    'logIn': {
+        en: 'Log in',
+        zh: '登录',
+    },
+    'signUp': {
+        en: 'Sign up',
+        zh: '注册',
+    },
+    'Sign Up With': {
+        en: 'Sign up with {{0}}',
+        zh: '{{0}}',
+    },
+    'Log In With': {
+        en: 'Log in with {{0}}',
+        zh: '{{0}} ',
+    },
+    'agreePolicy': {
+        en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',
+        zh: '我同意 <1>服务条款</1> 和 <3>隐私政策</3>',
+    },
+    'Should Check the ToS': {
+        en: 'Please read and check the ToS',
+        zh: '请阅读并勾选服务条款',
+    },
+    'User Not Registered': {
+        en: 'User not registered',
+        zh: '用户未注册',
+    },
+    'Check Your Email': {
+        en: 'Check your email',
+        zh: '请检查您的电子邮件',
+    },
+    'Please verify the email send from Starwhale': {
+        en: 'Please verify the email send from Starwhale',
+        zh: '请验证来自 Starwhale 的电子邮件',
+    },
+    'Resend Email': {
+        en: 'Resend Email',
+        zh: '重新发送电子邮件',
+    },
+    'Send Email Success': {
+        en: 'Send email success',
+        zh: '发送电子邮件成功',
+    },
+    'Already Verified': {
+        en: 'Already Verified',
+        zh: '已验证',
+    },
+    'alreadyHaveAccount': {
+        en: 'Already have an account?',
+        zh: '注册过了？',
+    },
     'Manage Member': {
         en: 'Manage Member',
         zh: '管理成员',
