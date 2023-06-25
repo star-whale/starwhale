@@ -53,4 +53,6 @@ export interface StepSpec {
     job_name?: string
     name?: string
     replicas?: number
+    virtual?: boolean
+    expose?: number
 }

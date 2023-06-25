@@ -301,6 +301,10 @@ const job = {
         en: 'Execute Cmd In Task Container',
         zh: '在任务容器中执行命令',
     },
+    'job.expose.title': {
+        en: 'Open Expose Service',
+        zh: '开启外部访问',
+    },
 }
 
 const evaluation = {

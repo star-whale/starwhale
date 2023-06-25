@@ -17,6 +17,7 @@ import { MonoText } from '@/components/Text'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button from '@starwhale/ui/Button'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import IconFont from '@starwhale/ui/IconFont'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -85,7 +86,6 @@ export default function JobListCard() {
                                         >
                                             {t('Cancel')}
                                         </Button>
-                                        &nbsp;&nbsp;
                                         <WithCurrentAuth id='job-pause'>
                                             <Button
                                                 kind='tertiary'
@@ -104,7 +104,6 @@ export default function JobListCard() {
                                         >
                                             {t('Cancel')}
                                         </Button>
-                                        &nbsp;&nbsp;
                                         <WithCurrentAuth id='job-pause'>
                                             <Button
                                                 kind='tertiary'
@@ -123,7 +122,6 @@ export default function JobListCard() {
                                         >
                                             {t('Cancel')}
                                         </Button>
-                                        &nbsp;&nbsp;
                                         <WithCurrentAuth id='job-resume'>
                                             <Button
                                                 kind='tertiary'
@@ -164,11 +162,26 @@ export default function JobListCard() {
                                 job.modelName,
                                 <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
                                 job.owner && <User user={job.owner} />,
-                                job?.createdTime && job?.createdTime && formatTimestampDateTime(job?.createdTime),
+                                job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
                                 typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
                                 job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
                                 <JobStatus key='jobStatus' status={job.jobStatus as any} />,
-                                actions[job.jobStatus] ?? '',
+                                <div key='action' style={{ display: 'flex', gap: '8px' }}>
+                                    {actions[job.jobStatus] ?? ''}
+                                    {job.exposedLinks?.map((link) => {
+                                        return (
+                                            <a
+                                                key={link}
+                                                target='_blank'
+                                                href={link}
+                                                rel='noreferrer'
+                                                title={t('job.expose.title')}
+                                            >
+                                                <IconFont type='global' size={16} />
+                                            </a>
+                                        )
+                                    })}
+                                </div>,
                             ]
                         }) ?? []
                     }
