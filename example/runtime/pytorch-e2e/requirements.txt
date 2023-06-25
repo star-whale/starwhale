@@ -1,3 +1,4 @@
+starwhale[serve]
 # for pfp
 pycocotools
 # for ucf101
