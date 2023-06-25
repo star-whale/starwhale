@@ -189,7 +189,15 @@ cli() {
     if ! twine upload --repository nexus dist/* ; then echo "[ERROR] Something wrong while uploading pypi version , press CTL+C to interrupt execution if needed"; fi
     popd
     pushd ../../docker
-    docker build --network=host -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME --build-arg SW_VERSION=$PYPI_RELEASE_VERSION  --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
+    docker build --network=host -t starwhale -f Dockerfile.starwhale  \
+        --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 \
+        --build-arg PORT_NEXUS=$PORT_NEXUS \
+        --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME \
+        --build-arg SW_VERSION=$PYPI_RELEASE_VERSION \
+        --build-arg HTTP_PROXY=$HTTP_PROXY \
+        --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+        --build-arg NO_PROXY=$NO_PROXY \
+        --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
     docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
     if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
