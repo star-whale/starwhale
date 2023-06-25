@@ -133,7 +133,7 @@ public class CompatibleStorageAccessServiceS3Like extends CompatibleStorageAcces
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
-        return storageAccessService.signedPutUrl(path, expTimeMillis);
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        return storageAccessService.signedPutUrl(path, contentType, expTimeMillis);
     }
 }

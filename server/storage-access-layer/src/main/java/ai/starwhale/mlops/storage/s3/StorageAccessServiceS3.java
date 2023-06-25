@@ -315,9 +315,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) {
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) {
         return s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
-                .putObjectRequest(PutObjectRequest.builder().bucket(this.s3Config.getBucket()).key(path).build())
+                .putObjectRequest(PutObjectRequest.builder()
+                        .bucket(this.s3Config.getBucket())
+                        .key(path)
+                        .contentType(contentType)
+                        .build())
                 .signatureDuration(Duration.ofMillis(expTimeMillis))
                 .build()).url().toString();
     }

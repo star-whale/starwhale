@@ -53,5 +53,5 @@ public interface StorageAccessService {
      */
     String signedUrl(String path, Long expTimeMillis) throws IOException;
 
-    String signedPutUrl(String path, Long expTimeMillis) throws IOException;
+    String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException;
 }

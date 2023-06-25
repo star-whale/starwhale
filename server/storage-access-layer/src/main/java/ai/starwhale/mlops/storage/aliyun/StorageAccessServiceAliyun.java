@@ -30,6 +30,7 @@ import com.aliyun.oss.OSSErrorCode;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.AbortMultipartUploadRequest;
 import com.aliyun.oss.model.CompleteMultipartUploadRequest;
+import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.HeadObjectRequest;
 import com.aliyun.oss.model.InitiateMultipartUploadRequest;
@@ -196,11 +197,10 @@ public class StorageAccessServiceAliyun implements StorageAccessService {
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
-        return ossClient.generatePresignedUrl(this.bucket,
-                        path,
-                        new Date(System.currentTimeMillis() + expTimeMillis),
-                        HttpMethod.PUT)
-                .toString();
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
+        var request = new GeneratePresignedUrlRequest(this.bucket, path, HttpMethod.PUT);
+        request.setExpiration(new Date(System.currentTimeMillis() + expTimeMillis));
+        request.setContentType(contentType);
+        return ossClient.generatePresignedUrl(request).toString();
     }
 }

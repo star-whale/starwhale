@@ -162,7 +162,7 @@ public class StorageAccessServiceFile implements StorageAccessService {
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
         return serviceProvider + "/" + path + "/" + (System.currentTimeMillis() + expTimeMillis);
     }
 }

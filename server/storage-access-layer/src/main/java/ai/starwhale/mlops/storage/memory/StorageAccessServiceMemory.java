@@ -107,7 +107,7 @@ public class StorageAccessServiceMemory implements StorageAccessService {
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) {
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) {
         return path;
     }
 }
