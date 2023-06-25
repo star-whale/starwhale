@@ -155,7 +155,6 @@ jobs:
           directory: ./client
 
   e2e:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version:
@@ -164,6 +163,15 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+        os:
+          - macos-latest
+          - ubuntu-latest
+        exclude:
+          # https://github.com/pytorch/pytorch/issues/86566
+          # pytorch does not release python 3.11 wheel package for macosx os yet.
+          - os: macos-latest
+            python-version: "3.11"
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
