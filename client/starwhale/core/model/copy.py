@@ -61,12 +61,16 @@ def _prepare_common_contextvars() -> None:
     _blob_sem.set(
         trio.Semaphore(int(os.environ.get("SW_BUNDLE_COPY_BUFFER_BLOBS", "32")))
     )
-    timeout = httpx.Timeout(10.0, connect=30.0)
+    timeout = httpx.Timeout(
+        float(os.environ.get("SW_BUNDLE_COPY_NETWORK_TIMEOUT", 90.0))
+    )
     limits = httpx.Limits(
         max_keepalive_connections=_net_sem.get().value,
         max_connections=_net_sem.get().value,
     )
-    transport = httpx.AsyncHTTPTransport(retries=3, limits=limits)
+    transport = httpx.AsyncHTTPTransport(
+        retries=int(os.environ.get("SW_BUNDLE_COPY_NETWORK_RETRIES", 10)), limits=limits
+    )
     _httpx_client.set(
         httpx.AsyncClient(timeout=timeout, limits=limits, transport=transport)
     )
