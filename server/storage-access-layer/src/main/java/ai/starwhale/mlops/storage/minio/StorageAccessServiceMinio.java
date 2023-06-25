@@ -203,13 +203,17 @@ public class StorageAccessServiceMinio implements StorageAccessService {
     }
 
     @Override
-    public String signedPutUrl(String path, Long expTimeMillis) throws IOException {
+    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
         return this.signUrl(path, expTimeMillis, Method.PUT);
     }
 
     private String signUrl(String path, Long expTimeMillis, Method method) throws IOException {
-        GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder().expiry(expTimeMillis.intValue(),
-                TimeUnit.MILLISECONDS).bucket(this.bucket).object(path).method(method).build();
+        GetPresignedObjectUrlArgs request = GetPresignedObjectUrlArgs.builder()
+                .expiry(expTimeMillis.intValue(), TimeUnit.MILLISECONDS)
+                .bucket(this.bucket)
+                .object(path)
+                .method(method)
+                .build();
         try {
             return minioClient.getPresignedObjectUrl(request);
         } catch (MinioException | NoSuchAlgorithmException | InvalidKeyException e) {

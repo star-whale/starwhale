@@ -116,7 +116,10 @@ public class BlobService {
 
 
     public String getSignedPutUrl(String blobId) throws IOException {
-        return this.storageAccessService.signedPutUrl(this.getObjectPath(blobId), this.urlExpirationTimeMillis);
+        return this.storageAccessService.signedPutUrl(
+                this.getObjectPath(blobId),
+                "application/octet-stream",
+                this.urlExpirationTimeMillis);
     }
 
     private String getObjectPath(String blobId) {

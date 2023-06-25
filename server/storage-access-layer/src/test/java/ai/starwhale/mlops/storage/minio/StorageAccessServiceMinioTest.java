@@ -121,7 +121,7 @@ public class StorageAccessServiceMinioTest {
     public void testSignedPutUrl() throws IOException {
         String path = "unit_test/x";
         String content = "testSignedPutUrl";
-        String signedUrl = minio.signedPutUrl(path, 1000 * 60L);
+        String signedUrl = minio.signedPutUrl(path, "text/plain", 1000 * 60L);
         var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("PUT");

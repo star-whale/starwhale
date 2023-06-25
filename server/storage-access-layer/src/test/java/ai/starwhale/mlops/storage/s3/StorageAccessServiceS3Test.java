@@ -214,10 +214,11 @@ public class StorageAccessServiceS3Test {
     public void testSignedPutUrl() throws IOException {
         String path = "x";
         String content = "testSignedPutUrl";
-        String signedUrl = s3.signedPutUrl(path, 1000 * 60L);
+        String signedUrl = s3.signedPutUrl(path, "text/plain", 1000 * 60L);
         var conn = (HttpURLConnection) new URL(signedUrl).openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "text/plain");
         try (var out = conn.getOutputStream()) {
             out.write(content.getBytes(StandardCharsets.UTF_8));
         }

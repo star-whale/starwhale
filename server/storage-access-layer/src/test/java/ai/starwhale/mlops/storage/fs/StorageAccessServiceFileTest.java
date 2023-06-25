@@ -79,7 +79,7 @@ public class StorageAccessServiceFileTest {
         String path = "unit_test/x";
         String content = "hello word";
         service.put(path, content.getBytes(StandardCharsets.UTF_8));
-        String signedUrl = service.signedPutUrl(path, 1000 * 60L);
+        String signedUrl = service.signedPutUrl(path, "text/plain", 1000 * 60L);
         Assertions.assertTrue(signedUrl.startsWith("http://localhost:8082/unit_test/x"));
     }
 
