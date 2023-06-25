@@ -111,7 +111,6 @@ async def _http_request(
 
 async def _upload_blob(b: bytes) -> str:
     assert len(b) > 0
-    assert len(b) <= MAX_DATA_BLOB_SIZE
     async with _net_sem.get():
         res = await _http_request(
             "POST",
