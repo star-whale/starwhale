@@ -400,6 +400,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert len(results) == 2
         DatasetTermView(dataset_uri).head(1, show_raw_data=True)
         DatasetTermView(dataset_uri).head(2, show_raw_data=True)
+        DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
