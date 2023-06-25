@@ -308,6 +308,9 @@ const job = {
     'job.unpin': {
         en: 'Unpin the job',
         zh: '取消置顶',
+    'job.expose.title': {
+        en: 'Open Expose Service',
+        zh: '开启外部访问',
     },
 }
 

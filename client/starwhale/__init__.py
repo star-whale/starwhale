@@ -26,6 +26,7 @@ from starwhale.api.dataset import (
     DefaultS3LinkAuth,
     COCOObjectAnnotation,
 )
+from starwhale.utils.debug import init_logger
 from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import PipelineHandler
 from starwhale.api.experiment import fine_tune
@@ -67,4 +68,5 @@ __all__ = [
     "GrayscaleImage",
     "COCOObjectAnnotation",
     "track",
+    "init_logger",
 ]

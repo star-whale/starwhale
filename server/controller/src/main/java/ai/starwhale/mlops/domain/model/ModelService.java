@@ -42,7 +42,9 @@ import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.File;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
@@ -70,6 +72,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
@@ -92,6 +95,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -102,6 +106,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
 import org.apache.commons.codec.binary.Hex;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -123,13 +128,10 @@ public class ModelService {
     private final UserService userService;
     private final ProjectService projectService;
     private final ModelDao modelDao;
-
+    private final HotJobHolder jobHolder;
     private final TrashService trashService;
-
     private final JobSpecParser jobSpecParser;
-
     private final BlobService blobService;
-
     @Setter
     private BundleManager bundleManager;
 
@@ -143,6 +145,7 @@ public class ModelService {
             ModelDao modelDao,
             UserService userService,
             ProjectService projectService,
+            HotJobHolder jobHolder,
             TrashService trashService,
             JobSpecParser jobSpecParser,
             BlobService blobService) {
@@ -155,6 +158,7 @@ public class ModelService {
         this.modelDao = modelDao;
         this.userService = userService;
         this.projectService = projectService;
+        this.jobHolder = jobHolder;
         this.trashService = trashService;
         this.jobSpecParser = jobSpecParser;
         this.bundleManager = new BundleManager(
@@ -470,6 +474,27 @@ public class ModelService {
                     .build();
             this.modelMapper.insert(modelEntity);
         }
+        ModelVersionEntity modelVersionEntity = modelVersionMapper.findByNameAndModelId(
+                version, modelEntity.getId());
+        if (modelVersionEntity != null) {
+            if (createModelVersionRequest.isForce()) {
+                jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
+                        .parallelStream().forEach(job -> {
+                            Model jobModel = job.getModel();
+                            if (jobModel.getName().equals(model)
+                                    && jobModel.getVersion().equals(version)) {
+                                throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
+                                        "job's are running on model version " + version
+                                                + " you can't force push now"),
+                                        HttpStatus.BAD_REQUEST);
+                            }
+                        });
+            } else {
+                throw new StarwhaleApiException(
+                        new SwValidationException(ValidSubject.MODEL, "model version duplicate" + version),
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
         var metaBlobId = createModelVersionRequest.getMetaBlobId();
         var metaBlob = this.getMetaBlob(metaBlobId);
         var metaBlobList = new ArrayList<ModelPackageStorage.MetaBlob>();
@@ -490,19 +515,26 @@ public class ModelService {
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "read jobs.yaml error", e);
         }
-
-        var modelVersionEntity = ModelVersionEntity.builder()
-                .modelId(modelEntity.getId())
-                .ownerId(ownerId)
-                .versionName(version)
-                .metaBlobId(metaBlobId)
-                .builtInRuntime(createModelVersionRequest.getBuiltInRuntime())
-                .jobs(jobs)
-                .storageSize(storageSize)
-                .build();
-        this.modelVersionMapper.insert(modelVersionEntity);
-        RevertManager.create(this.bundleManager, this.modelDao)
-                .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
+        if (modelVersionEntity == null) {
+            modelVersionEntity = ModelVersionEntity.builder()
+                    .modelId(modelEntity.getId())
+                    .ownerId(ownerId)
+                    .versionName(version)
+                    .metaBlobId(metaBlobId)
+                    .builtInRuntime(createModelVersionRequest.getBuiltInRuntime())
+                    .jobs(jobs)
+                    .storageSize(storageSize)
+                    .build();
+            this.modelVersionMapper.insert(modelVersionEntity);
+            RevertManager.create(this.bundleManager, this.modelDao)
+                    .revertVersionTo(modelVersionEntity.getModelId(), modelVersionEntity.getId());
+        } else {
+            modelVersionEntity.setMetaBlobId(metaBlobId);
+            modelVersionEntity.setBuiltInRuntime(createModelVersionRequest.getBuiltInRuntime());
+            modelVersionEntity.setJobs(jobs);
+            modelVersionEntity.setStorageSize(storageSize);
+            this.modelVersionMapper.update(modelVersionEntity);
+        }
     }
 
     public ModelPackageStorage.MetaBlob getModelMetaBlob(String project, String model, String version, String blobId) {

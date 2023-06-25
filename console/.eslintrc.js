@@ -115,6 +115,7 @@ module.exports = {
         'import/no-restricted-imports': 'off',
         'no-restricted-imports': 'off',
         'import/order': 'off',
+        'import/extensions': ['never' | 'always' | 'ignorePackages'],
     },
     settings: {
         'react': {

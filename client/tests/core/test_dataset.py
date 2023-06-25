@@ -22,7 +22,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api._impl import data_store
-from starwhale.base.type import BundleType, DatasetFolderSourceType
+from starwhale.base.type import BundleType, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.core.dataset.cli import _list as list_cli
@@ -138,6 +138,7 @@ class StandaloneDatasetTestCase(TestCase):
                 "--image-folder",
                 str(image_folder),
                 "--auto-label",
+                "--patch",
             ],
             obj=mock_obj,
         )
@@ -145,6 +146,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build_from_folder.call_count == 1
         call_args = mock_obj.build_from_folder.call_args
         assert call_args[1]["name"] == "image-folder-test"
+        assert call_args[1]["mode"] == DatasetChangeMode.PATCH
         assert call_args[0][0] == image_folder
         assert call_args[0][1] == DatasetFolderSourceType.IMAGE
 
@@ -183,6 +185,7 @@ class StandaloneDatasetTestCase(TestCase):
                 str(json_file),
                 "--field-selector",
                 "sub.sub",
+                "--overwrite",
             ],
             obj=mock_obj,
         )
@@ -190,6 +193,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert mock_obj.build_from_json_file.call_count == 1
         call_args = mock_obj.build_from_json_file.call_args
         assert call_args[1]["name"] == "json-file-test"
+        assert call_args[1]["mode"] == DatasetChangeMode.OVERWRITE
         assert call_args[1]["field_selector"] == "sub.sub"
         assert call_args[0][0] == str(json_file)
 
@@ -200,6 +204,7 @@ class StandaloneDatasetTestCase(TestCase):
             alignment_size="128",
             volume_size="128M",
             field_selector="sub.sub",
+            mode=DatasetChangeMode.OVERWRITE,
         )
 
     @Mocker()
@@ -400,6 +405,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert len(results) == 2
         DatasetTermView(dataset_uri).head(1, show_raw_data=True)
         DatasetTermView(dataset_uri).head(2, show_raw_data=True)
+        DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 

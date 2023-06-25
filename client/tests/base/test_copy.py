@@ -533,7 +533,8 @@ class TestBundleCopy(BaseTestCase):
             self._sw_config.rootdir / "self" / "model" / "mnist" / "_manifest.yaml"
         )
         ensure_dir(swmp_path)
-        ensure_file(swmp_path / "readme", "readme")
+        ensure_dir(swmp_path / "src")
+        ensure_file(swmp_path / "src" / "readme", "readme")
         ensure_file(
             swmp_manifest_path,
             yaml.safe_dump(
@@ -689,33 +690,35 @@ class TestBundleCopy(BaseTestCase):
             return b"".join(ret)[:n]
 
         model_file = random_bytes(1024 * 1024 * 20 + 1024)
-        ensure_file(swmp_path / "model", model_file)
+        ensure_file(swmp_path / "src" / "model", model_file)
         ensure_file(
-            swmp_path / "mixed",
+            swmp_path / "src" / "mixed",
             random_compressible_bytes(1024 * 500)
             + random_bytes(1024 * 500)
             + random_compressible_bytes(1024 * 500),
         )
         file99 = random_compressible_bytes(999)
         ensure_file(
-            swmp_path / "/".join([str(i) for i in range(20)]), file99, parents=True
+            swmp_path / "src" / "/".join([str(i) for i in range(20)]),
+            file99,
+            parents=True,
         )
         for i in range(500):
             ensure_file(
-                swmp_path / "t" / f"f{i}",
+                swmp_path / "src" / "t" / f"f{i}",
                 random_compressible_bytes(random.randint(100, 10000)),
                 parents=True,
             )
         for i in range(500):
             ensure_file(
-                swmp_path / "t" / f"d{i}" / "x",
+                swmp_path / "src" / "t" / f"d{i}" / "x",
                 random_compressible_bytes(random.randint(100, 10000)),
                 parents=True,
             )
         tzFile = random_compressible_bytes(1024 * 1024 * 20)
-        ensure_file(swmp_path / "t" / "z", tzFile, parents=True)
-        ensure_file(swmp_path / "empty", "")
-        ensure_dir(swmp_path / "empty_dir")
+        ensure_file(swmp_path / "src" / "t" / "z", tzFile, parents=True)
+        ensure_file(swmp_path / "src" / "empty", "")
+        ensure_dir(swmp_path / "src" / "empty_dir")
         BundleCopy(
             src_uri="mnist/v1",
             dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",

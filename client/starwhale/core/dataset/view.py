@@ -168,6 +168,7 @@ class DatasetTermView(BaseTermView):
         alignment_size: int | str,
         volume_size: int | str,
         field_selector: str = "",
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -181,6 +182,7 @@ class DatasetTermView(BaseTermView):
             field_selector=field_selector,
             alignment_size=alignment_size,
             volume_size=volume_size,
+            mode=mode,
         )
 
     @classmethod
@@ -194,6 +196,7 @@ class DatasetTermView(BaseTermView):
         auto_label: bool,
         alignment_size: int | str,
         volume_size: int | str,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -208,6 +211,7 @@ class DatasetTermView(BaseTermView):
             auto_label=auto_label,
             alignment_size=alignment_size,
             volume_size=volume_size,
+            mode=mode,
         )
 
     @classmethod
@@ -216,6 +220,7 @@ class DatasetTermView(BaseTermView):
         cls,
         workdir: str | Path,
         config: DatasetConfig,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         if config.runtime_uri:
             RuntimeProcess(uri=config.runtime_uri).run()
@@ -227,7 +232,7 @@ class DatasetTermView(BaseTermView):
                 auto_gen_version=False,
             )
             ds = Dataset.get_dataset(dataset_uri)
-            ds.build(workdir=Path(workdir), config=config)
+            ds.build(workdir=Path(workdir), config=config, mode=mode)
 
     @classmethod
     def copy(
@@ -259,25 +264,28 @@ class DatasetTermView(BaseTermView):
             self.dataset.add_tags(tags, ignore_errors)
 
     @BaseTermView._header
-    def head(self, rows: int, show_raw_data: bool = False) -> None:
+    def head(
+        self, rows: int, show_raw_data: bool = False, show_types: bool = False
+    ) -> None:
         from starwhale.api._impl.data_store import _get_type
 
         for row in self.dataset.head(rows, show_raw_data):
             console.rule(f"row [{row['index']}]", align="left")
-            output = (
-                f":deciduous_tree: id: {row['index']} \n"
-                ":cyclone: data:\n"
-                f"\t :dim_button: type: {row['features']} \n"
-            )
+            output = f":deciduous_tree: id: {row['index']} \n" ":cyclone: features:\n"
             for _k, _v in row["features"].items():
-                ds_type: t.Any
-                try:
-                    ds_type = _get_type(_v)
-                except RuntimeError:
-                    ds_type = type(_v)
-                output += (
-                    f"\t :droplet: {_k}: value[{_v}], type[{ds_type} | {type(_v)}] \n"
-                )
+                output += f"\t :dim_button: [bold green]{_k}[/] : {_v} \n"
+
+            if show_types:
+                output += ":school_satchel: features types:\n"
+                for _k, _v in row["features"].items():
+                    ds_type: t.Any
+                    try:
+                        ds_type = _get_type(_v)
+                    except RuntimeError:
+                        ds_type = type(_v)
+                    output += (
+                        f"\t :droplet: [bold green]{_k}[/] : {ds_type} | {type(_v)} \n"
+                    )
 
             console.print(output)
 
@@ -329,8 +337,12 @@ class DatasetTermViewJson(DatasetTermView):
     def info(self) -> None:
         self.pretty_json(self.dataset.info())
 
-    def head(self, rows: int, show_raw_data: bool = False) -> None:
+    def head(
+        self, rows: int, show_raw_data: bool = False, show_types: bool = False
+    ) -> None:
         from starwhale.base.mixin import _do_asdict_convert
+
+        # TODO: support show_types in the json format output
 
         info = self.dataset.head(rows, show_raw_data)
         self.pretty_json(_do_asdict_convert(info))

@@ -22,7 +22,7 @@ from requests_mock import Mocker
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
-from starwhale.utils.fs import ensure_file
+from starwhale.utils.fs import empty_dir, ensure_file
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -936,6 +936,49 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             myds[0].features["en-us"]
             == myds[0].features["content"]["child_content"][0]["en"]
         )
+
+    def test_from_image_folder_with_mode(self) -> None:
+        image_folder = Path(self.local_storage) / "images"
+        ensure_file(image_folder / "1.jpg", "1", parents=True)
+
+        dataset_name = "image-test"
+        Dataset.from_folder(
+            folder=image_folder, name=dataset_name, kind="image", mode="overwrite"
+        )
+        ds = dataset(dataset_name)
+        assert len(ds) == 1
+        assert ds["1.jpg"] is not None
+
+        empty_dir(image_folder)
+
+        ensure_file(image_folder / "2.jpg", "2", parents=True)
+        ensure_file(image_folder / "2.txt", "caption 2")
+        ensure_file(image_folder / "3.jpg", "3")
+        Dataset.from_folder(
+            folder=image_folder, name=dataset_name, kind="image", mode="overwrite"
+        )
+        overwrite_ds = dataset(dataset_name)
+        assert len(overwrite_ds) == 2
+        assert overwrite_ds["1.jpg"] is None
+        assert overwrite_ds["2.jpg"] is not None
+        assert overwrite_ds["3.jpg"] is not None
+        assert overwrite_ds["2.jpg"].features.caption == "caption 2"
+
+        empty_dir(image_folder)
+        ensure_file(image_folder / "2.jpg", "2", parents=True)
+        ensure_file(image_folder / "2.txt", "caption 2-patch")
+        ensure_file(image_folder / "4.jpg", "4")
+
+        Dataset.from_folder(
+            folder=image_folder, name=dataset_name, kind="image", mode="patch"
+        )
+        patch_ds = dataset(dataset_name)
+        assert len(patch_ds) == 3
+        assert patch_ds["1.jpg"] is None
+        assert patch_ds["2.jpg"] is not None
+        assert patch_ds["3.jpg"] is not None
+        assert patch_ds["4.jpg"] is not None
+        assert patch_ds["2.jpg"].features.caption == "caption 2-patch"
 
     def test_from_image_folder_only_images(self) -> None:
         image_folder = Path(self.local_storage) / "images"

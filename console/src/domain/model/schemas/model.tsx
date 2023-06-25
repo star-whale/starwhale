@@ -41,6 +41,7 @@ export interface ICreateOnlineEvalSchema {
 }
 
 export interface IModelTreeSchema {
+    modelId: string
     ownerName: string
     projectName: string
     modelName: string

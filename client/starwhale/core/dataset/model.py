@@ -82,6 +82,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         auto_label: bool = True,
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         raise NotImplementedError
 
@@ -91,6 +92,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         raise NotImplementedError
 
@@ -252,6 +254,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
@@ -274,6 +277,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             field_selector=field_selector,
             alignment_size=alignment_size,
             volume_size=volume_size,
+            mode=mode,
         )
 
         console.print(
@@ -288,6 +292,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         auto_label: bool = True,
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
@@ -298,6 +303,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             alignment_size=alignment_size,
             volume_size=volume_size,
             auto_label=auto_label,
+            mode=mode,
         )
 
         console.print(
@@ -308,12 +314,19 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
+        mode = DatasetChangeMode(kwargs.get("mode", DatasetChangeMode.PATCH))
         dataset_config: DatasetConfig = kwargs["config"]
         with SDKDataset.dataset(self.uri) as sds:
             sds = sds.with_builder_blob_config(
                 volume_size=dataset_config.attr.volume_size,
                 alignment_size=dataset_config.attr.alignment_size,
             )
+
+            if mode == DatasetChangeMode.OVERWRITE:
+                # TODO: use other high performance way to delete all records
+                for row in sds:
+                    del sds[row.index]
+
             console.print(
                 f":new: pending commit version: {sds.pending_commit_version[:SHORT_VERSION_CNT]}"
             )

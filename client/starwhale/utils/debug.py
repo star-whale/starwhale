@@ -10,17 +10,36 @@ from starwhale.consts import (
 )
 
 
-def init_logger(verbose: int) -> None:
+def init_logger(verbose: int = 0) -> None:
+    """Initialize Starwhale logger and traceback.
+
+    Arguments:
+        verbose: (int, optional) verbosity level. Defaults to 0.
+          - 0: show only errors, traceback only shows 1 frame.
+          - 1: show errors + warnings, traceback shows 5 frames.
+          - 2: show errors + warnings + info, traceback shows 10 frames.
+          - 3: show errors + warnings + info + debug, traceback shows 100 frames.
+          - >=4: show errors + warnings + info + debug + trace, traceback shows 1000 frames.
+
+    Returns: None
+    """
     if verbose == 0:
         lvl = console.ERROR
+        max_frames = 1
     elif verbose == 1:
         lvl = console.WARNING
+        max_frames = 5
     elif verbose == 2:
         lvl = console.INFO
+        max_frames = 10
     elif verbose == 3:
         lvl = console.DEBUG
-    else:
+        max_frames = 100
+    elif verbose >= 4:
         lvl = console.TRACE
+        max_frames = 1000
+    else:
+        raise ValueError(f"Invalid verbose level: {verbose}")
 
     console.set_level(lvl)
     lvl_name = console.get_level_name(lvl)
@@ -33,5 +52,5 @@ def init_logger(verbose: int) -> None:
 
     # TODO: custom debug for tb install
     traceback.install(
-        console=console.rich_console, show_locals=True, max_frames=1, width=200
+        console=console.rich_console, show_locals=True, max_frames=max_frames, width=200
     )
