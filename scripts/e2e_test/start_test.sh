@@ -44,7 +44,7 @@ declare_env() {
 }
 
 start_minikube() {
-    minikube start -p e2e --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE" --driver=docker --container-runtime=docker
+    minikube start -p e2e --memory=6G --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
     minikube addons enable ingress -p e2e
     minikube addons enable ingress-dns -p e2e
     minikube -p e2e docker-env

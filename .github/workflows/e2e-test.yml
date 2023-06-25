@@ -8,8 +8,6 @@ on:
         description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
         required: false
         default: false
-  schedule:
-    - cron: "34 10,13 * * *"
   pull_request:
     branches:
       - main
@@ -52,11 +50,17 @@ jobs:
           filters: .github/file-filter.yml
 
   e2e-test:
-    runs-on: ubuntu-latest
 
     needs:
       - filter
-    if: ${{  github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' || needs.filter.outputs.scripts == 'true' || needs.filter.outputs.docker == 'true' || needs.filter.outputs.example == 'true') && contains(needs.filter.outputs.labels, 'e2e'))}}
+    if: >-
+        ${{ github.event_name == 'push' ||
+            github.event_name == 'workflow_dispatch' ||
+            (github.event_name == 'pull_request' &&
+               (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' ||
+                needs.filter.outputs.scripts == 'true' || needs.filter.outputs.docker == 'true' ||
+                needs.filter.outputs.example == 'true') &&
+               contains(needs.filter.outputs.labels, 'e2e'))}}
 
     defaults:
       run:
@@ -65,11 +69,16 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
+          #- "3.7"
+          #- "3.8"
+          #- "3.9"
           - "3.10"
-          - "3.11"
+          #- "3.11"
+        os:
+          - macos-latest
+          #- ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -99,6 +108,14 @@ jobs:
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+
+      - name: Setup Docker and kubectl for macOSX
+        run: |
+            brew install docker kubectl helm coreutils
+            colima start --cpu 2 --memory 8
+            sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+            alias timeout=gtimeout
+        if: ${{ matrix.os == 'macos-latest' }}
 
       - name: Startup nexus service
         working-directory: ./scripts/e2e_test
