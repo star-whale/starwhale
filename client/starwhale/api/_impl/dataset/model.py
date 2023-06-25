@@ -1067,6 +1067,7 @@ class Dataset:
         field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
     ) -> Dataset:
         """Create a new dataset from a json text.
 
@@ -1075,6 +1076,7 @@ class Dataset:
             json_text: (str, required) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the dict is an array contains all the items.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
 
         Returns:
                 A Dataset Object
@@ -1099,7 +1101,9 @@ class Dataset:
         print(myds[0].features["zh-cn"])
         ```
         """
+        mode = DatasetChangeMode(mode)
         data_items = json.loads(json_text)
+
         if field_selector:
             # Split field selector by dots
             fields = field_selector.split(".")
@@ -1121,6 +1125,12 @@ class Dataset:
                 volume_size=volume_size,
                 alignment_size=alignment_size,
             )
+
+            if mode == DatasetChangeMode.OVERWRITE:
+                # TODO: use other high performance way to delete all records
+                for row in ds:
+                    del ds[row.index]
+
             total = 0
             for item in data_items:
                 ds.append(item)
@@ -1139,6 +1149,7 @@ class Dataset:
         auto_label: bool = True,
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
     ) -> Dataset:
         """Create a dataset from a folder of image files.
 
@@ -1198,6 +1209,7 @@ class Dataset:
             auto_label: (bool, optional) Whether to auto label by the sub-folder name. The default value is True.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
 
         Returns:
             A Dataset Object.
@@ -1214,6 +1226,7 @@ class Dataset:
             raise RuntimeError(f"folder {rootdir} doesn't exist")
 
         name = name or rootdir.name
+        mode = DatasetChangeMode(mode)
 
         def _read_meta() -> t.Dict:
             # TODO: support multi metadata files
@@ -1287,6 +1300,11 @@ class Dataset:
                 volume_size=volume_size,
                 alignment_size=alignment_size,
             )
+
+            if mode == DatasetChangeMode.OVERWRITE:
+                # TODO: use other high performance way to delete all records
+                for row in ds:
+                    del ds[row.index]
 
             total = 0
             for record in _iter_records():

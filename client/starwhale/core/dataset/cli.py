@@ -78,6 +78,26 @@ def dataset_cmd(ctx: click.Context) -> None:
         "The json content structure should be a list[dict] or tuple[dict]."
     ),
 )
+@optgroup.group(
+    "\n  ** Build Mode Selectors",
+    cls=MutuallyExclusiveOptionGroup,
+    help="The selector of build mode. If no set, the default is `patch` mode.",
+)
+@optgroup.option(  # type: ignore
+    "-pt",
+    "--patch",
+    "mode",
+    flag_value=DatasetChangeMode.PATCH.value,
+    default=True,
+    help="Patch mode, only update the changed rows and columns for the existed dataset.",
+)
+@optgroup.option(  # type: ignore
+    "-ow",
+    "--overwrite",
+    "mode",
+    flag_value=DatasetChangeMode.OVERWRITE.value,
+    help="Overwrite mode, update records and delete extraneous rows from the existed dataset.",
+)
 @optgroup.group("\n  ** Global Configurations")
 @optgroup.option("-n", "--name", help="Dataset name")  # type: ignore[no-untyped-call]
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -135,6 +155,7 @@ def _build(
     auto_label: bool,
     json_file: str,
     field_selector: str,
+    mode: str,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -157,6 +178,7 @@ def _build(
         - from dataset.yaml
         swcli dataset build  # build dataset from dataset.yaml in the current work directory(pwd)
         swcli dataset build --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, all the involved files are related to the dataset.yaml file.
+        swcli dataset build --overwrite --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, and overwrite the existed dataset.
 
         \b
         - from handler
@@ -185,7 +207,7 @@ def _build(
     """
     # TODO: add dry-run
     # TODO: add compress args
-
+    mode_type = DatasetChangeMode(mode)
     folder: str | Path | None = image_folder or audio_folder or video_folder
     if folder:
         if image_folder:
@@ -205,6 +227,7 @@ def _build(
             volume_size=volume_size,
             alignment_size=alignment_size,
             auto_label=auto_label,
+            mode=mode_type,
         )
     elif json_file:
         json_file = json_file.strip().rstrip("/")
@@ -215,6 +238,7 @@ def _build(
             volume_size=volume_size,
             alignment_size=alignment_size,
             field_selector=field_selector,
+            mode=mode_type,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()
@@ -230,7 +254,7 @@ def _build(
             },
         )
         config.do_validate()
-        view.build(_workdir, config)
+        view.build(_workdir, config, mode=mode_type)
     else:
         yaml_path = Path(dataset_yaml)
         if not yaml_path.exists():
@@ -248,7 +272,7 @@ def _build(
         config.runtime_uri = runtime or config.runtime_uri
         config.project_uri = project or config.project_uri
         config.do_validate()
-        view.build(_workdir, config)
+        view.build(_workdir, config, mode=mode_type)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
@@ -391,7 +415,7 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
 @optgroup.group(
-    "\n ** Copy Mode Selectors",
+    "\n **  Copy Mode Selectors",
     cls=MutuallyExclusiveOptionGroup,
     help="The selector of copy mode. If no set, the default is `patch` mode.",
 )
