@@ -156,7 +156,7 @@ async def _compress_and_upload_blob(
                         limiter=_cpu_limiter.get(),
                     )
                     if compression is None:
-                        if len(compressed) + 2 < len(chunk):
+                        if len(compressed) < len(chunk) * 0.9:
                             compression = pb2.COMPRESSION_ALGORITHM_LZ4
                         else:
                             compression = pb2.COMPRESSION_ALGORITHM_NO_COMPRESSION
@@ -164,7 +164,7 @@ async def _compress_and_upload_blob(
                         if compression == pb2.COMPRESSION_ALGORITHM_NO_COMPRESSION:
                             b.extend(chunk)
                             continue
-                    if len(compressed) > 65536:
+                    if len(compressed) >= 65536:
                         mid = len(chunk) // 2
                         c1 = await trio.to_thread.run_sync(
                             functools.partial(
@@ -568,6 +568,8 @@ async def _write_blob(
 def get_file_from_cache(store: LocalFileStore, path: Path, file: pb2.File) -> bool:
     f = store.get(file.md5.hex())
     if f is not None and f.exists():
+        if path.exists():
+            path.unlink()
         f.link(path)
         os.chmod(path, file.permission)
         _progress.get().advance(_task_id.get(), file.size)
