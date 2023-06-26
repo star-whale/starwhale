@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.common.proxy;
 
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -30,11 +31,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class WebServerInTask implements Service {
     private final HotJobHolder hotJobHolder;
-    public static final String TASK_PREFIX = "task";
-    public static final String TASK_GATEWAY_PATTERN = "/gateway/task/%d/%d/";
+    private final FeaturesProperties featuresProperties;
+    private static final String TASK_PREFIX = "task";
+    private static final String TASK_GATEWAY_PATTERN = "/gateway/task/%d/%d/";
 
-    public WebServerInTask(HotJobHolder hotJobHolder) {
+    public WebServerInTask(HotJobHolder hotJobHolder, FeaturesProperties featuresProperties) {
         this.hotJobHolder = hotJobHolder;
+        this.featuresProperties = featuresProperties;
     }
 
     @Override
@@ -62,5 +65,13 @@ public class WebServerInTask implements Service {
         var ip = task.get().getIp();
 
         return "http://" + ip + ":" + port + "/" + path;
+    }
+
+    public String generateGatewayUrl(Long taskId, String taskIp, int port) {
+        if (featuresProperties.isJobProxyEnabled()) {
+            return String.format(TASK_GATEWAY_PATTERN, taskId, port);
+        } else {
+            return String.format("http://%s/%d", taskIp, port);
+        }
     }
 }

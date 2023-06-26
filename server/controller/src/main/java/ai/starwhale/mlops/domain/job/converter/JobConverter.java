@@ -16,13 +16,12 @@
 
 package ai.starwhale.mlops.domain.job.converter;
 
-import static ai.starwhale.mlops.common.proxy.WebServerInTask.TASK_GATEWAY_PATTERN;
 
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.configuration.FeaturesProperties;
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -58,7 +57,7 @@ public class JobConverter {
     private final HotJobHolder hotJobHolder;
     private final JobSpecParser jobSpecParser;
     private final int devPort;
-    private final FeaturesProperties featuresProperties;
+    private final WebServerInTask webServerInTask;
 
     public JobConverter(
             IdConverter idConvertor,
@@ -66,7 +65,7 @@ public class JobConverter {
             SystemSettingService systemSettingService, HotJobHolder hotJobHolder,
             JobSpecParser jobSpecParser,
             @Value("${sw.task.dev-port}") int devPort,
-            FeaturesProperties featuresProperties
+            WebServerInTask webServerInTask
     ) {
         this.idConvertor = idConvertor;
         this.runtimeService = runtimeService;
@@ -75,7 +74,7 @@ public class JobConverter {
         this.hotJobHolder = hotJobHolder;
         this.jobSpecParser = jobSpecParser;
         this.devPort = devPort;
-        this.featuresProperties = featuresProperties;
+        this.webServerInTask = webServerInTask;
     }
 
     private List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
@@ -139,12 +138,7 @@ public class JobConverter {
             if (!StringUtils.hasText(ip)) {
                 return;
             }
-            String link;
-            if (featuresProperties.isJobProxyEnabled()) {
-                link = String.format(TASK_GATEWAY_PATTERN, task.getId(), port);
-            } else {
-                link = String.format("http://%s/%d", task.getIp(), port);
-            }
+            var link = webServerInTask.generateGatewayUrl(task.getId(), task.getIp(), port);
             links.add(link);
         };
 

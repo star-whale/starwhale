@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
@@ -31,11 +32,13 @@ import org.junit.jupiter.api.Test;
 class WebServerInTaskTest {
     private WebServerInTask webServerInTask;
     private HotJobHolder hotJobHolder;
+    private FeaturesProperties featuresProperties;
 
     @BeforeEach
     void setUp() {
         hotJobHolder = mock(HotJobHolder.class);
-        webServerInTask = new WebServerInTask(hotJobHolder);
+        featuresProperties = mock(FeaturesProperties.class);
+        webServerInTask = new WebServerInTask(hotJobHolder, featuresProperties);
     }
 
     @Test
