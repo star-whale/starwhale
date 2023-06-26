@@ -54,7 +54,7 @@ public class ModelInfoVo implements Serializable {
     private Integer shared;
 
     public static ModelInfoVo empty() {
-        return new ModelInfoVo("", "", "", "", "", "", 0L);
+        return new ModelInfoVo("", "", "", "", "", "", 0L, 0);
     }
 
 }
