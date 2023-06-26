@@ -514,6 +514,13 @@ class TestBundleCopy(BaseTestCase):
                 self.assertEqual(
                     b"0" * 65536 + b"1" * 65536 + b"2" * 65536 + b"3" * 65536, data
                 )
+        BundleCopy(
+            src_uri=cloud_uri,
+            dest_uri=cases[0]["dest_uri"],
+            typ=ResourceType.model,
+            dest_local_project_uri=cases[0]["dest_local_project_uri"],
+            force=True,
+        ).do()
 
     @Mocker()
     @respx.mock
