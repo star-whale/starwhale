@@ -25,6 +25,7 @@ MAX_DATA_BLOB_SIZE = convert_to_bytes(
     os.environ.get("SW_BUNDLE_COPY_DATA_BLOB_SIZE", "8m")
 )
 MAX_DATA_CHUNK_SIZE = convert_to_bytes("64k")
+MAX_RETRIES = int(os.environ.get("SW_BUNDLE_COPY_DATA_NET_RETRY", "10"))
 
 _progress: contextvars.ContextVar[Progress] = contextvars.ContextVar("progress")
 _task_id: contextvars.ContextVar[TaskID] = contextvars.ContextVar("task_id")
@@ -68,13 +69,7 @@ def _prepare_common_contextvars() -> None:
         max_keepalive_connections=_net_sem.get().value,
         max_connections=_net_sem.get().value,
     )
-    transport = httpx.AsyncHTTPTransport(
-        retries=int(os.environ.get("SW_BUNDLE_COPY_DATA_NET_RETRY", "10")),
-        limits=limits,
-    )
-    _httpx_client.set(
-        httpx.AsyncClient(timeout=timeout, limits=limits, transport=transport)
-    )
+    _httpx_client.set(httpx.AsyncClient(timeout=timeout, limits=limits))
 
 
 async def _http_request(
@@ -92,13 +87,24 @@ async def _http_request(
         assert path is not None
         url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         headers["Authorization"] = instance.token
-    for _ in range(3):
-        res = await _httpx_client.get().request(
-            method, url, params=params, content=content, json=json, headers=headers
-        )
-        if res.status_code not in (408, 429, 500, 502, 503, 504):
-            break
-        await trio.sleep(1)
+    interval = 0.0
+    for i in range(MAX_RETRIES):
+        try:
+            res = await _httpx_client.get().request(
+                method, url, params=params, content=content, json=json, headers=headers
+            )
+            if res.status_code not in (408, 429, 500, 502, 503, 504):
+                break
+        except httpx.RequestError as e:
+            if i == MAX_RETRIES - 1:
+                raise e
+        await trio.sleep(interval)
+        if interval == 0.0:
+            interval = 0.5
+        else:
+            interval *= 2
+            if interval > 10:
+                interval = 10
     if not res.is_success:
         raise httpx.HTTPStatusError(
             f"'{res.status_code} {res.reason_phrase}' for url '{res.url}', "
