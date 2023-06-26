@@ -19,6 +19,9 @@ export function useTreeDataSelection({
                     let ids = [node.id]
 
                     if (!multiple) {
+                        if (node.isLeafNode) {
+                            return prevSelectedIds
+                        }
                         const index = prevSelectedIds.indexOf(node.id)
                         if (index > -1) {
                             return []
