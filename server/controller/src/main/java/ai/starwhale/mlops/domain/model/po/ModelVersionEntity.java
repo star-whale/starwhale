@@ -53,6 +53,8 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
 
     private String jobs;
 
+    private Boolean shared;
+
     @Override
     public String getName() {
         return versionName;

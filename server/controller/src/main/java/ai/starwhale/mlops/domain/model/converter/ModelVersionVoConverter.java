@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.model.converter;
 
+import static cn.hutool.core.util.BooleanUtil.toInt;
+
 import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -54,6 +56,7 @@ public class ModelVersionVoConverter {
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
                     .size(entity.getStorageSize())
+                    .shared(toInt(entity.getShared()))
                     .build();
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);
