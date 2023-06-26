@@ -189,7 +189,7 @@ public class JobConverter {
                 .duration(job.getDurationMs())
                 .comment(job.getComment())
                 .resourcePool(job.getResourcePool().getName())
-                .pinnedTime(job.getPinnedTime().getTime())
+                .pinnedTime(job.getPinnedTime() == null ? null : job.getPinnedTime().getTime())
                 .exposedLinks(generateJobExposedLinks(job.getId()))
                 .build();
     }
