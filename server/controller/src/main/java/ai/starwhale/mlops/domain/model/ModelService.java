@@ -298,6 +298,7 @@ public class ModelService {
                 .versionName(version.getVersionName())
                 .versionTag(version.getVersionTag())
                 .createdTime(version.getCreatedTime().getTime())
+                .shared(toInt(version.getShared()))
                 .build();
     }
 

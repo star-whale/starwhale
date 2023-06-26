@@ -50,6 +50,9 @@ public class ModelInfoVo implements Serializable {
     @JsonProperty("createdTime")
     private Long createdTime;
 
+    @JsonProperty("shared")
+    private Integer shared;
+
     public static ModelInfoVo empty() {
         return new ModelInfoVo("", "", "", "", "", "", 0L);
     }
