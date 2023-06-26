@@ -298,7 +298,6 @@ public class ModelService {
                 .versionName(version.getVersionName())
                 .versionTag(version.getVersionTag())
                 .createdTime(version.getCreatedTime().getTime())
-                .files(this.listModelFiles(this.getMetaBlob(version.getMetaBlobId())))
                 .build();
     }
 
