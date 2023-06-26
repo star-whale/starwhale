@@ -5,9 +5,7 @@ import IconFont from '@starwhale/ui/IconFont'
 import { useModelVersion } from '@/domain/model/hooks/useModelVersion'
 import { TreeView, toggleIsExpanded, TreeLabelInteractable } from 'baseui/tree-view'
 import { FileNode } from '@/domain/base/schemas/file'
-import { getToken } from '@/api'
 import { useProject } from '@/domain/project/hooks/useProject'
-import { useModel } from '@/domain/model/hooks/useModel'
 import Editor, { DiffEditor, EditorProps } from '@monaco-editor/react'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { AutoResizer, GridResizer } from '@starwhale/ui/AutoResizer'
@@ -19,8 +17,9 @@ import { useQueryArgs } from '@starwhale/core'
 import { useParams } from 'react-router-dom'
 import { useFetchModelVersionDiff } from '@/domain/model/hooks/useFetchModelVersionDiff'
 import { useFetchModelVersion } from '@/domain/model/hooks/useFetchModelVersion'
-import qs from 'qs'
 import { LabelSmall } from 'baseui/typography'
+import { useModelFiles } from '@/domain/model/hooks/useModelFiles'
+import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 
 const useStyles = createUseStyles({
     wrapper: {
@@ -50,7 +49,9 @@ type FileNodeWithPathT = FileNode & {
     path: string[]
 }
 
-const isText = (file?: FileNodeWithPathT) => (file ? file.desc === 'SRC' || file.mime?.startsWith('text') : false)
+const isText = (file?: FileNodeWithPathT) => (file ? !file.mime?.endsWith('bin') : false)
+const isTooBig = (file?: FileNodeWithPathT) => (file ? Number(file.size) > 1024 * 1024 * 100 : false)
+
 const FILEFLAGES = {
     unchanged: 'rgba(2,16,43,0.20)',
     added: '#00B368',
@@ -60,29 +61,28 @@ const FILEFLAGES = {
 
 export default function ModelVersionFiles() {
     const styles = useStyles()
+    const { query } = useQueryArgs()
     const { modelVersion } = useModelVersion()
     const { project } = useProject()
-    const { model } = useModel()
     const [search, setSearch] = React.useState('')
     const [content, setContent] = React.useState('')
     const [targetContent, setTargetContent] = React.useState('')
-    const [sourceFile, setSourceFile] = React.useState<FileNodeWithPathT | undefined>()
+    const [sourceFilePath, setSourceFilePath] = React.useState<string>('')
     const { projectId, modelId, modelVersionId } = useParams<{
         modelId: string
         projectId: string
         modelVersionId: string
     }>()
 
-    // with compare
-    const { query } = useQueryArgs()
+    const { loadedFiles, loadFileData, loadFiles } = useModelFiles(project?.name, modelVersion?.name, modelVersionId)
     const compareVersionInfo = useFetchModelVersion(projectId, modelId, query.compare)
     const diffVersion = useFetchModelVersionDiff(projectId, modelId, modelVersionId, query.compare)
     const files = useMemo(() => {
         if (query.compare) {
             return diffVersion.data?.compareVersion
         }
-        return modelVersion?.files ?? []
-    }, [modelVersion, diffVersion, query.compare])
+        return loadedFiles.files
+    }, [loadedFiles, diffVersion, query.compare])
 
     const fileMap = useMemo(() => {
         const map = new Map<string, FileNodeWithPathT>()
@@ -99,13 +99,17 @@ export default function ModelVersionFiles() {
         return map
     }, [files])
 
+    const sourceFile = useMemo(() => {
+        return fileMap.get(sourceFilePath)
+    }, [fileMap, sourceFilePath])
+
     const fileTree: TreeNodeT[] = useMemo(() => {
         const walkWithSearch = (filesTmp: FileNode[] = [], directory: string[] = [], searchtmp = ''): TreeNodeT[] => {
             return filesTmp
                 .map((file) => {
                     if (file.type === 'file' && !file.name.includes(searchtmp)) return null as any
                     const id = [...directory, file.name].join('/')
-                    const isSelected = sourceFile?.path.join('/') === id
+                    const isSelected = sourceFilePath === id
                     const fileType = file.type === 'directory' ? 'file' : 'file2'
                     const color = file.flag && FILEFLAGES?.[file.flag] ? FILEFLAGES?.[file.flag] : FILEFLAGES.unchanged
 
@@ -124,7 +128,12 @@ export default function ModelVersionFiles() {
                                         flexWrap: 'nowrap',
                                     }}
                                     onClick={() => {
-                                        setSourceFile(fileMap.get(id))
+                                        if (!query.compare && file.type === 'directory') {
+                                            loadFiles(id)
+                                        }
+                                        setContent(' ')
+                                        setTargetContent(' ')
+                                        setSourceFilePath(id)
                                     }}
                                 >
                                     <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
@@ -140,65 +149,37 @@ export default function ModelVersionFiles() {
                 .filter((file) => !!file)
         }
         return walkWithSearch(files, [], search)
-    }, [files, search, fileMap, sourceFile, setSourceFile])
-
-    // testing
-    // useEffect(() => {
-    //     setSourceFile(fileMap.get('src/model.yaml'))
-    // }, [fileMap])
+    }, [files, search, sourceFilePath, setSourceFilePath, query.compare, loadFiles])
 
     useEffect(() => {
-        if (sourceFile) {
-            if (sourceFile.flag !== 'added') {
-                fetch(
-                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${
-                        modelVersion?.versionName
-                    }/file?${qs.stringify({
-                        Authorization: getToken(),
-                        partName: sourceFile.name,
-                        signature: sourceFile.signature,
-                    })}`
-                ).then(async (res) => {
-                    if (isText(sourceFile) && res.ok) {
-                        const text = await res.text()
-                        setContent(text)
-                    } else {
-                        setContent(' ')
-                    }
+        if (!sourceFile) return
+        if (!isText(sourceFile) || isTooBig(sourceFile)) return
+        // console.log(sourceFile)
+        if (sourceFile.flag !== 'added') {
+            loadFileData(sourceFile, modelVersion?.versionName)
+                .then((text: string) => {
+                    setContent(text ?? ' ')
                 })
-            } else {
-                setContent(' ')
-            }
-            if (!query.compare) return
-            if (sourceFile.flag !== 'deleted') {
-                fetch(
-                    `/api/v1/project/${project?.name}/model/${model?.name}/version/${
-                        compareVersionInfo.data?.versionName
-                    }/file?${qs.stringify({
-                        Authorization: getToken(),
-                        partName: sourceFile.name,
-                        signature: sourceFile.signature,
-                    })}`
-                ).then(async (res) => {
-                    if (isText(sourceFile) && res.ok) {
-                        const text = await res.text()
-                        setTargetContent(text)
-                    } else {
-                        setTargetContent(' ')
-                    }
+                .catch(() => {
+                    setContent(' ')
                 })
-            } else {
-                setTargetContent(' ')
-            }
+        } else {
+            setContent(' ')
         }
-    }, [
-        sourceFile,
-        project?.name,
-        model?.name,
-        modelVersion?.versionName,
-        compareVersionInfo.data?.versionName,
-        query.compare,
-    ])
+        if (!query.compare) return
+        if (sourceFile.flag !== 'deleted') {
+            loadFileData(sourceFile, compareVersionInfo.data?.versionName)
+                .then((text: string) => {
+                    setTargetContent(text ?? ' ')
+                })
+                .catch(() => {
+                    setTargetContent(' ')
+                })
+        } else {
+            setTargetContent(' ')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sourceFile, project?.name, modelVersion?.versionName, compareVersionInfo.data?.versionName, query.compare])
 
     return (
         <div className={styles.wrapper}>
@@ -331,7 +312,7 @@ function CodeViewer({
                 }}
             >
                 <div>
-                    {file?.name ?? ''} <LabelSmall>{file?.size}</LabelSmall>
+                    {file?.name ?? ''} <LabelSmall>{getReadableStorageQuantityStr(Number(file?.size ?? 0))}</LabelSmall>
                 </div>
                 <div className={styles.flex} style={{ gap: '20px' }}>
                     <div className={styles.flex} style={{ gap: '12px' }}>

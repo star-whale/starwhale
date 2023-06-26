@@ -10,7 +10,6 @@ export interface IModelSchema extends IResourceSchema {
 export interface IModelDetailSchema {
     id?: string
     name?: string
-    versionMeta?: string
     versionName?: string
     versionTag?: string
     versionAlias?: string

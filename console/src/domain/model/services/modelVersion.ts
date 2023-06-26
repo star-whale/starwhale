@@ -6,6 +6,7 @@ import {
     IUpdateModelVersionSchema,
     IModelVersionDetailSchema,
 } from '../schemas/modelVersion'
+import { IFileSchema } from '@/domain/base/schemas/file'
 
 export async function listModelVersions(
     projectId: string,
@@ -18,6 +19,17 @@ export async function listModelVersions(
             params: query,
         }
     )
+    return resp.data
+}
+
+export async function listModelVersionFiles(
+    projectId: string,
+    modelId: string,
+    query: { version?: string; path?: string }
+): Promise<IFileSchema> {
+    const resp = await axios.get<IFileSchema>(`/api/v1/project/${projectId}/model/${modelId}/listFiles`, {
+        params: query,
+    })
     return resp.data
 }
 
