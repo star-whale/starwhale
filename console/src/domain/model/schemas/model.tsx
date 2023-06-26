@@ -15,6 +15,7 @@ export interface IModelDetailSchema {
     versionAlias?: string
     createdTime?: number
     files?: Array<IModelFileSchema>
+    shared?: number
 }
 
 export interface IModelFileSchema {

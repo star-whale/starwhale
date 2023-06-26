@@ -118,3 +118,15 @@ export async function fetchModelVersionPanelSetting(
 ) {
     return fetchModelVersionFile(projectId, modelId, modelVersionId, token, 'eval_panel_layout.json')
 }
+
+export async function updateModelVersionShared(
+    projectId: string,
+    modelId: string,
+    modelVersionId: string,
+    shared: boolean
+): Promise<IModelVersionSchema> {
+    const resp = await axios.put<IModelVersionSchema>(
+        `/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/shared?shared=${shared ? 1 : 0}`
+    )
+    return resp.data
+}
