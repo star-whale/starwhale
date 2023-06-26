@@ -52,11 +52,13 @@ public class ModelVersionConverterTest {
                 .versionOrder(2L)
                 .versionTag("tag1")
                 .jobs("default:\n- concurrency: 2")
+                .shared(true)
                 .build());
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
+                hasProperty("shared", is(1)),
                 hasProperty("tag", is("tag1")),
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
