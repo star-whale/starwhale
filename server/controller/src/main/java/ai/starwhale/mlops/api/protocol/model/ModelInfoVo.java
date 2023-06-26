@@ -16,12 +16,9 @@
 
 package ai.starwhale.mlops.api.protocol.model;
 
-import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.List;
-import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -53,12 +50,8 @@ public class ModelInfoVo implements Serializable {
     @JsonProperty("createdTime")
     private Long createdTime;
 
-    @JsonProperty("files")
-    @Valid
-    private List<FileNode> files;
-
     public static ModelInfoVo empty() {
-        return new ModelInfoVo("", "", "", "", "", "", 0L, List.of());
+        return new ModelInfoVo("", "", "", "", "", "", 0L);
     }
 
 }
