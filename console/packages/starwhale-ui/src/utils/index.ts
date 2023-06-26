@@ -197,27 +197,27 @@ export function getReadableStorageQuantityStr(bytes?: number): string {
         const pi = mi / 1024 / 1024 / 1024
         const intPi = Math.round(pi)
         if (pi === intPi) {
-            return `${intPi} Pi`
+            return `${intPi} PB`
         }
-        return `${pi.toFixed(2)} Pi`
+        return `${pi.toFixed(2)} PB`
     }
     if (mi > 1024 * 1024) {
         const ti = mi / 1024 / 1024
         const intTi = Math.round(ti)
         if (ti === intTi) {
-            return `${intTi} Ti`
+            return `${intTi} TB`
         }
-        return `${ti.toFixed(2)} Ti`
+        return `${ti.toFixed(2)} TB`
     }
     if (mi > 1024) {
         const gi = mi / 1024
         const intGi = Math.round(gi)
         if (gi === intGi) {
-            return `${intGi} Gi`
+            return `${intGi} GB`
         }
-        return `${gi.toFixed(2)} Gi`
+        return `${gi.toFixed(2)} GB`
     }
-    return `${mi} Mi`
+    return `${mi.toFixed(2)} MB`
 }
 
 export function numberToPercentStr(v: number): string {

@@ -6,7 +6,6 @@ import { ICreateModelVersionSchema } from '@model/schemas/modelVersion'
 import ModelVersionForm from '@model/components/ModelVersionForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
@@ -18,6 +17,9 @@ import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
+import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
+import Alias from '@/components/Alias'
+import Shared from '@/components/Shared'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -50,7 +52,7 @@ export default function ModelVersionListCard() {
         <Card title={t('model versions')}>
             <Table
                 isLoading={modelsInfo.isLoading}
-                columns={[t('sth name', [t('Model')]), t('Alias'), t('Meta'), t('Created'), t('Owner'), t('Action')]}
+                columns={[t('Model Version'), t('Alias'), t('Shared'), t('Size'), t('Created'), t('Action')]}
                 data={
                     modelsInfo.data?.list.map((model, i) => {
                         return [
@@ -60,10 +62,10 @@ export default function ModelVersionListCard() {
                             >
                                 <MonoText>{model.name}</MonoText>
                             </TextLink>,
-                            model.alias,
-                            model.meta,
+                            <Alias key='alias' alias={model.alias} />,
+                            <Shared key='shared' shared={model.shared} isTextShow />,
+                            model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            model.owner && <User user={model.owner} />,
                             <>
                                 <CopyToClipboard
                                     content={`${window.location.protocol}//${window.location.host}/projects/${projectId}/models/${modelId}/versions/${model.id}/`}

@@ -2,7 +2,7 @@ import { findTreeNode } from '@starwhale/ui/base/tree-view/utils'
 import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelector'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React, { useEffect } from 'react'
-import ModelLabel from './ModelLabel'
+import ModelLabel, { getModelLabel } from './ModelLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
@@ -72,8 +72,10 @@ export function ModelTreeSelector(
                                     </Button>
                                 </ModelTreeNode>
                             ),
-                            labelView: <ModelLabel version={item} model={model} isProjectShow />,
-                            labelTitle: '',
+                            info: {
+                                labelView: <ModelLabel version={item} model={model} isProjectShow />,
+                                labelTitle: getModelLabel(item, model),
+                            },
                             isExpanded: true,
                         }
                     }) ?? [],
@@ -92,13 +94,13 @@ export function ModelTreeSelector(
                 },
                 multiple,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
-                getDataToLabelView: (data: any) => data?.labelView,
-                getDataToLabelTitle: (data: any) => data?.labelTitle,
-                getDataToValue: (data: any) => getId(data),
+                getDataToLabelView: (data: any) => data?.info.labelView,
+                getDataToLabelTitle: (data: any) => data?.info.labelTitle,
+                getDataToValue: (data: any) => data?.id,
                 render: SelectorItemByTree as React.FC<any>,
             },
         ]
-    }, [$treeData, getId, multiple])
+    }, [$treeData, multiple])
 
     return (
         <DynamicSelector

@@ -8,7 +8,6 @@ import useTreeDataLoader from './hooks/useTreeDataLoader'
 
 const searchFilter = (searchTmp: string, node: TreeNodeDataT) => {
     if (typeof node.info?.labelTitle !== 'string') return false
-
     const searchTerm = searchTmp?.toLowerCase() ?? ''
     const label = node.info?.labelTitle?.toLowerCase() ?? ''
     return label.includes(searchTerm)

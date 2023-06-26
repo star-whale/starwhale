@@ -23,6 +23,16 @@ export const RuntimeLabelText = themedStyled('div', () => ({
     fontFamily: 'Roboto Mono',
 }))
 
+export function getRuntimeLabel(version: IRuntimeTreeVersionSchema, runtime?: IRuntimeTreeSchema) {
+    const p = runtime ? [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/') : ''
+    const name = version?.versionName ?? version?.name
+    const v = (name ?? '').substring(0, 8)
+    const title = [p, v, version?.alias, version.createdTime ? formatTimestampDateTime(version.createdTime) : '']
+        .filter((tmp) => !!tmp)
+        .join('/')
+    return title
+}
+
 export function RuntimeLabel({
     version,
     runtime,

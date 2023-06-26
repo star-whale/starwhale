@@ -2,7 +2,7 @@ import { findTreeNode } from '@starwhale/ui/base/tree-view/utils'
 import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelector'
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React, { useEffect } from 'react'
-import RuntimeLabel from './RuntimeLabel'
+import RuntimeLabel, { getRuntimeLabel } from './RuntimeLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
@@ -71,8 +71,10 @@ export function RuntimeTreeSelector(
                                     </Button>
                                 </RuntimeTreeNode>
                             ),
-                            labelView: <RuntimeLabel version={item} runtime={runtime} isProjectShow />,
-                            labelTitle: '',
+                            info: {
+                                labelView: <RuntimeLabel version={item} runtime={runtime} isProjectShow />,
+                                labelTitle: getRuntimeLabel(item, runtime),
+                            },
                             isExpanded: true,
                         }
                     }) ?? [],
@@ -91,8 +93,8 @@ export function RuntimeTreeSelector(
                 },
                 multiple,
                 getData: (info: any, id: string) => findTreeNode(info.data, id),
-                getDataToLabelView: (data: any) => data?.labelView,
-                getDataToLabelTitle: (data: any) => data?.labelTitle,
+                getDataToLabelView: (data: any) => data?.info?.labelView,
+                getDataToLabelTitle: (data: any) => data?.info?.labelTitle,
                 getDataToValue: (data: any) => data?.id,
                 render: SelectorItemByTree as React.FC<any>,
             },

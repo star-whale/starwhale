@@ -6,10 +6,11 @@ export interface IModelVersionSchema extends IResourceSchema {
     name: string
     tag: string
     alias: string
-    meta: Record<string, unknown>
+    size: string
     owner?: IUserSchema
     stepSpecs: StepSpec[]
     builtInRuntime: string
+    shared?: number
 }
 
 export interface IModelTreeVersionSchema extends IModelVersionSchema {
@@ -25,6 +26,7 @@ export interface IModelVersionListSchema extends IResourceSchema, IFileSchema {
     versionAlias: string
     manifest: string
     createdTime?: number
+    shared?: number
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
