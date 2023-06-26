@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import os
 import re
-import sys
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -1682,15 +1681,6 @@ class TestPytorch(_DatasetSDKTestBase):
         assert item["audio"].dtype == torch.float64
 
 
-# TODO: wait for tensorflow release for python3.11
-# https://github.com/tensorflow/tensorflow/issues/58032
-skip_py311 = pytest.mark.skipif(
-    sys.version_info >= (3, 11),
-    reason="skip python3.11, because tensorflow does not release the related wheel package.",
-)
-
-
-@skip_py311
 class TestTensorflow(_DatasetSDKTestBase):
     def test_simple_data(self) -> None:
         import tensorflow as tf
