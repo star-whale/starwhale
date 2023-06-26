@@ -642,18 +642,15 @@ public class ModelService {
                 if (blobId.isEmpty()) {
                     var array = metaBlob.getData().toByteArray();
                     InputStream in;
-                    int size;
                     if (file.getBlobOffset() == 0 && file.getBlobSize() == 0) {
                         in = new ByteArrayInputStream(array);
-                        size = array.length;
                     } else {
                         in = new ByteArrayInputStream(array, file.getBlobOffset(), file.getBlobSize());
-                        size = file.getBlobSize();
                     }
-                    return readFileData(in, size, compressionAlgorithm);
+                    return readFileData(in, compressionAlgorithm);
                 }
                 try (var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize())) {
-                    return readFileData(data, data.getSize(), compressionAlgorithm);
+                    return readFileData(data, compressionAlgorithm);
                 } catch (IOException e) {
                     throw new SwProcessException(ErrorType.STORAGE, "can not read data", e);
                 }
@@ -663,7 +660,6 @@ public class ModelService {
 
     private InputStream readFileData(
             InputStream in,
-            long totalSize,
             ModelPackageStorage.CompressionAlgorithm compressionAlgorithm) {
         if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_NO_COMPRESSION) {
             return in;
@@ -671,19 +667,15 @@ public class ModelService {
         return new SequenceInputStream(new Enumeration<>() {
             final byte[] decompressBuf = new byte[65536];
             final byte[] readBuf = new byte[65536];
-            long available = totalSize;
             InputStream current = null;
 
             @SneakyThrows
             @Override
             public boolean hasMoreElements() {
                 if (current == null) {
-                    if (available == 0) {
-                        return false;
-                    }
                     var high = in.read();
                     if (high < 0) {
-                        throw new SwProcessException(ErrorType.SYSTEM, "failed to read size");
+                        return false;
                     }
                     var low = in.read();
                     if (low < 0) {
@@ -707,7 +699,6 @@ public class ModelService {
                     } else {
                         throw new SwProcessException(ErrorType.SYSTEM, "invalid compression:" + compressionAlgorithm);
                     }
-                    this.available -= size + 2;
                 }
                 return true;
             }

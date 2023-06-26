@@ -84,7 +84,7 @@ sw:
       page-row-count-limit: ${SW_DATASTORE_PARQUET_PAGE_ROW_COUNT_LIMIT:20000}
   blob-service:
     data-root-path: ${SW_BLOB_SERVICE_DATA_ROOT_PATH:blob/}
-    url-expiration-time: ${SW_BLOB_SERVICE_URL_EXPIRATION_TIME:5m}
+    url-expiration-time: ${SW_BLOB_SERVICE_URL_EXPIRATION_TIME:4h}
 ---
 #Development
 spring:
