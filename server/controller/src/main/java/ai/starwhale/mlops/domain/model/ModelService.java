@@ -73,6 +73,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
@@ -602,20 +603,21 @@ public class ModelService {
                 .build();
     }
 
-    public InputStream getFileData(String project, String model, String version, String path) {
+    public LengthAbleInputStream getFileData(String project, String model, String version, String path) {
         return this.getFileData(this.getModelMetaBlob(project, model, version, ""), path);
     }
 
-    private InputStream getFileData(ModelPackageStorage.MetaBlob metaBlob, String path) {
+    private LengthAbleInputStream getFileData(ModelPackageStorage.MetaBlob metaBlob, String path) {
         var files = new LinkedList<>(this.getFile(metaBlob, path));
-        if (files.get(0).getSize() == 0) {
-            return new ByteArrayInputStream(new byte[0]);
+        var size = files.get(0).getSize();
+        if (size == 0) {
+            return new LengthAbleInputStream(new ByteArrayInputStream(new byte[0]), 0);
         }
         var compressionAlgorithm = files.get(0).getCompressionAlgorithm();
         if (files.get(0).getBlobIdsCount() == 0) {
             files.removeFirst();
         }
-        return new SequenceInputStream(new Enumeration<>() {
+        var in = new SequenceInputStream(new Enumeration<>() {
             int index = 0;
 
             @Override
@@ -656,6 +658,7 @@ public class ModelService {
                 }
             }
         });
+        return new LengthAbleInputStream(in, size);
     }
 
     private InputStream readFileData(

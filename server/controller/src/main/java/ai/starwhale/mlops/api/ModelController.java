@@ -254,7 +254,12 @@ public class ModelController implements ModelApi {
     @Override
     public ResponseEntity<InputStreamResource> getFileData(String project, String model, String version, String path) {
         var result = this.modelService.getFileData(project, model, version, path);
-        return ResponseEntity.ok(new InputStreamResource(result));
+        return ResponseEntity.ok(new InputStreamResource(result) {
+            @Override
+            public long contentLength() {
+                return result.getSize();
+            }
+        });
     }
 
     @Override
