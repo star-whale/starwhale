@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
+import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -192,6 +193,21 @@ public class JobController implements JobApi {
 
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job comment failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
+            String projectUrl,
+            String jobUrl,
+            JobModifyPinRequest jobRequest
+    ) {
+        Boolean res = jobService.updateJobPinStatus(projectUrl, jobUrl, jobRequest.isPinned());
+
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update job pin status failed."),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

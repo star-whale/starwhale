@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -173,6 +174,16 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
             return jobBoConverter.fromEntity(jobMapper.findJobById(idConvertor.revert(jobUrl)));
         } else {
             return jobBoConverter.fromEntity(jobMapper.findJobByUuid(jobUrl));
+        }
+    }
+
+    public boolean updateJobPinStatus(String jobUrl, boolean pinned) {
+        Date pinnedTime = pinned ? Date.from(Instant.now()) : null;
+
+        if (idConvertor.isId(jobUrl)) {
+            return jobMapper.updateJobPinStatus(idConvertor.revert(jobUrl), pinnedTime) > 0;
+        } else {
+            return jobMapper.updateJobPinStatusByUuid(jobUrl, pinnedTime) > 0;
         }
     }
 

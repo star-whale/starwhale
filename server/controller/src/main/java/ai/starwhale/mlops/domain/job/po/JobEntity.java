@@ -85,6 +85,8 @@ public class JobEntity extends BaseEntity implements BundleEntity {
     private String devPassword;
     private Date autoReleaseTime;
 
+    private Date pinnedTime;
+
     @Override
     public String getName() {
         return jobUuid;

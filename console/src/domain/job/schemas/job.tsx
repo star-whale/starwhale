@@ -38,6 +38,7 @@ export interface IJobSchema extends IResourceSchema {
     comment?: string
     stopTime?: number
     createdTime?: number
+    pinnedTime?: number
     exposedLinks?: string[]
 }
 

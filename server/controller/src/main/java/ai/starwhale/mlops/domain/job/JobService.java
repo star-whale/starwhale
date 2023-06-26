@@ -165,6 +165,10 @@ public class JobService {
         return jobDao.updateJobComment(jobUrl, comment);
     }
 
+    public Boolean updateJobPinStatus(String projectUrl, String jobUrl, Boolean pinned) {
+        return jobDao.updateJobPinStatus(jobUrl, pinned);
+    }
+
     public Boolean removeJob(String projectUrl, String jobUrl) {
         var job = jobDao.findJob(jobUrl);
         Trash trash = Trash.builder()

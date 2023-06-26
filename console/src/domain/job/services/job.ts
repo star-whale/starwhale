@@ -52,3 +52,10 @@ export async function executeInTask(
     })
     return resp.data
 }
+
+export async function pinJob(projectId: string, jobId: string, pinned: boolean): Promise<IJobSchema> {
+    const resp = await axios.post<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/pin`, {
+        pinned,
+    })
+    return resp.data
+}

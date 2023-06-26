@@ -301,6 +301,14 @@ const job = {
         en: 'Execute Cmd In Task Container',
         zh: '在任务容器中执行命令',
     },
+    'job.pin': {
+        en: 'Pin the job',
+        zh: '置顶',
+    },
+    'job.unpin': {
+        en: 'Unpin the job',
+        zh: '取消置顶',
+    },
     'job.expose.title': {
         en: 'Open Expose Service',
         zh: '开启外部访问',

@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
+import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -340,5 +341,19 @@ public class JobControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(resp.getBody().getData().getStdout(), is("foo"));
         assertThat(resp.getBody().getData().getStderr(), is("bar"));
+    }
+
+
+    @Test
+    public void testModifyJobPinStatus() {
+        given(jobService.updateJobPinStatus(same("p1"), same("j1"), same(true)))
+                .willReturn(true);
+        JobModifyPinRequest request = new JobModifyPinRequest();
+        request.setPinned(true);
+        var resp = controller.modifyJobPinStatus("p1", "j1", request);
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+
+        assertThrows(StarwhaleApiException.class,
+                () -> controller.modifyJobPinStatus("p1", "j2", request));
     }
 }

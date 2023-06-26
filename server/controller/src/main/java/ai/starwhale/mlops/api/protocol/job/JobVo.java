@@ -95,4 +95,7 @@ public class JobVo implements Serializable {
         return stopTime - createdTime;
     }
 
+    @JsonProperty("pinnedTime")
+    private Long pinnedTime;
+
 }

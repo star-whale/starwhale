@@ -184,6 +184,7 @@ public class JobConverter {
                 .duration(job.getDurationMs())
                 .comment(job.getComment())
                 .resourcePool(job.getResourcePool().getName())
+                .pinnedTime(job.getPinnedTime().getTime())
                 .exposedLinks(generateJobExposedLinks(job.getId()))
                 .build();
     }
@@ -191,6 +192,7 @@ public class JobConverter {
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
         var runtimes = findRuntimeByVersionIds(List.of(jobEntity.getRuntimeVersionId()));
         var datasets = findDatasetVersionNamesByJobId(jobEntity.getId());
+        Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
         return JobVo.builder()
                 .id(idConvertor.convert(jobEntity.getId()))
@@ -207,6 +209,7 @@ public class JobConverter {
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
+                .pinnedTime(pinnedTime)
                 .build();
     }
 
