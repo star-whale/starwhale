@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -57,6 +58,7 @@ public class JobConverterTest {
     private JobConverter jobConvertor;
     private HotJobHolder hotJobHolder;
     private JobSpecParser jobSpecParser;
+    private WebServerInTask webServerInTask;
 
     @BeforeEach
     public void setUp() {
@@ -69,6 +71,7 @@ public class JobConverterTest {
         when(systemSettingService.queryResourcePool(anyString())).thenReturn(ResourcePool.defaults());
         hotJobHolder = mock(HotJobHolder.class);
         jobSpecParser = mock(JobSpecParser.class);
+        webServerInTask = mock(WebServerInTask.class);
         jobConvertor = new JobConverter(
                 idConvertor,
                 runtimeService,
@@ -76,7 +79,8 @@ public class JobConverterTest {
                 systemSettingService,
                 hotJobHolder,
                 jobSpecParser,
-                1234
+                1234,
+                webServerInTask
         );
     }
 
@@ -132,6 +136,7 @@ public class JobConverterTest {
         var task = Task.builder()
                 .status(TaskStatus.RUNNING)
                 .ip("1.1.1.1")
+                .id(7L)
                 .build();
         var step = Step.builder()
                 .name("step")
@@ -157,15 +162,17 @@ public class JobConverterTest {
         assertThat(res.getExposedLinks().size(), is(0));
 
         // running job will have exposed links with web handler
+        when(webServerInTask.generateGatewayUrl(7L, "1.1.1.1", 10)).thenReturn("/foo/bar/");
         entity.setJobStatus(JobStatus.RUNNING);
         job.setStatus(JobStatus.RUNNING);
         res = jobConvertor.convert(entity);
-        assertThat(res.getExposedLinks(), is(List.of("http://1.1.1.1:10")));
+        assertThat(res.getExposedLinks(), is(List.of("/foo/bar/")));
 
         // get debug mode links when dev mode is on
+        when(webServerInTask.generateGatewayUrl(7L, "1.1.1.1", 1234)).thenReturn("/baz/");
         entity.setDevMode(true);
         job.setDevMode(true);
         res = jobConvertor.convert(entity);
-        assertThat(res.getExposedLinks(), is(List.of("http://1.1.1.1:1234", "http://1.1.1.1:10")));
+        assertThat(res.getExposedLinks(), is(List.of("/baz/", "/foo/bar/")));
     }
 }

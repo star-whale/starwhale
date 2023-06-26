@@ -32,6 +32,7 @@ public class FeaturesProperties {
     public static final String FEATURE_JOB_PAUSE = "job-pause";
     public static final String FEATURE_JOB_RESUME = "job-resume";
     public static final String FEATURE_JOB_DEV = "job-dev";
+    public static final String FEATURE_JOB_PROXY = "job-proxy";
 
     List<String> disabled;
 
@@ -53,5 +54,9 @@ public class FeaturesProperties {
 
     public boolean isJobDevEnabled() {
         return featureEnabled(FEATURE_JOB_DEV);
+    }
+
+    public boolean isJobProxyEnabled() {
+        return featureEnabled(FEATURE_JOB_PROXY);
     }
 }

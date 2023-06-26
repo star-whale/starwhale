@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
@@ -36,9 +37,9 @@ import org.junit.jupiter.api.Test;
 
 public class TaskConverterTest {
 
-    StepMapper stepMapper;
-
-    TaskConverter taskConvertor;
+    private StepMapper stepMapper;
+    private TaskConverter taskConvertor;
+    private WebServerInTask webServerInTask;
 
     @BeforeEach
     public void setup() {
@@ -48,7 +49,8 @@ public class TaskConverterTest {
                 setName("ppl");
             }
         });
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000);
+        webServerInTask = mock(WebServerInTask.class);
+        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, webServerInTask);
     }
 
 
@@ -87,6 +89,7 @@ public class TaskConverterTest {
                 .devWay(DevWay.VS_CODE)
                 .ip("127.0.0.1")
                 .build();
+        when(webServerInTask.generateGatewayUrl(1L, "127.0.0.1", 8000)).thenReturn("/gateway/task/1/8000/");
         TaskVo taskVo = taskConvertor.convert(taskEntity);
         Assertions.assertEquals(taskVo.getTaskStatus(), taskEntity.getTaskStatus());
         Assertions.assertEquals(taskVo.getUuid(), taskEntity.getTaskUuid());
@@ -94,7 +97,7 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getStartedTime(), taskEntity.getStartedTime().getTime());
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
-        Assertions.assertEquals(taskVo.getDevUrl(), "http://127.0.0.1:8000");
+        Assertions.assertEquals(taskVo.getDevUrl(), "/gateway/task/1/8000/");
 
         taskEntity.setIp("");
         taskVo = taskConvertor.convert(taskEntity);

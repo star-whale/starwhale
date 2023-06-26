@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.common;
 
-import static ai.starwhale.mlops.domain.job.ModelServingService.MODEL_SERVICE_PREFIX;
+import static ai.starwhale.mlops.common.proxy.ModelServing.MODEL_SERVICE_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.intThat;
@@ -27,8 +29,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
-import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
+import ai.starwhale.mlops.common.proxy.Service;
+import ai.starwhale.mlops.configuration.FeaturesProperties;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -37,38 +39,35 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ProxyServletTest {
     private ProxyServlet proxyServlet;
-    private ModelServingMapper modelServingMapper;
+    private Service mockService;
 
     @BeforeEach
     public void setUp() {
-        modelServingMapper = mock(ModelServingMapper.class);
-        proxyServlet = new ProxyServlet(modelServingMapper);
+        mockService = mock(Service.class);
+        var featuresProperties = new FeaturesProperties();
+        proxyServlet = new ProxyServlet(featuresProperties, List.of(mockService));
     }
 
     @Test
     public void testGetTarget() {
-        long id = 1L;
-        when(modelServingMapper.find(id)).thenReturn(ModelServingEntity.builder().build());
+        when(mockService.getPrefix()).thenReturn("foo");
+        when(mockService.getTarget("bar/baz")).thenReturn("https://starwhale.ai/");
 
-        var uri = String.format("/%s/%d/ppl", MODEL_SERVICE_PREFIX, id);
-        var rt = proxyServlet.getTarget(uri);
-        Assertions.assertEquals("http://model-serving-1/ppl", rt);
+        // too short
+        var thrown = assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget("foo"));
+        assertTrue(thrown.getMessage().startsWith("can not parse "));
 
-        var shortUri = MODEL_SERVICE_PREFIX + "/1";
-        rt = proxyServlet.getTarget(shortUri);
-        Assertions.assertEquals("http://model-serving-1/", rt);
+        // no match service
+        thrown = assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget("bar/1/ppl"));
+        assertTrue(thrown.getMessage().startsWith("can not find service for prefix "));
 
-        var wrongStartsWith = "/foo/1/ppl";
-        Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(wrongStartsWith));
-
-        var notFound = String.format("/%s/%d/ppl", MODEL_SERVICE_PREFIX, id + 1);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> proxyServlet.getTarget(notFound));
+        var target = proxyServlet.getTarget("foo/bar/baz");
+        assertTrue(target.startsWith("https://starwhale.ai/"));
     }
 
     @Test

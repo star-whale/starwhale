@@ -21,6 +21,7 @@ import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ON
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.proxy.ModelServing;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
@@ -97,8 +98,8 @@ public class ModelServingService {
     private final long minTtlSec;
     private final Map<Long, Boolean> availableWorkloads;
 
-    public static final String MODEL_SERVICE_PREFIX = "model-serving";
-    private static final Pattern modelServingNamePattern = Pattern.compile(MODEL_SERVICE_PREFIX + "-(\\d+)");
+    private static final Pattern modelServingNamePattern =
+            Pattern.compile(ModelServing.MODEL_SERVICE_PREFIX + "-(\\d+)");
 
     public ModelServingService(
             ModelServingMapper modelServingMapper,
@@ -355,7 +356,7 @@ public class ModelServingService {
     }
 
     public static String getServiceName(long id) {
-        return String.format("%s-%d", MODEL_SERVICE_PREFIX, id);
+        return String.format("%s-%d", ModelServing.MODEL_SERVICE_PREFIX, id);
     }
 
     public static Long getServiceIdFromName(String name) {
@@ -367,7 +368,7 @@ public class ModelServingService {
     }
 
     public static String getServiceBaseUri(long id) {
-        return String.format("/gateway/%s/%d", MODEL_SERVICE_PREFIX, id);
+        return String.format("/gateway/%s/%d", ModelServing.MODEL_SERVICE_PREFIX, id);
     }
 
 

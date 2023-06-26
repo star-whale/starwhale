@@ -16,8 +16,10 @@
 
 package ai.starwhale.mlops.domain.task.converter;
 
+
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -32,16 +34,20 @@ import org.springframework.util.StringUtils;
 public class TaskConverter {
 
     private final IdConverter idConvertor;
-
     private final StepMapper stepMapper;
-
     private final int devPort;
+    private final WebServerInTask webServerInTask;
 
-    public TaskConverter(IdConverter idConvertor, StepMapper stepMapper,
-                         @Value("${sw.task.dev-port}") int devPort) {
+
+    public TaskConverter(
+            IdConverter idConvertor, StepMapper stepMapper,
+            @Value("${sw.task.dev-port}") int devPort,
+            WebServerInTask webServerInTask
+    ) {
         this.idConvertor = idConvertor;
         this.stepMapper = stepMapper;
         this.devPort = devPort;
+        this.webServerInTask = webServerInTask;
     }
 
     public TaskVo convert(TaskEntity entity) {
@@ -63,6 +69,11 @@ public class TaskConverter {
             }
         }
 
+        String devUrl = null;
+        if (entity.getDevWay() != null && StringUtils.hasText(entity.getIp())) {
+            devUrl = webServerInTask.generateGatewayUrl(entity.getId(), entity.getIp(), devPort);
+        }
+
         return TaskVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .uuid(entity.getTaskUuid())
@@ -70,8 +81,7 @@ public class TaskConverter {
                 .retryNum(entity.getRetryNum())
                 .finishedTime(entity.getFinishedTime() == null ? null : entity.getFinishedTime().getTime())
                 .stepName(step.getName())
-                .devUrl(entity.getDevWay() != null && StringUtils.hasText(entity.getIp())
-                        ? entity.getDevWay().toDevUrl(entity.getIp(), devPort) : null)
+                .devUrl(devUrl)
                 .startedTime(entity.getStartedTime() == null ? null : entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .build();
