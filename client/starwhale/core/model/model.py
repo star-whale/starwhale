@@ -580,6 +580,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             else:
                 _info = load_yaml(_mpath)
 
+            if not _info:
+                continue
+
             rs[_bf.name].append(
                 {
                     "name": _bf.name,
