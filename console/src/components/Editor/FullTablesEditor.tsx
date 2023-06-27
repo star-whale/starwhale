@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import EditorContextProvider, { StoreType } from '@starwhale/core/context/EditorContextProvider'
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
@@ -54,6 +54,10 @@ function witEditorContext(EditorApp: React.FC) {
 
             if (!store.current) {
                 store.current = createCustomStore(state as WidgetStoreState)
+            } else {
+                store.current.setState({
+                    ...(state as WidgetStoreState),
+                })
             }
             const eventBus = new EventBusSrv()
             return {
