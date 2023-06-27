@@ -31,15 +31,15 @@ export default function WidgetPreviewModal({
         pageSize: PAGE_TABLE_SIZE,
     })
 
-    const { recordInfo, columnTypes } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
+    const { recordInfo, columnTypes, records } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
 
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {
-            records: recordInfo.data.records,
+            records,
             columnTypes,
         }
-    }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
+    }, [recordInfo.isSuccess, records, columnTypes])
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})

@@ -54,6 +54,10 @@ function witEditorContext(EditorApp: React.FC) {
 
             if (!store.current) {
                 store.current = createCustomStore(state as WidgetStoreState)
+            } else {
+                store.current.setState({
+                    ...(state as WidgetStoreState),
+                })
             }
             const eventBus = new EventBusSrv()
             return {
