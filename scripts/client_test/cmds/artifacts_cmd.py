@@ -71,7 +71,7 @@ class Model(BaseArtifact):
         version = gen_uniq_version()
         cmd = [
             CLI,
-            "-vvv",
+            "-vvvv",
             "model",
             "run",
             "--uri",
@@ -112,7 +112,7 @@ class Model(BaseArtifact):
     @classmethod
     def build(cls, workdir: str, name: str, runtime: str = "") -> Resource:
         version = gen_uniq_version()
-        cmd = [CLI, "model", "build", workdir, "--name", name]
+        cmd = [CLI, "-vvvv", "model", "build", workdir, "--name", name]
         if runtime:
             cmd.extend(["--runtime", runtime])
         _ret_code, _res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
@@ -120,7 +120,7 @@ class Model(BaseArtifact):
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> None:
-        _args = [CLI, self.name, "copy", src_uri, target_project]
+        _args = [CLI, "-vvvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
         _ret_code, _res = invoke(_args, log=True)
@@ -142,6 +142,7 @@ class Dataset(BaseArtifact):
 
         cmd = [
             CLI,
+            "-vvvv",
             "dataset",
             "build",
             "--name",
@@ -161,7 +162,7 @@ class Dataset(BaseArtifact):
         force: bool = False,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
-        _args = [CLI, self.name, "copy", src_uri, target_project]
+        _args = [CLI, "-vvvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
         if mode == DatasetChangeMode.PATCH:
@@ -183,6 +184,7 @@ class Runtime(BaseArtifact):
         config = RuntimeConfig.create_by_yaml(Path(yaml_path))
         cmd = [
             CLI,
+            "-vvvv",
             "runtime",
             "build",
             "--yaml",
@@ -204,7 +206,7 @@ class Runtime(BaseArtifact):
         force: bool,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
-        _args = [CLI, self.name, "copy", src_uri, target_project]
+        _args = [CLI, "-vvvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
         _ret_code, _res = invoke(_args)
