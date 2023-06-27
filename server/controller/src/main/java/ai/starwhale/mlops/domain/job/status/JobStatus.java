@@ -43,11 +43,6 @@ public enum JobStatus {
     /**
      * CANCEL triggered by user( at least one task is TO_CANCEL)
      */
-    TO_CANCEL(),
-
-    /**
-     * CANCEL triggered by user( at least one task is TO_CANCEL)
-     */
     CANCELLING(),
 
     /**

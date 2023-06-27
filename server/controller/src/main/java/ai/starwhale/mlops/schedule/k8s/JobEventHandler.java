@@ -18,13 +18,16 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.reporting.TaskModifyReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -36,11 +39,20 @@ import org.springframework.util.StringUtils;
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     private final TaskModifyReceiver taskModifyReceiver;
+    private final TaskStatusMachine taskStatusMachine;
     private final RuntimeService runtimeService;
+    private final K8sClient k8sClient;
 
-    public JobEventHandler(TaskModifyReceiver taskModifyReceiver, RuntimeService runtimeService) {
+    public JobEventHandler(
+            TaskModifyReceiver taskModifyReceiver,
+            TaskStatusMachine taskStatusMachine,
+            RuntimeService runtimeService,
+            K8sClient k8sClient
+    ) {
         this.taskModifyReceiver = taskModifyReceiver;
+        this.taskStatusMachine = taskStatusMachine;
         this.runtimeService = runtimeService;
+        this.k8sClient = k8sClient;
     }
 
     @Override
@@ -56,6 +68,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     @Override
     public void onDelete(V1Job obj, boolean deletedFinalStateUnknown) {
         log.debug("job deleted for {} {}", jobName(obj), obj.getStatus());
+        updateEvalTask(obj, true);
     }
 
     private String jobName(V1Job obj) {
@@ -76,7 +89,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             log.debug("job({}) {} for {} with status {}", type, event, jobName(job), job.getStatus());
             switch (type) {
                 case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
-                    updateEvalTask(job);
+                    updateEvalTask(job, false);
                     break;
                 case K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER:
                     updateImageBuildTask(job);
@@ -102,11 +115,12 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
     }
 
-    private void updateEvalTask(V1Job job) {
+    private void updateEvalTask(V1Job job, boolean onDelete) {
         V1JobStatus status = job.getStatus();
         if (status == null) {
             return;
         }
+        var jobName = jobName(job);
         Long stopTime = null;
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
@@ -132,7 +146,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 if ("Failed".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.FAIL;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
-                    log.debug("job status changed for {} is failed {}", jobName(job), status);
+                    log.debug("job status changed for {} is failed {}", jobName, status);
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
@@ -143,19 +157,29 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 }
             }
         }
-        // warning: Represents time when the job controller started processing a job.
-        // When a Job is created in the suspended state, this field is not set until the first time it is resumed.
-        // This field is reset every time a Job is resumed from suspension.
-        // It is represented in RFC3339 form and is in UTC.
-        // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#jobstatus-v1-batch
-        // get the start time of the job to fill in the task status, beware that the start time is not reliable
-        // we only use it to fill in the task start time when the start time filed is not set
-        Long startTime = Util.k8sTimeToMs(status.getStartTime());
+
+        // we assume that the job is cancelled if it is not failed when delete
+        if (taskStatus != TaskStatus.FAIL && onDelete) {
+            taskStatus = TaskStatus.CANCELED;
+        }
+
+        Long startTime = null;
+        if (taskStatusMachine.isFinal(taskStatus)) {
+            startTime = getPodStartTime(jobName);
+            if (startTime == null) {
+                log.warn("no pod start time found for job {}, use now", jobName);
+                startTime = System.currentTimeMillis();
+            }
+            if (stopTime == null) {
+                stopTime = System.currentTimeMillis();
+                log.warn("no pod stop time found for job {}, use now", jobName);
+            }
+        }
 
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
         var report = ReportedTask.builder()
-                .id(Long.parseLong(jobName(job)))
+                .id(Long.parseLong(jobName))
                 .status(taskStatus)
                 .startTimeMillis(startTime)
                 .stopTimeMillis(stopTime)
@@ -168,5 +192,29 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         return String.join(",",
                 conditions.stream().map(c -> String.format("type %s status %s", c.getType(), c.getStatus())).collect(
                         Collectors.toSet()));
+    }
+
+    private Long getPodStartTime(String jobId) {
+        List<V1Pod> pods = null;
+        try {
+            var list = k8sClient.getPodsByJobName(jobId);
+            if (list != null) {
+                pods = list.getItems();
+            }
+        } catch (Exception e) {
+            log.warn("failed to get pod start time for job {}", jobId, e);
+        }
+        if (pods == null || pods.size() == 0) {
+            return null;
+        }
+
+        var startTimes = pods.stream().filter(p -> p.getStatus() != null)
+                .map(p -> Util.k8sTimeToMs(p.getStatus().getStartTime()))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        if (startTimes.size() == 0) {
+            return null;
+        }
+        return startTimes.stream().min(Long::compareTo).get();
     }
 }

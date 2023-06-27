@@ -25,7 +25,6 @@ import static ai.starwhale.mlops.domain.job.status.JobStatus.PAUSED;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.READY;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
 
 import java.util.Map;
@@ -36,18 +35,17 @@ import org.springframework.stereotype.Component;
 public class JobStatusMachine {
 
     static final Map<JobStatus, Set<JobStatus>> transferMap = Map.of(
-            CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
-            READY, Set.of(PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
+            CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, CANCELLING, FAIL),
+            READY, Set.of(PAUSED, RUNNING, SUCCESS, CANCELLING, FAIL),
             PAUSED, Set.of(READY, RUNNING, CANCELED, FAIL),
-            RUNNING, Set.of(PAUSED, SUCCESS, CANCELED, FAIL),
+            RUNNING, Set.of(PAUSED, SUCCESS, CANCELLING, FAIL),
             SUCCESS, Set.of(),
             FAIL, Set.of(READY, RUNNING, SUCCESS),
-            TO_CANCEL, Set.of(CANCELLING, CANCELED, FAIL),
             CANCELLING, Set.of(CANCELED, FAIL),
             CANCELED, Set.of(),
             UNKNOWN, Set.of(JobStatus.values()));
 
-    public static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
+    public static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, CANCELLING);
     public static final Set<JobStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
 
     public boolean couldTransfer(JobStatus statusNow, JobStatus statusNew) {

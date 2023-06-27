@@ -25,7 +25,6 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.PAUSED;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.TO_CANCEL;
 
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement;
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement.RequireType;
@@ -103,7 +102,7 @@ public class StatusRequirementTest {
         Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(
-                Set.of(TaskStatus.PAUSED, TO_CANCEL, TaskStatus.CANCELLING,
+                Set.of(TaskStatus.PAUSED, TaskStatus.CANCELLING,
                         TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO);
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
@@ -115,10 +114,10 @@ public class StatusRequirementTest {
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, RUNNING)));
 
         tr = new StatusRequirement(
-                Set.of(TaskStatus.FAIL, TO_CANCEL, TaskStatus.CANCELLING,
+                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING,
                         TaskStatus.CANCELED), RequireType.HAVE_NO);
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, FAIL)));
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, TO_CANCEL)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS)));
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, CANCELED)));
@@ -130,7 +129,7 @@ public class StatusRequirementTest {
         Assertions.assertTrue(tr.fit(List.of(RUNNING, PAUSED, CANCELLING, SUCCESS, SUCCESS)));
 
         tr = new StatusRequirement(
-                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING, TO_CANCEL,
+                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING,
                         TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
                         TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO);
         Assertions.assertTrue(tr.fit(List.of(CANCELED, SUCCESS, SUCCESS)));
@@ -141,9 +140,9 @@ public class StatusRequirementTest {
         Assertions.assertTrue(!tr.fit(List.of(RUNNING, SUCCESS, CREATED)));
 
         tr = new StatusRequirement(
-                Set.of(TO_CANCEL, TaskStatus.CANCELLING, TaskStatus.CANCELED,
+                Set.of(TaskStatus.CANCELLING, TaskStatus.CANCELED,
                         TaskStatus.FAIL), RequireType.HAVE_NO);
-        Assertions.assertTrue(!tr.fit(List.of(RUNNING, TO_CANCEL, CREATED)));
+        Assertions.assertTrue(!tr.fit(List.of(RUNNING, CREATED, CANCELLING)));
         Assertions.assertTrue(tr.fit(List.of(RUNNING, SUCCESS, CREATED)));
 
         tr = new StatusRequirement(Set.of(TaskStatus.values()), RequireType.HAVE_NO);

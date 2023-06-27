@@ -25,7 +25,6 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.TO_CANCEL;
 
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -51,12 +50,10 @@ public class StepHelperTest {
         StepStatus cancelling = StepStatus.CANCELLING;
         Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, CANCELLING)));
 
-        Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING)));
-
-        Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, TO_CANCEL)));
+        Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, CANCELLING)));
 
         Assertions.assertEquals(cancelling,
-                stepHelper.desiredStepStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING, CANCELED)));
+                stepHelper.desiredStepStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
 
         Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
         Assertions.assertEquals(cancelling,

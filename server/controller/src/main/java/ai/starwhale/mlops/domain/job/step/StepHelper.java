@@ -50,26 +50,25 @@ public class StepHelper {
                         Set.of(TaskStatus.ASSIGNING, TaskStatus.PREPARING, TaskStatus.RUNNING, TaskStatus.READY),
                         RequireType.MUST),
                 new StatusRequirement<>(
-                        Set.of(TaskStatus.PAUSED, TaskStatus.TO_CANCEL, TaskStatus.CANCELLING,
+                        Set.of(TaskStatus.PAUSED, TaskStatus.CANCELLING,
                                 TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO)));
         map.put(StepStatus.SUCCESS,
                 Set.of(new StatusRequirement<>(Set.of(TaskStatus.SUCCESS), RequireType.ALL)));
         map.put(StepStatus.CANCELED,
                 Set.of(new StatusRequirement<>(Set.of(TaskStatus.CANCELED), RequireType.MUST),
                         new StatusRequirement<>(
-                                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING, TaskStatus.TO_CANCEL,
+                                Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING,
                                         TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
                                         TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO)));
         map.put(StepStatus.CANCELLING,
                 Set.of(new StatusRequirement<>(
-                                Set.of(TaskStatus.CANCELLING, TaskStatus.TO_CANCEL, TaskStatus.CANCELED),
+                                Set.of(TaskStatus.CANCELLING, TaskStatus.CANCELED),
                                 RequireType.MUST),
                         new StatusRequirement<>(Set.of(TaskStatus.FAIL), RequireType.HAVE_NO)));
         map.put(StepStatus.PAUSED,
                 Set.of(new StatusRequirement<>(Set.of(TaskStatus.PAUSED), RequireType.MUST),
                         new StatusRequirement<>(
-                                Set.of(TaskStatus.TO_CANCEL,
-                                        TaskStatus.CANCELLING,
+                                Set.of(TaskStatus.CANCELLING,
                                         TaskStatus.CANCELED,
                                         TaskStatus.FAIL),
                                 RequireType.HAVE_NO)));

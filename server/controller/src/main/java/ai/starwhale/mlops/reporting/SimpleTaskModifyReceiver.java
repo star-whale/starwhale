@@ -63,16 +63,11 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 // update start time
                 if (reportedTask.getStartTimeMillis() != null) {
                     var tm = new Date(reportedTask.getStartTimeMillis());
-                    // prefer using the reported start time when the status is RUNNING
-                    if (reportedTask.getStatus() == TaskStatus.RUNNING) {
-                        taskMapper.updateTaskStartedTime(reportedTask.getId(), tm);
-                    } else {
-                        taskMapper.updateTaskStartedTimeIfNotSet(reportedTask.getId(), tm);
-                    }
+                    taskMapper.updateTaskStartedTimeIfNotSet(reportedTask.getId(), tm);
                 }
                 if (reportedTask.getStopTimeMillis() != null) {
                     var tm = new Date(reportedTask.getStopTimeMillis());
-                    taskMapper.updateTaskFinishedTime(reportedTask.getId(), tm);
+                    taskMapper.updateTaskFinishedTimeIfNotSet(reportedTask.getId(), tm);
                 }
                 return;
             }
