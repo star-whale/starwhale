@@ -302,6 +302,7 @@ class BundleCopy(CloudRequestMixed):
             workdir,
             progress,
             self._upload_built_in_runtime,
+            self.force,
         )
 
     def _upload_built_in_runtime(self, progress: Progress) -> str | None:
