@@ -46,7 +46,7 @@ export function linkWithOwner(data: ITypeLink): string {
 }
 export function linkToData(data: ITypeLink, curryParseLinkFn: any): string {
     if (data._owner) return linkWithOwner(data)
-    if (data.uri.startsWith('http')) return data.uri
+    if (data.uri?.startsWith('http')) return data.uri
     if (curryParseLinkFn) return curryParseLinkFn(data)
     return data.uri
 }
