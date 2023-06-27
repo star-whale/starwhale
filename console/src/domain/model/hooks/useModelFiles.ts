@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listModelVersionFiles } from '../services/modelVersion'
-import qs from 'qs'
+import { fetchModelVersionFile, listModelVersionFiles } from '../services/modelVersion'
 import { FileNode } from '@/domain/base/schemas/file'
 import { getToken } from '@/api'
 
@@ -45,15 +44,14 @@ export function useModelFiles(projectName?: string, modelName?: string, modelVer
 
     const loadFileData = async (source: FileNodeWithPathT, version = '') => {
         try {
-            const res = await fetch(
-                `/api/v1/project/${projectName}/model/${modelName}/getFileData?${qs.stringify({
-                    Authorization: getToken(),
-                    path: source.path?.join('/'),
-                    version,
-                })}`
+            const data = await fetchModelVersionFile(
+                projectName,
+                modelName,
+                version,
+                getToken(),
+                source.path?.join('/')
             )
-            const text = await res.text()
-            return text
+            return data
         } catch (e) {
             return ''
         }

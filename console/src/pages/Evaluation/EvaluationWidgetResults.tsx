@@ -253,12 +253,12 @@ function EvaluationWidgetResults() {
     }, [])
 
     useEffect(() => {
-        fetchModelVersionPanelSetting(projectId, job?.modelName, job?.modelVersion, getToken()).then((data) => {
+        fetchModelVersionPanelSetting(project?.name, job?.modelName, job?.modelVersion, getToken()).then((data) => {
             if (!data) return
             const layout = tryParseSimplified(data) ?? data
             updateLayout({ name: 'model-builtin', content: layout, label: t('panel.view.config.model-buildin') })
         })
-    }, [projectId, job, updateLayout, t])
+    }, [project, job, updateLayout, t])
 
     useEffect(() => {
         if (!storeKey) {
