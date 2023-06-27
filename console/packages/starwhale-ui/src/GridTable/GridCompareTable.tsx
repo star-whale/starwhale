@@ -321,7 +321,7 @@ export function BaseGridCompareTable({
         <>
             <div className={styles.header}>
                 <LabelSmall className={styles.headerTitle}>
-                    {title} <span className={styles.compareCount}>{$columns.length}</span>
+                    {title} <span className={styles.compareCount}>{$columns.length - 1}</span>
                 </LabelSmall>
                 <div className={styles.headerBar}>
                     <Checkbox
