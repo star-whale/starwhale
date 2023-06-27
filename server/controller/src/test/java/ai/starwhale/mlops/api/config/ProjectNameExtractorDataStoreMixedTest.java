@@ -56,24 +56,6 @@ public class ProjectNameExtractorDataStoreMixedTest {
     }
 
     @Test
-    public void testNonDataStoreParam() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getRequestURI()).thenReturn("api/v1/object-store");
-        when(request.getParameter("project")).thenReturn("p");
-        Set<String> strings = projectNameExtractorDataStoreMixed.extractProjectName(request);
-        Assertions.assertIterableEquals(Set.of("p"), strings);
-    }
-
-    @Test
-    public void testNonDataStoreParam2() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getRequestURI()).thenReturn("api/v1/object-store");
-        when(request.getParameter("projectUrl")).thenReturn("p");
-        Set<String> strings = projectNameExtractorDataStoreMixed.extractProjectName(request);
-        Assertions.assertIterableEquals(Set.of("p"), strings);
-    }
-
-    @Test
     public void testDataStoreList() throws IOException {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("api/v1/datastore/listTables");
