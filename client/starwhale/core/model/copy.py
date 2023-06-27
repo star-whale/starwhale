@@ -396,6 +396,7 @@ async def upload_model(
     workdir: Path,
     progress: Progress,
     upload_runtime: t.Callable[[Progress], str | None],
+    force: bool,
 ) -> None:
     _progress.set(progress)
     _instance.set(dest_uri.instance)
@@ -426,7 +427,11 @@ async def upload_model(
             path=f"/project/{dest_uri.project.name}"
             + f"/model/{dest_uri.name}"
             + f"/version/{dest_uri.version}/completeUpload",
-            json={"metaBlobId": blob_id, "builtInRuntime": runtime_version},
+            json={
+                "metaBlobId": blob_id,
+                "builtInRuntime": runtime_version,
+                "force": force,
+            },
         )
         console.print("metadata uploaded")
 
