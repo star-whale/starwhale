@@ -307,7 +307,7 @@ class TestDatasetCopy(BaseTestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/blob",
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/hashedBlob/111",
         )
 
         rm.request(

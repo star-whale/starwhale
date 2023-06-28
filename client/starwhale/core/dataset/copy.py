@@ -282,7 +282,7 @@ class DatasetCopy(BundleCopy):
         local_blob_path = DatasetStorage._get_object_store_path(hash_name)
         if not local_blob_path.exists():
             self.do_download_file(
-                url_path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}/blob",
+                url_path=f"/project/{self.src_uri.project.name}/dataset/{self.src_uri.name}/hashedBlob/{hash_name}",
                 dest_path=local_blob_path,
                 instance=self.src_uri.instance,
                 progress=progress,
