@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import ai.starwhale.mlops.domain.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;

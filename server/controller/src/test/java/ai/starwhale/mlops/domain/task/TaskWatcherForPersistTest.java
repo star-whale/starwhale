@@ -26,12 +26,11 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForPersist;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -45,7 +44,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testReady2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -61,7 +60,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testRunning2Success() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -80,7 +79,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testRunning2Running() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -88,7 +87,7 @@ public class TaskWatcherForPersistTest {
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
                         .build()).build()).build())
                 .build();
-        task = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
+        task = new WatchableTask(task, List.of(taskWatcherForPersist));
         task.updateStatus(TaskStatus.RUNNING);
         verify(taskMapper, times(0)).updateTaskStartedTime(any(), any());
         verify(taskMapper, times(0)).updateTaskFinishedTime(any(), any());
@@ -98,7 +97,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testFailedDirectlyWithTimeCaptured() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -109,7 +108,7 @@ public class TaskWatcherForPersistTest {
                 .finishTime(8L)
                 .build();
 
-        var watchableTask = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
+        var watchableTask = new WatchableTask(task, List.of(taskWatcherForPersist));
         watchableTask.updateStatus(TaskStatus.FAIL);
         // update start time use the start time in task
         verify(taskMapper, times(0)).updateTaskStartedTime(any(), any());
@@ -123,7 +122,7 @@ public class TaskWatcherForPersistTest {
     @Test
     public void testFailedDirectlyWithoutTimeCaptured() {
         TaskMapper taskMapper = mock(TaskMapper.class);
-        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(), taskMapper);
+        TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(taskMapper);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -134,7 +133,7 @@ public class TaskWatcherForPersistTest {
                 .finishTime(null)
                 .build();
 
-        var watchableTask = new WatchableTask(task, List.of(taskWatcherForPersist), new TaskStatusMachine());
+        var watchableTask = new WatchableTask(task, List.of(taskWatcherForPersist));
         watchableTask.updateStatus(TaskStatus.FAIL);
         verify(taskMapper, times(0)).updateTaskStartedTime(any(), any());
         verify(taskMapper, times(1)).updateTaskStartedTimeIfNotSet(eq(task.getId()), argThat(d -> d.getTime() > 0));

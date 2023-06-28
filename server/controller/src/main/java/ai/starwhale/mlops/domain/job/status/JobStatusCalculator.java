@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
-import ai.starwhale.mlops.domain.job.step.status.StatusRequirement;
-import ai.starwhale.mlops.domain.job.step.status.StatusRequirement.RequireType;
+import ai.starwhale.mlops.domain.job.StatusRequirement;
+import ai.starwhale.mlops.domain.job.StatusRequirement.RequireType;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,14 +25,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.springframework.stereotype.Service;
 
-@Service
 public class JobStatusCalculator {
 
-    final Map<JobStatus, Set<StatusRequirement<StepStatus>>> stepStatusRequirementSetMap;
+    static final Map<JobStatus, Set<StatusRequirement<StepStatus>>> stepStatusRequirementSetMap;
 
-    public JobStatusCalculator() {
+    static  {
         Map<JobStatus, Set<StatusRequirement<StepStatus>>> map = new LinkedHashMap<>();
         map.put(JobStatus.FAIL, Set.of(
                 new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.ANY)
@@ -70,11 +68,10 @@ public class JobStatusCalculator {
                         Set.of(StepStatus.FAIL, StepStatus.CANCELLING, StepStatus.RUNNING), RequireType.HAVE_NO)
         ));
 
-        this.stepStatusRequirementSetMap = Collections.unmodifiableMap(map);
-        ;
+        stepStatusRequirementSetMap = Collections.unmodifiableMap(map);
     }
 
-    public JobStatus desiredJobStatus(Collection<StepStatus> stepStatuses) {
+    public static JobStatus desiredJobStatus(Collection<StepStatus> stepStatuses) {
 
         for (Entry<JobStatus, Set<StatusRequirement<StepStatus>>> entry : stepStatusRequirementSetMap.entrySet()) {
             if (StatusRequirement.match(stepStatuses, entry.getValue())) {

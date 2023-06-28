@@ -16,11 +16,10 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskStatusChangeWatcher;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -35,7 +34,7 @@ public class WatchableTaskFactoryTest {
     public void testWatchableTaskFactory() {
 
         WatchableTaskFactory watchableTaskFactory = new WatchableTaskFactory(
-                List.of(new Watcher2(), new Watcher3(), new Watcher1()), new TaskStatusMachine());
+                List.of(new Watcher2(), new Watcher3(), new Watcher1()));
         Task task = new Task();
         task.updateStatus(TaskStatus.PREPARING);
         Task wrappedTask = watchableTaskFactory.wrapTask(task);

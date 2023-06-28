@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -30,10 +29,10 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorImpl;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.StepService;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -70,25 +69,24 @@ public class JobSpliteratorImplTest {
                     .needs(List.of("predict"))
                     .build()
         );
-        TaskMapper taskMapper = mock(TaskMapper.class);
+        TaskService taskService = mock(TaskService.class);
         JobDao jobDao = mock(JobDao.class);
-        StepMapper stepMapper = mock(StepMapper.class);
+        StepService stepService = mock(StepService.class);
         JobSpecParser jobParser = mock(JobSpecParser.class);
         given(jobParser.parseAndFlattenStepFromYaml(any())).willReturn(steps);
 
         JobSpliteratorImpl jobSpliteratorImpl = new JobSpliteratorImpl(
-                new StoragePathCoordinator("/test"), taskMapper, jobDao, stepMapper, jobParser);
+                new StoragePathCoordinator("/test"), jobDao, jobParser, stepService, taskService);
 
         mockJob.setStepSpec("");
         Assertions.assertThrows(SwValidationException.class, () -> jobSpliteratorImpl.split(mockJob));
 
         mockJob.setStepSpec("123");
         mockJob.setResourcePool(ResourcePool.builder().name("test").build());
-        var stepEntities = jobSpliteratorImpl.split(mockJob);
-        assertEquals(stepEntities.size(), 2);
-        verify(stepMapper, times(2)).save(any());
-        verify(stepMapper, times(2)).updateLastStep(any(), any());
-        verify(taskMapper, times(2)).addAll(any());
+        jobSpliteratorImpl.split(mockJob);
+        verify(stepService, times(2)).insert(any());
+        verify(stepService, times(2)).updateLastStep(any(), any());
+        verify(taskService, times(2)).batchInsertTasks(any());
         verify(jobDao, times(1)).updateJobStatus(any(), any());
 
         mockJob.setStatus(JobStatus.RUNNING);

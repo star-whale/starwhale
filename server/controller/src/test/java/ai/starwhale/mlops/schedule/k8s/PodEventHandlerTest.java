@@ -24,11 +24,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.domain.job.step.task.reporting.ReportedTask;
+import ai.starwhale.mlops.domain.job.step.task.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.PodEventHandler;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;

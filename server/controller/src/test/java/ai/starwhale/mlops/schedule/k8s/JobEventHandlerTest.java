@@ -16,19 +16,20 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
-import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_EVAL;
+import static ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
+import static ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_EVAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.domain.job.step.task.reporting.ReportedTask;
+import ai.starwhale.mlops.domain.job.step.task.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.JobEventHandler;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskModifyReceiver;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -55,9 +56,7 @@ public class JobEventHandlerTest {
     @BeforeEach
     public void setUp() throws ApiException {
         taskModifyReceiver = mock(TaskModifyReceiver.class);
-        TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
-        jobEventHandler =
-                new JobEventHandler(taskModifyReceiver, taskStatusMachine, mock(RuntimeService.class), k8sClient);
+        jobEventHandler = new JobEventHandler(taskModifyReceiver, mock(RuntimeService.class), k8sClient);
 
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
         pod.setStatus(new V1PodStatus().startTime(startTime));

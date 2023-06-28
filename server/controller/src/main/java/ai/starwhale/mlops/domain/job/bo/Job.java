@@ -22,13 +22,16 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.user.bo.User;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -97,6 +100,12 @@ public class Job extends TimeConcern {
     Date autoReleaseTime;
 
     Date pinnedTime;
+
+    public Stream<Task> tasks() {
+        return this.steps.stream()
+            .map(Step::getTasks)
+            .flatMap(Collection::stream);
+    }
 
     @Override
     public boolean equals(Object o) {

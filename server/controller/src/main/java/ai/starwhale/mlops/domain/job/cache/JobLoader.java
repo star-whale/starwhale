@@ -18,11 +18,11 @@ package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,13 +42,12 @@ public class JobLoader {
 
     final WatchableTaskFactory watchableTaskFactory;
 
-    final SwTaskScheduler swTaskScheduler;
+    final TaskScheduler taskScheduler;
 
-    public JobLoader(HotJobHolder jobHolder, WatchableTaskFactory watchableTaskFactory,
-            SwTaskScheduler swTaskScheduler) {
+    public JobLoader(HotJobHolder jobHolder, WatchableTaskFactory watchableTaskFactory, TaskScheduler taskScheduler) {
         this.jobHolder = jobHolder;
         this.watchableTaskFactory = watchableTaskFactory;
-        this.swTaskScheduler = swTaskScheduler;
+        this.taskScheduler = taskScheduler;
     }
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
@@ -91,7 +90,7 @@ public class JobLoader {
         if (CollectionUtils.isEmpty(tasks)) {
             return;
         }
-        swTaskScheduler.schedule(tasks);
+        taskScheduler.schedule(tasks);
     }
 
 }

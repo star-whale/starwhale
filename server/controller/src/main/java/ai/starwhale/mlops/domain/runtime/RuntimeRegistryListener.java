@@ -17,9 +17,9 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingListener;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;

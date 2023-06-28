@@ -40,17 +40,10 @@ public class HotJobsLoader implements CommandLineRunner {
 
     final JobLoader jobLoader;
 
-    final JobStatusMachine jobStatusMachine;
-
-    public HotJobsLoader(
-            JobDao jobDao,
-            JobLoader jobLoader,
-            JobStatusMachine jobStatusMachine) {
+    public HotJobsLoader(JobDao jobDao, JobLoader jobLoader) {
         this.jobDao = jobDao;
         this.jobLoader = jobLoader;
-        this.jobStatusMachine = jobStatusMachine;
     }
-
 
     /**
      * load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem CREATED job has no steps yet, so it will
@@ -61,7 +54,7 @@ public class HotJobsLoader implements CommandLineRunner {
     private List<Job> hotJobsFromDb() {
         List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
                 .parallelStream()
-                .filter(jobStatusMachine::isHot)
+                .filter(JobStatusMachine::isHot)
                 .collect(Collectors.toList());
         return jobDao.findJobByStatusIn(hotJobStatuses);
     }

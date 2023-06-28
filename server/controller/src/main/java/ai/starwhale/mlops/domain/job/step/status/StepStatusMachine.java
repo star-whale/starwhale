@@ -28,9 +28,7 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
 import java.util.Map;
 import java.util.Set;
-import org.springframework.stereotype.Component;
 
-@Component
 public class StepStatusMachine {
 
     static final Map<StepStatus, Set<StepStatus>> transferMap = Map.of(
@@ -40,16 +38,19 @@ public class StepStatusMachine {
             RUNNING, Set.of(CANCELLING, CANCELED, PAUSED, SUCCESS, FAIL),
             CANCELLING, Set.of(CANCELED, FAIL),
             SUCCESS, Set.of(),
-            FAIL, Set.of(),
+            FAIL, Set.of(), //TODO
             CANCELED, Set.of(),
-            UNKNOWN, Set.of(StepStatus.values()));
+            UNKNOWN, Set.of(StepStatus.values())
+    );
 
-    public boolean couldTransfer(StepStatus statusNow, StepStatus statusNew) {
+    public static final Set<StepStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
+
+    public static boolean couldTransfer(StepStatus statusNow, StepStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
     }
 
-    public boolean isFinal(StepStatus status) {
-        return transferMap.get(status).isEmpty();
+    public static boolean isFinal(StepStatus status) {
+        return FINAL_STATUS.contains(status);
     }
 
 }

@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
 import ai.starwhale.mlops.common.Constants;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

@@ -23,11 +23,10 @@ import static org.mockito.Mockito.verify;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForSchedule;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -37,14 +36,11 @@ import org.junit.jupiter.api.Test;
  */
 public class TaskWatcherForScheduleTest {
 
-    final TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
-
     @Test
     public void testChangeAdopt() {
-        SwTaskScheduler taskScheduler = mock(
-                SwTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-                taskStatusMachine, 0L);
+        TaskScheduler taskScheduler = mock(
+                TaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler, 0L);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -58,10 +54,9 @@ public class TaskWatcherForScheduleTest {
 
     @Test
     public void testChangeStopSchedule() {
-        SwTaskScheduler taskScheduler = mock(
-                SwTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-                taskStatusMachine, 100L);
+        TaskScheduler taskScheduler = mock(
+                TaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler, 100L);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -78,10 +73,9 @@ public class TaskWatcherForScheduleTest {
 
     @Test
     public void testDelayStopSchedule() throws InterruptedException {
-        SwTaskScheduler taskScheduler = mock(
-                SwTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-                taskStatusMachine, 1L);
+        TaskScheduler taskScheduler = mock(
+                TaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler, 1L);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
@@ -102,10 +96,9 @@ public class TaskWatcherForScheduleTest {
 
     @Test
     public void testChangeIgnore() {
-        SwTaskScheduler taskScheduler = mock(
-                SwTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-                taskStatusMachine, 0L);
+        TaskScheduler taskScheduler = mock(
+                TaskScheduler.class);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler, 0L);
         Task task = Task.builder()
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())

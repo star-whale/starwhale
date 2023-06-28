@@ -29,9 +29,7 @@ import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
 
 import java.util.Map;
 import java.util.Set;
-import org.springframework.stereotype.Component;
 
-@Component
 public class JobStatusMachine {
 
     static final Map<JobStatus, Set<JobStatus>> transferMap = Map.of(
@@ -39,24 +37,24 @@ public class JobStatusMachine {
             READY, Set.of(PAUSED, RUNNING, SUCCESS, CANCELLING, FAIL),
             PAUSED, Set.of(READY, RUNNING, CANCELED, FAIL),
             RUNNING, Set.of(PAUSED, SUCCESS, CANCELLING, FAIL),
-            SUCCESS, Set.of(),
-            FAIL, Set.of(READY, RUNNING, SUCCESS),
             CANCELLING, Set.of(CANCELED, FAIL),
+            SUCCESS, Set.of(),
+            FAIL, Set.of(),
             CANCELED, Set.of(),
             UNKNOWN, Set.of(JobStatus.values()));
 
     public static final Set<JobStatus> HOT_JOB_STATUS = Set.of(READY, RUNNING, CANCELLING);
     public static final Set<JobStatus> FINAL_STATUS = Set.of(FAIL, SUCCESS, CANCELED);
 
-    public boolean couldTransfer(JobStatus statusNow, JobStatus statusNew) {
+    public static boolean couldTransfer(JobStatus statusNow, JobStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
     }
 
-    public boolean isHot(JobStatus status) {
+    public static boolean isHot(JobStatus status) {
         return HOT_JOB_STATUS.contains(status);
     }
 
-    public boolean isFinal(JobStatus status) {
+    public static boolean isFinal(JobStatus status) {
         return FINAL_STATUS.contains(status);
     }
 

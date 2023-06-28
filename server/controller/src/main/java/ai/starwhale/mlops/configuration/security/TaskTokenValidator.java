@@ -17,9 +17,9 @@
 package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;

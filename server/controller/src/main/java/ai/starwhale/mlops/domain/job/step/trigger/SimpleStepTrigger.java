@@ -17,9 +17,8 @@
 package ai.starwhale.mlops.domain.job.step.trigger;
 
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,11 +27,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SimpleStepTrigger implements StepTrigger {
 
-    final StorageAccessService storageAccessService;
-
-    public SimpleStepTrigger(StorageAccessService storageAccessService) {
-        this.storageAccessService = storageAccessService;
-    }
+    public SimpleStepTrigger() { }
 
     public void triggerNextStep(Step pplStep) {
         Step nextStep = pplStep.getNextStep();

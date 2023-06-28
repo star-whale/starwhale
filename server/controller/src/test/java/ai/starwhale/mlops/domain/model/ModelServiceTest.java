@@ -50,6 +50,10 @@ import ai.starwhale.mlops.domain.blob.BlobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
@@ -177,8 +181,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
         }
 
         @Bean
-        SwTaskScheduler swTaskScheduler() {
-            return mock(SwTaskScheduler.class);
+        TaskScheduler swTaskScheduler() {
+            return mock(TaskScheduler.class);
         }
 
         @Bean

@@ -20,8 +20,9 @@ import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -61,7 +62,7 @@ public class TaskMapperTest extends MySqlContainerHolder {
         StepEntity stp1 = StepEntity.builder().jobId(jobId).name("stp1").uuid(UUID.randomUUID().toString())
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();
-        stepMapper.save(stp1);
+        stepMapper.insert(stp1);
         TaskEntity task1 = TaskEntity.builder()
                 .taskStatus(TaskStatus.CREATED)
                 .retryNum(0)
@@ -92,7 +93,7 @@ public class TaskMapperTest extends MySqlContainerHolder {
         StepEntity stp1 = StepEntity.builder().jobId(jobId).name("stp1").uuid(UUID.randomUUID().toString())
                 .status(StepStatus.READY).concurrency(1)
                 .taskNum(3).build();
-        stepMapper.save(stp1);
+        stepMapper.insert(stp1);
         TaskEntity task1 = TaskEntity.builder()
                 .taskStatus(TaskStatus.CREATED)
                 .retryNum(0)

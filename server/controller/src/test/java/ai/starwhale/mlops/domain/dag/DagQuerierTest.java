@@ -25,7 +25,10 @@ import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.mlops.domain.job.step.StepConverter;
+import ai.starwhale.mlops.domain.job.step.StepService;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.exception.SwValidationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,8 @@ public class DagQuerierTest {
         Job mockedJob = new JobMockHolder().mockJob();
         JobDao jobDao = mock(JobDao.class);
         when(jobDao.findJob(any())).thenReturn(mockedJob);
-        DagQuerier dagQuerier = new DagQuerier(jobDao, new StepHelper());
+        DagQuerier dagQuerier = new DagQuerier(jobDao,
+                new StepService(mock(StepMapper.class), mock(StepConverter.class), mock(TaskService.class)));
         Graph graph = dagQuerier.dagOfJob("1");
         Assertions.assertEquals(3, graph.getGroupingNodes().keySet().size());
         Assertions.assertEquals(4, graph.getGroupingNodes().get("Task").size());

@@ -21,16 +21,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.ResultPath;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
+import ai.starwhale.mlops.domain.job.step.task.bo.ResultPath;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.bo.TaskRequest;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForJobStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForPersist;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForSchedule;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -75,7 +74,7 @@ public class WatchableTaskTest {
 
         List<TaskStatusChangeWatcher> watchers = List.of(taskWatcherForSchedule, taskWatcherForJobStatus,
                 taskWatcherForPersist);
-        WatchableTask watchableTask = new WatchableTask(originalTask, watchers, new TaskStatusMachine());
+        WatchableTask watchableTask = new WatchableTask(originalTask, watchers);
 
         Method[] methods = originalTask.getClass().getMethods();
         Method[] methodsWatchable = watchableTask.getClass().getMethods();
@@ -122,10 +121,10 @@ public class WatchableTaskTest {
     @Test
     public void testUnwrap() throws NoSuchFieldException, IllegalAccessException {
         Task originalTask = Task.builder().build();
-        WatchableTask unModifiableTask = new WatchableTask(originalTask, Collections.emptyList(), null);
-        WatchableTask watchableTask1 = new WatchableTask(unModifiableTask, null, null);
-        WatchableTask watchableTask2 = new WatchableTask(originalTask, null, null);
-        WatchableTask watchableTask3 = new WatchableTask(watchableTask2, null, null);
+        WatchableTask unModifiableTask = new WatchableTask(originalTask, Collections.emptyList());
+        WatchableTask watchableTask1 = new WatchableTask(unModifiableTask, null);
+        WatchableTask watchableTask2 = new WatchableTask(originalTask, null);
+        WatchableTask watchableTask3 = new WatchableTask(watchableTask2, null);
         Assertions.assertTrue(watchableTask1.unwrap() == originalTask);
         Assertions.assertTrue(watchableTask2.unwrap() == originalTask);
         Assertions.assertTrue(watchableTask3.unwrap() == originalTask);
@@ -146,7 +145,7 @@ public class WatchableTaskTest {
         var taskWatcherForJobStatus = mock(TaskWatcherForJobStatus.class);
 
         var watchers = List.of(taskWatcherForSchedule, taskWatcherForJobStatus, taskWatcherForPersist);
-        WatchableTask watchableTask = new WatchableTask(originalTask, watchers, new TaskStatusMachine());
+        WatchableTask watchableTask = new WatchableTask(originalTask, watchers);
         watchableTask.updateStatus(TaskStatus.CANCELED);
         Assertions.assertEquals(TaskStatus.CANCELED, originalTask.getStatus());
         verify(taskWatcherForSchedule).onTaskStatusChange(watchableTask, TaskStatus.PREPARING);

@@ -38,16 +38,20 @@ import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
-import ai.starwhale.mlops.domain.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -121,13 +125,16 @@ public class JobController implements JobApi {
             Integer pageNum,
             Integer pageSize
     ) {
-
-        PageInfo<TaskVo> pageInfo = taskService.listTasks(jobUrl,
-                PageParams.builder()
-                        .pageNum(pageNum)
-                        .pageSize(pageSize)
-                        .build());
-        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+        // TODO real page and wrap it in job service
+        PageHelper.startPage(pageNum, pageSize);
+        var job = jobService.findJob(jobUrl);
+        List<TaskVo> tasks = taskService.listTasks(job.getId()).stream()
+                .peek(taskVo -> {
+                    if (!StringUtils.hasText(taskVo.getResourcePool())) {
+                        taskVo.setResourcePool(job.getResourcePool().getName());
+                    }
+                }).collect(Collectors.toList());
+        return ResponseEntity.ok(Code.success.asResponse(PageInfo.of(tasks)));
     }
 
     @Override

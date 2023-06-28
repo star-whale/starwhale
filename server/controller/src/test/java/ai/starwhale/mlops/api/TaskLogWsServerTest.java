@@ -22,8 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollector;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
+import ai.starwhale.mlops.domain.job.step.task.log.CancellableTaskLogK8sCollector;
+import ai.starwhale.mlops.domain.job.step.task.log.CancellableTaskLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

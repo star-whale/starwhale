@@ -21,8 +21,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.domain.job.step.task.log.CancellableTaskLogK8sCollectorFactory;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;

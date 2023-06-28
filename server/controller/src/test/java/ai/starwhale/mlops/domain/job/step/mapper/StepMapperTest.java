@@ -57,8 +57,8 @@ public class StepMapperTest extends MySqlContainerHolder {
                 .taskNum(20)
                 .build();
 
-        stepMapper.save(step1);
-        stepMapper.save(step2);
+        stepMapper.insert(step1);
+        stepMapper.insert(step2);
 
         List<StepEntity> list = stepMapper.findByJobId(1L);
         Assertions.assertEquals(2, list.size());
@@ -83,7 +83,7 @@ public class StepMapperTest extends MySqlContainerHolder {
                 .taskNum(10)
                 .build();
 
-        stepMapper.save(step1);
+        stepMapper.insert(step1);
         long now = System.currentTimeMillis() / 1000 * 1000;
         stepMapper.updateFinishedTime(step1.getId(), new Date(now));
 
@@ -104,7 +104,7 @@ public class StepMapperTest extends MySqlContainerHolder {
                 .taskNum(10)
                 .build();
 
-        stepMapper.save(step1);
+        stepMapper.insert(step1);
         long now = System.currentTimeMillis() / 1000 * 1000;
         stepMapper.updateStartedTime(step1.getId(), new Date(now));
 
