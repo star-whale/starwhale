@@ -16,18 +16,17 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELED;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.CREATED;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.PAUSED;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CANCELED;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CANCELLING;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CREATED;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.FAIL;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.PAUSED;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.PREPARING;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.RUNNING;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.SUCCESS;
 
-import ai.starwhale.mlops.domain.job.step.status.StatusRequirement;
-import ai.starwhale.mlops.domain.job.step.status.StatusRequirement.RequireType;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.StatusRequirement.RequireType;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;

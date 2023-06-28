@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.task;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;

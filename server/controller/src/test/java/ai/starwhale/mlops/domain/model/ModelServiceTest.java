@@ -37,6 +37,10 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.ModelServingService;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
@@ -51,10 +55,6 @@ import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -158,8 +158,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
         }
 
         @Bean
-        SwTaskScheduler swTaskScheduler() {
-            return mock(SwTaskScheduler.class);
+        TaskScheduler swTaskScheduler() {
+            return mock(TaskScheduler.class);
         }
 
         @Bean

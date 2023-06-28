@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import java.util.Collection;
 import java.util.Set;
 
@@ -30,6 +30,8 @@ public interface HotJobHolder {
     void adopt(Job job);
 
     Collection<Job> ofIds(Collection<Long> ids);
+
+    Job get(Long id);
 
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 

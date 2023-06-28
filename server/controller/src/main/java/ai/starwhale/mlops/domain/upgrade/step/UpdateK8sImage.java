@@ -16,12 +16,12 @@
 
 package ai.starwhale.mlops.domain.upgrade.step;
 
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.UpgradeService;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;

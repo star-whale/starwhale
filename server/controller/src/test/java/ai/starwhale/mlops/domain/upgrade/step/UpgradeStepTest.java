@@ -23,12 +23,12 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.backup.db.MysqlBackupService;
 import ai.starwhale.mlops.configuration.DataSourceProperties;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
 import ai.starwhale.mlops.domain.upgrade.bo.Version;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.List;

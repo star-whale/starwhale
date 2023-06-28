@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,16 +36,13 @@ public class HotJobsLoaderTest {
 
     JobLoader jobLoader;
 
-    JobStatusMachine jobStatusMachine;
-
     HotJobsLoader hotJobsLoader;
 
     @BeforeEach
     public void setup() {
         jobDao = mock(JobDao.class);
         jobLoader = mock(JobLoader.class);
-        jobStatusMachine = new JobStatusMachine();
-        hotJobsLoader = new HotJobsLoader(jobDao, jobLoader, jobStatusMachine);
+        hotJobsLoader = new HotJobsLoader(jobDao, jobLoader);
     }
 
     @Test

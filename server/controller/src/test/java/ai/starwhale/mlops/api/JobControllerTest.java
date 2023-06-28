@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import static ai.starwhale.mlops.configuration.FeaturesProperties.FEATURE_JOB_DEV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
@@ -53,12 +54,17 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
-import ai.starwhale.mlops.domain.task.TaskService;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import com.github.pagehelper.Page;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -132,14 +138,9 @@ public class JobControllerTest {
 
     @Test
     public void testListTasks() {
-        given(taskService.listTasks(same("j1"), any(PageParams.class)))
-                .willAnswer(invocation -> {
-                    PageParams pageParams = invocation.getArgument(1);
-                    try (Page<TaskVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
-                        page.add(TaskVo.builder().build());
-                        return page.toPageInfo();
-                    }
-                });
+        given(taskService.listTasks(eq(1L))).willReturn(
+                List.of(TaskVo.builder().build(), TaskVo.builder().build(), TaskVo.builder().build())
+        );
         var resp = controller.listTasks("p1", "j1", 3, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
@@ -148,6 +149,38 @@ public class JobControllerTest {
                 is(hasProperty("pageSize", is(5))),
                 is(hasProperty("list", isA(List.class)))
         ));
+    }
+
+    @Test
+    public void testListTask() {
+        when(jobService.findJob(any())).thenReturn(
+                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("a").build()).build());
+        var startedTime = new Date();
+        var finishedTime = new Date();
+        when(taskService.listTasks(1L)).thenReturn(
+                List.of(TaskVo.builder()
+                            .id("1")
+                            .startedTime(startedTime.getTime())
+                            .finishedTime(finishedTime.getTime())
+                            .uuid("uuid1")
+                            .taskStatus(
+                            TaskStatus.RUNNING).build(),
+                    TaskVo.builder()
+                            .id("2")
+                            .startedTime(startedTime.getTime())
+                            .finishedTime(finishedTime.getTime())
+                            .uuid("uuid2")
+                            .taskStatus(
+                            TaskStatus.SUCCESS).build()));
+        var response = controller.listTasks("p1", "j1", 1, 2);
+        Assertions.assertEquals(2, response.getBody().getData().getList().size());
+        assertThat(response.getBody().getData().getList(), containsInAnyOrder(
+                TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
+                    .uuid("uuid1")
+                    .taskStatus(TaskStatus.RUNNING).resourcePool("a").stepName("ppl").build(),
+                TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
+                    .uuid("uuid2")
+                    .taskStatus(TaskStatus.SUCCESS).resourcePool("a").stepName("ppl").build()));
     }
 
     @Test

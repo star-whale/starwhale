@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.NodeEventHandler;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Node;

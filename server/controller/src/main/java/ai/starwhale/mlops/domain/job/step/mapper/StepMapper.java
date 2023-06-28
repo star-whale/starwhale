@@ -35,7 +35,7 @@ public interface StepMapper {
             + " values (#{step.uuid}, #{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, "
             + " #{step.concurrency}, #{step.taskNum}, #{step.poolInfo})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
-    void save(@Param("step") StepEntity stepEntity);
+    void insert(@Param("step") StepEntity stepEntity);
 
     @Select("select id, step_uuid as uuid, step_name as name, job_id, last_step_id, step_status as status,"
             + " finished_time, started_time, created_time, modified_time, concurrency, task_num, pool_info from step"

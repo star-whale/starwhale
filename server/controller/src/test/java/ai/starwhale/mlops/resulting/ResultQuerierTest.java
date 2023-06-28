@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.task.resulting.ResultQuerier;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
@@ -36,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * test for {@link  ai.starwhale.mlops.resulting.ResultQuerier}
+ * test for {@link  ResultQuerier}
  */
 public class ResultQuerierTest {
 

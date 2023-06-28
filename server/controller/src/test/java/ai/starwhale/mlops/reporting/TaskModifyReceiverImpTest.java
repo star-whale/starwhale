@@ -22,9 +22,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.reporting.ReportedTask;
+import ai.starwhale.mlops.domain.job.step.task.reporting.SimpleTaskModifyReceiver;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;

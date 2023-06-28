@@ -42,7 +42,6 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -73,8 +72,7 @@ public class EvaluationServiceTest {
                 viewConfigMapper = mock(ViewConfigMapper.class),
                 new IdConverter(),
                 new ViewConfigConverter(),
-                jobConvertor = mock(JobConverter.class),
-                new JobStatusMachine()
+                jobConvertor = mock(JobConverter.class)
         );
     }
 

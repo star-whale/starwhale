@@ -23,11 +23,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.bo.ResultPath;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.domain.job.step.task.bo.ResultPath;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;

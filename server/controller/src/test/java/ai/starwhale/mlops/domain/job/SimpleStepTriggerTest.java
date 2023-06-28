@@ -21,13 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.job.step.trigger.SimpleStepTrigger;
-import ai.starwhale.mlops.domain.task.bo.ResultPath;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.storage.StorageAccessService;
-import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -37,24 +33,14 @@ import org.junit.jupiter.api.Test;
 public class SimpleStepTriggerTest {
 
     @Test
-    public void testEvalPplStepTrigger() throws IOException {
-
-        StorageAccessService storageAccessService = mock(StorageAccessService.class);
-        List<String> pplResultPathA = List.of("a");
-        List<String> pplResultPathB = List.of("b");
-        when(storageAccessService.list("task_path_a/result")).thenReturn(pplResultPathA.stream());
-        when(storageAccessService.list("task_path_b/result")).thenReturn(pplResultPathB.stream());
-        TaskMapper taskMapper = mock(TaskMapper.class);
-        SimpleStepTrigger evalPplStepTrigger = new SimpleStepTrigger(storageAccessService);
+    public void testEvalPplStepTrigger() {
+        SimpleStepTrigger evalPplStepTrigger = new SimpleStepTrigger();
 
         Task task = mock(Task.class);
         long taskId = 123L;
         when(task.getId()).thenReturn(taskId);
         Step cmpStep = Step.builder().tasks(List.of(task)).build();
         Step pplStep = Step.builder()
-                .tasks(List.of(
-                        Task.builder().resultRootPath(new ResultPath("task_path_a")).build(),
-                        Task.builder().resultRootPath(new ResultPath("task_path_b")).build()))
                 .nextStep(cmpStep)
                 .build();
         evalPplStepTrigger.triggerNextStep(pplStep);

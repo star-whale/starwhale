@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import java.util.List;

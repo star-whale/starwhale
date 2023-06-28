@@ -28,8 +28,7 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class StepConverter {
 
-    public StepConverter() {
-    }
+    public StepConverter() { }
 
     public Step fromEntity(StepEntity entity) throws IOException {
         log.debug("from step entity");

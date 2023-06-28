@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -35,20 +34,23 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
-import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.resulting.ResultQuerier;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -58,8 +60,6 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.resulting.ResultQuerier;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
@@ -74,7 +74,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -86,13 +85,14 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Service
 public class JobService {
-    private final TaskMapper taskMapper;
+    private final HotJobHolder jobHolder;
+    private final TaskService taskService;
     private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
     private final HotJobHolder hotJobHolder;
     private final JobLoader jobLoader;
-    private final SwTaskScheduler swTaskScheduler;
+    private final TaskScheduler taskScheduler;
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
     private final UserService userService;
@@ -101,23 +101,22 @@ public class JobService {
     private final ModelService modelService;
     private final DatasetService datasetService;
     private final RuntimeService runtimeService;
-    private final JobUpdateHelper jobUpdateHelper;
-
     private final TrashService trashService;
     private final SystemSettingService systemSettingService;
     private final JobSpecParser jobSpecParser;
 
     public JobService(
-            TaskMapper taskMapper, JobConverter jobConvertor,
+            HotJobHolder jobHolder, TaskService taskService, JobConverter jobConvertor,
             JobBoConverter jobBoConverter, RuntimeService runtimeService,
             JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
             ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
             ResultQuerier resultQuerier, DatasetService datasetService,
             StoragePathCoordinator storagePathCoordinator,
-            UserService userService, JobUpdateHelper jobUpdateHelper, TrashService trashService,
+            UserService userService, TrashService trashService,
             SystemSettingService systemSettingService, JobSpecParser jobSpecParser,
-            SwTaskScheduler swTaskScheduler) {
-        this.taskMapper = taskMapper;
+            TaskScheduler taskScheduler) {
+        this.jobHolder = jobHolder;
+        this.taskService = taskService;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
         this.runtimeService = runtimeService;
@@ -131,11 +130,10 @@ public class JobService {
         this.datasetService = datasetService;
         this.storagePathCoordinator = storagePathCoordinator;
         this.userService = userService;
-        this.jobUpdateHelper = jobUpdateHelper;
         this.trashService = trashService;
         this.systemSettingService = systemSettingService;
         this.jobSpecParser = jobSpecParser;
-        this.swTaskScheduler = swTaskScheduler;
+        this.taskScheduler = taskScheduler;
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
@@ -146,19 +144,64 @@ public class JobService {
     }
 
     public JobVo findJob(String projectUrl, String jobUrl) {
-        Job entity = jobDao.findJob(jobUrl);
-        if (entity == null) {
+        Job job = jobDao.findJob(jobUrl);
+        if (job == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
                     HttpStatus.BAD_REQUEST);
         }
 
-        return jobConvertor.convert(entity);
+        return jobConvertor.convert(job);
+    }
+
+    public Job findJob(String jobUrl) {
+        Job job = jobDao.findJob(jobUrl);
+        if (job == null) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        return job;
     }
 
     public Object getJobResult(String projectUrl, String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
         return resultQuerier.resultOfJob(jobId);
+    }
+
+    public void updateJob(Job job) {
+        JobStatus currentStatus = job.getStatus();
+        Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus)
+                .collect(Collectors.toSet());
+        JobStatus desiredJobStatus = JobStatusCalculator.desiredJobStatus(stepStatuses);
+        if (currentStatus == desiredJobStatus) {
+            log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
+            return;
+        }
+        if (!JobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
+            log.warn("job status change unexpectedly from {} to {} of id {} ",
+                    currentStatus, desiredJobStatus, job.getId());
+        }
+        log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus, job.getId());
+        job.setStatus(desiredJobStatus);
+        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
+
+        if (JobStatusMachine.isFinal(desiredJobStatus)) {
+            var finishedTime = new Date();
+            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
+            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
+            if (desiredJobStatus == JobStatus.FAIL) {
+                CompletableFuture.runAsync(() -> {
+                    TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
+                    job.getSteps().stream().map(Step::getTasks).flatMap(Collection::stream)
+                        .filter(task -> task.getStatus() == TaskStatus.RUNNING) // TODO these should be killed?
+                        .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
+                    TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
+                });
+            }
+            jobHolder.remove(job.getId());
+        }
     }
 
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
@@ -284,7 +327,7 @@ public class JobService {
         jobSpliterator.split(job);
         jobBoConverter.fillStepsAndTasks(job);
         jobLoader.load(job, false);
-        jobUpdateHelper.updateJob(job);
+        this.updateJob(job);
 
         return jobId;
     }
@@ -321,35 +364,24 @@ public class JobService {
     @Transactional
     public void cancelJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
-        if (null == jobs || jobs.isEmpty()) {
+        Job job = hotJobHolder.get(jobId);
+        if (null == job) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "freeze job can't be canceled "),
+                    new SwValidationException(ValidSubject.JOB, "Completed jobs cannot be canceled."),
                     HttpStatus.BAD_REQUEST);
         }
-        Job job = jobs.stream().findAny().get();
-        if (job.getStatus() != JobStatus.RUNNING
-                && job.getStatus() != JobStatus.PAUSED) {
-            throw new SwValidationException(ValidSubject.JOB, "not RUNNING/PAUSED job can't be canceled ");
+        if (job.getStatus() != JobStatus.RUNNING && job.getStatus() != JobStatus.PAUSED) {
+            throw new SwValidationException(ValidSubject.JOB, "Job's status is not RUNNING/PAUSED, can't be canceled.");
         }
 
-        List<Task> directlyCanceledTasks = tasksOfJob(job)
-                .filter(task -> task.getStatus() != TaskStatus.SUCCESS
-                        && task.getStatus() != TaskStatus.FAIL
-                        && task.getStatus() != TaskStatus.CREATED)
+        List<Task> runningTasks = job.tasks()
+                .filter(task -> !task.isFinal())
                 .collect(Collectors.toList());
-        batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELLING);
-        updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELLING);
+        taskService.batchUpdateTaskStatus(runningTasks, TaskStatus.CANCELLING);
     }
 
     public List<Job> listHotJobs() {
         return jobDao.findJobByStatusIn(new ArrayList<>(JobStatusMachine.HOT_JOB_STATUS));
-    }
-
-    private Stream<Task> tasksOfJob(Job job) {
-        return job.getSteps().stream()
-                .map(Step::getTasks)
-                .flatMap(Collection::stream);
     }
 
     /**
@@ -358,49 +390,17 @@ public class JobService {
     @Transactional
     public void pauseJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
-        if (null == jobs || jobs.isEmpty()) {
-            throw new SwValidationException(ValidSubject.JOB, "frozen job can't be paused ");
+        Job job = hotJobHolder.get(jobId);
+        if (null == job) {
+            throw new SwValidationException(ValidSubject.JOB, "Completed jobs cannot be paused.");
         }
-        Job job = jobs.stream().findAny().get();
-        List<Task> notRunningTasks = tasksOfJob(job)
-                .filter(task -> task.getStatus() != TaskStatus.SUCCESS
-                        && task.getStatus() != TaskStatus.FAIL
-                        && task.getStatus() != TaskStatus.CREATED)
+        List<Task> runningTasks = job.tasks()
+                .filter(task -> !task.isFinal())
                 .collect(Collectors.toList());
-        if (notRunningTasks.isEmpty()) {
+        if (runningTasks.isEmpty()) {
             return;
         }
-        batchPersistTaskStatus(notRunningTasks, TaskStatus.PAUSED);
-        updateWithoutPersistWatcher(notRunningTasks, TaskStatus.PAUSED);
-
-    }
-
-    private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
-        CompletableFuture.runAsync(() -> {
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-            tasks.forEach(task -> task.updateStatus(taskStatus));
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
-        });
-    }
-
-    /**
-     * prevent send packet greater than @@GLOBAL.max_allowed_packet
-     */
-    static final Integer MAX_BATCH_SIZE = 1000;
-
-    private void batchPersistTaskStatus(Collection<Task> tasks, TaskStatus taskStatus) {
-        if (CollectionUtils.isEmpty(tasks)) {
-            return;
-        }
-        //save to db
-        List<Long> taskIds = tasks.parallelStream().map(Task::getId).collect(
-                Collectors.toList());
-        BatchOperateHelper.doBatch(
-                taskIds,
-                taskStatus,
-                (tsks, status) -> taskMapper.updateTaskStatus(new ArrayList<>(tsks), status),
-                MAX_BATCH_SIZE);
+        taskService.batchUpdateTaskStatus(runningTasks, TaskStatus.PAUSED);
     }
 
     /**
@@ -418,7 +418,7 @@ public class JobService {
             throw new SwValidationException(ValidSubject.JOB, "only failed/paused/canceled job can be resumed ");
         }
         job = jobLoader.load(job, true);
-        jobUpdateHelper.updateJob(job);
+        this.updateJob(job);
     }
 
     public ExecResponse exec(
@@ -446,7 +446,7 @@ public class JobService {
         }
 
         try {
-            var resp = swTaskScheduler.exec(task, execRequest.getCommand()).get();
+            var resp = taskScheduler.exec(task, execRequest.getCommand()).get();
             return ExecResponse.builder().stdout(resp[0]).stderr(resp[1]).build();
         } catch (InterruptedException | ExecutionException e) {
             throw new SwProcessException(SwProcessException.ErrorType.K8S, "exec task failed", e);

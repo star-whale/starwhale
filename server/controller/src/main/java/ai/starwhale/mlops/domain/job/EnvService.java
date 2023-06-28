@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
-import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceOverwriteSpec;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;

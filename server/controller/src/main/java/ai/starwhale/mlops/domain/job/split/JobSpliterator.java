@@ -17,13 +17,11 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.step.po.StepEntity;
-import java.util.List;
 
 /**
  * split job to Steps. One job shall not to be split multiple times
  */
 public interface JobSpliterator {
 
-    List<StepEntity> split(Job job);
+    void split(Job job);
 }

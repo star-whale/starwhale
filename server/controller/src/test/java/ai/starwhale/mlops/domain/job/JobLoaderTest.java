@@ -26,11 +26,11 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,15 +49,15 @@ public class JobLoaderTest {
 
     JobLoader jobLoader;
 
-    SwTaskScheduler swTaskScheduler;
+    TaskScheduler taskScheduler;
 
     @BeforeEach
     public void setUp() {
         mockJob = new JobMockHolder().mockJob();
         jobHolder = mock(HotJobHolder.class);
         watchableTaskFactory = mock(WatchableTaskFactory.class);
-        swTaskScheduler = mock(SwTaskScheduler.class);
-        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler);
+        taskScheduler = mock(TaskScheduler.class);
+        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, taskScheduler);
     }
 
 
@@ -71,7 +71,7 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, false);
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
-        verify(swTaskScheduler).schedule(Set.of(readyTask));
+        verify(taskScheduler).schedule(Set.of(readyTask));
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
     }
 

@@ -19,7 +19,7 @@ package ai.starwhale.mlops.domain.job.cache;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +46,11 @@ public class HotJobHolderImpl implements HotJobHolder {
 
     public Collection<Job> ofIds(Collection<Long> ids) {
         return ids.parallelStream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Override
+    public Job get(Long id) {
+        return jobMap.get(id);
     }
 
     public Collection<Job> ofStatus(Set<JobStatus> jobStatuses) {

@@ -20,6 +20,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ContainerOverwriteSpec;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.domain.job.step.task.schedule.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import io.kubernetes.client.custom.Quantity;

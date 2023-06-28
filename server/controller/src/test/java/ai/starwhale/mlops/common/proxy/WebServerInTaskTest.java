@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.configuration.FeaturesProperties;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

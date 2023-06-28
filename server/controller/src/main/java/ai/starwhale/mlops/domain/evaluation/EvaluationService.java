@@ -58,13 +58,12 @@ public class EvaluationService {
     private final IdConverter idConvertor;
     private final ViewConfigConverter viewConfigConvertor;
     private final JobConverter jobConvertor;
-    private final JobStatusMachine jobStatusMachine;
 
     private static final Map<Long, SummaryVo> summaryCache = new ConcurrentHashMap<>();
 
     public EvaluationService(UserService userService, ProjectService projectService, JobDao jobDao,
             ViewConfigMapper viewConfigMapper, IdConverter idConvertor, ViewConfigConverter viewConfigConvertor,
-            JobConverter jobConvertor, JobStatusMachine jobStatusMachine) {
+            JobConverter jobConvertor) {
         this.userService = userService;
         this.projectService = projectService;
         this.jobDao = jobDao;
@@ -72,7 +71,6 @@ public class EvaluationService {
         this.idConvertor = idConvertor;
         this.viewConfigConvertor = viewConfigConvertor;
         this.jobConvertor = jobConvertor;
-        this.jobStatusMachine = jobStatusMachine;
     }
 
 
@@ -146,7 +144,7 @@ public class EvaluationService {
                 .build();
 
         // only cache the jobs which have the final status
-        if (jobStatusMachine.isFinal(job.getStatus())) {
+        if (JobStatusMachine.isFinal(job.getStatus())) {
             summaryCache.put(job.getId(), summaryVo);
         }
         return summaryVo;

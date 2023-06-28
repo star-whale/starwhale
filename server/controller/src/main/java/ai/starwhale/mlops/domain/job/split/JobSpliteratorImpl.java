@@ -16,20 +16,19 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
-import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.StepService;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.bo.TaskRequest;
+import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import cn.hutool.json.JSONUtil;
@@ -41,7 +40,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
@@ -54,25 +52,19 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Service
 public class JobSpliteratorImpl implements JobSpliterator {
-
-    /**
-     * prevent send packet greater than @@GLOBAL.max_allowed_packet
-     */
-    static final Integer MAX_MYSQL_INSERTION_SIZE = 500;
     private final StoragePathCoordinator storagePathCoordinator;
-    private final TaskMapper taskMapper;
     private final JobDao jobDao;
-    private final StepMapper stepMapper;
+    private final StepService stepService;
+    private final TaskService taskService;
     private final JobSpecParser jobSpecParser;
 
     public JobSpliteratorImpl(StoragePathCoordinator storagePathCoordinator,
-                              TaskMapper taskMapper,
-                              JobDao jobDao,
-                              StepMapper stepMapper, JobSpecParser jobSpecParser) {
+                              JobDao jobDao, JobSpecParser jobSpecParser,
+                              StepService stepService, TaskService taskService) {
         this.storagePathCoordinator = storagePathCoordinator;
-        this.taskMapper = taskMapper;
         this.jobDao = jobDao;
-        this.stepMapper = stepMapper;
+        this.stepService = stepService;
+        this.taskService = taskService;
         this.jobSpecParser = jobSpecParser;
     }
 
@@ -83,7 +75,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
      */
     @Override
     @Transactional
-    public List<StepEntity> split(Job job) {
+    public void split(Job job) {
         if (JobStatus.CREATED != job.getStatus()) {
             throw new SwValidationException(ValidSubject.JOB, "job has been split already!");
         }
@@ -124,7 +116,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                     .poolInfo(poolInfo)
                     .build();
-            stepMapper.save(stepEntity);
+            stepService.insert(stepEntity);
             stepEntities.add(stepEntity);
             allDependencies.put(stepSpec.getName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
             nameMapping.put(stepSpec.getName(), new Tuple2<>(stepEntity, stepSpec));
@@ -162,14 +154,11 @@ public class JobSpliteratorImpl implements JobSpliterator {
             }
 
             // update step's lastStepId and save tasks
-            stepMapper.updateLastStep(stepEntity.getId(), stepEntity.getLastStepId());
-            BatchOperateHelper.doBatch(taskEntities,
-                    ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),
-                    MAX_MYSQL_INSERTION_SIZE);
+            stepService.updateLastStep(stepEntity.getId(), stepEntity.getLastStepId());
+            taskService.batchInsertTasks(taskEntities);
         }
         // update job status
         job.setStatus(JobStatus.READY);
-        jobDao.updateJobStatus(job.getId(), JobStatus.READY);
-        return stepEntities;
+        jobDao.updateJobStatus(job.getId(), job.getStatus());
     }
 }
