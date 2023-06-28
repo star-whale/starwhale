@@ -47,7 +47,7 @@ public class StepHelper {
         Map<StepStatus, Set<StatusRequirement<TaskStatus>>> map = new LinkedHashMap<>();
         map.put(StepStatus.RUNNING, Set.of(
                 new StatusRequirement<>(
-                        Set.of(TaskStatus.ASSIGNING, TaskStatus.PREPARING, TaskStatus.RUNNING, TaskStatus.READY),
+                        Set.of(TaskStatus.PREPARING, TaskStatus.RUNNING, TaskStatus.READY),
                         RequireType.MUST),
                 new StatusRequirement<>(
                         Set.of(TaskStatus.PAUSED, TaskStatus.CANCELLING,
@@ -58,7 +58,7 @@ public class StepHelper {
                 Set.of(new StatusRequirement<>(Set.of(TaskStatus.CANCELED), RequireType.MUST),
                         new StatusRequirement<>(
                                 Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING,
-                                        TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
+                                        TaskStatus.CREATED, TaskStatus.PAUSED,
                                         TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO)));
         map.put(StepStatus.CANCELLING,
                 Set.of(new StatusRequirement<>(

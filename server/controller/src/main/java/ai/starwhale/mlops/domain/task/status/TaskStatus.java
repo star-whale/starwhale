@@ -32,11 +32,6 @@ public enum TaskStatus {
     READY,
 
     /**
-     * after created before assigned to an Agent. Ready to be scheduled
-     */
-    ASSIGNING,
-
-    /**
      * pausing triggered by user
      */
     PAUSED,
