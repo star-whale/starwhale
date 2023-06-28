@@ -14,11 +14,22 @@ file_exists() {
   [ -f "$1" ]
 }
 
+export SWNAME="${SWNAME:=e2e}"
+export SWNS="${SWNS:=e2e}"
+
 if in_github_action; then
     export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.org/simple}"
+    export CONTROLLER_HOST=controller.$SWNS.svc
+    export MINIO_HOST=minio.$SWNS.svc
+    export MINIO_ADMIN_HOST=minio-admin.$SWNS.svc
+    export CONTROLLER_URL=http://${CONTROLLER_HOST}
 else
     export SW_PYPI_EXTRA_INDEX_URL="${SW_PYPI_EXTRA_INDEX_URL:=https://pypi.doubanio.com/simple}"
     export PARENT_CLEAN="${PARENT_CLEAN:=true}"
+    export CONTROLLER_HOST=${SWNAME//./-}.pre.intra.starwhale.ai
+    export MINIO_HOST=${SWNAME//./-}-minio.pre.intra.starwhale.ai
+    export MINIO_ADMIN_HOST=${SWNAME//./-}-minio-admin.pre.intra.starwhale.ai
+    export CONTROLLER_URL=http://${CONTROLLER_HOST}
 fi
 
 declare_env() {
@@ -29,9 +40,6 @@ declare_env() {
   export NEXUS_USER_NAME="${NEXUS_USER_NAME:=admin}"
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
-  export PORT_MINIO="${PORT_MINIO:=9000}"
-  export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
-  export CONTROLLER_URL="${CONTROLLER_URL:=http://127.0.0.1:8082}"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
   export SW_IMAGE_REPO="${SW_IMAGE_REPO:=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER}"
@@ -39,8 +47,6 @@ declare_env() {
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
-  export SWNAME="${SWNAME:=e2e}"
-  export SWNS="${SWNS:=e2e}"
 }
 
 start_minikube() {
@@ -65,7 +71,7 @@ show_minikube_logs() {
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
   sudo cp /etc/hosts /etc/hosts.bak_e2e
-  sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
+  echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -202,7 +208,13 @@ start_starwhale() {
   --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
   --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
   --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
-   .
+  --set controller.ingress.enabled=true \
+  --set controller.ingress.host=$CONTROLLER_HOST \
+  --set minio.ingress.enabled=true \
+  --set minio.ingress.host=$MINIO_HOST \
+  --set minio.ingress.admin_host=$MINIO_ADMIN_HOST \
+  --set minio.ports.api=80 .
+  # workaround(minio 80 port) for internal and external use the same minio host: minio.starwhale.svc
   popd
 }
 
@@ -221,9 +233,11 @@ check_controller_service() {
             fi
             sleep 5
     done
-    nohup kubectl port-forward --namespace $SWNS svc/controller $PORT_CONTROLLER:$PORT_CONTROLLER > /dev/null 2>&1 &
-    nohup kubectl port-forward --namespace $SWNS svc/minio $PORT_MINIO:$PORT_MINIO > /dev/null 2>&1 &
-    DNS_RECORD='127.0.0.1 minio'
+    echo "controller started"
+}
+
+setup_minikube_dns_mock() {
+    DNS_RECORD="$(minikube ip) ${MINIO_HOST} ${CONTROLLER_HOST} ${MINIO_ADMIN_HOST}"
     if ! fgrep "$DNS_RECORD" /etc/hosts; then
       echo "$DNS_RECORD" | sudo tee -a /etc/hosts
     fi
@@ -252,7 +266,7 @@ client_test() {
 api_test() {
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
-  pytest --host 127.0.0.1 --port $PORT_CONTROLLER
+  pytest --host ${CONTROLLER_HOST} --port 80
   popd
   if ! in_github_action; then
     source upgrade_test.sh
@@ -261,7 +275,7 @@ api_test() {
 
 console_test() {
   if ! in_github_action; then
-    docker run --rm --ipc=host -w /app -e PROXY=http://${SWNAME//./-}.pre.intra.starwhale.ai -v $SWROOT/console/playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy /bin/bash -c "yarn && yarn test" || exit 1
+    docker run --rm --ipc=host -w /app -e PROXY=${CONTROLLER_URL} -v $SWROOT/console/playwright:/app mcr.microsoft.com/playwright:v1.33.0-jammy /bin/bash -c "yarn && yarn test" || exit 1
   fi
 }
 
@@ -300,6 +314,8 @@ publish_to_mini_k8s() {
   build_runtime_image
   push_images_to_nexus
   start_starwhale
+  check_controller_service
+  setup_minikube_dns_mock
 }
 
 publish_to_k8s() {
@@ -315,10 +331,10 @@ main() {
     trap exit_hook EXIT
     publish_to_k8s
     sleep 120
+    check_controller_service
   else
     publish_to_mini_k8s
   fi
-  check_controller_service
   client_test
   api_test
   console_test
@@ -330,4 +346,3 @@ if test -z $1; then
 else
   $1
 fi
-

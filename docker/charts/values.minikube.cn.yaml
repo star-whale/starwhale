@@ -12,14 +12,16 @@ minio:
   enabled: true
   initImage: docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6
   image: docker-registry.starwhale.cn/bitnami/minio:2022.6.20-debian-11-r0
+  ports:
+    api: 80 # workaround for internal and external use the same minio host: minio.starwhale.svc
   ingress:
-    enabled: false
+    enabled: true
 
 controller:
   containerPort: 8082
   storageType: "minio"
   ingress:
-    enabled: false
+    enabled: true
 
 minikube:
   enabled: true

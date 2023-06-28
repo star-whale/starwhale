@@ -109,7 +109,15 @@ spec:
               value: "http://controller:{{ .Values.controller.containerPort }}"
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
+            {{- if .Values.minio.ingress }}
+              {{- if .Values.minikube }}
+              value: "http://minio.{{ .Release.Namespace }}.svc"
+              {{- else}}
+              value: "http://{{ .Values.minio.ingress.host }}"
+              {{- end}}
+            {{- else }}
               value: "http://minio:{{ .Values.minio.ports.api }}"
+            {{- end }}
             - name: SW_STORAGE_BUCKET
               value: "{{ .Values.minio.defaultBuckets }}"
             - name: SW_STORAGE_ACCESSKEY

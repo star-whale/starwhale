@@ -47,14 +47,14 @@ spec:
               value: {{ .Values.minio.auth.rootPassword }}
             - name: MINIO_BROWSER
               value: "on"
-            - name: MINIO_CONSOLE_PORT_NUMBER
-              value: {{ .Values.minio.ports.console | quote}}
           ports:
             - name: minio-api
-              containerPort: {{ .Values.minio.ports.api }}
+              targetPort: {{ .Values.minio.ports.api }}
+              containerPort: 9000
               protocol: TCP
             - name: minio-console
-              containerPort: {{ .Values.minio.ports.console }}
+              targetPort: {{ .Values.minio.ports.console }}
+              containerPort: 9001
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -117,12 +117,30 @@ metadata:
 spec:
   ingressClassName: {{ .Values.minio.ingress.ingressClassName | quote }}
   rules:
+  {{- if .Values.minikube }}
+    - host: minio.{{ .Release.Namespace }}.svc
+  {{- else }}
     - host: {{ .Values.minio.ingress.host }}
+  {{- end}}
       http:
         paths:
           - backend:
               service:
                 name: minio
+                port:
+                  name: minio-api
+            path: /
+            pathType: ImplementationSpecific
+  {{- if .Values.minikube }}
+    - host: minio-admin.{{ .Release.Namespace }}.svc
+  {{- else }}
+    - host: {{ .Values.minio.ingress.admin_host }}
+  {{- end}}
+      http:
+        paths:
+          - backend:
+              service:
+                name: minio-console
                 port:
                   name: minio-console
             path: /

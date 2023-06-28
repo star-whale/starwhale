@@ -104,8 +104,11 @@ deploy() {
     --set devMode.createPV.host=host005-bj01 \
     --set resources.controller.limits.memory=16G \
     --set devMode.createPV.rootPath=/mnt/data/starwhale/$SWNS/$SWNAME \
-    --set minio.ingress.host=${SWNAME//./-}-minio.pre.intra.starwhale.ai \
-    --set controller.ingress.host=${SWNAME//./-}.pre.intra.starwhale.ai
+    --set controller.ingress.enabled=true \
+    --set minio.ingress.enabled=true \
+    --set minio.ingress.host="${MINIO_HOST:=${SWNAME//./-}-minio.pre.intra.starwhale.ai}" \
+    --set minio.ingress.admin_host="${MINIO_ADMIN_HOST:=${SWNAME//./-}-minio-admin.pre.intra.starwhale.ai}" \
+    --set controller.ingress.host="${CONTROLLER_HOST:=${SWNAME//./-}.pre.intra.starwhale.ai}"
   popd
 }
 
