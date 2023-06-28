@@ -29,6 +29,8 @@ public class LengthAbleInputStream extends InputStream {
 
     private long remaining;
 
+    private boolean closed = false;
+
     public LengthAbleInputStream(InputStream inputStream, long size) {
         this.inputStream = inputStream;
         this.size = size;
@@ -37,6 +39,7 @@ public class LengthAbleInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
+        checkClosed();
         if (this.remaining == 0) {
             return -1;
         }
@@ -56,6 +59,7 @@ public class LengthAbleInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        checkClosed();
         if (this.remaining == 0) {
             return -1;
         }
@@ -71,11 +75,13 @@ public class LengthAbleInputStream extends InputStream {
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        checkClosed();
         return this.readNBytes(Integer.MAX_VALUE);
     }
 
     @Override
     public byte[] readNBytes(int len) throws IOException {
+        checkClosed();
         if (this.remaining == 0 || len == 0) {
             return new byte[0];
         }
@@ -87,6 +93,7 @@ public class LengthAbleInputStream extends InputStream {
 
     @Override
     public int readNBytes(byte[] b, int off, int len) throws IOException {
+        checkClosed();
         Objects.checkFromIndexSize(off, len, b.length);
         if (this.remaining == 0 || len == 0) {
             return 0;
@@ -112,6 +119,7 @@ public class LengthAbleInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        this.closed = true;
         this.inputStream.close();
     }
 
@@ -137,5 +145,11 @@ public class LengthAbleInputStream extends InputStream {
 
     public long getSize() {
         return this.size;
+    }
+
+    protected void checkClosed() throws IOException {
+        if (this.closed) {
+            throw new IOException("Stream closed");
+        }
     }
 }

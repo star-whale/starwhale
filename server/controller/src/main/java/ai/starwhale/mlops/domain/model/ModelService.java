@@ -107,6 +107,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -651,7 +652,8 @@ public class ModelService {
                     }
                     return readFileData(in, compressionAlgorithm);
                 }
-                try (var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize())) {
+                try {
+                    var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize());
                     return readFileData(data, compressionAlgorithm);
                 } catch (IOException e) {
                     throw new SwProcessException(ErrorType.STORAGE, "can not read data", e);
@@ -741,7 +743,8 @@ public class ModelService {
         }
     }
 
-    private List<ModelPackageStorage.File> getFile(ModelPackageStorage.MetaBlob firstMetaBlob, String path) {
+    // this method is public for testing purpose
+    public List<ModelPackageStorage.File> getFile(ModelPackageStorage.MetaBlob firstMetaBlob, String path) {
         var metaBlob = new AtomicReference<>(firstMetaBlob);
         var indexes = new LinkedList<>(metaBlob.get().getMetaBlobIndexesList());
         indexes.addFirst(MetaBlobIndex.newBuilder().setLastFileIndex(firstMetaBlob.getFilesCount() - 1).build());

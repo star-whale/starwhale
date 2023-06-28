@@ -26,26 +26,44 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.api.protocol.storage.FileNode.Type;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
+import ai.starwhale.mlops.domain.blob.BlobService;
 import ai.starwhale.mlops.domain.job.ModelServingService;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
+import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
+import ai.starwhale.mlops.domain.model.converter.ModelVoConverter;
+import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
+import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -55,6 +73,7 @@ import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -856,6 +875,45 @@ public class ModelServiceTest extends MySqlContainerHolder {
         assertThat(this.modelService.getFileData("1", "m", "v1", "t/empty").readAllBytes(), is(new byte[0]));
 
         assertThat(this.modelService.getFileData("1", "m1", "v1", "s").readAllBytes(), is(this.fileS));
+    }
+
+    @org.junit.Test
+    public void testGetFileDataReleaseResource() throws Exception {
+        var blobService = mock(BlobService.class);
+        var modelService = new ModelService(
+                mock(ModelMapper.class),
+                mock(ModelVersionMapper.class),
+                mock(IdConverter.class),
+                mock(VersionAliasConverter.class),
+                mock(ModelVoConverter.class),
+                mock(ModelVersionVoConverter.class),
+                mock(ModelDao.class),
+                mock(UserService.class),
+                mock(ProjectService.class),
+                mock(HotJobHolder.class),
+                mock(TrashService.class),
+                mock(JobSpecParser.class),
+                blobService
+        );
+        var file = ModelPackageStorage.File.newBuilder()
+                .setSize(1L)
+                .addBlobIds("1")
+                .setCompressionAlgorithm(ModelPackageStorage.CompressionAlgorithm.COMPRESSION_ALGORITHM_LZ4)
+                .build();
+
+        var blob = mock(ModelPackageStorage.MetaBlob.class);
+        var svc = spy(modelService);
+        doReturn(List.of(file)).when(svc).getFile(any(), any());
+        doReturn(blob).when(svc).getModelMetaBlob(any(), any(), any(), any());
+
+        var originIs = new LengthAbleInputStream(new ByteArrayInputStream(new byte[] {0, 1, 3}), 3L);
+        var mockIs = spy(originIs);
+        doNothing().when(mockIs).close();
+
+        when(blobService.readBlob(anyString(), anyLong(), anyLong())).thenReturn(mockIs);
+
+        svc.getFileData("1", "m", "v1", "readme").close();
+        verify(mockIs).close();
     }
 
     private void checkDiff(FileNode f, String path, List<String> added, List<String> deleted, List<String> modified) {
