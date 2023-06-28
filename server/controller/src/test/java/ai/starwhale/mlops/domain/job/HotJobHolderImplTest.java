@@ -40,8 +40,8 @@ public class HotJobHolderImplTest {
         Job job1 = jobMockHolder.mockJob();
         Job job2 = jobMockHolder.mockJob();
         job2.getCurrentStep().getTasks().get(0).updateStatus(TaskStatus.FAIL);
-        job1.getCurrentStep().getTasks().get(0).updateStatus(TaskStatus.TO_CANCEL);
-        job1.setStatus(JobStatus.TO_CANCEL);
+        job1.getCurrentStep().getTasks().get(0).updateStatus(TaskStatus.CANCELLING);
+        job1.setStatus(JobStatus.CANCELLING);
         hotJobHolder.adopt(job1);
         hotJobHolder.adopt(job2);
 
@@ -50,7 +50,7 @@ public class HotJobHolderImplTest {
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(2, jobs.size());
 
-        Collection<Job> jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.TO_CANCEL));
+        Collection<Job> jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.CANCELLING));
         Assertions.assertEquals(1, jobs1.size());
         Assertions.assertTrue(jobs1.contains(job1));
 
@@ -65,7 +65,7 @@ public class HotJobHolderImplTest {
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(1, jobs.size());
 
-        jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.TO_CANCEL));
+        jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.CANCELLING));
         Assertions.assertEquals(0, jobs1.size());
 
         tasks = hotJobHolder.tasksOfIds(

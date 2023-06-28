@@ -338,8 +338,8 @@ public class JobService {
                         && task.getStatus() != TaskStatus.FAIL
                         && task.getStatus() != TaskStatus.CREATED)
                 .collect(Collectors.toList());
-        batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
-        updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELED);
+        batchPersistTaskStatus(directlyCanceledTasks, TaskStatus.CANCELLING);
+        updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELLING);
     }
 
     public List<Job> listHotJobs() {

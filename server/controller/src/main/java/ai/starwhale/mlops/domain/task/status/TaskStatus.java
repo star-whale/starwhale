@@ -57,11 +57,6 @@ public enum TaskStatus {
     SUCCESS,
 
     /**
-     * cancel triggered by the user
-     */
-    TO_CANCEL,
-
-    /**
      * agent cancelling task
      */
     CANCELLING,
