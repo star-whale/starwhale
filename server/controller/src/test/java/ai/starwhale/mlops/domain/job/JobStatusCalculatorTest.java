@@ -23,7 +23,6 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.FAIL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.READY;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.job.step.status.StepStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -49,12 +48,12 @@ public class JobStatusCalculatorTest {
         Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
 
         Assertions.assertEquals(cancelling,
-                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING)));
+                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
 
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL)));
+        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
 
         Assertions.assertEquals(cancelling,
-                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, TO_CANCEL, CANCELLING, CANCELED)));
+                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
 
         Assertions.assertEquals(cancelling,
                 jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
@@ -108,8 +107,7 @@ public class JobStatusCalculatorTest {
 
     @Test
     public void testEmpty() {
-        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(
-                Set.of()));
+        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of()));
     }
 
 

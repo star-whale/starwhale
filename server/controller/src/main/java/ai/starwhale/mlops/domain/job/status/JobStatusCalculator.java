@@ -44,7 +44,7 @@ public class JobStatusCalculator {
                 new StatusRequirement<>(Set.of(StepStatus.RUNNING, StepStatus.READY, StepStatus.CREATED),
                         RequireType.MUST),
                 new StatusRequirement<>(
-                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING, StepStatus.TO_CANCEL,
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING,
                                 StepStatus.PAUSED), RequireType.HAVE_NO)
         ));
 
@@ -56,19 +56,18 @@ public class JobStatusCalculator {
         map.put(JobStatus.PAUSED, Set.of(
                 new StatusRequirement<>(Set.of(StepStatus.PAUSED), RequireType.MUST),
                 new StatusRequirement<>(
-                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING, StepStatus.TO_CANCEL,
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING,
                                 StepStatus.RUNNING, StepStatus.READY), RequireType.HAVE_NO)
         ));
         map.put(JobStatus.CANCELLING, Set.of(
-                new StatusRequirement<>(Set.of(StepStatus.TO_CANCEL, StepStatus.CANCELLING), RequireType.MUST),
-                new StatusRequirement<>(Set.of(StepStatus.FAIL, StepStatus.PAUSED), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.CANCELLING), RequireType.MUST),
+                new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.HAVE_NO)
         ));
 
         map.put(JobStatus.CANCELED, Set.of(
                 new StatusRequirement<>(Set.of(StepStatus.CANCELED), RequireType.MUST),
                 new StatusRequirement<>(
-                        Set.of(StepStatus.FAIL, StepStatus.CANCELLING, StepStatus.RUNNING, StepStatus.PAUSED),
-                        RequireType.HAVE_NO)
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELLING, StepStatus.RUNNING), RequireType.HAVE_NO)
         ));
 
         this.stepStatusRequirementSetMap = Collections.unmodifiableMap(map);

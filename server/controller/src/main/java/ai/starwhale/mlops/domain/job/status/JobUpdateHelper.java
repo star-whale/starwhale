@@ -85,7 +85,7 @@ public class JobUpdateHelper {
                 CompletableFuture.runAsync(() -> {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
                     job.getSteps().stream().map(Step::getTasks).flatMap(Collection::stream)
-                            .filter(task -> task.getStatus() == TaskStatus.RUNNING)
+                            .filter(task -> task.getStatus() == TaskStatus.RUNNING) // TODO these should be killed?
                             .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
                 });

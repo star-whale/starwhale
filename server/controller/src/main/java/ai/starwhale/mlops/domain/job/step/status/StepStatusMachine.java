@@ -24,7 +24,6 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.PAUSED;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.READY;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.job.step.status.StepStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
 import java.util.Map;
@@ -35,13 +34,14 @@ import org.springframework.stereotype.Component;
 public class StepStatusMachine {
 
     static final Map<StepStatus, Set<StepStatus>> transferMap = Map.of(
-            CREATED, Set.of(READY, PAUSED, RUNNING, SUCCESS, TO_CANCEL, CANCELED, FAIL),
-            READY, Set.of(PAUSED, RUNNING, SUCCESS, TO_CANCEL, FAIL),
+            CREATED, Set.of(READY, PAUSED, RUNNING, CANCELLING, CANCELED, SUCCESS, FAIL),
+            READY, Set.of(PAUSED, RUNNING, CANCELLING, CANCELED, SUCCESS, FAIL),
             PAUSED, Set.of(READY, RUNNING, CANCELLING, CANCELED, FAIL),
             RUNNING, Set.of(CANCELLING, CANCELED, PAUSED, SUCCESS, FAIL),
-            SUCCESS, Set.of(), FAIL, Set.of(),
-            TO_CANCEL, Set.of(CANCELLING, CANCELED, FAIL),
-            CANCELLING, Set.of(CANCELED, FAIL), CANCELED, Set.of(),
+            CANCELLING, Set.of(CANCELED, FAIL),
+            SUCCESS, Set.of(),
+            FAIL, Set.of(),
+            CANCELED, Set.of(),
             UNKNOWN, Set.of(StepStatus.values()));
 
     public boolean couldTransfer(StepStatus statusNow, StepStatus statusNew) {

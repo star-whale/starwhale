@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.ASSIGNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELED;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.CREATED;
@@ -57,7 +56,7 @@ public class StepHelperTest {
 
         Assertions.assertEquals(cancelling, stepHelper.desiredStepStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
         Assertions.assertEquals(cancelling,
-                stepHelper.desiredStepStatus(Set.of(CANCELED, PREPARING, ASSIGNING, RUNNING, SUCCESS)));
+                stepHelper.desiredStepStatus(Set.of(CANCELED, PREPARING, RUNNING, SUCCESS)));
 
     }
 
@@ -72,13 +71,13 @@ public class StepHelperTest {
     public void testRunning() {
 
         Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
-                Set.of(CREATED, ASSIGNING)));
+                Set.of(CREATED, PREPARING)));
 
         Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
                 Set.of(CREATED, RUNNING)));
 
         Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
-                Set.of(READY, ASSIGNING)));
+                Set.of(READY)));
 
         Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
                 Set.of(READY, SUCCESS)));
@@ -91,11 +90,6 @@ public class StepHelperTest {
 
         Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
                 Set.of(SUCCESS, PREPARING)));
-
-        Assertions.assertEquals(StepStatus.RUNNING, stepHelper.desiredStepStatus(
-                Set.of(SUCCESS, ASSIGNING)));
-
-
     }
 
     @Test
@@ -109,7 +103,7 @@ public class StepHelperTest {
         Assertions.assertEquals(StepStatus.FAIL, stepHelper.desiredStepStatus(
                 Set.of(FAIL, CREATED, SUCCESS)));
         Assertions.assertEquals(StepStatus.FAIL, stepHelper.desiredStepStatus(
-                Set.of(FAIL, ASSIGNING, SUCCESS)));
+                Set.of(FAIL, PREPARING, SUCCESS)));
 
     }
 
