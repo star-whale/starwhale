@@ -109,7 +109,18 @@ export default function DataViewer({
         }
     }, [rawData, hiddenLabels, isZoom, showKey])
 
-    if (typeof rawData.value !== 'object') return rawData.value ?? ''
+    if (typeof rawData.value !== 'object')
+        return (
+            <pre
+                style={{
+                    padding: '10px',
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                }}
+            >
+                {rawData.value ?? ''}
+            </pre>
+        )
 
     return Viewer
 }

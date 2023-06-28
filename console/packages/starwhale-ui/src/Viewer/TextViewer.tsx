@@ -59,7 +59,7 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
 
     return (
         <div className='dataset-viewer text fullsize' style={{ height: '100%' }}>
-            <p className={styles.text}>{text}</p>
+            <pre className={styles.text}>{text}</pre>
         </div>
     )
 }

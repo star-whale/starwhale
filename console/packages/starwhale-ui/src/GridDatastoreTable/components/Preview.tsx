@@ -94,10 +94,11 @@ const useStyles = createUseStyles({
         },
     },
     panel: {
-        flexBasis: '320px',
+        flexBasis: '350px',
         padding: '20px',
         borderRight: '1px solid #EEF1F6',
         overflow: 'auto',
+        flexShrink: 0,
     },
     annotation: { display: 'flex', gap: '20px', flexDirection: 'column', marginBottom: '20px' },
     annotationTypes: {
