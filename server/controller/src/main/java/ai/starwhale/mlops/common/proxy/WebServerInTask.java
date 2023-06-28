@@ -71,7 +71,7 @@ public class WebServerInTask implements Service {
         if (featuresProperties.isJobProxyEnabled()) {
             return String.format(TASK_GATEWAY_PATTERN, taskId, port);
         } else {
-            return String.format("http://%s/%d", taskIp, port);
+            return String.format("http://%s:%d", taskIp, port);
         }
     }
 }
