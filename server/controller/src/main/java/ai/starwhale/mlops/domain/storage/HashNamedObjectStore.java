@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.storage;
 
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class HashNamedObjectStore {
         return path;
     }
 
-    public InputStream get(String blobHash) throws IOException {
+    public LengthAbleInputStream get(String blobHash) throws IOException {
         return storageAccessService.get(absolutePath(blobHash));
     }
 
