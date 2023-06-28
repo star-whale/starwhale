@@ -54,7 +54,10 @@ import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -361,6 +364,38 @@ public class DatasetControllerTest {
         Assertions.assertTrue(controller.headHashedBlob("p", "d", "h2").getStatusCode().is4xxClientError());
         Assertions.assertThrows(SwProcessException.class,
                 () -> controller.headHashedBlob("p", "d", "h3").getStatusCode().is4xxClientError());
+
+    }
+
+    @Test
+    public void getHeadHashedBlob() throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        given(response.getOutputStream())
+                .willReturn(new ServletOutputStream() {
+                    @Override
+                    public boolean isReady() {
+                        return true;
+                    }
+
+                    @Override
+                    public void setWriteListener(WriteListener listener) {
+                    }
+
+                    @Override
+                    public void write(int b) {
+                        output.write(b);
+                    }
+                });
+        HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
+        when(hashNamedDatasetObjectStoreFactory.of("p", "d")).thenReturn(hashNamedObjectStore);
+        when(hashNamedObjectStore.get("h1")).thenReturn(
+                new ByteArrayInputStream("hi content".getBytes(StandardCharsets.UTF_8)));
+        when(hashNamedObjectStore.get("h2")).thenThrow(IOException.class);
+        controller.getHashedBlob("p", "d", "h1", response);
+        assertThat(new String(output.toByteArray()), is("hi content"));
+        Assertions.assertThrows(SwProcessException.class,
+                () -> controller.getHashedBlob("p", "d", "h2", mock(HttpServletResponse.class)));
 
     }
 
