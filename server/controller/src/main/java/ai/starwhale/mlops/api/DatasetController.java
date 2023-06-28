@@ -257,7 +257,8 @@ public class DatasetController implements DatasetApi {
     }
 
     public void getHashedBlob(String project, String datasetName, String blobHash, HttpServletResponse httpResponse) {
-        try (LengthAbleInputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName).get(blobHash.trim());
+        try (LengthAbleInputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName)
+                .get(blobHash.trim());
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");
             httpResponse.addHeader("Content-Length", String.valueOf(inputStream.getSize()));
