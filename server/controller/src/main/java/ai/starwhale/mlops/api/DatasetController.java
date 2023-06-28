@@ -44,6 +44,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -256,11 +257,11 @@ public class DatasetController implements DatasetApi {
     }
 
     public void getHashedBlob(String project, String datasetName, String blobHash, HttpServletResponse httpResponse) {
-        try (InputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName).get(blobHash.trim());
+        try (LengthAbleInputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName).get(blobHash.trim());
                 ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            long length = inputStream.transferTo(outputStream);
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");
-            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            httpResponse.addHeader("Content-Length", String.valueOf(inputStream.getSize()));
+            inputStream.transferTo(outputStream);
             outputStream.flush();
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);

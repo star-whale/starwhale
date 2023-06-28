@@ -53,6 +53,7 @@ import ai.starwhale.mlops.domain.dataset.upload.DatasetUploader;
 import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
+import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import com.github.pagehelper.PageInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -390,7 +391,7 @@ public class DatasetControllerTest {
         HashNamedObjectStore hashNamedObjectStore = mock(HashNamedObjectStore.class);
         when(hashNamedDatasetObjectStoreFactory.of("p", "d")).thenReturn(hashNamedObjectStore);
         when(hashNamedObjectStore.get("h1")).thenReturn(
-                new ByteArrayInputStream("hi content".getBytes(StandardCharsets.UTF_8)));
+                new LengthAbleInputStream(new ByteArrayInputStream("hi content".getBytes(StandardCharsets.UTF_8)), 10));
         when(hashNamedObjectStore.get("h2")).thenThrow(IOException.class);
         controller.getHashedBlob("p", "d", "h1", response);
         assertThat(new String(output.toByteArray()), is("hi content"));
@@ -418,4 +419,5 @@ public class DatasetControllerTest {
         var resp = controller.shareDatasetVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
+
 }
