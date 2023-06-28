@@ -669,7 +669,8 @@ public class ModelService {
         if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_NO_COMPRESSION) {
             return in;
         }
-        return new SequenceInputStream(new Enumeration<>() {
+
+        var enumInputs = new Enumeration<InputStream>() {
             final byte[] decompressBuf = new byte[65536];
             final byte[] readBuf = new byte[65536];
             InputStream current = null;
@@ -714,8 +715,14 @@ public class ModelService {
                 this.current = null;
                 return ret;
             }
-        });
+        };
 
+        return new SequenceInputStream(enumInputs) {
+            @Override
+            public void close() throws IOException {
+                in.close();
+            }
+        };
     }
 
     private ModelPackageStorage.MetaBlob addSignedUrls(ModelPackageStorage.MetaBlob metaBlob) {
