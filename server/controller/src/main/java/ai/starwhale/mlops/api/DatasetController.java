@@ -241,7 +241,7 @@ public class DatasetController implements DatasetApi {
 
     public ResponseEntity<?> headHashedBlob(String project, String datasetName, String hash) {
         HashNamedObjectStore hashNamedObjectStore = hashNamedDatasetObjectStoreFactory.of(project, datasetName);
-        String path = null;
+        String path;
         try {
             path = hashNamedObjectStore.head(hash);
         } catch (IOException e) {
@@ -252,6 +252,18 @@ public class DatasetController implements DatasetApi {
             return ResponseEntity.ok().header("X-SW-LOCAL-STORAGE-URI", path).build();
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    public void getHashedBlob(String project, String datasetName, String blobHash, HttpServletResponse httpResponse) {
+        try (InputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName).get(blobHash.trim());
+                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            long length = inputStream.transferTo(outputStream);
+            httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new SwProcessException(ErrorType.STORAGE, "pull file from storage failed", e);
         }
     }
 

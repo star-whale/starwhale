@@ -239,7 +239,7 @@ public interface DatasetApi {
             DatasetUploadRequest uploadRequest);
 
     /**
-     * legacy blob content download api, use {@link #signLinks} or {@link #pullUriContent} instead
+     * legacy blob content download api, use {@link #getHashedBlob(String, String, String, HttpServletResponse)} instead
      */
     @Operation(summary = "Pull Dataset files",
             description = "Pull Dataset files part by part. ")
@@ -285,6 +285,20 @@ public interface DatasetApi {
             @PathVariable(name = "projectName") String projectName,
             @PathVariable(name = "datasetName") String datasetName,
             @PathVariable(name = "hash") String hash);
+
+    @Operation(summary = "Download the hashed blob in this dataset",
+            description = "404 if not exists; 200 if exists")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+            value = "/project/{projectName}/dataset/{datasetName}/hashedBlob/{hash}",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    void getHashedBlob(
+            @PathVariable(name = "projectName") String projectName,
+            @PathVariable(name = "datasetName") String datasetName,
+            @PathVariable(name = "hash") String hash,
+            HttpServletResponse httpResponse);
 
 
     @Operation(summary = "Pull Dataset uri file contents",
