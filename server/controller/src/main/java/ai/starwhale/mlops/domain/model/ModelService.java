@@ -651,7 +651,8 @@ public class ModelService {
                     }
                     return readFileData(in, compressionAlgorithm);
                 }
-                try (var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize())) {
+                try {
+                    var data = blobService.readBlob(blobId, file.getBlobOffset(), file.getBlobSize());
                     return readFileData(data, compressionAlgorithm);
                 } catch (IOException e) {
                     throw new SwProcessException(ErrorType.STORAGE, "can not read data", e);
@@ -667,7 +668,8 @@ public class ModelService {
         if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_NO_COMPRESSION) {
             return in;
         }
-        return new SequenceInputStream(new Enumeration<>() {
+
+        var enumInputs = new Enumeration<InputStream>() {
             final byte[] decompressBuf = new byte[65536];
             final byte[] readBuf = new byte[65536];
             InputStream current = null;
@@ -712,8 +714,14 @@ public class ModelService {
                 this.current = null;
                 return ret;
             }
-        });
+        };
 
+        return new SequenceInputStream(enumInputs) {
+            @Override
+            public void close() throws IOException {
+                in.close();
+            }
+        };
     }
 
     private ModelPackageStorage.MetaBlob addSignedUrls(ModelPackageStorage.MetaBlob metaBlob) {
@@ -741,7 +749,8 @@ public class ModelService {
         }
     }
 
-    private List<ModelPackageStorage.File> getFile(ModelPackageStorage.MetaBlob firstMetaBlob, String path) {
+    // this method is public for testing purpose
+    public List<ModelPackageStorage.File> getFile(ModelPackageStorage.MetaBlob firstMetaBlob, String path) {
         var metaBlob = new AtomicReference<>(firstMetaBlob);
         var indexes = new LinkedList<>(metaBlob.get().getMetaBlobIndexesList());
         indexes.addFirst(MetaBlobIndex.newBuilder().setLastFileIndex(firstMetaBlob.getFilesCount() - 1).build());
