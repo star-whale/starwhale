@@ -47,6 +47,10 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
     public void receive(List<ReportedTask> reportedTasks) {
 
         reportedTasks.forEach(reportedTask -> {
+            if (reportedTask.getFailedReason() != null) {
+                taskMapper.updateFailedReason(reportedTask.getId(), reportedTask.getFailedReason());
+            }
+
             Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
 
             if (null == optionalTasks || optionalTasks.isEmpty()) {

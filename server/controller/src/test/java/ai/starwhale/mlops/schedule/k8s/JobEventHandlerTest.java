@@ -104,6 +104,21 @@ public class JobEventHandlerTest {
                 .retryCount(1)
                 .build();
         verify(taskModifyReceiver).receive(List.of(expected));
+
+        // test with reason and message
+        var con = new V1JobCondition()
+                .status("True").type("Failed").lastTransitionTime(endTime).reason("reason").message("message");
+        v1JobStatus.setConditions(List.of(con));
+        jobEventHandler.onAdd(v1Job);
+        var expected2 = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.FAIL)
+                .startTimeMillis(startTime.toInstant().toEpochMilli())
+                .stopTimeMillis(endTime.toInstant().toEpochMilli())
+                .failedReason("reason, message")
+                .retryCount(1)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected2));
     }
 
     @Test

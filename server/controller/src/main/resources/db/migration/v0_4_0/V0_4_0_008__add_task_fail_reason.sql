@@ -14,28 +14,6 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-
-/**
- * convert taskReport to
- */
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@Builder
-public class ReportedTask {
-
-    final Long id;
-    final TaskStatus status;
-    final Integer retryCount;
-    final String ip;
-    final Long startTimeMillis;
-    final Long stopTimeMillis;
-    final String failedReason;
-}
+ALTER TABLE task_info
+    ADD failed_reason VARCHAR(255) NULL;
