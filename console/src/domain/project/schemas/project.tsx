@@ -11,6 +11,7 @@ export interface IProjectSchema extends IResourceSchema {
         datasetCounts: number
         evaluationCounts: number
         memberCounts: number
+        runtimeCounts: number
     }
 }
 

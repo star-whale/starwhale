@@ -20,6 +20,18 @@ const basic = {
         en: 'Add',
         zh: '添加',
     },
+    'en': {
+        en: 'English',
+        zh: '英文',
+    },
+    'zh': {
+        en: 'Chinese',
+        zh: '中文',
+    },
+    'docs': {
+        en: 'Docs',
+        zh: '文档',
+    },
 }
 
 const dataset = {

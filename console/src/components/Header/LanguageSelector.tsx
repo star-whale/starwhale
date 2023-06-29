@@ -4,6 +4,7 @@ import IconFont from '@starwhale/ui/IconFont'
 import { languages } from '@/consts'
 import i18n from '@/i18n'
 import { expandBorder } from '@starwhale/ui/utils'
+import useTranslation from '@/hooks/useTranslation'
 
 export interface IRoleSelectorProps {
     value?: string
@@ -22,6 +23,7 @@ export default function LanguageSelector() {
         )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [i18n.language, languages])
+    const [t] = useTranslation()
 
     return (
         <Select
@@ -58,7 +60,15 @@ export default function LanguageSelector() {
                 i18n.changeLanguage(params.option?.id as string)
             }}
             options={languages}
-            getValueLabel={() => <IconFont type='global' style={{ color: '#fff' }} size={18} />}
+            getValueLabel={() => {
+                return (
+                    <p style={{ gap: '4px', display: 'flex', color: '#fff', alignItems: 'center', fontSize: '14px' }}>
+                        <IconFont type='global2' style={{ color: '#fff' }} size={14} />
+                        {languageValue.id === 'en' ? t('en') : t('zh')}
+                        <IconFont type='arrow_down' />
+                    </p>
+                )
+            }}
         />
     )
 }

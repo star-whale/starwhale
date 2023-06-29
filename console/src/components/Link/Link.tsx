@@ -1,8 +1,9 @@
 import React from 'react'
-import { StatefulTooltip, StatefulTooltipProps } from 'baseui/tooltip'
+import { StatefulTooltipProps } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Link as BaseLink, LinkProps } from 'react-router-dom'
+import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
 
 const useLinkStyles = createUseStyles({
     link: {
@@ -30,10 +31,10 @@ export default function Link({ to, tooltip, className, style = {}, children, ...
     const { content, placement = 'top', ...tooltipRest } = tooltip || {}
 
     return (
-        <StatefulTooltip content={content} placement={placement} {...tooltipRest}>
+        <Tooltip content={content} placement={placement} {...tooltipRest}>
             <BaseLink to={to} className={cn(className ?? styles.link)} style={style} {...rest}>
                 {children}
             </BaseLink>
-        </StatefulTooltip>
+        </Tooltip>
     )
 }

@@ -9,6 +9,7 @@ const useStyles = createUseStyles({
         backgroundColor: '#8B9FC7',
         borderRadius: '50%',
         color: '#fff',
+        border: '1px solid #D0DDF7',
     },
 })
 
