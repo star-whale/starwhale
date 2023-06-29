@@ -73,7 +73,9 @@ export default function JobListCard() {
                 <Table
                     isLoading={jobsInfo.isLoading}
                     columns={[
-                        t('Job ID'),
+                        <div key='jobid' style={{ paddingLeft: '12px' }}>
+                            {t('Job ID')}
+                        </div>,
                         t('Resource Pool'),
                         t('sth name', [t('Model')]),
                         t('Version'),
@@ -164,14 +166,38 @@ export default function JobListCard() {
                             }
 
                             return [
-                                <div key='id' style={{ display: 'flex', gap: '8px' }}>
-                                    <Button key='pin' as='link' onClick={() => handlePin(job.id, !job.pinnedTime)}>
+                                <div key='id' style={{ gap: '8px', position: 'relative', paddingLeft: '12px' }}>
+                                    <Button
+                                        key='pin'
+                                        as='link'
+                                        onClick={() => handlePin(job.id, !job.pinnedTime)}
+                                        overrides={{
+                                            BaseButton: {
+                                                props: {
+                                                    className: 'pin-button',
+                                                },
+                                                style: {
+                                                    'position': 'absolute',
+                                                    'top': 0,
+                                                    'bottom': 0,
+                                                    'left': '-8px',
+                                                    'display': job.pinnedTime ? 'block' : 'none',
+                                                    '& .iconfont': {
+                                                        color: '#666',
+                                                    },
+                                                    ':hover .iconfont': {
+                                                        color: '#FFB23D !important',
+                                                    },
+                                                    ':active .iconfont': {
+                                                        color: '#F29200  !important',
+                                                    },
+                                                },
+                                            },
+                                        }}
+                                    >
                                         <IconTooltip
                                             content={job.pinnedTime ? t('job.unpin') : t('job.pin')}
-                                            icon={job.pinnedTime ? 'top' : 'top2'}
-                                            iconStyle={{
-                                                color: job.pinnedTime ? '#FF9A00' : 'rgba(2,16,43,0.40)',
-                                            }}
+                                            icon='top'
                                         />
                                     </Button>
                                     <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>

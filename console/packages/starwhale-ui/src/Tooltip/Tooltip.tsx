@@ -1,21 +1,28 @@
 import { StatefulTooltip } from 'baseui/tooltip'
 import IconFont, { IconTypesT } from '../IconFont'
 import { themedUseStyletron } from '../theme/styletron'
+import { expandBorderRadius, expandPadding } from '../utils'
 
-function IconTooltip({
-    content,
-    icon,
-    iconStyle = {},
-    ...props
-}: {
-    content: React.ReactNode
-    icon: IconTypesT
-    iconStyle: React.CSSProperties
-}) {
+function IconTooltip({ content, icon, ...props }: { content: React.ReactNode; icon: IconTypesT }) {
     const [css] = themedUseStyletron()
 
     return (
-        <StatefulTooltip content={content} showArrow placement='top' {...props}>
+        <StatefulTooltip
+            overrides={{
+                Inner: {
+                    style: {
+                        backgroundColor: 'rgba(0,0,0,0.80);',
+                        color: '#fff',
+                        ...expandBorderRadius('2px'),
+                        ...expandPadding('6px', '8px', '6px', '8px'),
+                    },
+                },
+            }}
+            content={content}
+            showArrow
+            placement='top'
+            {...props}
+        >
             <p
                 className={css({
                     'cursor': 'pointer',
@@ -25,7 +32,7 @@ function IconTooltip({
                     },
                 })}
             >
-                <IconFont type={icon} style={iconStyle} />
+                <IconFont type={icon} />
             </p>
         </StatefulTooltip>
     )
