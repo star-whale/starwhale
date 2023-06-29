@@ -142,6 +142,7 @@ def _do_pre_process(data: dict, external: dict) -> str:
         "mkqa-mini": "query",
         "z_bench_common": "prompt",
         "webqsp": "rawquestion",
+        "vicuna": "text",
     }
     ds_name = external["dataset_uri"].name
     keyword = "question"
