@@ -140,10 +140,18 @@ prepare(){
         # only remote
         echo '-->[Preparing] pulling model ...'
         swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
-        swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+        if [ -z "${SW_MODEL_URI}" ]; then
+            swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+        else
+            swcli model copy ${SW_MODEL_URI} .
+        fi
         if [ "${RUNTIME_RESTORED}" != "1" ]; then
             echo '-->[Preparing] pulling runtime ...'
-            swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
+            if [ -z "${SW_RUNTIME_URI}" ]; then
+                swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
+            else
+                swcli runtime copy ${SW_RUNTIME_URI} .
+            fi
         fi
     fi
     if [ "${RUNTIME_RESTORED}" != "1" ]; then

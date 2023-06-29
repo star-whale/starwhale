@@ -221,8 +221,10 @@ public class K8sTaskSchedulerTest {
     private Task mockTask(boolean devMode) {
         Job job = Job.builder()
                 .id(1L)
-                .model(Model.builder().build())
-                .jobRuntime(JobRuntime.builder().image("imageRT").storagePath("path_rt").build())
+                .model(Model.builder().name("swmpN").version("swmpV").build())
+                .jobRuntime(JobRuntime.builder()
+                                .name("swrtN").version("swrtV").image("imageRT").storagePath("path_rt")
+                                .build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)
                 .uuid("juuid")
@@ -275,8 +277,10 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
             expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
-            expectedEnvs.put("SW_MODEL_VERSION", "null/version/null");
-            expectedEnvs.put("SW_RUNTIME_VERSION", "null/version/null");
+            expectedEnvs.put("SW_MODEL_URI", "http://instanceUri/project/project/model/swmpN/version/swmpV");
+            expectedEnvs.put("SW_RUNTIME_URI", "http://instanceUri/project/project/runtime/swrtN/version/swrtV");
+            expectedEnvs.put("SW_MODEL_VERSION", "swmpN/version/swmpV");
+            expectedEnvs.put("SW_RUNTIME_VERSION", "swrtN/version/swrtV");
             expectedEnvs.put("SW_TASK_INDEX", "1");
             expectedEnvs.put("SW_TASK_NUM", "1");
             expectedEnvs.put("SW_PYPI_INDEX_URL", "indexU");
@@ -296,9 +300,7 @@ public class K8sTaskSchedulerTest {
 
         private void assertMapEquals(Map<String, String> expectedEnvs, Map<String, String> actualEnv) {
             Assertions.assertEquals(expectedEnvs.size(), actualEnv.size());
-            expectedEnvs.forEach((k, v) -> {
-                Assertions.assertEquals(v, actualEnv.get(k));
-            });
+            expectedEnvs.forEach((k, v) -> Assertions.assertEquals(v, actualEnv.get(k)));
         }
     }
 
