@@ -137,22 +137,7 @@ public class JobControllerTest {
     }
 
     @Test
-    public void testListTasks() {
-        given(taskService.listTasks(eq(1L))).willReturn(
-                List.of(TaskVo.builder().build(), TaskVo.builder().build(), TaskVo.builder().build())
-        );
-        var resp = controller.listTasks("p1", "j1", 3, 5);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                is(hasProperty("pageNum", is(3))),
-                is(hasProperty("pageSize", is(5))),
-                is(hasProperty("list", isA(List.class)))
-        ));
-    }
-
-    @Test
-    public void testListTask() {
+    public void testPageTasks() {
         when(jobService.findJob(any())).thenReturn(
                 Job.builder().id(1L).resourcePool(ResourcePool.builder().name("a").build()).build());
         var startedTime = new Date();
@@ -177,10 +162,10 @@ public class JobControllerTest {
         assertThat(response.getBody().getData().getList(), containsInAnyOrder(
                 TaskVo.builder().id("1").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                     .uuid("uuid1")
-                    .taskStatus(TaskStatus.RUNNING).resourcePool("a").stepName("ppl").build(),
+                    .taskStatus(TaskStatus.RUNNING).resourcePool("a").build(),
                 TaskVo.builder().id("2").startedTime(startedTime.getTime()).finishedTime(finishedTime.getTime())
                     .uuid("uuid2")
-                    .taskStatus(TaskStatus.SUCCESS).resourcePool("a").stepName("ppl").build()));
+                    .taskStatus(TaskStatus.SUCCESS).resourcePool("a").build()));
     }
 
     @Test
