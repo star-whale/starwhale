@@ -264,7 +264,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     .map(dataSet -> String.format(
                                 FORMATTER_URI_ARTIFACT,
                                 instanceUri,
-                                project.getName(),
+                                project.getId(),
                                 "dataset",
                                 dataSet.getName(),
                                 dataSet.getVersion())
@@ -273,7 +273,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 String.format(
                         FORMATTER_URI_ARTIFACT,
                         instanceUri,
-                        project.getName(),
+                        model.getProjectId(),
                         "model",
                         model.getName(),
                         model.getVersion()));
@@ -281,7 +281,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 String.format(
                         FORMATTER_URI_ARTIFACT,
                         instanceUri,
-                        project.getName(),
+                        runtime.getProjectId(),
                         "runtime",
                         runtime.getName(),
                         runtime.getVersion()));

@@ -221,9 +221,9 @@ public class K8sTaskSchedulerTest {
     private Task mockTask(boolean devMode) {
         Job job = Job.builder()
                 .id(1L)
-                .model(Model.builder().name("swmpN").version("swmpV").build())
+                .model(Model.builder().name("swmpN").version("swmpV").projectId(101L).build())
                 .jobRuntime(JobRuntime.builder()
-                                .name("swrtN").version("swrtV").image("imageRT").storagePath("path_rt")
+                                .name("swrtN").version("swrtV").image("imageRT").storagePath("path_rt").projectId(102L)
                                 .build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)
@@ -233,7 +233,7 @@ public class K8sTaskSchedulerTest {
                                 .size(300L).build()))
                 .stepSpec("")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
-                .project(Project.builder().name("project").id(7L).build())
+                .project(Project.builder().name("project").id(100L).build())
                 .build();
         Step step = new Step();
         step.setId(1L);
@@ -276,9 +276,9 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_ENV", "test");
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
-            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/project/dataset/swdsN/version/swdsV");
-            expectedEnvs.put("SW_MODEL_URI", "http://instanceUri/project/project/model/swmpN/version/swmpV");
-            expectedEnvs.put("SW_RUNTIME_URI", "http://instanceUri/project/project/runtime/swrtN/version/swrtV");
+            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/100/dataset/swdsN/version/swdsV");
+            expectedEnvs.put("SW_MODEL_URI", "http://instanceUri/project/101/model/swmpN/version/swmpV");
+            expectedEnvs.put("SW_RUNTIME_URI", "http://instanceUri/project/102/runtime/swrtN/version/swrtV");
             expectedEnvs.put("SW_MODEL_VERSION", "swmpN/version/swmpV");
             expectedEnvs.put("SW_RUNTIME_VERSION", "swrtN/version/swrtV");
             expectedEnvs.put("SW_TASK_INDEX", "1");

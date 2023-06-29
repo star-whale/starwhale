@@ -39,6 +39,8 @@ public class Model {
 
     String version;
 
+    Long projectId;
+
     List<StepSpec> stepSpecs;
 
     public static Model fromEntity(ModelEntity entity) {
