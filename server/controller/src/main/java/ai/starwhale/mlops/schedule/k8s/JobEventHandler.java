@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -122,6 +123,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         var jobName = jobName(job);
         Long stopTime = null;
+        String failedReason = null;
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
@@ -147,6 +149,10 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                     taskStatus = TaskStatus.FAIL;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
                     log.debug("job status changed for {} is failed {}", jobName, status);
+                    failedReason = Arrays.stream(new String[] {
+                            condition.getReason(),
+                            condition.getMessage()
+                    }).filter(Objects::nonNull).collect(Collectors.joining(", "));
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
@@ -184,6 +190,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 .startTimeMillis(startTime)
                 .stopTimeMillis(stopTime)
                 .retryCount(retryNum)
+                .failedReason(StringUtils.hasText(failedReason) ? failedReason : null)
                 .build();
         taskModifyReceiver.receive(List.of(report));
     }

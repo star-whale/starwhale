@@ -217,4 +217,17 @@ public class TaskMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(request, taskMapper.findTaskById(task1.getId()).getTaskRequest());
     }
 
+    @Test
+    public void testFailedReason() {
+        TaskEntity task = TaskEntity.builder()
+                .taskStatus(TaskStatus.CREATED)
+                .retryNum(0)
+                .taskUuid(UUID.randomUUID().toString())
+                .stepId(1L)
+                .build();
+        taskMapper.addTask(task);
+        String reason = "reason";
+        taskMapper.updateFailedReason(task.getId(), reason);
+        Assertions.assertEquals(reason, taskMapper.findTaskById(task.getId()).getFailedReason());
+    }
 }

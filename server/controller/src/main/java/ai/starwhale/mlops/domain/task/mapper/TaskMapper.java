@@ -32,7 +32,7 @@ public interface TaskMapper {
 
     String COLUMNS = "task_info.id, task_uuid, step_id, agent_id, task_status, task_request, "
             + " task_info.finished_time, task_info.started_time, task_info.created_time, task_info.modified_time,"
-            + " retry_num, output_path, ip, dev_way, dev_password";
+            + " retry_num, output_path, ip, dev_way, dev_password, failed_reason";
 
     @Select("select " + COLUMNS + " from task_info"
             + " left join step s on s.id = task_info.step_id where s.job_id = #{jobId} order by id desc")
@@ -105,5 +105,8 @@ public interface TaskMapper {
 
     @Update("update task_info set task_request = #{request} where id = #{taskId}")
     void updateTaskRequest(@Param("taskId") Long taskId, @Param("request") String request);
+
+    @Update("update task_info set failed_reason = #{reason} where id = #{id}")
+    void updateFailedReason(@Param("id") Long taskId, @Param("reason") String reason);
 }
 

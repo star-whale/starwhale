@@ -57,4 +57,5 @@ public class TaskEntity extends BaseEntity {
 
     private Date finishedTime;
 
+    private String failedReason;
 }

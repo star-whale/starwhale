@@ -49,4 +49,5 @@ public class TaskVo implements Serializable {
 
     private String devUrl;
 
+    private String failedReason;
 }

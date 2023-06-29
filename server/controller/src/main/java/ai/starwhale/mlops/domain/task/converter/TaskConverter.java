@@ -84,6 +84,7 @@ public class TaskConverter {
                 .devUrl(devUrl)
                 .startedTime(entity.getStartedTime() == null ? null : entity.getStartedTime().getTime())
                 .resourcePool(pool)
+                .failedReason(entity.getFailedReason())
                 .build();
     }
 
