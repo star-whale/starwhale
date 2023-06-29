@@ -110,7 +110,7 @@ spec:
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
             {{- if .Values.minio.ingress }}
-              {{- if .Values.minikube }}
+              {{- if .Values.minikube.enabled }}
               value: "http://minio.{{ .Release.Namespace }}.svc"
               {{- else}}
               value: "http://{{ .Values.minio.ingress.host }}"

@@ -277,13 +277,13 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 - 🍵 **STEP2**: Start minikube
 
     ```bash
-    minikube start
+    minikube start --addons ingress
     ```
 
     > For users in the mainland of China, please add some external parameters. The following command was well tested; you may also try another kubernetes version.
     >
     > ```bash
-    > minikube start --image-mirror-country=cn --kubernetes-version=1.25.3
+    > minikube start --addons ingress --image-mirror-country=cn --kubernetes-version=1.25.3
     > ```
 
     If there is no kubectl bin in your machine, you may use `minikube kubectl` or `alias kubectl="minikube kubectl --"` alias command.
@@ -324,19 +324,17 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     - runtime image: ghcr.io/star-whale/starwhale:latest
 
     ******************************************
-    Web Visit:
-
-    Port Forward Visit:
-    - starwhale controller:
-        - run: kubectl port-forward --namespace starwhale svc/controller 8082:8082
-        - visit: http://localhost:8082
-    - minio admin:
-        - run: kubectl port-forward --namespace starwhale svc/minio 9001:9001
-        - visit: http://localhost:9001
-    - mysql:
+    Controller:
+        - visit: http://controller.starwhale.svc
+    Minio:
+        - web visit: http://minio.starwhale.svc
+        - admin visit: http://minio-admin.starwhale.svc
+    MySQL:
+        - port-forward:
         - run: kubectl port-forward --namespace starwhale svc/mysql 3306:3306
         - visit: mysql -h 127.0.0.1 -P 3306 -ustarwhale -pstarwhale
-
+    Please run the following command for the domains searching:
+        echo "$(minikube ip) controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc " | sudo tee -a /etc/hosts
     ******************************************
     Login Info:
     - starwhale: u:starwhale, p:abcd1234

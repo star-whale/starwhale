@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.controller.ingress.ingressClassName }}
   rules:
-  {{- if .Values.minikube }}
+  {{- if .Values.minikube.enabled }}
     - host: controller.{{ .Release.Namespace }}.svc
   {{- else }}
     - host: {{ .Values.controller.ingress.host }}

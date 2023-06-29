@@ -10,7 +10,11 @@ Runtime default Image:
 ******************************************
 Controller:
   {{- if .Values.controller.ingress.enabled }}
+  {{- if .Values.minikube.enabled }}
+  - visit: http://controller.{{.Release.Namespace}}.svc
+  {{- else}}
   - visit: http://{{.Values.controller.ingress.host }}
+  {{- end}}
   {{- else}}
   - port-forward:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/controller {{ .Values.controller.containerPort }}:{{ .Values.controller.containerPort }}
@@ -20,8 +24,13 @@ Controller:
 {{- if .Values.minio.enabled}}
 Minio:
   {{- if .Values.minio.ingress.enabled }}
+  {{- if .Values.minikube.enabled }}
+  - web visit: http://minio.{{.Release.Namespace}}.svc
+  - admin visit: http://minio-admin.{{.Release.Namespace}}.svc
+  {{- else }}
   - web visit: http://{{.Values.minio.ingress.host }}
   - admin visit: http://{{.Values.minio.ingress.admin_host }}
+  {{- end}}
   {{- else}}
   - port-forward:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/minio {{ .Values.minio.ports.console }}:{{ .Values.minio.ports.console }}
@@ -36,11 +45,9 @@ MySQL:
     - visit: mysql -h 127.0.0.1 -P {{ .Values.mysql.ports.api }} -u{{ .Values.mysql.auth.username }} -p{{ .Values.mysql.auth.password }}
 {{- end}}
 
-{{- if .Values.minikube.enabled }}
-{{- if or .Values.controller.ingress.enabled .Values.minio.ingress.enabled }}
+{{- if and .Values.minikube.enabled (or .Values.controller.ingress.enabled .Values.minio.ingress.enabled ) }}
 Please run the following command for the domains searching:
     echo "$(minikube ip) controller.{{ .Release.Namespace }}.svc minio.{{ .Release.Namespace }}.svc  minio-admin.{{ .Release.Namespace }}.svc " | sudo tee -a /etc/hosts
-{{- end}}
 {{- end}}
 ******************************************
 Login Info:
