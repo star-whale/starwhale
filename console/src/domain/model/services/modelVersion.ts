@@ -95,28 +95,29 @@ export async function revertModelVersion(
 }
 
 export async function fetchModelVersionFile(
-    projectId: string,
-    modelId: string | undefined,
+    projectName: string | undefined,
+    modelName: string | undefined,
     modelVersionId: string | undefined,
     token: string,
     path: string
 ): Promise<any> {
-    if (!modelId || !modelVersionId) {
+    if (!projectName || !modelName) {
         return Promise.resolve(undefined)
     }
-    const { data } = await axios.get(`/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/file`, {
-        params: { Authorization: token, partName: path },
+
+    const { data } = await axios.get(`/api/v1/project/${projectName}/model/${modelName}/getFileData`, {
+        params: { Authorization: token, path, version: modelVersionId, silent: true },
     })
     return data
 }
 
 export async function fetchModelVersionPanelSetting(
-    projectId: string,
-    modelId: string | undefined,
+    projectName: string | undefined,
+    modelName: string | undefined,
     modelVersionId: string | undefined,
     token: string
 ) {
-    return fetchModelVersionFile(projectId, modelId, modelVersionId, token, 'eval_panel_layout.json')
+    return fetchModelVersionFile(projectName, modelName, modelVersionId, token, 'eval_panel_layout.json')
 }
 
 export async function updateModelVersionShared(

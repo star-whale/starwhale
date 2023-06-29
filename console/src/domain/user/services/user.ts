@@ -30,7 +30,9 @@ export async function fetchUser(userName: string): Promise<IUserSchema> {
 }
 
 export async function fetchCurrentUser(): Promise<IUserSchema> {
-    const resp = await axios.get<IUserSchema>('/api/v1/user/current')
+    const resp = await axios.get<IUserSchema>('/api/v1/user/current', {
+        params: { silent: true },
+    })
     return resp.data
 }
 

@@ -130,10 +130,13 @@ export default function ModelVersionFiles() {
                                     onClick={() => {
                                         if (!query.compare && file.type === 'directory') {
                                             loadFiles(id)
+                                        } else {
+                                            setSourceFilePath(id)
                                         }
-                                        setContent(' ')
-                                        setTargetContent(' ')
-                                        setSourceFilePath(id)
+                                        if (id !== sourceFilePath) {
+                                            setContent(' ')
+                                            setTargetContent(' ')
+                                        }
                                     }}
                                 >
                                     <IconFont type={fileType} style={{ color, marginRight: '5px' }} size={14} />{' '}
@@ -158,7 +161,7 @@ export default function ModelVersionFiles() {
         if (sourceFile.flag !== 'added') {
             loadFileData(sourceFile, modelVersion?.versionName)
                 .then((text: string) => {
-                    setContent(text ?? ' ')
+                    setContent(text || ' ')
                 })
                 .catch(() => {
                     setContent(' ')

@@ -148,12 +148,13 @@ export default function OnlineEval() {
                 return
             }
 
-            const api = `/api/v1/project/${project?.name}/model/${modelName}/version/${versionName}/file`
+            const api = `/api/v1/project/${project?.name}/model/${modelName}/getFileData`
             fetch(
                 `${api}?${qs.stringify({
                     Authorization: getToken(),
-                    partName: 'svc.json',
-                    signature: '',
+                    path: 'svc.json',
+                    version: versionName,
+                    silent: true,
                 })}`
             )
                 .then((res) => res.json())
@@ -186,6 +187,7 @@ export default function OnlineEval() {
                                         (item) =>
                                             `${api}?${qs.stringify({
                                                 Authorization: getToken(),
+                                                version: versionName,
                                                 path: item,
                                             })}`
                                     )

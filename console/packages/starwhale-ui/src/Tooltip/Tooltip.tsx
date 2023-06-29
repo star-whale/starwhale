@@ -5,7 +5,7 @@ import { themedUseStyletron } from '../theme/styletron'
 function IconTooltip({
     content,
     icon,
-    iconStyle,
+    iconStyle = {},
     ...props
 }: {
     content: React.ReactNode
