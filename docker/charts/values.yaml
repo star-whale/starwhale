@@ -44,6 +44,7 @@ minio:
   ingress:
     enabled: true
     host: minio.pre.intra.starwhale.ai
+    admin_host: minio-admin.pre.intra.starwhale.ai
     ingressClassName: nginx
   auth:
     rootUser: minioadmin

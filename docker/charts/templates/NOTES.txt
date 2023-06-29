@@ -8,29 +8,40 @@ Runtime default Image:
   - runtime image: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
 
 ******************************************
-Web Visit:
+Controller:
   {{- if .Values.controller.ingress.enabled }}
-  - starwhale controller: http://{{.Values.controller.ingress.host }}
-  {{- end}}
-  {{- if and .Values.minio.enabled .Values.minio.ingress.enabled }}
-  - minio admin: http://{{.Values.minio.ingress.host }}
-  {{- end}}
-
-Port Forward Visit:
-  - starwhale controller:
+  - visit: http://{{.Values.controller.ingress.host }}
+  {{- else}}
+  - port-forward:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/controller {{ .Values.controller.containerPort }}:{{ .Values.controller.containerPort }}
     - visit: http://localhost:{{.Values.controller.containerPort}}
-  {{- if .Values.minio.enabled}}
-  - minio admin:
+  {{- end}}
+
+{{- if .Values.minio.enabled}}
+Minio:
+  {{- if .Values.minio.ingress.enabled }}
+  - web visit: http://{{.Values.minio.ingress.host }}
+  - admin visit: http://{{.Values.minio.ingress.admin_host }}
+  {{- else}}
+  - port-forward:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/minio {{ .Values.minio.ports.console }}:{{ .Values.minio.ports.console }}
     - visit: http://localhost:{{.Values.minio.ports.console}}
   {{- end}}
-  {{- if and .Values.mysql.enabled .Values.minikube.enabled }}
-  - mysql:
+{{- end}}
+
+{{- if .Values.mysql.enabled}}
+MySQL:
+  - port-forward:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/mysql {{ .Values.mysql.ports.api }}:{{ .Values.mysql.ports.api }}
     - visit: mysql -h 127.0.0.1 -P {{ .Values.mysql.ports.api }} -u{{ .Values.mysql.auth.username }} -p{{ .Values.mysql.auth.password }}
-  {{- end}}
+{{- end}}
 
+{{- if .Values.minikube.enabled }}
+{{- if or .Values.controller.ingress.enabled .Values.minio.ingress.enabled }}
+Please run the following command for the domains searching:
+    echo "$(minikube ip) controller.{{ .Release.Namespace }}.svc minio.{{ .Release.Namespace }}.svc  minio-admin.{{ .Release.Namespace }}.svc " | sudo tee -a /etc/hosts
+{{- end}}
+{{- end}}
 ******************************************
 Login Info:
 - starwhale: u:{{ .Values.controller.auth.username }}, p:{{ .Values.controller.auth.password }}

@@ -21,7 +21,6 @@ env:
   NEXUS_USER_NAME: admin
   NEXUS_USER_PWD: admin123
   PORT_NEXUS: 8081
-  PORT_CONTROLLER: 8082
   PORT_NEXUS_DOCKER: 8083
   IP_DOCKER_BRIDGE: 172.17.0.1
   REPO_NAME_DOCKER: docker-hosted
@@ -115,6 +114,7 @@ jobs:
           cpus: 2
           wait: false
           insecure-registry: "192.0.0.0/8,10.0.0.0/8"
+          addons: ingress,ingress-dns
 
       - name: Overwrite configs
         working-directory: ./scripts/e2e_test
@@ -165,6 +165,10 @@ jobs:
       - name: Wait and check starwhale service
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh check_controller_service
+
+      - name: Setup minikube dns mock
+        working-directory: ./scripts/e2e_test
+        run: bash start_test.sh setup_minikube_dns_mock
 
       - name: Test by client side
         working-directory: ./scripts/e2e_test
