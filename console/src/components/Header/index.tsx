@@ -42,7 +42,6 @@ const useHeaderStyles = createUseStyles({
         backgroundColor: props.theme.brandBgNav,
         position: 'relative',
         zIndex: 10,
-        gap: '16px',
     }),
 })
 
@@ -324,6 +323,7 @@ export default function Header() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
+                    marginRight: '16px',
                 }}
             >
                 <LanguageSelector />
