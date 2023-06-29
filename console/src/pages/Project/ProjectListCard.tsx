@@ -28,6 +28,7 @@ import VisitSelector, { VisitBy } from '@/domain/project/components/VisitSelecto
 import { useLocalStorage } from 'react-use'
 import { useEventCallback } from '@starwhale/core'
 import { formatTimestampDateTime } from '@/utils/datetime'
+import Tooltip from '@starwhale/ui/Tooltip/Tooltip'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -90,7 +91,7 @@ const useCardStyles = createUseStyles({
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         flexBasis: '80%',
-        marginBottom: '12px',
+        marginBottom: '10px',
     },
     time: {
         background: '#F2F7FF',
@@ -133,11 +134,11 @@ const useCardStyles = createUseStyles({
         display: 'flex',
         justifyContent: 'flex-start',
         color: ' rgba(2,16,43,0.60)',
-        gap: '12px',
+        gap: '8px',
     },
     statisticsItem: {
         display: 'flex',
-        gap: '4px',
+        gap: '2px',
     },
     tag: {
         fontSize: '12px',
@@ -165,7 +166,7 @@ const useCardStyles = createUseStyles({
     },
     actions: {
         display: 'none',
-        gap: '12px',
+        gap: '8px',
     },
     edit: {
         display: 'flex',
@@ -217,7 +218,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                 </div>
             </div>
             <div className={cn(styles.time)}>
-                <IconFont type='runtime' /> {project.createdTime && formatTimestampDateTime(project.createdTime)}
+                <IconFont type='time' size={12} /> {project.createdTime && formatTimestampDateTime(project.createdTime)}
             </div>
             <div className={cn(styles.description, 'text-ellipsis')}>
                 <StatefulTooltip
@@ -234,7 +235,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                     <div className={styles.statisticsItem}>
                         <IconLink
                             to={`/projects/${project.id}/evaluations`}
-                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
                                 content: `${t('Evaluations')}:${project?.statistics.evaluationCounts}`,
                             }}
@@ -242,31 +243,15 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             <IconFont
                                 type='evaluation'
                                 size={12}
-                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
                             <span>{project?.statistics.evaluationCounts}</span>
                         </IconLink>
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}/datasets`}
-                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
-                            tooltip={{
-                                content: `${t('Datasets')}:${project?.statistics.datasetCounts}`,
-                            }}
-                        >
-                            <IconFont
-                                type='dataset'
-                                size={12}
-                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
-                            />
-                            <span>{project?.statistics.datasetCounts}</span>
-                        </IconLink>
-                    </div>
-                    <div className={styles.statisticsItem}>
-                        <IconLink
                             to={`/projects/${project.id}/models`}
-                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
                                 content: `${t('Models')}:${project?.statistics.modelCounts}`,
                             }}
@@ -274,15 +259,48 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                             <IconFont
                                 type='Model'
                                 size={12}
-                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
                             />
                             <span>{project?.statistics.modelCounts}</span>
                         </IconLink>
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
+                            to={`/projects/${project.id}/datasets`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
+                            tooltip={{
+                                content: `${t('Datasets')}:${project?.statistics.datasetCounts}`,
+                            }}
+                        >
+                            <IconFont
+                                type='dataset'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
+                            />
+                            <span>{project?.statistics.datasetCounts}</span>
+                        </IconLink>
+                    </div>
+                    <div className={styles.statisticsItem}>
+                        <IconLink
+                            to={`/projects/${project.id}/runtimes`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
+                            tooltip={{
+                                content: `${t('Runtimes')}:${project?.statistics.runtimeCounts}`,
+                            }}
+                        >
+                            <IconFont
+                                type='runtime'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '2px' }}
+                            />
+                            <span>{project?.statistics.datasetCounts}</span>
+                        </IconLink>
+                    </div>
+
+                    <div className={styles.statisticsItem}>
+                        <IconLink
                             to={`/projects/${project.id}/overview`}
-                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)', width: 'auto' }}
                             tooltip={{
                                 content: `${t('Members')}:${project?.statistics.memberCounts}`,
                             }}
@@ -302,11 +320,14 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                         tooltip={{
                             content: t('Manage Member'),
                         }}
+                        className={css({
+                            backgroundColor: '#EBF1FF !important',
+                        })}
                     >
                         <IconFont type='setting' size={12} style={{ color: 'gray' }} />
                     </IconLink>
                     <WithAuth role={role} id='project.update'>
-                        <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
+                        <Tooltip content={t('edit sth', [t('Project')])} placement='top'>
                             <div className={styles.edit}>
                                 <Button
                                     onClick={onEdit}
@@ -317,7 +338,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                             style: {
                                                 'display': 'flex',
                                                 'fontSize': '12px',
-                                                'backgroundColor': '#F4F5F7',
+                                                'backgroundColor': '#EBF1FF',
                                                 'width': '20px',
                                                 'height': '20px',
                                                 'textDecoration': 'none',
@@ -337,10 +358,10 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                     <IconFont type='edit' size={10} />
                                 </Button>
                             </div>
-                        </StatefulTooltip>
+                        </Tooltip>
                     </WithAuth>
                     <WithAuth role={role} id='project.delete'>
-                        <StatefulTooltip content={t('delete sth', [t('Project')])} placement='top'>
+                        <Tooltip content={t('delete sth', [t('Project')])} placement='top'>
                             <div className={styles.delete}>
                                 <Button
                                     icon='delete'
@@ -349,7 +370,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                             style: {
                                                 'display': 'flex',
                                                 'fontSize': '12px',
-                                                'backgroundColor': '#F4F5F7',
+                                                'backgroundColor': '#EBF1FF',
                                                 'width': '20px',
                                                 'height': '20px',
                                                 'textDecoration': 'none',
@@ -368,7 +389,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
                                     onClick={() => setIsRemoveProjectOpen(true)}
                                 />
                             </div>
-                        </StatefulTooltip>
+                        </Tooltip>
                     </WithAuth>
                 </div>
             </div>

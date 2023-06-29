@@ -111,6 +111,8 @@ export type IconTypesT =
     | 'docker'
     | 'top'
     | 'top2'
+    | 'time'
+    | 'global2'
 
 interface IIconFontProps {
     style?: React.CSSProperties

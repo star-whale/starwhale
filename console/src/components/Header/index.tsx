@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useContext, useEffect } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
 import { useSearchParam } from 'react-use'
 import { createUseStyles } from 'react-jss'
@@ -28,6 +27,8 @@ import Avatar from '../Avatar'
 import LanguageSelector from './LanguageSelector'
 import { HeaderExtends } from '../Extensions'
 import { useSystemFeatures } from '@/domain/setting/hooks/useSystemFeatures'
+import { docsEN, docsZH, headerHeight } from '@/consts'
+import i18n from '@/i18n'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: (props: IThemedStyleProps) => ({
@@ -41,6 +42,7 @@ const useHeaderStyles = createUseStyles({
         backgroundColor: props.theme.brandBgNav,
         position: 'relative',
         zIndex: 10,
+        gap: '16px',
     }),
 })
 
@@ -125,7 +127,7 @@ const useStyles = createUseStyles({
         'display': 'flex',
         'align-items': 'center',
         'height': '100%',
-        'margin-left': '8px',
+        'margin-left': '4px',
         'padding': '10px 0 10px 0',
         'justifyContent': 'flex-end',
 
@@ -139,13 +141,13 @@ const useStyles = createUseStyles({
     userNameWrapper: {
         'display': 'flex',
         'color': '#FFF',
-        'borderRadius': '20px',
+        'borderRadius': '50%',
         'fontSize': '16px',
-        'padding': '7px 13px 7px 7px',
+        'justifyContent': 'center',
         'align-items': 'center',
-        'height': '36px',
-        'gap': '9px',
-        'backgroundColor': '#264480',
+        'height': '28px',
+        'width': '28px',
+        'backgroundColor': '#D0DDF7',
     },
     userMenu: (props: IThemedStyleProps) => ({
         'padding': '16px 0px 0px',
@@ -301,6 +303,8 @@ export default function Header() {
         }
     }, [systemFeaturesInfo?.data, setSystemFeatures])
 
+    const isZH = i18n.language === 'zh'
+
     return (
         <header className={headerStyles.headerWrapper}>
             <Logo expanded={ctx.expanded} />
@@ -319,16 +323,19 @@ export default function Header() {
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    gap: '4px',
                 }}
             >
                 <LanguageSelector />
+                <a target='_blank' rel='noreferrer' href={isZH ? docsZH : docsEN} style={{ color: '#FFF' }}>
+                    {t('docs')}
+                </a>
             </div>
 
             {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
                         <Avatar name={currentUser.name} size={28} />
-                        <IconFont type='arrow_down' />
                     </div>
                     <div className={styles.userMenu}>
                         <p className={styles.userSignedIn}>{t('Signed in as')}</p>
