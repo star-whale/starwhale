@@ -39,6 +39,7 @@ pre_config() {
 [global]
 index-url = ${SW_PYPI_INDEX_URL}
 extra-index-url = ${SW_PYPI_EXTRA_INDEX_URL}
+timeout = ${SW_PYPI_TIMEOUT:-90}
 
 [install]
 trusted-host= ${SW_PYPI_TRUSTED_HOST}

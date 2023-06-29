@@ -294,6 +294,8 @@ public class ModelServingService {
                 "SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl(),
                 "SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl(),
                 "SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost(),
+                "SW_PYPI_TIMEOUT", runTimeProperties.getPypi().getTimeout(),
+                "SW_PYPI_RETRIES", runTimeProperties.getPypi().getRetries(),
                 "SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id),
                 // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
                 "SW_PRODUCTION", "1"

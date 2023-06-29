@@ -149,6 +149,8 @@ public class ModelServingServiceTest {
         when(pypi.getExtraIndexUrl()).thenReturn("extra-index");
         when(pypi.getIndexUrl()).thenReturn("index");
         when(pypi.getTrustedHost()).thenReturn("trusted-host");
+        when(pypi.getReties()).thenReturn("retries");
+        when(pypi.getTimeout()).thenReturn("timeout");
 
         when(modelServingTokenValidator.getToken(any(), any())).thenReturn("token");
     }

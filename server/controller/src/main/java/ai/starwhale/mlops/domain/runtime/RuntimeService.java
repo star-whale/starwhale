@@ -647,6 +647,10 @@ public class RuntimeService {
                             runTimeProperties.getPypi().getIndexUrl()),
                     new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(
                             runTimeProperties.getPypi().getExtraIndexUrl()),
+                    new V1EnvVar().name("SW_PYPI_TIMEOUT").value(
+                            runTimeProperties.getPypi().getTimeout()),
+                    new V1EnvVar().name("SW_PYPI_RETRIES").value(
+                            runTimeProperties.getPypi().getRetries()),
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
                             runTimeProperties.getPypi().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(

@@ -48,6 +48,8 @@ public class SystemSettingServiceTest {
             + "  indexUrl: \"url1\"\n"
             + "  extraIndexUrl: \"url2\"\n"
             + "  trustedHost: \"host1\"\n"
+            + "  retries: 11\n"
+            + "  timeout: 91\n"
             + "resourcePoolSetting:\n"
             + "- name: \"default\"\n"
             + "  nodeSelector: {}\n"
@@ -92,7 +94,8 @@ public class SystemSettingServiceTest {
         systemSettingService = new SystemSettingService(
                 systemSettingMapper,
                 List.of(listener),
-                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("url1", "url2", "host1")),
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild(),
+                        new Pypi("url1", "url2", "host1", 11, 91)),
                 new DockerSetting("", "", "", "", false),
                 userService);
         systemSettingService.run();
@@ -135,7 +138,6 @@ public class SystemSettingServiceTest {
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
     }
 
-
     @Test
     public void testUnsetSetting() {
         systemSettingService.updateSetting("--- {}");
@@ -150,6 +152,8 @@ public class SystemSettingServiceTest {
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
                 + "  trustedHost: \"\"\n"
+                + "  retries: 10\n"
+                + "  timeout: 90\n"
                 + "resourcePoolSetting:\n"
                 + "- name: \"default\"\n"
                 + "  nodeSelector: {}\n"
@@ -171,7 +175,6 @@ public class SystemSettingServiceTest {
         Assertions.assertEquals(ResourcePool.defaults().getName(), resourcePool.getName());
     }
 
-
     @Test
     public void testQueryWithData() {
         Assertions.assertEquals(YAML, systemSettingService.querySetting().trim());
@@ -179,13 +182,12 @@ public class SystemSettingServiceTest {
 
     @Test
     public void testStartWithoutData() throws Exception {
-        SystemSettingService systemSettingService =
-                new SystemSettingService(
-                        mock(SystemSettingMapper.class),
-                        List.of(listener),
-                        new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "")),
-                        new DockerSetting("abcd.com", "abcd2.com", "admin", "admin123", false),
-                        mock(UserService.class));
+        SystemSettingService systemSettingService = new SystemSettingService(
+                mock(SystemSettingMapper.class),
+                List.of(listener),
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "")),
+                new DockerSetting("abcd.com", "abcd2.com", "admin", "admin123", false),
+                mock(UserService.class));
         systemSettingService.run();
         Assertions.assertEquals("---\n"
                 + "dockerSetting:\n"
@@ -198,6 +200,8 @@ public class SystemSettingServiceTest {
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
                 + "  trustedHost: \"\"\n"
+                + "  retries: 10\n"
+                + "  timeout: 90\n"
                 + "resourcePoolSetting:\n"
                 + "- name: \"default\"\n"
                 + "  nodeSelector: {}\n"

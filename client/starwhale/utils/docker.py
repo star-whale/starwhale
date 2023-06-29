@@ -219,6 +219,8 @@ def gen_swcli_docker_cmd(
         "SW_PYPI_INDEX_URL",
         "SW_PYPI_EXTRA_INDEX_URL",
         "SW_PYPI_TRUSTED_HOST",
+        "SW_PYPI_TIMEOUT",
+        "SW_PYPI_RETRIES",
     ):
         if _ee not in _env:
             continue
