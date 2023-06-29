@@ -29,6 +29,9 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             ':hover': {
                                 backgroundColor: '#EBF1FF',
                             },
+                            ':hover .pin-button': {
+                                display: 'block !important',
+                            },
                         },
                         props: {
                             // eslint-disable-next-line
