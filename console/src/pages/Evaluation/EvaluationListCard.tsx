@@ -110,7 +110,7 @@ export default function EvaluationListCard() {
                     ),
                     filterable: true,
                     renderFilter: function RenderFilter() {
-                        return <JobStatusSelector clearable />
+                        return <JobStatusSelector clearable multiple />
                     },
                 })
             if (column.key?.endsWith('time')) {

@@ -33,7 +33,7 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
                     .filter((v) => !!v)
                     .map(([key, v]) => ({
                         value: v,
-                        op: 'EQUAL',
+                        op: Array.isArray(v) ? 'IN' : 'EQUAL',
                         property: key,
                     }))
             )

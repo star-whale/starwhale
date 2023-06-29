@@ -6,11 +6,12 @@ import { JobStatusType } from '../schemas/job'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 
 export interface IJobStatusSelectorProps {
-    value?: string
-    onChange?: (newValue: string) => void
+    value?: string[]
+    onChange?: (newValue: string[]) => void
     overrides?: ISelectProps['overrides']
     disabled?: boolean
     clearable?: boolean
+    multiple?: boolean
     placeholder?: React.ReactNode
 }
 
@@ -20,6 +21,7 @@ export default function JobStatusSelector({
     overrides,
     disabled,
     clearable = false,
+    multiple = false,
     placeholder,
 }: IJobStatusSelectorProps) {
     const [t] = useTranslation()
@@ -36,8 +38,15 @@ export default function JobStatusSelector({
             marginRight: '4px',
         },
     })
+    // const JOB_STATUS_COLOR = {
+    //     [JobStatusType.CREATED]: '#EBF1FF',
+    //     [JobStatusType.PAUSED]: '#F3EDFF',
+    //     [JobStatusType.RUNNING]: '#FFF3E8',
+    //     [JobStatusType.CANCELED]: '#EBF1FF',
+    //     [JobStatusType.FAIL]: '#FFEDED',
+    //     [JobStatusType.SUCCESS]: '#E6FFF4',
+    // }
 
-    // const [keyword, setKeyword] = useState<string>()
     const JOB_STATUS = {
         [JobStatusType.CREATED]: (
             <p className={cls} style={{ color: '#2B65D9', backgroundColor: '#EBF1FF' }}>
@@ -69,14 +78,11 @@ export default function JobStatusSelector({
                 {t('job.status.fail')}
             </p>
         ),
-        // [JobStatusType.READY]: (
-        //     <p className={cls} style={{ color: '#00B368', backgroundColor: '#FFEDED' }}>
-        //         {t('job.status.ready')}
-        //     </p>
-        // ),
     }
 
-    const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>(
+    const defaultOverrides = {}
+
+    const [options, setOptions] = useState<{ id: string }[]>(
         Object.entries(JOB_STATUS).map(([id, label]) => ({ id, label }))
     )
 
@@ -84,40 +90,49 @@ export default function JobStatusSelector({
         if (!term) {
             setOptions([])
         }
-        // setKeyword(term)
     })
+
+    const $value = React.useMemo(() => {
+        if (!value) return []
+        if (typeof value === 'string')
+            return String(value)
+                .split(',')
+                .map((item: any) => ({ id: item }))
+
+        return (
+            value?.map((item) => ({
+                id: item,
+            })) ?? []
+        )
+    }, [value])
 
     return (
         <Select
+            multi={multiple}
             placeholder={placeholder ?? t('job.status.selector.placeholder')}
             disabled={disabled}
-            overrides={overrides}
+            overrides={{
+                ...overrides,
+                ...defaultOverrides,
+            }}
             clearable={clearable}
             searchable={false}
             options={options}
             onChange={(params) => {
                 if (params.type === 'clear') {
-                    onChange?.('')
+                    onChange?.([])
                     return
                 }
                 if (!params.option) {
                     return
                 }
-                onChange?.(params.option.id as string)
+                onChange?.(params.value.map((item) => (item.id as string) ?? '').filter((name) => name !== ''))
             }}
             onInputChange={(e) => {
                 const target = e.target as HTMLInputElement
                 handleJobStatusInputChange(target.value)
             }}
-            value={
-                value
-                    ? [
-                          {
-                              id: value,
-                          },
-                      ]
-                    : []
-            }
+            value={$value}
         />
     )
 }

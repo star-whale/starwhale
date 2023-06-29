@@ -13,7 +13,7 @@ export type KindT = keyof typeof KIND
 
 export const FilterTypeOperators: Record<Partial<KIND>, OPERATOR[]> = {
     [KIND.CATEGORICAL]: [],
-    [KIND.STRING]: [OPERATOR.EQUAL],
+    [KIND.STRING]: [OPERATOR.EQUAL, OPERATOR.IN],
     [KIND.NUMERICAL]: [OPERATOR.EQUAL, OPERATOR.GREATER, OPERATOR.GREATER_EQUAL, OPERATOR.LESS, OPERATOR.LESS_EQUAL],
     BOOLEAN: [OPERATOR.EQUAL],
     CUSTOM: [],
@@ -143,12 +143,12 @@ export const Operators: Record<string, OperatorT> = {
     //         }
     //     },
     // },
-    // [OPERATOR.IN]: {
-    //     key: OPERATOR.IN,
-    //     label: 'in',
-    //     value: 'in',
-    //     buildFilter: () => () => true,
-    // },
+    [OPERATOR.IN]: {
+        key: OPERATOR.IN,
+        label: 'in',
+        value: 'in',
+        buildFilter: () => () => true,
+    },
     // [OPERATOR.NOT_IN]: {
     //     key: OPERATOR.NOT_IN,
     //     label: 'not in',
