@@ -13,7 +13,7 @@ test.beforeAll(async ({ admin }) => {
 })
 
 test.describe('Login', () => {
-    test('default route should be projects', async ({}) => {
+    test('default route should be projects', async ({ }) => {
         await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
     })
@@ -184,7 +184,7 @@ test.describe('Models', () => {
         test('should model overview show editor', async () => {
             await page
                 // .getByRole('button', { name: /model\.yaml/ })
-                .locator('[data-nodeid="src/model.yaml"]')
+                .locator('[data-nodeid="_manifest.yaml"]')
                 .click()
             // await expect(page.locator('div:right-of(:text("Version Name"))').first()).toHaveText(
             //     'mftdoolcgvqwknrtmftdgyjzobvti2q'
