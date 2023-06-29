@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.JobScheduler;
+import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.init.HotJobsLoader;
 import java.util.List;
@@ -44,7 +45,12 @@ public class HotJobsLoaderTest {
     public void setup() {
         jobDao = mock(JobDao.class);
         jobScheduler = mock(JobScheduler.class);
-        hotJobsLoader = new HotJobsLoader(jobDao, jobScheduler);
+        hotJobsLoader = new HotJobsLoader(
+                new JobService(null, null, null,
+                    jobDao, jobScheduler, null,
+                    null, null,
+                    null, null, null, null, null,
+                    null, null, null));
     }
 
     @Test

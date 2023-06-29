@@ -103,14 +103,7 @@ public class JobScheduler {
         if (waitingTasks.isEmpty()) {
             return;
         }
-        // first store to DB
-        taskService.batchUpdateTaskStatus(waitingTasks, TaskStatus.PAUSED);
-
-        CompletableFuture.runAsync(() -> {
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-            waitingTasks.forEach(task -> task.updateStatus(TaskStatus.PAUSED));
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
-        });
+        updateAndNotifyStatus(waitingTasks, TaskStatus.PAUSED);
     }
 
     public void cancel(Long jobId) {
@@ -136,12 +129,16 @@ public class JobScheduler {
         if (directlyCanceledTasks.isEmpty()) {
             return;
         }
+        updateAndNotifyStatus(directlyCanceledTasks, TaskStatus.CANCELLING);
+    }
+
+    private void updateAndNotifyStatus(List<Task> waitingTasks, TaskStatus paused) {
         // first store to DB
-        taskService.batchUpdateTaskStatus(directlyCanceledTasks, TaskStatus.CANCELLING);
+        taskService.batchUpdateTaskStatus(waitingTasks, paused);
 
         CompletableFuture.runAsync(() -> {
             TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-            directlyCanceledTasks.forEach(task -> task.updateStatus(TaskStatus.CANCELLING));
+            waitingTasks.forEach(task -> task.updateStatus(paused));
             TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
         });
     }

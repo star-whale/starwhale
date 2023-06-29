@@ -29,6 +29,7 @@ import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +50,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
     public TaskWatcherForJobStatus(
             StepService stepService,
             StepTrigger stepTrigger,
-            JobService jobService) {
+            @Lazy JobService jobService) {
         this.stepService = stepService;
         this.stepTrigger = stepTrigger;
         this.jobService = jobService;

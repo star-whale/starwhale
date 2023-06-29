@@ -122,93 +122,6 @@ public class JobService {
         this.taskScheduler = taskScheduler;
     }
 
-    public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectService.getProjectId(projectUrl);
-        List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
-        return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
-    }
-
-    public JobVo findJob(String projectUrl, String jobUrl) {
-        Job job = jobDao.findJob(jobUrl);
-        if (job == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        return jobConvertor.convert(job);
-    }
-
-    public Job findJob(String jobUrl) {
-        Job job = jobDao.findJob(jobUrl);
-        if (job == null) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        return job;
-    }
-
-    public Object getJobResult(String projectUrl, String jobUrl) {
-        Long jobId = jobDao.getJobId(jobUrl);
-        return resultQuerier.resultOfJob(jobId);
-    }
-
-    public void updateJob(Job job) {
-        JobStatus currentStatus = job.getStatus();
-        Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus)
-                .collect(Collectors.toSet());
-        JobStatus desiredJobStatus = JobStatusCalculator.desiredJobStatus(stepStatuses);
-        if (currentStatus == desiredJobStatus) {
-            log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
-            return;
-        }
-        if (!JobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
-            log.warn("job status change unexpectedly from {} to {} of id {} ",
-                    currentStatus, desiredJobStatus, job.getId());
-        }
-        log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus, job.getId());
-        job.setStatus(desiredJobStatus);
-        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
-
-        if (JobStatusMachine.isFinal(desiredJobStatus)) {
-            var finishedTime = new Date();
-            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
-            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
-            if (desiredJobStatus == JobStatus.FAIL) {
-                // try to cancel other running tasks
-                jobScheduler.cancel(job.getId());
-            }
-            jobScheduler.remove(job.getId());
-        }
-    }
-
-    public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
-        return jobDao.updateJobComment(jobUrl, comment);
-    }
-
-    public Boolean updateJobPinStatus(String projectUrl, String jobUrl, Boolean pinned) {
-        return jobDao.updateJobPinStatus(jobUrl, pinned);
-    }
-
-    public Boolean removeJob(String projectUrl, String jobUrl) {
-        var job = jobDao.findJob(jobUrl);
-        Trash trash = Trash.builder()
-                .projectId(projectService.getProjectId(projectUrl))
-                .objectId(job.getId())
-                .type(Type.valueOf(job.getType().name()))
-                .build();
-        trashService.moveToRecycleBin(trash, userService.currentUserDetail());
-        // TODO stop schedule
-
-        return jobDao.removeJob(job.getId());
-    }
-
-    public Boolean recoverJob(String projectUrl, String jobUrl) {
-        throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
-    }
 
     @Transactional
     public Long createJob(String projectUrl,
@@ -313,6 +226,124 @@ public class JobService {
         jobScheduler.schedule(job, false);
         // this.updateJob(job);
         return jobId;
+    }
+
+    public void reloadHotJobs() {
+        hotJobsFromDb().forEach(job -> {
+            try {
+                jobScheduler.schedule(job, false);
+            } catch (Exception e) {
+                log.error("loading hotting job failed {}", job.getId(), e);
+                jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
+            }
+        });
+        log.info("hot jobs loaded");
+    }
+
+    /**
+     * load jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED into mem CREATED job has no steps yet, so it will
+     * not be loaded here
+     *
+     * @return tasks of jobs that are not FINISHED/ERROR/CANCELED/CREATED/PAUSED
+     */
+    private List<Job> hotJobsFromDb() {
+        List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
+                .parallelStream()
+                .filter(JobStatusMachine::isHot)
+                .collect(Collectors.toList());
+        return jobDao.findJobByStatusIn(hotJobStatuses);
+    }
+
+    public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        Long projectId = projectService.getProjectId(projectUrl);
+        List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
+        return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
+    }
+
+    public JobVo findJob(String projectUrl, String jobUrl) {
+        Job job = jobDao.findJob(jobUrl);
+        if (job == null) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        return jobConvertor.convert(job);
+    }
+
+    public Job findJob(String jobUrl) {
+        Job job = jobDao.findJob(jobUrl);
+        if (job == null) {
+            throw new StarwhaleApiException(
+                    new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        return job;
+    }
+
+    public Object getJobResult(String projectUrl, String jobUrl) {
+        Long jobId = jobDao.getJobId(jobUrl);
+        return resultQuerier.resultOfJob(jobId);
+    }
+
+    public void updateJob(Job job) {
+        JobStatus currentStatus = job.getStatus();
+        Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus)
+                .collect(Collectors.toSet());
+        JobStatus desiredJobStatus = JobStatusCalculator.desiredJobStatus(stepStatuses);
+        if (currentStatus == desiredJobStatus) {
+            log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
+            return;
+        }
+        if (!JobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
+            log.warn("job status change unexpectedly from {} to {} of id {} ",
+                    currentStatus, desiredJobStatus, job.getId());
+        }
+        log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus, job.getId());
+        job.setStatus(desiredJobStatus);
+        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
+
+        if (JobStatusMachine.isFinal(desiredJobStatus)) {
+            var finishedTime = new Date();
+            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
+            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
+            if (desiredJobStatus == JobStatus.FAIL) {
+                // try to cancel other running tasks
+                jobScheduler.cancel(job.getId());
+            }
+            jobScheduler.remove(job.getId());
+        }
+    }
+
+    public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
+        return jobDao.updateJobComment(jobUrl, comment);
+    }
+
+    public Boolean updateJobPinStatus(String projectUrl, String jobUrl, Boolean pinned) {
+        return jobDao.updateJobPinStatus(jobUrl, pinned);
+    }
+
+    public Boolean removeJob(String projectUrl, String jobUrl) {
+        var job = jobDao.findJob(jobUrl);
+        try {
+            // stop schedule
+            jobScheduler.cancel(job.getId());
+        } catch (Exception e) {
+            log.warn("Stop job schedule error, continue to remove.");
+        }
+        Trash trash = Trash.builder()
+                .projectId(projectService.getProjectId(projectUrl))
+                .objectId(job.getId())
+                .type(Type.valueOf(job.getType().name()))
+                .build();
+        trashService.moveToRecycleBin(trash, userService.currentUserDetail());
+        return jobDao.removeJob(job.getId());
+    }
+
+    public Boolean recoverJob(String projectUrl, String jobUrl) {
+        throw new UnsupportedOperationException("Please use TrashService.recover() instead.");
     }
 
     @Transactional

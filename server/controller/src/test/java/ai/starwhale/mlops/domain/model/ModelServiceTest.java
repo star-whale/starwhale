@@ -73,10 +73,6 @@ import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
@@ -131,10 +127,13 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
         "ai.starwhale.mlops.common",
         "ai.starwhale.mlops.domain",
         "ai.starwhale.mlops.datastore",
-        "ai.starwhale.mlops.reporting",
-        "ai.starwhale.mlops.resulting",
         "ai.starwhale.mlops.configuration.security"},
-        excludeFilters = {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)})
+        excludeFilters = {
+            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class),
+            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = TaskScheduler.class),
+            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = K8sClient.class)
+        }
+)
 @Import({K8sJobTemplate.class, ResourceEventHolder.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModelServiceTest extends MySqlContainerHolder {
