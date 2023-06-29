@@ -49,7 +49,7 @@ public class WatchableTaskFactory {
     }
 
     public List<Task> wrapTasks(Collection<Task> tasks) {
-        return tasks.parallelStream()
+        return tasks.stream()
                 .map(task -> new WatchableTask(task, taskStatusChangeWatchers))
                 .collect(Collectors.toList());
     }

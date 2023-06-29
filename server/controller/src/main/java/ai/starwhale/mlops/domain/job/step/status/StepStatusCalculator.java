@@ -36,39 +36,39 @@ public class StepStatusCalculator {
 
     static {
         Map<StepStatus, Set<StatusRequirement<TaskStatus>>> map = new LinkedHashMap<>();
-        map.put(StepStatus.RUNNING, Set.of(
-                new StatusRequirement<>(
-                    Set.of(TaskStatus.PREPARING, TaskStatus.RUNNING, TaskStatus.READY),
-                    RequireType.MUST),
-                new StatusRequirement<>(
-                    Set.of(TaskStatus.PAUSED, TaskStatus.CANCELLING,
-                    TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO)));
-        map.put(StepStatus.SUCCESS,
-                Set.of(new StatusRequirement<>(Set.of(TaskStatus.SUCCESS), RequireType.ALL)));
-        map.put(StepStatus.CANCELED,
-                Set.of(new StatusRequirement<>(Set.of(TaskStatus.CANCELED), RequireType.MUST),
-                    new StatusRequirement<>(
-                        Set.of(TaskStatus.FAIL, TaskStatus.CANCELLING,
-                            TaskStatus.CREATED, TaskStatus.PAUSED,
-                            TaskStatus.PREPARING, TaskStatus.RUNNING), RequireType.HAVE_NO)));
-        map.put(StepStatus.CANCELLING,
-                Set.of(new StatusRequirement<>(
-                        Set.of(TaskStatus.CANCELLING, TaskStatus.CANCELED),
-                        RequireType.MUST),
-                    new StatusRequirement<>(Set.of(TaskStatus.FAIL), RequireType.HAVE_NO)));
-        map.put(StepStatus.PAUSED,
-                Set.of(new StatusRequirement<>(Set.of(TaskStatus.PAUSED), RequireType.MUST),
-                    new StatusRequirement<>(
-                        Set.of(TaskStatus.CANCELLING,
-                            TaskStatus.CANCELED,
-                            TaskStatus.FAIL),
-                        RequireType.HAVE_NO)));
-        map.put(StepStatus.READY,
-                Set.of(new StatusRequirement<>(Set.of(TaskStatus.READY), RequireType.ALL)));
-        map.put(StepStatus.CREATED,
-                Set.of(new StatusRequirement<>(Set.of(TaskStatus.CREATED), RequireType.ALL)));
         map.put(StepStatus.FAIL,
                 Set.of(new StatusRequirement<>(Set.of(TaskStatus.FAIL), RequireType.ANY)));
+        map.put(StepStatus.CREATED,
+                Set.of(new StatusRequirement<>(Set.of(TaskStatus.CREATED), RequireType.ALL)));
+        map.put(StepStatus.READY,
+                Set.of(new StatusRequirement<>(Set.of(TaskStatus.READY), RequireType.ALL)));
+        map.put(StepStatus.RUNNING, Set.of(
+                new StatusRequirement<>(
+                    Set.of(TaskStatus.PREPARING, TaskStatus.RUNNING, TaskStatus.READY), RequireType.MUST),
+                new StatusRequirement<>(
+                    Set.of(TaskStatus.PAUSED, TaskStatus.CANCELLING, TaskStatus.CANCELED, TaskStatus.FAIL),
+                    RequireType.HAVE_NO)));
+        map.put(StepStatus.PAUSED, Set.of(
+            new StatusRequirement<>(Set.of(TaskStatus.PAUSED), RequireType.MUST),
+            new StatusRequirement<>(
+                Set.of(TaskStatus.RUNNING, TaskStatus.READY, TaskStatus.CANCELLING,
+                        TaskStatus.CANCELED, TaskStatus.FAIL), RequireType.HAVE_NO)));
+        // should before cancelling
+        map.put(StepStatus.CANCELED, Set.of(
+                new StatusRequirement<>(Set.of(TaskStatus.CANCELED), RequireType.MUST),
+                new StatusRequirement<>(
+                    Set.of(
+                        TaskStatus.PAUSED, TaskStatus.PREPARING, TaskStatus.RUNNING,
+                        TaskStatus.CANCELLING, TaskStatus.FAIL
+                    ),
+                    RequireType.HAVE_NO)));
+        map.put(StepStatus.CANCELLING, Set.of(
+                new StatusRequirement<>(Set.of(TaskStatus.CANCELLING, TaskStatus.CANCELED), RequireType.MUST),
+                new StatusRequirement<>(Set.of(TaskStatus.FAIL), RequireType.HAVE_NO)));
+
+        map.put(StepStatus.SUCCESS,
+                Set.of(new StatusRequirement<>(Set.of(TaskStatus.SUCCESS), RequireType.ALL)));
+
         stepStatusRequirementSetMap = Collections.unmodifiableMap(map);
     }
 

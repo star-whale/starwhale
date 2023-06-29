@@ -27,9 +27,7 @@ import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.job.step.task.reporting.ReportedTask;
 import ai.starwhale.mlops.domain.job.step.task.reporting.SimpleTaskModifyReceiver;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +51,7 @@ public class TaskModifyReceiverImpTest {
 
     @Test
     public void testFreezeTask() {
-        when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Collections.emptySet());
+        when(jobHolder.getTask(1L)).thenReturn(null);
         var expected = ReportedTask.builder()
                 .id(1L)
                 .status(TaskStatus.READY)
@@ -66,7 +64,7 @@ public class TaskModifyReceiverImpTest {
     @Test
     public void testHotTask() {
         Task task = new Task();
-        when(jobHolder.tasksOfIds(List.of(1L))).thenReturn(Set.of(task));
+        when(jobHolder.getTask(1L)).thenReturn(task);
         var expected = ReportedTask.builder()
                 .id(1L)
                 .status(TaskStatus.READY)

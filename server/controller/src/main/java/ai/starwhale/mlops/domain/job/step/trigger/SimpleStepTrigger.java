@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.job.step.trigger;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -29,9 +28,12 @@ public class SimpleStepTrigger implements StepTrigger {
 
     public SimpleStepTrigger() { }
 
-    public void triggerNextStep(Step pplStep) {
-        Step nextStep = pplStep.getNextStep();
-        List<Task> nextStepTasks = nextStep.getTasks();
+    public void triggerNextStep(Step currentStep) {
+        var nextStep = currentStep.getNextStep();
+        if (null == nextStep) {
+            return;
+        }
+        var nextStepTasks = nextStep.getTasks();
         for (Task nextStepTask : nextStepTasks) {
             nextStepTask.updateStatus(TaskStatus.READY);
         }

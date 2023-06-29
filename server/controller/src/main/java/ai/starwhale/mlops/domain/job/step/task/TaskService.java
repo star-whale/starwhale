@@ -27,8 +27,6 @@ import ai.starwhale.mlops.domain.job.step.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -39,8 +37,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -135,12 +131,6 @@ public class TaskService {
                 taskStatus,
                 (batches, status) -> taskMapper.updateTaskStatus(new ArrayList<>(batches), status),
                 MAX_BATCH_SIZE);
-
-        CompletableFuture.runAsync(() -> {
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-            tasks.forEach(task -> task.updateStatus(taskStatus));
-            TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
-        });
     }
 
     private ResultPath resultPathOfTask(Long taskId) {

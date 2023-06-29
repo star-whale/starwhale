@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.cache;
+package ai.starwhale.mlops.domain.job.init;
 
 import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.JobScheduler;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
@@ -38,11 +39,11 @@ public class HotJobsLoader implements CommandLineRunner {
 
     final JobDao jobDao;
 
-    final JobLoader jobLoader;
+    final JobScheduler jobScheduler;
 
-    public HotJobsLoader(JobDao jobDao, JobLoader jobLoader) {
+    public HotJobsLoader(JobDao jobDao, JobScheduler jobScheduler) {
         this.jobDao = jobDao;
-        this.jobLoader = jobLoader;
+        this.jobScheduler = jobScheduler;
     }
 
     /**
@@ -63,7 +64,7 @@ public class HotJobsLoader implements CommandLineRunner {
     public void run(String... args) throws Exception {
         hotJobsFromDb().forEach(job -> {
             try {
-                jobLoader.load(job, false);
+                jobScheduler.schedule(job, false);
             } catch (Exception e) {
                 log.error("loading hotting job failed {}", job.getId(), e);
                 jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);

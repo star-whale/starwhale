@@ -32,25 +32,20 @@ public class JobStatusCalculator {
 
     static  {
         Map<JobStatus, Set<StatusRequirement<StepStatus>>> map = new LinkedHashMap<>();
-        map.put(JobStatus.FAIL, Set.of(
-                new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.ANY)
+        map.put(JobStatus.FAIL,
+                Set.of(new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.ANY)
         ));
-        map.put(JobStatus.UNKNOWN, Set.of(
-                new StatusRequirement<>(Set.of(StepStatus.UNKNOWN), RequireType.ANY)
+        map.put(JobStatus.UNKNOWN,
+                Set.of(new StatusRequirement<>(Set.of(StepStatus.UNKNOWN), RequireType.ANY)
         ));
         map.put(JobStatus.RUNNING, Set.of(
-                new StatusRequirement<>(Set.of(StepStatus.RUNNING, StepStatus.READY, StepStatus.CREATED),
+                new StatusRequirement<>(
+                        Set.of(StepStatus.RUNNING, StepStatus.READY, StepStatus.CREATED),
                         RequireType.MUST),
                 new StatusRequirement<>(
-                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING,
-                                StepStatus.PAUSED), RequireType.HAVE_NO)
+                        Set.of(StepStatus.FAIL, StepStatus.CANCELED, StepStatus.CANCELLING, StepStatus.PAUSED),
+                        RequireType.HAVE_NO)
         ));
-
-        map.put(JobStatus.SUCCESS, Set.of(
-                new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.ALL),
-                new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.MUST)
-        ));
-
         map.put(JobStatus.PAUSED, Set.of(
                 new StatusRequirement<>(Set.of(StepStatus.PAUSED), RequireType.MUST),
                 new StatusRequirement<>(
@@ -61,11 +56,15 @@ public class JobStatusCalculator {
                 new StatusRequirement<>(Set.of(StepStatus.CANCELLING), RequireType.MUST),
                 new StatusRequirement<>(Set.of(StepStatus.FAIL), RequireType.HAVE_NO)
         ));
-
         map.put(JobStatus.CANCELED, Set.of(
                 new StatusRequirement<>(Set.of(StepStatus.CANCELED), RequireType.MUST),
-                new StatusRequirement<>(
-                        Set.of(StepStatus.FAIL, StepStatus.CANCELLING, StepStatus.RUNNING), RequireType.HAVE_NO)
+                new StatusRequirement<>(Set.of(StepStatus.CANCELLING, StepStatus.RUNNING, StepStatus.FAIL),
+                        RequireType.HAVE_NO)
+        ));
+
+        map.put(JobStatus.SUCCESS, Set.of(
+            new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.ALL),
+            new StatusRequirement<>(Set.of(StepStatus.SUCCESS), RequireType.MUST)
         ));
 
         stepStatusRequirementSetMap = Collections.unmodifiableMap(map);

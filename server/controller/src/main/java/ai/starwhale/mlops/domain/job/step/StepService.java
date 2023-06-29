@@ -99,16 +99,16 @@ public class StepService {
         });
     }
 
-    public void updateStepStatus(Step step, StepStatus stepNewStatus) {
-        log.info("step status change from {} to {} with id {}", step.getStatus(), stepNewStatus, step.getId());
-        step.setStatus(stepNewStatus);
-        stepMapper.updateStatus(List.of(step.getId()), stepNewStatus);
+    public void updateStepStatus(Step step, StepStatus newStatus) {
+        log.info("step status change from {} to {} with id {}", step.getStatus(), newStatus, step.getId());
+        step.setStatus(newStatus);
+        stepMapper.updateStatus(List.of(step.getId()), newStatus);
         var now = new Date();
-        if (StepStatusMachine.isFinal(stepNewStatus)) {
+        if (StepStatusMachine.isFinal(newStatus)) {
             step.setFinishTime(now.getTime());
             stepMapper.updateFinishedTime(step.getId(), now);
         }
-        if (StepStatus.RUNNING == stepNewStatus) {
+        if (StepStatus.RUNNING == newStatus) {
             step.setStartTime(now.getTime());
             stepMapper.updateStartedTime(step.getId(), now);
         }

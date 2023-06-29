@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -42,10 +41,13 @@ public class HotJobHolderImplTest {
         job2.getCurrentStep().getTasks().get(0).updateStatus(TaskStatus.FAIL);
         job1.getCurrentStep().getTasks().get(0).updateStatus(TaskStatus.CANCELLING);
         job1.setStatus(JobStatus.CANCELLING);
-        hotJobHolder.adopt(job1);
-        hotJobHolder.adopt(job2);
+        hotJobHolder.add(job1);
+        hotJobHolder.add(job2);
 
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(1L, 8L, 9L));
+        Assertions.assertEquals(hotJobHolder.getJob(1L), job1);
+        Assertions.assertEquals(hotJobHolder.getJob(8L), job2);
+
+        Collection<Job> jobs = hotJobHolder.getJobs(Set.of(1L, 8L, 9L));
         Assertions.assertTrue(jobs.contains(job1));
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(2, jobs.size());
@@ -54,13 +56,13 @@ public class HotJobHolderImplTest {
         Assertions.assertEquals(1, jobs1.size());
         Assertions.assertTrue(jobs1.contains(job1));
 
-        Collection<Task> tasks = hotJobHolder.tasksOfIds(
-                List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
+        Collection<Task> tasks = hotJobHolder.getTasks(
+                Set.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
         Assertions.assertEquals(5, tasks.size());
 
         hotJobHolder.remove(job1.getId());
 
-        jobs = hotJobHolder.ofIds(List.of(1L, 8L, 9L));
+        jobs = hotJobHolder.getJobs(Set.of(1L, 8L, 9L));
         Assertions.assertTrue(!jobs.contains(job1));
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(1, jobs.size());
@@ -68,8 +70,8 @@ public class HotJobHolderImplTest {
         jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.CANCELLING));
         Assertions.assertEquals(0, jobs1.size());
 
-        tasks = hotJobHolder.tasksOfIds(
-                List.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
+        tasks = hotJobHolder.getTasks(
+                Set.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
         Assertions.assertEquals(3, tasks.size());
 
     }

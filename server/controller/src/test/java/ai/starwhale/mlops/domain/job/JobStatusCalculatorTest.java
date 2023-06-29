@@ -23,7 +23,6 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.FAIL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.READY;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
@@ -35,79 +34,78 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class JobStatusCalculatorTest {
 
-    JobStatusCalculator jobStatusCalculator = new JobStatusCalculator();
-
     @Test
     public void testSuccess() {
-        Assertions.assertEquals(JobStatus.SUCCESS, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS)));
+        Assertions.assertEquals(JobStatus.SUCCESS, JobStatusCalculator.desiredJobStatus(Set.of(SUCCESS)));
     }
 
     @Test
     public void testCancelling() {
         JobStatus cancelling = JobStatus.CANCELLING;
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
-
-        Assertions.assertEquals(cancelling,
-                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
-
-        Assertions.assertEquals(cancelling, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING)));
-
-        Assertions.assertEquals(cancelling,
-                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
-
-        Assertions.assertEquals(cancelling,
-                jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
-
-
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, CANCELLING)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, CANCELLING, RUNNING)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, CANCELLING)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, CANCELLING, CANCELED)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, RUNNING, CANCELLING, CANCELED)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, READY, CANCELLING, CANCELED)));
+        Assertions.assertEquals(cancelling, JobStatusCalculator.desiredJobStatus(
+                Set.of(SUCCESS, CREATED, CANCELLING, CANCELED)));
     }
 
     @Test
     public void testCancelled() {
         JobStatus canceled = JobStatus.CANCELED;
-        Assertions.assertEquals(canceled, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELED)));
-
-        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of(UNKNOWN, CANCELED)));
+        Assertions.assertEquals(canceled, JobStatusCalculator.desiredJobStatus(Set.of(SUCCESS, CANCELED)));
+        Assertions.assertEquals(canceled, JobStatusCalculator.desiredJobStatus(Set.of(CREATED, CANCELED)));
     }
 
     @Test
     public void testRunning() {
-
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(CREATED, RUNNING)));
 
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(READY, RUNNING)));
 
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(READY, SUCCESS)));
 
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(CREATED, SUCCESS)));
 
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(READY, RUNNING)));
 
-        Assertions.assertEquals(JobStatus.RUNNING, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
+                Set.of(READY, CREATED)));
+
+        Assertions.assertEquals(JobStatus.RUNNING, JobStatusCalculator.desiredJobStatus(
                 Set.of(SUCCESS, RUNNING)));
 
     }
 
     @Test
     public void testFail() {
-        Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.FAIL, JobStatusCalculator.desiredJobStatus(
                 Set.of(FAIL, SUCCESS)));
-        Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.FAIL, JobStatusCalculator.desiredJobStatus(
                 Set.of(FAIL, RUNNING)));
-        Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.FAIL, JobStatusCalculator.desiredJobStatus(
                 Set.of(FAIL, CANCELLING)));
-        Assertions.assertEquals(JobStatus.FAIL, jobStatusCalculator.desiredJobStatus(
+        Assertions.assertEquals(JobStatus.FAIL, JobStatusCalculator.desiredJobStatus(
                 Set.of(FAIL, CREATED, SUCCESS)));
 
     }
 
     @Test
     public void testEmpty() {
-        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of()));
+        Assertions.assertEquals(JobStatus.UNKNOWN, JobStatusCalculator.desiredJobStatus(Set.of()));
     }
 
 

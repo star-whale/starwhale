@@ -27,15 +27,17 @@ import java.util.Set;
  */
 public interface HotJobHolder {
 
-    void adopt(Job job);
+    void add(Job job);
 
-    Collection<Job> ofIds(Collection<Long> ids);
+    Collection<Job> getJobs(Set<Long> ids);
 
-    Job get(Long id);
+    Job getJob(Long id);
 
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 
-    Collection<Task> tasksOfIds(Collection<Long> taskIds);
+    Collection<Task> getTasks(Set<Long> taskIds);
+
+    Task getTask(Long taskId);
 
     /**
      * remove job in cache

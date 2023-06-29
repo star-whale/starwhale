@@ -20,6 +20,7 @@ import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CANCELED
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CANCELLING;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.CREATED;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.FAIL;
+import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.PAUSED;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.PREPARING;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.READY;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.RUNNING;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class StepServiceTest {
+public class StepStatusCalculatorTest {
 
     StepService stepService = new StepService(
             mock(StepMapper.class), mock(StepConverter.class), mock(TaskService.class));
@@ -53,30 +54,38 @@ public class StepServiceTest {
     @Test
     public void testCancelling() {
         StepStatus cancelling = StepStatus.CANCELLING;
-        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, CANCELLING)));
-
-        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, CANCELLING)));
-
-        Assertions.assertEquals(cancelling,
-                StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
-
-        Assertions.assertEquals(cancelling,
-                StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, CANCELLING, CANCELED)));
-        Assertions.assertEquals(cancelling,
-                StepStatusCalculator.desiredStepStatus(Set.of(CANCELED, PREPARING, RUNNING, SUCCESS)));
-
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(SUCCESS, CANCELLING)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(SUCCESS, CANCELED, PREPARING)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(SUCCESS, CANCELLING, CANCELED)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(SUCCESS, CANCELLING, RUNNING)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(CANCELED, PREPARING, RUNNING, SUCCESS)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(CANCELED, READY, PREPARING, RUNNING, SUCCESS)));
+        Assertions.assertEquals(cancelling, StepStatusCalculator.desiredStepStatus(
+                Set.of(CANCELED, CREATED, PREPARING, RUNNING, SUCCESS)));
     }
 
     @Test
     public void testCancelled() {
         StepStatus canceled = StepStatus.CANCELED;
         Assertions.assertEquals(canceled, StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, CANCELED)));
+        Assertions.assertEquals(canceled, StepStatusCalculator.desiredStepStatus(Set.of(CREATED, CANCELED)));
+    }
 
+    @Test
+    public void testPaused() {
+        StepStatus paused = StepStatus.PAUSED;
+        Assertions.assertEquals(paused, StepStatusCalculator.desiredStepStatus(Set.of(SUCCESS, PAUSED)));
+        Assertions.assertEquals(paused, StepStatusCalculator.desiredStepStatus(Set.of(CREATED, PAUSED)));
     }
 
     @Test
     public void testRunning() {
-
         Assertions.assertEquals(StepStatus.RUNNING, StepStatusCalculator.desiredStepStatus(
                 Set.of(CREATED, PREPARING)));
 
@@ -84,7 +93,7 @@ public class StepServiceTest {
                 Set.of(CREATED, RUNNING)));
 
         Assertions.assertEquals(StepStatus.RUNNING, StepStatusCalculator.desiredStepStatus(
-                Set.of(READY)));
+                Set.of(READY, PREPARING)));
 
         Assertions.assertEquals(StepStatus.RUNNING, StepStatusCalculator.desiredStepStatus(
                 Set.of(READY, SUCCESS)));

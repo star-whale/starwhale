@@ -25,7 +25,7 @@ public enum StepStatus {
     /**
      * ready to be scheduled
      */
-    READY,
+    READY(),
 
     /**
      * paused by user

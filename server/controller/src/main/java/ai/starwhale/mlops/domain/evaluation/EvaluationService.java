@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
-import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.core.io.FileUtil;
@@ -144,7 +143,7 @@ public class EvaluationService {
                 .build();
 
         // only cache the jobs which have the final status
-        if (JobStatusMachine.isFinal(job.getStatus())) {
+        if (job.isFinal()) {
             summaryCache.put(job.getId(), summaryVo);
         }
         return summaryVo;

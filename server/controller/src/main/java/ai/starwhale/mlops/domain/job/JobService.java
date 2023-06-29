@@ -25,8 +25,6 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
@@ -38,13 +36,10 @@ import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.resulting.ResultQuerier;
 import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
@@ -70,7 +65,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -85,13 +79,10 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Service
 public class JobService {
-    private final HotJobHolder jobHolder;
-    private final TaskService taskService;
     private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
-    private final HotJobHolder hotJobHolder;
-    private final JobLoader jobLoader;
+    private final JobScheduler jobScheduler;
     private final TaskScheduler taskScheduler;
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
@@ -106,25 +97,20 @@ public class JobService {
     private final JobSpecParser jobSpecParser;
 
     public JobService(
-            HotJobHolder jobHolder, TaskService taskService, JobConverter jobConvertor,
-            JobBoConverter jobBoConverter, RuntimeService runtimeService,
-            JobSpliterator jobSpliterator, HotJobHolder hotJobHolder,
-            ProjectService projectService, JobDao jobDao, JobLoader jobLoader, ModelService modelService,
-            ResultQuerier resultQuerier, DatasetService datasetService,
-            StoragePathCoordinator storagePathCoordinator,
-            UserService userService, TrashService trashService,
-            SystemSettingService systemSettingService, JobSpecParser jobSpecParser,
+            JobConverter jobConvertor, JobBoConverter jobBoConverter,
+            JobSpliterator jobSpliterator, JobDao jobDao, JobScheduler jobScheduler, JobSpecParser jobSpecParser,
+            ResultQuerier resultQuerier, StoragePathCoordinator storagePathCoordinator,
+            ProjectService projectService, UserService userService, TrashService trashService,
+            ModelService modelService, RuntimeService runtimeService, DatasetService datasetService,
+            SystemSettingService systemSettingService,
             TaskScheduler taskScheduler) {
-        this.jobHolder = jobHolder;
-        this.taskService = taskService;
         this.jobConvertor = jobConvertor;
         this.jobBoConverter = jobBoConverter;
         this.runtimeService = runtimeService;
         this.jobSpliterator = jobSpliterator;
-        this.hotJobHolder = hotJobHolder;
         this.projectService = projectService;
         this.jobDao = jobDao;
-        this.jobLoader = jobLoader;
+        this.jobScheduler = jobScheduler;
         this.modelService = modelService;
         this.resultQuerier = resultQuerier;
         this.datasetService = datasetService;
@@ -192,15 +178,10 @@ public class JobService {
             var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
             jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
             if (desiredJobStatus == JobStatus.FAIL) {
-                CompletableFuture.runAsync(() -> {
-                    TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
-                    job.getSteps().stream().map(Step::getTasks).flatMap(Collection::stream)
-                        .filter(task -> task.getStatus() == TaskStatus.RUNNING) // TODO these should be killed?
-                        .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
-                    TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
-                });
+                // try to cancel other running tasks
+                jobScheduler.cancel(job.getId());
             }
-            jobHolder.remove(job.getId());
+            jobScheduler.remove(job.getId());
         }
     }
 
@@ -220,6 +201,7 @@ public class JobService {
                 .type(Type.valueOf(job.getType().name()))
                 .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
+        // TODO stop schedule
 
         return jobDao.removeJob(job.getId());
     }
@@ -324,11 +306,12 @@ public class JobService {
         log.info("Job has been created. ID={}", jobId);
 
         var job = jobDao.findJobById(jobId);
-        jobSpliterator.split(job);
-        jobBoConverter.fillStepsAndTasks(job);
-        jobLoader.load(job, false);
-        this.updateJob(job);
 
+        jobSpliterator.split(job);
+        // should fill steps and tasks info after split
+        jobBoConverter.fillStepsAndTasks(job);
+        jobScheduler.schedule(job, false);
+        // this.updateJob(job);
         return jobId;
     }
 
@@ -359,25 +342,12 @@ public class JobService {
     }
 
     /**
-     * transactional jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
+     * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->CANCELLING;CREATED/PAUSED/UNKNOWN->CANCELED,READY->??
      */
     @Transactional
     public void cancelJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        Job job = hotJobHolder.get(jobId);
-        if (null == job) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.JOB, "Completed jobs cannot be canceled."),
-                    HttpStatus.BAD_REQUEST);
-        }
-        if (job.getStatus() != JobStatus.RUNNING && job.getStatus() != JobStatus.PAUSED) {
-            throw new SwValidationException(ValidSubject.JOB, "Job's status is not RUNNING/PAUSED, can't be canceled.");
-        }
-
-        List<Task> runningTasks = job.tasks()
-                .filter(task -> !task.isFinal())
-                .collect(Collectors.toList());
-        taskService.batchUpdateTaskStatus(runningTasks, TaskStatus.CANCELLING);
+        jobScheduler.cancel(jobId);
     }
 
     public List<Job> listHotJobs() {
@@ -390,25 +360,15 @@ public class JobService {
     @Transactional
     public void pauseJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        Job job = hotJobHolder.get(jobId);
-        if (null == job) {
-            throw new SwValidationException(ValidSubject.JOB, "Completed jobs cannot be paused.");
-        }
-        List<Task> runningTasks = job.tasks()
-                .filter(task -> !task.isFinal())
-                .collect(Collectors.toList());
-        if (runningTasks.isEmpty()) {
-            return;
-        }
-        taskService.batchUpdateTaskStatus(runningTasks, TaskStatus.PAUSED);
+        jobScheduler.pause(jobId);
     }
 
     /**
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
     public void resumeJob(String jobUrl) {
-        Long jobId = jobDao.getJobId(jobUrl);
-        Job job = jobDao.findJobById(jobId);
+        var jobId = jobDao.getJobId(jobUrl);
+        var job = jobDao.findJobById(jobId);
         if (null == job) {
             throw new SwValidationException(ValidSubject.JOB, "job not exists");
         }
@@ -417,8 +377,9 @@ public class JobService {
                 && job.getStatus() != JobStatus.CANCELED) {
             throw new SwValidationException(ValidSubject.JOB, "only failed/paused/canceled job can be resumed ");
         }
-        job = jobLoader.load(job, true);
-        this.updateJob(job);
+        // reschedule job
+        job = jobScheduler.schedule(job, true);
+        // this.updateJob(job);
     }
 
     public ExecResponse exec(

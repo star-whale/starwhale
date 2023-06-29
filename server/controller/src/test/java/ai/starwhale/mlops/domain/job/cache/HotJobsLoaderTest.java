@@ -25,7 +25,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.job.JobScheduler;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.init.HotJobsLoader;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,15 +36,15 @@ public class HotJobsLoaderTest {
 
     JobDao jobDao;
 
-    JobLoader jobLoader;
+    JobScheduler jobScheduler;
 
     HotJobsLoader hotJobsLoader;
 
     @BeforeEach
     public void setup() {
         jobDao = mock(JobDao.class);
-        jobLoader = mock(JobLoader.class);
-        hotJobsLoader = new HotJobsLoader(jobDao, jobLoader);
+        jobScheduler = mock(JobScheduler.class);
+        hotJobsLoader = new HotJobsLoader(jobDao, jobScheduler);
     }
 
     @Test
@@ -52,7 +54,7 @@ public class HotJobsLoaderTest {
         when(jobDao.findJobByStatusIn(anyList())).thenReturn(List.of(job1, job2));
 
         hotJobsLoader.run();
-        verify(jobLoader, times(2)).load(any(Job.class), eq(false));
+        verify(jobScheduler, times(2)).schedule(any(Job.class), eq(false));
     }
 
 }

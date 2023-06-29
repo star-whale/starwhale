@@ -180,7 +180,7 @@ public class DatasetUploaderTest {
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
-        hotJobHolder.adopt(mockJob);
+        hotJobHolder.add(mockJob);
         uploadRequest.setForce("1");
         Assertions.assertThrowsExactly(SwValidationException.class,
                 () -> datasetUploader.create(HotDatasetHolderTest.MANIFEST, "_manifest.yaml", uploadRequest));

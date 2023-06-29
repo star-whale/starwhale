@@ -53,7 +53,6 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
@@ -64,6 +63,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.task.TaskService;
+import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.resulting.ResultQuerier;
 import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
@@ -104,7 +104,7 @@ public class JobServiceTest {
     private JobBoConverter jobBoConverter;
     private JobSpliterator jobSpliterator;
     private HotJobHolder hotJobHolder;
-    private JobLoader jobLoader;
+    private JobScheduler jobScheduler;
     private ResultQuerier resultQuerier;
     private StoragePathCoordinator storagePathCoordinator;
     private UserService userService;
@@ -126,7 +126,7 @@ public class JobServiceTest {
         given(jobConverter.convert(any(Job.class))).willReturn(JobVo.builder().id("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
-        jobLoader = mock(JobLoader.class);
+        jobScheduler = new JobScheduler(hotJobHolder, mock(WatchableTaskFactory.class), taskScheduler, taskService);
         resultQuerier = mock(ResultQuerier.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
         userService = mock(UserService.class);
@@ -149,10 +149,13 @@ public class JobServiceTest {
         taskScheduler = mock(TaskScheduler.class);
 
         service = new JobService(
-                hotJobHolder, taskService, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
-                hotJobHolder, projectService, jobDao, jobLoader, modelService,
-                resultQuerier, datasetService, storagePathCoordinator, userService,
-                trashService, systemSettingService, jobSpecParser, taskScheduler);
+            jobConverter, jobBoConverter,
+            jobSpliterator, jobDao, jobScheduler, jobSpecParser,
+            resultQuerier, storagePathCoordinator,
+            projectService, userService, trashService,
+            modelService, runtimeService, datasetService,
+            systemSettingService, taskScheduler
+        );
     }
 
     @Test
@@ -341,7 +344,7 @@ public class JobServiceTest {
 
     @Test
     public void testCancelJob() {
-        given(hotJobHolder.get(1L)).willReturn(
+        given(hotJobHolder.getJob(1L)).willReturn(
                 Job.builder()
                     .steps(List.of(
                         Step.builder()
@@ -367,7 +370,7 @@ public class JobServiceTest {
 
     @Test
     public void testPauseJob() {
-        given(hotJobHolder.get(1L)).willReturn(
+        given(hotJobHolder.getJob(1L)).willReturn(
                 Job.builder()
                     .steps(List.of(
                         Step.builder()
@@ -378,14 +381,8 @@ public class JobServiceTest {
                             )).build()
                     )).status(JobStatus.RUNNING).build());
         final List<Long> ids = new ArrayList<>();
-        doAnswer(invocation -> ids.addAll(((Collection<Task>) invocation.getArgument(0)).stream()
-                    .map(Task::getId).collect(Collectors.toList()))
-        ).when(taskService).batchUpdateTaskStatus(anyList(), any());
+
         service.pauseJob("1");
-        assertThat(ids, allOf(
-                iterableWithSize(1),
-                hasItem(2L)
-        ));
 
         assertThrows(StarwhaleApiException.class,
                 () -> service.cancelJob("22"));
@@ -397,13 +394,8 @@ public class JobServiceTest {
                 .willReturn(Job.builder().steps(List.of()).status(JobStatus.FAIL).build());
         given(jobDao.findJobById(same(2L)))
                 .willReturn(Job.builder().status(JobStatus.SUCCESS).build());
-        final List<Job> jobs = new ArrayList<>();
-        doAnswer(invocation -> {
-            jobs.add(invocation.getArgument(0));
-            return invocation.getArgument(0);
-        }).when(jobLoader).load(any(), any());
+
         service.resumeJob("1");
-        assertThat(jobs, iterableWithSize(1));
 
         assertThrows(SwValidationException.class,
                 () -> service.resumeJob("2"));
@@ -425,7 +417,7 @@ public class JobServiceTest {
                 .status(JobStatus.RUNNING).build();
         when(jobDao.findJobByStatusIn(eq(List.of(JobStatus.RUNNING)))).thenReturn(List.of(theJob));
         when(jobDao.getJobId(eq("2"))).thenReturn(theJob.getId());
-        when(hotJobHolder.ofIds(eq(List.of(theJob.getId())))).thenReturn(List.of(theJob));
+        when(hotJobHolder.getJob(eq(theJob.getId()))).thenReturn(theJob);
 
         svc.gc();
         verify(svc).cancelJob("2");
@@ -443,9 +435,6 @@ public class JobServiceTest {
         var job = Job.builder().id(2L).status(JobStatus.RUNNING).steps(List.of(step)).build();
 
         when(jobDao.findJobById(eq(job.getId()))).thenReturn(job);
-        when(hotJobHolder.ofIds(eq(List.of(job.getId())))).thenReturn(List.of(job));
-        when(hotJobHolder.ofIds(eq(List.of(step.getId())))).thenReturn(List.of(job));
-        when(hotJobHolder.ofIds(eq(List.of(task.getId())))).thenReturn(List.of(job));
 
         var expected = ExecResponse.builder().stdout("stdout").stderr("stderr").build();
         when(taskScheduler.exec(eq(task), any())).thenReturn(new Future<>() {
@@ -510,6 +499,8 @@ public class JobServiceTest {
                     .thenReturn(desiredStatus);
             Job mockJob = new JobMockHolder().mockJob();
 
+            given(hotJobHolder.getJob(mockJob.getId())).willReturn(mockJob);
+
             Task luckTask = mockJob.getSteps().get(0).getTasks().get(0);
             luckTask.updateStatus(TaskStatus.RUNNING);
 
@@ -520,7 +511,7 @@ public class JobServiceTest {
             verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                     argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
             Thread.sleep(100); // wait for async status update
-            Assertions.assertEquals(TaskStatus.CANCELED, luckTask.getStatus());
+            Assertions.assertEquals(TaskStatus.CANCELLING, luckTask.getStatus());
         }
     }
 

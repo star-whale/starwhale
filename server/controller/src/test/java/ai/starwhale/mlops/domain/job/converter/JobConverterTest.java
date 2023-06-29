@@ -150,7 +150,7 @@ public class JobConverterTest {
                 .steps(List.of(step))
                 .build();
 
-        when(hotJobHolder.ofIds(List.of(1L))).thenReturn(List.of(job));
+        when(hotJobHolder.getJob(1L)).thenReturn(job);
         var stepSpec = StepSpec.builder()
                 .name("step")
                 .expose(10)

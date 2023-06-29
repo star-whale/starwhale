@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.cache.JobLoader;
+import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
 import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
@@ -37,9 +37,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * test for {@link JobLoader}
+ * test for {@link JobScheduler}
  */
-public class JobLoaderTest {
+public class JobSchedulerTest {
 
     Job mockJob;
 
@@ -47,7 +47,7 @@ public class JobLoaderTest {
 
     WatchableTaskFactory watchableTaskFactory;
 
-    JobLoader jobLoader;
+    JobScheduler jobScheduler;
 
     TaskScheduler taskScheduler;
 
@@ -57,7 +57,7 @@ public class JobLoaderTest {
         jobHolder = mock(HotJobHolder.class);
         watchableTaskFactory = mock(WatchableTaskFactory.class);
         taskScheduler = mock(TaskScheduler.class);
-        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, taskScheduler);
+        jobScheduler = new JobScheduler(jobHolder, watchableTaskFactory, taskScheduler, mock(TaskService.class));
     }
 
 
@@ -68,8 +68,8 @@ public class JobLoaderTest {
         Task readyTask = mock(Task.class);
         when(readyTask.getStatus()).thenReturn(TaskStatus.READY);
         when(watchableTaskFactory.wrapTasks(anyCollection())).thenReturn(List.of(failedTask, readyTask));
-        jobLoader.load(mockJob, false);
-        verify(jobHolder, times(1)).adopt(mockJob);
+        jobScheduler.schedule(mockJob, false);
+        verify(jobHolder, times(1)).add(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
         verify(taskScheduler).schedule(Set.of(readyTask));
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
@@ -81,8 +81,8 @@ public class JobLoaderTest {
         when(failedTask.getStatus()).thenReturn(TaskStatus.FAIL);
         when(failedTask.unwrap()).thenReturn(new Task());
         when(watchableTaskFactory.wrapTasks(anyCollection())).thenReturn(List.of(failedTask));
-        jobLoader.load(mockJob, true);
+        jobScheduler.schedule(mockJob, true);
         verify(failedTask, times(mockJob.getSteps().size())).updateStatus(TaskStatus.READY);
-        verify(jobHolder).adopt(mockJob);
+        verify(jobHolder).add(mockJob);
     }
 }

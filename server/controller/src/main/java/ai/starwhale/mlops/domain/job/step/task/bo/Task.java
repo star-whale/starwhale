@@ -20,7 +20,6 @@ import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.job.step.task.status.TaskStatusMachine;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -68,10 +67,6 @@ public class Task extends TimeConcern {
 
     String ip;
     DevWay devWay;
-
-    public boolean isFinal() {
-        return TaskStatusMachine.isFinal(status);
-    }
 
     public void updateStatus(TaskStatus status) {
         this.status = status;

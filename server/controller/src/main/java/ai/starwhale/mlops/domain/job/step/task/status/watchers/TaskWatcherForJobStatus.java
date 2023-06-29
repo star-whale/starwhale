@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.job.step.task.status.watchers;
 
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepService;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
@@ -61,25 +60,25 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
         Step step = task.getStep();
         Job job = step.getJob();
         log.debug("updating job {} status for task {}", job.getId(), task.getId());
+        // TODO use KeyLock for future distributed and keyLock can be replaced with other impl
         synchronized (job) {
             log.debug("lock got for job {} and task {}", job.getId(), task.getId());
-            Collection<TaskStatus> taskStatuses = step.getTasks().parallelStream().map(Task::getStatus).collect(
-                    Collectors.toSet());
+            Collection<TaskStatus> taskStatuses = step.getTasks()
+                    .stream().map(Task::getStatus).collect(Collectors.toSet());
             StepStatus stepNewStatus = StepStatusCalculator.desiredStepStatus(taskStatuses);
             if (step.getStatus() == stepNewStatus) {
                 log.debug("step status not changed {} id {}", stepNewStatus, step.getId());
                 return;
             }
             if (!StepStatusMachine.couldTransfer(step.getStatus(), stepNewStatus)) {
-                log.warn("step status change unexpectedly from {} to {} of id {} forbidden", step.getStatus(),
-                        stepNewStatus, step.getId());
+                log.warn("step status change unexpectedly from {} to {} of id {} forbidden",
+                        step.getStatus(), stepNewStatus, step.getId());
             }
             stepService.updateStepStatus(step, stepNewStatus);
             jobService.updateJob(job);
-            if (step.getStatus() == StepStatus.SUCCESS && job.getStatus() != JobStatus.SUCCESS) {
+            if (step.getStatus() == StepStatus.SUCCESS && !job.isFinal()) {
                 stepTrigger.triggerNextStep(step);
             }
-
         }
     }
 

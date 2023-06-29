@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -51,9 +50,10 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 taskMapper.updateFailedReason(reportedTask.getId(), reportedTask.getFailedReason());
             }
 
-            Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
+            Task optionalTasks = jobHolder.getTask(reportedTask.getId());
 
-            if (null == optionalTasks || optionalTasks.isEmpty()) {
+            if (null == optionalTasks) {
+                // TODO Update step and job status?
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
@@ -66,35 +66,33 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 }
                 // update start time
                 if (reportedTask.getStartTimeMillis() != null) {
-                    var tm = new Date(reportedTask.getStartTimeMillis());
-                    taskMapper.updateTaskStartedTimeIfNotSet(reportedTask.getId(), tm);
+                    taskMapper.updateTaskStartedTimeIfNotSet(
+                            reportedTask.getId(), new Date(reportedTask.getStartTimeMillis()));
                 }
                 if (reportedTask.getStopTimeMillis() != null) {
-                    var tm = new Date(reportedTask.getStopTimeMillis());
-                    taskMapper.updateTaskFinishedTimeIfNotSet(reportedTask.getId(), tm);
+                    taskMapper.updateTaskFinishedTimeIfNotSet(
+                            reportedTask.getId(), new Date(reportedTask.getStopTimeMillis()));
                 }
                 return;
             }
             if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
-                optionalTasks.forEach(task -> task.setRetryNum(reportedTask.getRetryCount()));
+                optionalTasks.setRetryNum(reportedTask.getRetryCount());
                 taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
             }
             if (StringUtils.hasText(reportedTask.getIp())) {
-                optionalTasks.forEach(task -> task.setIp(reportedTask.getIp()));
+                optionalTasks.setIp(reportedTask.getIp());
                 taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
             }
             if (reportedTask.status != TaskStatus.UNKNOWN) {
-                optionalTasks.forEach(task -> {
-                    // update time before status because only the updateStatus will trigger the watcher
-                    // TODO optimize the update time logic
-                    if (task.getStartTime() == null) {
-                        task.setStartTime(reportedTask.getStartTimeMillis());
-                    }
-                    if (task.getFinishTime() == null) {
-                        task.setFinishTime(reportedTask.getStopTimeMillis());
-                    }
-                    task.updateStatus(reportedTask.getStatus());
-                });
+                // update time before status because only the updateStatus will trigger the watcher
+                // TODO optimize the update time logic
+                if (optionalTasks.getStartTime() == null) {
+                    optionalTasks.setStartTime(reportedTask.getStartTimeMillis());
+                }
+                if (optionalTasks.getFinishTime() == null) {
+                    optionalTasks.setFinishTime(reportedTask.getStopTimeMillis());
+                }
+                optionalTasks.updateStatus(reportedTask.getStatus());
             }
         });
 

@@ -101,15 +101,12 @@ public class JobConverter {
      */
     private List<String> generateJobExposedLinks(Long jobId) {
         var links = new ArrayList<String>();
-        var jobs = hotJobHolder.ofIds(List.of(jobId));
-        if (CollectionUtils.isEmpty(jobs)) {
+        var job = hotJobHolder.getJob(jobId);
+        if (null == job) {
             return links;
         }
-        var job = jobs.stream().findAny().get();
-
         // only running job should generate exposed links
-        var jobStatus = job.getStatus();
-        if (jobStatus != JobStatus.RUNNING) {
+        if (job.getStatus() != JobStatus.RUNNING) {
             return links;
         }
         // check if job has exposed port in step spec

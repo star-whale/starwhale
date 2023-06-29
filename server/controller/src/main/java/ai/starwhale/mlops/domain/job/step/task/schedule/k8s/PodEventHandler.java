@@ -24,11 +24,9 @@ import ai.starwhale.mlops.domain.job.step.task.reporting.TaskModifyReceiver;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Pod;
-import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Slf4j
@@ -142,12 +140,11 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         }
         Long tid = getTaskId(pod);
         if (tid != null) {
-            Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(tid));
-            if (CollectionUtils.isEmpty(optionalTasks)) {
+            Task task = jobHolder.getTask(tid);
+            if (null == task) {
                 log.warn("no tasks found for pod {}", pod.getMetadata().getName());
                 return;
             }
-            Task task = optionalTasks.stream().findAny().get();
             taskLogK8sCollector.collect(task);
         }
     }

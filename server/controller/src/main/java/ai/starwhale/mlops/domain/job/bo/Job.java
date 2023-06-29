@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.model.Model;
@@ -100,6 +101,10 @@ public class Job extends TimeConcern {
     Date autoReleaseTime;
 
     Date pinnedTime;
+
+    public boolean isFinal() {
+        return JobStatusMachine.isFinal(status);
+    }
 
     public Stream<Task> tasks() {
         return this.steps.stream()

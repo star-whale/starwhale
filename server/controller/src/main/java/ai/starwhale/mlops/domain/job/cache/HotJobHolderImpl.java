@@ -37,19 +37,19 @@ public class HotJobHolderImpl implements HotJobHolder {
 
     ConcurrentHashMap<Long, Task> taskMap = new ConcurrentHashMap<>();
 
-    public void adopt(Job job) {
+    public void add(Job job) {
         jobMap.put(job.getId(), job);
         job.getSteps().stream().map(Step::getTasks)
                 .flatMap(Collection::stream)
                 .forEach(task -> taskMap.put(task.getId(), task));
     }
 
-    public Collection<Job> ofIds(Collection<Long> ids) {
-        return ids.parallelStream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
+    public Collection<Job> getJobs(Set<Long> ids) {
+        return ids.stream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
-    public Job get(Long id) {
+    public Job getJob(Long id) {
         return jobMap.get(id);
     }
 
@@ -59,15 +59,20 @@ public class HotJobHolderImpl implements HotJobHolder {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Task> tasksOfIds(Collection<Long> taskIds) {
+    public Collection<Task> getTasks(Set<Long> taskIds) {
         return taskIds.stream()
                 .map(id -> taskMap.get(id))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Task getTask(Long taskId) {
+        return taskMap.get(taskId);
+    }
+
     /**
-     * remove job in cache
+     * remove job and tasks in cache
      */
     public void remove(Long jobId) {
         Job job = jobMap.get(jobId);
