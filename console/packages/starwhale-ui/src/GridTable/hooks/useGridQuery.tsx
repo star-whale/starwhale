@@ -33,14 +33,14 @@ function useGridQuery() {
     const renderConfigQuery = React.useCallback(() => {
         return (
             <div
+                className='flex'
                 style={{
-                    display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     gap: '20px',
                 }}
             >
-                <div style={{ flex: 1 }}>
+                <div className='flex'>
                     {isSimpleQuery && hasFilter ? (
                         <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
                     ) : (

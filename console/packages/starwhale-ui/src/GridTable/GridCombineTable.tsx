@@ -16,6 +16,7 @@ const useStyles = createUseStyles({
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
+        minWidth: 0,
     },
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: {

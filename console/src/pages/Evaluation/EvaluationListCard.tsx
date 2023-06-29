@@ -139,7 +139,7 @@ export default function EvaluationListCard() {
                             <ModelTreeSelector
                                 placeholder={t('model.selector.version.placeholder')}
                                 projectId={projectId}
-                                multiple={false}
+                                multiple
                                 clearable
                                 getId={(v: any) => v.versionName}
                             />

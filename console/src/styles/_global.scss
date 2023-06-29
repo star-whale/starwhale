@@ -132,6 +132,10 @@ table {
     -webkit-line-clamp: 1;
 }
 
+.flex {
+    display: flex;
+    min-width: 0;
+}
 .flex-column-center {
     display: flex;
     align-items: center;
