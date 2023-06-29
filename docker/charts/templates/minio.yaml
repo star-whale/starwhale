@@ -49,11 +49,9 @@ spec:
               value: "on"
           ports:
             - name: minio-api
-              targetPort: {{ .Values.minio.ports.api }}
               containerPort: 9000
               protocol: TCP
             - name: minio-console
-              targetPort: {{ .Values.minio.ports.console }}
               containerPort: 9001
               protocol: TCP
           livenessProbe:
@@ -114,10 +112,15 @@ metadata:
   name: minio
   namespace: {{ .Release.Namespace | quote }}
   labels: {{ include "chart.minio.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "30g"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
   ingressClassName: {{ .Values.minio.ingress.ingressClassName | quote }}
   rules:
-  {{- if .Values.minikube }}
+  {{- if .Values.minikube.enabled }}
     - host: minio.{{ .Release.Namespace }}.svc
   {{- else }}
     - host: {{ .Values.minio.ingress.host }}
@@ -131,7 +134,7 @@ spec:
                   name: minio-api
             path: /
             pathType: ImplementationSpecific
-  {{- if .Values.minikube }}
+  {{- if .Values.minikube.enabled }}
     - host: minio-admin.{{ .Release.Namespace }}.svc
   {{- else }}
     - host: {{ .Values.minio.ingress.admin_host }}
