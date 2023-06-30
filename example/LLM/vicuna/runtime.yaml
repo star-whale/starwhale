@@ -4,7 +4,7 @@ environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.7
-  python: 3.9
+  python: "3.10"
 configs:
   pip:
     index_url: https://mirrors.aliyun.com/pypi/simple
@@ -16,3 +16,4 @@ dependencies:
       - transformers==4.28.0
       - peft==0.3.0
       - accelerate==0.20.3
+      - starwhale[serve] >= 0.5.0

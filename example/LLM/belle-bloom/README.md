@@ -11,7 +11,7 @@ swcli runtime build --yaml runtime.yaml
 ## Build Starwhale Model
 
 ```bash
-python sw.py build bloom/4bit
+python sw.py build bloom-4bit
 ```
 
 ![model build](https://github.com/star-whale/starwhale/assets/590748/63249227-34eb-4331-9029-8789cb92e7c8)
