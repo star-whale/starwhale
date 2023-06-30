@@ -5,7 +5,6 @@ import { HeaderContext } from './headers/header'
 import CellPlacement from './cells/cell-placement'
 import { VariableSizeGrid } from 'react-window'
 import { ColumnT } from './types'
-import _ from 'lodash'
 
 function LoadingOrEmptyMessage(props: { children: React.ReactNode | (() => React.ReactNode) }) {
     const [css, theme] = themedUseStyletron()
@@ -47,6 +46,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         viewState = EMPTY
     }
     const { data, gridRef } = props
+    const { rowHighlightIndex } = ctx
 
     const $columns = React.useMemo(
         () => data.columns.filter((column: ColumnT) => column.pin === 'LEFT'),
@@ -82,6 +82,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                             // @ts-ignore
                             ...gridRef._getItemStyle(rowIndex, columnIndex),
                             width: ctx.widths.get(column.key) ?? 0,
+                            zIndex: 1,
                         }}
                     />
                 )
@@ -91,6 +92,58 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
         return cells
     }, [$columns, data, props.children, ctx.widths, gridRef])
 
+    const [$background, $backgroundPinned] = React.useMemo(() => {
+        const cells: React.ReactNode[] = []
+        const pinnedCells: React.ReactNode[] = []
+        if (!gridRef) return cells
+        const list = React.Children.toArray(props.children)
+        if (list.length === 0) return cells
+
+        // @ts-ignore
+        const rowStartIndex = list[0]?.props?.rowIndex
+        // @ts-ignore
+        const rowStopIndex = list[list.length - 1]?.props?.rowIndex
+
+        if (
+            rowHighlightIndex !== undefined &&
+            rowHighlightIndex >= rowStartIndex &&
+            rowHighlightIndex <= rowStopIndex
+        ) {
+            cells.push(
+                <div
+                    className='table-row-background'
+                    key={rowHighlightIndex}
+                    style={{
+                        // @ts-ignore
+                        ...(gridRef._getItemStyle(rowHighlightIndex, 0) ?? {}),
+                        width: '100%',
+                        backgroundColor: 'rgb(243, 245, 249, 0.8)',
+                        marginBottom: '-42px',
+                        zIndex: -1,
+                        right: 0,
+                    }}
+                />
+            )
+            pinnedCells.push(
+                <div
+                    className='table-row-background'
+                    key={rowHighlightIndex}
+                    style={{
+                        // @ts-ignore
+                        ...(gridRef._getItemStyle(rowHighlightIndex, 0) ?? {}),
+                        width: '100%',
+                        backgroundColor: 'rgb(243, 245, 249, 0.8)',
+                        marginBottom: '-42px',
+                        zIndex: 0,
+                        right: 0,
+                    }}
+                />
+            )
+        }
+
+        return [cells, pinnedCells]
+    }, [props.children, gridRef, rowHighlightIndex])
+
     const $children = React.useMemo(() => {
         return props.children
     }, [props.children])
@@ -98,6 +151,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
     // useIfChanged({
     //     $childrenPinned,
     //     $children,
+    //     $background,
     // })
 
     if (ctx.widths.size === 0) {
@@ -134,6 +188,7 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                         }}
                     >
                         {$childrenPinned}
+                        {$backgroundPinned}
                     </div>
                 )}
             </div>
@@ -146,11 +201,14 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                 style={{
                     ...props.style,
                     minWidth: '100%',
+                    position: 'relative',
                 }}
+                onMouseLeave={ctx?.onRowMouseLeave}
             >
                 {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
                 {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
                 {viewState === RENDERING && $children}
+                {$background}
             </div>
         </>
     )

@@ -21,6 +21,7 @@ export type HeaderContextT = {
     measuredWidths: Map<any, any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
+    onRowMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
     onSelectMany?: () => void
     onSelectNone?: () => void
@@ -54,6 +55,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     measuredWidths: new Map(),
     onMouseEnter: () => {},
     onMouseLeave: () => {},
+    onRowMouseLeave: () => {},
     onResize: () => {},
     onSelectMany: () => {},
     onSelectNone: () => {},

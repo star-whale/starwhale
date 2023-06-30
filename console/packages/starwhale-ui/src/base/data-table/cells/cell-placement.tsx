@@ -107,8 +107,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             style={style}
             onBlur={handleBlur}
             onDoubleClick={handleDoubleClick}
-            onMouseEnter={_.throttle(() => onRowMouseEnter(rowIndex), 200)}
-            onMouseLeave={_.throttle(() => onRowMouseEnter(-1), 200)}
+            onMouseEnter={() => onRowMouseEnter(rowIndex)}
         >
             {previewable && (
                 <div
