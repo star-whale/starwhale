@@ -69,8 +69,7 @@ public class TaskLogK8sCollector implements TaskLogCollector {
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
             String logPath = resolveLogPath(task, logName);
             log.debug("putting log to storage at path {}", logPath);
-            storageService.put(logPath, taskLog.getBytes(
-                    StandardCharsets.UTF_8));
+            storageService.put(logPath, taskLog.getBytes(StandardCharsets.UTF_8));
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.INFRA,
                     MessageFormat.format("k8s api exception {}", e.getResponseBody()),

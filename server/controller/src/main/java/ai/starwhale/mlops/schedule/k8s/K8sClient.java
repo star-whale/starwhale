@@ -369,6 +369,24 @@ public class K8sClient {
         return getPodList(selector);
     }
 
+    /**
+     * get pod list of the job
+     *
+     * @param jobId job id
+     * @return pod list (empty list if not found, never null)
+     */
+    public List<V1Pod> getPodsByJobNameQuietly(String jobId) {
+        try {
+            var list = getPodsByJobName(jobId);
+            if (list != null) {
+                return list.getItems();
+            }
+        } catch (Exception e) {
+            log.warn("failed to get pod of job {}", jobId, e);
+        }
+        return List.of();
+    }
+
     public static String toV1LabelSelector(Map<String, String> labels) {
         return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
     }
