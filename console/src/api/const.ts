@@ -14,12 +14,15 @@ export const Privileges = {
     'evaluation.panel.save': true,
     'runtime.image.build': true,
     'task.execute': true,
+    // menu
+    'project.menu.trash': true,
     // global
     'online-eval': true,
     'job-pause': true,
     'job-resume': true,
     'job-dev': true,
 }
+
 export type IPrivileges = typeof Privileges
 
 export enum Role {
