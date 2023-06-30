@@ -16,9 +16,11 @@ import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import JobStatus from '@/domain/job/components/JobStatus'
 import Button from '@starwhale/ui/Button'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAuthPrivileged, WithCurrentAuth } from '@/api/WithAuth'
 import { IconTooltip } from '@starwhale/ui/Tooltip'
 import IconFont from '@starwhale/ui/IconFont'
+import { useProjectRole } from '@project/hooks/useProjectRole'
+import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -27,6 +29,8 @@ export default function JobListCard() {
     const { projectId } = useParams<{ projectId: string }>()
     const jobsInfo = useFetchJobs(projectId, page)
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
+    const { isPrivileged: canPinOrUnpin } = useAuthPrivileged({ role: useProjectRole().role, id: 'job.pinOrUnpin' })
+
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
             await createJob(projectId, data)
@@ -47,10 +51,11 @@ export default function JobListCard() {
 
     const handlePin = useCallback(
         async (jobId, pinned) => {
+            if (!canPinOrUnpin) return
             await pinJob(projectId, jobId, pinned)
             jobsInfo.refetch()
         },
-        [jobsInfo, projectId]
+        [canPinOrUnpin, jobsInfo, projectId]
     )
 
     return (
@@ -165,6 +170,25 @@ export default function JobListCard() {
                                 ),
                             }
 
+                            const pinBtnStyle: ConfigurationOverride = {
+                                'position': 'absolute',
+                                'top': 0,
+                                'bottom': 0,
+                                'left': '-8px',
+                                'display': job.pinnedTime ? 'block' : 'none',
+                                '& .iconfont': {
+                                    color: '#666',
+                                },
+                            }
+                            if (canPinOrUnpin) {
+                                pinBtnStyle[':hover .iconfont'] = {
+                                    color: '#FFB23D !important',
+                                }
+                                pinBtnStyle[':active .iconfont'] = {
+                                    color: '#F29200  !important',
+                                }
+                            }
+
                             return [
                                 <div key='id' style={{ gap: '8px', position: 'relative', paddingLeft: '12px' }}>
                                     <Button
@@ -176,29 +200,23 @@ export default function JobListCard() {
                                                 props: {
                                                     className: 'pin-button',
                                                 },
-                                                style: {
-                                                    'position': 'absolute',
-                                                    'top': 0,
-                                                    'bottom': 0,
-                                                    'left': '-8px',
-                                                    'display': job.pinnedTime ? 'block' : 'none',
-                                                    '& .iconfont': {
-                                                        color: '#666',
-                                                    },
-                                                    ':hover .iconfont': {
-                                                        color: '#FFB23D !important',
-                                                    },
-                                                    ':active .iconfont': {
-                                                        color: '#F29200  !important',
-                                                    },
-                                                },
+                                                style: pinBtnStyle,
                                             },
                                         }}
                                     >
-                                        <IconTooltip
-                                            content={job.pinnedTime ? t('job.unpin') : t('job.pin')}
-                                            icon='top'
-                                        />
+                                        {(canPinOrUnpin || job.pinnedTime) && (
+                                            <IconTooltip
+                                                content={
+                                                    // eslint-disable-next-line no-nested-ternary
+                                                    canPinOrUnpin
+                                                        ? job.pinnedTime
+                                                            ? t('job.unpin')
+                                                            : t('job.pin')
+                                                        : null
+                                                }
+                                                icon='top'
+                                            />
+                                        )}
                                     </Button>
                                     <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
                                         <MonoText>{job.id}</MonoText>
