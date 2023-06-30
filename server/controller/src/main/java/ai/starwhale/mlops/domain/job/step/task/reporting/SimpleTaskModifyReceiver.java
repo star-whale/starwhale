@@ -22,6 +22,8 @@ import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
 import java.util.Date;
 import java.util.List;
+
+import ai.starwhale.mlops.domain.job.step.task.status.TaskStatusMachine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -62,7 +64,10 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                     taskMapper.updateIp(reportedTask.getId(), reportedTask.getIp());
                 }
                 if (reportedTask.status != TaskStatus.UNKNOWN) {
-                    taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
+                    var task = taskMapper.findTaskById(reportedTask.getId());
+                    if (TaskStatusMachine.couldTransfer(task.getTaskStatus(), reportedTask.status)) {
+                        taskMapper.updateTaskStatus(List.of(reportedTask.getId()), reportedTask.getStatus());
+                    }
                 }
                 // update start time
                 if (reportedTask.getStartTimeMillis() != null) {
