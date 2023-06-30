@@ -135,7 +135,7 @@ public class JobServiceTest {
                 .willReturn(1L);
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
-                .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).build());
+                .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).status(JobStatus.SUCCESS).build());
         given(jobDao.getJobId("1"))
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
@@ -225,9 +225,9 @@ public class JobServiceTest {
         given(jobDao.removeJob(same(1L))).willReturn(true);
         given(jobDao.removeJobByUuid(same("uuid1"))).willReturn(true);
         given(jobDao.findJob(same("uuid1"))).willReturn(
-                Job.builder().id(1L).uuid("uuid1").type(JobType.EVALUATION).build());
+                Job.builder().id(1L).uuid("uuid1").status(JobStatus.SUCCESS).type(JobType.EVALUATION).build());
         given(jobDao.findJob(same("2"))).willReturn(
-                Job.builder().id(2L).type(JobType.EVALUATION).build());
+                Job.builder().id(2L).status(JobStatus.RUNNING).type(JobType.EVALUATION).build());
 
         var res = service.removeJob("", "1");
         assertThat(res, is(true));

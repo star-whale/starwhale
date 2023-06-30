@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.reporting;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.job.step.task.reporting.ReportedTask;
 import ai.starwhale.mlops.domain.job.step.task.reporting.SimpleTaskModifyReceiver;
 import ai.starwhale.mlops.domain.job.step.task.status.TaskStatus;
@@ -52,6 +54,8 @@ public class TaskModifyReceiverImpTest {
     @Test
     public void testFreezeTask() {
         when(jobHolder.getTask(1L)).thenReturn(null);
+        when(taskMapper.findTaskById(1L))
+                .thenReturn(TaskEntity.builder().taskStatus(TaskStatus.CREATED).build());
         var expected = ReportedTask.builder()
                 .id(1L)
                 .status(TaskStatus.READY)
@@ -59,6 +63,20 @@ public class TaskModifyReceiverImpTest {
                 .build();
         taskStatusReceiver.receive(List.of(expected));
         verify(taskMapper).updateTaskStatus(List.of(1L), TaskStatus.READY);
+    }
+
+    @Test
+    public void testFreezeInvalidTask() {
+        when(jobHolder.getTask(1L)).thenReturn(null);
+        when(taskMapper.findTaskById(1L))
+                .thenReturn(TaskEntity.builder().taskStatus(TaskStatus.CANCELED).build());
+        var invalid = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.PREPARING)
+                .ip("127.0.0.1")
+                .build();
+        taskStatusReceiver.receive(List.of(invalid));
+        verify(taskMapper, times(0)).updateTaskStatus(any(), any());
     }
 
     @Test
