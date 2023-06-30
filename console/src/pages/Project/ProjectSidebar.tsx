@@ -4,6 +4,8 @@ import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseS
 import { useParams } from 'react-router-dom'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import IconFont from '@starwhale/ui/IconFont'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { useAuthPrivileged } from '@/api/WithAuth'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
@@ -11,6 +13,11 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const projectInfo = useFetchProject(projectId)
     const project = projectInfo?.data
     const projectName = project?.name || t('PROJECT')
+    const { role } = useProjectRole()
+    const { isPrivileged } = useAuthPrivileged({
+        role,
+        id: 'project.menu.trash',
+    })
 
     const navItems: INavItem[] = useMemo(() => {
         if (!project) {
@@ -54,14 +61,16 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
                 icon: <IconFont type='runtime' size={16} />,
             },
-            {
-                title: t('trash.title'),
-                path: `/projects/${projectId}/trashes`,
-                activePathPattern: /\/(trashes)\/?/,
-                icon: <IconFont type='delete' size={16} />,
-            },
-        ]
-    }, [project, projectId, t])
+            isPrivileged
+                ? {
+                      title: t('trash.title'),
+                      path: `/projects/${projectId}/trashes`,
+                      activePathPattern: /\/(trashes)\/?/,
+                      icon: <IconFont type='delete' size={16} />,
+                  }
+                : undefined,
+        ].filter((v) => !!v) as INavItem[]
+    }, [project, projectId, t, isPrivileged])
     return (
         <BaseSidebar
             navItems={navItems}
