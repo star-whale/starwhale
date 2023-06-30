@@ -44,12 +44,12 @@ public class HotJobHolderImpl implements HotJobHolder {
                 .forEach(task -> taskMap.put(task.getId(), task));
     }
 
-    public Collection<Job> getJobs(Set<Long> ids) {
+    public Collection<Job> ofIds(Set<Long> ids) {
         return ids.stream().map(id -> jobMap.get(id)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
-    public Job getJob(Long id) {
+    public Job ofId(Long id) {
         return jobMap.get(id);
     }
 
@@ -59,7 +59,7 @@ public class HotJobHolderImpl implements HotJobHolder {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Task> getTasks(Set<Long> taskIds) {
+    public Collection<Task> taskOfIds(Set<Long> taskIds) {
         return taskIds.stream()
                 .map(id -> taskMap.get(id))
                 .filter(Objects::nonNull)
@@ -67,7 +67,7 @@ public class HotJobHolderImpl implements HotJobHolder {
     }
 
     @Override
-    public Task getTask(Long taskId) {
+    public Task taskOfId(Long taskId) {
         return taskMap.get(taskId);
     }
 

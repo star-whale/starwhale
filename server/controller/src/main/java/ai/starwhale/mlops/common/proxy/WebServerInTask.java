@@ -56,7 +56,7 @@ public class WebServerInTask implements Service {
         var path = parts[2];
 
         // get task from cache
-        var task = hotJobHolder.getTask(taskId);
+        var task = hotJobHolder.taskOfId(taskId);
         if (null == task) {
             throw new IllegalArgumentException("can not find task " + taskId);
         }

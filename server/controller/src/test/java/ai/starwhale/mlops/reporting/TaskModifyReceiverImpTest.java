@@ -53,7 +53,7 @@ public class TaskModifyReceiverImpTest {
 
     @Test
     public void testFreezeTask() {
-        when(jobHolder.getTask(1L)).thenReturn(null);
+        when(jobHolder.taskOfId(1L)).thenReturn(null);
         when(taskMapper.findTaskById(1L))
                 .thenReturn(TaskEntity.builder().taskStatus(TaskStatus.CREATED).build());
         var expected = ReportedTask.builder()
@@ -67,7 +67,7 @@ public class TaskModifyReceiverImpTest {
 
     @Test
     public void testFreezeInvalidTask() {
-        when(jobHolder.getTask(1L)).thenReturn(null);
+        when(jobHolder.taskOfId(1L)).thenReturn(null);
         when(taskMapper.findTaskById(1L))
                 .thenReturn(TaskEntity.builder().taskStatus(TaskStatus.CANCELED).build());
         var invalid = ReportedTask.builder()
@@ -82,7 +82,7 @@ public class TaskModifyReceiverImpTest {
     @Test
     public void testHotTask() {
         Task task = new Task();
-        when(jobHolder.getTask(1L)).thenReturn(task);
+        when(jobHolder.taskOfId(1L)).thenReturn(task);
         var expected = ReportedTask.builder()
                 .id(1L)
                 .status(TaskStatus.READY)

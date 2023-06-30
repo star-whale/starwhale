@@ -51,7 +51,7 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
                 taskMapper.updateFailedReason(reportedTask.getId(), reportedTask.getFailedReason());
             }
 
-            Task optionalTasks = jobHolder.getTask(reportedTask.getId());
+            Task optionalTasks = jobHolder.taskOfId(reportedTask.getId());
 
             if (null == optionalTasks) {
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());

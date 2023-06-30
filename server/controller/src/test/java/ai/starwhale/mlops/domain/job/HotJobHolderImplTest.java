@@ -44,10 +44,10 @@ public class HotJobHolderImplTest {
         hotJobHolder.add(job1);
         hotJobHolder.add(job2);
 
-        Assertions.assertEquals(hotJobHolder.getJob(1L), job1);
-        Assertions.assertEquals(hotJobHolder.getJob(8L), job2);
+        Assertions.assertEquals(hotJobHolder.ofId(1L), job1);
+        Assertions.assertEquals(hotJobHolder.ofId(8L), job2);
 
-        Collection<Job> jobs = hotJobHolder.getJobs(Set.of(1L, 8L, 9L));
+        Collection<Job> jobs = hotJobHolder.ofIds(Set.of(1L, 8L, 9L));
         Assertions.assertTrue(jobs.contains(job1));
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(2, jobs.size());
@@ -56,13 +56,13 @@ public class HotJobHolderImplTest {
         Assertions.assertEquals(1, jobs1.size());
         Assertions.assertTrue(jobs1.contains(job1));
 
-        Collection<Task> tasks = hotJobHolder.getTasks(
+        Collection<Task> tasks = hotJobHolder.taskOfIds(
                 Set.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
         Assertions.assertEquals(5, tasks.size());
 
         hotJobHolder.remove(job1.getId());
 
-        jobs = hotJobHolder.getJobs(Set.of(1L, 8L, 9L));
+        jobs = hotJobHolder.ofIds(Set.of(1L, 8L, 9L));
         Assertions.assertTrue(!jobs.contains(job1));
         Assertions.assertTrue(jobs.contains(job2));
         Assertions.assertEquals(1, jobs.size());
@@ -70,7 +70,7 @@ public class HotJobHolderImplTest {
         jobs1 = hotJobHolder.ofStatus(Set.of(JobStatus.CANCELLING));
         Assertions.assertEquals(0, jobs1.size());
 
-        tasks = hotJobHolder.getTasks(
+        tasks = hotJobHolder.taskOfIds(
                 Set.of(1L, 4L, 5L, 7L, 11L, 12L, 13L, 14L, 15L));
         Assertions.assertEquals(3, tasks.size());
 

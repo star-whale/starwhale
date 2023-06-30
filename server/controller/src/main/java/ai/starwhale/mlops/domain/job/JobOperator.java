@@ -95,7 +95,7 @@ public class JobOperator {
     }
 
     public void pause(Long jobId) {
-        Job job = jobHolder.getJob(jobId);
+        Job job = jobHolder.ofId(jobId);
         if (null == job) {
             throw new SwValidationException(SwValidationException.ValidSubject.JOB,
                     "Completed jobs cannot be paused.");
@@ -114,7 +114,7 @@ public class JobOperator {
     }
 
     public void cancel(Long jobId) {
-        Job job = jobHolder.getJob(jobId);
+        Job job = jobHolder.ofId(jobId);
         if (null == job) {
             throw new StarwhaleApiException(
                     new SwValidationException(

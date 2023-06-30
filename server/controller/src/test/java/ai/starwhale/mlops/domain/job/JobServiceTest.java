@@ -337,7 +337,7 @@ public class JobServiceTest {
 
     @Test
     public void testCancelJob() {
-        given(hotJobHolder.getJob(1L)).willReturn(
+        given(hotJobHolder.ofId(1L)).willReturn(
                 Job.builder()
                     .steps(List.of(
                         Step.builder()
@@ -363,7 +363,7 @@ public class JobServiceTest {
 
     @Test
     public void testPauseJob() {
-        given(hotJobHolder.getJob(1L)).willReturn(
+        given(hotJobHolder.ofId(1L)).willReturn(
                 Job.builder()
                     .steps(List.of(
                         Step.builder()
@@ -410,7 +410,7 @@ public class JobServiceTest {
                 .status(JobStatus.RUNNING).build();
         when(jobDao.findJobByStatusIn(eq(List.of(JobStatus.RUNNING)))).thenReturn(List.of(theJob));
         when(jobDao.getJobId(eq("2"))).thenReturn(theJob.getId());
-        when(hotJobHolder.getJob(eq(theJob.getId()))).thenReturn(theJob);
+        when(hotJobHolder.ofId(eq(theJob.getId()))).thenReturn(theJob);
 
         svc.gc();
         verify(svc).cancelJob("2");

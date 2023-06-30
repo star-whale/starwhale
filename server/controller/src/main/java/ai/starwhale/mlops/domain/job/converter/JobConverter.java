@@ -101,7 +101,7 @@ public class JobConverter {
      */
     private List<String> generateJobExposedLinks(Long jobId) {
         var links = new ArrayList<String>();
-        var job = hotJobHolder.getJob(jobId);
+        var job = hotJobHolder.ofId(jobId);
         if (null == job) {
             return links;
         }

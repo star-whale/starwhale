@@ -72,7 +72,7 @@ public class PodEventHandlerTest {
     @Test
     public void testTerminated() {
         Task task = mock(Task.class);
-        when(hotJobHolder.getTask(3L)).thenReturn(task);
+        when(hotJobHolder.taskOfId(3L)).thenReturn(task);
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector).collect(task);
     }
@@ -94,7 +94,7 @@ public class PodEventHandlerTest {
 
     @Test
     public void testTaskNotFound() {
-        when(hotJobHolder.getTask(3L)).thenReturn(null);
+        when(hotJobHolder.taskOfId(3L)).thenReturn(null);
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector, times(0)).collect(any());
     }

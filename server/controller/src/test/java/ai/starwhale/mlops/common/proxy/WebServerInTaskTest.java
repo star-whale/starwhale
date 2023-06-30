@@ -60,7 +60,7 @@ class WebServerInTaskTest {
         // success
         var successUri = "1/8765/foo";
         var task = Task.builder().ip("1.2.3.4").id(1L).build();
-        when(hotJobHolder.getTask(1L)).thenReturn(task);
+        when(hotJobHolder.taskOfId(1L)).thenReturn(task);
         var target = webServerInTask.getTarget(successUri);
         assertEquals("http://1.2.3.4:8765/foo", target);
     }

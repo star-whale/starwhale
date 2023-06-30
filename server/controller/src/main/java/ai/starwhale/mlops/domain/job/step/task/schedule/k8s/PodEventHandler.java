@@ -140,7 +140,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         }
         Long tid = getTaskId(pod);
         if (tid != null) {
-            Task task = jobHolder.getTask(tid);
+            Task task = jobHolder.taskOfId(tid);
             if (null == task) {
                 log.warn("no tasks found for pod {}", pod.getMetadata().getName());
                 return;

@@ -131,7 +131,7 @@ public class JobOperatorTest {
                     () -> JobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
             Job mockJob = new JobMockHolder().mockJob();
 
-            given(jobHolder.getJob(mockJob.getId())).willReturn(mockJob);
+            given(jobHolder.ofId(mockJob.getId())).willReturn(mockJob);
 
             Task luckTask = mockJob.getSteps().get(0).getTasks().get(0);
             luckTask.updateStatus(TaskStatus.RUNNING);

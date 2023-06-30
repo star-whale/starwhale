@@ -29,15 +29,15 @@ public interface HotJobHolder {
 
     void add(Job job);
 
-    Collection<Job> getJobs(Set<Long> ids);
+    Collection<Job> ofIds(Set<Long> ids);
 
-    Job getJob(Long id);
+    Job ofId(Long id);
 
     Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
 
-    Collection<Task> getTasks(Set<Long> taskIds);
+    Collection<Task> taskOfIds(Set<Long> taskIds);
 
-    Task getTask(Long taskId);
+    Task taskOfId(Long taskId);
 
     /**
      * remove job in cache
