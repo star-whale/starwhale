@@ -33,6 +33,7 @@ public class DatasetVersion {
     public static final int STATUS_UN_AVAILABLE = 0;
     private Long id;
     private Long datasetId;
+    private Long projectId;
     private Long versionOrder;
     private String datasetName;
     private Long ownerId;
@@ -52,6 +53,7 @@ public class DatasetVersion {
         return DatasetVersion.builder()
                 .id(versionEntity.getId())
                 .datasetId(versionEntity.getDatasetId())
+                .projectId(datasetEntity.getProjectId())
                 .versionOrder(versionEntity.getVersionOrder())
                 .datasetName(datasetEntity.getDatasetName())
                 .ownerId(versionEntity.getOwnerId())

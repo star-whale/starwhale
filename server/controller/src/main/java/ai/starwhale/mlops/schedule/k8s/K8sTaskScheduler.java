@@ -140,7 +140,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     /**
      * {instance}/project/{projectName}/dataset/{datasetName}/version/{version}
      */
-    static final String FORMATTER_URI_DATASET = "%s/project/%s/dataset/%s/version/%s";
+    static final String FORMATTER_URI_ARTIFACT = "%s/project/%s/%s/%s/version/%s";
 
     static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
 
@@ -259,15 +259,32 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // support multi dataset uris
-        var datasetUri = swJob.getDataSets().stream()
-                .map(dataSet -> String.format(
-                        FORMATTER_URI_DATASET,
+        coreContainerEnvs.put("SW_DATASET_URI",
+                swJob.getDataSets().stream()
+                    .map(dataSet -> String.format(
+                                FORMATTER_URI_ARTIFACT,
+                                instanceUri,
+                                dataSet.getProjectId(),
+                                "dataset",
+                                dataSet.getName(),
+                                dataSet.getVersion())
+                    ).collect(Collectors.joining(" ")));
+        coreContainerEnvs.put("SW_MODEL_URI",
+                String.format(
+                        FORMATTER_URI_ARTIFACT,
                         instanceUri,
-                        project.getName(),
-                        dataSet.getName(),
-                        dataSet.getVersion())
-                ).collect(Collectors.joining(" "));
-        coreContainerEnvs.put("SW_DATASET_URI", datasetUri);
+                        model.getProjectId(),
+                        "model",
+                        model.getName(),
+                        model.getVersion()));
+        coreContainerEnvs.put("SW_RUNTIME_URI",
+                String.format(
+                        FORMATTER_URI_ARTIFACT,
+                        instanceUri,
+                        runtime.getProjectId(),
+                        "runtime",
+                        runtime.getName(),
+                        runtime.getVersion()));
         coreContainerEnvs.put("SW_MODEL_VERSION",
                 String.format(FORMATTER_VERSION_ARTIFACT,
                         model.getName(), model.getVersion()));

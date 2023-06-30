@@ -36,6 +36,8 @@ public class JobRuntime {
      */
     String name;
 
+    Long projectId;
+
     /**
      * the version for the runtime
      */
