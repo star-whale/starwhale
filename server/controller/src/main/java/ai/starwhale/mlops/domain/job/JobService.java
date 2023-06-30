@@ -327,11 +327,13 @@ public class JobService {
 
     public Boolean removeJob(String projectUrl, String jobUrl) {
         var job = jobDao.findJob(jobUrl);
-        try {
-            // stop schedule
-            jobScheduler.cancel(job.getId());
-        } catch (Exception e) {
-            log.warn("Stop job schedule error, continue to remove.");
+        if (!job.isFinal()) {
+            try {
+                // stop schedule
+                jobScheduler.cancel(job.getId());
+            } catch (Exception e) {
+                log.warn("Stop job schedule error, continue to remove.");
+            }
         }
         Trash trash = Trash.builder()
                 .projectId(projectService.getProjectId(projectUrl))
