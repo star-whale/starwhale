@@ -354,38 +354,33 @@ export function DataTable({
     const [rowHighlightIndex, setRowHighlightIndex] = React.useState(-1)
 
     // @ts-ignore
-    const handleRowHighlightIndexChange = useCallback(
-        (nextIndex) => {
-            setRowHighlightIndex(nextIndex)
-            if (gridRef) {
-                if (nextIndex >= 0) {
-                    // $FlowFixMe - unable to get react-window types
-                    // gridRef.scrollToItem({ rowIndex: nextIndex })
-                }
-                onRowHighlightChange?.(nextIndex, rows[nextIndex])
+    const handleRowHighlightIndexChange = useEvent((nextIndex) => {
+        setRowHighlightIndex(nextIndex)
+        if (gridRef) {
+            if (nextIndex >= 0) {
+                // $FlowFixMe - unable to get react-window types
+                // gridRef.scrollToItem({ rowIndex: nextIndex })
             }
-        },
-        [setRowHighlightIndex, onRowHighlightChange, gridRef, rows]
-    )
-
-    const handleRowMouseEnter = useEvent((nextIndex) => {
-        // setColumnHighlightIndex(-1)
-        if (nextIndex !== rowHighlightIndex) {
-            handleRowHighlightIndexChange(nextIndex)
+            onRowHighlightChange?.(nextIndex, rows[nextIndex])
         }
     })
 
-    const handleColumnHeaderMouseEnter = React.useCallback(
-        (columnIndex) => {
-            setColumnHighlightIndex(columnIndex)
-            handleRowHighlightIndexChange(-1)
-        },
-        [handleRowHighlightIndexChange]
-    )
+    const handleRowMouseEnter = useEvent((nextIndex) => {
+        handleRowHighlightIndexChange(nextIndex)
+    })
 
-    const handleColumnHeaderMouseLeave = React.useCallback(() => {
+    const handleRowMouseLeave = useEvent(() => {
+        handleRowHighlightIndexChange(-1)
+    })
+
+    const handleColumnHeaderMouseEnter = useEvent((columnIndex) => {
+        setColumnHighlightIndex(columnIndex)
+        handleRowHighlightIndexChange(-1)
+    })
+
+    const handleColumnHeaderMouseLeave = useEvent(() => {
         setColumnHighlightIndex(-1)
-    }, [])
+    })
 
     React.useEffect(() => {
         if (typeof rowHighlightIndexControlled === 'number') {
@@ -413,8 +408,6 @@ export function DataTable({
         }
     }, [
         handleRowMouseEnter,
-        // columnHighlightIndex,
-        // rowHighlightIndex,
         isRowSelected,
         isSelectable,
         isQueryInline,
@@ -428,8 +421,6 @@ export function DataTable({
         onPreview,
     ])
 
-    // console.log(rowHighlightIndex, resizeDeltas)
-
     const columnWidth = React.useCallback(
         (index) => {
             return normalizedWidths.get(columns[index].key)
@@ -441,26 +432,6 @@ export function DataTable({
         // @ts-ignore
         return (props) => <InnerTableElement {...props} data={itemData} gridRef={gridRef} />
     }, [itemData, gridRef])
-
-    // const $background = React.useMemo(() => {
-    //     if (!gridRef) return []
-    //     //
-    //     const [rowStartIndex, rowStopIndex] = gridRef._getVerticalRangeToRender()
-    //     return new Array(rowStopIndex - rowStartIndex + 1).fill(0).map((_, rowIndex) => {
-    //         return (
-    //             <div
-    //                 className='table-row-background'
-    //                 key={rowIndex}
-    //                 style={{
-    //                     ...gridRef._getItemStyle(rowIndex, 0),
-    //                     width: '100%',
-    //                     marginBottom: gridRef._getItemStyle(rowIndex, 0).height * -1,
-    //                     backgroundColor: rowHighlightIndex === rowIndex + rowStartIndex ? '#F7F8FA' : 'transparent',
-    //                 }}
-    //             />
-    //         )
-    //     })
-    // }, [gridRef, rowHighlightIndex])
 
     // useIfChanged({
     //     normalizedWidths,
@@ -509,6 +480,7 @@ export function DataTable({
                             isQueryInline,
                             onMouseEnter: handleColumnHeaderMouseEnter,
                             onMouseLeave: handleColumnHeaderMouseLeave,
+                            onRowMouseLeave: handleRowMouseLeave,
                             onResize: handleColumnResize,
                             onSelectMany,
                             onSelectNone,
@@ -516,7 +488,7 @@ export function DataTable({
                             resizableColumnWidths,
                             compareable,
                             rowHeight,
-                            rowHighlightIndex: -1,
+                            rowHighlightIndex,
                             rows,
                             scrollLeft,
                             sortDirection: sortDirection || null,
@@ -528,17 +500,6 @@ export function DataTable({
                         }}
                     >
                         <Headers width={width} />
-                        {/* <div
-                            style={{
-                                width: `${width}px`,
-                                position: 'absolute',
-                                top: HEADER_ROW_HEIGHT,
-                                height: height - HEADER_ROW_HEIGHT,
-                                marginBottom: (height - HEADER_ROW_HEIGHT) * -1,
-                            }}
-                        >
-                            {$background}
-                        </div> */}
                         <VariableSizeGrid
                             className='table-columns'
                             ref={setGridRef as any}
