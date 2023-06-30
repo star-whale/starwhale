@@ -16,14 +16,24 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
 
     const [form] = useForm()
 
+    const columnsWithFilter = React.useMemo(() => {
+        return columns?.filter((column) => column.filterable)
+    }, [columns])
+
     useEffect(() => {
         const tmp = _.fromPairs(
             value.map((query) => {
                 return [query.property, query.value]
             })
         )
+        const prev = form.getFieldsValue()
+        Object.keys(prev).forEach((key) => {
+            if (!(key in tmp)) {
+                tmp[key] = undefined
+            }
+        })
+        form.setFieldsValue({ ...tmp })
         setValues(tmp)
-        form.setFieldsValue(tmp)
     }, [value, form])
 
     const handleValuesChange = React.useCallback(
@@ -40,10 +50,6 @@ function ConfigSimpleQuery({ columns, onChange, value }: PropsT) {
         },
         [onChange]
     )
-
-    const columnsWithFilter = React.useMemo(() => {
-        return columns?.filter((column) => column.filterable)
-    }, [columns])
 
     const Filters = React.useMemo(() => {
         return columnsWithFilter?.map((column) => {

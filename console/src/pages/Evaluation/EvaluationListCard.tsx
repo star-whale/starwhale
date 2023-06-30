@@ -32,6 +32,7 @@ import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import JobStatusSelector from '@/domain/job/components/JobStatusSelector'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
+import { useEventCallback } from '@starwhale/core'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -51,10 +52,8 @@ export default function EvaluationListCard() {
     const summaryTableName = React.useMemo(() => {
         return tableNameOfSummary(projectId)
     }, [projectId])
-    const { rowSelectedIds, currentView, initStore, getRawConfigs, getRawIfChangedConfigs } = useEvaluationStore(
-        selector,
-        shallow
-    )
+    const { rowSelectedIds, currentView, initStore, onCurrentViewIdChange, getRawIfChangedConfigs } =
+        useEvaluationStore(selector, shallow)
 
     const { page, setPage, getQueryParams } = useDatastorePage({
         pageNum: 1,
@@ -71,7 +70,7 @@ export default function EvaluationListCard() {
     } = useFetchDatastoreByTable(getQueryParams(summaryTableName), true)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
-    const [viewId, setViewId] = useLocalStorage<string>('currentViewId', '')
+    const [defaultViewObj, setDefaultViewObj] = useLocalStorage<Record<string, any>>('currentViewId', {})
     const [changed, setChanged] = useState(false)
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
@@ -168,59 +167,62 @@ export default function EvaluationListCard() {
         }
     }, [changed])
 
-    const doSave = React.useCallback(() => {
+    const doSave = useEventCallback(() => {
         setEvaluationViewConfig(projectId, {
             name: 'evaluation',
             content: JSON.stringify(getRawIfChangedConfigs(), null),
         }).then(() => {
             toaster.positive(t('evaluation.save.success'), {})
         })
-    }, [projectId, t, getRawIfChangedConfigs])
+    })
 
-    const onViewsChange = React.useCallback(
-        (state: ITableState, prevState: ITableState) => {
-            // console.log('onViewsChange', state)
-            setChanged(state.currentView.updated ?? false)
-            setViewId(state.currentView.id)
-            if (!_.isEqual(state.views, prevState.views)) {
-                setEvaluationViewConfig(projectId, {
-                    name: 'evaluation',
-                    content: JSON.stringify(
-                        {
-                            ...getRawIfChangedConfigs(),
-                            views: state.views,
-                        },
-                        null
-                    ),
-                })
-            }
-        },
-        [projectId, setViewId, getRawIfChangedConfigs]
-    )
+    const onViewsChange = useEventCallback((state: ITableState, prevState: ITableState) => {
+        setChanged(state.currentView.updated ?? false)
+        setDefaultViewObj((obj) => {
+            return { ...obj, [projectId]: state.currentView.id }
+        })
+        if (!_.isEqual(state.views, prevState.views)) {
+            setEvaluationViewConfig(projectId, {
+                name: 'evaluation',
+                content: JSON.stringify(
+                    {
+                        ...getRawIfChangedConfigs(),
+                        views: state.views,
+                    },
+                    null
+                ),
+            })
+        }
+    })
 
-    // NOTICE: use isinit to make sure view config is loading into store
-    const initRef = React.useRef(false)
+    const onCurrentViewChange = useEventCallback((state: ITableState) => {
+        setDefaultViewObj((obj) => {
+            return { ...obj, [projectId]: state.currentView.id }
+        })
+    })
+
+    const initRef = React.useRef('')
+    const viewId = defaultViewObj?.[projectId]
     React.useEffect(() => {
         if (!evaluationViewConfig.isSuccess) return
-        if (initRef.current) return
-
+        if (initRef.current === projectId) return
         let $rawConfig
         try {
-            $rawConfig = JSON.parse(evaluationViewConfig.data?.content, undefined) ?? {}
+            $rawConfig = JSON.parse(evaluationViewConfig.data?.content, undefined)
         } catch (e) {
-            // console.log(e)
+            $rawConfig = undefined
         }
-        // eslint-disable-next-line no-console
-        console.log('init store', getRawConfigs(), $rawConfig)
-        initStore({
-            ...getRawConfigs(),
-            ...$rawConfig,
-        })
-
-        initRef.current = true
-        // store should not be used as a deps, it's will trigger cycle render
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data?.content, viewId])
+        initStore($rawConfig)
+        onCurrentViewIdChange(viewId)
+        initRef.current = projectId
+    }, [
+        evaluationViewConfig.isSuccess,
+        viewId,
+        onCurrentViewIdChange,
+        projectId,
+        evaluationViewConfig.data?.content,
+        initStore,
+    ])
 
     const $compareRows = React.useMemo(() => {
         return records?.filter((r) => rowSelectedIds.includes(val(r.id))) ?? []
@@ -283,6 +285,7 @@ export default function EvaluationListCard() {
                         columns={$columnsWithSpecColumns}
                         onSave={doSave}
                         onViewsChange={onViewsChange}
+                        onCurrentViewChange={onCurrentViewChange}
                     />
                 )}
                 isResizeable={$compareRows.length > 0}

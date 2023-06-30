@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import _ from 'lodash'
 import { ErrorBoundary } from '@starwhale/ui'
-import { useWidget } from './WidgetFactoryRegister'
+import { useWidget } from './hooks/useWidget'
 import { WidgetRendererProps } from '../types'
 
 const DEBUG = false

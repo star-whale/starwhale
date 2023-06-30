@@ -20,6 +20,14 @@ class WidgetPlugin<
         this.renderer = renderer
         this.defaults = config
     }
+
+    getType() {
+        return this.defaults?.type
+    }
+
+    getConfig() {
+        return this.defaults
+    }
 }
 
 export default WidgetPlugin

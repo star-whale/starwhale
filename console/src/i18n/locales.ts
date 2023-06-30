@@ -1505,6 +1505,14 @@ const locales0 = {
         en: 'Push to local',
         zh: '拉取到本地',
     },
+    'Github': {
+        en: 'Github',
+        zh: 'Github',
+    },
+    'Google': {
+        en: 'Google',
+        zh: 'Google',
+    },
     ...basic,
     ...dataset,
     ...model,
