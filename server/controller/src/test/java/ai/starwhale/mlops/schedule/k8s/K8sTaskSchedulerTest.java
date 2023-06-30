@@ -229,8 +229,9 @@ public class K8sTaskSchedulerTest {
                 .devMode(devMode)
                 .uuid("juuid")
                 .dataSets(
-                        List.of(DataSet.builder().indexTable("it").path("swds_path").name("swdsN").version("swdsV")
-                                .size(300L).build()))
+                        List.of(DataSet.builder()
+                                .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
+                                .size(300L).projectId(103L).build()))
                 .stepSpec("")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").id(100L).build())
@@ -276,7 +277,7 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_ENV", "test");
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
-            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/100/dataset/swdsN/version/swdsV");
+            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/103/dataset/swdsN/version/swdsV");
             expectedEnvs.put("SW_MODEL_URI", "http://instanceUri/project/101/model/swmpN/version/swmpV");
             expectedEnvs.put("SW_RUNTIME_URI", "http://instanceUri/project/102/runtime/swrtN/version/swrtV");
             expectedEnvs.put("SW_MODEL_VERSION", "swmpN/version/swmpV");

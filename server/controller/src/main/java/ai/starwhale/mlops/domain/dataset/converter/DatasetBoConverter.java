@@ -31,6 +31,7 @@ public class DatasetBoConverter {
                 .size(datasetVersion.getSize())
                 .path(datasetVersion.getStoragePath())
                 .indexTable(datasetVersion.getIndexTable())
+                .projectId(datasetVersion.getProjectId())
                 .build();
     }
 }

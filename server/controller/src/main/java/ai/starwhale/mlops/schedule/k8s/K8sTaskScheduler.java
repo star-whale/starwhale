@@ -264,7 +264,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                     .map(dataSet -> String.format(
                                 FORMATTER_URI_ARTIFACT,
                                 instanceUri,
-                                project.getId(),
+                                dataSet.getProjectId(),
                                 "dataset",
                                 dataSet.getName(),
                                 dataSet.getVersion())
