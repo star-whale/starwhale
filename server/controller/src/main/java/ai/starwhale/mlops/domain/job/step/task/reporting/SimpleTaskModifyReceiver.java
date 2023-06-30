@@ -54,7 +54,6 @@ public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
             Task optionalTasks = jobHolder.getTask(reportedTask.getId());
 
             if (null == optionalTasks) {
-                // TODO Update step and job status?
                 log.warn("un-cached tasks reported {}, status directly update to DB", reportedTask.getId());
                 if (reportedTask.getRetryCount() != null && reportedTask.getRetryCount() > 0) {
                     taskMapper.updateRetryNum(reportedTask.getId(), reportedTask.getRetryCount());
