@@ -25,10 +25,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.JobScheduler;
+import ai.starwhale.mlops.domain.job.JobOperator;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.init.HotJobsLoader;
+import ai.starwhale.mlops.domain.job.cache.init.HotJobsLoader;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,17 +37,17 @@ public class HotJobsLoaderTest {
 
     JobDao jobDao;
 
-    JobScheduler jobScheduler;
+    JobOperator jobOperator;
 
     HotJobsLoader hotJobsLoader;
 
     @BeforeEach
     public void setup() {
         jobDao = mock(JobDao.class);
-        jobScheduler = mock(JobScheduler.class);
+        jobOperator = mock(JobOperator.class);
         hotJobsLoader = new HotJobsLoader(
                 new JobService(null, null, null,
-                    jobDao, jobScheduler, null,
+                    jobDao, jobOperator, null,
                     null, null,
                     null, null, null, null, null,
                     null, null, null));
@@ -60,7 +60,7 @@ public class HotJobsLoaderTest {
         when(jobDao.findJobByStatusIn(anyList())).thenReturn(List.of(job1, job2));
 
         hotJobsLoader.run();
-        verify(jobScheduler, times(2)).schedule(any(Job.class), eq(false));
+        verify(jobOperator, times(2)).addAndSchedule(any(Job.class), eq(false));
     }
 
 }

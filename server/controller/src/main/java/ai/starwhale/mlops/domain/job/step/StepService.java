@@ -16,21 +16,14 @@
 
 package ai.starwhale.mlops.domain.job.step;
 
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
 import ai.starwhale.mlops.domain.job.step.task.TaskService;
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -56,49 +49,6 @@ public class StepService {
         stepMapper.updateLastStep(id, lastId);
     }
 
-    public void fillJobSteps(Job job) {
-        var entities = stepMapper.findByJobId(job.getId());
-        var steps = entities.stream().map(entity -> {
-            try {
-                var step = stepConverter.fromEntity(entity);
-                if (step.getResourcePool() == null) {
-                    // backward compatibility
-                    step.setResourcePool(job.getResourcePool());
-                }
-                return step;
-            } catch (IOException e) {
-                log.error("can not convert step entity to step", e);
-                return null;
-            }
-        }).filter(Objects::nonNull).peek(step -> {
-            step.setJob(job);
-            taskService.fillStepTasks(step);
-            if (step.getStatus() == StepStatus.RUNNING) {
-                if (job.getCurrentStep() != null) {
-                    log.error("ERROR!!!!! A job has two running steps job id: {}", job.getId());
-                }
-                job.setCurrentStep(step);
-            }
-        }).collect(Collectors.toList());
-        linkSteps(steps, entities);
-        job.setSteps(steps);
-    }
-
-    private void linkSteps(List<Step> steps, List<StepEntity> stepEntities) {
-        Map<Long, Step> stepMap = steps.parallelStream()
-                .collect(Collectors.toMap(Step::getId, Function.identity()));
-        Map<Long, Long> linkMap = stepEntities.parallelStream()
-                .filter(stepEntity -> null != stepEntity.getLastStepId())
-                .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
-        steps.forEach(step -> {
-            Long nextStepId = linkMap.get(step.getId());
-            if (null == nextStepId) {
-                return;
-            }
-            step.setNextStep(stepMap.get(nextStepId));
-        });
-    }
-
     public void updateStepStatus(Step step, StepStatus newStatus) {
         log.info("step status change from {} to {} with id {}", step.getStatus(), newStatus, step.getId());
         step.setStatus(newStatus);
@@ -113,15 +63,5 @@ public class StepService {
             stepMapper.updateStartedTime(step.getId(), now);
         }
     }
-
-    public Step firsStep(List<Step> linkedSteps) {
-        List<Step> followingSteps = linkedSteps.stream().map(Step::getNextStep).filter(
-                        Objects::nonNull)
-                .collect(Collectors.toList());
-        Optional<Step> headStepOp = linkedSteps.stream().filter(step -> !followingSteps.contains(step))
-                .findAny();
-        return headStepOp.get();
-    }
-
 
 }

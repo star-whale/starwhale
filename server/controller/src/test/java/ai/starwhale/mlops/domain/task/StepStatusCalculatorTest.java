@@ -25,15 +25,11 @@ import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.PREPARIN
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.READY;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.step.task.status.TaskStatus.SUCCESS;
-import static org.mockito.Mockito.mock;
 
-import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.StepService;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusCalculator;
-import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +39,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class StepStatusCalculatorTest {
 
-    StepService stepService = new StepService(
-            mock(StepMapper.class), mock(StepConverter.class), mock(TaskService.class));
+    StepHelper stepHelper = new StepHelper();
 
     @Test
     public void testSuccess() {
@@ -142,7 +137,7 @@ public class StepStatusCalculatorTest {
         step1.setNextStep(step6);
         step6.setNextStep(step4);
         step4.setNextStep(step5);
-        Step firsStep = stepService.firsStep(List.of(step1, step2, step3, step4, step5, step6));
+        Step firsStep = stepHelper.firsStep(List.of(step1, step2, step3, step4, step5, step6));
         Assertions.assertEquals(step3.getId(), firsStep.getId());
     }
 }

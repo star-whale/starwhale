@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.job.step.task;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.converter.TaskBoConverter;
@@ -73,12 +72,6 @@ public class TaskService {
         } else {
             return taskConvertor.convert(taskMapper.findTaskByUuid(taskUrl));
         }
-    }
-
-    public void fillStepTasks(Step step) {
-        var taskEntities = taskMapper.findByStepId(step.getId());
-        var tasks = taskBoConvertor.fromTaskEntity(taskEntities, step);
-        step.setTasks(tasks);
     }
 
     public List<String> offLineLogFiles(Long taskId) {

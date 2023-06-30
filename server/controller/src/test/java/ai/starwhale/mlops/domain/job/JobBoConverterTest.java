@@ -35,12 +35,10 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.StepService;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.job.step.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
@@ -165,7 +163,7 @@ public class JobBoConverterTest {
                 runtimeVersionMapper,
                 converter,
                 jobSpecParser, systemSettingService,
-                new StepService(stepMapper, stepConverter, new TaskService(null, taskBoConverter, taskMapper, null)));
+                stepMapper, stepConverter, taskMapper, taskBoConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(), job.getStatus());

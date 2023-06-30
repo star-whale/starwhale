@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step.task.status.watchers;
 
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobOperator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.StepService;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -29,7 +29,6 @@ import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -45,15 +44,15 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     final StepTrigger stepTrigger;
 
-    final JobService jobService;
+    final JobOperator jobOperator;
 
     public TaskWatcherForJobStatus(
             StepService stepService,
             StepTrigger stepTrigger,
-            @Lazy JobService jobService) {
+            JobOperator jobOperator) {
         this.stepService = stepService;
         this.stepTrigger = stepTrigger;
-        this.jobService = jobService;
+        this.jobOperator = jobOperator;
     }
 
     @Override
@@ -76,7 +75,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
                         step.getStatus(), stepNewStatus, step.getId());
             }
             stepService.updateStepStatus(step, stepNewStatus);
-            jobService.updateJob(job);
+            jobOperator.updateJob(job);
             if (step.getStatus() == StepStatus.SUCCESS && !job.isFinal()) {
                 stepTrigger.triggerNextStep(step);
             }

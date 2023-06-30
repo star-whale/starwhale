@@ -24,7 +24,7 @@ import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.StepService;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
@@ -45,12 +45,11 @@ public class DagQuerier {
 
     final JobDao jobDao;
 
-    final StepService stepService;
+    final StepHelper stepHelper;
 
-    public DagQuerier(JobDao jobDao,
-                      StepService stepService) {
+    public DagQuerier(JobDao jobDao, StepHelper stepHelper) {
         this.jobDao = jobDao;
-        this.stepService = stepService;
+        this.stepHelper = stepHelper;
     }
 
     public Graph dagOfJob(String jobUrl) {
@@ -66,7 +65,7 @@ public class DagQuerier {
         JobNodeContent initialJobNodeContent = new JobNodeContent(job);
         initialJobNodeContent.setStatus(JobStatus.CREATED);
         graph.add(jobNode(initialJobNodeContent, idx));
-        Step stepPointer = stepService.firsStep(job.getSteps());
+        Step stepPointer = stepHelper.firsStep(job.getSteps());
         long lastStepNodeId = idx.get();
         List<Long> lastTaskNodeIds = new LinkedList<>();
         do {

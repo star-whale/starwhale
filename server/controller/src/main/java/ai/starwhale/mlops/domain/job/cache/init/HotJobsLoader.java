@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.init;
+package ai.starwhale.mlops.domain.job.cache.init;
 
 import ai.starwhale.mlops.domain.job.JobService;
 import lombok.extern.slf4j.Slf4j;

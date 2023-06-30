@@ -26,7 +26,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -37,14 +36,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
@@ -59,9 +55,7 @@ import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
@@ -91,10 +85,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 public class JobServiceTest {
 
@@ -104,7 +96,7 @@ public class JobServiceTest {
     private JobBoConverter jobBoConverter;
     private JobSpliterator jobSpliterator;
     private HotJobHolder hotJobHolder;
-    private JobScheduler jobScheduler;
+    private JobOperator jobOperator;
     private ResultQuerier resultQuerier;
     private StoragePathCoordinator storagePathCoordinator;
     private UserService userService;
@@ -126,7 +118,8 @@ public class JobServiceTest {
         given(jobConverter.convert(any(Job.class))).willReturn(JobVo.builder().id("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
-        jobScheduler = new JobScheduler(hotJobHolder, mock(WatchableTaskFactory.class), taskScheduler, taskService);
+        jobOperator = new JobOperator(
+                hotJobHolder, jobDao, mock(WatchableTaskFactory.class), taskScheduler, taskService);
         resultQuerier = mock(ResultQuerier.class);
         storagePathCoordinator = mock(StoragePathCoordinator.class);
         userService = mock(UserService.class);
@@ -150,7 +143,7 @@ public class JobServiceTest {
 
         service = new JobService(
             jobConverter, jobBoConverter,
-            jobSpliterator, jobDao, jobScheduler, jobSpecParser,
+            jobSpliterator, jobDao, jobOperator, jobSpecParser,
             resultQuerier, storagePathCoordinator,
             projectService, userService, trashService,
             modelService, runtimeService, datasetService,
@@ -465,105 +458,6 @@ public class JobServiceTest {
         });
         var resp = service.exec("1", "2", "3", req);
         assertEquals(expected, resp);
-    }
-
-
-    @Test
-    public void testSuccess() {
-        JobStatus desiredStatus = JobStatus.SUCCESS;
-        try (MockedStatic<JobStatusCalculator> statusCalculator = mockStatic(JobStatusCalculator.class)) {
-            statusCalculator.when(() -> JobStatusCalculator.desiredJobStatus(anyCollection()))
-                    .thenReturn(desiredStatus);
-
-            Job mockJob = new JobMockHolder().mockJob();
-            mockJob.getSteps().parallelStream().forEach(step -> {
-                step.getTasks().parallelStream().forEach(t -> {
-                    t.updateStatus(TaskStatus.SUCCESS);
-                });
-            });
-
-            service.updateJob(mockJob);
-            Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-            verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
-            verify(hotJobHolder).remove(mockJob.getId());
-            verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                    argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
-        }
-    }
-
-    @Test
-    public void testFail() throws InterruptedException {
-        JobStatus desiredStatus = JobStatus.FAIL;
-        try (MockedStatic<JobStatusCalculator> statusCalculator = mockStatic(JobStatusCalculator.class)) {
-            statusCalculator.when(() -> JobStatusCalculator.desiredJobStatus(anyCollection()))
-                    .thenReturn(desiredStatus);
-            Job mockJob = new JobMockHolder().mockJob();
-
-            given(hotJobHolder.getJob(mockJob.getId())).willReturn(mockJob);
-
-            Task luckTask = mockJob.getSteps().get(0).getTasks().get(0);
-            luckTask.updateStatus(TaskStatus.RUNNING);
-
-            service.updateJob(mockJob);
-            Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-            verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
-            verify(hotJobHolder).remove(mockJob.getId());
-            verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                    argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
-            Thread.sleep(100); // wait for async status update
-            Assertions.assertEquals(TaskStatus.CANCELLING, luckTask.getStatus());
-        }
-    }
-
-    @Test
-    public void testCanceled() throws InterruptedException {
-        JobStatus desiredStatus = JobStatus.CANCELED;
-        try (MockedStatic<JobStatusCalculator> statusCalculator = mockStatic(JobStatusCalculator.class)) {
-            statusCalculator.when(() -> JobStatusCalculator.desiredJobStatus(anyCollection()))
-                    .thenReturn(desiredStatus);
-            Job mockJob = new JobMockHolder().mockJob();
-            mockJob.setStatus(JobStatus.RUNNING);
-
-            Thread.sleep(1L);
-            service.updateJob(mockJob);
-            Assertions.assertEquals(desiredStatus, mockJob.getStatus());
-            verify(jobDao).updateJobStatus(mockJob.getId(), desiredStatus);
-            verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
-                    argThat(d -> d.getTime() > 0), argThat(d -> d >= 0));
-        }
-    }
-
-    @Test
-    public void testRunning() {
-        JobStatus desiredStatus = JobStatus.RUNNING;
-        try (MockedStatic<JobStatusCalculator> statusCalculator = mockStatic(JobStatusCalculator.class)) {
-            statusCalculator.when(() -> JobStatusCalculator.desiredJobStatus(anyCollection()))
-                    .thenReturn(desiredStatus);
-            Job mockJob = new JobMockHolder().mockJob();
-            mockJob.setStatus(JobStatus.READY);
-            service.updateJob(mockJob);
-            Assertions.assertEquals(JobStatus.RUNNING, mockJob.getStatus());
-            verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), JobStatus.RUNNING);
-        }
-    }
-
-    @Test
-    public void testCancel() {
-        var desiredStatus = JobStatus.CANCELED;
-        try (MockedStatic<JobStatusCalculator> statusCalculator = mockStatic(JobStatusCalculator.class)) {
-            statusCalculator.when(() -> JobStatusCalculator.desiredJobStatus(anyCollection()))
-                    .thenReturn(desiredStatus);
-            var mockJob = new JobMockHolder().mockJob();
-            var step = Step.builder()
-                    .status(StepStatus.CANCELED)
-                    .build();
-            mockJob.setSteps(List.of(step));
-
-            mockJob.setStatus(JobStatus.RUNNING);
-            service.updateJob(mockJob);
-            Assertions.assertEquals(JobStatus.CANCELED, mockJob.getStatus());
-            verify(jobDao, times(1)).updateJobStatus(mockJob.getId(), desiredStatus);
-        }
     }
 
 }

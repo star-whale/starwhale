@@ -32,10 +32,8 @@ import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.task.bo.Task;
 import ai.starwhale.mlops.domain.job.step.task.resulting.ResultQuerier;
 import ai.starwhale.mlops.domain.job.step.task.schedule.TaskScheduler;
@@ -64,7 +62,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -82,7 +79,7 @@ public class JobService {
     private final JobConverter jobConvertor;
     private final JobBoConverter jobBoConverter;
     private final JobSpliterator jobSpliterator;
-    private final JobScheduler jobScheduler;
+    private final JobOperator jobOperator;
     private final TaskScheduler taskScheduler;
     private final ResultQuerier resultQuerier;
     private final StoragePathCoordinator storagePathCoordinator;
@@ -98,7 +95,7 @@ public class JobService {
 
     public JobService(
             JobConverter jobConvertor, JobBoConverter jobBoConverter,
-            JobSpliterator jobSpliterator, JobDao jobDao, JobScheduler jobScheduler, JobSpecParser jobSpecParser,
+            JobSpliterator jobSpliterator, JobDao jobDao, JobOperator jobOperator, JobSpecParser jobSpecParser,
             ResultQuerier resultQuerier, StoragePathCoordinator storagePathCoordinator,
             ProjectService projectService, UserService userService, TrashService trashService,
             ModelService modelService, RuntimeService runtimeService, DatasetService datasetService,
@@ -110,7 +107,7 @@ public class JobService {
         this.jobSpliterator = jobSpliterator;
         this.projectService = projectService;
         this.jobDao = jobDao;
-        this.jobScheduler = jobScheduler;
+        this.jobOperator = jobOperator;
         this.modelService = modelService;
         this.resultQuerier = resultQuerier;
         this.datasetService = datasetService;
@@ -223,7 +220,7 @@ public class JobService {
         jobSpliterator.split(job);
         // should fill steps and tasks info after split
         jobBoConverter.fillStepsAndTasks(job);
-        jobScheduler.schedule(job, false);
+        jobOperator.addAndSchedule(job, false);
         // this.updateJob(job);
         return jobId;
     }
@@ -231,7 +228,7 @@ public class JobService {
     public void reloadHotJobs() {
         hotJobsFromDb().forEach(job -> {
             try {
-                jobScheduler.schedule(job, false);
+                jobOperator.addAndSchedule(job, false);
             } catch (Exception e) {
                 log.error("loading hotting job failed {}", job.getId(), e);
                 jobDao.updateJobStatus(job.getId(), JobStatus.FAIL);
@@ -288,35 +285,6 @@ public class JobService {
         return resultQuerier.resultOfJob(jobId);
     }
 
-    public void updateJob(Job job) {
-        JobStatus currentStatus = job.getStatus();
-        Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus)
-                .collect(Collectors.toSet());
-        JobStatus desiredJobStatus = JobStatusCalculator.desiredJobStatus(stepStatuses);
-        if (currentStatus == desiredJobStatus) {
-            log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
-            return;
-        }
-        if (!JobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
-            log.warn("job status change unexpectedly from {} to {} of id {} ",
-                    currentStatus, desiredJobStatus, job.getId());
-        }
-        log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus, job.getId());
-        job.setStatus(desiredJobStatus);
-        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
-
-        if (JobStatusMachine.isFinal(desiredJobStatus)) {
-            var finishedTime = new Date();
-            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
-            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
-            if (desiredJobStatus == JobStatus.FAIL) {
-                // try to cancel other running tasks
-                jobScheduler.cancel(job.getId());
-            }
-            jobScheduler.remove(job.getId());
-        }
-    }
-
     public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
         return jobDao.updateJobComment(jobUrl, comment);
     }
@@ -330,7 +298,7 @@ public class JobService {
         if (!job.isFinal()) {
             try {
                 // stop schedule
-                jobScheduler.cancel(job.getId());
+                jobOperator.cancel(job.getId());
             } catch (Exception e) {
                 log.warn("Stop job schedule error, continue to remove.");
             }
@@ -380,7 +348,7 @@ public class JobService {
     @Transactional
     public void cancelJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        jobScheduler.cancel(jobId);
+        jobOperator.cancel(jobId);
     }
 
     public List<Job> listHotJobs() {
@@ -393,7 +361,7 @@ public class JobService {
     @Transactional
     public void pauseJob(String jobUrl) {
         Long jobId = jobDao.getJobId(jobUrl);
-        jobScheduler.pause(jobId);
+        jobOperator.pause(jobId);
     }
 
     /**
@@ -411,7 +379,7 @@ public class JobService {
             throw new SwValidationException(ValidSubject.JOB, "only failed/paused/canceled job can be resumed ");
         }
         // reschedule job
-        job = jobScheduler.schedule(job, true);
+        job = jobOperator.addAndSchedule(job, true);
         // this.updateJob(job);
     }
 

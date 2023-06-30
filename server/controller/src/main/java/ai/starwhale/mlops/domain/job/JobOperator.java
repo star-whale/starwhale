@@ -19,7 +19,10 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.task.TaskService;
 import ai.starwhale.mlops.domain.job.step.task.WatchableTask;
 import ai.starwhale.mlops.domain.job.step.task.WatchableTaskFactory;
@@ -31,6 +34,7 @@ import ai.starwhale.mlops.domain.job.step.task.status.watchers.TaskWatcherForPer
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -46,9 +50,11 @@ import org.springframework.util.CollectionUtils;
  */
 @Slf4j
 @Service
-public class JobScheduler {
+public class JobOperator {
 
     final HotJobHolder jobHolder;
+
+    final JobDao jobDao;
 
     final WatchableTaskFactory watchableTaskFactory;
 
@@ -56,17 +62,18 @@ public class JobScheduler {
 
     final TaskService taskService;
 
-    public JobScheduler(HotJobHolder jobHolder,
-                        WatchableTaskFactory watchableTaskFactory,
-                        TaskScheduler taskScheduler,
-                        TaskService taskService) {
+    public JobOperator(HotJobHolder jobHolder, JobDao jobDao,
+                       WatchableTaskFactory watchableTaskFactory,
+                       TaskScheduler taskScheduler,
+                       TaskService taskService) {
         this.jobHolder = jobHolder;
+        this.jobDao = jobDao;
         this.watchableTaskFactory = watchableTaskFactory;
         this.taskScheduler = taskScheduler;
         this.taskService = taskService;
     }
 
-    public Job schedule(@NotNull Job job, Boolean resumePausedOrFailTasks) {
+    public Job addAndSchedule(@NotNull Job job, Boolean resumePausedOrFailTasks) {
         //wrap task with watchers
         job.getSteps().forEach(step -> {
             List<Task> watchableTasks = watchableTaskFactory.wrapTasks(step.getTasks());
@@ -157,6 +164,34 @@ public class JobScheduler {
                     ((WatchableTask) t).unwrap().updateStatus(TaskStatus.CREATED);
                     t.updateStatus(TaskStatus.READY);
                 });
+    }
+
+    public void updateJob(Job job) {
+        JobStatus currentStatus = job.getStatus();
+        Set<StepStatus> stepStatuses = job.getSteps().stream().map(Step::getStatus).collect(Collectors.toSet());
+        JobStatus desiredJobStatus = JobStatusCalculator.desiredJobStatus(stepStatuses);
+        if (currentStatus == desiredJobStatus) {
+            log.debug("job status unchanged id:{} status:{}", job.getId(), job.getStatus());
+            return;
+        }
+        if (!JobStatusMachine.couldTransfer(currentStatus, desiredJobStatus)) {
+            log.warn("job status change unexpectedly from {} to {} of id {} ",
+                    currentStatus, desiredJobStatus, job.getId());
+        }
+        log.info("job status change from {} to {} with id {}", currentStatus, desiredJobStatus, job.getId());
+        job.setStatus(desiredJobStatus);
+        jobDao.updateJobStatus(job.getId(), desiredJobStatus);
+
+        if (JobStatusMachine.isFinal(desiredJobStatus)) {
+            var finishedTime = new Date();
+            var duration = finishedTime.getTime() - job.getCreatedTime().getTime();
+            jobDao.updateJobFinishedTime(job.getId(), finishedTime,  duration);
+            if (desiredJobStatus == JobStatus.FAIL) {
+                // try to cancel other running tasks
+                cancel(job.getId());
+            }
+            remove(job.getId());
+        }
     }
 
     /**

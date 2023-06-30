@@ -24,7 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.JobMockHolder;
-import ai.starwhale.mlops.domain.job.JobService;
+import ai.starwhale.mlops.domain.job.JobOperator;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
@@ -56,11 +56,11 @@ public class TaskWatcherForJobStatusTest {
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
 
         StepMapper stepMapper = mock(StepMapper.class);
-        JobService jobService = mock(JobService.class);
+        JobOperator jobOperator = mock(JobOperator.class);
 
         var taskWatcherForJobStatus = new TaskWatcherForJobStatus(
                 new StepService(stepMapper, mock(StepConverter.class), mock(TaskService.class)),
-                stepTriggerContext, jobService);
+                stepTriggerContext, jobOperator);
 
         task.updateStatus(TaskStatus.SUCCESS);
         taskWatcherForJobStatus.onTaskStatusChange(task, TaskStatus.RUNNING);
@@ -69,7 +69,7 @@ public class TaskWatcherForJobStatusTest {
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
         verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0));
         verify(stepTriggerContext).triggerNextStep(step);
-        verify(jobService).updateJob(step.getJob());
+        verify(jobOperator).updateJob(step.getJob());
 
     }
 
@@ -84,16 +84,16 @@ public class TaskWatcherForJobStatusTest {
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
 
         StepMapper stepMapper = mock(StepMapper.class);
-        JobService jobService = mock(JobService.class);
+        JobOperator jobOperator = mock(JobOperator.class);
         doAnswer(invocation -> {
             Job j = invocation.getArgument(0);
             j.setStatus(JobStatus.SUCCESS);
             return null;
-        }).when(jobService).updateJob(job);
+        }).when(jobOperator).updateJob(job);
 
         var taskWatcherForJobStatus = new TaskWatcherForJobStatus(
                 new StepService(stepMapper, mock(StepConverter.class), mock(TaskService.class)),
-                stepTriggerContext, jobService);
+                stepTriggerContext, jobOperator);
 
         task.updateStatus(TaskStatus.SUCCESS);
         taskWatcherForJobStatus.onTaskStatusChange(task, TaskStatus.RUNNING);
@@ -102,7 +102,7 @@ public class TaskWatcherForJobStatusTest {
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.SUCCESS);
         verify(stepMapper).updateFinishedTime(eq(step.getId()), argThat(d -> d.getTime() > 0));
         verify(stepTriggerContext, times(0)).triggerNextStep(step);
-        verify(jobService).updateJob(step.getJob());
+        verify(jobOperator).updateJob(step.getJob());
 
     }
 
@@ -116,17 +116,17 @@ public class TaskWatcherForJobStatusTest {
         StepTrigger stepTriggerContext = mock(StepTrigger.class);
 
         StepMapper stepMapper = mock(StepMapper.class);
-        JobService jobService = mock(JobService.class);
+        JobOperator jobOperator = mock(JobOperator.class);
 
         var taskWatcherForJobStatus = new TaskWatcherForJobStatus(
                 new StepService(stepMapper, mock(StepConverter.class), mock(TaskService.class)),
-                stepTriggerContext, jobService);
+                stepTriggerContext, jobOperator);
 
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForJobStatus.onTaskStatusChange(task, TaskStatus.PREPARING);
 
         Step step = task.getStep();
         verify(stepMapper).updateStatus(List.of(step.getId()), StepStatus.CANCELED);
-        verify(jobService).updateJob(step.getJob());
+        verify(jobOperator).updateJob(step.getJob());
     }
 }

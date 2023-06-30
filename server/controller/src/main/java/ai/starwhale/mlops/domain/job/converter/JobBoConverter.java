@@ -23,7 +23,15 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.step.StepService;
+import ai.starwhale.mlops.domain.job.step.StepConverter;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.job.step.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.task.converter.TaskBoConverter;
+import ai.starwhale.mlops.domain.job.step.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.job.step.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
@@ -37,7 +45,11 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -65,7 +77,13 @@ public class JobBoConverter {
 
     final JobSpecParser jobSpecParser;
 
-    final StepService stepService;
+    final StepMapper stepMapper;
+
+    final StepConverter stepConverter;
+
+    final TaskMapper taskMapper;
+
+    final TaskBoConverter taskBoConverter;
 
     public JobBoConverter(
             DatasetDao datasetDao,
@@ -74,8 +92,9 @@ public class JobBoConverter {
             RuntimeVersionMapper runtimeVersionMapper,
             DatasetBoConverter datasetBoConverter,
             JobSpecParser jobSpecParser,
-            SystemSettingService systemSettingService,
-            StepService stepService) {
+            SystemSettingService systemSettingService, StepMapper stepMapper,
+            StepConverter stepConverter, TaskMapper taskMapper,
+            TaskBoConverter taskBoConverter) {
         this.datasetDao = datasetDao;
         this.modelMapper = modelMapper;
         this.runtimeMapper = runtimeMapper;
@@ -83,7 +102,10 @@ public class JobBoConverter {
         this.datasetBoConverter = datasetBoConverter;
         this.systemSettingService = systemSettingService;
         this.jobSpecParser = jobSpecParser;
-        this.stepService = stepService;
+        this.stepMapper = stepMapper;
+        this.stepConverter = stepConverter;
+        this.taskMapper = taskMapper;
+        this.taskBoConverter = taskBoConverter;
     }
 
     public Job fromEntity(JobEntity jobEntity) {
@@ -154,8 +176,48 @@ public class JobBoConverter {
     }
 
     public Job fillStepsAndTasks(Job job) {
-        stepService.fillJobSteps(job);
+        List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
+        List<Step> steps = stepEntities.stream().map(entity -> {
+            try {
+                var step = stepConverter.fromEntity(entity);
+                if (step.getResourcePool() == null) {
+                    // backward compatibility
+                    step.setResourcePool(job.getResourcePool());
+                }
+                return step;
+            } catch (IOException e) {
+                log.error("can not convert step entity to step", e);
+                return null;
+            }
+        }).filter(Objects::nonNull).peek(step -> {
+            step.setJob(job);
+            List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
+            List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);
+            step.setTasks(tasks);
+            if (step.getStatus() == StepStatus.RUNNING) {
+                if (job.getCurrentStep() != null) {
+                    log.error("ERROR!!!!! A job has two running steps job id: {}", job.getId());
+                }
+                job.setCurrentStep(step);
+            }
+        }).collect(Collectors.toList());
+        linkSteps(steps, stepEntities);
+        job.setSteps(steps);
         return job;
     }
 
+    private void linkSteps(List<Step> steps, List<StepEntity> stepEntities) {
+        Map<Long, Step> stepMap = steps.parallelStream()
+                .collect(Collectors.toMap(Step::getId, Function.identity()));
+        Map<Long, Long> linkMap = stepEntities.parallelStream()
+                .filter(stepEntity -> null != stepEntity.getLastStepId())
+                .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
+        steps.forEach(step -> {
+            Long nextStepId = linkMap.get(step.getId());
+            if (null == nextStepId) {
+                return;
+            }
+            step.setNextStep(stepMap.get(nextStepId));
+        });
+    }
 }
