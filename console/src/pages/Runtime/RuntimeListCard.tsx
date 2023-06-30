@@ -50,7 +50,7 @@ export default function RuntimeListCard() {
                             <Alias key='alias' alias={runtime.version?.alias} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
-                            runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
+                            runtime.version?.createdTime && formatTimestampDateTime(runtime.version?.createdTime),
                             <>
                                 <Button
                                     key='version-history'
