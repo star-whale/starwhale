@@ -21,6 +21,7 @@ export const Privileges = {
     'job-pause': true,
     'job-resume': true,
     'job-dev': true,
+    'job.pinOrUnpin': true,
 }
 
 export type IPrivileges = typeof Privileges
