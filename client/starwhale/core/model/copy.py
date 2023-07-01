@@ -14,6 +14,7 @@ import lz4.block
 from rich.progress import TaskID, Progress
 from google.protobuf import json_format
 
+from starwhale.base import cloud_blob_cache
 from starwhale.utils import console, convert_to_bytes
 from starwhale.consts import SW_API_VERSION, DEFAULT_MANIFEST_NAME
 from starwhale.proto_gen import model_package_storage_pb2 as pb2
@@ -72,6 +73,41 @@ def _prepare_common_contextvars() -> None:
     _httpx_client.set(httpx.AsyncClient(timeout=timeout, limits=limits))
 
 
+async def _send_request(
+    method: str,
+    url: str,
+    retry_count: int,
+    params: t.Dict[str, t.Any] | None = None,
+    content: str | bytes | None = None,
+    json: t.Any | None = None,
+    headers: t.Dict[str, str] = {},
+) -> httpx.Response | None:
+    resp = await _httpx_client.get().request(
+        method,
+        url,
+        params=params,
+        content=content,
+        json=json,
+        headers=headers,
+        follow_redirects=True,
+    )
+    if resp.is_success:
+        return resp
+    if (
+        resp.status_code not in (408, 429, 500, 502, 503, 504)
+        or retry_count == MAX_RETRIES
+    ):
+        data = await resp.aread()
+        await resp.aclose()
+        raise httpx.HTTPStatusError(
+            f"'{resp.status_code} {resp.reason_phrase}' for url '{resp.url}', "
+            + f"message={data.decode('utf-8')}",
+            request=resp.request,
+            response=resp,
+        )
+    return None
+
+
 async def _http_request(
     method: str,
     url: str | None = None,
@@ -80,6 +116,7 @@ async def _http_request(
     content: str | bytes | None = None,
     json: t.Any | None = None,
     headers: t.Dict[str, str] = {},
+    replace: bool = True,
 ) -> httpx.Response:
     instance = _instance.get()
     headers = dict(headers)
@@ -87,32 +124,30 @@ async def _http_request(
         assert path is not None
         url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         headers["Authorization"] = instance.token
-    interval = 0.0
-    for i in range(MAX_RETRIES):
-        try:
-            res = await _httpx_client.get().request(
-                method, url, params=params, content=content, json=json, headers=headers
-            )
-            if res.status_code not in (408, 429, 500, 502, 503, 504):
-                break
-        except httpx.RequestError as e:
-            if i == MAX_RETRIES - 1:
-                raise e
-        await trio.sleep(interval)
-        if interval == 0.0:
-            interval = 0.5
-        else:
-            interval *= 2
-            if interval > 10:
-                interval = 10
-    if not res.is_success:
-        raise httpx.HTTPStatusError(
-            f"'{res.status_code} {res.reason_phrase}' for url '{res.url}', "
-            + f"message={res.text}",
-            request=res.request,
-            response=res,
-        )
-    return res
+    url_iter = cloud_blob_cache.replace_url(url, replace)
+    try:
+        interval = 0.0
+        retry_count = 0
+        while True:
+            try:
+                resp = await _send_request(
+                    method, next(url_iter), retry_count, params, content, json, headers
+                )
+                if resp is not None:
+                    return resp
+            except httpx.RequestError as e:
+                if retry_count == MAX_RETRIES:
+                    raise e
+            retry_count += 1
+            await trio.sleep(interval)
+            if interval == 0.0:
+                interval = 0.5
+            else:
+                interval *= 2
+                if interval > 10:
+                    interval = 10
+    finally:
+        url_iter.close()
 
 
 async def _upload_blob(b: bytes) -> str:
@@ -134,6 +169,7 @@ async def _upload_blob(b: bytes) -> str:
                 url=result["signedUrl"],
                 content=b,
                 headers={"Content-Type": "application/octet-stream"},
+                replace=False,
             )
             res = await _http_request("POST", path=f"/blob/{blob_id}", json={})
             blob_id = res.json()["data"]["blobId"]
@@ -398,6 +434,7 @@ async def upload_model(
     upload_runtime: t.Callable[[Progress], str | None],
     force: bool,
 ) -> None:
+    cloud_blob_cache.init()
     _progress.set(progress)
     _instance.set(dest_uri.instance)
     _prepare_common_contextvars()
@@ -432,6 +469,7 @@ async def upload_model(
                 "builtInRuntime": runtime_version,
                 "force": force,
             },
+            replace=False,
         )
         console.print("metadata uploaded")
 
@@ -553,16 +591,19 @@ async def _write_blob(
 ) -> None:
     buf: t.Dict[int, bytes] = {}
     next = 0
+    md5 = hashlib.md5()
     async with await trio.open_file(path, "wb") as f:
         async with ch:
             for _ in range(total):
                 index, b = await ch.receive()
                 if index == next:
                     await f.write(b)
+                    md5.update(b)
                     _blob_sem.get().release()
                     _progress.get().advance(_task_id.get(), len(b))
                     next += 1
                     while next in buf:
+                        md5.update(buf[next])
                         await f.write(buf[next])
                         del buf[next]
                         next += 1
@@ -572,6 +613,11 @@ async def _write_blob(
                     assert index not in buf
                     assert index > next
                     buf[index] = b
+    if file.md5 != md5.digest():
+        raise RuntimeError(
+            f"downloaded file {path} md5 mismatch. expected: {file.md5.hex()}, "
+            + f"actual: {md5.hexdigest()}"
+        )
     await trio.to_thread.run_sync(store.link, path, file.md5.hex())
     await trio.to_thread.run_sync(os.chmod, path, file.permission)
 
@@ -668,6 +714,7 @@ async def download_model(
     store: LocalFileStore,
     progress: Progress,
 ) -> None:
+    cloud_blob_cache.init()
     _progress.set(progress)
     _instance.set(src_uri.instance)
     _prepare_common_contextvars()

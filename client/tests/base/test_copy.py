@@ -418,7 +418,9 @@ class TestBundleCopy(BaseTestCase):
                         name="big",
                         size=65536 * 2,
                         permission=0o600,
-                        md5=bytes.fromhex("13d30e5ea70257d1117973ced6063ce0"),
+                        md5=hashlib.md5(
+                            b"0" * 65536 + b"1" * 65536 + b"2" * 65536 + b"3" * 65536
+                        ).digest(),
                         compression_algorithm=pb2.COMPRESSION_ALGORITHM_LZ4,
                         from_file_index=4,
                         to_file_index=5,
