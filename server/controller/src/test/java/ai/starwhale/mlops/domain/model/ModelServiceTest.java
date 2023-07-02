@@ -877,7 +877,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         assertThat(this.modelService.getFileData("1", "m1", "v1", "s").readAllBytes(), is(this.fileS));
     }
 
-    @org.junit.Test
+    @Test
     public void testGetFileDataReleaseResource() throws Exception {
         var blobService = mock(BlobService.class);
         var modelService = new ModelService(
@@ -906,7 +906,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         doReturn(List.of(file)).when(svc).getFile(any(), any());
         doReturn(blob).when(svc).getModelMetaBlob(any(), any(), any(), any());
 
-        var originIs = new LengthAbleInputStream(new ByteArrayInputStream(new byte[] {0, 1, 3}), 3L);
+        var originIs = new LengthAbleInputStream(new ByteArrayInputStream(new byte[]{0, 1, 3}), 3L);
         var mockIs = spy(originIs);
         doNothing().when(mockIs).close();
 

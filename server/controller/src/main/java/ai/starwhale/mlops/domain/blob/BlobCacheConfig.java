@@ -16,24 +16,27 @@
 
 package ai.starwhale.mlops.domain.blob;
 
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
-import java.io.IOException;
+import ai.starwhale.mlops.storage.s3.S3Config;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-public interface BlobService {
+@Data
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class BlobCacheConfig extends S3Config {
 
-    String generateBlobId() throws IOException;
+    @NotNull
+    private String storageType;
 
-    String readBlobRef(String contentMd5, long contentLength) throws IOException;
+    @NotNull
+    private String blobRoot;
 
-    String generateBlobRef(String blobId);
-
-    LengthAbleInputStream readBlob(String blobId) throws IOException;
-
-    LengthAbleInputStream readBlob(String blobId, long offset, long length) throws IOException;
-
-    byte[] readBlobAsByteArray(String blobId) throws IOException;
-
-    String getSignedUrl(String blobId) throws IOException;
-
-    String getSignedPutUrl(String blobId) throws IOException;
+    @NotNull
+    private String blobIdPrefix;
 }
