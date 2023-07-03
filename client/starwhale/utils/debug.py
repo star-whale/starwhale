@@ -23,6 +23,11 @@ def init_logger(verbose: int = 0) -> None:
 
     Returns: None
     """
+    verbose_env = os.environ.get(ENV_LOG_VERBOSE_COUNT)
+    if verbose_env is not None:
+        verbose = int(verbose_env)
+
+    show_locals = False
     if verbose == 0:
         lvl = console.ERROR
         max_frames = 1
@@ -38,13 +43,13 @@ def init_logger(verbose: int = 0) -> None:
     elif verbose >= 4:
         lvl = console.TRACE
         max_frames = 1000
+        show_locals = True
     else:
         raise ValueError(f"Invalid verbose level: {verbose}")
 
     console.set_level(lvl)
     lvl_name = console.get_level_name(lvl)
     os.environ[ENV_LOG_LEVEL] = lvl_name
-    os.environ[ENV_LOG_VERBOSE_COUNT] = str(verbose)
 
     if verbose > 0:
         os.environ[ENV_DISABLE_PROGRESS_BAR] = "1"
@@ -52,5 +57,8 @@ def init_logger(verbose: int = 0) -> None:
 
     # TODO: custom debug for tb install
     traceback.install(
-        console=console.rich_console, show_locals=True, max_frames=max_frames, width=200
+        console=console.rich_console,
+        show_locals=show_locals,
+        max_frames=max_frames,
+        width=200,
     )

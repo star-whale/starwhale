@@ -3,7 +3,7 @@ import typing as t
 import urllib.error
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 import requests
@@ -38,17 +38,33 @@ def test_valid_object_name() -> None:
 
 
 @patch("os.environ", {})
-def test_logger() -> None:
+@patch("starwhale.utils.debug.traceback.install")
+def test_logger(m_install: MagicMock) -> None:
     init_logger(0)
     assert os.environ[ENV_LOG_LEVEL] == "ERROR"
     assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "0"
+    m_install.call_args[1]["max_frames"] = 1
+    m_install.call_args[1]["show_locals"] = False
 
     init_logger(1)
     assert os.environ[ENV_LOG_LEVEL] == "WARN"
     assert os.environ.get(ENV_DISABLE_PROGRESS_BAR, "0") == "1"
 
+    init_logger(2)
+    assert os.environ[ENV_LOG_LEVEL] == "INFO"
+    m_install.call_args[1]["max_frames"] = 10
+    m_install.call_args[1]["show_locals"] = False
+
     init_logger(3)
     assert os.environ[ENV_LOG_LEVEL] == "DEBUG"
+
+    init_logger(4)
+    assert os.environ[ENV_LOG_LEVEL] == "TRACE"
+    m_install.call_args[1]["max_frames"] = 1000
+    m_install.call_args[1]["show_locals"] = True
+
+    with pytest.raises(ValueError, match="Invalid verbose level"):
+        init_logger(-1)
 
 
 @pytest.fixture

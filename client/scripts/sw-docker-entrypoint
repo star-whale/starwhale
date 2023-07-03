@@ -10,7 +10,7 @@ ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
-VERBOSE="-vvvv"
+VERBOSE="-vvv"
 HANDLER=${SW_RUN_HANDLER:-""}
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
