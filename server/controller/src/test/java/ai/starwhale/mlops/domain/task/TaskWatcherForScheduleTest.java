@@ -70,10 +70,12 @@ public class TaskWatcherForScheduleTest {
                         .build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
+        verify(taskScheduler).stop(List.of(task));
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         verify(taskScheduler, times(0)).schedule(List.of(task));
-        verify(taskScheduler, times(2)).stop(List.of(task));
+        // canceled do not trigger schedule
+        verify(taskScheduler).stop(List.of(task));
     }
 
     @Test
@@ -118,5 +120,20 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
         verify(taskScheduler, times(0)).schedule(List.of(task));
         verify(taskScheduler, times(0)).stop(List.of(task));
+    }
+
+    @Test
+    public void testCancelling() {
+        SwTaskScheduler taskScheduler = mock(SwTaskScheduler.class);
+        var taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler, taskStatusMachine, 0L);
+        Task task = Task.builder()
+                .id(1L)
+                .uuid(UUID.randomUUID().toString())
+                .status(TaskStatus.CANCELLING)
+                .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
+                .build();
+        taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
+        verify(taskScheduler, times(0)).schedule(List.of(task));
+        verify(taskScheduler, times(1)).stop(List.of(task));
     }
 }
