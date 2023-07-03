@@ -107,6 +107,9 @@ export async function fetchModelVersionFile(
 
     const { data } = await axios.get(`/api/v1/project/${projectName}/model/${modelName}/getFileData`, {
         params: { Authorization: token, path, version: modelVersionId, silent: true },
+        transformResponse: (res) => {
+            return res
+        },
     })
     return data
 }
@@ -117,7 +120,9 @@ export async function fetchModelVersionPanelSetting(
     modelVersionId: string | undefined,
     token: string
 ) {
-    return fetchModelVersionFile(projectName, modelName, modelVersionId, token, 'eval_panel_layout.json')
+    return fetchModelVersionFile(projectName, modelName, modelVersionId, token, 'eval_panel_layout.json').then((raw) =>
+        JSON.parse(raw)
+    )
 }
 
 export async function updateModelVersionShared(
