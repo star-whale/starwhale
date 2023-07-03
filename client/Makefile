@@ -25,7 +25,7 @@ install-sw:
 
 install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
-	((grep -E "ubuntu|debian" /etc/os-release > /dev/null) && sudo apt-get install libsndfile1) || echo "skip install libsndfile1"
+	((grep -E "ubuntu|debian" /etc/os-release > /dev/null) && sudo apt-get install libsndfile1 -y) || echo "skip install libsndfile1"
 
 black-format:
 	black --config pyproject.toml $(PY_CHANGED_FILES)
