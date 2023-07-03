@@ -30,24 +30,26 @@ export default function JobTasks() {
         if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
             const key = [task?.stepName, task?.id].join('@')
             files[key] = 'ws'
-            setCurrentLogFiles({
-                ...files,
-            })
-        } else {
-            const data = await fetchTaskOfflineLogFiles(task?.id)
-            if (!_.isEmpty(data)) {
+        }
+
+        const data = await fetchTaskOfflineLogFiles(task?.id)
+        if (!_.isEmpty(data)) {
+            await Promise.all(
                 data.map(async (v: string) => {
                     const content = await fetchTaskOfflineFileLog(task?.id, v)
                     const key = [task?.stepName, v].join('@')
                     files[key] = content ?? ''
-                    setCurrentLogFiles({
-                        ...files,
-                    })
                 })
-            } else {
-                toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
-            }
+            )
         }
+
+        if (Object.keys(files).length === 0) {
+            toaster.negative('No logs collected for this task', { autoHideDuration: 2000 })
+        }
+
+        setCurrentLogFiles({
+            ...files,
+        })
 
         setExpanded(true)
     }, [])
