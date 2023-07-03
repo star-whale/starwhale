@@ -185,7 +185,7 @@ public class SystemSettingServiceTest {
         SystemSettingService systemSettingService = new SystemSettingService(
                 mock(SystemSettingMapper.class),
                 List.of(listener),
-                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "")),
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "", 1, 2)),
                 new DockerSetting("abcd.com", "abcd2.com", "admin", "admin123", false),
                 mock(UserService.class));
         systemSettingService.run();
@@ -200,8 +200,8 @@ public class SystemSettingServiceTest {
                 + "  indexUrl: \"\"\n"
                 + "  extraIndexUrl: \"\"\n"
                 + "  trustedHost: \"\"\n"
-                + "  retries: 10\n"
-                + "  timeout: 90\n"
+                + "  retries: 1\n"
+                + "  timeout: 2\n"
                 + "resourcePoolSetting:\n"
                 + "- name: \"default\"\n"
                 + "  nodeSelector: {}\n"

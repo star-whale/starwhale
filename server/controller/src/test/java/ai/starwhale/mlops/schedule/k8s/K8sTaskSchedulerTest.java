@@ -84,7 +84,7 @@ public class K8sTaskSchedulerTest {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH"));
+                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH", 1, 2));
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
@@ -116,7 +116,7 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", ""));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -152,7 +152,7 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", ""));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -192,7 +192,7 @@ public class K8sTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", ""));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -292,6 +292,8 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("SW_INSTANCE_URI", "http://instanceUri");
             expectedEnvs.put("SW_TASK_STEP", "cmp");
             expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
+            expectedEnvs.put("SW_PYPI_RETRIES", "1");
+            expectedEnvs.put("SW_PYPI_TIMEOUT", "2");
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .filter(envVar -> envVar.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));

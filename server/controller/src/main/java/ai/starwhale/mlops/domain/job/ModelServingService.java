@@ -285,22 +285,20 @@ public class ModelServingService {
         var rt = runtimeMapper.find(runtime.getRuntimeId());
         var md = modelMapper.find(model.getModelId());
 
-        var envs = new HashMap<>(Map.of(
-                "SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()),
-                "SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()),
-                "SW_INSTANCE_URI", instanceUri,
-                "SW_TOKEN", modelServingTokenValidator.getToken(owner, id),
-                "SW_PROJECT", project,
-                "SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl(),
-                "SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl(),
-                "SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost(),
-                "SW_PYPI_TIMEOUT", runTimeProperties.getPypi().getTimeout(),
-                "SW_PYPI_RETRIES", runTimeProperties.getPypi().getRetries(),
-                "SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id),
-                // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
-                "SW_PRODUCTION", "1"
-        ));
-
+        var envs = new HashMap<String, String>();
+        envs.put("SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()));
+        envs.put("SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()));
+        envs.put("SW_INSTANCE_URI", instanceUri);
+        envs.put("SW_TOKEN", modelServingTokenValidator.getToken(owner, id));
+        envs.put("SW_PROJECT", project);
+        envs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
+        envs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
+        envs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
+        envs.put("SW_PYPI_TIMEOUT", String.valueOf(runTimeProperties.getPypi().getTimeout()));
+        envs.put("SW_PYPI_RETRIES", String.valueOf(runTimeProperties.getPypi().getRetries()));
+        // see https://github.com/star-whale/starwhale/blob/c1d85ab98045a95ab3c75a89e7af56a17e966714/client/starwhale/utils/__init__.py#L51
+        envs.put("SW_MODEL_SERVING_BASE_URI", getServiceBaseUri(id));
+        envs.put("SW_PRODUCTION", "1");
         if (null != modelServingSpec && null != modelServingSpec.getEnvVars()) {
             envs.putAll(modelServingSpec.getEnvVars());
         }
