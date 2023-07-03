@@ -73,7 +73,11 @@ export default function FilterRenderer({
     const $fieldOptions = React.useMemo(() => {
         return $columns
             .filter((tmp) => {
-                return tmp.label?.match(value)
+                try {
+                    return tmp.label?.match(value)
+                } catch {
+                    return false
+                }
             })
             .map((tmp) => {
                 return {
@@ -237,7 +241,7 @@ export default function FilterRenderer({
             )}
             {!editing && isValueExist(value) && (
                 <div className={styles.label} title={value}>
-                    {value}
+                    {Array.isArray(value) ? value.join(', ') : value}
                     <div
                         className='filter-remove'
                         role='button'

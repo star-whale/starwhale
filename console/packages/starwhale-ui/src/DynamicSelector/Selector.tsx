@@ -34,6 +34,8 @@ export function SelectorItemByTree({ value, onChange, search, inputRef, info, $m
     )
 }
 
+const empty: any = []
+
 export function DynamicSelector<T = any>({
     onChange,
     startEnhancer,
@@ -56,6 +58,9 @@ export function DynamicSelector<T = any>({
     useEffect(() => {
         if (rest.value && rest.value !== values) {
             setValues(rest.value)
+        }
+        if (!rest.value) {
+            setValues(empty)
         }
     }, [rest.value, values])
 
@@ -196,83 +201,3 @@ export function DynamicSelector<T = any>({
 }
 
 export default DynamicSelector
-
-// const treeData = [
-//     {
-//         id: '1',
-//         label: 'Fruit',
-//         isExpanded: true,
-//         info: { label: 'Fruit' },
-//         children: [
-//             {
-//                 id: '2',
-//                 label: 'Apple',
-//                 isExpanded: true,
-//                 children: [],
-//             },
-
-//             {
-//                 id: '3',
-//                 label: 'Test',
-//                 isExpanded: true,
-//                 children: [],
-//             },
-
-//             {
-//                 id: '4',
-//                 label: 'Test2',
-//                 isExpanded: true,
-//                 children: [],
-//             },
-
-//             {
-//                 id: '5',
-//                 label: 'Test2',
-//                 isExpanded: true,
-//                 children: [],
-//             },
-
-//             {
-//                 id: '6',
-//                 label: 'Test2',
-//                 isExpanded: true,
-//                 children: [],
-//             },
-//         ],
-//     },
-// ]
-
-// export default (props: DynamicSelectorPropsT<any>) => {
-//     const options = [
-//         {
-//             id: 'tree',
-//             info: {
-//                 data: treeData,
-//             },
-//             multiple: false,
-//             getData: (info: any, id: string) => findTreeNode(info.data, id),
-//             getDataToLabel: (data: any) => data?.label,
-//             getDataToValue: (data: any) => data?.id,
-//             render: SelectorItemByTree as React.FC<any>,
-//         },
-//     ]
-//     const options2 = [
-//         {
-//             id: 'tree',
-//             info: {
-//                 data: treeData,
-//             },
-//             multiple: true,
-//             getData: (info: any, id: string) => findTreeNode(info.data, id),
-//             getDataToLabel: (data: any) => data?.label,
-//             getDataToValue: (data: any) => data?.id,
-//             render: SelectorItemByTree as React.FC<any>,
-//         },
-//     ]
-//     return (
-//         <>
-//             <DynamicSelector {...props} options={options} />
-//             <DynamicSelector options={options2} />
-//         </>
-//     )
-// }

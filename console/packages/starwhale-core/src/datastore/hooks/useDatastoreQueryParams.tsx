@@ -2,6 +2,7 @@ import { IListQuerySchema } from '../../server/schemas/list'
 import { QueryTableRequest, ScanTableRequest, TableQueryFilterDesc, TableQueryOperandDesc } from '../schemas/datastore'
 import { OPERATOR, DataTypes } from '../constants'
 import { DatastorePageT } from '../types'
+import _ from 'lodash'
 
 export type TableQueryParamsT = {
     tableName?: string
@@ -15,8 +16,14 @@ export type TableQueryParamsT = {
 
 export type TableScanParamsT = ScanTableRequest
 
-function getFilter(columnName: string, value: string, operator: OPERATOR, type: DataTypes): TableQueryOperandDesc {
-    let queryType
+function getFilter(
+    columnName: string,
+    value: string,
+    operator: OPERATOR,
+    type: DataTypes
+): TableQueryOperandDesc | undefined {
+    let queryType = ''
+
     switch (type) {
         case DataTypes.FLOAT16:
         case DataTypes.FLOAT32:
@@ -40,11 +47,47 @@ function getFilter(columnName: string, value: string, operator: OPERATOR, type: 
             break
     }
     const operands = [{ columnName }]
-    operands.push({ [queryType]: value } as any)
+
+    // operator that only render by frontend, like IN
+    if (operator === OPERATOR.IN) {
+        // eslint-disable-next-line no-param-reassign
+        operator = OPERATOR.EQUAL
+        // @ts-ignore
+        // eslint-disable-next-line no-param-reassign
+        value = Array.isArray(value) ? value : (value as string).split(',')
+    }
+
+    // single value
+    if (!Array.isArray(value)) {
+        operands.push({ [queryType]: value } as any)
+        return {
+            filter: {
+                operator: operator as string,
+                operands,
+            },
+        }
+    }
+    if (value.length === 0) return undefined
+    // multiple value but only one, use single value
+    if (value.length === 1) {
+        operands.push({ [queryType]: value[0] } as any)
+        return {
+            filter: {
+                operator: operator as string,
+                operands,
+            },
+        }
+    }
+    // multiple value
     return {
         filter: {
-            operator: operator as string,
-            operands,
+            operator: 'OR',
+            operands: value.map((v) => ({
+                filter: {
+                    operands: [{ columnName }, { [queryType]: v } as any],
+                    operator: operator as string,
+                },
+            })),
         },
     }
 }
@@ -67,7 +110,7 @@ function FilterToQuery(
             }
             return item
         })
-        .filter((item: any) => item.value && item.op && item.property)
+        .filter((item: any) => !_.isEmpty(item.value) && item.op && item.property)
         .map((item: any) => {
             return getFilter(item?.property, item.value, item.op, item?.type as DataTypes)
         })
@@ -80,7 +123,7 @@ function FilterToQuery(
 
     return {
         operator: 'AND',
-        operands: filters,
+        operands: filters as any,
     }
 }
 

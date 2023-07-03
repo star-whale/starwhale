@@ -26,7 +26,7 @@ export function useDirectStoreUpdater(
     useEffect(() => {
         if (typeof value !== 'undefined') {
             // eslint-disable-next-line no-console
-            console.log('set state', key)
+            // console.log('set state', key)
             setState({ [key]: value }, false)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

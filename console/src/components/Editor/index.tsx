@@ -1,6 +1,5 @@
 import React, { useMemo, useRef } from 'react'
 import EditorContextProvider, { StoreType } from '@starwhale/core/context/EditorContextProvider'
-import { registerWidgets } from '@starwhale/core/widget/WidgetFactoryRegister'
 import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
@@ -11,8 +10,6 @@ import { tranformState } from './utils'
 import { useProject } from '@project/hooks/useProject'
 
 export function withEditorRegister(EditorApp: React.FC) {
-    registerWidgets()
-
     return function EditorLoader(props: any) {
         const { project } = useProject()
         const projectId = project?.id

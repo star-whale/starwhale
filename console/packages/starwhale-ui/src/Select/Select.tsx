@@ -45,6 +45,28 @@ export function Select({ size = 'compact', ...props }: ISelectProps) {
                     />
                 )
             },
+            IconsContainer: {
+                style: {
+                    color: 'rgba(2, 16, 43, 0.2)',
+                },
+            },
+            Tag: {
+                props: {
+                    overrides: {
+                        Root: {
+                            style: {
+                                cursor: 'pointer',
+                                color: 'rgba(2, 16, 43, 0.2)',
+                                backgroundColor: 'rgba(2, 16, 43, 0)',
+                                marginTop: '2px',
+                                marginBottom: '2px',
+                                marginRight: '2px',
+                                marginLeft: '2px',
+                            },
+                        },
+                    },
+                },
+            },
         },
         props.overrides
     )

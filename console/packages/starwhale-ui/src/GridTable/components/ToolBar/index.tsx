@@ -77,12 +77,8 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                         )}
                     </div>
                 )}
-                <div
-                    className={css({
-                        display: 'flex',
-                    })}
-                >
-                    <div className='table-config-query' style={{ flex: 1 }}>
+                <div className='flex'>
+                    <div className='table-config-query' style={{ flex: 1, minWidth: 0 }}>
                         {query}
                     </div>
 

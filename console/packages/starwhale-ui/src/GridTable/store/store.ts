@@ -153,6 +153,7 @@ const createViewSlice: IStateCreator<IViewState> = (set, get, store) => {
 
 const rawCurrentView = {
     filters: [],
+    queries: [],
     ids: [],
     pinnedIds: [],
     selectedIds: [],
@@ -198,8 +199,11 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
             if (!view) {
                 view = rawCurrentView
             }
+            const prev = get()
             // view id change will not tiggered changed status, current view only saved in local,
             set({ currentView: view }, false, 'onCurrentViewIdChange')
+            // @ts-ignore
+            store.getState().onCurrentViewChange?.(get(), prev)
         },
         onCurrentViewFiltersChange: (filters) => update({ filters }, 'onCurrentViewFiltersChange'),
         onCurrentViewQueriesChange: (queries) =>
@@ -246,7 +250,7 @@ const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, g
 const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get, store) => ({
     isInit: false,
     key: 'table',
-    initStore: (obj?: Record<string, any>) =>
+    initStore: (obj?: Record<string, any>) => {
         set(
             {
                 ...(obj ? _.pick(obj, Object.keys(rawInitialState)) : rawInitialState),
@@ -254,7 +258,8 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
             },
             undefined,
             'initStore'
-        ),
+        )
+    },
     setRawConfigs: (obj: Record<string, any>) =>
         set(
             {
@@ -389,7 +394,7 @@ export type IStore = ReturnType<typeof createCustomStore>
 
 export default createCustomStore
 
-export const useEvaluationStore = createCustomStore('evaluations', {}, true)
+export const useEvaluationStore = createCustomStore('evaluations', {}, false)
 export const useEvaluationCompareStore = createCustomStore('compare', {
     compare: {
         comparePinnedKey: '',

@@ -1,5 +1,5 @@
 export { default as BaseWidget } from './BaseWidget'
-export * from './WidgetFactoryRegister'
+export * from './hooks/useWidget'
 
 export { default as WidgetFactory } from './WidgetFactory'
 export * from './WidgetFactory'

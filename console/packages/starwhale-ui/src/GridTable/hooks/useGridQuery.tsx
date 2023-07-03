@@ -9,9 +9,10 @@ import ConfigSimpleQuery from '../components/Query/ConfigSimpleQuery'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 
+const non: any = []
 const selector = (state: IGridState) => ({
-    queries: state.currentView?.queries ?? [],
-    onCurrentViewQueriesChange: state.onCurrentViewQueriesChange ?? [],
+    queries: state.currentView?.queries ?? non,
+    onCurrentViewQueriesChange: state.onCurrentViewQueriesChange,
 })
 
 function useGridQuery() {
@@ -33,14 +34,19 @@ function useGridQuery() {
     const renderConfigQuery = React.useCallback(() => {
         return (
             <div
+                className='flex'
                 style={{
-                    display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     gap: '20px',
                 }}
             >
-                <div style={{ flex: 1 }}>
+                <div
+                    className='flex'
+                    style={{
+                        flex: 1,
+                    }}
+                >
                     {isSimpleQuery && hasFilter ? (
                         <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
                     ) : (

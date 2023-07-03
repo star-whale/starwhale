@@ -21,7 +21,7 @@ export const useStyles = createUseStyles({
         '&::-webkit-scrollbar': {
             height: '4px !important',
         },
-        'flexGrow': '0',
+        'flexGrow': '1',
         '&:hover': {
             borderColor: '#799EE8 !important',
         },

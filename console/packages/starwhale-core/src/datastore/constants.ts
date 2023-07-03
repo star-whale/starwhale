@@ -23,7 +23,7 @@ export enum OPERATOR {
     LESS = 'LESS',
     LESS_EQUAL = 'LESS_EQUAL',
     NOT = 'NOT',
-    // IN = 'IN',
+    IN = 'IN',
     // NOT_IN = 'NOT_IN',
     // CONTAINS = 'CONTAINS',
     // NOT_CONTAINS = 'NOT_CONTAINS',
