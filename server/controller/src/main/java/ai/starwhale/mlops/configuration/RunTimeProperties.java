@@ -52,9 +52,11 @@ public class RunTimeProperties {
         String indexUrl;
         String extraIndexUrl;
         String trustedHost;
+        int retries;
+        int timeout;
 
         public static Pypi empty() {
-            return new Pypi("", "", "");
+            return new Pypi("", "", "", 10, 90);
         }
     }
 

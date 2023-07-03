@@ -153,6 +153,11 @@ def _do_pip_install_req(
     if _s_hosts:
         cmd += ["--trusted-host", _s_hosts]
 
+    cmd += [
+        f"--timeout={_env.get('SW_PYPI_TIMEOUT', 90)}",
+        f"--retries={_env.get('SW_PYPI_RETRIES', 10)}",
+    ]
+
     if enable_pre:
         cmd += ["--pre"]
 

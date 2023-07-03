@@ -149,6 +149,8 @@ public class ModelServingServiceTest {
         when(pypi.getExtraIndexUrl()).thenReturn("extra-index");
         when(pypi.getIndexUrl()).thenReturn("index");
         when(pypi.getTrustedHost()).thenReturn("trusted-host");
+        when(pypi.getRetries()).thenReturn(1);
+        when(pypi.getTimeout()).thenReturn(2);
 
         when(modelServingTokenValidator.getToken(any(), any())).thenReturn("token");
     }
@@ -201,6 +203,8 @@ public class ModelServingServiceTest {
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
         ));
+        expectedEnvs.put("SW_PYPI_RETRIES", "1");
+        expectedEnvs.put("SW_PYPI_TIMEOUT", "2");
         expectedEnvs.put("a", "b");
         verify(k8sJobTemplate).renderModelServingOrch(
                 "model-serving-7",
