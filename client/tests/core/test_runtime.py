@@ -1545,7 +1545,7 @@ class StandaloneRuntimeTestCase(TestCase):
         Runtime.restore(Path(workdir))
 
         assert m_call.call_count == 2
-        pip_cmds = [mc[0][0][8:] for mc in m_call.call_args_list]
+        pip_cmds = [mc[0][0][6:] for mc in m_call.call_args_list]
         assert pip_cmds == [["-r", req_lock_fpath], [wheel_fpath]]
 
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
@@ -1649,7 +1649,7 @@ class StandaloneRuntimeTestCase(TestCase):
         Runtime.restore(Path(workdir))
 
         assert m_call.call_count == 8
-        pip_cmds = [mc[0][0][8:] for mc in m_call.call_args_list]
+        pip_cmds = [mc[0][0][6:] for mc in m_call.call_args_list]
         assert pip_cmds == [
             ["-r", req_lock_fpath],
             ["a"],
@@ -1672,10 +1672,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "-r",
             req_lock_fpath,
         ]
@@ -1684,10 +1682,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "starwhale",
         ]
         assert (Path(workdir) / "export/venv/bin/prepare.sh").exists()
@@ -1818,10 +1814,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "install",
                 "--exists-action",
                 "w",
-                "--timeout",
-                90,
-                "--retries",
-                10,
+                "--timeout=90",
+                "--retries=10",
                 wheel_fpath,
             ],
             [
@@ -1953,10 +1947,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "install",
                 "--exists-action",
                 "w",
-                "--timeout",
-                90,
-                "--retries",
-                10,
+                "--timeout=90",
+                "--retries=10",
                 "-r",
                 req_lock_fpath,
             ],
@@ -1973,10 +1965,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "install",
                 "--exists-action",
                 "w",
-                "--timeout",
-                90,
-                "--retries",
-                10,
+                "--timeout=90",
+                "--retries=10",
                 "a",
             ],
             [
@@ -1992,10 +1982,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "install",
                 "--exists-action",
                 "w",
-                "--timeout",
-                90,
-                "--retries",
-                10,
+                "--timeout=90",
+                "--retries=10",
                 "b",
             ],
             [
@@ -2011,10 +1999,8 @@ class StandaloneRuntimeTestCase(TestCase):
                 "install",
                 "--exists-action",
                 "w",
-                "--timeout",
-                90,
-                "--retries",
-                10,
+                "--timeout=90",
+                "--retries=10",
                 wheel_fpath,
             ],
             [
@@ -2110,10 +2096,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "a",
         ]
         assert m_call.call_args_list[1][0][0] == [
@@ -2121,10 +2105,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "b",
         ]
 
@@ -2133,10 +2115,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             f"{target_dir}/dummy.whl",
         ]
         assert m_call.call_args_list[3][0][0].startswith(
@@ -2328,10 +2308,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "a",
         ]
         assert m_call.call_args_list[1][0][0] == [
@@ -2346,10 +2324,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "c",
         ]
         assert m_call.call_args_list[2][0][0] == [
@@ -2511,10 +2487,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "a",
         ]
         assert m_call.call_args_list[1][0][0] == [
@@ -2529,10 +2503,8 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
             "--exists-action",
             "w",
-            "--timeout",
-            90,
-            "--retries",
-            10,
+            "--timeout=90",
+            "--retries=10",
             "c",
         ]
         assert m_call.call_args_list[2][0][0] == [
