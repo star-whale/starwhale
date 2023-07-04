@@ -67,6 +67,7 @@ class DependencyType(Enum):
     CONDA_ENV_FILE = "conda_env_file"
     WHEEL = "wheel"
     NATIVE_FILE = "native_file"
+    COMMAND = "command"
 
 
 @unique
