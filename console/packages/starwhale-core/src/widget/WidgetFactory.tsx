@@ -1,6 +1,7 @@
 import { WidgetGroupType, WidgetType } from '../types'
 import WidgetPlugin from './WidgetPlugin'
 import { generateId } from '../utils/generators'
+import modules from './WidgetModules'
 
 export type DerivedPropertiesMap = Record<string, string>
 
@@ -16,6 +17,10 @@ class WidgetFactory {
         }
     }
 
+    static hasWidget(widgetType: WidgetType) {
+        return this.widgetMap.has(widgetType)
+    }
+
     static getWidgetTypes(): WidgetType[] {
         return Array.from(this.widgetMap.keys())
     }
@@ -27,12 +32,12 @@ class WidgetFactory {
     }
 
     static getWidget(widgetType: WidgetType) {
-        if (!this.widgetTypes[widgetType]) return null
+        if (!this.widgetTypes[widgetType]) return undefined
         return this.widgetMap.get(widgetType)
     }
 
     static newWidget(widgetType: WidgetType) {
-        if (!this.widgetMap.has(widgetType)) return null
+        if (!this.widgetMap.has(widgetType)) return undefined
         const widget = this.widgetMap.get(widgetType) as WidgetPlugin
         const id = generateId(widget.defaults?.group ?? '')
 
@@ -46,5 +51,11 @@ class WidgetFactory {
         }
     }
 }
+
+modules.forEach((w: WidgetPlugin<any>) => {
+    if (!w.getType()) return
+    if (WidgetFactory.hasWidget(w.getType())) return
+    WidgetFactory.register(w.getType(), w)
+})
 
 export default WidgetFactory
