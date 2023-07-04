@@ -41,6 +41,7 @@ install_requires = [
     "lz4>=3.1.10",
     "trio>=0.22.0",
     "httpx>=0.22.0",
+    "urllib3<1.27",
 ]
 
 extras_require = {
