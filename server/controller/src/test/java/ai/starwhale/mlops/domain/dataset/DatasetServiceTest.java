@@ -35,10 +35,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -403,8 +407,44 @@ public class DatasetServiceTest {
 
     @Test
     public void testShareDatasetVersion() {
-        service.shareDatasetVersion("1", "d1", "v1", true);
-        service.shareDatasetVersion("1", "d1", "v1", false);
+        var projectService = mock(ProjectService.class);
+        var datasetDao = mock(DatasetDao.class);
+        var versionAliasConverter = mock(VersionAliasConverter.class);
+        var datasetVersionMapper = mock(DatasetVersionMapper.class);
+
+        var svc = new DatasetService(
+                projectService,
+                mock(DatasetMapper.class),
+                datasetVersionMapper,
+                mock(DatasetVoConverter.class),
+                mock(DatasetVersionVoConverter.class),
+                mock(StorageService.class),
+                datasetDao,
+                new IdConverter(),
+                versionAliasConverter,
+                mock(UserService.class),
+                mock(UriAccessor.class),
+                mock(DataLoader.class),
+                mock(TrashService.class)
+        );
+
+        // public project
+        when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
+        when(datasetDao.findById(1L)).thenReturn(DatasetEntity.builder().id(1L).build());
+        when(versionAliasConverter.isVersionAlias("v1")).thenReturn(true);
+        var ds = DatasetVersionEntity.builder().id(2L).build();
+        when(datasetDao.findVersionByAliasAndBundleId("v1", 1L)).thenReturn(ds);
+        svc.shareDatasetVersion("pub", "1", "v1", true);
+        verify(datasetVersionMapper).updateShared(2L, true);
+        svc.shareDatasetVersion("pub", "1", "v1", false);
+        verify(datasetVersionMapper).updateShared(2L, false);
+
+        reset(datasetVersionMapper);
+        // private project can not share resources
+        when(projectService.getProjectVo("private")).thenReturn(ProjectVo.builder().id("2").privacy("PRIVATE").build());
+        assertThrows(SwValidationException.class, () -> svc.shareDatasetVersion("private", "1", "v1", true));
+        assertThrows(SwValidationException.class, () -> svc.shareDatasetVersion("private", "1", "v1", false));
+        verify(datasetVersionMapper, never()).updateShared(any(), any());
     }
 
     @Test

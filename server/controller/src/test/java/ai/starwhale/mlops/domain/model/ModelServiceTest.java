@@ -32,6 +32,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.api.protocol.storage.FileNode.Type;
 import ai.starwhale.mlops.common.IdConverter;
@@ -59,6 +62,8 @@ import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
 import ai.starwhale.mlops.domain.model.converter.ModelVoConverter;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
+import ai.starwhale.mlops.domain.model.po.ModelEntity;
+import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
@@ -68,6 +73,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
@@ -721,8 +727,43 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
     @Test
     public void testShareModelVersion() {
-        modelService.shareModelVersion("1", "m", "v1", true);
-        modelService.shareModelVersion("1", "m1", "v1", false);
+        var projectService = mock(ProjectService.class);
+        var modelDao = mock(ModelDao.class);
+        var versionAliasConverter = mock(VersionAliasConverter.class);
+        var modelVersionMapper = mock(ModelVersionMapper.class);
+
+        var svc = new ModelService(
+                mock(ModelMapper.class),
+                modelVersionMapper,
+                new IdConverter(),
+                versionAliasConverter,
+                mock(ModelVoConverter.class),
+                mock(ModelVersionVoConverter.class),
+                modelDao,
+                mock(UserService.class),
+                projectService,
+                mock(HotJobHolder.class),
+                mock(TrashService.class),
+                mock(JobSpecParser.class),
+                mock(BlobService.class)
+        );
+
+        // public project
+        when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
+        when(modelDao.findById(1L)).thenReturn(ModelEntity.builder().id(1L).build());
+        when(versionAliasConverter.isVersionAlias("v1")).thenReturn(true);
+        when(modelDao.findVersionByAliasAndBundleId("v1", 1L)).thenReturn(ModelVersionEntity.builder().id(2L).build());
+        svc.shareModelVersion("pub", "1", "v1", true);
+        verify(modelVersionMapper).updateShared(2L, true);
+        svc.shareModelVersion("pub", "1", "v1", false);
+        verify(modelVersionMapper).updateShared(2L, false);
+
+        reset(modelVersionMapper);
+        // private project can not share resources
+        when(projectService.getProjectVo("private")).thenReturn(ProjectVo.builder().id("2").privacy("PRIVATE").build());
+        assertThrows(SwValidationException.class, () -> svc.shareModelVersion("private", "1", "v1", true));
+        assertThrows(SwValidationException.class, () -> svc.shareModelVersion("private", "1", "v1", false));
+        verify(modelVersionMapper, never()).updateShared(any(), any());
     }
 
     @Test

@@ -351,6 +351,10 @@ public class RuntimeService {
     }
 
     public void shareRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, Boolean shared) {
+        var project = projectService.getProjectVo(projectUrl);
+        if (!project.getPrivacy().equals(Project.Privacy.PUBLIC.name())) {
+            throw new SwValidationException(ValidSubject.RUNTIME, "project is not public");
+        }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, runtimeUrl, runtimeVersionUrl));
         runtimeVersionMapper.updateShared(versionId, shared);
