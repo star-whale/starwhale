@@ -165,7 +165,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
 
         // we assume that the job is cancelled if it is not failed when delete
-        if (taskStatus != TaskStatus.FAIL && onDelete) {
+        if (taskStatus != TaskStatus.SUCCESS && taskStatus != TaskStatus.FAIL && onDelete) {
             taskStatus = TaskStatus.CANCELED;
         }
 
