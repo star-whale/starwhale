@@ -15,7 +15,8 @@ RUN bash /tmp/render_sources_list.sh ${TARGETARCH}
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
-    zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent jq libsndfile1
+    zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent jq libsndfile1 \
+    pkg-config libglib2.0-0 libgl1 libcairo2-dev
 
 RUN locale-gen en_US.UTF-8
 #TODO: build a seperated image by the different python version
