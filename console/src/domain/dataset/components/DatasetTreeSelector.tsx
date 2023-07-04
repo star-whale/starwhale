@@ -62,7 +62,7 @@ export function DatasetTreeSelector(
                                         kind='tertiary'
                                         onClick={() =>
                                             window.open(
-                                                `/projects/${projectId}/datasets/${dataset.datasetName}/versions/${item.id}/overview`
+                                                `/projects/${dataset.projectName}/datasets/${dataset.datasetName}/versions/${item.id}/overview`
                                             )
                                         }
                                     >

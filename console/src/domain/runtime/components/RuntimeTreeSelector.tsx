@@ -63,7 +63,7 @@ export function RuntimeTreeSelector(
                                         }}
                                         onClick={() =>
                                             window.open(
-                                                `/projects/${projectId}/runtimes/${runtime.runtimeName}/versions/${item.id}/overview`
+                                                `/projects/${runtime.projectName}/runtimes/${runtime.runtimeName}/versions/${item.id}/overview`
                                             )
                                         }
                                     >
