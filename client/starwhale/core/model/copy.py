@@ -4,6 +4,7 @@ import os
 import struct
 import typing as t
 import hashlib
+import logging
 import functools
 import contextvars
 from pathlib import Path
@@ -21,6 +22,8 @@ from starwhale.proto_gen import model_package_storage_pb2 as pb2
 from starwhale.base.blob.store import LocalFileStore
 from starwhale.base.uri.project import Instance
 from starwhale.base.uri.resource import Resource
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 MAX_DATA_BLOB_SIZE = convert_to_bytes(
     os.environ.get("SW_BUNDLE_COPY_DATA_BLOB_SIZE", "8m")
@@ -124,6 +127,7 @@ async def _http_request(
         assert path is not None
         url = f"{instance.url}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         headers["Authorization"] = instance.token
+
     url_iter = cloud_blob_cache.replace_url(url, replace)
     try:
         interval = 0.0
