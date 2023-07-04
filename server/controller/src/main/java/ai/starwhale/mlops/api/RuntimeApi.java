@@ -288,7 +288,7 @@ public interface RuntimeApi {
     @GetMapping(
             value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     void pull(
             @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
