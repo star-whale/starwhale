@@ -1,14 +1,13 @@
 api_version: '1.1'
 dependencies:
-- pip:
-  - starwhale
-  - transformers
-  - accelerate
+  - pip:
+    - starwhale>=0.5.1
+  - requirements.txt
 environment:
   arch: noarch
   cuda: '11.7'
   cudnn: ''
   os: ubuntu:20.04
   python: '3.8'
-mode: conda
-name: bloom
+mode: venv
+name: chatglm6b

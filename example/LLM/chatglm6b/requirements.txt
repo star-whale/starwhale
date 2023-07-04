@@ -6,3 +6,4 @@ transformers==4.27.1
 icetk
 cpm_kernels
 peft
+gradio
