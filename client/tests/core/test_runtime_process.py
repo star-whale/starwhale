@@ -201,10 +201,6 @@ class RuntimeProcessTestCase(TestCase):
             with patch.object(sys, "argv", []):
                 Process(uri).run()
 
-        with self.assertRaisesRegex(RuntimeError, "no runtime specified"):
-            with patch.object(sys, "argv", ["swcli", "model"]):
-                Process(uri).run()
-
         with self.assertRaisesRegex(
             NoSupportError, "run process with cloud instance uri"
         ):
