@@ -31,7 +31,10 @@ class Scheduler:
         self.version = version
 
     def run(
-        self, step_name: str = "", task_num: int = 0, task_index: t.Optional[int] = None
+        self,
+        step_name: str = "",
+        task_num: int = 0,
+        task_index: int | None = None,
     ) -> t.List[StepResult]:
         if not step_name:
             return self._schedule_all()
@@ -39,7 +42,11 @@ class Scheduler:
         if task_index is None or task_index < 0:
             return [self._schedule_one_step(step_name=step_name, task_num=task_num)]
         else:
-            return [self._schedule_one_task(step_name=step_name, task_index=task_index)]
+            return [
+                self._schedule_one_task(
+                    step_name=step_name, task_index=task_index, task_num=task_num
+                )
+            ]
 
     def _schedule_all(self) -> t.List[StepResult]:
         _results: t.List[StepResult] = []
@@ -107,11 +114,16 @@ class Scheduler:
         )
         return result
 
-    def _schedule_one_task(self, step_name: str, task_index: int) -> StepResult:
+    def _schedule_one_task(
+        self, step_name: str, task_index: int, task_num: int | None = None
+    ) -> StepResult:
         _step = self._steps[step_name]
-        if task_index >= _step.task_num:
+        if task_num is None or task_num <= 0:
+            task_num = _step.task_num
+
+        if task_index >= task_num:
             raise RuntimeError(
-                f"task_index:{task_index} out of bounds, total:{_step.task_num}"
+                f"task_index:{task_index} out of bounds, task_num:{task_num}"
             )
 
         _task = TaskExecutor(
@@ -120,7 +132,7 @@ class Scheduler:
                 project=self.project,
                 version=self.version,
                 step=_step.name,
-                total=_step.task_num,
+                total=task_num,
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,
