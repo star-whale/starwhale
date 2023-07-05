@@ -183,6 +183,7 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                         "show_name": "handle",
                         "expose": 0,
                         "virtual": False,
+                        "need_dataset": False,
                     }
                 ]
             }
