@@ -585,6 +585,7 @@ def _register_predict(
             predict_log_dataset_features=log_dataset_features,
             dataset_uris=datasets,
         ),
+        need_dataset=True,
     )(func)
 
 
