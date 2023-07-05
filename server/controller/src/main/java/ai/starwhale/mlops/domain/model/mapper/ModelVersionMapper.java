@@ -85,6 +85,9 @@ public interface ModelVersionMapper {
             + " order by m.id desc, v.version_order desc")
     List<ModelVersionViewEntity> listModelVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
 
+    @Update("update model_version set shared = 0 where model_id in ("
+            + " select id from model_info where project_id = #{projectId})")
+    int unShareModelVersionWithinProject(@Param("projectId") Long projectId);
 
     @Select("select version_order from model_version where id = #{id} for update")
     Long selectVersionOrderForUpdate(@Param("id") Long id);
@@ -96,9 +99,9 @@ public interface ModelVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into model_version "
-            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id)"
+            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared)"
             + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{jobs}, "
-            + "#{builtInRuntime}, #{metaBlobId})")
+            + "#{builtInRuntime}, #{metaBlobId}, #{shared})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 

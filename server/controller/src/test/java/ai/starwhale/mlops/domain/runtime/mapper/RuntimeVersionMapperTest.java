@@ -16,12 +16,13 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,6 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
                 .versionName("version 1")
                 .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .storagePath("storage path")
-                .image("image")
                 .build();
         runtimeVersionMapper.insert(runtimeVersionEntity1);
         runtimeVersionEntity1.setVersionOrder(0L);
@@ -62,7 +62,6 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
                 .versionName("version 2")
                 .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
                 .storagePath("storage path")
-                .image("image")
                 .build();
         // make sure modify time changes
         Thread.sleep(1000);
@@ -70,18 +69,63 @@ public class RuntimeVersionMapperTest extends MySqlContainerHolder {
         runtimeVersionEntity2.setVersionOrder(0L);
 
         var rt = runtimeVersionMapper.findLatestByProjectId(2L, null);
-        Assertions.assertEquals(2, rt.size());
-        Assertions.assertEquals("version 2", rt.get(0).getVersionName());
-        Assertions.assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
-        Assertions.assertEquals("version 1", rt.get(1).getVersionName());
-        Assertions.assertEquals(RuntimeTestConstants.BUILTIN_IMAGE, rt.get(1).getImage());
+        assertEquals(2, rt.size());
+        assertEquals("version 2", rt.get(0).getVersionName());
+        assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
+        assertEquals("version 1", rt.get(1).getVersionName());
+        assertEquals(RuntimeTestConstants.BUILTIN_IMAGE, rt.get(1).getImage());
 
         rt = runtimeVersionMapper.findLatestByProjectId(2L, 1);
-        Assertions.assertEquals(1, rt.size());
-        Assertions.assertEquals("version 2", rt.get(0).getVersionName());
-        Assertions.assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
+        assertEquals(1, rt.size());
+        assertEquals("version 2", rt.get(0).getVersionName());
+        assertEquals(RuntimeTestConstants.CUSTOM_IMAGE, rt.get(0).getImage());
 
         rt = runtimeVersionMapper.findLatestByProjectId(3L, null);
-        Assertions.assertEquals(List.of(), rt);
+        assertEquals(List.of(), rt);
+    }
+
+    @Test
+    public void testUnShareByProject() {
+        var runtime = RuntimeEntity.builder()
+                .runtimeName("runtime")
+                .ownerId(1L)
+                .projectId(2L)
+                .build();
+        runtimeMapper.insert(runtime);
+        var runtimeVersion = RuntimeVersionEntity.builder()
+                .runtimeId(runtime.getId())
+                .ownerId(1L)
+                .versionName("version 1")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .storagePath("storage path")
+                .shared(true)
+                .build();
+        runtimeVersionMapper.insert(runtimeVersion);
+
+        // add runtime version that do not belong to the project
+        var runtime2 = RuntimeEntity.builder()
+                .runtimeName("runtime2")
+                .ownerId(1L)
+                .projectId(3L)
+                .build();
+        runtimeMapper.insert(runtime2);
+        var runtimeVersion2 = RuntimeVersionEntity.builder()
+                .runtimeId(runtime2.getId())
+                .ownerId(1L)
+                .versionName("version 2")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
+                .storagePath("storage path")
+                .shared(true)
+                .build();
+        runtimeVersionMapper.insert(runtimeVersion2);
+
+        runtimeVersionMapper.unShareRuntimeVersionWithinProject(2L);
+
+        var rv = runtimeVersionMapper.find(runtimeVersion.getId());
+        assertEquals(false, rv.getShared());
+
+        // the shared attribute of runtime version that do not belong to the project should not be changed
+        var rv2 = runtimeVersionMapper.find(runtimeVersion2.getId());
+        assertEquals(true, rv2.getShared());
     }
 }

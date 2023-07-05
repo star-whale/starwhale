@@ -71,9 +71,9 @@ public interface RuntimeVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta,"
-            + " storage_path, image)"
+            + " storage_path, image, shared)"
             + " values (#{runtimeId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta},"
-            + " #{storagePath}, #{image})")
+            + " #{storagePath}, #{image}, #{shared})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(RuntimeVersionEntity version);
 
@@ -128,6 +128,10 @@ public interface RuntimeVersionMapper {
             + " and p.id != #{excludeProjectId}"
             + " order by b.id desc, v.version_order desc")
     List<RuntimeVersionViewEntity> listRuntimeVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
+
+    @Update("update runtime_version set shared = 0 where runtime_id in (select id from runtime_info where project_id = "
+            + "#{projectId})")
+    int unShareRuntimeVersionWithinProject(@Param("projectId") Long projectId);
 
     class RuntimeVersionProvider {
 

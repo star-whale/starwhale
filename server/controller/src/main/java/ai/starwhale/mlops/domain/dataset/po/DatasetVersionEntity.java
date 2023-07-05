@@ -20,6 +20,7 @@ import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,7 +45,8 @@ public class DatasetVersionEntity extends BaseEntity implements BundleVersionEnt
     private String storagePath;
     private Long size;
     private String indexTable;
-    private Boolean shared;
+    @Builder.Default
+    private Boolean shared = false;
 
     private Integer status = DatasetVersion.STATUS_UN_AVAILABLE;
 
