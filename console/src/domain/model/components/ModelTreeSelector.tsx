@@ -83,7 +83,7 @@ export function ModelTreeSelector(
         })
 
         return treeData
-    }, [modelInfo, projectId, t, getId])
+    }, [modelInfo, t, getId])
 
     const options = React.useMemo(() => {
         return [

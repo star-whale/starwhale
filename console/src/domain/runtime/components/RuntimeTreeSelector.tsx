@@ -82,7 +82,7 @@ export function RuntimeTreeSelector(
         })
 
         return treeData
-    }, [runtimeInfo, projectId, getId, t])
+    }, [runtimeInfo, getId, t])
 
     const options = React.useMemo(() => {
         return [

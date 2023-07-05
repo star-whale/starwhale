@@ -81,7 +81,7 @@ export function DatasetTreeSelector(
         })
 
         return treeData
-    }, [datasetInfo, projectId, t, getId])
+    }, [datasetInfo, t, getId])
 
     const options = React.useMemo(() => {
         return [
