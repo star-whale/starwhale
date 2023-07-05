@@ -923,14 +923,14 @@ class MockReport:
         steps = Step.get_steps_from_yaml(
             "mock_user_module:MockReport.report_handler", yaml_path
         )
-        results = Scheduler(
+        scheduler = Scheduler(
             project="test",
             version="test",
             workdir=self.workdir,
             dataset_uris=[],
             steps=steps,
-        ).run()
-
+        )
+        results = scheduler.run()
         assert {
             "mock_user_module:prepare_handler",
             "mock_user_module:evaluate_handler",
@@ -939,6 +939,56 @@ class MockReport:
         } == {r.name for r in results}
         assert all([r.status == "success" for r in results])
         assert {1, 1, 10, 1} == {len(r.task_results) for r in results}
+        for r in results:
+            if r.name == "mock_user_module:predict_handler":
+                assert {i for i in range(10)} == {t.id for t in r.task_results}
+
+        results = scheduler.run(
+            step_name="mock_user_module:predict_handler",
+            task_index=3,
+            task_num=12,
+        )
+        assert {1} == {len(r.task_results) for r in results}
+        assert {"mock_user_module:predict_handler"} == {r.name for r in results}
+        assert len(results) == 1
+        assert len(results[0].task_results) == 1
+        assert results[0].task_results[0].id == 3
+
+        results = scheduler.run(
+            step_name="mock_user_module:predict_handler",
+        )
+        assert {10} == {len(r.task_results) for r in results}
+        assert {"mock_user_module:predict_handler"} == {r.name for r in results}
+        assert len(results) == 1
+        assert len(results[0].task_results) == 10
+        assert {i for i in range(10)} == {t.id for t in results[0].task_results}
+
+        results = scheduler.run(
+            step_name="mock_user_module:predict_handler",
+            task_num=3,
+        )
+        assert {3} == {len(r.task_results) for r in results}
+        assert {"mock_user_module:predict_handler"} == {r.name for r in results}
+        assert len(results) == 1
+        assert len(results[0].task_results) == 3
+        assert {i for i in range(3)} == {t.id for t in results[0].task_results}
+
+        results = scheduler.run(
+            step_name="mock_user_module:predict_handler",
+            task_index=5,
+        )
+        assert {1} == {len(r.task_results) for r in results}
+        assert {"mock_user_module:predict_handler"} == {r.name for r in results}
+        assert len(results) == 1
+        assert len(results[0].task_results) == 1
+        assert results[0].task_results[0].id == 5
+
+        with self.assertRaisesRegex(RuntimeError, "out of bounds"):
+            scheduler.run(
+                step_name="mock_user_module:predict_handler",
+                task_index=10,
+                task_num=1,
+            )
 
     def test_evaluator_needs(self) -> None:
         content = """
