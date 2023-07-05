@@ -23,6 +23,7 @@ import generatePassword from '@/utils/passwordGenerator'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { IconFont } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { useQueryArgs } from '@starwhale/core/utils'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateJobFormSchema>()
 
@@ -62,6 +63,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
+    const [modelId, setModelId] = useState('')
     const [modelVersionId, setModelVersionId] = useState('')
     const [modelVersionHandler, setModelVersionHandler] = useState('')
     const [rawType, setRawType] = React.useState(false)
@@ -118,6 +120,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
+    const isModifiedDataset = React.useMemo(() => {
+        return stepSource?.some((v) => !('need_dataset' in v) || v.need_dataset)
+    }, [stepSource])
+
     const checkStepSource = useCallback(
         (value) => {
             try {
@@ -170,14 +176,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     )
 
     const handleModelHandlerChange = useCallback(
-        (value) => {
+        (value: any) => {
             setModelVersionHandler(value)
         },
         [setModelVersionHandler]
     )
 
     const handleValuesChange = useCallback(
-        (_changes, values_) => {
+        (_changes: Partial<ICreateJobFormSchema>, values_: ICreateJobFormSchema) => {
             if ('modelVersionUrl' in _changes) {
                 setModelVersionHandler('')
             }
@@ -224,6 +230,28 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             )
         }
     }, [fullStepSource, modelVersionHandler])
+
+    // auto select by modelid & handler , load from query args: used by online-eval
+    const { query } = useQueryArgs()
+    useEffect(() => {
+        if (query.modelId && modelTree) {
+            setModelId(query.modelId)
+            let vid = null
+            modelTree?.forEach((v) => {
+                if (v.modelId === modelId) {
+                    vid = v.versions?.[0]?.id
+                }
+            })
+            if (!vid) return
+            setModelVersionId(vid)
+            form.setFieldsValue({
+                modelVersionUrl: vid,
+            })
+        }
+        if (query.handler) {
+            setModelVersionHandler(query.handler)
+        }
+    }, [query.modelId, query.handler, modelTree, modelId, form])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -337,12 +365,16 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 </div>
             </div>
             {/* dataset config */}
-            <Divider orientation='top'>{t('Datasets')}</Divider>
-            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-                <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
-                    <DatasetTreeSelector projectId={projectId} multiple />
-                </FormItem>
-            </div>
+            {isModifiedDataset && (
+                <>
+                    <Divider orientation='top'>{t('Datasets')}</Divider>
+                    <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
+                        <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
+                            <DatasetTreeSelector projectId={projectId} multiple />
+                        </FormItem>
+                    </div>
+                </>
+            )}
             {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
@@ -424,7 +456,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </WithCurrentAuth>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
-                    <div style={{ flexGrow: 1 }} />
                     <Button
                         kind='secondary'
                         type='button'
