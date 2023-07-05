@@ -577,6 +577,7 @@ def _register_predict(
         concurrency=concurrency,
         needs=needs,
         replicas=replicas,
+        require_dataset=True,
         extra_kwargs=dict(
             predict_batch_size=batch_size,
             ignore_error=not fail_on_error,
@@ -585,7 +586,6 @@ def _register_predict(
             predict_log_dataset_features=log_dataset_features,
             dataset_uris=datasets,
         ),
-        require_dataset=True,
     )(func)
 
 

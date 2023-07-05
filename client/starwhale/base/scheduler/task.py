@@ -39,6 +39,13 @@ class TaskExecutor:
         self.exception: t.Optional[Exception] = None
         self.step = step
         self.__status = RunStatus.INIT
+        self._validate()
+
+    def _validate(self):
+        if self.step.require_dataset and not self.context.dataset_uris:
+            raise RuntimeError(
+                f"TaskExecutor[{self.index}]: step-{self.step} requires dataset."
+            )
 
     def __str__(self) -> str:
         return f"TaskExecutor[{self.index}]: step-{self.step}"

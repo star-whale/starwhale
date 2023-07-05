@@ -385,6 +385,7 @@ def evaluate_handler(*args, **kwargs): ...
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
+        assert steps[0].require_dataset is True
 
         steps = Step.get_steps_from_yaml("", yaml_path)
         assert len(steps) == 2
@@ -394,14 +395,24 @@ def evaluate_handler(*args, **kwargs): ...
 
         steps = Step.get_steps_from_yaml(1, yaml_path)
         assert len(steps) == 1
+        assert steps[0].name == "mock_user_module:predict_handler"
+        assert steps[0].show_name == "predict"
+        assert steps[0].require_dataset is True
 
-        with self.assertRaises(IndexError):
-            Step.get_steps_from_yaml(3, yaml_path)
+        with self.assertRaises(RuntimeError):
+            # without dataset_uri
+            context = Context(
+                workdir=self.workdir,
+                project="test",
+                version="123",
+            )
+            TaskExecutor(index=1, context=context, workdir=self.workdir, step=steps[0])
 
         context = Context(
             workdir=self.workdir,
             project="test",
             version="123",
+            dataset_uris=["ds/version/v0"],
         )
         task = TaskExecutor(
             index=1, context=context, workdir=self.workdir, step=steps[0]
@@ -409,6 +420,9 @@ def evaluate_handler(*args, **kwargs): ...
         result = task.execute()
         assert result.status == "success"
         assert mock_ppl.call_count == 1
+
+        with self.assertRaises(IndexError):
+            Step.get_steps_from_yaml(3, yaml_path)
 
     @patch(
         "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
@@ -625,7 +639,7 @@ class MockHandler:
             project="test",
             version="test",
             workdir=self.workdir,
-            dataset_uris=[],
+            dataset_uris=["ds/version/v0"],
             steps=steps,
         ).run()
 

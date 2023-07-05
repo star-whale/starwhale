@@ -61,6 +61,7 @@ class Step(ASDictMixin):
         self.extra_kwargs = extra_kwargs or {}
         self.expose = kw.get("expose", 0)
         self.virtual = kw.get("virtual", False)
+        self.require_dataset = kw.get("require_dataset", False)
 
         # TODO: add validation
 
@@ -123,6 +124,7 @@ class Step(ASDictMixin):
                 extra_kwargs=v.get("extra_kwargs"),
                 expose=v.get("expose"),
                 virtual=v.get("virtual"),
+                require_dataset=v.get("require_dataset"),
             )
             steps.append(step)
         return steps
