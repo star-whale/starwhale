@@ -56,5 +56,5 @@ def _register_ft(
         concurrency=1,
         replicas=1,
         needs=needs,
-        need_dataset=True,
+        require_dataset=True,
     )(func)

@@ -166,7 +166,7 @@ class StandaloneModelTestCase(TestCase):
                     "show_name": "t1",
                     "expose": 0,
                     "virtual": False,
-                    "need_dataset": False,
+                    "require_dataset": False,
                 }
             ],
             "depend": [
@@ -184,7 +184,7 @@ class StandaloneModelTestCase(TestCase):
                     "show_name": "t1",
                     "expose": 0,
                     "virtual": False,
-                    "need_dataset": False,
+                    "require_dataset": False,
                 },
                 {
                     "cls_name": "",
@@ -200,7 +200,7 @@ class StandaloneModelTestCase(TestCase):
                     "show_name": "t2",
                     "expose": 0,
                     "virtual": False,
-                    "need_dataset": False,
+                    "require_dataset": False,
                 },
             ],
             "serving": [
@@ -220,7 +220,7 @@ class StandaloneModelTestCase(TestCase):
                     "resources": [],
                     "show_name": "virtual handler for model serving",
                     "virtual": True,
-                    "need_dataset": False,
+                    "require_dataset": False,
                 }
             ],
         }
