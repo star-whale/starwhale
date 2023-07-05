@@ -273,6 +273,10 @@ const job = {
         en: 'Running',
         zh: '运行中',
     },
+    'job.status.cancelling': {
+        en: 'Cancelling',
+        zh: '取消中',
+    },
     'job.status.cancelled': {
         en: 'Cancelled',
         zh: '已取消',
