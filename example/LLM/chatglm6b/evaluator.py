@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from collections import namedtuple
 
 import torch
 from peft import TaskType, LoraConfig, get_peft_model
@@ -330,7 +329,7 @@ def chatbot():
     with gr.Blocks() as demo:
         chatbot = gr.Chatbot()
         msg = gr.Textbox()
-        clear = gr.ClearButton([msg, chatbot])
+        gr.ClearButton([msg, chatbot])
         max_length = gr.Slider(
             0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True
         )

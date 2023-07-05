@@ -1,6 +1,6 @@
 # pip install -q transformers accelerate starwhale
 import os
-from typing import Any, List, Tuple
+from typing import Any
 from pathlib import Path
 
 import numpy as np
@@ -8,7 +8,6 @@ import torch
 from datasets import Dataset
 from transformers import (
     AdamW,
-    AutoModel,
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
     get_linear_schedule_with_warmup,
@@ -230,7 +229,7 @@ def chatbot():
     with gr.Blocks() as demo:
         chatbot = gr.Chatbot()
         msg = gr.Textbox()
-        clear = gr.ClearButton([msg, chatbot])
+        gr.ClearButton([msg, chatbot])
         max_length = gr.Slider(
             0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True
         )
