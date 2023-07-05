@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -210,9 +211,11 @@ public class JobService {
         }
         var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
 
-        var datasetVersionIdMaps = Arrays.stream(datasetVersionUrls.split("[,;]"))
-                .map(datasetService::findDatasetVersion)
-                .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName));
+        var datasetVersionIdMaps = StringUtils.hasText(datasetVersionUrls)
+                ? Arrays.stream(datasetVersionUrls.split("[,;]"))
+                        .map(datasetService::findDatasetVersion)
+                        .collect(Collectors.toMap(DatasetVersion::getId, DatasetVersion::getVersionName))
+                    : new HashMap<Long, String>();
 
         if ((!StringUtils.hasText(stepSpecOverWrites) && !StringUtils.hasText(handler))
                 || (StringUtils.hasText(stepSpecOverWrites) && StringUtils.hasText(handler))) {
