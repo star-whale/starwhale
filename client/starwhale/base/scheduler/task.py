@@ -41,7 +41,7 @@ class TaskExecutor:
         self.__status = RunStatus.INIT
         self._validate()
 
-    def _validate(self):
+    def _validate(self) -> None:
         if self.step.require_dataset and not self.context.dataset_uris:
             raise RuntimeError(
                 f"TaskExecutor[{self.index}]: step-{self.step} requires dataset."
