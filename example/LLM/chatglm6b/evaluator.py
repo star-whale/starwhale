@@ -8,7 +8,7 @@ from gradio import gradio
 from transformers import Trainer, AutoModel, AutoTokenizer, TrainingArguments
 from torch.utils.data import Dataset
 
-from starwhale import Context, dataset, evaluation, pass_context, handler
+from starwhale import Context, dataset, handler, evaluation, pass_context
 from starwhale.api import model, experiment
 from starwhale.api.service import api
 
@@ -310,9 +310,11 @@ def fine_tune(
 def online_eval(question: str) -> str:
     return ppl({"text": question})
 
+
 @handler(expose=7860)
 def chatbot():
     import gradio as gr
+
     if not os.path.exists(ROOTDIR / "models"):
         import download_model  # noqa: F401
     tokenizer = AutoTokenizer.from_pretrained(
@@ -329,19 +331,32 @@ def chatbot():
         chatbot = gr.Chatbot()
         msg = gr.Textbox()
         clear = gr.ClearButton([msg, chatbot])
-        max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
+        max_length = gr.Slider(
+            0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True
+        )
         top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-        temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
+        temperature = gr.Slider(
+            0, 1, value=0.95, step=0.01, label="Temperature", interactive=True
+        )
 
         def respond(message, chat_history, mxl, tpp, tmp):
-            response, history = chatglm.chat(tokenizer, message, chat_history[-5] if len(chat_history)>5 else chat_history, max_length=mxl, top_p=tpp,
-                                               temperature=tmp)
+            response, history = chatglm.chat(
+                tokenizer,
+                message,
+                chat_history[-5] if len(chat_history) > 5 else chat_history,
+                max_length=mxl,
+                top_p=tpp,
+                temperature=tmp,
+            )
             chat_history.append((message, response))
             return "", chat_history
 
-        msg.submit(respond, [msg, chatbot, max_length, top_p, temperature], [msg, chatbot])
+        msg.submit(
+            respond, [msg, chatbot, max_length, top_p, temperature], [msg, chatbot]
+        )
 
     demo.launch(server_name="0.0.0.0")
+
 
 if __name__ == "__main__":
     chatbot()

@@ -42,7 +42,7 @@ def ppl(data: dict, external: dict):
             checkpoint, torch_dtype="auto", device_map="auto"
         )
 
-    ds_name = external["dataset_uri"].name if external else ''
+    ds_name = external["dataset_uri"].name if external else ""
     if "text" in data:
         text = data["text"]
     elif "question" in data:
@@ -61,6 +61,7 @@ def ppl(data: dict, external: dict):
     result = tokenizer.decode(outputs[0])
     print(result)
     return result
+
 
 @pass_context
 @fine_tune()

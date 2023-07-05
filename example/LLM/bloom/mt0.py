@@ -1,6 +1,6 @@
 # pip install -q transformers accelerate starwhale
 import os
-from typing import Any
+from typing import Any, List, Tuple
 from pathlib import Path
 
 import numpy as np
@@ -13,8 +13,8 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     get_linear_schedule_with_warmup,
 )
-from typing import Tuple, List, Any
-from starwhale import Context, dataset, fine_tune, evaluation, pass_context, handler
+
+from starwhale import Context, dataset, handler, fine_tune, evaluation, pass_context
 from starwhale.api import model as swmp
 
 ROOTDIR = Path(__file__).parent
@@ -200,10 +200,12 @@ def swds2hgds(swds) -> Any:
 
     return Dataset.from_generator(my_gen)
 
+
 @handler(expose=7860)
 @torch.no_grad()
 def chatbot():
     import gradio as gr
+
     # os.environ['CUDA_VISIBLE_DEVICES'] ='0'
     checkpoint = ROOTDIR / "models"
     if not os.path.exists(checkpoint):
@@ -214,39 +216,49 @@ def chatbot():
     )
     mt0.eval()
 
-    def gen_prompt(message,chat_histroy):
+    def gen_prompt(message, chat_histroy):
         if not chat_histroy:
             return message
         prompt = ""
-        for i , (q, r) in enumerate(chat_histroy):
+        for i, (q, r) in enumerate(chat_histroy):
             prompt += "[Round {}]\answer the chat below:{}\nanswer:{}\n".format(i, q, r)
-        prompt += "[Round {}]\answer the chat below:{}\nanswer:".format(len(chat_histroy), message)
+        prompt += "[Round {}]\answer the chat below:{}\nanswer:".format(
+            len(chat_histroy), message
+        )
         return prompt
-        
 
-    
     with gr.Blocks() as demo:
         chatbot = gr.Chatbot()
         msg = gr.Textbox()
         clear = gr.ClearButton([msg, chatbot])
-        max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
+        max_length = gr.Slider(
+            0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True
+        )
         top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-        temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
-        
+        temperature = gr.Slider(
+            0, 1, value=0.95, step=0.01, label="Temperature", interactive=True
+        )
 
         def respond(message, chat_history, mxl, tpp, tmp):
-            gen_kwargs = {"max_length": mxl, "num_beams": 1, "do_sample": True, "top_p": tpp,
-                      "temperature": tmp}
-            ct = chat_history[-5] if len(chat_history)>5 else chat_history
-            inputs = tokenizer.encode(gen_prompt(message,ct), return_tensors="pt")
+            gen_kwargs = {
+                "max_length": mxl,
+                "num_beams": 1,
+                "do_sample": True,
+                "top_p": tpp,
+                "temperature": tmp,
+            }
+            ct = chat_history[-5] if len(chat_history) > 5 else chat_history
+            inputs = tokenizer.encode(gen_prompt(message, ct), return_tensors="pt")
             outputs = mt0.generate(inputs, **gen_kwargs)
             response = tokenizer.decode(outputs[0])
-            response = response.replace(tokenizer.pad_token,'')
-            response = response.replace(tokenizer.eos_token,'')
+            response = response.replace(tokenizer.pad_token, "")
+            response = response.replace(tokenizer.eos_token, "")
             chat_history.append((message, response))
             return "", chat_history
 
-        msg.submit(respond, [msg, chatbot, max_length, top_p, temperature], [msg, chatbot])
+        msg.submit(
+            respond, [msg, chatbot, max_length, top_p, temperature], [msg, chatbot]
+        )
 
     demo.launch(server_name="0.0.0.0")
 
