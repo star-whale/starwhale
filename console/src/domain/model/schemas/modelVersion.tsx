@@ -57,5 +57,5 @@ export interface StepSpec {
     replicas?: number
     virtual?: boolean
     expose?: number
-    need_dataset?: boolean
+    require_dataset?: boolean
 }

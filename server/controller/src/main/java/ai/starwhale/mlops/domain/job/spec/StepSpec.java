@@ -62,8 +62,8 @@ public class StepSpec {
     private Integer expose;
     private Boolean virtual;
 
-    @JsonProperty("need_dataset")
-    private Boolean needDataset;
+    @JsonProperty("require_dataset")
+    private Boolean requireDataset;
 }
 
 
