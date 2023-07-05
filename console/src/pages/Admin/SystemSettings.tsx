@@ -9,9 +9,27 @@ import { toaster } from 'baseui/toast'
 import { useFetchSystemSetting } from '@/domain/setting/hooks/useSettings'
 import { updateSystemSetting } from '@/domain/setting/services/system'
 
-const { Form, FormItem, useForm } = createForm<any>()
+const { Form, FormItem, useForm } = createForm<any>({
+    itemClassName: {
+        label: 'flex',
+    },
+})
 
 const useStyles = createUseStyles({
+    form: {
+        'display': 'flex',
+        'flexDirection': 'column',
+        'flex': 1,
+        '& [data-baseweb="form-control-container"]': {
+            flex: 1,
+        },
+        '& [class*=formItem]:nth-child(1)': {
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minWidth: 0,
+        },
+    },
     buttonGroup: {
         display: 'flex',
         gap: 20,
@@ -60,9 +78,15 @@ export default function SystemSettings() {
     )
 
     return (
-        <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+        <Form
+            className={styles.form}
+            form={form}
+            initialValues={values}
+            onFinish={handleFinish}
+            onValuesChange={handleValuesChange}
+        >
             <FormItem label='' name='setting' required>
-                <Editor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
+                <Editor width='960px' defaultLanguage='yaml' theme='vs-dark' />
             </FormItem>
             <FormItem>
                 <div className={styles.buttonGroup}>
