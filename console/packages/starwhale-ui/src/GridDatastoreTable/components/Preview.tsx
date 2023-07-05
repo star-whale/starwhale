@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _, { toUpper } from 'lodash'
 import React from 'react'
 import Button from '@starwhale/ui/Button'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
@@ -9,29 +9,9 @@ import IconFont from '@starwhale/ui/IconFont'
 import { RAW_COLORS } from '@starwhale/ui/Viewer/utils'
 import { LabelMedium } from 'baseui/typography'
 import Checkbox from '@starwhale/ui/Checkbox'
-import { JSONTree } from 'react-json-tree'
 import { useDatasetTableAnnotations } from '@starwhale/core/dataset'
+import JSONView from '@starwhale/ui/JSONView'
 
-export const theme = {
-    scheme: 'bright',
-    author: 'chris kempson (http://chriskempson.com)',
-    base00: '#000000',
-    base01: '#303030',
-    base02: '#505050',
-    base03: '#b0b0b0',
-    base04: '#d0d0d0',
-    base05: '#e0e0e0',
-    base06: '#f5f5f5',
-    base07: '#ffffff',
-    base08: '#fb0120',
-    base09: '#fc6d24',
-    base0A: '#fda331',
-    base0B: '#a1c659',
-    base0C: '#76c7b7',
-    base0D: '#6fb3d2',
-    base0E: '#d381c3',
-    base0F: '#be643c',
-}
 const useStyles = createUseStyles({
     cardImg: {
         'position': 'relative',
@@ -66,7 +46,7 @@ const useStyles = createUseStyles({
         flexDirection: 'column',
         marginTop: 0,
         marginBottom: 0,
-        border: '1px solid #CFD7E6',
+        borderTop: '1px solid #eef1f6',
     },
     layoutFullscreen: {
         position: 'fixed',
@@ -83,18 +63,25 @@ const useStyles = createUseStyles({
         borderRadius: '4px',
         // border: '1px solid #E2E7F0',
         display: 'flex',
+        flex: 1,
     },
     card: {
         'position': 'relative',
         'flex': 1,
-        'display': 'grid',
+        'display': 'flex',
         'placeContent': 'center',
+        'overflow': 'auto',
         '&:hover $cardFullscreen': {
             display: 'grid',
         },
+        'padding': '20px',
+        '& > pre': {
+            borderRadius: '4px',
+            width: '100%',
+        },
     },
     panel: {
-        flexBasis: '350px',
+        flexBasis: '370px',
         padding: '20px',
         borderRight: '1px solid #EEF1F6',
         overflow: 'auto',
@@ -175,7 +162,8 @@ export default function Preview({
                     style: {
                         width: '90vw',
                         maxWidth: '1200px',
-                        maxHeight: '640px',
+                        minHeight: '640px',
+                        maxHeight: '90vh',
                         display: 'flex',
                         flexDirection: 'column',
                     },
@@ -188,7 +176,7 @@ export default function Preview({
                 className={styles.layoutNormal}
             >
                 <div className={styles.wrapper}>
-                    {Panel && <div className={styles.panel}>{Panel}</div>}
+                    {Panel && <div className={[styles.panel, 'flex-full'].join(' ')}>{Panel}</div>}
                     <div className={styles.card}>
                         {!isFullscreen && (
                             <div
@@ -249,7 +237,7 @@ function TabControl({
             return (
                 <div key={type} className={styles.annotationList}>
                     <div className={styles.annotationItem} style={{ color: ' rgba(2,16,43,0.60)', marginTop: '20px' }}>
-                        {type}({list.length})
+                        {toUpper(type)}({list.length})
                         <div className={styles.annotationItemShow}>
                             <Button
                                 as='transparent'
@@ -295,7 +283,7 @@ function TabControl({
     }, [hiddenLabels, setHiddenLabels, annotationTypeMap, styles, hiddenTypes])
 
     return (
-        <div>
+        <div className='flex-full'>
             {!$isSimpleView && (
                 <div className={styles.annotation}>
                     <LabelMedium>Annotation Type</LabelMedium>
@@ -326,54 +314,66 @@ function TabControl({
                 </div>
             )}
             {/* @ts-ignore */}
-            <Tabs
-                overrides={{
-                    TabBar: {
-                        style: {
-                            display: 'flex',
-                            gap: '0',
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
+            {!$isSimpleView && (
+                <Tabs
+                    overrides={{
+                        Root: {
+                            style: {
+                                overflow: 'hidden',
+                            },
                         },
-                    },
-                    TabContent: {
-                        style: {
-                            paddingLeft: 0,
-                            paddingRight: 0,
-                            borderRadius: '4px',
+                        TabBar: {
+                            style: {
+                                display: 'flex',
+                                gap: '0',
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                                borderRadius: '4px',
+                            },
                         },
-                    },
-                    Tab: {
-                        style: ({ $active }) => ({
-                            flex: 1,
-                            textAlign: 'center',
-                            border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
-                            color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
-                            marginLeft: '0',
-                            marginRight: '0',
-                            paddingTop: '9px',
-                            paddingBottom: '9px',
-                            fontSize: '14px',
-                            lineHeight: '14px',
-                        }),
-                    },
-                }}
-                onChange={({ activeKey }) => onChange?.(activeKey as string)}
-                activeKey={$activeKey}
-            >
-                {/* @ts-ignore */}
-                {!$isSimpleView && (
+                        TabContent: {
+                            style: {
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                                borderRadius: '4px',
+                                overflow: 'auto',
+                                backgroundColor: '#fff',
+                            },
+                        },
+                        Tab: {
+                            style: ({ $active }) => ({
+                                flex: 1,
+                                textAlign: 'center',
+                                border: $active ? '1px solid #2B65D9' : '1px solid #CFD7E6',
+                                color: $active ? ' #2B65D9' : 'rgba(2,16,43,0.60)',
+                                marginLeft: '0',
+                                marginRight: '0',
+                                paddingTop: '9px',
+                                paddingBottom: '9px',
+                                fontSize: '14px',
+                                lineHeight: '14px',
+                                overflow: 'hidden',
+                                backgroundColor: '#fff',
+                                fontWeight: 600,
+                            }),
+                        },
+                    }}
+                    onChange={({ activeKey }) => onChange?.(activeKey as string)}
+                    activeKey={$activeKey}
+                >
                     <Tab title={`Annotation(${count})`}>
                         <div>{Anno}</div>
                     </Tab>
-                )}
-                <Tab title='Meta'>
-                    <div>
-                        <JSONTree data={record} theme={theme} hideRoot shouldExpandNode={() => false} />
-                    </div>
-                </Tab>
-            </Tabs>
+                    <Tab title='Meta'>
+                        <JSONView data={record} />
+                    </Tab>
+                </Tabs>
+            )}
+            {$isSimpleView && (
+                <div className='flex-full-scroll'>
+                    <JSONView data={record} />{' '}
+                </div>
+            )}
         </div>
     )
 }
