@@ -60,6 +60,7 @@ import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.TrashService;
@@ -353,8 +354,12 @@ public class ModelService {
         });
     }
 
-    public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl,
-            Boolean shared) {
+    public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
+        // the model can share only in public project
+        var project = projectService.getProjectVo(projectUrl);
+        if (!project.getPrivacy().equals(Project.Privacy.PUBLIC.name())) {
+            throw new SwValidationException(ValidSubject.MODEL, "project is not public");
+        }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
                 .create(projectUrl, modelUrl, versionUrl));
         modelVersionMapper.updateShared(versionId, shared);

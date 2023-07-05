@@ -37,9 +37,13 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
@@ -446,8 +450,52 @@ public class RuntimeServiceTest {
 
     @Test
     public void testShareRuntimeVersion() {
-        service.shareRuntimeVersion("1", "r1", "v1", true);
-        service.shareRuntimeVersion("1", "r1", "v1", false);
+        var projectService = mock(ProjectService.class);
+        var runtimeDao = mock(RuntimeDao.class);
+        var versionAliasConverter = mock(VersionAliasConverter.class);
+        var runtimeVersionMapper = mock(RuntimeVersionMapper.class);
+
+        var svc = new RuntimeService(
+                mock(RuntimeMapper.class),
+                runtimeVersionMapper,
+                mock(StorageService.class),
+                projectService,
+                mock(RuntimeConverter.class),
+                mock(RuntimeVersionConverter.class),
+                runtimeDao,
+                mock(StoragePathCoordinator.class),
+                mock(StorageAccessService.class),
+                mock(HotJobHolder.class),
+                mock(UserService.class),
+                new IdConverter(),
+                versionAliasConverter,
+                mock(TrashService.class),
+                mock(K8sClient.class),
+                mock(K8sJobTemplate.class),
+                mock(RuntimeTokenValidator.class),
+                mock(SystemSettingService.class),
+                mock(DockerSetting.class),
+                mock(RunTimeProperties.class),
+                "fake instance url"
+        );
+
+        // public project
+        when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
+        when(runtimeDao.findById(1L)).thenReturn(RuntimeEntity.builder().id(1L).build());
+        when(versionAliasConverter.isVersionAlias("v1")).thenReturn(true);
+        var rt = RuntimeVersionEntity.builder().id(2L).build();
+        when(runtimeDao.findVersionByAliasAndBundleId("v1", 1L)).thenReturn(rt);
+        svc.shareRuntimeVersion("pub", "1", "v1", true);
+        verify(runtimeVersionMapper).updateShared(2L, true);
+        svc.shareRuntimeVersion("pub", "1", "v1", false);
+        verify(runtimeVersionMapper).updateShared(2L, false);
+
+        reset(runtimeVersionMapper);
+        // private project can not share resources
+        when(projectService.getProjectVo("private")).thenReturn(ProjectVo.builder().id("2").privacy("PRIVATE").build());
+        assertThrows(SwValidationException.class, () -> svc.shareRuntimeVersion("private", "1", "v1", true));
+        assertThrows(SwValidationException.class, () -> svc.shareRuntimeVersion("private", "1", "v1", false));
+        verify(runtimeVersionMapper, never()).updateShared(any(), any());
     }
 
     @Test

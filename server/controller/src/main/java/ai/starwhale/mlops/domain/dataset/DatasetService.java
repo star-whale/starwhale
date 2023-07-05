@@ -50,6 +50,7 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.trash.Trash;
@@ -256,10 +257,12 @@ public class DatasetService {
         }
     }
 
-    public void shareDatasetVersion(String projectUrl, String datasetUrl, String versionUrl,
-            Boolean shared) {
-        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, datasetUrl, versionUrl));
+    public void shareDatasetVersion(String projectUrl, String datasetUrl, String versionUrl, Boolean shared) {
+        var project = projectService.getProjectVo(projectUrl);
+        if (!project.getPrivacy().equals(Project.Privacy.PUBLIC.name())) {
+            throw new SwValidationException(ValidSubject.DATASET, "project is not public");
+        }
+        Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(projectUrl, datasetUrl, versionUrl));
         datasetVersionMapper.updateShared(versionId, shared);
     }
 
