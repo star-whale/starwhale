@@ -63,7 +63,7 @@ export function RuntimeTreeSelector(
                                         }}
                                         onClick={() =>
                                             window.open(
-                                                `/projects/${projectId}/runtimes/${runtime.runtimeName}/versions/${item.id}/overview`
+                                                `/projects/${runtime.projectName}/runtimes/${runtime.runtimeName}/versions/${item.id}/overview`
                                             )
                                         }
                                     >
@@ -82,7 +82,7 @@ export function RuntimeTreeSelector(
         })
 
         return treeData
-    }, [runtimeInfo, projectId, getId, t])
+    }, [runtimeInfo, getId, t])
 
     const options = React.useMemo(() => {
         return [

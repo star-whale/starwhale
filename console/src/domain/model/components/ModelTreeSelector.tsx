@@ -64,7 +64,7 @@ export function ModelTreeSelector(
                                         }}
                                         onClick={() =>
                                             window.open(
-                                                `/projects/${projectId}/models/${model.modelName}/versions/${item.id}/overview`
+                                                `/projects/${model.projectName}/models/${model.modelName}/versions/${item.id}/overview`
                                             )
                                         }
                                     >
@@ -83,7 +83,7 @@ export function ModelTreeSelector(
         })
 
         return treeData
-    }, [modelInfo, projectId, t, getId])
+    }, [modelInfo, t, getId])
 
     const options = React.useMemo(() => {
         return [
