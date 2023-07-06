@@ -40,9 +40,11 @@ async function init() {
 
     if (window.location.search.includes('lang=en')) {
         i18n.changeLanguage('en')
-    } else {
+    }
+    if (window.location.search.includes('lang=zh')) {
         i18n.changeLanguage('zh')
     }
+
     ReactDOM.render(
         <React.StrictMode>
             <App />
