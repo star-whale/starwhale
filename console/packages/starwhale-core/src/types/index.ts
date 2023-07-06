@@ -88,6 +88,8 @@ export interface WidgetRendererProps<O extends object = any, F extends object = 
     width: number
     height: number
     children?: React.ReactNode
+    page?: any
+    onPageChange?: (page: any) => void
 }
 
 export type WidgetRendererType<O extends object = any, F extends object = any> = React.ComponentType<

@@ -16,7 +16,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 function PanelTableWidget(props: WidgetRendererProps<any, any>) {
-    const { optionConfig, data = {}, id, onOptionChange } = props
+    const { optionConfig, data = {}, id, onOptionChange, page, onPageChange } = props
 
     const onCurrentViewChange = React.useCallback(
         (newState: ITableState) => {
@@ -40,6 +40,9 @@ function PanelTableWidget(props: WidgetRendererProps<any, any>) {
             queryinline
             previewable
             fillable
+            paginationable
+            page={page}
+            onPageChange={onPageChange}
             onCurrentViewChange={onCurrentViewChange}
             onInit={onInit}
         />
