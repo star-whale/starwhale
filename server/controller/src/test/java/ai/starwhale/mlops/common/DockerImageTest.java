@@ -25,19 +25,19 @@ public class DockerImageTest {
     @Test
     public void testGhcrConstructor() {
         Assertions.assertEquals(
-                new DockerImage("ghcr.io//", "star-whale/starwhale:latest").toString(),
+                new DockerImage("ghcr.io/star-whale//", "starwhale:latest").toString(),
                 "ghcr.io/star-whale/starwhale:latest");
 
         DockerImage dockerImage = new DockerImage("ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("ghcr.io", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+                new DockerImage("ghcr.io/star-whale", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("ghcr.io/star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("ghcr.io", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("ghcr.io/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("ghcr.io/star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("ghcr.io", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("ghcr.io/star-whale", "starwhale"), dockerImage);
     }
 
     @Test
@@ -45,14 +45,14 @@ public class DockerImageTest {
         DockerImage dockerImage = new DockerImage(
                 "localhost:8083/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("localhost:8083", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+                new DockerImage("localhost:8083/star-whale", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("localhost:8083/star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("localhost:8083", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("localhost:8083/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("localhost:8083/star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("localhost:8083", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("localhost:8083/star-whale", "starwhale"), dockerImage);
     }
 
     @Test
@@ -60,14 +60,14 @@ public class DockerImageTest {
         DockerImage dockerImage = new DockerImage(
                 "localhost/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("localhost", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+                new DockerImage("localhost/star-whale", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("localhost/star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("localhost", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("localhost/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("localhost/star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("localhost", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("localhost/star-whale", "starwhale"), dockerImage);
     }
 
     @Test
@@ -75,14 +75,14 @@ public class DockerImageTest {
         DockerImage dockerImage = new DockerImage(
                 "docker.io/starwhaleai/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("docker.io", "starwhaleai/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+                new DockerImage("docker.io/starwhaleai", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("ghcr.io/star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("ghcr.io", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("ghcr.io/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("ghcr.io/star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("ghcr.io", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("ghcr.io/star-whale", "starwhale"), dockerImage);
 
     }
 
@@ -90,21 +90,21 @@ public class DockerImageTest {
     public void testHostPortConstructor() {
         DockerImage dockerImage = new DockerImage(
                 "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
-        Assertions.assertEquals(new DockerImage("homepage-ca.intra.starwhale.ai:5000",
-                "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
+        Assertions.assertEquals(new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale",
+                    "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
 
         dockerImage = new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:latest");
         Assertions.assertEquals(
-                new DockerImage("homepage-ca.intra.starwhale.ai:5000", "star-whale/starwhale:latest"), dockerImage);
+                new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale");
         Assertions.assertEquals(
-                new DockerImage("homepage-ca.intra.starwhale.ai:5000", "star-whale/starwhale"), dockerImage);
+                new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale", "starwhale"), dockerImage);
 
         dockerImage = new DockerImage(
                 "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
-        Assertions.assertEquals(new DockerImage("homepage-ca.intra.starwhale.ai:5000",
-                "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
+        Assertions.assertEquals(new DockerImage("homepage-ca.intra.starwhale.ai:5000/star-whale",
+                "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
     }
 
     @Test
@@ -112,44 +112,45 @@ public class DockerImageTest {
         DockerImage dockerImage = new DockerImage(
                 "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("131.0.1.8:5000", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
+                new DockerImage("131.0.1.8:5000/star-whale", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"),
                 dockerImage);
 
         dockerImage = new DockerImage("131.0.1.8:5000/star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("131.0.1.8:5000", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("131.0.1.8:5000/star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("131.0.1.8:5000/star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("131.0.1.8:5000", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("131.0.1.8:5000/star-whale", "starwhale"), dockerImage);
     }
 
     @Test
     public void testOnlyNameConstructor() {
         var dockerImage = new DockerImage("star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507");
         Assertions.assertEquals(
-                new DockerImage("", "star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
+                new DockerImage("star-whale", "starwhale:0.3.0-rc.6-nightly-20220920-016d5507"), dockerImage);
 
         dockerImage = new DockerImage("star-whale/starwhale:latest");
-        Assertions.assertEquals(new DockerImage("", "star-whale/starwhale:latest"), dockerImage);
+        Assertions.assertEquals(new DockerImage("star-whale", "starwhale:latest"), dockerImage);
 
         dockerImage = new DockerImage("star-whale/starwhale");
-        Assertions.assertEquals(new DockerImage("", "star-whale/starwhale"), dockerImage);
+        Assertions.assertEquals(new DockerImage("star-whale", "starwhale"), dockerImage);
 
     }
 
     @Test
     public void testResolve() {
         Map<String, String> images = Map.of(
-                "docker.io", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "docker.io/", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "ghcr.io", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "ghcr.io/", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "131.0.1.8:5000", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "131.0.1.8:5000/", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "homepage-ca.intra.starwhale.ai:5000",
+                "docker.io/star-whale", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "docker.io/star-whale/", "docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "ghcr.io/star-whale", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "ghcr.io/star-whale/", "ghcr.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "131.0.1.8:5000/star-whale", "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "131.0.1.8:5000/star-whale/",
+                "131.0.1.8:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
+                "homepage-ca.intra.starwhale.ai:5000/star-whale",
                 "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "homepage-ca.intra.starwhale.ai:5000/",
+                "homepage-ca.intra.starwhale.ai:5000/star-whale/",
                 "homepage-ca.intra.starwhale.ai:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507",
-                "localhost:5000", "localhost:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
+                "localhost:5000/star-whale", "localhost:5000/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507"
         );
         images.forEach((k, v) -> Assertions.assertEquals(v,
             new DockerImage("docker.io/star-whale/starwhale:0.3.0-rc.6-nightly-20220920-016d5507").resolve(k)));

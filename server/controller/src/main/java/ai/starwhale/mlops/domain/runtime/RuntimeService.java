@@ -641,8 +641,7 @@ public class RuntimeService {
             var baseImage = runtimeVersion.getImage(dockerSetting.getRegistryForPull());
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             List<V1EnvVar> envVars = new ArrayList<>(List.of(
-                    new V1EnvVar().name("SW_IMAGE_REPO").value(
-                            new DockerImage(baseImage).getRegistry()),
+                    new V1EnvVar().name("SW_IMAGE_REPO").value(new DockerImage(baseImage).getRepo()),
                     new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                     new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                     new V1EnvVar().name("SW_RUNTIME_VERSION").value(
