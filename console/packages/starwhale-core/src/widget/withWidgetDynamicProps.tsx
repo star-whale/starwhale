@@ -63,7 +63,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
         const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
-        const { getQueryParams } = useDatastorePage({
+        const { page, setPage, getQueryParams } = useDatastorePage({
             pageNum: 1,
             pageSize: 1000,
             sortBy: tableConfig?.sortBy || 'id',
@@ -131,6 +131,8 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                         {...props}
                         name={overrides?.name}
                         data={$data}
+                        page={page}
+                        onPageChange={setPage}
                         optionConfig={overrides?.optionConfig}
                         onOptionChange={(config) => api.onConfigChange(['widgets', id, 'optionConfig'], config)}
                         fieldConfig={overrides?.fieldConfig}
