@@ -12,7 +12,7 @@ import axios from 'axios'
 import { Modal } from 'baseui/modal'
 import { toaster } from 'baseui/toast'
 import yaml from 'js-yaml'
-import css from '@/assets/GradioWidget/es/style.css'
+import css from '@/assets/GradioWidget/es/style.css?inline'
 // eslint-disable-next-line import/extensions
 import '@/assets/GradioWidget/es/app.es.js'
 import qs from 'qs'
