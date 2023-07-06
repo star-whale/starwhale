@@ -9,7 +9,7 @@ scikit-learn==1.0.2; python_version=='3.7'
 scipy==1.7.3; python_version=='3.7'
 numpy==1.23.2; python_version>='3.8'
 scikit-learn==1.1.1; python_version>='3.8'
-scipy==1.8.1; python_version>='3.8'
+scipy==1.10.0; python_version>='3.8'
 importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'
 torch==1.12.1
 torchaudio==0.12.1
