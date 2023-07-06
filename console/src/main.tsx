@@ -2,7 +2,7 @@ import './wdyr'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import '@/styles/_global.scss'
-import { initI18n } from '@/i18n'
+import i18n, { initI18n } from '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
 import App from './App'
 import { registerExtensions } from './components/Extensions'
@@ -38,6 +38,11 @@ async function init() {
     // should after locale register
     initI18n()
 
+    if (window.location.search.includes('lang=en')) {
+        i18n.changeLanguage('en')
+    } else {
+        i18n.changeLanguage('zh')
+    }
     ReactDOM.render(
         <React.StrictMode>
             <App />
