@@ -86,7 +86,7 @@ public class JobUpdateHelper {
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class));
                     job.getSteps().stream().map(Step::getTasks).flatMap(Collection::stream)
                             .filter(task -> task.getStatus() == TaskStatus.RUNNING)
-                            .forEach(task -> task.updateStatus(TaskStatus.CANCELED));
+                            .forEach(task -> task.updateStatus(TaskStatus.CANCELLING));
                     TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
                 });
             }

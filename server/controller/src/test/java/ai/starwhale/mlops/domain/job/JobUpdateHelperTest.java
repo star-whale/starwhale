@@ -98,7 +98,7 @@ public class JobUpdateHelperTest {
         verify(jobDao).updateJobFinishedTime(eq(mockJob.getId()),
                 argThat(d -> d.getTime() > 0), argThat(d -> d > 0));
         Thread.sleep(100); // wait for async status update
-        Assertions.assertEquals(TaskStatus.CANCELED, luckTask.getStatus());
+        Assertions.assertEquals(TaskStatus.CANCELLING, luckTask.getStatus());
 
     }
 
