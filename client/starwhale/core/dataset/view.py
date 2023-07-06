@@ -160,6 +160,39 @@ class DatasetTermView(BaseTermView):
 
     @classmethod
     @BaseTermView._only_standalone
+    def build_from_huggingface(
+        cls,
+        repo: str,
+        name: str,
+        project_uri: str,
+        alignment_size: int | str,
+        volume_size: int | str,
+        subset: str | None = None,
+        split: str | None = None,
+        revision: str = "main",
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        cache: bool = True,
+    ) -> None:
+        dataset_uri = cls.prepare_build_bundle(
+            project=project_uri,
+            bundle_name=name,
+            typ=ResourceType.dataset,
+            auto_gen_version=False,
+        )
+        ds = Dataset.get_dataset(dataset_uri)
+        ds.build_from_huggingface(
+            repo=repo,
+            subset=subset,
+            split=split,
+            revision=revision,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+            mode=mode,
+            cache=cache,
+        )
+
+    @classmethod
+    @BaseTermView._only_standalone
     def build_from_json_file(
         cls,
         json_file_path: str,

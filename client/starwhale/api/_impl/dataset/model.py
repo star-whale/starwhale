@@ -1060,6 +1060,80 @@ class Dataset:
         return ds
 
     @classmethod
+    def from_huggingface(
+        cls,
+        name: str,
+        repo: str,
+        subset: str | None = None,
+        split: str | None = None,
+        revision: str = "main",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        cache: bool = True,
+    ) -> Dataset:
+        """Create a new dataset from huggingface datasets.
+
+        Arguments:
+            name: (str, required) The dataset name you would like to use.
+            repo: (str, required) The huggingface datasets repo name.
+            subset: (str, optional) The subset name. If the huggingface dataset has multiple subsets, you must specify the subset name.
+            split: (str, optional) The split name. If the split name is not specified, the all splits dataset will be built.
+            revision: (str, optional) The huggingface datasets revision. The default value is `main`. If the split name is not specified, the all splits dataset will be built.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            cache: (bool, optional) Whether to use huggingface dataset cache(download + local hf dataset). The default value is True.
+
+        Returns:
+                A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+        myds = Dataset.from_huggingface("mnist", "mnist")
+        print(myds[0])
+        ```
+
+        ```python
+        from starwhale import Dataset
+        myds = Dataset.from_huggingface("mmlu", "cais/mmlu", subset="anatomy", split="auxiliary_train", revision="7456cfb")
+        ```
+        """
+        from starwhale.integrations.huggingface import iter_dataset
+
+        # TODO: support auto build all subset datasets
+        # TODO: support huggingface dataset info
+        data_items = iter_dataset(
+            repo=repo,
+            subset=subset,
+            split=split,
+            revision=revision,
+            cache=cache,
+        )
+
+        with cls.dataset(name) as ds:
+            ds = ds.with_builder_blob_config(
+                volume_size=volume_size,
+                alignment_size=alignment_size,
+            )
+
+            if mode == DatasetChangeMode.OVERWRITE:
+                # TODO: use other high performance way to delete all records
+                for row in ds:
+                    del ds[row.index]
+
+            total = 0
+            for key, item in data_items:
+                ds[key] = item
+                total += 1
+
+            console.print(f":butterfly: update {total} records into dataset")
+            ds.commit()
+
+        return ds
+
+    @classmethod
     def from_json(
         cls,
         name: str,
@@ -1076,6 +1150,8 @@ class Dataset:
             json_text: (str, required) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the dict is an array contains all the items.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
 
         Returns:
