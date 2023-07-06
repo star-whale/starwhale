@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from collections import namedtuple
 
 import torch
 from peft import TaskType, LoraConfig, get_peft_model
@@ -8,7 +7,7 @@ from gradio import gradio
 from transformers import Trainer, AutoModel, AutoTokenizer, TrainingArguments
 from torch.utils.data import Dataset
 
-from starwhale import Context, dataset, evaluation, pass_context
+from starwhale import Context, dataset, handler, evaluation, pass_context
 from starwhale.api import model, experiment
 from starwhale.api.service import api
 
@@ -63,7 +62,7 @@ def ppl(data: dict, external: dict):
             chatglm.load_state_dict(
                 torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
             )
-    chatglm.half().cuda().eval()
+        chatglm.half().cuda().eval()
     response, h = chatglm.chat(tokenizer, text, history=[])
     print(f"dataset: {text}\n chatglm6b: {response} \n")
     return response
@@ -311,7 +310,52 @@ def online_eval(question: str) -> str:
     return ppl({"text": question})
 
 
+@handler(expose=7860)
+def chatbot():
+    import gradio as gr
+
+    if not os.path.exists(ROOTDIR / "models"):
+        import download_model  # noqa: F401
+    tokenizer = AutoTokenizer.from_pretrained(
+        str(ROOTDIR / "models"), trust_remote_code=True
+    )
+    chatglm = AutoModel.from_pretrained(str(ROOTDIR / "models"), trust_remote_code=True)
+    chatglm = load_lora_config(chatglm)
+    if os.path.exists(ROOTDIR / "models" / "chatglm-6b-lora.pt"):
+        chatglm.load_state_dict(
+            torch.load(ROOTDIR / "models" / "chatglm-6b-lora.pt"), strict=False
+        )
+    chatglm.half().cuda().eval()
+    with gr.Blocks() as demo:
+        chatbot = gr.Chatbot()
+        msg = gr.Textbox()
+        gr.ClearButton([msg, chatbot])
+        max_length = gr.Slider(
+            0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True
+        )
+        top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
+        temperature = gr.Slider(
+            0, 1, value=0.95, step=0.01, label="Temperature", interactive=True
+        )
+
+        def respond(message, chat_history, mxl, tpp, tmp):
+            response, history = chatglm.chat(
+                tokenizer,
+                message,
+                chat_history[-5] if len(chat_history) > 5 else chat_history,
+                max_length=mxl,
+                top_p=tpp,
+                temperature=tmp,
+            )
+            chat_history.append((message, response))
+            return "", chat_history
+
+        msg.submit(
+            respond, [msg, chatbot, max_length, top_p, temperature], [msg, chatbot]
+        )
+
+    demo.launch(server_name="0.0.0.0")
+
+
 if __name__ == "__main__":
-    Context = namedtuple("Context", ["dataset_uris"])
-    context = Context(["webqsp/version/latest"])
-    fine_tune(context)
+    chatbot()
