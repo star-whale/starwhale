@@ -29,8 +29,8 @@ public class DockerImage {
     String image;
 
     /**
-     * @param registry such as ghcr.io
-     * @param image such as starwhale-ai/starwhale:0.3.5-rc123.dev12432344
+     * @param registry such as ghcr.io/starwhale-ai
+     * @param image such as starwhale:0.3.5-rc123.dev12432344
      */
     public DockerImage(String registry, String image) {
         this.registry = registry;
@@ -40,7 +40,7 @@ public class DockerImage {
     /**
      * please refer to https://github.com/distribution/distribution/blob/v2.7.1/reference/reference.go
      */
-    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.+?)\\/(.+)$");
+    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.*)/(.*)$");
 
     /**
      * @param imageNameFull such as ghcr.io/starwhale-ai/starwhale:0.3.5-rc123.dev12432344
@@ -51,22 +51,9 @@ public class DockerImage {
             this.registry = "";
             this.image = imageNameFull;
         } else {
-            String candidateRegistry = matcher.group(1);
-            if (isDomain(candidateRegistry)) {
-                this.registry = candidateRegistry;
-                image = matcher.group(2);
-            } else {
-                this.registry = "";
-                this.image = imageNameFull;
-            }
-
+            this.registry = matcher.group(1);
+            this.image = matcher.group(2);
         }
-    }
-
-    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST = Pattern.compile("localhost(:\\d+)?");
-
-    private static boolean isDomain(String candidate) {
-        return candidate.contains(".") || PATTERN_DOMAIN_LOCAL_HOST.matcher(candidate).matches();
     }
 
     private static final String SLASH = "/";
