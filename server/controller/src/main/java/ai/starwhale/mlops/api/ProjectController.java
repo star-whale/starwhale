@@ -120,7 +120,7 @@ public class ProjectController implements ProjectApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> updateProject(String projectUrl,
             UpdateProjectRequest updateProjectRequest) {
-        Boolean res = projectService.modifyProject(projectUrl,
+        Boolean res = projectService.updateProject(projectUrl,
                 updateProjectRequest.getProjectName(),
                 updateProjectRequest.getDescription(),
                 idConvertor.revert(updateProjectRequest.getOwnerId()),

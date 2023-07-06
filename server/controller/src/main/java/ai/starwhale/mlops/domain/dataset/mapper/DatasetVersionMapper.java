@@ -85,9 +85,9 @@ public interface DatasetVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into dataset_version(dataset_id, owner_id, version_name, size,"
-            + " index_table, version_tag, version_meta, storage_path, files_uploaded)"
+            + " index_table, version_tag, version_meta, storage_path, files_uploaded, shared)"
             + " values (#{datasetId}, #{ownerId}, #{versionName}, #{size},"
-            + " #{indexTable}, #{versionTag}, #{versionMeta}, #{storagePath}, #{filesUploaded})")
+            + " #{indexTable}, #{versionTag}, #{versionMeta}, #{storagePath}, #{filesUploaded}, #{shared})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(DatasetVersionEntity version);
 
@@ -135,6 +135,10 @@ public interface DatasetVersionMapper {
             + " and p.id != #{excludeProjectId}"
             + " order by b.id desc, v.version_order desc")
     List<DatasetVersionViewEntity> listDatasetVersionViewByShared(@Param("excludeProjectId") Long excludeProjectId);
+
+    @Update("update dataset_version set shared = 0 where dataset_id in (select id from dataset_info where project_id = "
+            + "#{projectId})")
+    int unShareDatesetVersionWithinProject(@Param("projectId") Long projectId);
 
     class DatasetVersionProvider {
 
