@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "36317040",
+      "name": "copy link",
+      "font_class": "a-copylink",
+      "unicode": "e66f",
+      "unicode_decimal": 58991
+    },
+    {
+      "icon_id": "36317041",
+      "name": "copy",
+      "font_class": "copy",
+      "unicode": "e670",
+      "unicode_decimal": 58992
+    },
+    {
       "icon_id": "36161167",
       "name": "global2",
       "font_class": "global2",

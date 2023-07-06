@@ -956,6 +956,10 @@ const locales0 = {
         en: 'Status',
         zh: '状态',
     },
+    'Status Desc': {
+        en: 'Description',
+        zh: '状态信息',
+    },
     'Continue': {
         en: 'Continue',
         zh: '继续',

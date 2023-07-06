@@ -113,6 +113,8 @@ export type IconTypesT =
     | 'top2'
     | 'time'
     | 'global2'
+    | 'copy'
+    | 'a-copylink'
 
 interface IIconFontProps {
     style?: React.CSSProperties
