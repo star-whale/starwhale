@@ -472,7 +472,7 @@ class TestCli:
         script_path = (
             Path(self._work_dir) / "scripts" / "example" / "src" / "sdk_model_build.py"
         )
-        check_invoke([sys.executable, str(script_path)])
+        check_invoke([sys.executable, str(script_path)], log=True)
 
         self.select_local_instance()
         ctx_handle_info = self.model_api.info("ctx_handle")

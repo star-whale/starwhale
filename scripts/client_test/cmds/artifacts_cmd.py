@@ -14,7 +14,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import RuntimeConfig
 
 from . import CLI
-from .base.invoke import invoke
+from .base.invoke import check_invoke, invoke_output
 
 _ENV_FIXED_VERSION = ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 
@@ -24,7 +24,7 @@ class BaseArtifact:
         self.name = name
 
     def info(self, uri: str) -> t.Any:
-        _ret_code, _res = invoke([CLI, "-o", "json", self.name, "info", uri])
+        _ret_code, _res = invoke_output([CLI, "-o", "json", self.name, "info", uri])
         return json.loads(_res) if _ret_code == 0 else {}
 
     def list(
@@ -53,7 +53,7 @@ class BaseArtifact:
         if show_removed:
             _args.append("--show-removed")
 
-        _ret_code, _res = invoke(_args)
+        _ret_code, _res = invoke_output(_args)
         return json.loads(_res) if _ret_code == 0 else []
 
 
@@ -88,8 +88,7 @@ class Model(BaseArtifact):
         if runtime_uri:
             cmd += ["--runtime", str(runtime_uri)]
 
-        _ret_code, _res = invoke(cmd)
-        assert _ret_code == 0, _res
+        check_invoke(cmd, log=True)
         return version
 
     def run_in_server(
@@ -115,16 +114,14 @@ class Model(BaseArtifact):
         cmd = [CLI, "-vvv", "model", "build", workdir, "--name", name]
         if runtime:
             cmd.extend(["--runtime", runtime])
-        _ret_code, _res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
-        assert _ret_code == 0, _res
+        check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)
 
     def copy(self, src_uri: str, target_project: str, force: bool) -> None:
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _ret_code, _res = invoke(_args, log=True)
-        assert _ret_code == 0, _res
+        check_invoke(_args, log=True)
 
 
 class Dataset(BaseArtifact):
@@ -151,8 +148,7 @@ class Dataset(BaseArtifact):
             os.path.join(workdir, dataset_yaml),
         ]
         version = gen_uniq_version()
-        ret_code, res = invoke(cmd, external_env={_ENV_FIXED_VERSION: version})
-        assert ret_code == 0, res
+        check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{name}/version/{version}", typ=ResourceType.dataset)
 
     def copy(
@@ -169,8 +165,7 @@ class Dataset(BaseArtifact):
             _args.append("--patch")
         else:
             _args.append("--overwrite")
-        _ret_code, _res = invoke(_args)
-        assert _ret_code == 0, _res
+        check_invoke(_args)
 
 
 class Runtime(BaseArtifact):
@@ -193,10 +188,7 @@ class Runtime(BaseArtifact):
             config.name,
             "--no-cache",
         ]
-        ret_code, res = invoke(
-            cmd, external_env={_ENV_FIXED_VERSION: version}, log=True
-        )
-        assert ret_code == 0, res
+        check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{config.name}/version/{version}", typ=ResourceType.runtime)
 
     def copy(
@@ -209,5 +201,4 @@ class Runtime(BaseArtifact):
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
-        _ret_code, _res = invoke(_args)
-        assert _ret_code == 0, _res
+        check_invoke(_args)
