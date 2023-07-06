@@ -2,14 +2,14 @@ import json
 import typing as t
 
 from . import CLI
-from .base.invoke import invoke
+from .base.invoke import invoke_output, invoke_ret_code
 
 
 class Job:
     _cmd = "job"
 
     def info(self, version: str) -> t.Any:
-        _ret_code, _res = invoke([CLI, "-o", "json", self._cmd, "info", version])
+        _ret_code, _res = invoke_output([CLI, "-o", "json", self._cmd, "info", version])
         try:
             return json.loads(_res) if _ret_code == 0 else {}
         except Exception as e:
@@ -44,7 +44,7 @@ class Job:
         if show_removed:
             _args.append("--show-removed")
 
-        _ret_code, _res = invoke(_args)
+        _ret_code, _res = invoke_output(_args)
         return json.loads(_res.strip()) if _ret_code == 0 else []
 
     def cancel(self, uri: str, force: bool = False) -> bool:
@@ -71,5 +71,5 @@ class Job:
         _args = [CLI, self._cmd, name, uri]
         if force:
             _args.append("--force")
-        _ret_code, _res = invoke(_args)
-        return bool(_ret_code == 0)
+        _code = invoke_ret_code(_args)
+        return _code == 0
