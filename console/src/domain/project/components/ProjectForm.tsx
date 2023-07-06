@@ -108,7 +108,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     const [values, setValues] = useState<ICreateProjectSchema | undefined>({
         ownerId: user?.id,
         projectName: project?.name ?? '',
-        privacy: project?.privacy ?? 'PUBLIC',
+        privacy: project?.privacy ?? 'PRIVATE',
         description: project?.description ?? '',
     })
 
