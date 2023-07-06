@@ -34,6 +34,7 @@ export const SelectorContainer = themedStyled('div', ({ $isEditing, $isGrid }) =
         },
         'borderWidth': '1px',
         'borderColor': $isEditing ? '#799EE8' : '#CFD7E6',
+        'borderStyle': 'solid',
         ...$style,
     }
 })
