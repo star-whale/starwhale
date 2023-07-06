@@ -3,6 +3,9 @@ dependencies:
   - pip:
       - Pillow
   - requirements.txt
+  - commands:
+      - apt-get install libgl1
+      - echo "hello world"
 environment:
   arch: noarch
   os: ubuntu:20.04

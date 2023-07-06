@@ -7,6 +7,7 @@ from functools import wraps
 import numpy
 
 from starwhale import Text, Image, Context, evaluation, multi_classification
+from starwhale.utils import in_container
 
 
 def timing(func: t.Callable) -> t.Any:
@@ -33,6 +34,10 @@ def predict(data: t.Dict, external: t.Dict) -> t.Any:
     assert isinstance(external["context"], Context)
     assert external["dataset_uri"].name
     assert external["dataset_uri"].version
+
+    if in_container():
+        assert osp.exists("/tmp/runtime-command-run.flag")
+
     return {
         "txt": data["txt"].to_str(),
         "value": numpy.exp([random.uniform(-10, 1) for i in range(0, 5)]).tolist(),
