@@ -431,6 +431,7 @@ class TestModelPipelineHandler(TestCase):
             assert isinstance(log_result["input/image"], GrayscaleImage)
             assert log_result["input/label"] == 0
             assert "input/annotation" not in log_result
+            assert log_result["duration_seconds"] >= 0
 
             status_file_path = os.path.join(status_dir, "current")
             assert os.path.exists(status_file_path)
@@ -449,6 +450,7 @@ class TestModelPipelineHandler(TestCase):
             assert isinstance(log_result["input/image"], GrayscaleImage)
             assert log_result["input/label"] == 0
             assert "input/annotation" not in log_result
+            assert log_result["duration_seconds"] >= 0
 
     def test_ppl(self) -> None:
         with self._mock_ppl_prepare_data() as (status_dir, m_log_result):
