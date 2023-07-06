@@ -56,6 +56,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     t('End Time'),
                     t('Duration'),
                     t('Status'),
+                    t('Status Desc'),
                     t('Action'),
                 ]}
                 data={
@@ -70,6 +71,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 ? moment.duration(task.finishedTime - task.startedTime, 'milliseconds').humanize()
                                 : '-',
                             <JobStatus key='status' status={task.taskStatus as any} />,
+                            task.failedReason,
                             <p key='action' style={{ display: 'flex', gap: '10px' }}>
                                 <StyledLink
                                     key={task.uuid}

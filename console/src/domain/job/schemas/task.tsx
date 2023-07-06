@@ -24,6 +24,7 @@ export interface ITaskSchema extends IResourceSchema {
     devUrl?: string
     startedTime: number
     finishedTime: number
+    failedReason?: string
 }
 
 export type ITaskDetailSchema = ITaskSchema
