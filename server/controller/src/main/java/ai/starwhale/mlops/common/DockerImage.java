@@ -25,15 +25,15 @@ import org.springframework.util.StringUtils;
 @Getter
 @EqualsAndHashCode
 public class DockerImage {
-    String registry;
+    String repo;
     String image;
 
     /**
-     * @param registry such as ghcr.io/starwhale-ai
+     * @param repo such as ghcr.io/starwhale-ai
      * @param image such as starwhale:0.3.5-rc123.dev12432344
      */
-    public DockerImage(String registry, String image) {
-        this.registry = registry;
+    public DockerImage(String repo, String image) {
+        this.repo = repo;
         this.image = image;
     }
 
@@ -48,25 +48,25 @@ public class DockerImage {
     public DockerImage(String imageNameFull) {
         Matcher matcher = PATTERN_IMAGE_FULL.matcher(imageNameFull);
         if (!matcher.matches()) {
-            this.registry = "";
+            this.repo = "";
             this.image = imageNameFull;
         } else {
-            this.registry = matcher.group(1);
+            this.repo = matcher.group(1);
             this.image = matcher.group(2);
         }
     }
 
     private static final String SLASH = "/";
 
-    public String resolve(String newRegistry) {
-        if (!StringUtils.hasText(newRegistry)) {
-            newRegistry = this.registry;
+    public String resolve(String newRepo) {
+        if (!StringUtils.hasText(newRepo)) {
+            newRepo = this.repo;
         }
-        return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
+        return StringUtils.trimTrailingCharacter(newRepo, '/') + SLASH + image;
     }
 
     public String toString() {
-        return StringUtils.trimTrailingCharacter(registry, '/') + SLASH + image;
+        return StringUtils.trimTrailingCharacter(repo, '/') + SLASH + image;
     }
 
 }
