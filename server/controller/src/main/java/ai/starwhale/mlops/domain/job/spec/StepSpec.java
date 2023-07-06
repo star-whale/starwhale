@@ -61,6 +61,9 @@ public class StepSpec {
     // https://github.com/star-whale/starwhale/pull/2350
     private Integer expose;
     private Boolean virtual;
+
+    @JsonProperty("require_dataset")
+    private Boolean requireDataset;
 }
 
 

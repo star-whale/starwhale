@@ -585,6 +585,7 @@ def _register_predict(
         concurrency=concurrency,
         needs=needs,
         replicas=replicas,
+        require_dataset=True,
         extra_kwargs=dict(
             predict_batch_size=batch_size,
             ignore_error=not fail_on_error,

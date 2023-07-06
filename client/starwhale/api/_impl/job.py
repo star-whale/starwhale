@@ -39,6 +39,7 @@ class Handler(ASDictMixin):
         extra_kwargs: t.Optional[t.Dict] = None,
         expose: int = 0,
         virtual: bool = False,
+        require_dataset: bool = False,
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -55,6 +56,7 @@ class Handler(ASDictMixin):
         self.expose = expose
         # virtual marks that the handler is not a real user handler and can not find in the user's code
         self.virtual = virtual
+        self.require_dataset = require_dataset
 
     def __str__(self) -> str:
         return f"Handler[{self.name}]: name-{self.show_name}"
@@ -126,6 +128,7 @@ class Handler(ASDictMixin):
         extra_kwargs: t.Optional[t.Dict] = None,
         name: str = "",
         expose: int = 0,
+        require_dataset: bool = False,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control concurrency and replicas of handler run.
@@ -141,6 +144,10 @@ class Handler(ASDictMixin):
             expose: [int, optional] The expose port of the handler. Only used for the handler run as a service.
               Default is 0. If expose is 0, there is no expose port.
               Users must set the expose port when the handler run as a service on the server or cloud instance.
+            require_dataset: [bool] Whether you need datasets when execute the handler.
+              Default is False, It means that there is no need to select datasets when executing this handler on the server or cloud instance.
+              If True, You must select datasets when executing on the server or cloud instance.
+
 
 
         Example:
@@ -197,6 +204,7 @@ class Handler(ASDictMixin):
                 extra_args=extra_args,
                 extra_kwargs=extra_kwargs,
                 expose=expose,
+                require_dataset=require_dataset,
             )
 
             cls._register(_handler, func)

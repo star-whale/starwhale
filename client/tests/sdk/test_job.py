@@ -221,6 +221,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": True,
             },
             {
                 "cls_name": "",
@@ -236,6 +237,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
 
@@ -261,6 +263,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": True,
             },
             {
                 "cls_name": "",
@@ -276,6 +279,7 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
 
@@ -325,6 +329,7 @@ def evaluate_handler(*args, **kwargs): ...
                     "show_name": "predict",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": True,
                 },
                 {
                     "cls_name": "",
@@ -340,6 +345,7 @@ def evaluate_handler(*args, **kwargs): ...
                     "show_name": "evaluate",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": False,
                 },
             ],
             "mock_user_module:predict_handler": [
@@ -364,6 +370,7 @@ def evaluate_handler(*args, **kwargs): ...
                     "show_name": "predict",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": True,
                 }
             ],
         }
@@ -378,6 +385,7 @@ def evaluate_handler(*args, **kwargs): ...
         assert len(steps) == 1
         assert steps[0].name == "mock_user_module:predict_handler"
         assert steps[0].show_name == "predict"
+        assert steps[0].require_dataset is True
 
         steps = Step.get_steps_from_yaml("", yaml_path)
         assert len(steps) == 2
@@ -387,14 +395,24 @@ def evaluate_handler(*args, **kwargs): ...
 
         steps = Step.get_steps_from_yaml(1, yaml_path)
         assert len(steps) == 1
+        assert steps[0].name == "mock_user_module:predict_handler"
+        assert steps[0].show_name == "predict"
+        assert steps[0].require_dataset is True
 
-        with self.assertRaises(IndexError):
-            Step.get_steps_from_yaml(3, yaml_path)
+        with self.assertRaises(RuntimeError):
+            # without dataset_uri
+            context = Context(
+                workdir=self.workdir,
+                project="test",
+                version="123",
+            )
+            TaskExecutor(index=1, context=context, workdir=self.workdir, step=steps[0])
 
         context = Context(
             workdir=self.workdir,
             project="test",
             version="123",
+            dataset_uris=["ds/version/v0"],
         )
         task = TaskExecutor(
             index=1, context=context, workdir=self.workdir, step=steps[0]
@@ -402,6 +420,9 @@ def evaluate_handler(*args, **kwargs): ...
         result = task.execute()
         assert result.status == "success"
         assert mock_ppl.call_count == 1
+
+        with self.assertRaises(IndexError):
+            Step.get_steps_from_yaml(3, yaml_path)
 
     @patch(
         "starwhale.api._impl.evaluation.PipelineHandler._starwhale_internal_run_evaluate"
@@ -461,6 +482,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
             {
                 "cls_name": "MockHandler",
@@ -476,6 +498,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -493,6 +516,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             }
         ]
         steps = Step.get_steps_from_yaml(
@@ -561,6 +585,7 @@ class MockHandler:
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": True,
             }
         ]
 
@@ -586,6 +611,7 @@ class MockHandler:
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": True,
             },
             {
                 "cls_name": "MockHandler",
@@ -601,6 +627,7 @@ class MockHandler:
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
 
@@ -612,7 +639,7 @@ class MockHandler:
             project="test",
             version="test",
             workdir=self.workdir,
-            dataset_uris=[],
+            dataset_uris=["ds/version/v0"],
             steps=steps,
         ).run()
 
@@ -654,6 +681,7 @@ def run(): ...
                     "show_name": "run",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": False,
                 }
             ]
         }
@@ -688,6 +716,7 @@ def handle(context): ...
                     "show_name": "handle",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": False,
                 }
             ]
         }
@@ -723,6 +752,7 @@ def ft2(): ...
                     "show_name": "fine_tune",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": True,
                 }
             ],
             "mock_user_module:ft2": [
@@ -740,6 +770,7 @@ def ft2(): ...
                     "show_name": "fine_tune",
                     "expose": 0,
                     "virtual": False,
+                    "require_dataset": True,
                 }
             ],
         }
@@ -785,6 +816,7 @@ class MockReport:
             "show_name": "prepare",
             "expose": 0,
             "virtual": False,
+            "require_dataset": False,
         } in report_handler
 
         assert {
@@ -801,6 +833,7 @@ class MockReport:
             "show_name": "evaluate",
             "expose": 0,
             "virtual": False,
+            "require_dataset": False,
         } in report_handler
 
         assert {
@@ -820,6 +853,7 @@ class MockReport:
             "show_name": "report",
             "expose": 0,
             "virtual": False,
+            "require_dataset": False,
         } in report_handler
 
         assert {
@@ -836,6 +870,7 @@ class MockReport:
             "show_name": "predict",
             "expose": 0,
             "virtual": False,
+            "require_dataset": False,
         } in report_handler
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
@@ -853,6 +888,7 @@ class MockReport:
                 "show_name": "prepare",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
             {
                 "cls_name": "",
@@ -868,6 +904,7 @@ class MockReport:
                 "show_name": "evaluate",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
@@ -885,6 +922,7 @@ class MockReport:
                 "show_name": "prepare",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
             {
                 "cls_name": "",
@@ -900,6 +938,7 @@ class MockReport:
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             },
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
@@ -917,6 +956,7 @@ class MockReport:
                 "show_name": "prepare",
                 "expose": 0,
                 "virtual": False,
+                "require_dataset": False,
             }
         ]
 

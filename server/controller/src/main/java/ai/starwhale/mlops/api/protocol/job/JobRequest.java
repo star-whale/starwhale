@@ -32,7 +32,6 @@ public class JobRequest implements Serializable {
     @JsonProperty("modelVersionUrl")
     private String modelVersionUrl;
 
-    @NotNull
     @JsonProperty("datasetVersionUrls")
     private String datasetVersionUrls;
 
