@@ -172,8 +172,7 @@ class Dataset(BaseArtifact):
         src_uri: str,
     ) -> None:
         _args = [CLI, "-vvvv", self.name, "rm", src_uri]
-        _ret_code, _res = check_invoke(_args)
-        assert _ret_code == 0, _res
+        check_invoke(_args)
 
 
 class Runtime(BaseArtifact):
