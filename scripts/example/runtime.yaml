@@ -7,6 +7,9 @@ dependencies:
   - pip:
       - numpy
   - requirements-sw-lock.txt
+  - commands:
+      - apt-get install libgl1
+      - touch /tmp/runtime-command-run.flag
 environment:
   arch: noarch
   os: ubuntu:20.04

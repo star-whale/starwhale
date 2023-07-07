@@ -121,7 +121,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
     const isModifiedDataset = React.useMemo(() => {
-        return stepSource?.some((v) => !('need_dataset' in v) || v.need_dataset)
+        return stepSource?.some((v) => !('require_dataset' in v) || v.require_dataset)
     }, [stepSource])
 
     const checkStepSource = useCallback(

@@ -62,7 +62,6 @@ export default function RuntimeListCard() {
                                 &nbsp;&nbsp;
                                 <WithCurrentAuth id='runtime.image.build'>
                                     <Button
-                                        size='mini'
                                         kind='tertiary'
                                         disabled={!!runtime.version?.builtImage}
                                         onClick={async () => {

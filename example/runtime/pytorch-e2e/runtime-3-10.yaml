@@ -3,6 +3,9 @@ dependencies:
   - pip:
       - Pillow
   - requirements.txt
+  - commands:
+      - apt-get install libgl1
+      - echo "hello world"
 environment:
   python: "3.10"
   arch: noarch

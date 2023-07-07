@@ -17,6 +17,7 @@ import { TaskStatusType } from '@/domain/job/schemas/task'
 import Button from '@starwhale/ui/Button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import ExecutorForm from '@job/components/ExecutorForm'
+import Text from '@starwhale/ui/Text'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -56,6 +57,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                     t('End Time'),
                     t('Duration'),
                     t('Status'),
+                    t('Status Desc'),
                     t('Action'),
                 ]}
                 data={
@@ -70,6 +72,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 ? moment.duration(task.finishedTime - task.startedTime, 'milliseconds').humanize()
                                 : '-',
                             <JobStatus key='status' status={task.taskStatus as any} />,
+                            <Text key='statusDesc' tooltip={task.failedReason} content={task.failedReason} />,
                             <p key='action' style={{ display: 'flex', gap: '10px' }}>
                                 <StyledLink
                                     key={task.uuid}

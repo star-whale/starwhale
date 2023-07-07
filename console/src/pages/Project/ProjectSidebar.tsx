@@ -32,18 +32,6 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(overview)\/?/,
             },
             {
-                title: t('Evaluations'),
-                path: `/projects/${projectId}/evaluations`,
-                activePathPattern: /\/(evaluations|new_job)\/?/,
-                icon: <IconFont type='evaluation' size={16} />,
-            },
-            {
-                title: t('Jobs'),
-                path: `/projects/${projectId}/jobs`,
-                activePathPattern: /\/(jobs|new_job)\/?/,
-                icon: <IconFont type='job' size={16} />,
-            },
-            {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
                 icon: <IconFont type='Model' size={16} />,
@@ -54,6 +42,18 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 path: `/projects/${projectId}/datasets`,
                 activePathPattern: /\/(datasets)\/?/,
                 icon: <IconFont type='dataset' size={16} />,
+            },
+            {
+                title: t('Jobs'),
+                path: `/projects/${projectId}/jobs`,
+                activePathPattern: /\/(jobs|new_job)\/?/,
+                icon: <IconFont type='job' size={16} />,
+            },
+            {
+                title: t('Evaluations'),
+                path: `/projects/${projectId}/evaluations`,
+                activePathPattern: /\/(evaluations|new_job)\/?/,
+                icon: <IconFont type='evaluation' size={16} />,
             },
             {
                 title: t('Runtimes'),

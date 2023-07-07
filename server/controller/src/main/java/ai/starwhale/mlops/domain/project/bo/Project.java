@@ -78,7 +78,7 @@ public class Project {
         public static Privacy fromName(String name) {
             try {
                 return Privacy.valueOf(name.toUpperCase());
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | NullPointerException e) {
                 log.error("Privacy parse error. ", e);
                 return PRIVATE;
             }

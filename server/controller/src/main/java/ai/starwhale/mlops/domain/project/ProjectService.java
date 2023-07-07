@@ -23,8 +23,10 @@ import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
+import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -33,6 +35,7 @@ import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCounts;
 import ai.starwhale.mlops.domain.project.sort.Sort;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -73,6 +76,9 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
 
     private final ProjectVisitedMapper projectVisitedMapper;
     private final ProjectDao projectDao;
+    private final RuntimeVersionMapper runtimeVersionMapper;
+    private final ModelVersionMapper modelVersionMapper;
+    private final DatasetVersionMapper datasetVersionMapper;
 
     private final MemberService memberService;
 
@@ -91,13 +97,20 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             ProjectDao projectDao,
             MemberService memberService,
             IdConverter idConvertor,
-            UserService userService) {
+            UserService userService,
+            RuntimeVersionMapper runtimeVersionMapper,
+            ModelVersionMapper modelVersionMapper,
+            DatasetVersionMapper datasetVersionMapper
+    ) {
         this.projectMapper = projectMapper;
         this.projectVisitedMapper = projectVisitedMapper;
         this.projectDao = projectDao;
         this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.userService = userService;
+        this.runtimeVersionMapper = runtimeVersionMapper;
+        this.modelVersionMapper = modelVersionMapper;
+        this.datasetVersionMapper = datasetVersionMapper;
     }
 
     @Override
@@ -312,8 +325,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     }
 
     @Transactional
-    public Boolean modifyProject(String projectUrl, String projectName, String description, Long ownerId,
-            String privacy) {
+    public Boolean updateProject(String projectUrl, String projectName, String description, Long ownerId,
+                                 String privacy) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
@@ -328,12 +341,21 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                         HttpStatus.BAD_REQUEST);
             }
         }
+
+        var privacyEnum = Privacy.fromName(privacy);
+        if (privacyEnum == Privacy.PRIVATE) {
+            // make all the shared resource unshared
+            runtimeVersionMapper.unShareRuntimeVersionWithinProject(projectId);
+            modelVersionMapper.unShareModelVersionWithinProject(projectId);
+            datasetVersionMapper.unShareDatesetVersionWithinProject(projectId);
+        }
+
         ProjectEntity entity = ProjectEntity.builder()
                 .id(projectId)
                 .projectName(projectName)
                 .projectDescription(description)
                 .ownerId(ownerId)
-                .privacy(privacy == null ? null : Privacy.fromName(privacy).getValue())
+                .privacy(privacyEnum.getValue())
                 .build();
         int res = projectMapper.update(entity);
         log.info("Project has been modified ID={}", entity.getId());

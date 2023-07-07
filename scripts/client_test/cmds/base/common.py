@@ -1,7 +1,6 @@
-import logging
 from os.path import exists
 
-from .invoke import invoke, invoke_with_react
+from .invoke import check_invoke, invoke_with_react
 
 
 class EnvironmentPrepare:
@@ -9,7 +8,7 @@ class EnvironmentPrepare:
         self.work_dir = work_dir
 
     def prepare_mnist_requirements(self) -> None:
-        _res, _err = invoke(
+        check_invoke(
             [
                 "python3",
                 "-m",
@@ -17,13 +16,13 @@ class EnvironmentPrepare:
                 "install",
                 "-r",
                 f"{self.work_dir}/example/mnist/requirements-sw-lock.txt",
-            ]
+            ],
+            log=True,
         )
-        logging.info(f"install package info:{_res}, err is:{_err}")
 
     def download(self, package: str) -> None:
         if not exists(f"{self.work_dir}/example/mnist/data/{package}"):
-            invoke(
+            check_invoke(
                 [
                     "wget",
                     "-P",

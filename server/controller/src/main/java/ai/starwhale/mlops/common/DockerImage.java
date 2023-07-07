@@ -25,22 +25,22 @@ import org.springframework.util.StringUtils;
 @Getter
 @EqualsAndHashCode
 public class DockerImage {
-    String registry;
+    String repo;
     String image;
 
     /**
-     * @param registry such as ghcr.io
-     * @param image such as starwhale-ai/starwhale:0.3.5-rc123.dev12432344
+     * @param repo such as ghcr.io/starwhale-ai
+     * @param image such as starwhale:0.3.5-rc123.dev12432344
      */
-    public DockerImage(String registry, String image) {
-        this.registry = registry;
+    public DockerImage(String repo, String image) {
+        this.repo = repo;
         this.image = image;
     }
 
     /**
      * please refer to https://github.com/distribution/distribution/blob/v2.7.1/reference/reference.go
      */
-    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.+?)\\/(.+)$");
+    private static final Pattern PATTERN_IMAGE_FULL = Pattern.compile("^(.*)/(.*)$");
 
     /**
      * @param imageNameFull such as ghcr.io/starwhale-ai/starwhale:0.3.5-rc123.dev12432344
@@ -48,38 +48,25 @@ public class DockerImage {
     public DockerImage(String imageNameFull) {
         Matcher matcher = PATTERN_IMAGE_FULL.matcher(imageNameFull);
         if (!matcher.matches()) {
-            this.registry = "";
+            this.repo = "";
             this.image = imageNameFull;
         } else {
-            String candidateRegistry = matcher.group(1);
-            if (isDomain(candidateRegistry)) {
-                this.registry = candidateRegistry;
-                image = matcher.group(2);
-            } else {
-                this.registry = "";
-                this.image = imageNameFull;
-            }
-
+            this.repo = matcher.group(1);
+            this.image = matcher.group(2);
         }
-    }
-
-    private static final Pattern PATTERN_DOMAIN_LOCAL_HOST = Pattern.compile("localhost(:\\d+)?");
-
-    private static boolean isDomain(String candidate) {
-        return candidate.contains(".") || PATTERN_DOMAIN_LOCAL_HOST.matcher(candidate).matches();
     }
 
     private static final String SLASH = "/";
 
-    public String resolve(String newRegistry) {
-        if (!StringUtils.hasText(newRegistry)) {
-            newRegistry = this.registry;
+    public String resolve(String newRepo) {
+        if (!StringUtils.hasText(newRepo)) {
+            newRepo = this.repo;
         }
-        return StringUtils.trimTrailingCharacter(newRegistry, '/') + SLASH + image;
+        return StringUtils.trimTrailingCharacter(newRepo, '/') + SLASH + image;
     }
 
     public String toString() {
-        return StringUtils.trimTrailingCharacter(registry, '/') + SLASH + image;
+        return StringUtils.trimTrailingCharacter(repo, '/') + SLASH + image;
     }
 
 }

@@ -264,9 +264,9 @@ class PipelineHandler(metaclass=ABCMeta):
                 for (_idx, _features), _result in zip(rows, _results):
                     cnt += 1
                     _idx_with_ds = f"{idx_prefix}{join_str}{_idx}"
-
-                    console.trace(
-                        f"[{_idx_with_ds}] use {time.time() - _start:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
+                    _duration = time.time() - _start
+                    console.debug(
+                        f"[{_idx_with_ds}] use {_duration:.3f}s, session-id:{self.context.version} @{self.context.step}-{self.context.index}"
                     )
 
                     self._timeline_writer.write(
@@ -276,6 +276,7 @@ class PipelineHandler(metaclass=ABCMeta):
                             "exception": str(_exception),
                             "index": _idx,
                             "index_with_dataset": _idx_with_ds,
+                            "duration_seconds": _duration,
                         }
                     )
 
@@ -284,6 +285,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         idx_with_ds=_idx_with_ds,
                         output=_result,
                         idx=_idx,
+                        duration_seconds=_duration,
                     )
 
         if self.flush_result and self.predict_auto_log:
@@ -325,7 +327,12 @@ class PipelineHandler(metaclass=ABCMeta):
             yield data
 
     def _log_predict_result(
-        self, features: t.Dict, idx_with_ds: str, output: t.Any, idx: str | int
+        self,
+        features: t.Dict,
+        idx_with_ds: str,
+        output: t.Any,
+        idx: str | int,
+        duration_seconds: float,
     ) -> None:
         if not self.predict_auto_log:
             return
@@ -356,6 +363,7 @@ class PipelineHandler(metaclass=ABCMeta):
             "_mode": self.predict_log_mode.value,
             "_index": idx,
             "output": output,
+            "duration_seconds": duration_seconds,
             **input_features,
         }
         self.evaluation_store.log_result(record)
@@ -577,6 +585,7 @@ def _register_predict(
         concurrency=concurrency,
         needs=needs,
         replicas=replicas,
+        require_dataset=True,
         extra_kwargs=dict(
             predict_batch_size=batch_size,
             ignore_error=not fail_on_error,

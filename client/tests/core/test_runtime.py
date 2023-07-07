@@ -79,6 +79,8 @@ class StandaloneRuntimeTestCase(TestCase):
         sw_config._config = {}
         get_conda_bin.cache_clear()
         os.environ.pop("CONDARC", None)
+        os.environ.pop("SW_CONTAINER", None)
+        os.environ.pop("SW_RUNTIME_FORCE_RUN_COMMAND", None)
 
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -777,12 +779,13 @@ class StandaloneRuntimeTestCase(TestCase):
                 workdir=workdir, yaml_path=os.path.join(workdir, "runtime.yaml")
             )
 
+    @patch("os.environ", {})
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_from_runtime_yaml_in_venv_mode(
-        self, m_output: MagicMock, m_py_bin: MagicMock, *args: t.Any
+        self, m_output: MagicMock, m_py_bin: MagicMock, m_call: MagicMock, *args: t.Any
     ) -> None:
         sw = SWCliConfigMixed()
         workdir = "/home/starwhale/myproject"
@@ -833,6 +836,7 @@ class StandaloneRuntimeTestCase(TestCase):
         sr.build_from_runtime_yaml(
             workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
         )
+        assert m_call.call_count == 4
 
         assert sr.uri.version != ""
         assert len(sr._version) == 40
@@ -898,11 +902,12 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _deps["pip_files"] == ["requirements.txt"]
         assert _deps["pip_pkgs"] == ["Pillow"]
         _raw_deps = _deps["raw_deps"]
-        assert len(_raw_deps) == 6
+        assert len(_raw_deps) == 7
         assert _raw_deps == [
             {"deps": "requirements.txt", "kind": "pip_req_file"},
             {"deps": ["dummy.whl"], "kind": "wheel"},
             {"deps": ["Pillow"], "kind": "pip_pkg"},
+            {"deps": ["apt-get install xxx", "echo 'helloworld'"], "kind": "command"},
             {
                 "deps": [
                     {
@@ -1438,6 +1443,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "requirements.txt",
                 {"wheels": ["dummy.whl"]},
                 {"pip": ["Pillow"]},
+                {"commands": ["apt-get install xxx", "echo 'helloworld'"]},
             ],
         }
 
@@ -1548,11 +1554,17 @@ class StandaloneRuntimeTestCase(TestCase):
         pip_cmds = [mc[0][0][6:] for mc in m_call.call_args_list]
         assert pip_cmds == [["-r", req_lock_fpath], [wheel_fpath]]
 
+    @patch("os.environ", {})
     @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
     @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.core.runtime.model.check_call")
     def test_restore_venv(
-        self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
+        self,
+        m_command_call: MagicMock,
+        m_call: MagicMock,
+        m_venv: MagicMock,
+        m_exists: MagicMock,
     ):
         workdir = "/home/starwhale/myproject"
         export_dir = os.path.join(workdir, "export")
@@ -1613,6 +1625,10 @@ class StandaloneRuntimeTestCase(TestCase):
                                     }
                                 ],
                             },
+                            {
+                                "kind": "command",
+                                "deps": ["apt-get install xxx", "echo 'helloworld'"],
+                            },
                         ],
                         "pip_files": [
                             "requirements-sw-lock.txt",
@@ -1646,7 +1662,12 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(req_lock_fpath, contents="test2==0.0.1")
 
         m_exists.return_value = False
+        os.environ["SW_CONTAINER"] = "1"
         Runtime.restore(Path(workdir))
+
+        assert m_command_call.call_count == 2
+        assert m_command_call.call_args_list[0][0][0] == "apt-get install xxx"
+        assert m_command_call.call_args_list[1][0][0] == "echo 'helloworld'"
 
         assert m_call.call_count == 8
         pip_cmds = [mc[0][0][6:] for mc in m_call.call_args_list]
@@ -1686,12 +1707,18 @@ class StandaloneRuntimeTestCase(TestCase):
             "--retries=10",
             "starwhale",
         ]
-        assert (Path(workdir) / "export/venv/bin/prepare.sh").exists()
+        assert Path("bin/prepare.sh").exists()
 
         m_call.reset_mock()
+        m_command_call.reset_mock()
         m_exists.return_value = True
+
+        os.environ["SW_CONTAINER"] = "0"
+        os.environ["SW_RUNTIME_FORCE_RUN_COMMAND"] = "0"
         Runtime.restore(Path(workdir))
         assert m_call.call_count == 7
+        assert m_command_call.call_count == 0
+        assert (Path(workdir) / "export/venv/bin/prepare.sh").exists()
 
         RuntimeTermView.restore(workdir)
 
@@ -2903,6 +2930,7 @@ class DependenciesTestCase(TestCase):
             {"pip": ["p1", "p2", "p3"]},
             {"wheels": ["dummy.whl"]},
             {"conda": ["cp1", "cp2"]},
+            {"commands": ["apt-get install xxx"]},
             {
                 "files": [
                     {
@@ -2924,28 +2952,36 @@ class DependenciesTestCase(TestCase):
             "conda-env.yaml",
             "requirements.in",
             "conda-env.yml",
+            {"commands": ["apt-get install yyy", "echo 'helloworld'"]},
         ]
 
         dep = Dependencies(deps_config)
         assert len(dep._unparsed) == 0
-        assert len(dep.deps) == 10
+        assert len(dep.deps) == 12
         assert dep._pip_files == ["requirements.txt", "requirements.in"]
         assert dep._pip_pkgs == ["p1", "p2", "p3", "p4", "p5", "p6"]
         assert dep._conda_pkgs == ["cp1", "cp2", "cp3", "cp4"]
         assert dep._conda_files == ["conda-env.yaml", "conda-env.yml"]
         assert len(dep._files) == 2
         assert dep._wheels == ["dummy.whl"]
+        assert dep._commands == [
+            "apt-get install xxx",
+            "apt-get install yyy",
+            "echo 'helloworld'",
+        ]
         expected_kinds = [
             DependencyType.PIP_REQ_FILE,
             DependencyType.PIP_PKG,
             DependencyType.WHEEL,
             DependencyType.CONDA_PKG,
+            DependencyType.COMMAND,
             DependencyType.NATIVE_FILE,
             DependencyType.PIP_PKG,
             DependencyType.CONDA_PKG,
             DependencyType.CONDA_ENV_FILE,
             DependencyType.PIP_REQ_FILE,
             DependencyType.CONDA_ENV_FILE,
+            DependencyType.COMMAND,
         ]
 
         flat_raw_deps = dep.flatten_raw_deps()
@@ -3003,6 +3039,12 @@ class DependenciesTestCase(TestCase):
 
         with self.assertRaises(FormatError):
             WheelDependency(["d.d"])
+
+        with self.assertRaises(FormatError):
+            Dependencies([{"commands": [1, 2, 3]}])  # type: ignore
+
+        with self.assertRaises(NoSupportError):
+            Dependencies([{"commands": "abc"}])  # type: ignore
 
 
 class CloudRuntimeTest(TestCase):

@@ -15,7 +15,7 @@ export enum JobStatusType {
     PAUSED = 'PAUSED',
     RUNNING = 'RUNNING',
     TO_CANCEL = 'TO_CANCEL',
-    CANCELING = 'CANCELING',
+    CANCELLING = 'CANCELLING',
     CANCELED = 'CANCELED',
     SUCCESS = 'SUCCESS',
     FAIL = 'FAIL',

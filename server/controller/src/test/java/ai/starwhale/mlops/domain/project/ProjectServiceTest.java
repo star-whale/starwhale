@@ -35,14 +35,17 @@ import static org.mockito.BDDMockito.mock;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
 import ai.starwhale.mlops.domain.member.MemberService;
 import ai.starwhale.mlops.domain.member.bo.ProjectMember;
+import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.sort.Sort;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -135,7 +138,11 @@ public class ProjectServiceTest {
                 projectDao,
                 memberService,
                 idConvertor,
-                userService);
+                userService,
+                mock(RuntimeVersionMapper.class),
+                mock(ModelVersionMapper.class),
+                mock(DatasetVersionMapper.class)
+        );
     }
 
     @Test
@@ -257,23 +264,23 @@ public class ProjectServiceTest {
                 .willReturn(1);
         given(projectMapper.findByNameForUpdateAndOwner(same("p2"), any()))
                 .willReturn(ProjectEntity.builder().id(2L).projectName("p2").build());
-        var res = service.modifyProject("1", "pro1", null, 1L, "PUBLIC");
+        var res = service.updateProject("1", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.modifyProject("p1", "pro1", null, 1L, "PUBLIC");
+        res = service.updateProject("p1", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.modifyProject("2", "pro1", null, 1L, "PUBLIC");
+        res = service.updateProject("2", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(false));
 
-        res = service.modifyProject("1", "pro1", null, 1L, "PUBLIC");
+        res = service.updateProject("1", "pro1", null, 1L, "PUBLIC");
         assertThat(res, is(true));
 
-        res = service.modifyProject("2", "p2", null, 1L, "PUBLIC");
+        res = service.updateProject("2", "p2", null, 1L, "PUBLIC");
         assertThat(res, is(false));
 
         assertThrows(StarwhaleApiException.class,
-                () -> service.modifyProject("1", "p2", "", 1L, "PUBLIC"));
+                () -> service.updateProject("1", "p2", "", 1L, "PUBLIC"));
     }
 
     @Test

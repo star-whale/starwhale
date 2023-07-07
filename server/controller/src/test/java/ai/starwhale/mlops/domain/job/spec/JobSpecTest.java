@@ -97,6 +97,7 @@ public class JobSpecTest {
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
+            + "  require_dataset: null\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
             + "  - \"ppl\"\n"
@@ -110,7 +111,8 @@ public class JobSpecTest {
             + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
-            + "  show_name: \"cmp\"\n";
+            + "  show_name: \"cmp\"\n"
+            + "  require_dataset: null\n";
 
     static final String YAML3 = "---\n"
             + "- concurrency: 1\n"
@@ -126,6 +128,7 @@ public class JobSpecTest {
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
+            + "  require_dataset: null\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
             + "  - \"ppl\"\n"
@@ -139,7 +142,8 @@ public class JobSpecTest {
             + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
-            + "  show_name: \"cmp\"\n";
+            + "  show_name: \"cmp\"\n"
+            + "  require_dataset: null\n";
 
     private JobSpecParser jobSpecParser;
 

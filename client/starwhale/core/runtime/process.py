@@ -65,9 +65,6 @@ class Process:
                 clear_positions.append(i)
                 break
 
-        if not clear_positions:
-            raise RuntimeError(f"no runtime specified: {argv}")
-
         for p in clear_positions[::-1]:
             argv.pop(p)
 

@@ -112,6 +112,7 @@ from starwhale.utils.error import (
     ExclusiveArgsError,
     UnExpectedConfigFieldError,
 )
+from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.base.uri.project import Project as ProjectURI
@@ -466,6 +467,42 @@ class PipReqFileDependency(ASDictMixin, BaseDependency):
         venv_install_req(env_dir, fpath, pip_config=configs.get("pip"))  # type:ignore
 
 
+class CommandDependency(ASDictMixin, BaseDependency):
+    def __init__(self, deps: t.List[str]) -> None:
+        if isinstance(deps, list):
+            for d in deps:
+                if not isinstance(d, str):
+                    raise FormatError(f"command must be str: {d}")
+        else:
+            raise NoSupportError(
+                f"command dependency only supports list[str] format: {deps}"
+            )
+        self.deps = deps
+
+    @property
+    def kind(self) -> DependencyType:
+        return DependencyType.COMMAND
+
+    def _run_command(self, src_dir: Path, commands: t.List[str]) -> None:
+        for cmd in commands:
+            if (
+                in_container()
+                or os.environ.get("SW_RUNTIME_FORCE_RUN_COMMAND", "0") == "1"
+            ):
+                console.info(f"run command: {cmd}, cwd: {src_dir}")
+                check_call(cmd, shell=True, cwd=src_dir)
+            else:
+                console.info(
+                    f"skip run command: {cmd}, because not in container or SW_RUNTIME_FORCE_RUN_COMMAND!=1"
+                )
+
+    def conda_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._run_command(src_dir, self.deps)
+
+    def venv_install(self, src_dir: Path, env_dir: Path, configs: t.Dict) -> None:
+        self._run_command(src_dir, self.deps)
+
+
 dependency_map: t.Dict[DependencyType, t.Type[BaseDependency]] = {
     DependencyType.WHEEL: WheelDependency,
     DependencyType.CONDA_ENV_FILE: CondaEnvFileDependency,
@@ -473,6 +510,7 @@ dependency_map: t.Dict[DependencyType, t.Type[BaseDependency]] = {
     DependencyType.PIP_PKG: PipPkgDependency,
     DependencyType.PIP_REQ_FILE: PipReqFileDependency,
     DependencyType.NATIVE_FILE: NativeFileDependency,
+    DependencyType.COMMAND: CommandDependency,
 }
 
 
@@ -488,6 +526,7 @@ class Dependencies(ASDictMixin):
         self._conda_files: t.List[str] = []
         self._wheels: t.List[str] = []
         self._files: t.List[t.Dict[str, str]] = []
+        self._commands: t.List[str] = []
         self._unparsed: t.List[t.Any] = []
 
         _dmap: t.Dict[str, t.Tuple[t.Type[BaseDependency], t.List]] = {
@@ -495,6 +534,7 @@ class Dependencies(ASDictMixin):
             "conda": (CondaPkgDependency, self._conda_pkgs),
             "wheels": (WheelDependency, self._wheels),
             "files": (NativeFileDependency, self._files),
+            "commands": (CommandDependency, self._commands),
         }
 
         for d in deps:
@@ -530,7 +570,7 @@ class Dependencies(ASDictMixin):
         return (
             f"Starwhale Runtime Dependencies: {len(self.deps)}, unparsed: {len(self._unparsed)}, pip pkg:{len(self._pip_pkgs)}"
             f"pip file:{len(self._pip_files)}, conda pkg:{len(self._conda_pkgs)} conda file:{len(self._conda_files)}"
-            f"wheel: {len(self._wheels)} native file:{len(self._files)}"
+            f"wheel: {len(self._wheels)} native file:{len(self._files)} commands: {len(self._commands)}"
         )
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
@@ -1629,7 +1669,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             src_dir=yaml_path.parent,
             runtime_yaml=runtime_yaml,
             env_dir=prefix_path,
-            skip_deps=[DependencyType.NATIVE_FILE],
+            skip_deps=[DependencyType.NATIVE_FILE, DependencyType.COMMAND],
         )
 
         if mode == PythonRunEnv.CONDA:
@@ -1984,9 +2024,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         }
 
         if lock_files:
+            raw_deps = []
+            # run commands in the first place
+            for dep in deps["raw_deps"]:
+                if DependencyType(dep["kind"]) == DependencyType.COMMAND:
+                    raw_deps.append(dep)
+
             # We assume the equation in the runtime auto-lock build mode:
             #   the lock files = pip_pkg + pip_req_file + conda_pkg + conda_env_file
-            raw_deps = []
             for lf in lock_files:
                 if lf.endswith(RuntimeLockFileType.CONDA):
                     raw_deps.append({"deps": lf, "kind": DependencyType.CONDA_ENV_FILE})

@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -60,7 +61,8 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private String builtImage;
 
-    private Boolean shared;
+    @Builder.Default
+    private Boolean shared = false;
 
     @Override
     public String getName() {

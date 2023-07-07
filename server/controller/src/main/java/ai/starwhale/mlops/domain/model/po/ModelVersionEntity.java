@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.model.po;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -53,7 +54,8 @@ public class ModelVersionEntity extends BaseEntity implements BundleVersionEntit
 
     private String jobs;
 
-    private Boolean shared;
+    @Builder.Default
+    private Boolean shared = false;
 
     @Override
     public String getName() {

@@ -1,8 +1,7 @@
 import React from 'react'
-import { RecordSchemaT, isComplexType, isSearchColumns } from '@starwhale/core/datastore'
+import { RecordSchemaT, isSearchColumns } from '@starwhale/core/datastore'
 import { CustomColumn } from '../../base/data-table'
 import { ColumnT } from '../../base/data-table/types'
-import { StringCell } from '../../base/data-table/column-string'
 import DataViewer from '@starwhale/ui/Viewer/DataViewer'
 import { RecordAttr } from '../recordAttrModel'
 
@@ -24,10 +23,9 @@ export const sortColumn = (ca: { name: string }, cb: { name: string }) => {
     return ca.name.localeCompare(cb.name)
 }
 
-export function RenderMixedCell({ value, columnKey, ...props }: { value: RecordAttr; columnKey: string }) {
+export function RenderMixedCell({ value, columnKey }: { value: RecordAttr; columnKey: string }) {
     if (!value) return ''
-    if (isComplexType(value?.type)) return <DataViewer data={value} showKey={columnKey as string} />
-    return <StringCell {...props} lineClamp={1} value={value.toString()} />
+    return <DataViewer data={value} showKey={columnKey as string} />
 }
 
 export function useDatastoreColumns(

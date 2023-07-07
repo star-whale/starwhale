@@ -4,7 +4,7 @@ from typing import Any
 from starwhale.core.instance.view import InstanceTermView
 
 from . import CLI
-from .base.invoke import invoke, invoke_with_react
+from .base.invoke import invoke_output, invoke_with_react
 
 
 class Instance:
@@ -53,7 +53,7 @@ class Instance:
                     "version": "0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52"
                 }
         """
-        _ret_code, _res = invoke(
+        _ret_code, _res = invoke_output(
             [CLI, self.instance_cmd, "-o", "json", "info", instance]
         )
         return json.loads(_res) if _ret_code == 0 else {}
@@ -92,7 +92,7 @@ class Instance:
                 ...
             ]
         """
-        _ret_code, _res = invoke([CLI, "-o", "json", self.instance_cmd, "list"])
+        _ret_code, _res = invoke_output([CLI, "-o", "json", self.instance_cmd, "list"])
         return json.loads(_res) if _ret_code == 0 else []
 
     def logout(self, instance: str = "") -> bool:
