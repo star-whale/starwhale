@@ -11,6 +11,7 @@ function Tooltip({ children, ...props }: ITooltipProps) {
         Body: {
             style: {
                 opacity: 0.8,
+                zIndex: 20,
             },
         },
         Inner: {

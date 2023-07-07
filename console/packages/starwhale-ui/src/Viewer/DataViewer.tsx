@@ -6,7 +6,6 @@ import {
     IArtifactImage,
     IArtifactVideo,
     MIMES,
-    IArtifactText,
     AnnotationType,
 } from '@starwhale/core/dataset'
 import ImageViewer from '@starwhale/ui/Viewer/ImageViewer'
@@ -15,6 +14,7 @@ import ImageGrayscaleViewer from './ImageGrayscaleViewer'
 import TextViewer from './TextViewer'
 import VideoViewer from './VideoViewer'
 import _ from 'lodash'
+import { JSONView } from '../JSONView'
 
 export type IDataViewerProps = {
     data?: any
@@ -50,11 +50,8 @@ export default function DataViewer({
 }: IDataViewerProps) {
     const Viewer = React.useMemo(() => {
         const { summary } = rawData
-        const data = summary?.get(showKey)
-        if (!data) return <></>
-        if (!_.isObject(data)) {
-            return <TextViewer data={data} isZoom={isZoom} />
-        }
+        const data = summary?.get(showKey) ?? rawData.value
+        if (!data) return null
 
         // @ts-ignore
         const { _type, _mime_type: mimeType } = data
@@ -102,25 +99,29 @@ export default function DataViewer({
                 return <AudioViewer data={data as IArtifactAudio} isZoom={isZoom} />
             case ArtifactType.Video:
                 return <VideoViewer data={data as IArtifactVideo} isZoom={isZoom} />
-            case ArtifactType.Text:
-                return <TextViewer data={data as IArtifactText} isZoom={isZoom} />
             default:
-                return <Placeholder />
+                if (isZoom && _.isObject(data)) {
+                    return (
+                        <JSONView
+                            data={data}
+                            style={{ width: '100%' }}
+                            collapsed={5}
+                            collapseStringsAfterLength={300}
+                        />
+                    )
+                }
+                try {
+                    return (
+                        <TextViewer
+                            data={typeof data === 'string' ? data : JSON.stringify(data, null)}
+                            isZoom={isZoom}
+                        />
+                    )
+                } catch {
+                    return <Placeholder />
+                }
         }
     }, [rawData, hiddenLabels, isZoom, showKey])
-
-    if (typeof rawData.value !== 'object')
-        return (
-            <pre
-                style={{
-                    padding: '10px',
-                    wordWrap: 'break-word',
-                    whiteSpace: 'pre-wrap',
-                }}
-            >
-                {rawData.value ?? ''}
-            </pre>
-        )
 
     return Viewer
 }

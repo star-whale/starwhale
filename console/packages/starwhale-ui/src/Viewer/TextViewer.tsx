@@ -1,17 +1,16 @@
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { createUseStyles } from 'react-jss'
-import { StatefulTooltip } from 'baseui/tooltip'
 import _ from 'lodash'
+import { Tooltip } from '../Tooltip'
 
 const useStyles = createUseStyles({
     wrapper: {
-        display: 'flex',
-        placeItems: 'center',
-        textOverflow: 'hidden',
+        overflow: 'hidden',
     },
     text: {
         padding: '20px',
+        textWrap: 'inherit',
     },
 })
 
@@ -47,12 +46,21 @@ export default function TextViewer({ isZoom = false, data }: ITextViewerProps) {
 
     if (!isZoom) {
         return (
-            <div className={classNames(styles.wrapper, 'dataset-viewer text ')}>
-                <StatefulTooltip content={() => <p style={{ maxWidth: '300px' }}>{text ?? ''}</p>} placement='bottom'>
-                    <p className='text-ellipsis' style={{ lineHeight: '1.5' }}>
-                        {text}
-                    </p>
-                </StatefulTooltip>
+            <div className={classNames(styles.wrapper, 'dataset-viewer text line-clamp line-clamp-2')}>
+                <Tooltip
+                    content={() => (
+                        <p
+                            style={{
+                                maxWidth: '500px',
+                                whiteSpace: 'pre-wrap',
+                            }}
+                        >
+                            {text ?? ''}
+                        </p>
+                    )}
+                >
+                    <p style={{ lineHeight: '1.5' }}>{text}</p>
+                </Tooltip>
             </div>
         )
     }
