@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import math
 import random
 import socket
 import typing as t
@@ -14,13 +13,6 @@ _cache_server_port = int(os.getenv("BLOB_CACHE_SERVER_PORT", "18080"))
 class _Server:
     def __init__(self, ip: str) -> None:
         self.ip = ip
-        self.running = 0
-        self.success = 0
-        self.error = 0.0
-        self.error_step = 1.0
-
-    def score(self) -> float:
-        return (self.success + self.error + 1) / (self.success + 1) * (self.running + 1)
 
 
 _servers: t.List[_Server] | None = None
@@ -48,22 +40,9 @@ def replace_url(url: str, replace: bool) -> t.Generator[str, None, None]:
             yield url
     else:
         result = result._replace(scheme="http")
+        index = 0
         while True:
-            error = False
-            try:
-                best = _servers[0]
-                for server in _servers:
-                    if server.score() < best.score():
-                        best = server
-                best.running += 1
-                yield result._replace(netloc=f"{best.ip}:{_cache_server_port}").geturl()
-                error = True
-            finally:
-                if error:
-                    best.error += best.error_step
-                    best.error_step = best.error_step * 2 + math.pow(best.success, 0.5)
-                else:
-                    best.success += 1
-                    best.error_step /= 1.1
-                    best.error = max(0, best.error - best.error_step)
-                best.running -= 1
+            yield result._replace(
+                netloc=f"{_servers[index % len(_servers)].ip}:{_cache_server_port}"
+            ).geturl()
+            index += 1

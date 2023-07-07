@@ -133,6 +133,7 @@ async def _http_request(
         interval = 0.0
         retry_count = 0
         while True:
+            retry_count += 1
             try:
                 resp = await _send_request(
                     method, next(url_iter), retry_count, params, content, json, headers
@@ -142,7 +143,6 @@ async def _http_request(
             except httpx.RequestError as e:
                 if retry_count == MAX_RETRIES:
                     raise e
-            retry_count += 1
             await trio.sleep(interval)
             if interval == 0.0:
                 interval = 0.5
