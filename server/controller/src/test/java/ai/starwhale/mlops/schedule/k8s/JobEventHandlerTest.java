@@ -118,7 +118,7 @@ public class JobEventHandlerTest {
                 .status(TaskStatus.FAIL)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .failedReason("reason, message")
+                .failedReason("job failed: reason, message")
                 .retryCount(1)
                 .build();
         verify(taskModifyReceiver).receive(List.of(expected2));
@@ -127,14 +127,14 @@ public class JobEventHandlerTest {
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
         pod.setStatus(new V1PodStatus().startTime(startTime).reason("foo").message("bar").phase("Failed"));
         reset(k8sClient);
-        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod));
+        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod, pod));
         jobEventHandler.onAdd(v1Job);
         var expected3 = ReportedTask.builder()
                 .id(1L)
                 .status(TaskStatus.FAIL)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .failedReason("foo, bar")
+                .failedReason("job failed: reason, message\npod failed: foo, bar\nfoo, bar")
                 .retryCount(1)
                 .build();
         verify(taskModifyReceiver).receive(List.of(expected3));

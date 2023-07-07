@@ -123,7 +123,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         var jobName = jobName(job);
         Long stopTime = null;
-        String failedReason = null;
+        String jobFailedReason = null;
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
@@ -149,7 +149,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                     taskStatus = TaskStatus.FAIL;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
                     log.debug("job status changed for {} is failed {}", jobName, status);
-                    failedReason = joinReasons(condition.getReason(), condition.getMessage());
+                    jobFailedReason = joinReasons(condition.getReason(), condition.getMessage());
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
@@ -181,8 +181,13 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
         // prefer using the pod failed reason, it has more details
         var podFailedReason = getPodFailedReason(jobName);
+
+        var failedReason = "";
+        if (StringUtils.hasText(jobFailedReason)) {
+            failedReason = "job failed: " + jobFailedReason;
+        }
         if (StringUtils.hasText(podFailedReason)) {
-            failedReason = podFailedReason;
+            failedReason = failedReason + "\npod failed: " + podFailedReason;
         }
 
         // retry number here is not reliable, it only counts failed pods that is not deleted
@@ -235,6 +240,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (failedReasons.size() == 0) {
             return null;
         }
-        return failedReasons.stream().min(String::compareTo).get();
+        // join all failed reasons
+        return String.join("\n", failedReasons);
     }
 }
