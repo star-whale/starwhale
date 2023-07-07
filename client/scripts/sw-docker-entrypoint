@@ -8,8 +8,6 @@ fi
 
 ulimit -n 65535 || true
 
-CONDA_BIN="/opt/miniconda3/bin"
-PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
 VERBOSE="-vvv"
 HANDLER=${SW_RUN_HANDLER:-""}
 STEP=${SW_TASK_STEP:-""}
@@ -17,94 +15,12 @@ TASK_INDEX=${SW_TASK_INDEX:-0}
 TASK_NUM=${SW_TASK_NUM:-0}
 RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
 
-_update_python_alter() {
-    echo "-->[Preparing] set python/python3 to $1 ..."
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/$1 10
-    update-alternatives --install /usr/bin/python python /usr/bin/$1 10
-    python3 --version
-}
 
-pre_config() {
+run() {
     if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
         echo "-->[Preparing] debug config ..."
         VERBOSE="-v"
     fi
-
-    echo "-->[Preparing] config pypi and conda config ..."
-
-    if [ ${SW_PYPI_INDEX_URL} ] ; then
-        echo -e "\t ** use SW_PYPI_* env to config ~/.pip/pip.conf"
-        mkdir -p ~/.pip
-        cat > ~/.pip/pip.conf << EOF
-[global]
-index-url = ${SW_PYPI_INDEX_URL}
-extra-index-url = ${SW_PYPI_EXTRA_INDEX_URL}
-timeout = ${SW_PYPI_TIMEOUT:-90}
-
-[install]
-trusted-host= ${SW_PYPI_TRUSTED_HOST}
-EOF
-        echo -e "\t ** current pip conf:"
-        echo "-------------------"
-        cat ~/.pip/pip.conf
-        echo "-------------------"
-    else
-        echo -e "\t ** use image builtin pip.conf"
-    fi
-
-    if [ -n "$SW_CONDA_CONFIG" ] ; then
-      echo -e "\t ** use SW_CONDA_CONFIG env to config ~/.condarc"
-      echo "$SW_CONDA_CONFIG" > ~/.condarc
-      echo -e "\t ** current .condarc:"
-      echo "-------------------"
-      cat ~/.condarc
-      echo "-------------------"
-    else
-      echo -e "\t ** use image builtin condarc"
-    fi
-
-}
-
-set_pip_cache() {
-    echo "\t ** set pip cache dir:"
-    python3 -m pip config set global.cache-dir ${PIP_CACHE_DIR} || true
-    python3 -m pip cache dir || true
-}
-
-set_py_and_sw() {
-    pre_config
-
-    echo "-->[Preparing] use runtime ..."
-    _MANIFEST_RUNTIME=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.python") || exit 1
-    DETECTED_SW_VER=$(swcli -o json runtime info ${SW_RUNTIME_VERSION} -of manifest | jq -r ".manifest.environment.lock.starwhale_version") || exit 1
-
-    _RUNTIME="python${_MANIFEST_RUNTIME}"
-    ORIGIN_SW_VER=$(swcli --version)
-    DETECTED_SW_VER=${DETECTED_SW_VER:-$ORIGIN_SW_VER}
-
-    echo "**** DETECT RUNTIME: python version: ${_RUNTIME}, starwhale version: ${DETECTED_SW_VER}"
-
-    # default python version
-    DEFAULT_PY_VER="python3.8"
-    PY_VER="$DEFAULT_PY_VER"
-    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] || [ "$_RUNTIME" = "python3.11" ] ; then
-        PY_VER="$_RUNTIME"
-    fi
-    _update_python_alter "$PY_VER"
-
-    set_pip_cache
-
-    if [ "$PY_VER" != "$_RUNTIME" ] || [ "$DETECTED_SW_VER" != "$ORIGIN_SW_VER" ]; then
-        # ignore the editable dev version
-        if [ "$DETECTED_SW_VER" != "0.0.0.dev0" ]; then
-          echo "-->[Preparing] start to install starwhale:${DETECTED_SW_VER}"
-          # install starwhale for current python
-          python3 -m pip install "starwhale==${DETECTED_SW_VER}" || exit 1
-        fi
-    fi
-}
-
-run() {
     echo "-->[Running] start to run model: ${STEP}, use $(which swcli) cli ..."
     if [ "${RUNTIME_RESTORED}" != "1" ]; then
         runtime_args="--runtime ${SW_RUNTIME_VERSION}"
@@ -167,9 +83,8 @@ prepare(){
             fi
         fi
     fi
-    if [ "${RUNTIME_RESTORED}" != "1" ]; then
-        set_py_and_sw
-    else
+    if [ "${RUNTIME_RESTORED}" == "1" ]; then
+        # TODO useless?
         $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
     fi
 }
@@ -240,9 +155,6 @@ ds_build_and_upload () {
 
 welcome "$1"
 case "$1" in
-    pre_config)
-        pre_config
-        ;;
     run|evaluation|fine_tune)
         prepare && run
         ;;

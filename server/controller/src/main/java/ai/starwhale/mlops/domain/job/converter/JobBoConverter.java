@@ -137,6 +137,7 @@ public class JobBoConverter {
                             .version(runtimeVersionEntity.getVersionName())
                             .projectId(runtimeEntity.getProjectId())
                             .storagePath(runtimeVersionEntity.getStoragePath())
+                            .manifest(runtimeVersionEntity.getVersionMetaObj())
                             .image(image)
                             .build())
                     .status(jobEntity.getJobStatus())

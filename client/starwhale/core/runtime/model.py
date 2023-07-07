@@ -1850,6 +1850,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
                 pypi_trusted_host=" ".join(_pip.get("trusted_host", [])),
                 python_version=_manifest["environment"]["python"],
+                starwhale_version=_manifest["environment"]["lock"]["starwhale_version"],
                 mode=_manifest["environment"]["mode"],
                 local_packaged_env=_manifest["dependencies"].get(
                     "local_packaged_env", False
