@@ -8,10 +8,12 @@ function JSONView({
     data,
     collapsed = 1,
     collapseStringsAfterLength = 10,
+    style = {},
 }: {
     data: any
     collapsed?: number
     collapseStringsAfterLength?: number
+    style?: React.CSSProperties
 }) {
     const [, copyToClipboard] = useCopyToClipboard()
 
@@ -32,6 +34,7 @@ function JSONView({
                 collapseStringsAfterLength={collapseStringsAfterLength}
                 displayDataTypes={false}
                 quotesOnKeys={false}
+                style={style}
             />
         </React.Suspense>
     )

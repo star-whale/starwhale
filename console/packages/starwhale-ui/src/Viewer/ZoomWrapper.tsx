@@ -53,6 +53,8 @@ export default function ZoomWrapper({ children, isTools }: any) {
                         contentStyle={{
                             display: 'flex',
                             flexWrap: 'nowrap',
+                            justifyContent: 'center',
+                            maxHeight: '100%',
                         }}
                     >
                         {children}

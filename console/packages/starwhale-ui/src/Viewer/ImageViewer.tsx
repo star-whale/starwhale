@@ -40,7 +40,7 @@ export default function ImageViewer({ isZoom = false, data, masks = [], cocos = 
                 style={{
                     height: '100%',
                     backgroundImage: `url(${data._extendSrc})`,
-                    backgroundSize: 'cover',
+                    backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                 }}

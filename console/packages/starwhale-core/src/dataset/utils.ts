@@ -59,6 +59,9 @@ export function getSummary(record: RecordT, options: OptionsT) {
     Object.entries(record).forEach(([key, value]: [string, any]) => {
         if (!options.showPrivate && isPrivate(key)) return
         function flatObjectWithPaths(anno: any, path: any[] = []) {
+            // with all fields
+            summaryTmp.set([...path].join('.'), anno)
+
             if (_.isArray(anno)) {
                 anno.forEach((item: any, index: number) => flatObjectWithPaths(item, [...path, index]))
             } else if (_.isPlainObject(anno)) {
