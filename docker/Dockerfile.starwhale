@@ -3,9 +3,6 @@ FROM ${BASE_IMAGE}
 
 ARG TARGETARCH=amd64
 
-ARG SW_VERSION=0.1.0
-ENV SW_VERSION ${SW_VERSION}
-
 SHELL ["/bin/bash", "-c"]
 
 ARG LOCAL_PYPI_HOSTNAME=host.nexus
@@ -17,13 +14,6 @@ RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENA
 
 RUN curl -fsSL --compressed  https://code-server.dev/install.sh | sh
 
-RUN rm -rf /opt/starwhale.venv \
-    && virtualenv /opt/starwhale.venv --python 3.8 \
-    && /opt/starwhale.venv/bin/python -m pip install starwhale==${SW_VERSION} \
-    && rm -rf /usr/local/bin/swcli /usr/local/bin/sw-docker-entrypoint \
-    && ln -s /opt/starwhale.venv/bin/swcli /usr/local/bin/swcli \
-    && ln -s /opt/starwhale.venv/bin/sw-docker-entrypoint /usr/local/bin/sw-docker-entrypoint
-
 COPY external/condarc /root/.condarc
 
 ENV SW_CONTAINER=1
@@ -31,4 +21,5 @@ ENV TARGETARCH=${TARGETARCH}
 ENV COLUMNS=250
 
 WORKDIR /opt/starwhale/swmp
-ENTRYPOINT ["/usr/local/bin/sw-docker-entrypoint"]
+COPY external/starwhale-entrypoint.sh entrypoint
+ENTRYPOINT ["entrypoint"]

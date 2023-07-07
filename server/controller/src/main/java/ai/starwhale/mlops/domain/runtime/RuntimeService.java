@@ -530,8 +530,27 @@ public class RuntimeService {
         @JsonProperty("base_image")
         String baseImage;
 
-        @JsonProperty("docker")
+        Environment environment;
+
         Docker docker;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Environment {
+            String python;
+            Lock lock;
+        }
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Lock {
+            @JsonProperty("starwhale_version")
+            String swVersion;
+        }
 
         @Data
         @NoArgsConstructor
@@ -657,8 +676,12 @@ public class RuntimeService {
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
                             runTimeProperties.getPypi().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
-                            runtimeTokenValidator.getToken(user, runtimeVersion.getId())))
-            );
+                            runtimeTokenValidator.getToken(user, runtimeVersion.getId())),
+                    new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(
+                        runtimeVersion.getVersionMetaObj().getEnvironment().getPython()),
+                    new V1EnvVar().name("SW_VERSION").value(
+                        runtimeVersion.getVersionMetaObj().getEnvironment().getLock().getSwVersion())
+            ));
             if (null != runConfig && null != runConfig.getEnvVars()) {
                 List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(K8sJobTemplate::toEnvVar)
                         .collect(Collectors.toList());

@@ -249,7 +249,6 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     @NotNull
     private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
         Job swJob = task.getStep().getJob();
-        var project = swJob.getProject();
         var model = swJob.getModel();
         var runtime = swJob.getJobRuntime();
         Map<String, String> coreContainerEnvs = new HashMap<>();
@@ -257,6 +256,8 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         if (!CollectionUtils.isEmpty(taskEnv)) {
             taskEnv.forEach(env -> coreContainerEnvs.put(env.getName(), env.getValue()));
         }
+        coreContainerEnvs.put("SW_RUNTIME_PYTHON_VERSION", runtime.getManifest().getEnvironment().getPython());
+        coreContainerEnvs.put("SW_VERSION", runtime.getManifest().getEnvironment().getLock().getSwVersion());
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
         // support multi dataset uris

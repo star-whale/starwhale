@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.bo;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,4 +50,6 @@ public class JobRuntime {
     String storagePath;
 
     String image;
+
+    RuntimeService.RuntimeManifest manifest;
 }
