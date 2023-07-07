@@ -527,12 +527,12 @@ class TestCli:
 
 def start(
     sw_repo_path: str,
-    case: str="all",
-    work_dir: str="",
-    server_url: str="",
-    client_config: str="",
-    client_storage: str="",
-    server_project: str="starwhale",
+    case: str = "all",
+    work_dir: str = "",
+    server_url: str = "",
+    client_config: str = "",
+    client_storage: str = "",
+    server_project: str = "starwhale",
 ) -> None:
     wd = work_dir or WORK_DIR
     if not wd:
