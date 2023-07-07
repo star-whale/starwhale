@@ -123,7 +123,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         }
         var jobName = jobName(job);
         Long stopTime = null;
-        String failedReason = null;
+        String jobFailedReason = null;
         TaskStatus taskStatus = TaskStatus.UNKNOWN;
         // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#jobstatus-v1-batch
         //  The latest available observations of an object's current state.
@@ -149,10 +149,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                     taskStatus = TaskStatus.FAIL;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
                     log.debug("job status changed for {} is failed {}", jobName, status);
-                    failedReason = Arrays.stream(new String[] {
-                            condition.getReason(),
-                            condition.getMessage()
-                    }).filter(Objects::nonNull).collect(Collectors.joining(", "));
+                    jobFailedReason = joinReasons(condition.getReason(), condition.getMessage());
                 } else if ("Complete".equalsIgnoreCase(type)) {
                     taskStatus = TaskStatus.SUCCESS;
                     stopTime = Util.k8sTimeToMs(condition.getLastTransitionTime());
@@ -182,6 +179,17 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             }
         }
 
+        // prefer using the pod failed reason, it has more details
+        var podFailedReason = getPodFailedReason(jobName);
+
+        var failedReason = "";
+        if (StringUtils.hasText(jobFailedReason)) {
+            failedReason = "job failed: " + jobFailedReason;
+        }
+        if (StringUtils.hasText(podFailedReason)) {
+            failedReason = failedReason + "\npod failed: " + podFailedReason;
+        }
+
         // retry number here is not reliable, it only counts failed pods that is not deleted
         Integer retryNum = null != status.getFailed() ? status.getFailed() : 0;
         var report = ReportedTask.builder()
@@ -201,20 +209,16 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                         Collectors.toSet()));
     }
 
-    private Long getPodStartTime(String jobId) {
-        List<V1Pod> pods = null;
-        try {
-            var list = k8sClient.getPodsByJobName(jobId);
-            if (list != null) {
-                pods = list.getItems();
-            }
-        } catch (Exception e) {
-            log.warn("failed to get pod start time for job {}", jobId, e);
-        }
-        if (pods == null || pods.size() == 0) {
+    private String joinReasons(String... reasons) {
+        var items = Arrays.stream(reasons).filter(Objects::nonNull).collect(Collectors.toList());
+        if (items.isEmpty()) {
             return null;
         }
+        return String.join(", ", items);
+    }
 
+    private Long getPodStartTime(String jobId) {
+        List<V1Pod> pods = k8sClient.getPodsByJobNameQuietly(jobId);
         var startTimes = pods.stream().filter(p -> p.getStatus() != null)
                 .map(p -> Util.k8sTimeToMs(p.getStatus().getStartTime()))
                 .filter(Objects::nonNull).collect(Collectors.toList());
@@ -223,5 +227,20 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             return null;
         }
         return startTimes.stream().min(Long::compareTo).get();
+    }
+
+    private String getPodFailedReason(String jobId) {
+        List<V1Pod> pods = k8sClient.getPodsByJobNameQuietly(jobId);
+
+        var failedReasons = pods.stream().filter(p -> p.getStatus() != null)
+                .filter(p -> Objects.equals(p.getStatus().getPhase(), "Failed"))
+                .map(p -> joinReasons(p.getStatus().getReason(), p.getStatus().getMessage()))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        if (failedReasons.size() == 0) {
+            return null;
+        }
+        // join all failed reasons
+        return String.join("\n", failedReasons);
     }
 }

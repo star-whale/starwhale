@@ -21,6 +21,8 @@ import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_EVAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +64,7 @@ public class JobEventHandlerTest {
         var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
         pod.setStatus(new V1PodStatus().startTime(startTime));
         when(k8sClient.getPodsByJobName("1")).thenReturn(new V1PodList().addItemsItem(pod));
+        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod));
     }
 
     @Test
@@ -115,10 +118,26 @@ public class JobEventHandlerTest {
                 .status(TaskStatus.FAIL)
                 .startTimeMillis(startTime.toInstant().toEpochMilli())
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
-                .failedReason("reason, message")
+                .failedReason("job failed: reason, message")
                 .retryCount(1)
                 .build();
         verify(taskModifyReceiver).receive(List.of(expected2));
+
+        // prefer using pod status
+        var pod = new V1Pod().metadata(new V1ObjectMeta().name("1"));
+        pod.setStatus(new V1PodStatus().startTime(startTime).reason("foo").message("bar").phase("Failed"));
+        reset(k8sClient);
+        when(k8sClient.getPodsByJobNameQuietly("1")).thenReturn(List.of(pod, pod));
+        jobEventHandler.onAdd(v1Job);
+        var expected3 = ReportedTask.builder()
+                .id(1L)
+                .status(TaskStatus.FAIL)
+                .startTimeMillis(startTime.toInstant().toEpochMilli())
+                .stopTimeMillis(endTime.toInstant().toEpochMilli())
+                .failedReason("job failed: reason, message\npod failed: foo, bar\nfoo, bar")
+                .retryCount(1)
+                .build();
+        verify(taskModifyReceiver).receive(List.of(expected3));
     }
 
     @Test
@@ -143,7 +162,7 @@ public class JobEventHandlerTest {
     }
 
     @Test
-    public void testOnUpdateFail() throws ApiException {
+    public void testOnUpdateFail() {
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta().name("1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_EVAL)));
         V1JobStatus v1JobStatus = new V1JobStatus();
@@ -162,7 +181,7 @@ public class JobEventHandlerTest {
                 .stopTimeMillis(endTime.toInstant().toEpochMilli())
                 .build();
         verify(taskModifyReceiver).receive(List.of(expected));
-        verify(k8sClient).getPodsByJobName("1");
+        verify(k8sClient, times(2)).getPodsByJobNameQuietly("1");
     }
 
     @Test
