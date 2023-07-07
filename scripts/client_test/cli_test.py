@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import sys
 import time
+import random
+import shutil
 import typing as t
 import logging
 import subprocess
@@ -29,8 +31,6 @@ CURRENT_DIR = os.path.dirname(__file__)
 SCRIPT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir))
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 WORK_DIR = os.environ.get("WORK_DIR")
-if not WORK_DIR:
-    raise RuntimeError("WORK_DIR NOT FOUND")
 STATUS_SUCCESS = {"SUCCESS", "success"}
 STATUS_FAIL = {"fail", "CANCELED", "FAIL"}
 
@@ -99,15 +99,9 @@ GPU_EXAMPLES: t.Dict[str, t.Dict[str, t.Any]] = {
 
 ALL_EXAMPLES = {**CPU_EXAMPLES, **GPU_EXAMPLES}
 
-_pytorch_e2e_root = f"{WORK_DIR}/example/runtime/pytorch-e2e"
 
 # TODO: add conda mode runtime
-RUNTIME_EXAMPLES: t.Dict[str, t.Dict[str, str]] = {
-    "pytorch37": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-7.yaml"},
-    "pytorch38": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-8.yaml"},
-    "pytorch39": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-9.yaml"},
-    "pytorch310": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-10.yaml"},
-}
+
 
 BUILT_IN = "built-in"
 BUILT_IN_EXAMPLES: t.List[str] = ["mnist", "pfp", "simple"]
@@ -131,13 +125,22 @@ class TestCli:
         self._work_dir = work_dir
         self.executor = thread_pool
         self.server_url = server_url
+        self.server_alias = "server"
         self.server_project = server_project
         self.datasets: t.Dict[str, t.List[Resource]] = {}
         self.runtimes: t.Dict[str, t.List[Resource]] = {}
         self.models: t.Dict[str, Resource] = {}
         if self.server_url:
             logger.info(f"login to server {self.server_url} ...")
-            assert self.instance_api.login(url=self.server_url)
+            assert self.instance_api.login(url=self.server_url, alias=self.server_alias)
+
+        _pytorch_e2e_root = f"{self._work_dir}/example/runtime/pytorch-e2e"
+        self.RUNTIME_EXAMPLES: t.Dict[str, t.Dict[str, str]] = {
+            "pytorch37": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-7.yaml"},
+            "pytorch38": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-8.yaml"},
+            "pytorch39": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-9.yaml"},
+            "pytorch310": {"workdir": _pytorch_e2e_root, "yaml": "runtime-3-10.yaml"},
+        }
 
         self.cloud_target_project_uri = f"cloud://server/project/{self.server_project}"
         config.update_swcli_config(
@@ -340,15 +343,17 @@ class TestCli:
     def test_all(self) -> None:
         for name, example in ALL_EXAMPLES.items():
             logger.info(f"preparing data for {example}")
-            rc = subprocess.call(
+            process = subprocess.Popen(
                 ["make", "CN=1", "prepare"],
                 cwd=example["workdir"],
             )
+            rc = process.wait()
             if rc != 0:
-                logger.error(f"prepare data for {example} failed")
+                logger.error(f"prepare data for {example} failed ")
+                logger.error(process.stderr.read().decode("utf-8"))  # type: ignore
                 raise
 
-        for name, rt in RUNTIME_EXAMPLES.items():
+        for name, rt in self.RUNTIME_EXAMPLES.items():
             self.build_runtime(rt["workdir"], rt["yaml"])
 
         for name, example in ALL_EXAMPLES.items():
@@ -356,17 +361,39 @@ class TestCli:
                 self.build_dataset(name, example["workdir"], d_type)
             self.build_model(example["workdir"], name, example["runtime"])
 
-        # model run on server
-        res = [
-            self.run_example(
-                name,
-                example["run_handler"],
-                in_standalone=False,
-                runtime=example["runtime"],
-            )
-            for name, example in ALL_EXAMPLES.items()
-        ]
-        remote_job_ids: t.List[str] = sum(res, [])
+        if self.server_url:
+            # model run on server
+            res = [
+                self.run_example(
+                    name,
+                    example["run_handler"],
+                    in_standalone=False,
+                    runtime=random.choice(list(self.RUNTIME_EXAMPLES.keys())),
+                )
+                for name, example in ALL_EXAMPLES.items()
+            ]
+            remote_job_ids: t.List[str] = sum(res, [])
+            # remove all local artifacts
+            shutil.rmtree(config._config["storage"]["root"])
+            self.select_local_instance()
+            # download all artifacts from server
+            for ds_uris in self.datasets.values():
+                for ds_uri in ds_uris:
+                    self.dataset_api.copy(
+                        f"cloud://{self.server_alias}/project/{self.server_project}/dataset/{ds_uri.name}/version/{ds_uri.version}",
+                        ".",
+                    )
+            for md_uri in self.models.values():
+                self.model_api.copy(
+                    f"cloud://{self.server_alias}/project/{self.server_project}/model/{md_uri.name}/version/{md_uri.version}",
+                    ".",
+                )
+            for rt_uris in self.runtimes.values():
+                for rt_uri in rt_uris:
+                    self.runtime_api.copy(
+                        f"cloud://{self.server_alias}/project/{self.server_project}/runtime/{rt_uri.name}/version/{rt_uri.version}",
+                        ".",
+                    )
 
         # model run on standalone
         for name, example in CPU_EXAMPLES.items():
@@ -374,52 +401,55 @@ class TestCli:
                 name,
                 example["run_handler"],
                 in_standalone=True,
-                runtime=example["runtime"],
+                runtime=random.choice(list(self.RUNTIME_EXAMPLES.keys())),
             )
 
-        failed_jobs = []
-        futures = [
-            self.executor.submit(self.get_remote_job_status, jid)
-            for jid in remote_job_ids
-        ]
-        for f in as_completed(futures):
-            jid, status = f.result()
-            if status not in STATUS_SUCCESS:
-                failed_jobs.append((jid, status))
+        if self.server_url:
+            failed_jobs = []
+            futures = [
+                self.executor.submit(self.get_remote_job_status, jid)
+                for jid in remote_job_ids
+            ]
+            for f in as_completed(futures):
+                jid, status = f.result()
+                if status not in STATUS_SUCCESS:
+                    failed_jobs.append((jid, status))
 
-        if failed_jobs:
-            msg = f"failed jobs: {failed_jobs}"
-            logger.error(msg)
-            raise RuntimeError(msg)
-        else:
-            logger.info("all jobs finished successfully")
+            if failed_jobs:
+                msg = f"failed jobs: {failed_jobs}"
+                logger.error(msg)
+                raise RuntimeError(msg)
+            else:
+                logger.info("all jobs finished successfully")
 
-    def test_example(self, name: str, run_handler: str, runtime: str) -> None:
-        rt = RUNTIME_EXAMPLES.get(name) or RUNTIME_EXAMPLES.get("pytorch37")
+    def test_example(self, name: str) -> None:
+        rt = self.RUNTIME_EXAMPLES.get(name) or self.RUNTIME_EXAMPLES.get("pytorch37")
         if not rt:
             raise RuntimeError(f"no runtime matching for {name}")
 
-        self.build_runtime(rt["workdir"], rt["yaml"])
+        rt_uri = self.build_runtime(rt["workdir"], rt["yaml"])
 
         example = ALL_EXAMPLES[name]
         workdir = str(example["workdir"])
 
-        rc = subprocess.Popen(
+        process = subprocess.Popen(
             ["make", "CN=1", "prepare"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=workdir,
         )
+        rc = process.wait()
         if rc != 0:
-            logger.error(f"prepare data for {example} failed")
+            logger.error(f"prepare data for {example} failed ")
+            logger.error(process.stderr.read().decode("utf-8"))  # type: ignore
             raise
 
         for ds in example["datasets"]:
             self.build_dataset(name, workdir, ds)
-        self.build_model(workdir, name, runtime)
+        self.build_model(workdir, name, rt_uri.full_uri)
 
         self.run_example(
-            name, run_handler, in_standalone=True, runtime=example["runtime"]
+            name, example["run_handler"], in_standalone=True, runtime=example["runtime"]
         )
 
     def run_example(
@@ -429,6 +459,9 @@ class TestCli:
         in_standalone: bool = True,
         runtime: str = "pytorch37",
     ) -> t.List:
+        logger.info(
+            f"run example {name} using runtime {runtime} in standalone {in_standalone}"
+        )
         dataset_uris = self.datasets.get(name)
         if not dataset_uris:
             raise RuntimeError("datasets should not be empty")
@@ -493,17 +526,123 @@ class TestCli:
         }, ctx_handle_no_modules_info["basic"]["handlers"]
 
 
-if __name__ == "__main__":
+def start(
+    sw_repo_path,
+    case="all",
+    work_dir="",
+    server_url="",
+    client_config="",
+    client_storage="",
+    server_project="starwhale",
+) -> None:
+    wd = work_dir or WORK_DIR
+    if not wd:
+        raise RuntimeError("WORK_DIR NOT FOUND")
+
+    example_sync_commands = [
+        [
+            "rsync",
+            "-q",
+            "-av",
+            f"{sw_repo_path}/client",
+            wd,
+            "--exclude",
+            "venv",
+            "--exclude",
+            ".venv",
+        ],
+        [
+            "rsync",
+            "-q",
+            "-av",
+            f"{sw_repo_path}/example/ucf101",
+            f"{wd}/example",
+            "--exclude",
+            "venv",
+            "--exclude",
+            ".venv",
+            "--exclude",
+            ".starwhale",
+            "--exclude",
+            "data",
+            "--exclude",
+            "models",
+        ],
+        [
+            "rsync",
+            "-q",
+            "-av",
+            f"{sw_repo_path}/example/runtime/pytorch-e2e",
+            f"{wd}/example/runtime",
+            "--exclude",
+            "venv",
+            "--exclude",
+            ".venv",
+            "--exclude",
+            ".starwhale",
+        ],
+        [
+            "rsync",
+            "-q",
+            "-av",
+            f"{sw_repo_path}/scripts/example",
+            f"{wd}/scripts",
+            "--exclude",
+            "venv",
+            "--exclude",
+            ".venv",
+            "--exclude",
+            ".starwhale",
+        ],
+    ]
+    processes = [
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        for cmd in example_sync_commands
+    ]
+    processes.append(
+        subprocess.Popen(
+            ["cp", f"{sw_repo_path}/README.md", wd],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    )
+    for p in processes:
+        stdout, stderr = p.communicate()
+        logger.info(stdout.decode("utf-8"))
+        logger.error(stderr.decode("utf-8"))
+
+    if case == "simple":
+        cmd = [
+            "bash",
+            f"{wd}/scripts/example/runtime_conda_init.sh",
+            f"{sw_repo_path}/client",
+        ]
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        rc = process.wait()
+        if rc != 0:
+            logger.error("prepare wheel for simple case failed ")
+            raise
+
+    os.environ["SW_CLI_CONFIG"] = (
+        f"{wd}/{client_config}" if client_config else f"{wd}/config.yaml"
+    )
+    os.environ["SW_LOCAL_STORAGE"] = (
+        f"{wd}/{client_storage}" if client_storage else f"{wd}/data"
+    )
     with ThreadPoolExecutor(
         max_workers=int(os.environ.get("SW_TEST_E2E_THREAD_NUM", "10"))
     ) as executor:
         test_cli = TestCli(
-            work_dir=WORK_DIR,
+            work_dir=wd,
             thread_pool=executor,
-            server_url=os.environ.get("CONTROLLER_URL"),
+            server_url=server_url or os.environ.get("CONTROLLER_URL"),
+            server_project=server_project,
         )
 
-        case = sys.argv[1]
         if case == "simple":
             test_cli.test_simple()
         elif case == "all":
@@ -513,8 +652,12 @@ if __name__ == "__main__":
         elif case == "sdk":
             test_cli.test_sdk()
         else:
-            test_cli.test_example(
-                name=case, run_handler=sys.argv[2], runtime=sys.argv[3]
-            )
+            test_cli.test_example(name=case)
 
         test_cli.smoke_commands()
+
+
+if __name__ == "__main__":
+    import fire
+
+    fire.Fire(start)

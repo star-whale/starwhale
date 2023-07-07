@@ -119,7 +119,7 @@ class Model(BaseArtifact):
         assert _ret_code == 0, _res
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)
 
-    def copy(self, src_uri: str, target_project: str, force: bool) -> None:
+    def copy(self, src_uri: str, target_project: str, force: bool = False) -> None:
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
@@ -172,6 +172,14 @@ class Dataset(BaseArtifact):
         _ret_code, _res = invoke(_args)
         assert _ret_code == 0, _res
 
+    def rm(
+        self,
+        src_uri: str,
+    ) -> None:
+        _args = [CLI, "-vvvv", self.name, "rm", src_uri]
+        _ret_code, _res = invoke(_args)
+        assert _ret_code == 0, _res
+
 
 class Runtime(BaseArtifact):
     def __init__(self) -> None:
@@ -203,7 +211,7 @@ class Runtime(BaseArtifact):
         self,
         src_uri: str,
         target_project: str,
-        force: bool,
+        force: bool = False,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]
