@@ -616,15 +616,8 @@ def start(
             f"{wd}/scripts/example/runtime_conda_init.sh",
             f"{sw_repo_path}/client",
         ]
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        rc = process.wait()
-        if rc != 0:
-            logger.error("prepare wheel for simple case failed ")
-            raise
+        logger.info(cmd)
+        check_invoke(cmd, log=True)
 
     os.environ["SW_CLI_CONFIG"] = (
         f"{wd}/{client_config}" if client_config else f"{wd}/config.yaml"

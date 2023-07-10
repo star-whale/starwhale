@@ -5,7 +5,7 @@ set -x
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_PATH=$( cd -- "$SCRIPT_DIR/../.." &> /dev/null && pwd )
 export WORK_DIR=`mktemp -d`
-# deletes the temp directory
+ deletes the temp directory
 function cleanup {
   rm -rf "$WORK_DIR"
   echo "Deleted temp working directory $WORK_DIR"
@@ -17,6 +17,7 @@ python3 -m pip install -r "$SCRIPT_DIR"/requirements.txt
 if [[ -n $PYPI_RELEASE_VERSION ]] ; then
   python3 -m pip install starwhale==$PYPI_RELEASE_VERSION
 else
+  rm -rf ${REPO_PATH}/client/dist
   python3 -m pip install -e $REPO_PATH/client
 fi
 swcli --version
