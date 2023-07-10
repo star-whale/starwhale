@@ -82,6 +82,12 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             return;
         }
 
+        // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+        if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
+            log.info("pod {} is being deleted", pod.getMetadata().getName());
+            return;
+        }
+
         Long tid = getTaskId(pod);
         if (tid == null) {
             return;
@@ -138,6 +144,9 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 || null == pod.getStatus().getContainerStatuses().get(0).getState()
                 || null == pod.getStatus().getContainerStatuses().get(0).getState().getTerminated()
         ) {
+            return;
+        }
+        if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
             return;
         }
         Long tid = getTaskId(pod);

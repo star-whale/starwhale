@@ -19,6 +19,7 @@ package ai.starwhale.mlops.schedule.k8s;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +62,7 @@ public class PodEventHandlerTest {
         taskModifyReceiver = mock(TaskModifyReceiver.class);
         podEventHandler = new PodEventHandler(taskLogK8sCollector, taskModifyReceiver, hotJobHolder);
         v1Pod = new V1Pod()
-                .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")))
+                .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")).name("3-xxx"))
                 .status(new V1PodStatus()
                         .containerStatuses(List.of(
                                 new V1ContainerStatus().state(
@@ -110,5 +112,14 @@ public class PodEventHandlerTest {
                 .status(TaskStatus.PREPARING)
                 .build();
         verify(taskModifyReceiver, times(1)).receive(List.of(expect));
+    }
+
+    @Test
+    public void testTerminating() {
+        v1Pod.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
+        v1Pod.getStatus().setPhase("Running");
+        podEventHandler.onUpdate(null, v1Pod);
+        verify(taskLogK8sCollector, never()).collect(any());
+        verify(taskModifyReceiver, never()).receive(any());
     }
 }
