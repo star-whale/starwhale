@@ -190,7 +190,7 @@ const ProjectCard = ({ project, onEdit, onRefresh }: IProjectCardProps) => {
         <div className={styles.projectCard}>
             <div className={styles.row}>
                 <div className={styles.name}>
-                    <TextLink className={styles.text} to={`/projects/${project.id}/evaluations`}>
+                    <TextLink className={styles.text} to={`/projects/${project.id}/jobs`}>
                         {[project.owner?.name, project.name].join('/')}
                     </TextLink>
                 </div>
