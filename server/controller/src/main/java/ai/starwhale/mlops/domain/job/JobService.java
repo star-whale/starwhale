@@ -207,7 +207,7 @@ public class JobService {
             if (!StringUtils.hasText(runtimeVersionUrl)) {
                 throw new SwValidationException(ValidSubject.RUNTIME, "no runtime or built-in runtime");
             }
-            runtimeVersion = runtimeService.findBuiltInRuntimeVersion(project.getId(), runtimeVersionUrl);
+            runtimeVersion = runtimeService.findBuiltInRuntimeVersion(model.getProjectId(), runtimeVersionUrl);
         }
         var runtime = runtimeService.findRuntime(runtimeVersion.getRuntimeId());
 

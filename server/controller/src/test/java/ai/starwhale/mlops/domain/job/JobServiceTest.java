@@ -293,7 +293,7 @@ public class JobServiceTest {
         given(modelService.findModelVersion(same("3")))
                 .willReturn(ModelVersion.builder().id(3L).modelId(3L).name("q1w2e3r4t5y6").jobs(fullJobSpec).build());
         given(modelService.findModel(same(3L)))
-                .willReturn(Model.builder().id(3L).name("test-model").build());
+                .willReturn(Model.builder().id(3L).projectId(10L).name("test-model").build());
         given(storagePathCoordinator.allocateResultMetricsPath("uuid1"))
                 .willReturn("out");
         given(jobDao.addJob(any(JobFlattenEntity.class)))
@@ -311,6 +311,7 @@ public class JobServiceTest {
         assertThrows(StarwhaleApiException.class, () -> service.createJob("1", "3", "1", "2",
                 "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L));
 
+        // use built-in runtime(but no built-in)
         assertThrows(SwValidationException.class, () -> service.createJob("1", "3", "1", "",
                 "", "1", "h", "s", JobType.EVALUATION, DevWay.VS_CODE, false, "", 1L));
 
@@ -325,6 +326,24 @@ public class JobServiceTest {
         assertThat(res, is(1L));
         verify(jobDao).addJob(argThat(jobFlattenEntity -> jobFlattenEntity.isDevMode()
                 && jobFlattenEntity.getDevWay() == DevWay.VS_CODE && jobFlattenEntity.getDevPassword().equals("")));
+
+        // use built-in runtime(but no built-in)
+        var builtInRuntime = "built-in-rt";
+        given(modelService.findModelVersion(same("3"))).willReturn(
+                ModelVersion.builder()
+                        .id(3L)
+                        .modelId(3L)
+                        .name("q1w2e3r4t5y6")
+                        .builtInRuntime(builtInRuntime)
+                        .jobs(fullJobSpec)
+                        .build()
+        );
+        given(runtimeService.findBuiltInRuntimeVersion(10L, builtInRuntime))
+                .willReturn(RuntimeVersion.builder().id(2L).runtimeId(2L).build());
+        res = service.createJob("1", "3", "1", "",
+                "", "1", "", overviewJobSpec, JobType.FINE_TUNE, DevWay.VS_CODE, true, "", 1L);
+        assertThat(res, is(1L));
+        verify(runtimeService).findBuiltInRuntimeVersion(eq(10L), eq(builtInRuntime));
     }
 
     @Test
