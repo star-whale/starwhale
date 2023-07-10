@@ -16,7 +16,7 @@ import DatasetOverviewLayout from '@/pages/Dataset/DatasetOverviewLayout'
 import JobNewCard from '@/pages/Project/JobNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
-import JobResults from '@/pages/Job/JobResults'
+import JobWidgetResults from '@/pages/Job/JobWidgetResults'
 import JobOverviewLayout from '@/pages/Job/JobOverviewLayout'
 import SettingsOverviewLayout from '@/pages/Settings/SettingsOverviewLayout'
 import SettingAgentListCard from '@/pages/Settings/SettingAgentListCard'
@@ -168,7 +168,7 @@ const Routes = () => {
                                         <Route
                                             exact
                                             path='/projects/:projectId/jobs/:jobId/results'
-                                            component={JobResults}
+                                            component={JobWidgetResults}
                                         />
                                         <Redirect
                                             from='/projects/:projectId/jobs/:jobId'

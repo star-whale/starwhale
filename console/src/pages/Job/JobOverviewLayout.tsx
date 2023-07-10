@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import IconFont from '@starwhale/ui/IconFont'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -49,10 +48,13 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
+                title: t('Results'),
+                path: `/projects/${projectId}/jobs/${jobId}/results`,
+            },
+            {
                 title: t('Tasks'),
                 path: `/projects/${projectId}/jobs/${jobId}/tasks`,
                 pattern: '/\\/tasks\\/?',
-                icon: <IconFont type='tasks' />,
             },
         ]
         return items
