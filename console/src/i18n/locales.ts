@@ -8,6 +8,18 @@ const basic = {
         en: 'Core',
         zh: '核',
     },
+    'resource.price.unit.hour': {
+        en: 'per hour',
+        zh: '小时',
+    },
+    'resource.price.unit.minute': {
+        en: 'per minute',
+        zh: '分钟',
+    },
+    'resource.price.unit.second': {
+        en: 'per second',
+        zh: '秒',
+    },
     'remove.yes': {
         en: 'Yes',
         zh: '是',
@@ -312,6 +324,18 @@ const job = {
     'job.debug.notice': {
         en: 'Debug mode is on, please remember the debug password for later debugging. You can also change it to your own password.',
         zh: '调试模式已开启，请记住您的调试密码，以便后续调试。您也可以修改为自己的密码。',
+    },
+    'job.autorelease.notice': {
+        en: 'Auto release is on, to prevent unnecessary cost, the service will be terminated automatically under the release time condition.',
+        zh: '自动释放已开启，为了预防多余的费用支出，服务将在到达释放时间 后自动终止。',
+    },
+    'job.autorelease.toggle': {
+        en: 'Auto Release',
+        zh: '自动释放',
+    },
+    'job.autorelease.time': {
+        en: 'Auto Release Time',
+        zh: '自动释放时间',
     },
     'job.task.executor': {
         en: 'Execute Cmd In Task Container',
