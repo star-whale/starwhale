@@ -13,7 +13,7 @@ test.beforeAll(async ({ admin }) => {
 })
 
 test.describe('Login', () => {
-    test('default route should be projects', async ({ }) => {
+    test('default route should be projects', async ({}) => {
         await page.waitForURL(/\/projects/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/projects/)
     })
@@ -86,8 +86,8 @@ test.describe('Evaluation', () => {
 
             const isChecked = await p.locator(SELECTOR.headerFirst).locator('label input').isChecked()
             if (isChecked) await p.locator(SELECTOR.headerFirst).locator('label').click()
-            await p.locator(SELECTOR.row1column1).locator('input').check()
-            await p.locator(SELECTOR.row2column1).locator('input').check()
+            await p.locator(SELECTOR.row1column1).locator('label').check()
+            await p.locator(SELECTOR.row2column1).locator('label').check()
             await expect(page.getByText(/Compare/)).toBeVisible()
             await expect(await page.locator('.cell--neq').count()).toBeGreaterThan(0)
             await p.locator(SELECTOR.row1column1).locator('label').uncheck()
