@@ -154,7 +154,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'stepSpecOverWrites',
                         'modelVersionHandler',
                         'modelVersionUrl',
-                        'isAutoReleaseTime',
+                        'isTimeToLiveInSec',
                     ]),
                     runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
                     modelVersionUrl: values_.modelVersionUrl,
@@ -456,15 +456,15 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 </div>
             </WithCurrentAuth>
             {/* auto release time config */}
-            {form.getFieldValue('isAutoReleaseTime') && (
+            {form.getFieldValue('isTimeToLiveInSec') && (
                 <p style={{ marginBottom: '10px' }}>{t('job.autorelease.notice')}</p>
             )}
             <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
-                <FormItem label={t('job.autorelease.toggle')} name='isAutoReleaseTime'>
+                <FormItem label={t('job.autorelease.toggle')} name='isTimeToLiveInSec'>
                     <Toggle />
                 </FormItem>
-                {form.getFieldValue('isAutoReleaseTime') && (
-                    <FormItem label={t('job.autorelease.time')} name='autoReleaseTime' initialValue={60 * 60}>
+                {form.getFieldValue('isTimeToLiveInSec') && (
+                    <FormItem label={t('job.autorelease.time')} name='timeToLiveInSec' initialValue={60 * 60}>
                         <NumberInput endEnhancer={() => t('resource.price.unit.second')} />
                     </FormItem>
                 )}

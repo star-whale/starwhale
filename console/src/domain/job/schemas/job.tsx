@@ -40,8 +40,8 @@ export interface IJobSchema extends IResourceSchema {
     createdTime?: number
     pinnedTime?: number
     exposedLinks?: string[]
-    isAutoReleaseTime?: boolean
-    autoReleaseTime?: number
+    isTimeToLiveInSec?: boolean
+    timeToLiveInSec?: number
 }
 
 export type IJobDetailSchema = IJobSchema
@@ -54,8 +54,8 @@ export interface ICreateJobSchema {
     stepSpecOverWrites?: string
     devMode?: boolean
     devPassword?: string
-    isAutoReleaseTime?: boolean
-    autoReleaseTime?: number
+    isTimeToLiveInSec?: boolean
+    timeToLiveInSec?: number
 }
 
 export interface IJobFormSchema extends IJobSchema {
@@ -80,8 +80,8 @@ export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOv
     modelVersionHandler: string
     devMode: boolean
     devPassword: string
-    isAutoReleaseTime?: boolean
-    autoReleaseTime?: number
+    isTimeToLiveInSec?: boolean
+    timeToLiveInSec?: number
 }
 
 export type IJobResultSchema = any
