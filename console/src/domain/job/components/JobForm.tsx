@@ -18,7 +18,7 @@ import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector
 import RuntimeTreeSelector from '@runtime/components/RuntimeTreeSelector'
 import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
-import Input from '@starwhale/ui/Input'
+import Input, { NumberInput } from '@starwhale/ui/Input'
 import generatePassword from '@/utils/passwordGenerator'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { IconFont } from '@starwhale/ui'
@@ -154,6 +154,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'stepSpecOverWrites',
                         'modelVersionHandler',
                         'modelVersionUrl',
+                        'isTimeToLiveInSec',
                     ]),
                     runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
                     modelVersionUrl: values_.modelVersionUrl,
@@ -288,7 +289,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     <Toggle />
                 </FormItem>
             </div>
-            <div style={{ paddingBottom: '16px' }}>
+            <div style={{ paddingBottom: '0px' }}>
                 {stepSource &&
                     stepSource?.length > 0 &&
                     !rawType &&
@@ -426,11 +427,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </FormItem>
                 )}
             </div>
+            <Divider orientation='top'>{t('job.advanced')}</Divider>
             {/* debug config */}
             <WithCurrentAuth id='job-dev'>
-                <Divider orientation='top'>{t('job.advanced')}</Divider>
                 {form.getFieldValue('devMode') && <p style={{ marginBottom: '10px' }}>{t('job.debug.notice')}</p>}
-                <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
+                <div style={{ width: '660px', marginBottom: '20px', display: 'flex', gap: '40px' }}>
                     <FormItem label={t('job.debug.mode')} name='devMode'>
                         <Toggle />
                     </FormItem>
@@ -454,6 +455,20 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     )}
                 </div>
             </WithCurrentAuth>
+            {/* auto release time config */}
+            {form.getFieldValue('isTimeToLiveInSec') && (
+                <p style={{ marginBottom: '10px' }}>{t('job.autorelease.notice')}</p>
+            )}
+            <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
+                <FormItem label={t('job.autorelease.toggle')} name='isTimeToLiveInSec'>
+                    <Toggle />
+                </FormItem>
+                {form.getFieldValue('isTimeToLiveInSec') && (
+                    <FormItem label={t('job.autorelease.time')} name='timeToLiveInSec' initialValue={60 * 60}>
+                        <NumberInput endEnhancer={() => t('resource.price.unit.second')} />
+                    </FormItem>
+                )}
+            </div>
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <Button

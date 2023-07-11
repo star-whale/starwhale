@@ -65,7 +65,7 @@ const useStyles = createUseStyles({
     },
     top: {
         'position': 'relative',
-        'marginTop': '30px',
+        'marginTop': '40px',
         'marginBottom': '20px',
         '&:before': {
             width: '0%',
@@ -76,16 +76,16 @@ const useStyles = createUseStyles({
         },
         '& $innerText': {
             position: 'absolute',
-            top: '-24px',
+            top: '-25px',
             left: 0,
             paddingLeft: '0px',
         },
     },
     innerText: (props: IThemedStyleProps) => ({
         flexShrink: 0,
-        fontWeight: '500',
+        fontWeight: '600',
         padding: '0 1em',
-        color: `${props.theme.brandFontNote} !important`,
+        color: `${props.theme.brandFontNote}`,
     }),
 })
 
