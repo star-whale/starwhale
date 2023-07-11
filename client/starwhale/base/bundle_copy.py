@@ -324,10 +324,6 @@ class BundleCopy(CloudRequestMixed):
         file_path: Path = (
             self._get_versioned_resource_path(self.src_uri) / packaged_runtime["path"]
         )
-        task_id = progress.add_task(
-            f":arrow_up: uploading the built-in runtime {file_path.name}",
-            total=file_path.stat().st_size,
-        )
 
         def _check_built_in_runtime_existed(rc: Resource) -> bool:
             ok, _ = self.do_http_request_simple_ret(
@@ -339,8 +335,12 @@ class BundleCopy(CloudRequestMixed):
             return ok
 
         if _check_built_in_runtime_existed(dest_uri):
-            console.print("built-in runtime was already existed, skip copy")
+            console.print("built-in runtime was already existed, skip copy it")
         else:
+            task_id = progress.add_task(
+                f":arrow_up: uploading the built-in runtime {file_path.name}",
+                total=file_path.stat().st_size,
+            )
             self.do_multipart_upload_file(
                 url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
                 file_path=file_path,
@@ -356,5 +356,5 @@ class BundleCopy(CloudRequestMixed):
                 progress=progress,
                 task_id=task_id,
             )
-        progress.update(task_id, completed=file_path.stat().st_size)
+            progress.update(task_id, completed=file_path.stat().st_size)
         return rt_version
