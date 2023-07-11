@@ -593,61 +593,73 @@ class TestBundleCopy(BaseTestCase):
                 "src_uri": f"local/project/self/mnist/version/{version}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"local/project/self/mnist/version/{version}",
                 "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"local/project/self/model/mnist/version/{version}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"local/project/self/model/mnist/version/{version}",
                 "dest_uri": "pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": "mnist",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": "mnist",
                 "dest_uri": "http://1.1.1.1:8182/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"mnist/version/{version}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"mnist/version/{version[:5]}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": f"mnist/{version[:5]}",
                 "dest_uri": "cloud://pre-bare/project/mnist",
                 "dest_model": "mnist",
+                "dest_builtin_exist": True,
             },
             {
                 "src_uri": "mnist/v1",
                 "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias",
                 "dest_model": "mnist-new-alias",
+                "dest_builtin_exist": False,
             },
             {
                 "src_uri": "mnist/v1",
                 "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/version/foo",
                 "dest_model": "mnist-new-alias",
+                "dest_builtin_exist": False,
             },
             {
                 "src_uri": "mnist/v1",
                 "dest_uri": "cloud://pre-bare/project/mnist/mnist-new-alias/foo",
                 "dest_model": "mnist-new-alias",
+                "dest_builtin_exist": False,
             },
         ]
 
@@ -657,6 +669,15 @@ class TestBundleCopy(BaseTestCase):
                 f"http://1.1.1.1:8182/api/v1/project/mnist/model/{case['dest_model']}/version/{version}",
                 json={"message": "not found"},
                 status_code=HTTPStatus.NOT_FOUND,
+            )
+
+            rt_upload_head_request = rm.request(
+                HTTPMethod.HEAD,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/runtime/{SW_BUILT_IN}/version/{built_in_version}",
+                json={},
+                status_code=HTTPStatus.OK
+                if case["dest_builtin_exist"]
+                else HTTPStatus.NOT_FOUND,
             )
 
             rt_upload_request = rm.request(
@@ -671,7 +692,9 @@ class TestBundleCopy(BaseTestCase):
                 typ=ResourceType.model,
             ).do()
             assert head_request.call_count == 1
-            assert rt_upload_request.call_count == 1
+            assert rt_upload_head_request.call_count == 1
+            expect_upload_count = 0 if case["dest_builtin_exist"] else 1
+            assert rt_upload_request.call_count == expect_upload_count
 
         head_request = rm.request(
             HTTPMethod.HEAD,

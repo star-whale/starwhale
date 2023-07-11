@@ -468,7 +468,7 @@ public class RuntimeService {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.RUNTIME,
                             "Runtime version duplicate" + uploadRequest.version()),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.CONFLICT);
         } else if (entityExists && uploadRequest.force()) {
             jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
                     .parallelStream().forEach(job -> {

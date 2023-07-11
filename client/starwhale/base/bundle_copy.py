@@ -321,26 +321,40 @@ class BundleCopy(CloudRequestMixed):
             typ=ResourceType.runtime,
             refine=False,
         )
-
         file_path: Path = (
             self._get_versioned_resource_path(self.src_uri) / packaged_runtime["path"]
         )
-        task_id = progress.add_task(
-            f":arrow_up: uploading the built-in runtime {file_path.name}",
-            total=file_path.stat().st_size,
-        )
-        self.do_multipart_upload_file(
-            url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
-            file_path=file_path,
-            instance=dest_uri.instance,
-            fields={
-                _query_param_map[ResourceType.runtime]: f"{SW_BUILT_IN}:{rt_version}",
-                "project": dest_uri.project.name,
-                "force": "1" if self.force else "0",
-            },
-            use_raise=True,
-            progress=progress,
-            task_id=task_id,
-        )
-        progress.update(task_id, completed=file_path.stat().st_size)
+
+        def _check_built_in_runtime_existed(rc: Resource) -> bool:
+            ok, _ = self.do_http_request_simple_ret(
+                path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{rc.version}",
+                method=HTTPMethod.HEAD,
+                instance=rc.instance,
+                ignore_status_codes=[HTTPStatus.NOT_FOUND],
+            )
+            return ok
+
+        if _check_built_in_runtime_existed(dest_uri):
+            console.print("built-in runtime was already existed, skip copy it")
+        else:
+            task_id = progress.add_task(
+                f":arrow_up: uploading the built-in runtime {file_path.name}",
+                total=file_path.stat().st_size,
+            )
+            self.do_multipart_upload_file(
+                url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
+                file_path=file_path,
+                instance=dest_uri.instance,
+                fields={
+                    _query_param_map[
+                        ResourceType.runtime
+                    ]: f"{SW_BUILT_IN}:{rt_version}",
+                    "project": dest_uri.project.name,
+                    "force": "1" if self.force else "0",
+                },
+                use_raise=True,
+                progress=progress,
+                task_id=task_id,
+            )
+            progress.update(task_id, completed=file_path.stat().st_size)
         return rt_version
