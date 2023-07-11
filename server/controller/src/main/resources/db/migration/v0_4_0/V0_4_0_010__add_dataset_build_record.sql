@@ -18,14 +18,12 @@
 create table if not exists dataset_build_record
 (
     id            bigint auto_increment primary key  not null,
-    uuid          varchar(64)                        not null,
     dataset_id    bigint comment 'existence of dataset, it is a new dataset if it is null',
     dataset_name  varchar(255)                       not null comment 'should check dataset name when dataset id is null',
     type          varchar(64)                        not null comment 'image, video, audio, others(json, csv, txt ...etc)',
-    status        varchar(32)                        not null comment 'uploading, upload_fail, upload_success, building, build_fail, build_success',
+    status        varchar(32)                        not null comment 'created, building, failed, success',
     storage_path  varchar(255)                       not null,
-    filter        varchar(255)                       not null comment 'reserve for future use',
+    format        varchar(255)                       not null comment 'reserve for future use',
     created_time  datetime default CURRENT_TIMESTAMP not null,
-    modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    unique index uniq_uuid (uuid)
+    modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP
 );
