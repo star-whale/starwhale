@@ -338,7 +338,9 @@ class BundleCopy(CloudRequestMixed):
             )
             return ok
 
-        if not _check_built_in_runtime_existed(dest_uri):
+        if _check_built_in_runtime_existed(dest_uri):
+            console.print("built-in runtime was already existed, skip copy")
+        else:
             self.do_multipart_upload_file(
                 url_path=f"/project/{dest_uri.project.name}/{ResourceType.runtime.value}/{SW_BUILT_IN}/version/{rt_version}/file",
                 file_path=file_path,
@@ -354,7 +356,5 @@ class BundleCopy(CloudRequestMixed):
                 progress=progress,
                 task_id=task_id,
             )
-        else:
-            console.print("built-in runtime was already existed, skip copy")
         progress.update(task_id, completed=file_path.stat().st_size)
         return rt_version
