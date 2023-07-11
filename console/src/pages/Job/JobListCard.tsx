@@ -59,212 +59,200 @@ export default function JobListCard() {
     )
 
     return (
-        <>
-            <Card
-                title={t('Jobs')}
-                extra={
-                    <WithCurrentAuth id='evaluation.create'>
-                        <Button
-                            onClick={() => {
-                                history.push('new_job')
-                            }}
-                            isLoading={jobsInfo.isLoading}
-                        >
-                            {t('create')}
-                        </Button>
-                    </WithCurrentAuth>
-                }
-            >
-                <Table
-                    isLoading={jobsInfo.isLoading}
-                    columns={[
-                        <div key='jobid' style={{ paddingLeft: '12px' }}>
-                            {t('Job ID')}
-                        </div>,
-                        t('Resource Pool'),
-                        t('sth name', [t('Model')]),
-                        t('Version'),
-                        t('Owner'),
-                        t('Created'),
-                        t('Elapsed Time'),
-                        t('End Time'),
-                        t('Status'),
-                        t('Action'),
-                    ]}
-                    data={
-                        jobsInfo.data?.list.map((job) => {
-                            const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-                                [JobStatusType.CREATED]: (
-                                    <>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                        <WithCurrentAuth id='job-pause'>
-                                            <Button
-                                                kind='tertiary'
-                                                onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                            >
-                                                {t('Pause')}
-                                            </Button>
-                                        </WithCurrentAuth>
-                                    </>
-                                ),
-                                [JobStatusType.RUNNING]: (
-                                    <>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                        <WithCurrentAuth id='job-pause'>
-                                            <Button
-                                                kind='tertiary'
-                                                onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                            >
-                                                {t('Pause')}
-                                            </Button>
-                                        </WithCurrentAuth>
-                                    </>
-                                ),
-                                [JobStatusType.PAUSED]: (
-                                    <>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.CANCEL)}
-                                        >
-                                            {t('Cancel')}
-                                        </Button>
-                                        <WithCurrentAuth id='job-resume'>
-                                            <Button
-                                                kind='tertiary'
-                                                onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                            >
-                                                {t('Resume')}
-                                            </Button>
-                                        </WithCurrentAuth>
-                                    </>
-                                ),
-                                [JobStatusType.FAIL]: (
-                                    <>
-                                        <WithCurrentAuth id='job-resume'>
-                                            <Button
-                                                kind='tertiary'
-                                                onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                            >
-                                                {t('Resume')}
-                                            </Button>
-                                        </WithCurrentAuth>
-                                    </>
-                                ),
-                                [JobStatusType.SUCCESS]: (
-                                    <Button
-                                        kind='tertiary'
-                                        onClick={() => history.push(`/projects/${projectId}/jobs/${job.id}/tasks`)}
-                                    >
-                                        {t('View Tasks')}
+        <Card
+            title={t('Jobs')}
+            extra={
+                <WithCurrentAuth id='evaluation.create'>
+                    <Button
+                        onClick={() => {
+                            history.push('new_job')
+                        }}
+                        isLoading={jobsInfo.isLoading}
+                    >
+                        {t('create')}
+                    </Button>
+                </WithCurrentAuth>
+            }
+            style={{
+                marginBottom: 0,
+            }}
+        >
+            <Table
+                isLoading={jobsInfo.isLoading}
+                columns={[
+                    <div key='jobid' style={{ paddingLeft: '12px' }}>
+                        {t('Job ID')}
+                    </div>,
+                    t('Resource Pool'),
+                    t('sth name', [t('Model')]),
+                    t('Version'),
+                    t('Owner'),
+                    t('Created'),
+                    t('Elapsed Time'),
+                    t('End Time'),
+                    t('Status'),
+                    t('Action'),
+                ]}
+                data={
+                    jobsInfo.data?.list.map((job) => {
+                        const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
+                            [JobStatusType.CREATED]: (
+                                <>
+                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        {t('Cancel')}
                                     </Button>
-                                ),
-                            }
+                                    <WithCurrentAuth id='job-pause'>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                        >
+                                            {t('Pause')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                </>
+                            ),
+                            [JobStatusType.RUNNING]: (
+                                <>
+                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        {t('Cancel')}
+                                    </Button>
+                                    <WithCurrentAuth id='job-pause'>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
+                                        >
+                                            {t('Pause')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                </>
+                            ),
+                            [JobStatusType.PAUSED]: (
+                                <>
+                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                        {t('Cancel')}
+                                    </Button>
+                                    <WithCurrentAuth id='job-resume'>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                        >
+                                            {t('Resume')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                </>
+                            ),
+                            [JobStatusType.FAIL]: (
+                                <>
+                                    <WithCurrentAuth id='job-resume'>
+                                        <Button
+                                            kind='tertiary'
+                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
+                                        >
+                                            {t('Resume')}
+                                        </Button>
+                                    </WithCurrentAuth>
+                                </>
+                            ),
+                            [JobStatusType.SUCCESS]: (
+                                <Button
+                                    kind='tertiary'
+                                    onClick={() => history.push(`/projects/${projectId}/jobs/${job.id}/tasks`)}
+                                >
+                                    {t('View Tasks')}
+                                </Button>
+                            ),
+                        }
 
-                            const pinBtnStyle: ConfigurationOverride = {
-                                'position': 'absolute',
-                                'top': 0,
-                                'bottom': 0,
-                                'left': '-8px',
-                                'display': job.pinnedTime ? 'block' : 'none',
-                                '& .iconfont': {
-                                    color: '#666',
-                                },
+                        const pinBtnStyle: ConfigurationOverride = {
+                            'position': 'absolute',
+                            'top': 0,
+                            'bottom': 0,
+                            'left': '-8px',
+                            'display': job.pinnedTime ? 'block' : 'none',
+                            '& .iconfont': {
+                                color: '#666',
+                            },
+                        }
+                        if (canPinOrUnpin) {
+                            pinBtnStyle[':hover .iconfont'] = {
+                                color: '#FFB23D !important',
                             }
-                            if (canPinOrUnpin) {
-                                pinBtnStyle[':hover .iconfont'] = {
-                                    color: '#FFB23D !important',
-                                }
-                                pinBtnStyle[':active .iconfont'] = {
-                                    color: '#F29200  !important',
-                                }
+                            pinBtnStyle[':active .iconfont'] = {
+                                color: '#F29200  !important',
                             }
+                        }
 
-                            return [
-                                <div key='id' style={{ gap: '8px', position: 'relative', paddingLeft: '12px' }}>
-                                    <Button
-                                        key='pin'
-                                        as='link'
-                                        onClick={() => handlePin(job.id, !job.pinnedTime)}
-                                        overrides={{
-                                            BaseButton: {
-                                                props: {
-                                                    className: 'pin-button',
-                                                },
-                                                style: pinBtnStyle,
+                        return [
+                            <div key='id' style={{ gap: '8px', position: 'relative', paddingLeft: '12px' }}>
+                                <Button
+                                    key='pin'
+                                    as='link'
+                                    onClick={() => handlePin(job.id, !job.pinnedTime)}
+                                    overrides={{
+                                        BaseButton: {
+                                            props: {
+                                                className: 'pin-button',
                                             },
-                                        }}
-                                    >
-                                        {(canPinOrUnpin || job.pinnedTime) && (
-                                            <IconTooltip
-                                                content={
-                                                    // eslint-disable-next-line no-nested-ternary
-                                                    canPinOrUnpin
-                                                        ? job.pinnedTime
-                                                            ? t('job.unpin')
-                                                            : t('job.pin')
-                                                        : null
-                                                }
-                                                icon='top'
-                                            />
-                                        )}
-                                    </Button>
-                                    <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
-                                        <MonoText>{job.id}</MonoText>
-                                    </TextLink>
-                                </div>,
-                                job.resourcePool,
-                                job.modelName,
-                                <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
-                                job.owner && <User user={job.owner} />,
-                                job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
-                                typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
-                                job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
-                                <JobStatus key='jobStatus' status={job.jobStatus as any} />,
-                                <div key='action' style={{ display: 'flex', gap: '8px' }}>
-                                    {actions[job.jobStatus] ?? ''}
-                                    {job.exposedLinks?.map((link) => {
-                                        return (
-                                            <a
-                                                key={link}
-                                                target='_blank'
-                                                href={link}
-                                                rel='noreferrer'
-                                                title={t('job.expose.title')}
-                                            >
-                                                <IconFont type='global' size={16} />
-                                            </a>
-                                        )
-                                    })}
-                                </div>,
-                            ]
-                        }) ?? []
-                    }
-                    paginationProps={{
-                        start: jobsInfo.data?.pageNum,
-                        count: jobsInfo.data?.pageSize,
-                        total: jobsInfo.data?.total,
-                        afterPageChange: () => {
-                            jobsInfo.refetch()
-                        },
-                    }}
-                />
-                <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
-                    <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
-                    <ModalBody>
-                        <JobForm onSubmit={handleCreateJob} />
-                    </ModalBody>
-                </Modal>
-            </Card>
-        </>
+                                            style: pinBtnStyle,
+                                        },
+                                    }}
+                                >
+                                    {(canPinOrUnpin || job.pinnedTime) && (
+                                        <IconTooltip
+                                            content={
+                                                // eslint-disable-next-line no-nested-ternary
+                                                canPinOrUnpin ? (job.pinnedTime ? t('job.unpin') : t('job.pin')) : null
+                                            }
+                                            icon='top'
+                                        />
+                                    )}
+                                </Button>
+                                <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
+                                    <MonoText>{job.id}</MonoText>
+                                </TextLink>
+                            </div>,
+                            job.resourcePool,
+                            job.modelName,
+                            <MonoText key='modelVersion'>{job.modelVersion}</MonoText>,
+                            job.owner && <User user={job.owner} />,
+                            job?.createdTime && job?.createdTime > 0 && formatTimestampDateTime(job?.createdTime),
+                            typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
+                            job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
+                            <JobStatus key='jobStatus' status={job.jobStatus as any} />,
+                            <div key='action' style={{ display: 'flex', gap: '8px' }}>
+                                {actions[job.jobStatus] ?? ''}
+                                {job.exposedLinks?.map((link) => {
+                                    return (
+                                        <a
+                                            key={link}
+                                            target='_blank'
+                                            href={link}
+                                            rel='noreferrer'
+                                            title={t('job.expose.title')}
+                                        >
+                                            <IconFont type='global' size={16} />
+                                        </a>
+                                    )
+                                })}
+                            </div>,
+                        ]
+                    }) ?? []
+                }
+                paginationProps={{
+                    start: jobsInfo.data?.pageNum,
+                    count: jobsInfo.data?.pageSize,
+                    total: jobsInfo.data?.total,
+                    afterPageChange: () => {
+                        jobsInfo.refetch()
+                    },
+                }}
+            />
+            <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
+                <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
+                <ModalBody>
+                    <JobForm onSubmit={handleCreateJob} />
+                </ModalBody>
+            </Modal>
+        </Card>
     )
 }

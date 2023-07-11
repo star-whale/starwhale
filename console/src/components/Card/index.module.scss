@@ -7,18 +7,21 @@
     font-variant: tabular-nums;
     line-height: 1.5715;
     list-style: none;
-    -webkit-font-feature-settings: "tnum","tnum";
-    font-feature-settings: "tnum","tnum";
+    -webkit-font-feature-settings: 'tnum', 'tnum';
+    font-feature-settings: 'tnum', 'tnum';
     position: relative;
     border-radius: 2px;
-    -webkit-transition: transform 270ms cubic-bezier(0.1, 0.9, 0.2, 1),opacity 300ms cubic-bezier(0.1, 0.9, 0.2, 1) 0.05s,-webkit-transform 300ms cubic-bezier(0.1, 0.9, 0.2, 1);
-    transition: transform 270ms cubic-bezier(0.1, 0.9, 0.2, 1),opacity 300ms cubic-bezier(0.1, 0.9, 0.2, 1) 0.05s,-webkit-transform 300ms cubic-bezier(0.1, 0.9, 0.2, 1);
-    transform: translate3d(0,48px,0);
+    -webkit-transition: transform 270ms cubic-bezier(0.1, 0.9, 0.2, 1),
+        opacity 300ms cubic-bezier(0.1, 0.9, 0.2, 1) 0.05s, -webkit-transform 300ms cubic-bezier(0.1, 0.9, 0.2, 1);
+    transition: transform 270ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 300ms cubic-bezier(0.1, 0.9, 0.2, 1) 0.05s,
+        -webkit-transform 300ms cubic-bezier(0.1, 0.9, 0.2, 1);
+    transform: translate3d(0, 48px, 0);
     transition-delay: 0.4s;
     margin-bottom: 10px;
     display: flex;
     border-radius: 8px;
     flex-direction: column;
+    overflow: hidden;
 
     .card {
         box-shadow: none;
@@ -29,7 +32,7 @@
     .card:nth-child(#{$i}) {
         transition-delay: 0.05s * ($i - 1);
     }
-  }
+}
 
 .cardHeadWrapper {
     // padding: 0 18px;
@@ -62,6 +65,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: auto;
 }
 
 .cardHeadTail {
