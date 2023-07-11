@@ -64,32 +64,38 @@ export default function JobListCard() {
     )
 
     const CancelButton = ({ jobId }: IActionButtonProps) => (
-        <ConfirmButton
-            kind='tertiary'
-            onClick={() => handleAction(jobId, JobActionType.CANCEL)}
-            title={t('Cancel.Confirm')}
-        >
-            {t('Cancel')}
-        </ConfirmButton>
+        <WithCurrentAuth id='job.cancel'>
+            <ConfirmButton
+                kind='tertiary'
+                onClick={() => handleAction(jobId, JobActionType.CANCEL)}
+                title={t('Cancel.Confirm')}
+            >
+                {t('Cancel')}
+            </ConfirmButton>
+        </WithCurrentAuth>
     )
 
     const PauseButton = ({ jobId }: IActionButtonProps) => (
         <WithCurrentAuth id='job-pause'>
-            <ConfirmButton
-                kind='tertiary'
-                onClick={() => handleAction(jobId, JobActionType.PAUSE)}
-                title={t('Pause.Confirm')}
-            >
-                {t('Pause')}
-            </ConfirmButton>
+            <WithCurrentAuth id='job.pause'>
+                <ConfirmButton
+                    kind='tertiary'
+                    onClick={() => handleAction(jobId, JobActionType.PAUSE)}
+                    title={t('Pause.Confirm')}
+                >
+                    {t('Pause')}
+                </ConfirmButton>
+            </WithCurrentAuth>
         </WithCurrentAuth>
     )
 
     const ResumeButton = ({ jobId }: IActionButtonProps) => (
         <WithCurrentAuth id='job-resume'>
-            <Button kind='tertiary' onClick={() => handleAction(jobId, JobActionType.RESUME)}>
-                {t('Resume')}
-            </Button>
+            <WithCurrentAuth id='job.resume'>
+                <Button kind='tertiary' onClick={() => handleAction(jobId, JobActionType.RESUME)}>
+                    {t('Resume')}
+                </Button>
+            </WithCurrentAuth>
         </WithCurrentAuth>
     )
 

@@ -14,6 +14,10 @@ export const Privileges = {
     'evaluation.panel.save': true,
     'runtime.image.build': true,
     'task.execute': true,
+    'job.pinOrUnpin': true,
+    'job.cancel': true,
+    'job.pause': true,
+    'job.resume': true,
     // menu
     'project.menu.trash': true,
     // global
@@ -21,7 +25,6 @@ export const Privileges = {
     'job-pause': true,
     'job-resume': true,
     'job-dev': true,
-    'job.pinOrUnpin': true,
 }
 
 export type IPrivileges = typeof Privileges
