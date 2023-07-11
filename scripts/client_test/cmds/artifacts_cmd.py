@@ -117,7 +117,7 @@ class Model(BaseArtifact):
         check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)
 
-    def copy(self, src_uri: str, target_project: str, force: bool) -> None:
+    def copy(self, src_uri: str, target_project: str, force: bool = False) -> None:
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]
         if force:
             _args.append("--force")
@@ -167,6 +167,13 @@ class Dataset(BaseArtifact):
             _args.append("--overwrite")
         check_invoke(_args)
 
+    def rm(
+        self,
+        src_uri: str,
+    ) -> None:
+        _args = [CLI, "-vvvv", self.name, "rm", src_uri]
+        check_invoke(_args)
+
 
 class Runtime(BaseArtifact):
     def __init__(self) -> None:
@@ -195,7 +202,7 @@ class Runtime(BaseArtifact):
         self,
         src_uri: str,
         target_project: str,
-        force: bool,
+        force: bool = False,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
     ) -> None:
         _args = [CLI, "-vvv", self.name, "copy", src_uri, target_project]

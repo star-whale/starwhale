@@ -8,7 +8,7 @@ dependencies:
       - numpy
   - requirements-sw-lock.txt
   - commands:
-      - apt-get install libgl1
+      - apt-get install -y libgl1
       - touch /tmp/runtime-command-run.flag
 environment:
   arch: noarch
