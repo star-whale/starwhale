@@ -17,9 +17,21 @@
 package ai.starwhale.mlops.domain.dataset.build.mapper;
 
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface BuildRecordMapper {
-    public int insert(BuildRecordEntity buildRecord);
+    String COLUMNS_FOR_INSERT = "dataset_id, dataset_name, type, status, storage_path, format, created_time";
+    String COLUMNS_FOR_SELECT = "id, " + COLUMNS_FOR_INSERT;
+
+    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record WHERE id = #{id}")
+    BuildRecordEntity get(Long id);
+
+    @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
+            + "VALUES (#{datasetId}, #{datasetName}, #{type}, #{status}, #{storagePath}, #{format}, #{createdTime}")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insert(BuildRecordEntity buildRecord);
 }
