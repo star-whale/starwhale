@@ -78,6 +78,14 @@ def dataset_cmd(ctx: click.Context) -> None:
         "The json content structure should be a list[dict] or tuple[dict]."
     ),
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_repo",
+    "-hf",
+    "--huggingface",
+    help=(
+        "Build dataset from huggingface dataset, the huggingface option is a huggingface repo name"
+    ),
+)
 @optgroup.group(
     "\n  ** Build Mode Selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -137,6 +145,38 @@ def dataset_cmd(ctx: click.Context) -> None:
         "The default value is empty str, which indicates that the dict is an array contains all the items."
     ),
 )
+@optgroup.group("\n  ** Huggingface Build Source Configurations")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_subset",
+    "--subset",
+    help=(
+        "Huggingface dataset subset name. If the huggingface dataset has multiple subsets, you must specify the subset name."
+    ),
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_split",
+    "--split",
+    help=(
+        "Huggingface dataset split name. If the split name is not specified, the all splits dataset will be built."
+    ),
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_revision",
+    "--revision",
+    default="main",
+    show_default=True,
+    help=(
+        "Version of the dataset script to load. Defaults to 'main'. The option value accepts tag name, or branch name, or commit hash."
+    ),
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_cache",
+    "--cache/--no-cache",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help=("Whether to use huggingface dataset cache(download + local hf dataset)."),
+)
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -156,6 +196,11 @@ def _build(
     json_file: str,
     field_selector: str,
     mode: str,
+    hf_repo: str,
+    hf_subset: str,
+    hf_split: str,
+    hf_revision: str,
+    hf_cache: bool,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -167,10 +212,11 @@ def _build(
             You should write some python code to build the dataset.
         - handler: The handler is a python executor, it should be a python class or function. When use the handler build source, you should specify --workdir option.
             if the workdir option is emitted, swcli will use the work directory(pwd) as the workdir.
-        - image folder: The image-folder is a starwhale dataset builder designed to quickly build an image dataset with a folder of images without requiring you to write any code.
-        - audio folder: The audio-folder is a starwhale dataset builder designed to quickly build an audio dataset with a folder of audios without requiring you to write any code.
-        - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without requiring you to write any code.
-        - json file: The json-file is a starwhale dataset builder designed to quickly build a dataset with a json file without requiring you to write any code.
+        - image folder: The image-folder is a starwhale dataset builder designed to quickly build an image dataset with a folder of images without any code.
+        - audio folder: The audio-folder is a starwhale dataset builder designed to quickly build an audio dataset with a folder of audios without any code.
+        - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without any code.
+        - json file: The json-file is a starwhale dataset builder designed to quickly build a dataset with a json file without any code.
+        - huggingface dataset: The huggingface dataset is a starwhale dataset builder designed to quickly build a dataset from huggingface dataset without any code.
 
     Examples:
 
@@ -204,6 +250,12 @@ def _build(
         swcli dataset build --json-file http://example.com/example.json
         swcli dataset build --json-file /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
         swcli dataset build --name qald9 --json-file https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
+
+        \b
+        - from huggingface dataset
+        swcli dataset build --huggingface mnist
+        swcli dataset build -hf mnist --no-cache
+        swcli dataset build -hf cais/mmlu --subset anatomy --split auxiliary_train --revision 7456cfb
     """
     # TODO: add dry-run
     # TODO: add compress args
@@ -255,6 +307,20 @@ def _build(
         )
         config.do_validate()
         view.build(_workdir, config, mode=mode_type)
+    elif hf_repo:
+        _candidate_name = (f"{hf_repo}/{hf_subset or ''}").strip("/").replace("/", "-")
+        view.build_from_huggingface(
+            hf_repo,
+            name=name or _candidate_name,
+            project_uri=project,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            subset=hf_subset,
+            split=hf_split,
+            revision=hf_revision,
+            mode=mode_type,
+            cache=hf_cache,
+        )
     else:
         yaml_path = Path(dataset_yaml)
         if not yaml_path.exists():

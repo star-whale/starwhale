@@ -1848,3 +1848,253 @@ class TestTensorflow(_DatasetSDKTestBase):
         assert len(items[0][1]) == 2
         assert items[0][1]["data"][0].startswith(b"data-")
         assert len(items[0][1]["label"].tolist()) == 2
+
+
+class TestHuggingface(_DatasetSDKTestBase):
+    def test_simple_data(self) -> None:
+        import datasets as hf_datasets
+
+        from starwhale.integrations.huggingface.dataset import _transform_to_starwhale
+
+        cases = [
+            (1, hf_datasets.Value("int64"), 1),
+            (1.0, hf_datasets.Value("float64"), 1.0),
+            (b"000", hf_datasets.Value("binary"), b"000"),
+            (b"000", hf_datasets.Value("large_binary"), Binary(b"000")),
+            ("000", hf_datasets.Value("string"), "000"),
+            ("000", hf_datasets.Value("large_string"), Text("000")),
+            (1, hf_datasets.ClassLabel(num_classes=3, names=["a", "b", "c"]), 1),
+            (
+                [[1, 2], [11, 22]],
+                hf_datasets.Array2D(shape=(1, 2), dtype="int32"),
+                [[1, 2], [11, 22]],
+            ),
+            (
+                [[[1], [2]], [[11], [22]]],
+                hf_datasets.Array3D(shape=(1, 2, 1), dtype="int32"),
+                [[[1], [2]], [[11], [22]]],
+            ),
+            (
+                {"en": "the cat", "zh": "猫"},
+                hf_datasets.Translation(languages=["en", "zh"]),
+                {"en": "the cat", "zh": "猫"},
+            ),
+            (
+                {"en": "the cat", "fr": ["le chat", "la chatte"]},
+                hf_datasets.TranslationVariableLanguages(languages=["en", "fr"]),
+                {"en": "the cat", "fr": ["le chat", "la chatte"]},
+            ),
+            (1, int, 1),
+        ]
+
+        for data, feature, result in cases:
+            assert result == _transform_to_starwhale(data, feature)
+
+    def test_image(self) -> None:
+        import datasets as hf_datasets
+
+        from starwhale.integrations.huggingface.dataset import _transform_to_starwhale
+
+        img = PILImage.new(mode="RGB", size=(1, 1), color=(1, 1, 1))
+        transform_img = _transform_to_starwhale(img, hf_datasets.Image(decode=True))
+        assert isinstance(transform_img, Image)
+        assert transform_img.shape == [1, 1, 3]
+        assert transform_img.mime_type == MIMEType.PNG
+
+        grayscale_img = PILImage.new(mode="L", size=(1, 1), color=1)
+        transform_img = _transform_to_starwhale(
+            grayscale_img, hf_datasets.Image(decode=True)
+        )
+        assert isinstance(transform_img, Image)
+        assert transform_img.shape == [1, 1, 1]
+
+        with self.assertRaisesRegex(NoSupportError, "Unknown image type"):
+            _transform_to_starwhale({}, hf_datasets.Image(decode=True))
+
+    def test_audio(self) -> None:
+        import datasets as hf_datasets
+
+        from starwhale.integrations.huggingface.dataset import _transform_to_starwhale
+
+        audio = {
+            "path": None,
+            "array": numpy.array([1.0, 2.0, 3.0]),
+            "sampling_rate": 16000,
+        }
+
+        transform_audio = _transform_to_starwhale(audio, hf_datasets.Audio())
+        assert isinstance(transform_audio, Audio)
+        assert transform_audio.mime_type == MIMEType.WAV
+
+        audio = {"path": Path(ROOT_DIR) / "data" / "simple.wav"}
+        transform_audio = _transform_to_starwhale(audio, hf_datasets.Audio())
+        assert isinstance(transform_audio, Audio)
+        assert transform_audio.mime_type == MIMEType.WAV
+
+        with self.assertRaisesRegex(ValueError, "Unknown audio data fields:"):
+            assert _transform_to_starwhale({}, hf_datasets.Audio())
+
+    def test_compound_data(self) -> None:
+        import datasets as hf_datasets
+
+        from starwhale.integrations.huggingface.dataset import _transform_to_starwhale
+
+        data = {
+            "int": 1,
+            "float": 1.1,
+            "list_int": [1, 1, 1],
+            "sequence_image": [
+                PILImage.new(mode="RGB", size=(1, 1), color=(1, 1, 1)),
+                PILImage.new(mode="L", size=(1, 1), color=1),
+            ],
+            "dict": {"int": 1},
+            "sequence_dict": {
+                "int": 1,
+                "list_int": [1, 1, 1],
+            },
+        }
+
+        features = {
+            "int": hf_datasets.Value("int64"),
+            "float": hf_datasets.Value("float64"),
+            "list_int": hf_datasets.Sequence(feature=hf_datasets.Value("int64")),
+            "sequence_image": hf_datasets.Sequence(feature=hf_datasets.Image()),
+            "dict": {
+                "int": hf_datasets.Value("int64"),
+            },
+            "sequence_dict": hf_datasets.Sequence(
+                feature={
+                    "int": hf_datasets.Value("int64"),
+                    "list_int": hf_datasets.Sequence(
+                        feature=hf_datasets.Value("int64")
+                    ),
+                }
+            ),
+        }
+        transform_data = _transform_to_starwhale(data, features)
+
+        assert transform_data["int"] == 1
+        assert transform_data["float"] == 1.1
+        assert transform_data["list_int"] == [1, 1, 1]
+        assert isinstance(transform_data["sequence_image"][0], Image)
+        assert transform_data["dict"]["int"] == 1
+        assert transform_data["sequence_dict"]["int"] == 1
+        assert transform_data["sequence_dict"]["list_int"] == [1, 1, 1]
+
+    @patch("starwhale.integrations.huggingface.dataset.hf_datasets.load_dataset")
+    def test_build_dataset(self, m_load_dataset: MagicMock) -> None:
+        import datasets as hf_datasets
+
+        complex_data = {
+            "list_int": [[1, 2, 3]],
+            "seq_img": [
+                [
+                    PILImage.new(mode="RGB", size=(1, 1), color=(1, 1, 1)),
+                    PILImage.new(mode="L", size=(1, 1), color=1),
+                ]
+            ],
+            "seq_dict": [
+                [
+                    {
+                        "int": 1,
+                        "str": "test",
+                    }
+                ]
+            ],
+            "img": [PILImage.new(mode="RGB", size=(1, 1), color=(1, 1, 1))],
+            "audio": [str(Path(ROOT_DIR) / "data" / "simple.wav")],
+            "class_label": [1],
+        }
+
+        complex_features = hf_datasets.Features(
+            {
+                "list_int": hf_datasets.Sequence(feature=hf_datasets.Value("int64")),
+                "seq_img": hf_datasets.Sequence(feature=hf_datasets.Image()),
+                "seq_dict": hf_datasets.Sequence(
+                    feature={
+                        "int": hf_datasets.Value("int64"),
+                        "str": hf_datasets.Value("string"),
+                    }
+                ),
+                "img": hf_datasets.Image(),
+                "audio": hf_datasets.Audio(),
+                "class_label": hf_datasets.ClassLabel(
+                    num_classes=3, names=["a", "b", "c"]
+                ),
+            }
+        )
+
+        simple_data = {
+            "int": [1, 2],
+            "float": [1.0, 2.0],
+            "str": ["test1", "test2"],
+            "bin": [b"test1", b"test2"],
+            "large_str": ["test1", "test2"],
+            "large_bin": [b"test1", b"test2"],
+        }
+
+        simple_features = hf_datasets.Features(
+            {
+                "int": hf_datasets.Value("int64"),
+                "float": hf_datasets.Value("float64"),
+                "str": hf_datasets.Value("string"),
+                "bin": hf_datasets.Value("binary"),
+                "large_str": hf_datasets.Value("large_string"),
+                "large_bin": hf_datasets.Value("large_binary"),
+            }
+        )
+
+        hf_simple_ds = hf_datasets.Dataset.from_dict(
+            simple_data, features=simple_features
+        )
+        hf_complex_ds = hf_datasets.Dataset.from_dict(
+            complex_data, features=complex_features
+        )
+        hf_mixed_ds = hf_datasets.DatasetDict(
+            {
+                "simple": hf_simple_ds,
+                "complex": hf_complex_ds,
+            }
+        )
+
+        m_load_dataset.return_value = hf_simple_ds
+        Dataset.from_huggingface(name="simple", repo="simple", split="train")
+        simple_ds = dataset("simple")
+        assert len(simple_ds) == 2
+        assert simple_ds["train/0"].features.int == 1
+        assert simple_ds["train/0"].features.float == 1.0
+        assert simple_ds["train/0"].features.str == "test1"
+        assert simple_ds["train/0"].features.bin == b"test1"
+        large_str = simple_ds["train/0"].features["large_str"]
+        large_bin = simple_ds["train/0"].features["large_bin"]
+        assert isinstance(large_str, Text)
+        assert isinstance(large_bin, Binary)
+        assert large_str.to_str() == "test1"
+        assert large_bin.to_bytes() == b"test1"
+
+        assert simple_ds["train/1"].features.int == 2
+        assert simple_ds["train/1"].features["large_bin"].to_bytes() == b"test2"
+
+        m_load_dataset.return_value = hf_complex_ds
+        complex_ds = Dataset.from_huggingface(name="complex", repo="complex")
+
+        assert len(complex_ds) == 1
+        assert complex_ds["0"].features.list_int == [1, 2, 3]
+        assert complex_ds["0"].features.seq_img[0].shape == [1, 1, 3]
+        assert complex_ds["0"].features.seq_img[1].shape == [1, 1, 1]
+        assert complex_ds["0"].features.seq_dict["int"] == [1]
+        assert complex_ds["0"].features.seq_dict["str"] == ["test"]
+        assert complex_ds["0"].features.img.shape == [1, 1, 3]
+        assert complex_ds["0"].features.class_label == 1
+        _audio = complex_ds["0"].features.audio
+        assert isinstance(_audio, Audio)
+        assert _audio.display_name == "simple.wav"
+        assert _audio.mime_type == MIMEType.WAV
+
+        m_load_dataset.return_value = hf_mixed_ds
+        mixed_ds = Dataset.from_huggingface(name="mixed", repo="mixed")
+
+        assert len(mixed_ds) == 3
+        assert mixed_ds["complex/0"].features.list_int == [1, 2, 3]
+        assert mixed_ds["simple/0"].features.int == 1
+        assert mixed_ds["simple/1"].features.int == 2

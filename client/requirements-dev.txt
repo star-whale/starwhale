@@ -25,6 +25,8 @@ torch>=2.0.1; python_version >= '3.11'
 torch; python_version < '3.11'
 tensorflow>=2.12.0; python_version >= '3.11'
 tensorflow; python_version < '3.11'
+datasets
+librosa  # for datasets Audio
 # for starwhale[image] test
 pillow
 # for starwhale[audio] test

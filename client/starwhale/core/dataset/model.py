@@ -96,6 +96,19 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     ) -> None:
         raise NotImplementedError
 
+    def build_from_huggingface(
+        self,
+        repo: str,
+        subset: str | None = None,
+        split: str | None = None,
+        revision: str = "main",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        cache: bool = True,
+    ) -> None:
+        raise NotImplementedError
+
     @classmethod
     def get_dataset(cls, uri: Resource) -> Dataset:
         _cls = cls._get_cls(uri)
@@ -247,6 +260,35 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             )
 
         return rs, {}
+
+    def build_from_huggingface(
+        self,
+        repo: str,
+        subset: str | None = None,
+        split: str | None = None,
+        revision: str = "main",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        cache: bool = True,
+    ) -> None:
+        from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+        ds = SDKDataset.from_huggingface(
+            name=self.name,
+            repo=repo,
+            subset=subset,
+            split=split,
+            revision=revision,
+            alignment_size=alignment_size,
+            volume_size=volume_size,
+            mode=mode,
+            cache=cache,
+        )
+        console.print(
+            f":hibiscus: congratulation! dataset build from https://huggingface.co/datasets/{repo} has been built. You can run "
+            f"[red bold blink] swcli dataset info {self.name}/version/{ds.committed_version[:SHORT_VERSION_CNT]}[/]"
+        )
 
     def build_from_json_file(
         self,

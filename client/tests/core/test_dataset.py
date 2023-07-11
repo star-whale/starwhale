@@ -160,6 +160,43 @@ class StandaloneDatasetTestCase(TestCase):
             volume_size="128M",
         )
 
+    @patch("starwhale.api._impl.dataset.model.Dataset.from_huggingface")
+    def test_build_from_huggingface(self, m_hf: MagicMock) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                "--name",
+                "huggingface-test",
+                "--huggingface",
+                "mnist",
+                "--no-cache",
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_huggingface.call_count == 1
+        call_args = mock_obj.build_from_huggingface.call_args
+        assert call_args
+        assert call_args[0][0] == "mnist"
+        assert call_args[1]["name"] == "huggingface-test"
+        assert call_args[1]["subset"] is None
+        assert not call_args[1]["cache"]
+
+        DatasetTermView.build_from_huggingface(
+            repo="mnist",
+            name="huggingface-test",
+            project_uri="self",
+            alignment_size="128",
+            volume_size="128M",
+            subset="sub1",
+            split="train",
+            revision="main",
+        )
+        assert m_hf.call_count == 1
+        assert m_hf.call_args[1]["cache"]
+
     def test_build_from_json_file_local(self) -> None:
         json_file = Path("/tmp/workdir/json.json")
         content = json.dumps(
