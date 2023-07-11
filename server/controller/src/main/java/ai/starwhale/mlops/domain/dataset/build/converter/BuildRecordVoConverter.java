@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.dataset.build;
+package ai.starwhale.mlops.domain.dataset.build.converter;
 
-import lombok.Data;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@Data
-public class SignedUrlResponse {
-    private String pathPrefix;
-    private Map<String, String> signedUrls = new HashMap<>();
-
-    public SignedUrlResponse(String pathPrefix) {
-        this.pathPrefix = pathPrefix;
-    }
-
-    public void addSignedUrl(String key, String url) {
-        signedUrls.put(key, url);
-    }
+public class BuildRecordVoConverter {
 }

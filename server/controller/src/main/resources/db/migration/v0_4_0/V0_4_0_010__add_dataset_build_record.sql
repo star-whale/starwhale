@@ -19,6 +19,7 @@ create table if not exists dataset_build_record
 (
     id            bigint auto_increment primary key  not null,
     dataset_id    bigint comment 'existence of dataset, it is a new dataset if it is null',
+    project_id    bigint                             not null,
     dataset_name  varchar(255)                       not null comment 'should check dataset name when dataset id is null',
     type          varchar(64)                        not null comment 'image, video, audio, others(json, csv, txt ...etc)',
     status        varchar(32)                        not null comment 'created, building, failed, success',

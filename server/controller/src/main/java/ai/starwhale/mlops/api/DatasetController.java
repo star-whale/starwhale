@@ -24,6 +24,8 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
+import ai.starwhale.mlops.api.protocol.dataset.build.DatasetBuildRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
@@ -34,6 +36,8 @@ import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
+import ai.starwhale.mlops.domain.dataset.build.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.ReadMode;
 import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
@@ -355,5 +359,27 @@ public class DatasetController implements DatasetApi {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> buildDataset(
+                String projectUrl, String datasetName, DatasetBuildRequest datasetBuildRequest) {
+        var res = datasetService.build(CreateBuildRecordRequest.builder()
+                .datasetId(datasetBuildRequest.getDatasetId())
+                .datasetName(datasetName)
+                .projectUrl(projectUrl)
+                .type(datasetBuildRequest.getType())
+                .storagePath(datasetBuildRequest.getStoragePath())
+                .build());
+        return res ? ResponseEntity.ok(Code.success.asResponse("success"))
+                : ResponseEntity.internalServerError().build();
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<PageInfo<BuildRecordVo>>> listBuildRecords(
+                String projectUrl, BuildStatus status, Integer pageNum, Integer pageSize) {
+        return ResponseEntity.ok(Code.success.asResponse(
+                datasetService.listBuildRecords(projectUrl, status, new PageParams(pageNum, pageSize))));
+    }
+
 
 }

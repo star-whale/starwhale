@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -40,6 +41,10 @@ import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
+import ai.starwhale.mlops.domain.dataset.build.CreateBuildRecordRequest;
+import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
+import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionVoConverter;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
@@ -89,6 +94,7 @@ public class DatasetService {
 
     private final DatasetMapper datasetMapper;
     private final DatasetVersionMapper datasetVersionMapper;
+    private final BuildRecordMapper buildRecordMapper;
     private final DatasetVoConverter datasetVoConverter;
     private final DatasetVersionVoConverter versionConvertor;
     private final StorageService storageService;
@@ -104,13 +110,16 @@ public class DatasetService {
     private BundleManager bundleManager;
 
     public DatasetService(ProjectService projectService, DatasetMapper datasetMapper,
-            DatasetVersionMapper datasetVersionMapper, DatasetVoConverter datasetVoConverter,
-            DatasetVersionVoConverter versionConvertor, StorageService storageService, DatasetDao datasetDao,
-            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor, UserService userService,
-            UriAccessor uriAccessor, DataLoader dataLoader, TrashService trashService) {
+                          DatasetVersionMapper datasetVersionMapper, BuildRecordMapper buildRecordMapper,
+                          DatasetVoConverter datasetVoConverter, DatasetVersionVoConverter versionConvertor,
+                          StorageService storageService, DatasetDao datasetDao,
+                          IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
+                          UserService userService, UriAccessor uriAccessor,
+                          DataLoader dataLoader, TrashService trashService) {
         this.projectService = projectService;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.buildRecordMapper = buildRecordMapper;
         this.datasetVoConverter = datasetVoConverter;
         this.versionConvertor = versionConvertor;
         this.storageService = storageService;
@@ -371,4 +380,47 @@ public class DatasetService {
             }
         }));
     }
+
+    public boolean build(CreateBuildRecordRequest request) {
+        var project = projectService.findProject(request.getProjectUrl());
+        if (request.getDatasetId() == null) {
+            // create new dataset
+            // TODO check the dataset name in the same project and build records
+
+        }
+        var entity = BuildRecordEntity.builder()
+                .datasetId(request.getDatasetId())
+                .projectId(project.getId())
+                .datasetName(request.getDatasetName())
+                .storagePath(request.getStoragePath())
+                .type(request.getType())
+                .status(BuildStatus.CREATED)
+                .build();
+        var res = buildRecordMapper.insert(entity) > 0;
+        if (res) {
+            // TODO start build
+
+            return true;
+        } else {
+            throw new SwProcessException(ErrorType.DB, "create build record failed");
+        }
+    }
+
+    public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, BuildStatus status, PageParams pageParams) {
+        var project = projectService.findProject(projectUrl);
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        var entities = buildRecordMapper.selectByStatus(project.getId(), status);
+        return PageUtil.toPageInfo(entities, entity -> BuildRecordVo.builder()
+                    .id(String.valueOf(entity.getId()))
+                    .datasetId(String.valueOf(entity.getDatasetId()))
+                    .datasetName(entity.getDatasetName())
+                    .type(entity.getType())
+                    .status(entity.getStatus())
+                    .createTime(entity.getCreatedTime().getTime())
+                    .build()
+        );
+    }
+
+    // TODO build records GC
+
 }

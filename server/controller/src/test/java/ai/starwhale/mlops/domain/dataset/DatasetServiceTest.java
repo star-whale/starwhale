@@ -55,6 +55,7 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionVoConverter;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
@@ -88,6 +89,7 @@ public class DatasetServiceTest {
     private DatasetService service;
     private DatasetMapper datasetMapper;
     private DatasetVersionMapper datasetVersionMapper;
+    private BuildRecordMapper buildRecordMapper;
     private DatasetVoConverter datasetConvertor;
     private DatasetVersionVoConverter versionConvertor;
     private StorageService storageService;
@@ -105,6 +107,7 @@ public class DatasetServiceTest {
     public void setUp() {
         datasetMapper = mock(DatasetMapper.class);
         datasetVersionMapper = mock(DatasetVersionMapper.class);
+        buildRecordMapper = mock(BuildRecordMapper.class);
         datasetConvertor = mock(DatasetVoConverter.class);
         given(datasetConvertor.convert(any(DatasetEntity.class)))
                 .willAnswer(invocation -> {
@@ -150,6 +153,7 @@ public class DatasetServiceTest {
                 projectService,
                 datasetMapper,
                 datasetVersionMapper,
+                buildRecordMapper,
                 datasetConvertor,
                 versionConvertor,
                 storageService,
@@ -416,6 +420,7 @@ public class DatasetServiceTest {
                 projectService,
                 mock(DatasetMapper.class),
                 datasetVersionMapper,
+                mock(BuildRecordMapper.class),
                 mock(DatasetVoConverter.class),
                 mock(DatasetVersionVoConverter.class),
                 mock(StorageService.class),

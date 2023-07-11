@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.build.po;
+package ai.starwhale.mlops.api.protocol.dataset.build;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.springframework.validation.annotation.Validated;
 
+
+@Validated
 @Data
-@SuperBuilder
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class BuildRecordEntity extends BaseEntity {
-    private Long id;
+public class DatasetBuildRequest {
+
     private Long datasetId;
-    private Long projectId;
-    private String datasetName;
-    private BuildStatus status;
+
+    @NotNull(message = "type can not be null")
     private BuildType type;
+
+    @NotNull(message = "storagePath can not be null")
     private String storagePath;
-    private String format;
 }

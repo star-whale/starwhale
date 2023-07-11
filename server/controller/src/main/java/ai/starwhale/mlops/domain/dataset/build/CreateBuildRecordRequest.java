@@ -14,28 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.build.po;
+package ai.starwhale.mlops.domain.dataset.build;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
-import ai.starwhale.mlops.domain.dataset.build.BuildType;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Data
-@SuperBuilder
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class BuildRecordEntity extends BaseEntity {
-    private Long id;
+@Builder
+public class CreateBuildRecordRequest {
     private Long datasetId;
-    private Long projectId;
+    private String projectUrl;
     private String datasetName;
-    private BuildStatus status;
     private BuildType type;
     private String storagePath;
     private String format;
