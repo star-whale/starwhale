@@ -44,8 +44,10 @@ public class Model {
     List<StepSpec> stepSpecs;
 
     public static Model fromEntity(ModelEntity entity) {
+        // TODO: version and stepSpecs need to be handled
         return Model.builder()
                 .id(entity.getId())
+                .projectId(entity.getProjectId())
                 .name(entity.getModelName())
                 .build();
     }
