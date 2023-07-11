@@ -96,7 +96,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        marginTop: 20,
+                        marginTop: 5,
                     }}
                 >
                     <div

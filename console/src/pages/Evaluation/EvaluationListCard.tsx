@@ -116,7 +116,11 @@ export default function EvaluationListCard() {
                 return CustomColumn<RecordAttr, any>({
                     ...column,
                     renderCell: ({ value }) => {
-                        return <span title={value.toString()}>{formatTimestampDateTime(value.value)}</span>
+                        return (
+                            <span className='line-clamp line-clamp-2' title={value.toString()}>
+                                {formatTimestampDateTime(value.value)}
+                            </span>
+                        )
                     },
                 })
             }
