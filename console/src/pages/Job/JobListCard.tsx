@@ -21,6 +21,11 @@ import { IconTooltip } from '@starwhale/ui/Tooltip'
 import IconFont from '@starwhale/ui/IconFont'
 import { useProjectRole } from '@project/hooks/useProjectRole'
 import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
+import { ConfirmButton } from '@starwhale/ui'
+
+interface IActionButtonProps {
+    jobId: string
+}
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -56,6 +61,42 @@ export default function JobListCard() {
             jobsInfo.refetch()
         },
         [canPinOrUnpin, jobsInfo, projectId]
+    )
+
+    const CancelButton = ({ jobId }: IActionButtonProps) => (
+        <WithCurrentAuth id='job.cancel'>
+            <ConfirmButton
+                kind='tertiary'
+                onClick={() => handleAction(jobId, JobActionType.CANCEL)}
+                title={t('Cancel.Confirm')}
+            >
+                {t('Cancel')}
+            </ConfirmButton>
+        </WithCurrentAuth>
+    )
+
+    const PauseButton = ({ jobId }: IActionButtonProps) => (
+        <WithCurrentAuth id='job-pause'>
+            <WithCurrentAuth id='job.pause'>
+                <ConfirmButton
+                    kind='tertiary'
+                    onClick={() => handleAction(jobId, JobActionType.PAUSE)}
+                    title={t('Pause.Confirm')}
+                >
+                    {t('Pause')}
+                </ConfirmButton>
+            </WithCurrentAuth>
+        </WithCurrentAuth>
+    )
+
+    const ResumeButton = ({ jobId }: IActionButtonProps) => (
+        <WithCurrentAuth id='job-resume'>
+            <WithCurrentAuth id='job.resume'>
+                <Button kind='tertiary' onClick={() => handleAction(jobId, JobActionType.RESUME)}>
+                    {t('Resume')}
+                </Button>
+            </WithCurrentAuth>
+        </WithCurrentAuth>
     )
 
     return (
@@ -98,59 +139,25 @@ export default function JobListCard() {
                         const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
                             [JobStatusType.CREATED]: (
                                 <>
-                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
-                                        {t('Cancel')}
-                                    </Button>
-                                    <WithCurrentAuth id='job-pause'>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                        >
-                                            {t('Pause')}
-                                        </Button>
-                                    </WithCurrentAuth>
+                                    <CancelButton jobId={job.id} />
+                                    <PauseButton jobId={job.id} />
                                 </>
                             ),
                             [JobStatusType.RUNNING]: (
                                 <>
-                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
-                                        {t('Cancel')}
-                                    </Button>
-                                    <WithCurrentAuth id='job-pause'>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.PAUSE)}
-                                        >
-                                            {t('Pause')}
-                                        </Button>
-                                    </WithCurrentAuth>
+                                    <CancelButton jobId={job.id} />
+                                    <PauseButton jobId={job.id} />
                                 </>
                             ),
                             [JobStatusType.PAUSED]: (
                                 <>
-                                    <Button kind='tertiary' onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
-                                        {t('Cancel')}
-                                    </Button>
-                                    <WithCurrentAuth id='job-resume'>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                        >
-                                            {t('Resume')}
-                                        </Button>
-                                    </WithCurrentAuth>
+                                    <CancelButton jobId={job.id} />
+                                    <ResumeButton jobId={job.id} />
                                 </>
                             ),
                             [JobStatusType.FAIL]: (
                                 <>
-                                    <WithCurrentAuth id='job-resume'>
-                                        <Button
-                                            kind='tertiary'
-                                            onClick={() => handleAction(job.id, JobActionType.RESUME)}
-                                        >
-                                            {t('Resume')}
-                                        </Button>
-                                    </WithCurrentAuth>
+                                    <ResumeButton jobId={job.id} />
                                 </>
                             ),
                             [JobStatusType.SUCCESS]: (
