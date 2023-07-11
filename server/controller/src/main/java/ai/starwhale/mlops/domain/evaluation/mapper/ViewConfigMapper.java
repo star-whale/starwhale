@@ -27,10 +27,8 @@ public interface ViewConfigMapper {
 
     @Select("select id, config_name, project_id, owner_id, content, created_time, modified_time from view_config"
             + " where config_name = #{name}"
-            + " and owner_id = #{userId}"
             + " and project_id = #{projectId}")
-    ViewConfigEntity findViewConfig(@Param("userId") Long userId, @Param("projectId") Long projectId,
-            @Param("name") String name);
+    ViewConfigEntity findViewConfig(@Param("projectId") Long projectId, @Param("name") String name);
 
     @Insert("replace  into view_config(config_name, project_id, owner_id, content)"
             + " values (#{configName}, #{projectId}, #{ownerId}, #{content})")

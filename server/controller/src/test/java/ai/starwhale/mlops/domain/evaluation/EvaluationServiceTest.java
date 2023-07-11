@@ -80,7 +80,7 @@ public class EvaluationServiceTest {
 
     @Test
     public void testGetViewConfig() {
-        given(viewConfigMapper.findViewConfig(same(1L), same(1L), same("config")))
+        given(viewConfigMapper.findViewConfig(same(1L), same("config")))
                 .willReturn(ViewConfigEntity.builder()
                         .id(1L)
                         .configName("config")
