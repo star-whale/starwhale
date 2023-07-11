@@ -1860,9 +1860,13 @@ class TestHuggingface(_DatasetSDKTestBase):
             (1, hf_datasets.Value("int64"), 1),
             (1.0, hf_datasets.Value("float64"), 1.0),
             (b"000", hf_datasets.Value("binary"), b"000"),
-            (b"000", hf_datasets.Value("large_binary"), Binary(b"000")),
+            (b"000" * 32, hf_datasets.Value("binary"), Binary(b"000" * 32)),
+            (b"000", hf_datasets.Value("large_binary"), b"000"),
+            (b"000" * 32, hf_datasets.Value("large_binary"), Binary(b"000" * 32)),
             ("000", hf_datasets.Value("string"), "000"),
-            ("000", hf_datasets.Value("large_string"), Text("000")),
+            ("000" * 32, hf_datasets.Value("string"), Text("000" * 32)),
+            ("000", hf_datasets.Value("large_string"), "000"),
+            ("000" * 32, hf_datasets.Value("large_string"), Text("000" * 32)),
             (1, hf_datasets.ClassLabel(num_classes=3, names=["a", "b", "c"]), 1),
             (
                 [[1, 2], [11, 22]],
@@ -2029,8 +2033,8 @@ class TestHuggingface(_DatasetSDKTestBase):
             "float": [1.0, 2.0],
             "str": ["test1", "test2"],
             "bin": [b"test1", b"test2"],
-            "large_str": ["test1", "test2"],
-            "large_bin": [b"test1", b"test2"],
+            "large_str": ["test1" * 20, "test2" * 20],
+            "large_bin": [b"test1" * 20, b"test2" * 20],
         }
 
         simple_features = hf_datasets.Features(
@@ -2069,11 +2073,11 @@ class TestHuggingface(_DatasetSDKTestBase):
         large_bin = simple_ds["train/0"].features["large_bin"]
         assert isinstance(large_str, Text)
         assert isinstance(large_bin, Binary)
-        assert large_str.to_str() == "test1"
-        assert large_bin.to_bytes() == b"test1"
+        assert large_str.to_str() == "test1" * 20
+        assert large_bin.to_bytes() == b"test1" * 20
 
         assert simple_ds["train/1"].features.int == 2
-        assert simple_ds["train/1"].features["large_bin"].to_bytes() == b"test2"
+        assert simple_ds["train/1"].features["large_bin"].to_bytes() == b"test2" * 20
 
         m_load_dataset.return_value = hf_complex_ds
         complex_ds = Dataset.from_huggingface(name="complex", repo="complex")

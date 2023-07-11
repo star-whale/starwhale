@@ -2,6 +2,8 @@ import csv
 import typing as t
 from pathlib import Path
 
+from starwhale import Text
+
 
 def iter_agnews_item() -> t.Generator:
     root_dir = Path(__file__).parent.parent / "data"
@@ -12,6 +14,6 @@ def iter_agnews_item() -> t.Generator:
             # https://huggingface.co/datasets/ag_news#default-1
             data = " ".join(row[1:])
             yield {
-                "text": data,
+                "text": Text(data),
                 "label": int(row[0]) - 1,
             }
