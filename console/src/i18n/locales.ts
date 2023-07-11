@@ -992,6 +992,10 @@ const locales0 = {
         en: 'Cancel',
         zh: '取消',
     },
+    'Cancel.Confirm': {
+        en: 'Are you sure to cancel the job?',
+        zh: '确定要取消该任务吗？',
+    },
     'Confirm': {
         en: 'Confirm',
         zh: '确认',
@@ -1171,6 +1175,10 @@ const locales0 = {
     'Pause': {
         en: 'Pause',
         zh: '暂停',
+    },
+    'Pause.Confirm': {
+        en: 'Are you sure to pause the job?',
+        zh: '确定要暂停该任务吗？',
     },
     'Resume': {
         en: 'Resume',
