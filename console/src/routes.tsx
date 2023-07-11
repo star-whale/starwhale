@@ -14,6 +14,7 @@ import ModelVersionListCard from '@/pages/Model/ModelVersionListCard'
 import DatasetVersionListCard from '@/pages/Dataset/DatasetVersionListCard'
 import DatasetOverviewLayout from '@/pages/Dataset/DatasetOverviewLayout'
 import JobNewCard from '@/pages/Project/JobNewCard'
+import DatasetNewCard from '@/pages/Project/DatasetNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
 import JobWidgetResults from '@/pages/Job/JobWidgetResults'
@@ -312,6 +313,11 @@ const Routes = () => {
                                         />
                                         <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                         <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/new_dataset'
+                                            component={DatasetNewCard}
+                                        />
                                         <Route
                                             exact
                                             path='/projects/:projectId/online_eval/:modelId/:modelVersionId?'

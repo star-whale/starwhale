@@ -1,12 +1,8 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import Card from '@/components/Card'
-import { createDataset } from '@dataset/services/dataset'
 import { usePage } from '@/hooks/usePage'
-import { ICreateDatasetSchema } from '@dataset/schemas/dataset'
-import DatasetForm from '@dataset/components/DatasetForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
@@ -14,6 +10,8 @@ import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
+import { WithCurrentAuth } from '@/api/WithAuth'
+import User from '@/domain/user/components/User'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -21,26 +19,33 @@ export default function DatasetListCard() {
     const history = useHistory()
 
     const datasetsInfo = useFetchDatasets(projectId, page)
-    const [isCreateDatasetOpen, setIsCreateDatasetOpen] = useState(false)
-    const handleCreateDataset = useCallback(
-        async (data: ICreateDatasetSchema) => {
-            await createDataset(projectId, data)
-            await datasetsInfo.refetch()
-            setIsCreateDatasetOpen(false)
-        },
-        [datasetsInfo, projectId]
-    )
     const [t] = useTranslation()
 
     return (
-        <Card title={t('Datasets')}>
+        <Card
+            title={t('Datasets')}
+            style={{
+                flexShrink: 1,
+                marginBottom: 0,
+                width: '100%',
+                flex: 1,
+            }}
+            bodyStyle={{
+                flexDirection: 'column',
+            }}
+            extra={
+                <WithCurrentAuth id='dataset.create'>
+                    <Button onClick={() => history.push('new_dataset')}>{t('create')}</Button>
+                </WithCurrentAuth>
+            }
+        >
             <Table
                 isLoading={datasetsInfo.isLoading}
                 columns={[
                     t('sth name', [t('Dataset')]),
                     t('Version'),
                     t('Alias'),
-                    // t('Owner'),
+                    t('Owner'),
                     t('Created'),
                     t('Action'),
                 ]}
@@ -55,7 +60,7 @@ export default function DatasetListCard() {
                             </TextLink>,
                             <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
                             <Alias key='alias' alias={dataset.version?.alias} />,
-                            // dataset.owner && <User user={dataset.owner} />,
+                            dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <Button
                                 key='version-history'
@@ -76,18 +81,6 @@ export default function DatasetListCard() {
                     },
                 }}
             />
-            <Modal
-                isOpen={isCreateDatasetOpen}
-                onClose={() => setIsCreateDatasetOpen(false)}
-                closeable
-                animate
-                autoFocus
-            >
-                <ModalHeader>{t('create sth', [t('Dataset')])}</ModalHeader>
-                <ModalBody>
-                    <DatasetForm onSubmit={handleCreateDataset} />
-                </ModalBody>
-            </Modal>
         </Card>
     )
 }

@@ -83,6 +83,14 @@ const dataset = {
         en: 'View',
         zh: '查看',
     },
+    'dataset.create': {
+        en: 'Create Dataset',
+        zh: '创建数据集',
+    },
+    'dataset.update': {
+        en: 'Update Dataset',
+        zh: '更新数据集',
+    },
 }
 
 const runtime = {

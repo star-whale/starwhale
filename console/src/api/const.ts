@@ -11,6 +11,7 @@ export const Privileges = {
     'model.version.revert': true,
     'model.version.serve': true,
     'dataset.version.revert': true,
+    'dataset.create': true,
     'evaluation.panel.save': true,
     'runtime.image.build': true,
     'task.execute': true,
