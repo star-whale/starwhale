@@ -24,6 +24,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface BuildRecordMapper {
@@ -36,7 +37,18 @@ public interface BuildRecordMapper {
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
             + "WHERE project_id = #{projectId} AND status = #{status}")
-    List<BuildRecordEntity> selectByStatus(@Param("projectId") Long projectId, @Param("status") BuildStatus status);
+    List<BuildRecordEntity> selectFinishedAndUncleaned(
+            @Param("projectId") Long projectId, @Param("status") BuildStatus status);
+
+    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
+            + "WHERE (status = 'SUCCESS' or status = 'FAILED') AND cleaned = 0")
+    List<BuildRecordEntity> selectFinishedAndUncleaned();
+
+    @Update("UPDATE dataset_build_record set status = #{status} WHERE id = #{id}")
+    int updateStatus(@Param("id") Long id, @Param("status") BuildStatus status);
+
+    @Update("UPDATE dataset_build_record set cleaned = 1 WHERE id = #{id} AND cleaned = 0")
+    int updateCleaned(@Param("id") Long id);
 
     @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
             + "VALUES ("

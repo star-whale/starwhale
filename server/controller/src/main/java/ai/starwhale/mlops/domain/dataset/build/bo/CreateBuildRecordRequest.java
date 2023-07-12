@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.build;
+package ai.starwhale.mlops.domain.dataset.build.bo;
 
+import ai.starwhale.mlops.domain.dataset.build.BuildType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,6 +26,7 @@ public class CreateBuildRecordRequest {
     private Long datasetId;
     private String projectUrl;
     private String datasetName;
+    private Boolean shared;
     private BuildType type;
     private String storagePath;
     private String format;

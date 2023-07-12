@@ -26,8 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.RunTimeProperties.ImageBuild;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
+import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -97,7 +97,7 @@ public class K8sTaskSchedulerTest {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
+                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
@@ -129,8 +129,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -166,8 +166,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -207,8 +207,8 @@ public class K8sTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,

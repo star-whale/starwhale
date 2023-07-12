@@ -37,7 +37,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
 import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
-import ai.starwhale.mlops.domain.dataset.build.CreateBuildRecordRequest;
+import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataReadRequest;
 import ai.starwhale.mlops.domain.dataset.dataloader.ReadMode;
 import ai.starwhale.mlops.domain.dataset.objectstore.HashNamedDatasetObjectStoreFactory;
@@ -366,6 +366,7 @@ public class DatasetController implements DatasetApi {
         var res = datasetService.build(CreateBuildRecordRequest.builder()
                 .datasetId(datasetBuildRequest.getDatasetId())
                 .datasetName(datasetName)
+                .shared(datasetBuildRequest.getShared())
                 .projectUrl(projectUrl)
                 .type(datasetBuildRequest.getType())
                 .storagePath(datasetBuildRequest.getStoragePath())

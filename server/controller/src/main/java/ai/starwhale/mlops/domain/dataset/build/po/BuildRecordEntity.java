@@ -34,6 +34,8 @@ public class BuildRecordEntity extends BaseEntity {
     private Long id;
     private Long datasetId;
     private Long projectId;
+    private Boolean shared;
+    private Boolean cleaned;
     private String datasetName;
     private BuildStatus status;
     private BuildType type;

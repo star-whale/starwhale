@@ -46,6 +46,7 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
@@ -68,11 +69,14 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -163,8 +167,11 @@ public class DatasetServiceTest {
                 userService,
                 uriAccessor,
                 dataLoader,
-                trashService
-        );
+                trashService,
+                mock(K8sClient.class),
+                mock(K8sJobTemplate.class),
+                mock(DatasetBuildTokenValidator.class),
+                mock(SystemSettingService.class), "");
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -430,8 +437,11 @@ public class DatasetServiceTest {
                 mock(UserService.class),
                 mock(UriAccessor.class),
                 mock(DataLoader.class),
-                mock(TrashService.class)
-        );
+                mock(TrashService.class),
+                mock(K8sClient.class),
+                mock(K8sJobTemplate.class),
+                mock(DatasetBuildTokenValidator.class),
+                mock(SystemSettingService.class), "");
 
         // public project
         when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());

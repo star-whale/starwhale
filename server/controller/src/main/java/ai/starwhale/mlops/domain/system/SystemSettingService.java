@@ -34,6 +34,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -42,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
+@Data
 @Order(1)
 @Service
 public class SystemSettingService implements CommandLineRunner {

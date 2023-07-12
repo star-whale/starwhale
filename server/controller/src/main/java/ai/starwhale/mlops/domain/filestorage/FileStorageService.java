@@ -42,7 +42,7 @@ public class FileStorageService {
     private final Integer maxFileNum;
 
     public FileStorageService(StorageAccessService storageAccessService,
-                              @Value("${sw.filestorage.data-root-path:dataset-build/}") String dataRootPath,
+                              @Value("${sw.filestorage.data-root-path:files/}") String dataRootPath,
                               @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime,
                               @Value("${sw.filestorage.max-signed-files:1000}") Integer maxFileNum) {
         this.storageAccessService = storageAccessService;
@@ -56,7 +56,7 @@ public class FileStorageService {
     }
 
     /**
-     * generate path prefix for build(use current oss service)
+     * generate path prefix
      *
      * @return path
      */
