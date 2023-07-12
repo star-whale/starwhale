@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "File storage", description = "File storage operations")
@@ -34,7 +35,7 @@ public interface FileStorageApi {
 
     @Operation(summary = "Apply signedUrls for put", description = "Apply signedUrls for put")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping("/filestorage/signedurl/put")
+    @PutMapping("/filestorage/signedurl/put")
     ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedPutUrls(
             @RequestBody ApplySignedUrlRequest applySignedUrlRequest);
 

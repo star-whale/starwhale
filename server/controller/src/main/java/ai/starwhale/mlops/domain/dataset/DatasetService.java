@@ -385,7 +385,7 @@ public class DatasetService {
         var project = projectService.findProject(request.getProjectUrl());
         if (request.getDatasetId() == null) {
             // create new dataset
-            // TODO check the dataset name in the same project and build records
+            // TODO check the dataset name in the same project and building in build records
 
         }
         var entity = BuildRecordEntity.builder()
