@@ -4,7 +4,7 @@ import time
 import unittest
 import concurrent.futures
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
 import numpy as np
 import pytest
@@ -2261,6 +2261,25 @@ class TestTableWriter(BaseTestCase):
             "scan all",
         )
         assert not self.writer.is_alive()
+
+    def test_batch_update(self) -> None:
+        m_store = MagicMock()
+        _writer = data_store.TableWriter("b/test", "k", data_store=m_store)
+
+        os.environ["SW_DATASTORE_UPDATE_MAX_BATCH_SIZE"] = "1"
+        for i in range(100):
+            _writer.insert({"k": i, "a": i})
+
+        _writer.flush()
+        assert m_store.update_table.call_count == 100
+
+        m_store.reset_mock()
+        m_store.update_table.side_effect = lambda *a, **kw: time.sleep(0.1)
+        os.environ["SW_DATASTORE_UPDATE_MAX_BATCH_SIZE"] = "30"
+        for i in range(100):
+            _writer.insert({"k": i, "a": i})
+        _writer.flush()
+        assert m_store.update_table.call_count >= 4
 
     @Mocker()
     def test_run_thread_exception_limit(self, request_mock: Mocker) -> None:

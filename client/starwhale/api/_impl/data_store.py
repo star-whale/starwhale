@@ -1747,6 +1747,19 @@ class TableWriter(threading.Thread):
             time.sleep(0.1)
         return self.latest_revision
 
+    def _batch_update_table(
+        self, schema: TableSchema, records: List[Dict[str, Any]]
+    ) -> None:
+        max_batch_size = int(os.environ.get("SW_DATASTORE_UPDATE_MAX_BATCH_SIZE", 1000))
+        for i in range(0, len(records), max_batch_size):
+            chunk_records = records[i : i + max_batch_size]
+            console.trace(
+                f"update table {self.table_name}, {len(chunk_records)} records"
+            )
+            self.latest_revision = self.data_store.update_table(
+                self.table_name, schema, chunk_records
+            )
+
     def run(self) -> None:
         while True:
             with self._cond:
@@ -1772,22 +1785,12 @@ class TableWriter(threading.Thread):
                             can_merge = False
                         if not can_merge:
                             console.debug(f"schema changed, {last_schema} -> {schema}")
-                            console.debug(
-                                f"update table {self.table_name}, {len(to_submit)} records"
-                            )
-                            self.latest_revision = self.data_store.update_table(
-                                self.table_name, last_schema, to_submit
-                            )
+                            self._batch_update_table(last_schema, to_submit)
                             to_submit = []
                             last_schema = schema
                     to_submit.extend(records)
                 if len(to_submit) > 0 and last_schema is not None:
-                    console.trace(
-                        f"update table {self.table_name}, {len(to_submit)} records"
-                    )
-                    self.latest_revision = self.data_store.update_table(
-                        self.table_name, last_schema, to_submit
-                    )
+                    self._batch_update_table(last_schema, to_submit)
             except Exception as e:
                 console.print_exception()
                 self._queue_run_exceptions.append(e)
