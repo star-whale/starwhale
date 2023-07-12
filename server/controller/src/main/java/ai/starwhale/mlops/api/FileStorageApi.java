@@ -40,12 +40,12 @@ public interface FileStorageApi {
 
     @Operation(summary = "Apply signedUrls for put", description = "Apply signedUrls for put")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping("/filestorage/signedurl/put")
+    @PutMapping("/filestorage/signedurl")
     ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedPutUrls(
             @RequestBody ApplySignedUrlRequest applySignedUrlRequest);
 
     @Operation(summary = "Apply signedUrls for get", description = "Apply signedUrls for get")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping("/filestorage/signedurl/get")
+    @GetMapping("/filestorage/signedurl")
     ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedGetUrls(String pathPrefix);
 }
