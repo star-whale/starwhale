@@ -15,6 +15,7 @@ from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
 _MIN_GUESS_NAME_LENGTH = 5
+DIGEST_SIZE = 32
 
 
 class FilePosition(IntEnum):
@@ -122,7 +123,7 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
     _chunk_size = 8192
     fpath = Path(fpath)
     # blake2b is more faster and better than md5,sha1,sha2
-    _hash = hashlib.blake2b(digest_size=64)
+    _hash = hashlib.blake2b(digest_size=DIGEST_SIZE)
 
     with fpath.open("rb") as f:
         _chunk = f.read(_chunk_size)
@@ -134,7 +135,7 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
 
 
 def blake2b_content(content: bytes) -> str:
-    _hash = hashlib.blake2b(digest_size=64)
+    _hash = hashlib.blake2b(digest_size=DIGEST_SIZE)
     _hash.update(content)
     return _hash.hexdigest()
 

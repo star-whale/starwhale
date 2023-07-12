@@ -13,7 +13,7 @@ from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.view import BaseTermView
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
-from starwhale.core.dataset.type import DatasetConfig
+from starwhale.core.dataset.type import Text, DatasetConfig
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Dataset
@@ -306,6 +306,8 @@ class DatasetTermView(BaseTermView):
             console.rule(f"row [{row['index']}]", align="left")
             output = f":deciduous_tree: id: {row['index']} \n" ":cyclone: features:\n"
             for _k, _v in row["features"].items():
+                if show_raw_data and isinstance(_v, Text):
+                    _v = _v.link_to_content()
                 output += f"\t :dim_button: [bold green]{_k}[/] : {_v} \n"
 
             if show_types:
