@@ -24,11 +24,17 @@ export interface IDatasetDetailSchema {
 export interface IUpdateDatasetSchema {
     description?: string
 }
-
-export interface ICreateDatasetSchema {
+export interface ICreateDatasetFormSchema {
     datasetName: string
-    zipFile?: FileList
-    importPath?: string
+    storagePath?: string
+    shared?: number
+}
+
+export interface ICreateDatasetQuerySchema {
+    datasetId?: string
+    shared?: number
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    storagePath: string
 }
 
 export interface IDatasetTreeSchema {

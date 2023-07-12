@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { ICreateDatasetSchema, IDatasetSchema, IDatasetDetailSchema, IDatasetTreeSchema } from '../schemas/dataset'
+import { IDatasetSchema, IDatasetDetailSchema, IDatasetTreeSchema, ICreateDatasetQuerySchema } from '../schemas/dataset'
 
 export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
     const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
@@ -19,18 +19,15 @@ export async function fetchDatasetTree(projectId: string): Promise<IDatasetTreeS
     return resp.data
 }
 
-export async function createDataset(projectId: string, data: ICreateDatasetSchema): Promise<IDatasetSchema> {
-    const bodyFormData = new FormData()
-    bodyFormData.append('datasetName', data.datasetName)
-    bodyFormData.append('importPath', data.importPath ?? '')
-    if (data.zipFile && data.zipFile.length > 0) bodyFormData.append('zipFile', data.zipFile[0] as File)
-
-    const resp = await axios({
-        method: 'post',
-        url: `/api/v1/project/${projectId}/dataset`,
-        data: bodyFormData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-    })
+export async function createDataset(
+    projectId: string,
+    datasetName: string,
+    data: ICreateDatasetQuerySchema
+): Promise<any> {
+    const resp = await axios.post<IDatasetTreeSchema[]>(
+        `/api/v1/project/${projectId}/dataset/${datasetName}/build`,
+        data
+    )
     return resp.data
 }
 

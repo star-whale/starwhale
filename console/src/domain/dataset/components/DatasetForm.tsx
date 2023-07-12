@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
 import { ICreateDatasetSchema, IDatasetSchema } from '../schemas/dataset'
 import { createUseStyles } from 'react-jss'
@@ -10,15 +9,13 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import User from '@/domain/user/components/User'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { Toggle } from '@starwhale/ui/Select'
-import DatasetSelector from './DatasetSelector'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core'
 import { MIMES } from '@starwhale/core/dataset'
-import type { UploadFile, UploadProps } from 'antd/es/upload/interface'
-// import Upload from 'antd/lib/upload'
-import Upload from 'antd/es/upload'
+import { DraggerUpload } from '@starwhale/ui/Upload'
+import Button from '@starwhale/ui/Button'
+import _ from 'lodash'
 
-const { Dragger } = Upload
 const { Form, FormItem, useForm } = createForm<ICreateDatasetSchema>()
 
 const useStyles = createUseStyles({
@@ -57,6 +54,7 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
     const { project } = useProject()
     const styles = useStyles()
     const [form] = useForm()
+    const history = useHistory()
 
     useEffect(() => {
         if (!dataset) {
@@ -77,7 +75,10 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
         async (values_) => {
             setLoading(true)
             try {
-                await onSubmit(values_)
+                await onSubmit({
+                    ..._.omit(values_, ['upload']),
+                    ...values_.upload,
+                })
             } finally {
                 setLoading(false)
             }
@@ -86,24 +87,6 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
     )
 
     const [t] = useTranslation()
-
-    const props: UploadProps = {
-        action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-        onChange(info) {
-            console.log(info)
-
-            const { status } = info.file
-            if (status !== 'uploading') {
-                console.log(info.file, info.fileList)
-            }
-            if (status === 'done') {
-            } else if (status === 'error') {
-            }
-        },
-        onDrop(e) {
-            console.log('Dropped files', e.dataTransfer.files)
-        },
-    }
 
     console.log(values)
 
@@ -132,32 +115,6 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
 
     console.log(Object.values(MIMES).join(','))
 
-    const [fileList, setFileList] = useState<UploadFile[]>([])
-
-    const handleChange: UploadProps['onChange'] = (info) => {
-        let newFileList = [...info.fileList]
-
-        // 1. Limit the number of uploaded files
-        // Only to show two recent uploaded files, and old ones will be replaced by the new
-        newFileList = newFileList.slice(-2)
-
-        // 2. Read from response and show file link
-        newFileList = newFileList.map((file) => {
-            if (file.response) {
-                // Component will show file.url as link
-                file.url = file.response.url
-            }
-            return file
-        })
-
-        setFileList(newFileList)
-    }
-
-    const itemRender = (originNode: React.ReactNode, file: UploadFile, currentFileList: UploadFile[]) => {
-        console.log(originNode, file, currentFileList)
-        return originNode
-    }
-
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <div className={styles.datasetName}>
@@ -168,13 +125,10 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
                         gap: '5px',
                     }}
                 >
-                    <User user={currentUser} /> /
+                    <User user={currentUser} /> / {project?.name}
                 </div>
-                <FormItem key='projectName' name='projectName' label={t('sth name', [t('Project')])} required>
+                <FormItem name='datasetName' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }} required>
                     <Input size='compact' />
-                </FormItem>
-                <FormItem name='datasetVersionId' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }}>
-                    <DatasetSelector projectId={projectId} />
                 </FormItem>
             </div>
             <div className={styles.row}>
@@ -183,33 +137,23 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
                 </FormItem>
             </div>
             <div className={styles.upload} style={{ overflow: 'auto' }}>
-                {/* accept={Object.values(MIMES).join(',')} */}
-                <Dragger
-                    {...props}
-                    name='file'
-                    multiple
-                    directory
-                    onChange={handleChange}
-                    fileList={fileList}
-                    itemRender={itemRender}
-                >
-                    <p className='ant-upload-drag-icon'></p>
-                    <p className='ant-upload-text'>Click or drag file to this area to upload</p>
-                    <p className='ant-upload-hint'>
-                        Support for a single or bulk upload. Strictly prohibited from uploading company data or other
-                        banned files.
-                    </p>
-                </Dragger>
+                <FormItem name='upload' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }} required>
+                    <DraggerUpload />
+                </FormItem>
             </div>
 
             <FormItem>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1 }} />
+                <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <Button
-                        isLoading={loading}
-                        // size={ButtonSize.compact}
-                        disabled={!isModified(dataset, values)}
+                        kind='secondary'
+                        type='button'
+                        onClick={() => {
+                            history.goBack()
+                        }}
                     >
+                        {t('Cancel')}
+                    </Button>
+                    <Button isLoading={loading} type='submit'>
                         {t('submit')}
                     </Button>
                 </div>

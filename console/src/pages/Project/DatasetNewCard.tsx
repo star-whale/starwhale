@@ -1,27 +1,34 @@
 import React, { useCallback } from 'react'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
-import { ICreateJobSchema } from '@job/schemas/job'
-import { createJob } from '@job/services/job'
 import { useParams } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core'
+import { createDataset } from '@/domain/dataset/services/dataset'
+import { ICreateDatasetFormSchema } from '@/domain/dataset/schemas/dataset'
 
 const DatasetForm = React.lazy(
     () => import(/* webpackChunkName: "datasetForm" */ '@/domain/dataset/components/DatasetForm')
 )
 
 export default function DatasetNewCard() {
-    const { projectId } = useParams<{ projectId: string }>()
+    const { projectId, datasetId } = useParams<{ projectId: string; datasetId: string }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
     const handleSubmit = useCallback(
-        async (data: ICreateJobSchema) => {
-            if (!projectId) {
+        async (data: ICreateDatasetFormSchema) => {
+            console.log(data)
+            if (!projectId || !data.datasetName || !data.storagePath) {
                 return
             }
-            await createJob(projectId, data)
+
+            await createDataset(projectId, data.datasetName, {
+                datasetId,
+                type: data.type,
+                shared: data.shared,
+                storagePath: data.storagePath,
+            })
         },
-        [projectId]
+        [projectId, datasetId]
     )
 
     return (
