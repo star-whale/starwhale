@@ -69,7 +69,7 @@ public interface EvaluationApi {
     @PostMapping(
             value = "/project/{projectUrl}/evaluation/view/config",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
             @Valid @PathVariable("projectUrl") String projectUrl,
             @Valid @RequestBody ConfigRequest configRequest

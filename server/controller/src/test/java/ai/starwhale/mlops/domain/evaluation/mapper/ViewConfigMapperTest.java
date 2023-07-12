@@ -43,7 +43,18 @@ public class ViewConfigMapperTest extends MySqlContainerHolder {
 
         viewConfigMapper.createViewConfig(viewConfigEntity);
 
-        ViewConfigEntity find = viewConfigMapper.findViewConfig(2L, 3L, "test_name");
+        ViewConfigEntity find = viewConfigMapper.findViewConfig(3L, "test_name");
         Assertions.assertEquals("content1", find.getContent());
+
+        // insert with the same project id and name, will replace the old one
+        var newViewConfigEntity = ViewConfigEntity.builder()
+                .configName("test_name")
+                .content("content2")
+                .ownerId(2L)
+                .projectId(3L)
+                .build();
+        viewConfigMapper.createViewConfig(newViewConfigEntity);
+        find = viewConfigMapper.findViewConfig(3L, "test_name");
+        Assertions.assertEquals("content2", find.getContent());
     }
 }
