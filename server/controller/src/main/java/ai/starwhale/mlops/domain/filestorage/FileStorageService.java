@@ -82,6 +82,9 @@ public class FileStorageService {
      * @return signed urls for files, key is file name, value is signed url.
      */
     public Map<String, String> generateSignedPutUrls(String pathPrefix, Set<String> files) {
+        if (!validatePathPrefix(pathPrefix)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "pathPrefix is invalid");
+        }
         if (files.size() > maxFileNum) {
             throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "file count is too large");
         }

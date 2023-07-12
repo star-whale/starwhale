@@ -33,6 +33,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 @Validated
 public interface FileStorageApi {
 
+    @Operation(summary = "Apply pathPrefix", description = "Apply pathPrefix")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping("/filestorage/path/apply")
+    ResponseEntity<ResponseMessage<String>> applyPathPrefix();
+
     @Operation(summary = "Apply signedUrls for put", description = "Apply signedUrls for put")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping("/filestorage/signedurl/put")

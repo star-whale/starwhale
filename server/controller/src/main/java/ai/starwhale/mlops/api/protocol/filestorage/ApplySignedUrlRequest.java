@@ -33,6 +33,9 @@ import org.springframework.validation.annotation.Validated;
 public class ApplySignedUrlRequest {
     private String flag;
 
+    @NotNull(message = "pathPrefix is required")
+    private String pathPrefix;
+
     @NotNull(message = "files is required")
     private Set<String> files;
 }

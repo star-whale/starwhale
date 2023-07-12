@@ -38,9 +38,15 @@ public class FileStorageController implements FileStorageApi {
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> applyPathPrefix() {
+        // TODO whether need to create a path in oss?
+        return ResponseEntity.ok(Code.success.asResponse(service.generatePathPrefix()));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedPutUrls(
                 ApplySignedUrlRequest applySignedUrlRequest) {
-        var path = service.generatePathPrefix();
+        var path = applySignedUrlRequest.getPathPrefix();
         var signedUrls = service.generateSignedPutUrls(path, applySignedUrlRequest.getFiles());
 
         return ResponseEntity.ok(Code.success.asResponse(new SignedUrlResponse(path, signedUrls)));
