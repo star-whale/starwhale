@@ -35,7 +35,7 @@ public interface FileStorageApi {
 
     @Operation(summary = "Apply pathPrefix", description = "Apply pathPrefix")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping("/filestorage/path/apply")
+    @GetMapping("/filestorage/path/apply")
     ResponseEntity<ResponseMessage<String>> applyPathPrefix();
 
     @Operation(summary = "Apply signedUrls for put", description = "Apply signedUrls for put")
