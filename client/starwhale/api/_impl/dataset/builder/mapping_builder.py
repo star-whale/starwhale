@@ -295,7 +295,7 @@ class MappingDatasetBuilder:
 
             # TODO: find a graceful cleanup method
             # forbid to write cache and fp contents into datastore table
-            artifact.clear_bytes()
+            artifact.clear_cache()
 
         self._tabular_dataset.put(td_row)
 

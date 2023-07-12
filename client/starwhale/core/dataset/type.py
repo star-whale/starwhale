@@ -248,13 +248,10 @@ class BaseArtifact(ASDictMixin, _ResourceOwnerMixin, metaclass=ABCMeta):
     def to_bytes(self, encoding: str = "utf-8") -> bytes:
         return self.fetch_data(encoding)
 
-    def clear_bytes(self) -> None:
-        self.clear_cache()
+    def clear_cache(self) -> None:
+        self.__cache_bytes = b""
         if isinstance(self.fp, (bytes, io.IOBase, str)):
             self.fp = ""
-
-    def clear_cache(self) -> None:
-        self.__cache_bytes = bytes()
 
     def fetch_data(self, encoding: str = "utf-8") -> bytes:
         if self.__cache_bytes:
@@ -746,6 +743,10 @@ class Text(BaseArtifact, SwObject):
         if not self._content:
             self._content = self.link_to_content()
         return self._content
+
+    def clear_cache(self) -> None:
+        super().clear_cache()
+        self._content = ""
 
     def to_bytes(self, encoding: str = "") -> bytes:
         return self.content.encode(encoding or self.encoding)
