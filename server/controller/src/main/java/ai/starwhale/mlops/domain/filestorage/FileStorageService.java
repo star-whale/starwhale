@@ -116,7 +116,7 @@ public class FileStorageService {
         try {
             return storageAccessService.list(pathPrefix)
                     .collect(Collectors.toMap(
-                        filePath -> filePath.substring(pathPrefix.length() + 1),
+                        filePath -> filePath.substring(pathPrefix.length() + (pathPrefix.endsWith("/") ? 0 : 1)),
                         filePath -> {
                             try {
                                 return storageAccessService.signedUrl(filePath, urlExpirationTimeMillis);
