@@ -289,6 +289,7 @@ class BundleCopy(CloudRequestMixed):
             workdir,
             self._object_store,
             progress,
+            self.force,
         )
 
     def _do_upload_bundle_dir(

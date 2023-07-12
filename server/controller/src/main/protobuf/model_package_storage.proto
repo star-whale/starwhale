@@ -33,6 +33,8 @@ enum FileType {
   FILE_TYPE_REGULAR = 0;
   FILE_TYPE_HUGE = 1;
   FILE_TYPE_DIRECTORY = 2;
+  FILE_TYPE_SYMLINK = 3;
+  FILE_TYPE_HARDLINK = 4;
 }
 
 message File {
@@ -54,6 +56,9 @@ message File {
      of data blobs references. from_file_index is inclusive, to_file_index is exclusive. */
   int32 from_file_index = 10;
   int32 to_file_index = 11;
+
+  /* stores link target, either hardlink or symlink */
+  string link = 12;
 }
 
 message MetaBlobIndex {
