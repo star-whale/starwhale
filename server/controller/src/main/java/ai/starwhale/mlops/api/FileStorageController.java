@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.filestorage.ApplySignedUrlRequest;
+import ai.starwhale.mlops.api.protocol.filestorage.FileDeleteRequest;
 import ai.starwhale.mlops.api.protocol.filestorage.SignedUrlResponse;
 import ai.starwhale.mlops.domain.filestorage.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +39,8 @@ public class FileStorageController implements FileStorageApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> applyPathPrefix() {
-        // TODO whether need to create a path in oss?
-        return ResponseEntity.ok(Code.success.asResponse(service.generatePathPrefix()));
+    public ResponseEntity<ResponseMessage<String>> applyPathPrefix(String flag) {
+        return ResponseEntity.ok(Code.success.asResponse(service.generatePathPrefix(flag)));
     }
 
     @Override
@@ -59,8 +59,8 @@ public class FileStorageController implements FileStorageApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deletePath(String path) {
-        service.deletePath(path);
+    public ResponseEntity<ResponseMessage<String>> deletePath(FileDeleteRequest request) {
+        service.deleteFiles(request.getPathPrefix(), request.getFiles());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 }

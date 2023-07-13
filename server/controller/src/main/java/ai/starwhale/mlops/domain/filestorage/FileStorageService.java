@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 
 @Slf4j
@@ -42,7 +43,7 @@ public class FileStorageService {
     private final Integer maxFileNum;
 
     public FileStorageService(StorageAccessService storageAccessService,
-                              @Value("${sw.filestorage.data-root-path:files/}") String dataRootPath,
+                              @Value("${sw.filestorage.data-root-path:files}") String dataRootPath,
                               @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime,
                               @Value("${sw.filestorage.max-signed-files:1000}") Integer maxFileNum) {
         this.storageAccessService = storageAccessService;
@@ -60,8 +61,11 @@ public class FileStorageService {
      *
      * @return path
      */
-    public String generatePathPrefix() {
-        return String.format("%s%s/", dataRootPath, UUID.randomUUID());
+    public String generatePathPrefix(String flag) {
+        if (!StringUtils.hasText(flag)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "flag can't be null");
+        }
+        return String.format("%s%s/%s/", dataRootPath, flag, UUID.randomUUID());
     }
 
     /**
@@ -102,15 +106,17 @@ public class FileStorageService {
         return signedUrls;
     }
 
-    public void deletePath(String path) {
-        if (!validatePathPrefix(path)) {
+    public void deleteFiles(String pathPrefix, Set<String> files) {
+        if (!validatePathPrefix(pathPrefix)) {
             throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "path is invalid");
         }
-        try {
-            storageAccessService.delete(path);
-        } catch (IOException e) {
-            log.error("delete path:{} error.", path, e);
-            throw new SwProcessException(SwProcessException.ErrorType.STORAGE, e.getMessage());
+        for (String file : files) {
+            try {
+                storageAccessService.delete(pathPrefix + file);
+            } catch (IOException e) {
+                log.error("delete path:{} error.", pathPrefix + file, e);
+                throw new SwProcessException(SwProcessException.ErrorType.STORAGE, e.getMessage());
+            }
         }
     }
 
