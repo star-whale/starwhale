@@ -40,7 +40,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
             {
                 title: t('Datasets'),
                 path: `/projects/${projectId}/datasets`,
-                activePathPattern: /\/(datasets)\/?/,
+                activePathPattern: /\/(datasets|new_dataset)\/?/,
                 icon: <IconFont type='dataset' size={16} />,
             },
             {

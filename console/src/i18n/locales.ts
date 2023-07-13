@@ -111,6 +111,10 @@ const dataset = {
         en: '{{0}} files, total size {{1}}',
         zh: '{{0}} 个文件，共 {{1}}',
     },
+    'dataset.create.upload.error.type': {
+        zh: '文件主类型异常, 建议格式 image/video/audio/csv/json/jsonl .',
+        en: 'File main type is invalid, suggest format image/video/audio/csv/json/jsonl.',
+    },
     'dataset.create.upload.error.desc': {
         en: 'the following files have an invalid status: ',
         zh: '以下文件上传状态异常: ',

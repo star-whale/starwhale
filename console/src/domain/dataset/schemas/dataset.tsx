@@ -47,3 +47,13 @@ export interface IDatasetTreeSchema {
     shared: number
     versions: IDatasetTreeVersionSchema[]
 }
+
+export interface IDatasetTaskBuildListSchema {
+    id: string
+    datasetId: string
+    projectId: string
+    datasetName: string
+    status: 'CREATED' | 'BUILDING' | 'SUCCESS' | 'FAILED'
+    type: string
+    createTime: number
+}

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core'
 import { createDataset } from '@/domain/dataset/services/dataset'
 import { ICreateDatasetFormSchema } from '@/domain/dataset/schemas/dataset'
@@ -14,21 +14,22 @@ export default function DatasetNewCard() {
     const { projectId, datasetId } = useParams<{ projectId: string; datasetId: string }>()
     const { query } = useQueryArgs()
     const [t] = useTranslation()
+    const history = useHistory()
+
     const handleSubmit = useCallback(
         async (data: ICreateDatasetFormSchema) => {
-            console.log(data)
-            if (!projectId || !data.datasetName || !data.storagePath) {
+            if (!projectId || !data.datasetName || !data.upload?.storagePath || !data.upload?.type) {
                 return
             }
-
             await createDataset(projectId, data.datasetName, {
                 datasetId,
-                type: data.type,
+                type: data.upload?.type as any,
                 shared: data.shared,
-                storagePath: data.storagePath,
+                storagePath: data.upload?.storagePath,
             })
+            history.push(`/projects/${projectId}/datasets`)
         },
-        [projectId, datasetId]
+        [projectId, datasetId, history]
     )
 
     return (

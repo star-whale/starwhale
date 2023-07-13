@@ -57,7 +57,6 @@ export interface IDatasetFormProps {
 
 export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
     const [values, setValues] = useState<ICreateDatasetFormSchema | undefined>(undefined)
-    const { projectId } = useParams<{ projectId: string }>()
     const { query } = useQueryArgs()
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
@@ -85,10 +84,7 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
         async (values_) => {
             setLoading(true)
             try {
-                await onSubmit({
-                    ..._.omit(values_, ['upload']),
-                    ...values_.upload,
-                })
+                await onSubmit(values_)
             } finally {
                 setLoading(false)
             }
@@ -97,8 +93,6 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
     )
 
     const [t] = useTranslation()
-
-    console.log(values)
 
     const formResetField = useCallback(
         (key: any, value: any) => {
@@ -118,14 +112,12 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
     )
 
     useEffect(() => {
-        if (query.datasetVersionId) {
-            formResetField('datasetVersionId', query.datasetVersionId)
+        if (query.datasetName) {
+            formResetField('datasetName', query.datasetName)
         }
-    }, [query.datasetVersionId, formResetField])
+    }, [query.datasetName, formResetField])
 
-    // console.log(Object.values(MIMES).join(','))
-
-    console.log(form.getFieldValue('shared'))
+    const disabled = !values?.datasetName || !values?.upload?.type
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -168,7 +160,7 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
                     >
                         {t('Cancel')}
                     </Button>
-                    <Button isLoading={loading} type='submit'>
+                    <Button isLoading={loading} type='submit' disabled={disabled}>
                         {t('submit')}
                     </Button>
                 </div>

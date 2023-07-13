@@ -144,11 +144,11 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                         <p style={{ color: 'rgba(2,16,43,0.60)' }}>
                             {t('dataset.create.upload.total.desc', [successCount, totalSize])}
                         </p>
-                        {errorCount && (
+                        {errorCount ? (
                             <p style={{ color: '#CC3D3D', display: 'inline-flex', gap: '5px' }}>
-                                {errorCount && t('dataset.create.upload.error.desc')}
+                                {t('dataset.create.upload.error.desc')}
                                 {[
-                                    statusMap['error_exist'] && (
+                                    statusMap['error_exist']?.length && (
                                         <Text
                                             key='exist'
                                             tooltip={<pre>{statusMap['error_exist'].map(getFileName).join('\n')}</pre>}
@@ -157,7 +157,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                                             {t('dataset.create.upload.error.exist')})
                                         </Text>
                                     ),
-                                    statusMap['error_max'] && (
+                                    statusMap['error_max']?.length && (
                                         <Text
                                             key='max'
                                             tooltip={<pre>{statusMap['error_max'].map(getFileName).join('\n')}</pre>}
@@ -168,11 +168,9 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                                     ),
                                 ]}
                             </p>
-                        )}
-                        {mostFrequentType && (
-                            <p style={{ color: '#CC3D3D' }}>
-                                type: {mostFrequentType} {mostFrequentType === '' && 'error type'}
-                            </p>
+                        ) : null}
+                        {!mostFrequentType && (
+                            <p style={{ color: '#CC3D3D' }}>{t('dataset.create.upload.error.type')}</p>
                         )}
                     </div>
                     <Button onClick={reset} as='link'>

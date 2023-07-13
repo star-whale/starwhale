@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import type { UploadFile, UploadProps, RcFile, UploadFileStatus } from 'antd/es/upload/interface'
-import { sign } from '@/domain/base/services/filestore'
+import { deleteFiles, sign } from '@/domain/base/services/filestore'
 import _ from 'lodash'
 import { useSign } from './useSign'
 import { useEvent } from '@starwhale/core'
 import { getUploadName, getUploadType } from '../utils'
 import IconFont from '@starwhale/ui/IconFont'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
+import Button from '@starwhale/ui/Button'
 
 type StatusT = UploadFileStatus | 'error_exist' | 'error_max'
 
@@ -24,9 +25,17 @@ function useUpload(props: UploadProps = {}) {
         setFileList([...fileListTmp.filter((f) => !fileFailedList.find((ff) => ff.uid === f.uid))])
     }
 
+    const handleRemove = async (file: UploadFile) => {
+        const name = getUploadName(file)
+        await deleteFiles([name], signPrefix)
+        setFileMap((prev) => ({ ...prev, [name]: undefined }))
+        setFileList((prev) => prev.filter((f) => f.uid !== file.uid))
+    }
+
     const itemRender = (
         originNode: React.ReactNode,
         file: UploadFile,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         currentFileList: UploadFile[]
     ): React.ReactNode => {
         // return originNode
@@ -50,7 +59,30 @@ function useUpload(props: UploadProps = {}) {
                     </div>
                     <div className='ant-upload-list-item-name'>{name}</div>
                     <div className='ant-upload-list-item-size'>{getReadableStorageQuantityStr(file.size ?? 0)}</div>
-                    <div className='ant-upload-list-item-actions'></div>
+                    <div className='ant-upload-list-item-actions'>
+                        <Button
+                            as='link'
+                            icon='delete'
+                            onClick={() => handleRemove(file)}
+                            overrides={{
+                                BaseButton: {
+                                    style: {
+                                        'marginLeft': '16px',
+                                        'backgroundColor': 'transparent',
+                                        'color': ' rgba(2,16,43,0.40);',
+                                        ':hover .icon-container': {
+                                            color: '#D65E5E !important',
+                                            backgroundColor: 'transparent',
+                                        },
+                                        ':focus': {
+                                            color: '#D65E5E !important',
+                                            backgroundColor: 'transparent',
+                                        },
+                                    },
+                                },
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         )
