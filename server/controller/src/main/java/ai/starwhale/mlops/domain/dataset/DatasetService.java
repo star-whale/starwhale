@@ -443,7 +443,9 @@ public class DatasetService {
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD);
 
             // record id to annotations
-            k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("id", String.valueOf(entity.getId())));
+            var info = Map.of("id", String.valueOf(entity.getId()));
+            k8sJobTemplate.updateAnnotations(job.getMetadata(), info);
+            k8sJobTemplate.updateAnnotations(job.getSpec().getTemplate().getMetadata(), info);
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             var envVars = List.of(
