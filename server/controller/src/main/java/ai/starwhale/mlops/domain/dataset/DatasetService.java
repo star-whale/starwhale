@@ -418,7 +418,7 @@ public class DatasetService {
         var project = projectService.findProject(request.getProjectUrl());
         if (request.getDatasetId() == null || request.getDatasetId() == 0) {
             // create new dataset
-            // TODO check the dataset name in the same project and building in build records
+            // check the dataset name whether already in the same project
             var ds = datasetMapper.findByName(request.getDatasetName(), project.getId(), true);
             if (null != ds) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
@@ -430,7 +430,7 @@ public class DatasetService {
                     project.getId(), request.getDatasetName());
         if (buildings.size() > 0) {
             throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
-                    "The dataset:{} in project:{} is already in building.",
+                    "The dataset:{0} in project:{1} is already in building.",
                     request.getDatasetName(), project.getName()));
         }
         var entity = BuildRecordEntity.builder()

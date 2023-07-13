@@ -83,7 +83,7 @@ public class BuildLogCollector {
             buildRecordMapper.updateLogPath(id, logPath);
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.INFRA,
-                    MessageFormat.format("k8s api exception {}", e.getResponseBody()), e);
+                    MessageFormat.format("k8s api exception {0}", e.getResponseBody()), e);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "uploading log failed", e);
         }
