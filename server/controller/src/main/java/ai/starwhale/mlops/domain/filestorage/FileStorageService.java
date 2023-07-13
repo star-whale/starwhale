@@ -102,6 +102,18 @@ public class FileStorageService {
         return signedUrls;
     }
 
+    public void deletePath(String path) {
+        if (!validatePathPrefix(path)) {
+            throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "path is invalid");
+        }
+        try {
+            storageAccessService.delete(path);
+        } catch (IOException e) {
+            log.error("delete path:{} error.", path, e);
+            throw new SwProcessException(SwProcessException.ErrorType.STORAGE, e.getMessage());
+        }
+    }
+
 
     /**
      * get signed urls for files(use the special oss which parsed from path prefix)

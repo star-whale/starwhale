@@ -57,4 +57,10 @@ public class FileStorageController implements FileStorageApi {
         return ResponseEntity.ok(Code.success.asResponse(
                 new SignedUrlResponse(pathPrefix, service.generateSignedGetUrls(pathPrefix))));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deletePath(String path) {
+        service.deletePath(path);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
 }

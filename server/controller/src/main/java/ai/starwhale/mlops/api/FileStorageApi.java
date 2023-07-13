@@ -25,7 +25,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -48,4 +50,10 @@ public interface FileStorageApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping("/filestorage/signedurl")
     ResponseEntity<ResponseMessage<SignedUrlResponse>> applySignedGetUrls(String pathPrefix);
+
+    @Operation(summary = "Delete path", description = "Delete path")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping("/filestorage/{path}")
+    ResponseEntity<ResponseMessage<String>> deletePath(@PathVariable("path") String path);
+
 }
