@@ -70,9 +70,11 @@ public interface LogApi {
     @Operation(summary = "Get the build log content")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-            value = "/log/dataset/build/{id}",
+            value = "/log/offline/dataset/{name}/build/{id}",
             produces = MediaType.TEXT_PLAIN_VALUE)
     ResponseEntity<String> buildLogContent(
+            @Parameter(in = ParameterIn.PATH, description = "the name of a dataset", schema = @Schema())
+            @PathVariable("name") String name,
             @Parameter(in = ParameterIn.PATH, description = "the id of the build record", schema = @Schema())
             @PathVariable("id") Long id);
 }
