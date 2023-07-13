@@ -48,7 +48,7 @@ public class LogController implements LogApi {
     }
 
     @Override
-    public ResponseEntity<String> buildLogContent(String name, Long id) {
+    public ResponseEntity<String> buildLogContent(Long id) {
         return ResponseEntity.ok(datasetService.buildLogContent(id));
     }
 }
