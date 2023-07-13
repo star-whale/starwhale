@@ -36,7 +36,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-@ServerEndpoint("/api/v1/log/dataset/{name}/build/{id}/online")
+@ServerEndpoint("/api/v1/log/online/dataset/{name}/build/{id}")
 public class DatasetBuildLogWsServer {
 
     private static final ExecutorService executorService = Executors.newCachedThreadPool();
