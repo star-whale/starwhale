@@ -414,12 +414,24 @@ public class DatasetService {
     }
 
     @Transactional
-    public boolean build(CreateBuildRecordRequest request) {
+    public void build(CreateBuildRecordRequest request) {
         var project = projectService.findProject(request.getProjectUrl());
-        if (request.getDatasetId() == null) {
+        if (request.getDatasetId() == null || request.getDatasetId() == 0) {
             // create new dataset
             // TODO check the dataset name in the same project and building in build records
-
+            var ds = datasetMapper.findByName(request.getDatasetName(), project.getId(), true);
+            if (null != ds) {
+                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
+                    "The dataset:{} in project:{} is already exists, please use another name.",
+                    request.getDatasetName(), project.getName()));
+            }
+        }
+        var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
+                    project.getId(), request.getDatasetName());
+        if (buildings.size() > 0) {
+            throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
+                    "The dataset:{} in project:{} is already in building.",
+                    request.getDatasetName(), project.getName()));
         }
         var entity = BuildRecordEntity.builder()
                 .datasetId(request.getDatasetId())
@@ -477,7 +489,6 @@ public class DatasetService {
             } catch (ApiException e) {
                 throw new SwProcessException(ErrorType.K8S, "deploy dataset build job failed", e);
             }
-            return true;
         } else {
             throw new SwProcessException(ErrorType.DB, "create build record failed");
         }

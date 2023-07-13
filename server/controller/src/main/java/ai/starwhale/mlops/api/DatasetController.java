@@ -363,7 +363,7 @@ public class DatasetController implements DatasetApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> buildDataset(
                 String projectUrl, String datasetName, DatasetBuildRequest datasetBuildRequest) {
-        var res = datasetService.build(CreateBuildRecordRequest.builder()
+        datasetService.build(CreateBuildRecordRequest.builder()
                 .datasetId(datasetBuildRequest.getDatasetId())
                 .datasetName(datasetName)
                 .shared(datasetBuildRequest.getShared())
@@ -371,8 +371,7 @@ public class DatasetController implements DatasetApi {
                 .type(datasetBuildRequest.getType())
                 .storagePath(datasetBuildRequest.getStoragePath())
                 .build());
-        return res ? ResponseEntity.ok(Code.success.asResponse("success"))
-                : ResponseEntity.internalServerError().build();
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override

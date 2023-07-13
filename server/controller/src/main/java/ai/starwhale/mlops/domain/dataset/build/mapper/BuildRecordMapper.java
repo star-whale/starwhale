@@ -41,6 +41,12 @@ public interface BuildRecordMapper {
             @Param("projectId") Long projectId, @Param("status") BuildStatus status);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
+            + "WHERE project_id = #{projectId} AND dataset_name = #{datasetName} AND status = 'BUILDING' "
+            + "FOR UPDATE")
+    List<BuildRecordEntity> selectBuildingInOneProjectForUpdate(
+            @Param("projectId") Long projectId, @Param("datasetName") String datasetName);
+
+    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
             + "WHERE (status = 'SUCCESS' or status = 'FAILED') AND cleaned = 0")
     List<BuildRecordEntity> selectFinishedAndUncleaned();
 
