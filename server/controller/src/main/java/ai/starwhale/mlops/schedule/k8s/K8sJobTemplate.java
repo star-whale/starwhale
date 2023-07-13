@@ -176,6 +176,11 @@ public class K8sJobTemplate {
         originLabels = originLabels == null ? new HashMap<>() : originLabels;
         originLabels.putAll(labels);
         job.getMetadata().labels(originLabels);
+
+        var specLabels = job.getSpec().getTemplate().getMetadata().getLabels();
+        specLabels = specLabels == null ? new HashMap<>() : specLabels;
+        specLabels.putAll(labels);
+        job.getSpec().getTemplate().getMetadata().labels(specLabels);
     }
 
     public void updateAnnotations(V1ObjectMeta meta, Map<String, String> annotations) {
