@@ -50,6 +50,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Service
 @Slf4j
@@ -305,6 +306,9 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
         coreContainerEnvs.put("SW_PYPI_TIMEOUT", String.valueOf(runTimeProperties.getPypi().getTimeout()));
         coreContainerEnvs.put("SW_PYPI_RETRIES", String.valueOf(runTimeProperties.getPypi().getRetries()));
+        if (StringUtils.hasText(runTimeProperties.getCondarc())) {
+            coreContainerEnvs.put("SW_CONDA_CONFIG", runTimeProperties.getCondarc());
+        }
 
         // GPU resource
         var resources = getPatchedResources(task).stream();

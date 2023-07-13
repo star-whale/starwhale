@@ -51,6 +51,18 @@ EOF
     else
         echo -e "\t ** use image builtin pip.conf"
     fi
+
+    if [ -n "$SW_CONDA_CONFIG" ] ; then
+      echo -e "\t ** use SW_CONDA_CONFIG env to config ~/.condarc"
+      echo "$SW_CONDA_CONFIG" > ~/.condarc
+      echo -e "\t ** current .condarc:"
+      echo "-------------------"
+      cat ~/.condarc
+      echo "-------------------"
+    else
+      echo -e "\t ** use image builtin condarc"
+    fi
+
 }
 
 set_pip_cache() {

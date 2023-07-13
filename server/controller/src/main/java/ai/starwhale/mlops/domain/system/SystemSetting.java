@@ -36,6 +36,8 @@ public class SystemSetting {
 
     Pypi pypiSetting;
 
+    String condaSetting;
+
     List<ResourcePool> resourcePoolSetting;
 
     Set<StorageConnectionToken> storageSetting;
