@@ -1,19 +1,25 @@
 import { fetchSignPathPrefix } from '@/domain/base/services/filestore'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 function useSign() {
     const signPrefix = useRef<string>('')
 
-    return {
-        getSign: async () => {
-            if (!signPrefix.current) {
-                signPrefix.current = await fetchSignPathPrefix()
-            }
+    const getSign = async () => {
+        if (!signPrefix.current) {
+            signPrefix.current = await fetchSignPathPrefix()
+        }
 
-            return signPrefix.current
-        },
-        resetSign: () => {
-            signPrefix.current = ''
+        return signPrefix.current
+    }
+
+    useEffect(() => {
+        getSign()
+    }, [])
+
+    return {
+        getSign,
+        resetSign: async () => {
+            signPrefix.current = await fetchSignPathPrefix()
         },
         signPrefix: signPrefix.current,
     }

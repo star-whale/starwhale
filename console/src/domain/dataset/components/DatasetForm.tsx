@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
-import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import { isModified } from '@/utils'
-import { ICreateDatasetSchema, IDatasetSchema } from '../schemas/dataset'
+import { ICreateDatasetFormSchema, IDatasetSchema } from '../schemas/dataset'
 import { createUseStyles } from 'react-jss'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import User from '@/domain/user/components/User'
@@ -11,19 +9,31 @@ import { useProject } from '@/domain/project/hooks/useProject'
 import { Toggle } from '@starwhale/ui/Select'
 import { useHistory, useParams } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core'
-import { MIMES } from '@starwhale/core/dataset'
 import { DraggerUpload } from '@starwhale/ui/Upload'
 import Button from '@starwhale/ui/Button'
 import _ from 'lodash'
+import Shared from '@/components/Shared'
+import Input from '@starwhale/ui/Input'
 
-const { Form, FormItem, useForm } = createForm<ICreateDatasetSchema>()
+const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateDatasetFormSchema>()
 
 const useStyles = createUseStyles({
     datasetName: {
         display: 'flex',
         alignContent: 'stretch',
         alignItems: 'flex-start',
-        gap: '5px',
+        gap: '8px',
+    },
+    shared: {
+        'display': 'flex',
+        'alignItems': 'center',
+        '& [data-baseweb=form-control-container]': {
+            marginBottom: '0 !important',
+        },
+        '& > div:first-child': {
+            marginLeft: '22px',
+        },
+        'marginBottom': '20px',
     },
     row: {
         display: 'grid',
@@ -42,11 +52,11 @@ const useStyles = createUseStyles({
 
 export interface IDatasetFormProps {
     dataset?: IDatasetSchema
-    onSubmit: (data: ICreateDatasetSchema) => Promise<void>
+    onSubmit: (data: ICreateDatasetFormSchema) => Promise<void>
 }
 
 export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
-    const [values, setValues] = useState<ICreateDatasetSchema | undefined>(undefined)
+    const [values, setValues] = useState<ICreateDatasetFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const { query } = useQueryArgs()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,37 +123,42 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
         }
     }, [query.datasetVersionId, formResetField])
 
-    console.log(Object.values(MIMES).join(','))
+    // console.log(Object.values(MIMES).join(','))
+
+    console.log(form.getFieldValue('shared'))
 
     return (
-        <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+        <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <div className={styles.datasetName}>
-                <div
-                    style={{
-                        margin: '38px 6px 0px',
-                        display: 'flex',
-                        gap: '5px',
-                    }}
-                >
-                    <User user={currentUser} /> / {project?.name}
-                </div>
+                <FormItemLabel label={t('dataset.create.owner')}>
+                    <div className='flex' style={{ height: '32px', alignItems: 'center', gap: '8px' }}>
+                        <User user={currentUser} /> /
+                    </div>
+                </FormItemLabel>
+                <FormItemLabel label={t('Project Name')}>
+                    <div className='flex' style={{ height: '32px', alignItems: 'center', gap: '8px' }}>
+                        {project?.name} /
+                    </div>
+                </FormItemLabel>
                 <FormItem name='datasetName' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }} required>
                     <Input size='compact' />
                 </FormItem>
             </div>
-            <div className={styles.row}>
-                <FormItem label={t('Shared')} name='shared'>
+            <div className={styles.shared}>
+                {t('Shared')}:
+                <Shared shared={form.getFieldValue('shared') ? 1 : 0} />
+                <FormItem name='shared'>
                     <Toggle />
                 </FormItem>
             </div>
-            <div className={styles.upload} style={{ overflow: 'auto' }}>
-                <FormItem name='upload' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }} required>
+            <div className={styles.upload} style={{ overflow: 'auto', maxWidth: 800, width: '100%' }}>
+                <FormItem name='upload' label={t('dataset.create.files')} required>
                     <DraggerUpload />
                 </FormItem>
             </div>
 
             <FormItem>
-                <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
+                <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
                     <Button
                         kind='secondary'
                         type='button'

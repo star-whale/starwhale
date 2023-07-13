@@ -6,11 +6,25 @@
   "description": "",
   "glyphs": [
     {
-      "icon_id": "36317040",
+      "icon_id": "36423030",
+      "name": "file3",
+      "font_class": "file3",
+      "unicode": "e672",
+      "unicode_decimal": 58994
+    },
+    {
+      "icon_id": "36414623",
       "name": "copy link",
       "font_class": "a-copylink",
       "unicode": "e66f",
       "unicode_decimal": 58991
+    },
+    {
+      "icon_id": "36414624",
+      "name": "View log",
+      "font_class": "a-Viewlog",
+      "unicode": "e671",
+      "unicode_decimal": 58993
     },
     {
       "icon_id": "36317041",

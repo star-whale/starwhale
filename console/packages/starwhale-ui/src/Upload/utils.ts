@@ -1,4 +1,5 @@
-import type { UploadFile } from 'antd/es/upload/interface'
+import type { RcFile, UploadFile } from 'antd/es/upload/interface'
+import { fi } from 'date-fns/locale'
 
 export const getUploadType = (file: UploadFile) => {
     if (file.type?.startsWith('image')) return 'IMAGE'
@@ -8,6 +9,12 @@ export const getUploadType = (file: UploadFile) => {
     if (file.name?.includes('.json')) return 'JSON'
     if (file.name?.includes('.jsonL')) return 'JSONL'
     return ''
+}
+
+export const getUploadName = (file: UploadFile | RcFile | any) => {
+    if (!file) return ''
+    if (file.originFileObj) return file.originFileObj?.webkitRelativePath ?? file.name
+    return file.webkitRelativePath ?? file.name
 }
 
 function findMostFrequentType(arr: UploadFile[]) {

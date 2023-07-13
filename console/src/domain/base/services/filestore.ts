@@ -14,7 +14,16 @@ export async function sign(files: string[], pathPrefix?: string): Promise<Signed
     return resp.data
 }
 
+export async function deleteFiles(files: string[], pathPrefix?: string): Promise<any> {
+    const resp = await axios.delete('/api/v1/filestorage/file', {
+        // @ts-ignore
+        files,
+        pathPrefix,
+    })
+    return resp.data
+}
+
 export async function fetchSignPathPrefix(): Promise<string> {
-    const resp = await axios.get('/api/v1/filestorage/path/apply')
+    const resp = await axios.get('/api/v1/filestorage/path/apply?flag=ds-build')
     return resp.data
 }

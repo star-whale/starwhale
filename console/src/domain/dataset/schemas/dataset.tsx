@@ -26,8 +26,11 @@ export interface IUpdateDatasetSchema {
 }
 export interface ICreateDatasetFormSchema {
     datasetName: string
-    storagePath?: string
     shared?: number
+    upload?: {
+        storagePath?: string
+        type?: string
+    }
 }
 
 export interface ICreateDatasetQuerySchema {

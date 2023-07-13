@@ -89,6 +89,7 @@ export type IconTypesT =
     | 'a-passwordresets'
     | 'file'
     | 'file2'
+    | 'file3'
     | 'check'
     | 'invalidFile'
     | 'group'
@@ -115,6 +116,7 @@ export type IconTypesT =
     | 'global2'
     | 'copy'
     | 'a-copylink'
+    | 'upload'
 
 interface IIconFontProps {
     style?: React.CSSProperties

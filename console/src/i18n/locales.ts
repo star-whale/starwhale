@@ -44,6 +44,10 @@ const basic = {
         en: 'Docs',
         zh: '文档',
     },
+    'form.upload.error.exist': {
+        en: 'File already exists',
+        zh: '文件已存在',
+    },
 }
 
 const dataset = {
@@ -90,6 +94,34 @@ const dataset = {
     'dataset.update': {
         en: 'Update Dataset',
         zh: '更新数据集',
+    },
+    'dataset.create.owner': {
+        en: 'Owner',
+        zh: '拥有者',
+    },
+    'dataset.create.files': {
+        en: 'Dataset Files',
+        zh: '数据集文件',
+    },
+    'dataset.create.upload.desc': {
+        en: 'Drag or click to upload files',
+        zh: '拖拽或点击上传文件',
+    },
+    'dataset.create.upload.total.desc': {
+        en: '{{0}} files, total size {{1}}',
+        zh: '{{0}} 个文件，共 {{1}}',
+    },
+    'dataset.create.upload.error.desc': {
+        en: 'the following files have an invalid status: ',
+        zh: '以下文件上传状态异常: ',
+    },
+    'dataset.create.upload.error.exist': {
+        en: 'File already exists',
+        zh: '文件已存在',
+    },
+    'dataset.create.upload.error.max': {
+        en: 'File size exceeds the maximum limit',
+        zh: '文件大小超过最大限制',
     },
 }
 
@@ -1231,6 +1263,10 @@ const locales0 = {
     'Files': {
         en: 'Files',
         zh: '文件',
+    },
+    'Directory': {
+        en: 'Directory',
+        zh: '目录',
     },
     'Version ID': {
         en: 'Version ID',
