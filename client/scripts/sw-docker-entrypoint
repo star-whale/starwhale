@@ -197,13 +197,13 @@ case "$1" in
         pre_config
         ;;
     run|evaluation|fine_tune)
-        prepare $1 && run
+        prepare && run
         ;;
     serve|serving)
-        prepare $1 && serve
+        prepare && serve
         ;;
     dev)
-        install_code_server && run_code_server
+        prepare && install_code_server && run_code_server
         tail -f /var/log/dev.log
         ;;
     *)
