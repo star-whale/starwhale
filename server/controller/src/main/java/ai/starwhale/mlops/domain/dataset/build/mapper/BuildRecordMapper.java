@@ -29,7 +29,7 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface BuildRecordMapper {
     String COLUMNS_FOR_INSERT = "dataset_id, dataset_name, project_id, "
-            + "type, status, storage_path, format, created_time";
+            + "type, status, storage_path, format, shared, created_time";
     String COLUMNS_FOR_SELECT = "id, " + COLUMNS_FOR_INSERT;
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record WHERE id = #{id}")
@@ -62,7 +62,7 @@ public interface BuildRecordMapper {
     @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
             + "VALUES ("
             + "#{datasetId}, #{datasetName}, #{projectId}, "
-            + "#{type}, #{status}, #{storagePath}, #{format}, #{createdTime}"
+            + "#{type}, #{status}, #{storagePath}, #{format}, #{shared}, #{createdTime}"
             + ")")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(BuildRecordEntity buildRecord);
