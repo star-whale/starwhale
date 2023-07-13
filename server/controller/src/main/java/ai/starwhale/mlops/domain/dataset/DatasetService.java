@@ -89,6 +89,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -441,6 +442,7 @@ public class DatasetService {
                 .storagePath(request.getStoragePath())
                 .type(request.getType())
                 .status(BuildStatus.CREATED)
+                .createdTime(new Date())
                 .build();
         var res = buildRecordMapper.insert(entity) > 0;
         if (res) {
