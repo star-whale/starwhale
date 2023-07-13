@@ -23,6 +23,9 @@ sw:
     image-build:
       resource-pool: ${SW_IMAGE_BUILD_RESOURCE_POOL:default}
       image: ${SW_IMAGE_BUILD_IMAGE:gcr.io/kaniko-project/executor:latest}
+    dataset-build:
+      resource-pool: ${SW_DATASET_BUILD_RESOURCE_POOL:default}
+      image: ${SW_DATASET_BUILD_IMAGE:docker-registry.starwhale.cn/star-whale/starwhale:latest}
     pypi:
       index-url: ${SW_PYPI_INDEX_URL:}
       extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:}
