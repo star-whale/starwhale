@@ -508,7 +508,7 @@ public class DatasetService {
             if (dataset != null) {
                 var version = datasetVersionMapper.findByLatest(dataset.getId());
                 if (version != null) {
-                    datasetVersionMapper.updateShared(dataset.getId(), true);
+                    datasetVersionMapper.updateShared(version.getId(), true);
                 }
             }
         }
