@@ -60,11 +60,11 @@ public class BuildLogCollector {
         this.buildLogPath = buildLogPath;
     }
 
-    public void collect(Long id) throws StarwhaleException {
+    public void collect(String jobName, Long id) throws StarwhaleException {
         log.debug("logging for dataset build {} begins...", id);
         try {
             V1Pod v1Pod = k8sClient.podOfJob(K8sClient.toV1LabelSelector(Map.of(
-                    K8sJobTemplate.JOB_IDENTITY_LABEL, id.toString())));
+                    K8sJobTemplate.JOB_IDENTITY_LABEL, jobName)));
             if (null == v1Pod) {
                 log.warn("pod not exists for dataset build {}", id);
                 return;

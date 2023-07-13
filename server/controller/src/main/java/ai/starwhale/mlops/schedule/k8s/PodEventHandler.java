@@ -190,8 +190,9 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 }
                 break;
             case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
+                String jobName = pod.getMetadata().getLabels().get("job-name");
                 id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
-                buildLogCollector.collect(id);
+                buildLogCollector.collect(jobName, id);
                 break;
             default:
         }
