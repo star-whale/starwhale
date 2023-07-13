@@ -235,6 +235,7 @@ ds_build_and_upload () {
     eval "$cmd" || exit 1
 
     echo "-->[Uploading] Start to upload dataset: $DATASET_BUILD_NAME..."
+    swcli instance login --token "$SW_TOKEN" --alias server "$SW_INSTANCE_URI"
     swcli dataset copy --patch "$DATASET_BUILD_NAME"/version/latest cloud://server/project/"$SW_PROJECT" || exit 1
 }
 
