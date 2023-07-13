@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
+import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
+import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
@@ -25,11 +27,13 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -37,6 +41,7 @@ import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +61,11 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
+import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
+import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVersionVoConverter;
 import ai.starwhale.mlops.domain.dataset.converter.DatasetVoConverter;
 import ai.starwhale.mlops.domain.dataset.dataloader.DataLoader;
@@ -74,10 +83,16 @@ import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -104,6 +119,10 @@ public class DatasetServiceTest {
     private UriAccessor uriAccessor;
     private DataLoader dataLoader;
     private TrashService trashService;
+    private K8sClient k8sClient;
+    private K8sJobTemplate k8sJobTemplate;
+    private DatasetBuildTokenValidator datasetBuildTokenValidator;
+    private SystemSettingService systemSettingService;
     @Setter
     private BundleManager bundleManager;
 
@@ -153,6 +172,10 @@ public class DatasetServiceTest {
         dataLoader = mock(DataLoader.class);
 
         trashService = mock(TrashService.class);
+        k8sClient = mock(K8sClient.class);
+        k8sJobTemplate = mock(K8sJobTemplate.class);
+        datasetBuildTokenValidator = mock(DatasetBuildTokenValidator.class);
+        systemSettingService = mock(SystemSettingService.class);
 
         service = new DatasetService(
                 projectService,
@@ -170,10 +193,10 @@ public class DatasetServiceTest {
                 uriAccessor,
                 dataLoader,
                 trashService,
-                mock(K8sClient.class),
-                mock(K8sJobTemplate.class),
-                mock(DatasetBuildTokenValidator.class),
-                mock(SystemSettingService.class), "");
+                k8sClient,
+                k8sJobTemplate,
+                datasetBuildTokenValidator,
+                systemSettingService, "");
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -509,6 +532,122 @@ public class DatasetServiceTest {
         assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+    }
+
+    @Test
+    public void testStartBuild() throws ApiException {
+        var datasetName = "test-build-ds";
+        var projectId = 1L;
+        given(projectService.findProject(String.valueOf(projectId)))
+                .willReturn(Project.builder().id(projectId).build());
+
+        // case1: create and already exist the same name dataset
+        given(datasetMapper.findByName(datasetName, projectId, true))
+                .willReturn(DatasetEntity.builder().build());
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                    .datasetId(null)
+                    .datasetName(datasetName)
+                    .projectUrl(String.valueOf(projectId))
+                    .build())
+        );
+
+        // case2: create and not exist the same name, but already building a same name dataset
+        given(datasetMapper.findByName(datasetName, projectId, true)).willReturn(null);
+        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
+                .willReturn(List.of(BuildRecordEntity.builder().build()));
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                    .datasetId(null)
+                    .datasetName(datasetName)
+                    .projectUrl(String.valueOf(projectId))
+                    .build())
+        );
+
+        // case3: insert to db failed
+        given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
+        given(buildRecordMapper.insert(any())).willReturn(0);
+        assertThrows(SwProcessException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(null)
+                .datasetName(datasetName)
+                .projectUrl(String.valueOf(projectId))
+                .build())
+        );
+
+        // case4: normal build
+        given(buildRecordMapper.insert(any())).willReturn(1);
+        V1Job v1Job = new V1Job();
+        v1Job.setMetadata(new V1ObjectMeta()
+                .name("dataset_build-1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_DATASET_BUILD)));
+        v1Job.setSpec(new V1JobSpec().template(new V1PodTemplateSpec().metadata(new V1ObjectMeta())));
+        given(k8sJobTemplate.loadJob(WORKLOAD_TYPE_DATASET_BUILD)).willReturn(v1Job);
+
+        service.build(CreateBuildRecordRequest.builder()
+                .datasetId(null)
+                .datasetName(datasetName)
+                .shared(true)
+                .type(BuildType.IMAGE)
+                .projectUrl(String.valueOf(projectId))
+                .storagePath("storage-path")
+                .build());
+        verify(k8sJobTemplate, times(1)).loadJob(WORKLOAD_TYPE_DATASET_BUILD);
+        verify(k8sJobTemplate, times(2)).updateAnnotations(any(), any());
+        verify(datasetBuildTokenValidator, times(1)).getToken(any(), any());
+        verify(k8sJobTemplate, times(1)).renderJob(
+                any(), eq("test-build-ds-null"), eq("Never"), eq(1), any(), any(), isNull(), isNull());
+        verify(k8sClient, times(1)).deployJob(any());
+    }
+
+    @Test
+    public void testUpdateBuildRecord() {
+        var recordId = 1L;
+        var projectId = 101L;
+        var datasetName = "test-build-ds";
+
+        // case1: not found
+        given(buildRecordMapper.selectById(recordId)).willReturn(null);
+        assertFalse(service.updateBuildStatus(recordId, BuildStatus.SUCCESS));
+
+        var record = BuildRecordEntity.builder()
+                .id(recordId).projectId(projectId).datasetName(datasetName).shared(false).build();
+        given(buildRecordMapper.selectById(recordId)).willReturn(record);
+
+        // case2: update failed
+        given(buildRecordMapper.updateStatus(recordId, BuildStatus.SUCCESS)).willReturn(0);
+        assertFalse(service.updateBuildStatus(recordId, BuildStatus.SUCCESS));
+
+        // update is ok
+        given(buildRecordMapper.updateStatus(eq(recordId), any())).willReturn(1);
+        // case3: update to failed and shared is false
+        service.updateBuildStatus(recordId, BuildStatus.FAILED);
+        verify(datasetMapper, times(0)).findByName(eq(datasetName), eq(projectId), eq(true));
+
+        record.setShared(true);
+        // case4: update to failed and shared is true
+        service.updateBuildStatus(recordId, BuildStatus.FAILED);
+        verify(datasetMapper, times(0)).findByName(eq(datasetName), eq(projectId), eq(true));
+
+        // case5: update to success and shared is true
+        given(datasetMapper.findByName(datasetName, projectId, false))
+                .willReturn(DatasetEntity.builder().id(1000L).build());
+        given(datasetVersionMapper.findByLatest(1000L))
+                .willReturn(DatasetVersionEntity.builder().id(10000L).build());
+
+        service.updateBuildStatus(recordId, BuildStatus.SUCCESS);
+
+        verify(datasetVersionMapper, times(1)).updateShared(eq(10000L), eq(true));
+    }
+
+    @Test
+    public void testListBuildRecord() {
+        Long project = 1L;
+        given(projectService.findProject(String.valueOf(project))).willReturn(Project.builder().id(project).build());
+        given(buildRecordMapper.selectByStatus(project, BuildStatus.SUCCESS))
+                .willReturn(List.of(BuildRecordEntity.builder().id(10L).datasetName("ds").build()));
+
+        var page = service.listBuildRecords(
+                String.valueOf(project), BuildStatus.SUCCESS, PageParams.builder().pageNum(1).pageSize(10).build());
+        assertThat(page, allOf(
+                hasProperty("list", iterableWithSize(1))
+        ));
     }
 
 }

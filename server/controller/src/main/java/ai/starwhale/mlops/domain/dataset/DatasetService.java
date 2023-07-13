@@ -441,18 +441,21 @@ public class DatasetService {
                 .datasetName(request.getDatasetName())
                 .storagePath(request.getStoragePath())
                 .type(request.getType())
-                .status(BuildStatus.CREATED)
+                .status(BuildStatus.BUILDING)
                 .createdTime(new Date())
                 .build();
         var res = buildRecordMapper.insert(entity) > 0;
         if (res) {
-            buildRecordMapper.updateStatus(entity.getId(), BuildStatus.BUILDING);
             // start build
             var user = userService.currentUserDetail();
-            var image = new DockerImage(
-                    StringUtils.hasText(systemSettingService.getRunTimeProperties().getDatasetBuild().getImage())
-                            ? systemSettingService.getRunTimeProperties().getDatasetBuild().getImage()
-                            : "docker-registry.starwhale.cn/star-whale/starwhale:latest");
+            DockerImage image;
+            var runtimeProperties = systemSettingService.getRunTimeProperties();
+            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null
+                    && StringUtils.hasText(runtimeProperties.getDatasetBuild().getImage())) {
+                image = new DockerImage(systemSettingService.getRunTimeProperties().getDatasetBuild().getImage());
+            } else {
+                image = new DockerImage("docker-registry.starwhale.cn/star-whale/starwhale:latest");
+            }
 
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD);
 
@@ -478,7 +481,10 @@ public class DatasetService {
                 containerOverwriteSpec.setCmds(List.of("dataset_build"));
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
-            var rp = systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool();
+            String rp = null;
+            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null) {
+                rp = systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool();
+            }
             var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             var toleration = pool != null ? pool.getTolerations() : null;

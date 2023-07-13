@@ -40,12 +40,10 @@ public class FileStorageService {
     private final StorageAccessService storageAccessService;
     private final String dataRootPath;
     private final Long urlExpirationTimeMillis;
-    private final Integer maxFileNum;
 
     public FileStorageService(StorageAccessService storageAccessService,
                               @Value("${sw.filestorage.data-root-path:files}") String dataRootPath,
-                              @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime,
-                              @Value("${sw.filestorage.max-signed-files:1000}") Integer maxFileNum) {
+                              @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime) {
         this.storageAccessService = storageAccessService;
         if (dataRootPath.endsWith("/")) {
             this.dataRootPath = dataRootPath;
@@ -53,7 +51,6 @@ public class FileStorageService {
             this.dataRootPath = dataRootPath + "/";
         }
         this.urlExpirationTimeMillis = DurationStyle.detectAndParse(urlExpirationTime).toMillis();
-        this.maxFileNum = maxFileNum;
     }
 
     /**
@@ -88,9 +85,6 @@ public class FileStorageService {
     public Map<String, String> generateSignedPutUrls(String pathPrefix, Set<String> files) {
         if (!validatePathPrefix(pathPrefix)) {
             throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "pathPrefix is invalid");
-        }
-        if (files.size() > maxFileNum) {
-            throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "file count is too large");
         }
         Map<String, String> signedUrls = new HashMap<>();
         for (String file : files) {
