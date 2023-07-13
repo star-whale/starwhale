@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +44,7 @@ public class LogControllerTest {
     @BeforeEach
     public void setUp() {
         taskService = mock(TaskService.class);
-        logController = new LogController(taskService);
+        logController = new LogController(taskService, mock(DatasetService.class));
     }
 
     @Test

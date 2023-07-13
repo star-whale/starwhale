@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogController implements LogApi {
 
     final TaskService taskService;
+    final DatasetService datasetService;
 
-    public LogController(TaskService taskService) {
+    public LogController(TaskService taskService, DatasetService datasetService) {
         this.taskService = taskService;
+        this.datasetService = datasetService;
     }
 
     @Override
@@ -42,5 +45,10 @@ public class LogController implements LogApi {
     @Override
     public ResponseEntity<String> logContent(Long taskId, String fileName) {
         return ResponseEntity.ok(taskService.logContent(taskId, fileName));
+    }
+
+    @Override
+    public ResponseEntity<String> buildLogContent(String name, Long id) {
+        return ResponseEntity.ok(datasetService.buildLogContent(id));
     }
 }

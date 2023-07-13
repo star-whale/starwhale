@@ -47,6 +47,9 @@ public interface BuildRecordMapper {
     @Update("UPDATE dataset_build_record set status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") BuildStatus status);
 
+    @Update("UPDATE dataset_build_record set log_path = #{path} WHERE id = #{id}")
+    int updateLogPath(@Param("id") Long id, @Param("path") String logPath);
+
     @Update("UPDATE dataset_build_record set cleaned = 1 WHERE id = #{id} AND cleaned = 0")
     int updateCleaned(@Param("id") Long id);
 

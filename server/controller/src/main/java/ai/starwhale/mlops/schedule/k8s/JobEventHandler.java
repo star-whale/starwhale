@@ -51,8 +51,8 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             TaskModifyReceiver taskModifyReceiver,
             TaskStatusMachine taskStatusMachine,
             RuntimeService runtimeService,
-            DatasetService datasetService, K8sClient k8sClient
-    ) {
+            DatasetService datasetService,
+            K8sClient k8sClient) {
         this.taskModifyReceiver = taskModifyReceiver;
         this.taskStatusMachine = taskStatusMachine;
         this.runtimeService = runtimeService;
@@ -128,13 +128,13 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
         if (status == null) {
             return;
         }
-        var buildId = Long.parseLong(jobName(job));
-
+        var jobName = jobName(job);
+        var buildId = Long.parseLong(job.getMetadata().getAnnotations().get("id"));
         if (null != status.getSucceeded()) {
-            log.info("dataset:{} build success", buildId);
+            log.info("dataset:{} build success", jobName);
             datasetService.updateBuildStatus(buildId, BuildStatus.SUCCESS);
         } else if (null != status.getFailed()) {
-            log.info("dataset:{} build failed", buildId);
+            log.info("dataset:{} build failed", jobName);
             datasetService.updateBuildStatus(buildId, BuildStatus.FAILED);
         }
 

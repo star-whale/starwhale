@@ -26,6 +26,7 @@ create table if not exists dataset_build_record
     type          varchar(64)                        not null comment 'image, video, audio, others(json, csv, txt ...etc)',
     status        varchar(32)                        not null comment 'created, building, failed, success',
     storage_path  varchar(255)                       not null,
+    log_path      varchar(255),
     format        varchar(255) comment 'reserve for future use',
     created_time  datetime default CURRENT_TIMESTAMP not null,
     modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP

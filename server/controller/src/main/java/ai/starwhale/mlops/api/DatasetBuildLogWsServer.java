@@ -36,8 +36,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-@ServerEndpoint("/api/v1/log/online/{taskId}")
-public class TaskLogWsServer {
+@ServerEndpoint("/api/v1/log/dataset/{name}/build/{id}")
+public class DatasetBuildLogWsServer {
 
     private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -56,25 +56,25 @@ public class TaskLogWsServer {
 
     @Autowired
     public void setIdConvertor(IdConverter idConvertor) {
-        TaskLogWsServer.idConvertor = idConvertor;
+        DatasetBuildLogWsServer.idConvertor = idConvertor;
     }
 
     @Autowired
     public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
-        TaskLogWsServer.logCollectorFactory = factory;
+        DatasetBuildLogWsServer.logCollectorFactory = factory;
     }
 
     @OnOpen
-    public void onOpen(Session session, @PathParam("taskId") String taskId) {
+    public void onOpen(Session session, @PathParam("name") String name, @PathParam("id") String id) {
         this.session = session;
         this.readerId = session.getId();
-        this.id = idConvertor.revert(taskId);
+        this.id = idConvertor.revert(id);
         try {
-            logCollector = logCollectorFactory.make(taskId);
+            logCollector = logCollectorFactory.make(String.format("%s@%d", name, id));
         } catch (IOException | ApiException e) {
             log.error("make k8s log collector failed", e);
         }
-        log.info("Task log ws opened. reader={}, task={}", readerId, id);
+        log.info("Build log ws opened. reader={}, task={}", readerId, id);
         executorService.submit(() -> {
             String line;
             while (true) {
@@ -94,7 +94,7 @@ public class TaskLogWsServer {
     @OnClose
     public void onClose() {
         cancelLogCollector();
-        log.info("Task log ws closed. reader={}, task={}", readerId, id);
+        log.info("Build log ws closed. reader={}, task={}", readerId, id);
     }
 
     @OnMessage

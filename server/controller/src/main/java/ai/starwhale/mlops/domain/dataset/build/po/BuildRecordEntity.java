@@ -40,5 +40,6 @@ public class BuildRecordEntity extends BaseEntity {
     private BuildStatus status;
     private BuildType type;
     private String storagePath;
+    private String logPath;
     private String format;
 }

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildLogCollector;
+import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -42,10 +42,10 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     final HotJobHolder jobHolder;
 
     public PodEventHandler(
-                TaskLogK8sCollector taskLogK8sCollector,
-                BuildLogCollector buildLogCollector,
-                TaskModifyReceiver taskModifyReceiver,
-                HotJobHolder jobHolder) {
+            TaskLogK8sCollector taskLogK8sCollector,
+            BuildLogCollector buildLogCollector,
+            TaskModifyReceiver taskModifyReceiver,
+            HotJobHolder jobHolder) {
         this.taskLogK8sCollector = taskLogK8sCollector;
         this.buildLogCollector = buildLogCollector;
         this.taskModifyReceiver = taskModifyReceiver;
@@ -175,10 +175,11 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
             return;
         }
-        Long id = getJobNameAsId(pod);
-        if (id != null) {
-            switch (type) {
-                case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
+        Long id;
+        switch (type) {
+            case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
+                id = getJobNameAsId(pod);
+                if (id != null) {
                     Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(id));
                     if (CollectionUtils.isEmpty(optionalTasks)) {
                         log.warn("no tasks found for pod {}", pod.getMetadata().getName());
@@ -186,14 +187,16 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                     }
                     Task task = optionalTasks.stream().findAny().get();
                     taskLogK8sCollector.collect(task);
-                    break;
-                case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
-                    buildLogCollector.collect(id);
-                    break;
-                default:
-            }
-
+                }
+                break;
+            case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
+                id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
+                buildLogCollector.collect(id);
+                break;
+            default:
         }
+
+
     }
 
 }

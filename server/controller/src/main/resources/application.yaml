@@ -33,6 +33,8 @@ sw:
     issuer: ${SW_JWT_ISSUER:starwhale}
     expire-minutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
   dataset:
+    build:
+      log-path: ${DATASET_BUILD_LOG_PREFIX:/dataset-build/logs}
     load:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:

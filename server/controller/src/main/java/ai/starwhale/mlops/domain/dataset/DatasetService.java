@@ -75,6 +75,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.k8s.ContainerOverwriteSpec;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.github.pagehelper.PageHelper;
@@ -83,6 +84,9 @@ import com.google.common.base.Joiner;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -110,6 +114,7 @@ public class DatasetService {
     private final DatasetVoConverter datasetVoConverter;
     private final DatasetVersionVoConverter versionConvertor;
     private final StorageService storageService;
+    private final StorageAccessService storageAccessService;
     private final ProjectService projectService;
     private final DatasetDao datasetDao;
     private final IdConverter idConvertor;
@@ -129,8 +134,8 @@ public class DatasetService {
     public DatasetService(ProjectService projectService, DatasetMapper datasetMapper,
                           DatasetVersionMapper datasetVersionMapper, BuildRecordMapper buildRecordMapper,
                           DatasetVoConverter datasetVoConverter, DatasetVersionVoConverter versionConvertor,
-                          StorageService storageService, DatasetDao datasetDao,
-                          IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
+                          StorageService storageService, StorageAccessService storageAccessService,
+                          DatasetDao datasetDao, IdConverter idConvertor, VersionAliasConverter versionAliasConvertor,
                           UserService userService, UriAccessor uriAccessor,
                           DataLoader dataLoader, TrashService trashService,
                           K8sClient k8sClient, K8sJobTemplate k8sJobTemplate,
@@ -144,6 +149,7 @@ public class DatasetService {
         this.datasetVoConverter = datasetVoConverter;
         this.versionConvertor = versionConvertor;
         this.storageService = storageService;
+        this.storageAccessService = storageAccessService;
         this.datasetDao = datasetDao;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
@@ -436,6 +442,9 @@ public class DatasetService {
 
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD);
 
+            // record id to annotations
+            k8sJobTemplate.updateAnnotations(job.getMetadata(), Map.of("id", String.valueOf(entity.getId())));
+
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             var envVars = List.of(
                 new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
@@ -457,8 +466,8 @@ public class DatasetService {
             var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             var toleration = pool != null ? pool.getTolerations() : null;
-            k8sJobTemplate.renderJob(
-                    job, entity.getId().toString(), "Never", 1, ret, nodeSelector, toleration, null);
+            k8sJobTemplate.renderJob(job, String.format("%s@%d", entity.getDatasetName(), entity.getId()),
+                        "Never", 1, ret, nodeSelector, toleration, null);
 
             log.debug("deploying dataset build job to k8s :{}", JSONUtil.toJsonStr(job));
             try {
@@ -466,15 +475,31 @@ public class DatasetService {
             } catch (ApiException e) {
                 throw new SwProcessException(ErrorType.K8S, "deploy dataset build job failed", e);
             }
-            // TODO when finish build, update the status and shared
             return true;
         } else {
             throw new SwProcessException(ErrorType.DB, "create build record failed");
         }
     }
 
+    @Transactional
     public boolean updateBuildStatus(Long id, BuildStatus status) {
-        return buildRecordMapper.updateStatus(id, status) > 0;
+        var record = buildRecordMapper.selectById(id);
+        if (record == null) {
+            log.warn("build record:{} can't find when update status to {}.", id, status);
+            return false;
+        }
+        var res = buildRecordMapper.updateStatus(id, status) > 0;
+        if (res && status == BuildStatus.SUCCESS && record.getShared()) {
+            // update shared
+            var dataset = datasetMapper.findByName(record.getDatasetName(), record.getProjectId(), false);
+            if (dataset != null) {
+                var version = datasetVersionMapper.findByLatest(dataset.getId());
+                if (version != null) {
+                    datasetVersionMapper.updateShared(dataset.getId(), true);
+                }
+            }
+        }
+        return res;
     }
 
     public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, BuildStatus status, PageParams pageParams) {
@@ -490,5 +515,18 @@ public class DatasetService {
                     .createTime(entity.getCreatedTime().getTime())
                     .build()
         );
+    }
+
+    public String buildLogContent(Long id) {
+        var record = buildRecordMapper.selectById(id);
+        if (StringUtils.hasText(record.getLogPath())) {
+            try (InputStream inputStream = storageAccessService.get(record.getLogPath())) {
+                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new SwProcessException(ErrorType.DB,
+                    MessageFormat.format("read build log path failed {}", id), e);
+            }
+        }
+        return "";
     }
 }

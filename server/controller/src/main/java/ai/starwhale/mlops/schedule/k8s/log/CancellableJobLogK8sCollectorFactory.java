@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.schedule.k8s.log;
 
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -22,14 +22,14 @@ import java.io.IOException;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CancellableTaskLogK8sCollectorFactory {
+public class CancellableJobLogK8sCollectorFactory {
     private final K8sClient k8sClient;
 
-    public CancellableTaskLogK8sCollectorFactory(K8sClient k8sClient) {
+    public CancellableJobLogK8sCollectorFactory(K8sClient k8sClient) {
         this.k8sClient = k8sClient;
     }
 
-    public CancellableTaskLogCollector make(Long taskId) throws IOException, ApiException {
-        return new CancellableTaskLogK8sCollector(this.k8sClient, taskId);
+    public CancellableJobLogCollector make(String jobName) throws IOException, ApiException {
+        return new CancellableJobLogK8sCollector(this.k8sClient, jobName);
     }
 }

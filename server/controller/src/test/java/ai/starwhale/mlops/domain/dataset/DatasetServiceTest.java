@@ -77,6 +77,7 @@ import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -161,6 +162,7 @@ public class DatasetServiceTest {
                 datasetConvertor,
                 versionConvertor,
                 storageService,
+                mock(StorageAccessService.class),
                 datasetDao,
                 new IdConverter(),
                 new VersionAliasConverter(),
@@ -431,6 +433,7 @@ public class DatasetServiceTest {
                 mock(DatasetVoConverter.class),
                 mock(DatasetVersionVoConverter.class),
                 mock(StorageService.class),
+                mock(StorageAccessService.class),
                 datasetDao,
                 new IdConverter(),
                 versionAliasConverter,

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.dataset.build;
+package ai.starwhale.mlops.domain.dataset.build.log;
 
+import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -30,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -38,20 +40,24 @@ import org.springframework.util.StringUtils;
 @Component
 public class BuildLogCollector {
 
-    final String buildLogPath = "/dataset-build/logs";
+    final String buildLogPath;
 
     final StorageAccessService storageService;
-
+    final BuildRecordMapper buildRecordMapper;
     final K8sClient k8sClient;
-
     final List<String> containers;
 
     public BuildLogCollector(StorageAccessService storageService,
-                             K8sClient k8sClient, K8sJobTemplate k8sJobTemplate) {
+                             BuildRecordMapper buildRecordMapper,
+                             K8sClient k8sClient,
+                             K8sJobTemplate k8sJobTemplate,
+                             @Value("${sw.dataset.build.log-path}") String buildLogPath) {
         this.storageService = storageService;
+        this.buildRecordMapper = buildRecordMapper;
         this.k8sClient = k8sClient;
         this.containers = k8sJobTemplate.getJobContainerNames(
                 k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD));
+        this.buildLogPath = buildLogPath;
     }
 
     public void collect(Long id) throws StarwhaleException {
@@ -66,20 +72,24 @@ public class BuildLogCollector {
             String buildLog = k8sClient.logOfPod(v1Pod, containers);
             log.debug("logs for dataset build {} collected {} ...", id,
                     StringUtils.hasText(buildLog) ? buildLog.substring(0, Math.min(buildLog.length() - 1, 100)) : "");
-
-            String logPath = resolveLogPath(id);
+            var record = buildRecordMapper.selectById(id);
+            if (null == record) {
+                log.warn("record not exists for dataset build {}", id);
+                return;
+            }
+            String logPath = resolveLogPath(String.format("%s-%s", record.getDatasetName(), record.getId()));
             log.debug("putting log to storage at path {}", logPath);
             storageService.put(logPath, buildLog.getBytes(StandardCharsets.UTF_8));
+            buildRecordMapper.updateLogPath(id, logPath);
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.INFRA,
-                    MessageFormat.format("k8s api exception {}", e.getResponseBody()),
-                    e);
+                    MessageFormat.format("k8s api exception {}", e.getResponseBody()), e);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.STORAGE, "uploading log failed", e);
         }
     }
 
-    public String resolveLogPath(Long id) {
-        return String.format("%s/%d.log", buildLogPath, id);
+    private String resolveLogPath(String logName) {
+        return String.format("%s/%s.log", buildLogPath, logName);
     }
 }

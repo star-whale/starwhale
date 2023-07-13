@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.schedule.k8s.log;
 
 import java.io.IOException;
 
-public interface CancellableTaskLogCollector {
+public interface CancellableJobLogCollector {
 
     String readLine() throws IOException;
 
