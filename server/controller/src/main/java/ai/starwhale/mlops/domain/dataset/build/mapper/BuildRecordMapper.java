@@ -37,7 +37,7 @@ public interface BuildRecordMapper {
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
             + "WHERE project_id = #{projectId} AND status = #{status}")
-    List<BuildRecordEntity> selectFinishedAndUncleaned(
+    List<BuildRecordEntity> selectByStatus(
             @Param("projectId") Long projectId, @Param("status") BuildStatus status);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "

@@ -505,7 +505,7 @@ public class DatasetService {
     public PageInfo<BuildRecordVo> listBuildRecords(String projectUrl, BuildStatus status, PageParams pageParams) {
         var project = projectService.findProject(projectUrl);
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = buildRecordMapper.selectFinishedAndUncleaned(project.getId(), status);
+        var entities = buildRecordMapper.selectByStatus(project.getId(), status);
         return PageUtil.toPageInfo(entities, entity -> BuildRecordVo.builder()
                     .id(String.valueOf(entity.getId()))
                     .datasetId(String.valueOf(entity.getDatasetId()))
