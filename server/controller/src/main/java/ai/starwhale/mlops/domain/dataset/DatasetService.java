@@ -422,7 +422,7 @@ public class DatasetService {
             var ds = datasetMapper.findByName(request.getDatasetName(), project.getId(), true);
             if (null != ds) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
-                    "The dataset:{} in project:{} is already exists, please use another name.",
+                    "The dataset:{0} in project:{1} is already exists, please use another name.",
                     request.getDatasetName(), project.getName()));
             }
         }
