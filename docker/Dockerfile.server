@@ -1,16 +1,23 @@
 ARG BASE_IMAGE=starwhaleai/base_server:latest
+FROM ${BASE_IMAGE} as builder
+
+WORKDIR application
+COPY jar/controller.jar controller.jar
+RUN java -Djarmode=layertools -jar controller.jar extract
+
+
 FROM ${BASE_IMAGE}
+
+WORKDIR /opt/starwhale.java
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+
 ARG SW_SERVER_VERSION=server_version_not_set
 ARG GIT_INFO=git_not_set
 
-# java opts
-ENV JDWP_PORT=5005
-ENV JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:$JDWP_PORT
-ENV JAR=controller
 ENV SW_VERSION_CONTROLLER=${SW_SERVER_VERSION}:${GIT_INFO}
 
-WORKDIR /opt/starwhale.java
-# java jar
-COPY jar/controller.jar controller.jar
-
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -XX:InitialRAMPercentage=40.0 -XX:MaxRAMPercentage=80.0 -jar $JAR.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -XX:InitialRAMPercentage=40.0 -XX:MaxRAMPercentage=80.0 org.springframework.boot.loader.JarLauncher"]
