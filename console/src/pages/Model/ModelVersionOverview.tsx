@@ -1,7 +1,7 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { useModelVersion } from '../../domain/model/hooks/useModelVersion'
+import { useModelVersion } from '@model/hooks/useModelVersion'
 import { MonoText } from '@/components/Text'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
@@ -9,6 +9,7 @@ import { Toggle } from '@starwhale/ui'
 import { toaster } from 'baseui/toast'
 import { useParams } from 'react-router-dom'
 import { fetchModelVersion, updateModelVersionShared } from '@/domain/model/services/modelVersion'
+import { useProject } from '@project/hooks/useProject'
 
 export default function ModelVersionOverview() {
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -17,6 +18,7 @@ export default function ModelVersionOverview() {
         modelVersionId: string
     }>()
     const { modelVersion, setModelVersion } = useModelVersion()
+    const { project } = useProject()
 
     const [t] = useTranslation()
     const items = [
@@ -64,7 +66,9 @@ export default function ModelVersionOverview() {
             label: t('Created At'),
             value: modelVersion?.createdTime && formatTimestampDateTime(modelVersion.createdTime),
         },
-    ]
+    ].filter((item) => {
+        return project?.privacy === 'PUBLIC' || item.label !== t('Shared')
+    })
 
     return (
         <div className='flex-column'>
