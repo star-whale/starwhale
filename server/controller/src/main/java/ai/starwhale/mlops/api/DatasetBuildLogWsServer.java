@@ -70,7 +70,7 @@ public class DatasetBuildLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(id);
         try {
-            logCollector = logCollectorFactory.make(String.format("%s-%d", name, id));
+            logCollector = logCollectorFactory.make(String.format("%s-%s", name, id));
         } catch (IOException | ApiException e) {
             log.error("make k8s log collector failed", e);
         }
