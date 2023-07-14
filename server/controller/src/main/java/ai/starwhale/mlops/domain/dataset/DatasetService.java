@@ -489,7 +489,7 @@ public class DatasetService {
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             var toleration = pool != null ? pool.getTolerations() : null;
             k8sJobTemplate.renderJob(job, String.format("%s-%d", entity.getDatasetName(), entity.getId()),
-                        "Never", 1, ret, nodeSelector, toleration, null);
+                        "Never", 0, ret, nodeSelector, toleration, null);
 
             log.debug("deploying dataset build job to k8s :{}", JSONUtil.toJsonStr(job));
             try {
