@@ -38,6 +38,7 @@ sw:
   dataset:
     build:
       log-path: ${DATASET_BUILD_LOG_PREFIX:/dataset-build/logs}
+      gc-rate: ${DATASET_BUILD_FILES_GC_RATE:0 0 0 * * ?}
     load:
       batch-size: ${DATASET_CONSUMPTION_BATCH_SIZE:50}
   task:

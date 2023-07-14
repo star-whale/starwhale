@@ -20,6 +20,7 @@ import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -38,12 +39,16 @@ public class BuildRecordGarbageCollector {
         this.storageAccessService = storageAccessService;
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "${sw.dataset.build.gc-rate:0 0 0 * * ?}")
     public void gc() {
         var finished = mapper.selectFinishedAndUncleaned();
         for (BuildRecordEntity finishedRecord : finished) {
             try {
-                storageAccessService.delete(finishedRecord.getStoragePath());
+                var files = storageAccessService.list(finishedRecord.getStoragePath())
+                        .collect(Collectors.toList());
+                for (String file : files) {
+                    storageAccessService.delete(file);
+                }
                 mapper.updateCleaned(finishedRecord.getId());
             } catch (IOException e) {
                 log.warn("delete storage file path:{} failed", finishedRecord.getStoragePath(), e);
