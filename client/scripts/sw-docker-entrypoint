@@ -16,6 +16,50 @@ TASK_NUM=${SW_TASK_NUM:-0}
 RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
 
 
+welcome() {
+    echo "===================================="
+    echo "StarWhale Docker Entrypoint"
+    echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
+    echo "Version: `swcli --version`"
+    echo "Run: $1 "
+    echo "Model Version: ${SW_MODEL_VERSION}"
+    echo "Runtime Version: ${SW_RUNTIME_VERSION}"
+    echo "Runtime Restored: ${SW_USER_RUNTIME_RESTORED}"
+    echo "Local User: ${SW_USER:-root}"
+    echo "===================================="
+    if [ ! -z "${SW_USER}" ];
+    then
+      useradd -g ${SW_USER_GROUP_ID} -u ${SW_USER_ID} ${SW_USER}
+      su ${SW_USER}
+    fi
+}
+
+prepare(){
+    if [ "${RUNTIME_RESTORED}" == "1" ]; then
+        $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
+    fi
+
+    if [ "${SW_INSTANCE_URI}" != "local" ]
+    then
+        # only remote
+        echo '-->[Preparing] pulling model ...'
+        swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
+        if [ -z "${SW_MODEL_URI}" ]; then
+            swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
+        else
+            swcli model copy ${SW_MODEL_URI} .
+        fi
+        if [ "${RUNTIME_RESTORED}" != "1" ]; then
+            echo '-->[Preparing] pulling runtime ...'
+            if [ -z "${SW_RUNTIME_URI}" ]; then
+                swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
+            else
+                swcli runtime copy ${SW_RUNTIME_URI} .
+            fi
+        fi
+    fi
+}
+
 run() {
     if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
         echo "-->[Preparing] debug config ..."
@@ -42,50 +86,6 @@ serve() {
         swcli ${VERBOSE} model serve --uri "${SW_MODEL_VERSION}" --runtime "${SW_RUNTIME_VERSION}" --host 0.0.0.0 || exit 1
     else
         swcli ${VERBOSE} model serve --uri "${SW_MODEL_VERSION}" --host 0.0.0.0 --forbid-packaged-runtime || exit 1
-    fi
-}
-
-welcome() {
-    echo "===================================="
-    echo "StarWhale Docker Entrypoint"
-    echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
-    echo "Version: `swcli --version`"
-    echo "Run: $1 "
-    echo "Model Version: ${SW_MODEL_VERSION}"
-    echo "Runtime Version: ${SW_RUNTIME_VERSION}"
-    echo "Runtime Restored: ${SW_USER_RUNTIME_RESTORED}"
-    echo "Local User: ${SW_USER:-root}"
-    echo "===================================="
-    if [ ! -z "${SW_USER}" ];
-    then
-      useradd -g ${SW_USER_GROUP_ID} -u ${SW_USER_ID} ${SW_USER}
-      su ${SW_USER}
-    fi
-}
-
-prepare(){
-    if [ "${SW_INSTANCE_URI}" != "local" ]
-    then
-        # only remote
-        echo '-->[Preparing] pulling model ...'
-        swcli instance login --token "${SW_TOKEN}" --alias server ${SW_INSTANCE_URI}
-        if [ -z "${SW_MODEL_URI}" ]; then
-            swcli model copy cloud://server/project/${SW_PROJECT}/model/${SW_MODEL_VERSION} .
-        else
-            swcli model copy ${SW_MODEL_URI} .
-        fi
-        if [ "${RUNTIME_RESTORED}" != "1" ]; then
-            echo '-->[Preparing] pulling runtime ...'
-            if [ -z "${SW_RUNTIME_URI}" ]; then
-                swcli runtime copy cloud://server/project/${SW_PROJECT}/runtime/${SW_RUNTIME_VERSION} .
-            else
-                swcli runtime copy ${SW_RUNTIME_URI} .
-            fi
-        fi
-    fi
-    if [ "${RUNTIME_RESTORED}" == "1" ]; then
-        # TODO useless?
-        $(bash "${SW_USER_RUNTIME_WORKDIR:-/opt/starwhale.user/runtime}"/activate.sw)
     fi
 }
 

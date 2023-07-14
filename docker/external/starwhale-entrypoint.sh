@@ -41,6 +41,17 @@ EOF
     else
         echo -e "\t ** use image builtin pip.conf"
     fi
+
+    if [ -n "$SW_CONDA_CONFIG" ] ; then
+      echo -e "\t ** use SW_CONDA_CONFIG env to config ~/.condarc"
+      echo "$SW_CONDA_CONFIG" > ~/.condarc
+      echo -e "\t ** current .condarc:"
+      echo "-------------------"
+      cat ~/.condarc
+      echo "-------------------"
+    else
+      echo -e "\t ** use image builtin condarc"
+    fi
 }
 
 set_pip_cache() {
@@ -57,8 +68,8 @@ set_py_and_sw() {
 
     echo "-->[Preparing] Use python:${PYTHON_VERSION}."
     set_python_alter
-
     set_pip_cache
+
     echo "-->[Preparing] Install starwhale:${SW_VERSION}."
     # install starwhale for current python
     python3 -m pip install "starwhale==${SW_VERSION}" || exit 1
