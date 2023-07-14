@@ -28,6 +28,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -39,6 +40,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
@@ -166,13 +168,15 @@ public class JobConverterTest {
         entity.setJobStatus(JobStatus.RUNNING);
         job.setStatus(JobStatus.RUNNING);
         res = jobConvertor.convert(entity);
-        assertThat(res.getExposedLinks(), is(List.of("/foo/bar/")));
+        var expectWeb = ExposedLinkVo.builder().type(ExposedType.WEB_HANDLER).link("/foo/bar/").name("step").build();
+        assertThat(res.getExposedLinks(), is(List.of(expectWeb)));
 
         // get debug mode links when dev mode is on
         when(webServerInTask.generateGatewayUrl(7L, "1.1.1.1", 1234)).thenReturn("/baz/");
         entity.setDevMode(true);
         job.setDevMode(true);
         res = jobConvertor.convert(entity);
-        assertThat(res.getExposedLinks(), is(List.of("/baz/", "/foo/bar/")));
+        var expectDevMode = ExposedLinkVo.builder().type(ExposedType.DEV_MODE).link("/baz/").name("VS_CODE").build();
+        assertThat(res.getExposedLinks(), is(List.of(expectDevMode, expectWeb)));
     }
 }

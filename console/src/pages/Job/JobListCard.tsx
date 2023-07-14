@@ -18,10 +18,10 @@ import JobStatus from '@/domain/job/components/JobStatus'
 import Button from '@starwhale/ui/Button'
 import { useAuthPrivileged, WithCurrentAuth } from '@/api/WithAuth'
 import { IconTooltip } from '@starwhale/ui/Tooltip'
-import IconFont from '@starwhale/ui/IconFont'
 import { useProjectRole } from '@project/hooks/useProjectRole'
 import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
 import { ConfirmButton } from '@starwhale/ui'
+import ExposedLink from '@job/components/ExposedLink'
 
 interface IActionButtonProps {
     jobId: string
@@ -226,21 +226,11 @@ export default function JobListCard() {
                             typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
                             job?.stopTime && job?.stopTime > 0 ? formatTimestampDateTime(job?.stopTime) : '-',
                             <JobStatus key='jobStatus' status={job.jobStatus as any} />,
-                            <div key='action' style={{ display: 'flex', gap: '8px' }}>
+                            <div key='action' style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 {actions[job.jobStatus] ?? ''}
-                                {job.exposedLinks?.map((link) => {
-                                    return (
-                                        <a
-                                            key={link}
-                                            target='_blank'
-                                            href={link}
-                                            rel='noreferrer'
-                                            title={t('job.expose.title')}
-                                        >
-                                            <IconFont type='global' size={16} />
-                                        </a>
-                                    )
-                                })}
+                                {job.exposedLinks?.map((exposed) => (
+                                    <ExposedLink key={exposed.link} data={exposed} />
+                                ))}
                             </div>,
                         ]
                     }) ?? []
