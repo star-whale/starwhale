@@ -4,65 +4,12 @@ import { deleteFiles, sign } from '@/domain/base/services/filestore'
 import _ from 'lodash'
 import { useSign } from './useSign'
 import { useEvent } from '@starwhale/core'
-import { getUploadName, getUploadType } from '../utils'
-import IconFont from '@starwhale/ui/IconFont'
-import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
-import Button from '@starwhale/ui/Button'
+import { getUploadName } from '../utils'
+import { ItemRender } from '../UploadItem'
 
 type StatusT = UploadFileStatus | 'error_exist' | 'error_max'
 
 const UPLOAD_MAX = 1000
-
-export function ItemRender({ file }: { file: UploadFile }) {
-    // return originNode
-    const type = getUploadType(file)
-    const name = getUploadName(file)
-    const icons = {
-        IMAGE: 'image',
-        VIDEO: 'video',
-        AUDIO: 'audio',
-        CSV: 'txt',
-        JSON: 'txt',
-        JSONL: 'txt',
-    }
-
-    return (
-        <div className='ant-upload-list-item-container'>
-            <div className='ant-upload-list-item'>
-                <div className='ant-upload-icon'>
-                    {/* @ts-ignore */}
-                    <IconFont type={icons[type] ?? 'file2'} />
-                </div>
-                <div className='ant-upload-list-item-name'>{name}</div>
-                <div className='ant-upload-list-item-size'>{getReadableStorageQuantityStr(file.size ?? 0)}</div>
-                <div className='ant-upload-list-item-actions'>
-                    <Button
-                        as='link'
-                        icon='delete'
-                        onClick={() => handleRemove(file)}
-                        overrides={{
-                            BaseButton: {
-                                style: {
-                                    'marginLeft': '16px',
-                                    'backgroundColor': 'transparent',
-                                    'color': ' rgba(2,16,43,0.40);',
-                                    ':hover .icon-container': {
-                                        color: '#D65E5E !important',
-                                        backgroundColor: 'transparent',
-                                    },
-                                    ':focus': {
-                                        color: '#D65E5E !important',
-                                        backgroundColor: 'transparent',
-                                    },
-                                },
-                            },
-                        }}
-                    />
-                </div>
-            </div>
-        </div>
-    )
-}
 
 function useUpload(props: UploadProps = {}) {
     const { resetSign, signPrefix } = useSign()

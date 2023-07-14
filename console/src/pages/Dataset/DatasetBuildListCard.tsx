@@ -7,7 +7,7 @@ import { toaster } from 'baseui/toast'
 import { BusyPlaceholder } from '@starwhale/ui'
 import DatasetTaskBuildList from './DatasetBuildList'
 import { fetchDatasetTaskOfflineLogFiles } from '@/domain/dataset/services/dataset'
-import { IDatasetTaskBuildSchema } from '@/domain/dataset/schemas/dataset'
+import { IDatasetTaskBuildSchema, TaskBuildStatusType } from '@/domain/dataset/schemas/dataset'
 
 const ComplexToolbarLogViewer = React.lazy(() => import('@/components/LogViewer/LogViewer'))
 
@@ -27,21 +27,13 @@ export default function DatasetBuildListCard() {
         console.log(task)
         setCurrentTask(task)
         const files: Record<string, string> = {}
+        const key = [task?.datasetName, task?.id].join('@')
 
-        if ([TaskStatusType.RUNNING].includes(task.taskStatus)) {
-            const key = [task?.stepName, task?.id].join('@')
+        if ([TaskBuildStatusType.BUILDING].includes(task.status)) {
             files[key] = 'ws'
-        }
-
-        const data = await fetchDatasetTaskOfflineLogFiles(task?.datasetName, task?.id)
-        if (!_.isEmpty(data)) {
-            await Promise.all(
-                data.map(async (v: string) => {
-                    const content = await fetchTaskOfflineFileLog(task?.id, v)
-                    const key = [task?.stepName, v].join('@')
-                    files[key] = content ?? ''
-                })
-            )
+        } else {
+            const data = await fetchDatasetTaskOfflineLogFiles(task?.datasetName, task?.id)
+            files[key] = data ?? ''
         }
 
         if (Object.keys(files).length === 0) {

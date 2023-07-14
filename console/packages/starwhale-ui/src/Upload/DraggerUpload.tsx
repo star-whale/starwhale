@@ -1,20 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react'
-import Upload, { UploadFile } from 'antd/es/upload'
+import React, { useEffect } from 'react'
 import { useUpload } from './hooks/useUpload'
-import { findMostFrequentType, getSignUrls, getUploadName } from './utils'
+import { findMostFrequentType, getSignUrls, getUploadName, pickAttr } from './utils'
 import Button from '../Button'
-import IconFont from '../IconFont'
 import { createUseStyles } from 'react-jss'
 import useTranslation from '@/hooks/useTranslation'
 import { getReadableStorageQuantityStr } from '../utils/index'
 import Text from '../Text/Text'
 import { useDropzone } from './react-dropzone'
-import { Subject, Subscription, catchError, concatMap, mergeMap, of } from 'rxjs'
 import { sign } from '@/domain/base/services/filestore'
-import axios from 'axios'
 import _ from 'lodash'
-
-const { Dragger } = Upload
+import useUploadingControl from './hooks/useUploadingControl'
+import { UploadFile } from './types'
+import { ItemRender } from './UploadItem'
 
 const useStyles = createUseStyles({
     drag: {
@@ -27,7 +24,12 @@ const useStyles = createUseStyles({
             backgroundColor: '#FAFBFC !important',
         },
         '& .ant-upload-btn': {
-            height: '170px !important',
+            'height': '170px !important',
+            'alignItems': 'center',
+            'justifyContent': 'center',
+            ':hover': {
+                border: '1px solid #5181E0; !important',
+            },
         },
         '& .ant-upload-drag-icon': {
             color: 'rgba(2,16,43,0.40) !important',
@@ -71,6 +73,30 @@ const useStyles = createUseStyles({
         },
     },
 })
+const baseStyle = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '20px',
+    borderWidth: 1,
+    borderRadius: 2,
+    borderColor: '#CFD7E6;',
+    borderStyle: 'dashed',
+    backgroundColor: '#fafbfc',
+    color: '#bdbdbd',
+    outline: 'none',
+    transition: 'border .24s ease-in-out',
+}
+const focusedStyle = {
+    borderColor: '#5181E0',
+}
+const acceptStyle = {
+    borderColor: '#5181E0',
+}
+const rejectStyle = {
+    borderColor: '#5181E0',
+}
 
 type ValueT = { storagePath: string; type: string }
 interface IDraggerUploadProps {
@@ -78,101 +104,16 @@ interface IDraggerUploadProps {
     onChange?: (data: ValueT) => void
 }
 
-interface FileUpload {
-    path: string
-    body: file
-}
-
-const baseStyle = {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '20px',
-    borderWidth: 2,
-    borderRadius: 2,
-    borderColor: '#eeeeee',
-    borderStyle: 'dashed',
-    backgroundColor: '#fafafa',
-    color: '#bdbdbd',
-    outline: 'none',
-    transition: 'border .24s ease-in-out',
-}
-
-const focusedStyle = {
-    borderColor: '#2196f3',
-}
-
-const acceptStyle = {
-    borderColor: '#00e676',
-}
-
-const rejectStyle = {
-    borderColor: '#ff1744',
-}
-
-function useUploadingControl({ concurrent = 1, onUpload, onDone = () => {}, onError = () => {} }) {
-    const uploadQRef = useRef<Subject<FileUpload>>(new Subject<FileUpload>())
-
-    useEffect(() => {
-        const subscription = new Subscription()
-        const uploadQ = uploadQRef.current
-        const uploadQSubscription = uploadQ
-            .asObservable()
-            .pipe(
-                mergeMap(async ({ oss, file }) => {
-                    // console.log(fu)
-                    const resp = await onUpload?.({ oss, file })
-                    return {
-                        oss,
-                        file,
-                        resp,
-                    }
-                    // return new Promise((resolve, reject) => {
-                    //     setTimeout(() => {
-                    //         resolve(fu)
-                    //     }, 2000)
-                    // })
-                }, concurrent)
-            )
-            .subscribe((res: any) => {
-                // process result
-                console.log(res, 'done')
-                onDone?.(res.file, res)
-            })
-
-        subscription.add(uploadQSubscription)
-
-        // new Array(concurrent).fill(100).map(() => uploadQ.next({ test: new Date() }))
-
-        return () => {
-            subscription.unsubscribe()
-        }
-    }, [])
-
-    return {
-        uploadQueue: uploadQRef.current,
-    }
-}
-
-function pickAttr(file) {
-    return {
-        path: file.path,
-        body: file.file,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified,
-        lastModifiedDate: file.lastModifiedDate,
-        webkitRelativePath: file.webkitRelativePath,
-    }
-}
-
 const UPLOAD_MAX = 1000
+type UploadControlT = {
+    file: UploadFile
+    oss: string
+    resp: any
+}
 function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const styles = useStyles()
     const [t] = useTranslation()
-    const { getProps, signPrefix, reset, ItemRender } = useUpload()
+    const { getProps, signPrefix, reset } = useUpload()
     const rest = getProps()
     const [fileList, setFileList] = React.useState<UploadFile[]>([])
     const [fileSuccessList, setFileSuccessList] = React.useState<UploadFile[]>([])
@@ -196,7 +137,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     }, [])
 
     const beforeUpload = (file: UploadFile) => {
-        console.log('beforeUpload', file, !!isExist(file))
+        // console.log('beforeUpload', file, !!isExist(file))
         if (isMax) {
             setFileFailedList((prev) => [
                 ...prev,
@@ -221,10 +162,9 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         return true
     }
     // use hooks
-    const { uploadQueue } = useUploadingControl({
+    const { uploadQueue } = useUploadingControl<UploadControlT>({
         onUpload: (file) => {
             console.log('onUpload', file)
-
             return fetch(file.oss, {
                 method: 'PUT',
                 body: file.file,
@@ -241,30 +181,26 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             ])
         },
     })
-    const { acceptedFiles, getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } = useDropzone({
+    const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } = useDropzone({
         // Note how this callback is never invoked if drop occurs on the inner dropzone
-        onDrop: async (files: File[]) => {
+        // @ts-ignore
+        onDrop: async (files: UploadFile[]) => {
             const validateFiles: any[] = []
-
             files.forEach((file) => {
                 if (!beforeUpload(file)) {
                     return false
                 }
                 validateFiles.push(file)
             })
-
-            console.log('validateFiles', validateFiles)
             if (validateFiles.length == 0) return
-
             setFileList((prev) => [...prev, ...validateFiles])
-
             const signedUrls = await getSignUrls(validateFiles)
             const data = await sign(signedUrls, signPrefix)
             files.map((file) =>
                 uploadQueue.next({
                     file,
                     oss: data.signedUrls[file.path],
-                })
+                } as UploadControlT)
             )
         },
     })
@@ -325,36 +261,14 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 style={{
                     ...style,
                     width: '100%',
-                    height: '170px',
+                    flexShrink: 0,
+                    flexBasis: 'auto',
                 }}
             >
                 <input {...getInputProps()} multiple {...dir} />
                 <p>Drag 'n' drop some files here, or click to select files</p>
             </div>
             <div className='ant-upload-list'>{items}</div>
-
-            {/* <Dragger {...rest} directory={isDirectory} className={styles.drag}>
-                <p className='ant-upload-drag-icon'>
-                    <IconFont type='upload' size={24} />
-                </p>
-                <p className='ant-upload-text'>{t('dataset.create.upload.desc')}</p>
-                <p className='ant-upload-action'>
-                    <Button
-                        kind='secondary'
-                        onClick={() => setIsDirectory(false)}
-                        startEnhancer={<IconFont type='file2' />}
-                    >
-                        {t('Files')}
-                    </Button>
-                    <Button
-                        kind='secondary'
-                        onClick={() => setIsDirectory(true)}
-                        startEnhancer={<IconFont type='file3' />}
-                    >
-                        {t('Directory')}
-                    </Button>
-                </p>
-            </Dragger> */}
             {total > 0 && (
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: 10 }}>
                     <div style={{ flex: 1 }}>

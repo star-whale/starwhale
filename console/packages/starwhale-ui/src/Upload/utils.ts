@@ -1,5 +1,4 @@
-import type { RcFile, UploadFile } from 'antd/es/upload/interface'
-import { fi } from 'date-fns/locale'
+import { UploadFile } from './types'
 
 export const getUploadType = (file: UploadFile) => {
     if (file.type?.startsWith('image')) return 'IMAGE'
@@ -11,7 +10,7 @@ export const getUploadType = (file: UploadFile) => {
     return ''
 }
 
-export const getUploadName = (file: UploadFile | RcFile | any) => {
+export const getUploadName = (file: UploadFile | File | any) => {
     if (!file) return ''
     if (file.path) return file.path
     if (file.originFileObj) return file.originFileObj?.webkitRelativePath ?? file.name
@@ -56,5 +55,19 @@ export const getSignUrls = (fileList: UploadFile[]) =>
         }
         return acc
     }, [] as string[])
+
+export function pickAttr(file: File | any) {
+    return {
+        ...file,
+        path: file.path,
+        originFileObj: file.file,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified,
+        lastModifiedDate: file.lastModifiedDate,
+        webkitRelativePath: file.webkitRelativePath,
+    } as UploadFile
+}
 
 export { findMostFrequentType }

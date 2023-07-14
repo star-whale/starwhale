@@ -24,7 +24,7 @@ export default function DatasetListCard() {
     const datasetsInfo = useFetchDatasets(projectId, page)
     const [t] = useTranslation()
 
-    const query = { status: 'FAILED', ...page }
+    const query = { status: 'BUILDING', ...page }
 
     const datasetBuildList = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
         fetchDatasetBuildList(projectId, query)

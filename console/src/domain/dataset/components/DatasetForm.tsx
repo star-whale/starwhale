@@ -7,14 +7,12 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import User from '@/domain/user/components/User'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { Toggle } from '@starwhale/ui/Select'
-import { useHistory, useParams } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 import { useQueryArgs } from '@starwhale/core'
 import { DraggerUpload } from '@starwhale/ui/Upload'
 import Button from '@starwhale/ui/Button'
-import _ from 'lodash'
 import Shared from '@/components/Shared'
 import Input from '@starwhale/ui/Input'
-import { minLength } from '../../../../packages/starwhale-ui/src/Form/validators'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateDatasetFormSchema>()
 
