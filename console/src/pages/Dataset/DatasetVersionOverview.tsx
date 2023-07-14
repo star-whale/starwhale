@@ -1,7 +1,7 @@
 import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { formatTimestampDateTime } from '@/utils/datetime'
-import { useDatasetVersion } from '../../domain/dataset/hooks/useDatasetVersion'
+import { useDatasetVersion } from '@dataset/hooks/useDatasetVersion'
 import { Toggle } from '@starwhale/ui'
 import { fetchDatasetVersion, updateDatasetVersionShared } from '@/domain/dataset/services/datasetVersion'
 import { toaster } from 'baseui/toast'
@@ -9,6 +9,7 @@ import { useParams } from 'react-router-dom'
 import Shared from '@/components/Shared'
 import { Alias } from '@/components/Alias'
 import { MonoText } from '@/components/Text'
+import { useProject } from '@project/hooks/useProject'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
@@ -17,6 +18,7 @@ export default function DatasetVersionOverview() {
         datasetVersionId: string
     }>()
     const { datasetVersion: dataset, setDatasetVersion } = useDatasetVersion()
+    const { project } = useProject()
 
     const [t] = useTranslation()
 
@@ -65,7 +67,10 @@ export default function DatasetVersionOverview() {
             label: t('Created At'),
             value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
         },
-    ]
+    ].filter((item) => {
+        // hide shared if project is private
+        return project?.privacy === 'PUBLIC' || item.label !== t('dataset.overview.shared')
+    })
 
     return (
         <div className='flex-column'>

@@ -9,6 +9,7 @@ import { toaster } from 'baseui/toast'
 import { fetchRuntimeVersion, updateRuntimeVersionShared } from '@/domain/runtime/services/runtimeVersion'
 import { useParams } from 'react-router-dom'
 import { MonoText } from '@/components/Text'
+import { useProject } from '@project/hooks/useProject'
 
 export default function RuntimeVersionOverview() {
     const { projectId, runtimeId, runtimeVersionId } = useParams<{
@@ -17,6 +18,7 @@ export default function RuntimeVersionOverview() {
         runtimeVersionId: string
     }>()
     const { runtimeVersion, setRuntimeVersion } = useRuntimeVersion()
+    const { project } = useProject()
 
     const [t] = useTranslation()
 
@@ -65,7 +67,9 @@ export default function RuntimeVersionOverview() {
             label: t('Created At'),
             value: runtimeVersion?.createdTime && formatTimestampDateTime(runtimeVersion.createdTime),
         },
-    ]
+    ].filter((item) => {
+        return project?.privacy === 'PUBLIC' || item.label !== t('Shared')
+    })
 
     return (
         <div className='flex-column'>
