@@ -93,6 +93,10 @@ function useUpload(props: UploadProps = {}) {
         const name = getUploadName(file)
         const data = await sign([name], signPrefix)
         const oss = data.signedUrls[name]
+        const status = await fetch(oss, {
+            method: 'PUT',
+            body: file,
+        })
         return oss
     }
 

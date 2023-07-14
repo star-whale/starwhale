@@ -8,15 +8,8 @@ import { useParams, useLocation } from 'react-router-dom'
 import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
 import qs from 'qs'
-import moment from 'moment'
-import JobStatus from '@/domain/job/components/JobStatus'
-import { WithCurrentAuth } from '@/api/WithAuth'
-import { IconFont } from '@starwhale/ui'
-import { TaskStatusType } from '@/domain/job/schemas/task'
-import Button from '@starwhale/ui/Button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import ExecutorForm from '@job/components/ExecutorForm'
-import Text from '@starwhale/ui/Text'
 import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
 import { useQuery } from 'react-query'
 
@@ -25,14 +18,14 @@ export interface ITaskListCardProps {
     onAction?: (type: string, value: any) => void
 }
 
-export default function DatasetTaskBuildList({ header, onAction }: ITaskListCardProps) {
+export default function DatasetBuildList({ header, onAction }: ITaskListCardProps) {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const location = useLocation()
     const id = qs.parse(location.search, { ignoreQueryPrefix: true })?.id ?? ''
-    const query = { status: 'FAILED', ...page }
+    const query = { status: 'BUILDING', ...page }
     const tasksInfo = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
-        fetchDatasetBuildList(projectId, query)
+        fetchDatasetBuildList(projectId, query as any)
     )
 
     const [t] = useTranslation()
@@ -49,30 +42,26 @@ export default function DatasetTaskBuildList({ header, onAction }: ITaskListCard
     }, [tasksInfo.isSuccess, tasksInfo.data, id, onAction])
 
     return (
-        <Card title='1'>
+        <Card title={t('dataset.create.title')}>
             {header}
             <Table
                 isLoading={tasksInfo.isLoading}
                 columns={[
                     t('Task ID'),
-                    t('Step'),
-                    t('Resource Pool'),
                     t('Started'),
-                    t('End Time'),
-                    t('Duration'),
+                    t('sth name', [t('Dataset')]),
+                    t('dataset.create.type'),
                     t('Status'),
-                    t('Status Desc'),
                     t('Action'),
                 ]}
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
                             task.id,
+                            task.createTime && formatTimestampDateTime(task.createTime),
                             task.datasetName,
-                            task.datasetId,
                             task.type,
                             task.status,
-                            task.createTime && formatTimestampDateTime(task.createTime),
                             <p key='action' style={{ display: 'flex', gap: '10px' }}>
                                 <StyledLink
                                     key={task.uuid}
@@ -92,24 +81,6 @@ export default function DatasetTaskBuildList({ header, onAction }: ITaskListCard
                                 >
                                     {t('View Log')}
                                 </StyledLink>
-                                <WithCurrentAuth id='job-dev' key='devUrl'>
-                                    {(bool: boolean) =>
-                                        bool && task.devUrl && task.taskStatus === TaskStatusType.RUNNING ? (
-                                            <a target='_blank' href={task.devUrl} rel='noreferrer' title='debug'>
-                                                <IconFont type='vscode' size={14} />
-                                            </a>
-                                        ) : (
-                                            ''
-                                        )
-                                    }
-                                </WithCurrentAuth>
-                                <WithCurrentAuth id='task.execute'>
-                                    {task.taskStatus === TaskStatusType.RUNNING && (
-                                        <Button onClick={() => setCurrentTaskExecutor(task.id)} as='link'>
-                                            <IconFont type='docker' size={14} />
-                                        </Button>
-                                    )}
-                                </WithCurrentAuth>
                             </p>,
                         ]
                     }) ?? []

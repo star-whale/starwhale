@@ -48,6 +48,10 @@ const basic = {
         en: 'File already exists',
         zh: '文件已存在',
     },
+    'form.rule.min': {
+        en: '{{0}} must be at least 3 characters',
+        zh: '{{0}} 至少需要3个字符',
+    },
 }
 
 const dataset = {
@@ -95,6 +99,10 @@ const dataset = {
         en: 'Update Dataset',
         zh: '更新数据集',
     },
+    'dataset.create.title': {
+        en: 'Dataset Build Task',
+        zh: '数据集构建任务',
+    },
     'dataset.create.owner': {
         en: 'Owner',
         zh: '拥有者',
@@ -102,6 +110,10 @@ const dataset = {
     'dataset.create.files': {
         en: 'Dataset Files',
         zh: '数据集文件',
+    },
+    'dataset.create.type': {
+        en: 'Dataset Type',
+        zh: '数据集类型',
     },
     'dataset.create.upload.desc': {
         en: 'Drag or click to upload files',

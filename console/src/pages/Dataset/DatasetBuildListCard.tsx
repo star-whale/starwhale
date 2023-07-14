@@ -7,7 +7,7 @@ import { getToken } from '@/api'
 import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
 import { toaster } from 'baseui/toast'
 import { BusyPlaceholder } from '@starwhale/ui'
-import DatasetTaskBuildList from './DatasetTaskBuildList'
+import DatasetTaskBuildList from './DatasetBuildList'
 import { fetchDatasetTaskOfflineLogFiles } from '@/domain/dataset/services/dataset'
 
 const ComplexToolbarLogViewer = React.lazy(() => import('@/components/LogViewer/LogViewer'))
@@ -18,7 +18,7 @@ export interface IScrollProps {
     clientHeight: number
 }
 
-export default function DatasetTaskListCard() {
+export default function DatasetBuildListCard() {
     const [t] = useTranslation()
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)

@@ -53,7 +53,7 @@ import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
-import DatasetTaskListCard from './pages/Dataset/DatasetTaskListCard'
+import DatasetBuildListCard from './pages/Dataset/DatasetBuildListCard'
 
 // const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -185,7 +185,7 @@ const Routes = () => {
                                     <Route
                                         exact
                                         path='/projects/:projectId/datasets/builds'
-                                        component={DatasetTaskListCard}
+                                        component={DatasetBuildListCard}
                                     />
                                 </ProjectLayout>
                             </Route>

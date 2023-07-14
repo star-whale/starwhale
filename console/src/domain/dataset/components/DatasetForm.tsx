@@ -14,6 +14,7 @@ import Button from '@starwhale/ui/Button'
 import _ from 'lodash'
 import Shared from '@/components/Shared'
 import Input from '@starwhale/ui/Input'
+import { minLength } from '../../../../packages/starwhale-ui/src/Form/validators'
 
 const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateDatasetFormSchema>()
 
@@ -132,7 +133,14 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
                         {project?.name} /
                     </div>
                 </FormItemLabel>
-                <FormItem name='datasetName' label={t('sth name', [t('Dataset')])} style={{ minWidth: 280 }} required>
+                <FormItem
+                    name='datasetName'
+                    // @ts-ignore
+                    rules={[{ type: 'string', min: 3, message: t('form.rule.min', [t('sth name', [t('Dataset')])]) }]}
+                    label={t('sth name', [t('Dataset')])}
+                    style={{ minWidth: 280 }}
+                    required
+                >
                     <Input size='compact' />
                 </FormItem>
             </div>
