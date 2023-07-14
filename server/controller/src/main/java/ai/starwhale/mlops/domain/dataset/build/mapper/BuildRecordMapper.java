@@ -62,7 +62,7 @@ public interface BuildRecordMapper {
     @Insert("INSERT INTO dataset_build_record (" + COLUMNS_FOR_INSERT + ") "
             + "VALUES ("
             + "#{datasetId}, #{datasetName}, #{projectId}, "
-            + "#{type}, #{status}, #{storagePath}, #{format}, #{shared}, #{createdTime}"
+            + "#{type}, #{status}, #{storagePath}, #{logPath}, #{format}, #{shared}, #{createdTime}"
             + ")")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(BuildRecordEntity buildRecord);
