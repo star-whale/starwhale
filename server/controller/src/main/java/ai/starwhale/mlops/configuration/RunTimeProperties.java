@@ -30,6 +30,7 @@ public class RunTimeProperties {
     String imageDefault;
     ImageBuild imageBuild;
     Pypi pypi;
+    String condarc;
 
     @Data
     @AllArgsConstructor

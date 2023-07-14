@@ -30,6 +30,8 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -64,7 +66,9 @@ public class SystemSettingService implements CommandLineRunner {
 
     public String querySetting() {
         try {
-            return Constants.yamlMapper.writeValueAsString(systemSetting);
+            return Constants.yamlMapper.writer()
+                .with(YAMLFactory.builder().configure(Feature.LITERAL_BLOCK_STYLE, true).build())
+                .writeValueAsString(systemSetting);
         } catch (JsonProcessingException e) {
             log.error("write systemSetting setting to yaml failed", e);
             throw new SwProcessException(ErrorType.SYSTEM);
@@ -121,6 +125,9 @@ public class SystemSettingService implements CommandLineRunner {
                 if (null == systemSetting.getPypiSetting()) {
                     systemSetting.setPypiSetting(runTimeProperties.getPypi());
                 }
+                if (null == systemSetting.getCondaSetting()) {
+                    systemSetting.setCondaSetting(runTimeProperties.getCondarc());
+                }
                 if (null == systemSetting.getDockerSetting()) {
                     systemSetting.setDockerSetting(dockerSetting);
                 }
@@ -135,6 +142,7 @@ public class SystemSettingService implements CommandLineRunner {
         } else {
             systemSetting = new SystemSetting();
             systemSetting.setPypiSetting(runTimeProperties.getPypi());
+            systemSetting.setCondaSetting(runTimeProperties.getCondarc());
             systemSetting.setDockerSetting(dockerSetting);
             systemSetting.setResourcePoolSetting(List.of(ResourcePool.defaults()));
         }

@@ -37,7 +37,20 @@ import org.junit.jupiter.api.Test;
 
 public class SystemSettingServiceTest {
 
-    static String YAML = "---\n"
+    static final String CONDARC = "channels:\n"
+            + "  - defaults\n"
+            + "show_channel_urls: true\n"
+            + "default_channels:\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/main\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/r\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
+            + "custom_channels:\n"
+            + "  conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "ssl_verify: false\n"
+            + "default_threads: 10";
+
+    static final String YAML = "---\n"
             + "dockerSetting:\n"
             + "  registryForPull: \"abcd.com\"\n"
             + "  registryForPush: \"abcd2.com\"\n"
@@ -50,6 +63,19 @@ public class SystemSettingServiceTest {
             + "  trustedHost: \"host1\"\n"
             + "  retries: 11\n"
             + "  timeout: 91\n"
+            + "condaSetting: |-\n"
+            + "  channels:\n"
+            + "    - defaults\n"
+            + "  show_channel_urls: true\n"
+            + "  default_channels:\n"
+            + "    - http://nexus.starwhale.ai/repository/anaconda/main\n"
+            + "    - http://nexus.starwhale.ai/repository/anaconda/r\n"
+            + "    - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
+            + "  custom_channels:\n"
+            + "    conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "    nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "  ssl_verify: false\n"
+            + "  default_threads: 10\n"
             + "resourcePoolSetting:\n"
             + "- name: \"default\"\n"
             + "  nodeSelector: {}\n"
@@ -95,7 +121,7 @@ public class SystemSettingServiceTest {
                 systemSettingMapper,
                 List.of(listener),
                 new RunTimeProperties("", new RunTimeProperties.ImageBuild(),
-                        new Pypi("url1", "url2", "host1", 11, 91)),
+                        new Pypi("url1", "url2", "host1", 11, 91), CONDARC),
                 new DockerSetting("", "", "", "", false),
                 userService);
         systemSettingService.run();
@@ -185,7 +211,7 @@ public class SystemSettingServiceTest {
         SystemSettingService systemSettingService = new SystemSettingService(
                 mock(SystemSettingMapper.class),
                 List.of(listener),
-                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "", 1, 2)),
+                new RunTimeProperties("", new RunTimeProperties.ImageBuild(), new Pypi("", "", "", 1, 2), ""),
                 new DockerSetting("abcd.com", "abcd2.com", "admin", "admin123", false),
                 mock(UserService.class));
         systemSettingService.run();
@@ -202,6 +228,7 @@ public class SystemSettingServiceTest {
                 + "  trustedHost: \"\"\n"
                 + "  retries: 1\n"
                 + "  timeout: 2\n"
+                + "condaSetting: \"\"\n"
                 + "resourcePoolSetting:\n"
                 + "- name: \"default\"\n"
                 + "  nodeSelector: {}\n"

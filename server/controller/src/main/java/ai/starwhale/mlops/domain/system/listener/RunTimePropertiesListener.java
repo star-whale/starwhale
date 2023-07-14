@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.system.listener;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.domain.system.SystemSetting;
 import ai.starwhale.mlops.domain.system.SystemSettingListener;
 import org.springframework.stereotype.Component;
@@ -33,7 +32,7 @@ public class RunTimePropertiesListener implements SystemSettingListener {
 
     @Override
     public void onUpdate(SystemSetting systemSetting) {
-        Pypi pypiSetting = systemSetting.getPypiSetting();
-        this.runTimeProperties.setPypi(pypiSetting);
+        this.runTimeProperties.setPypi(systemSetting.getPypiSetting());
+        this.runTimeProperties.setCondarc(systemSetting.getCondaSetting());
     }
 }

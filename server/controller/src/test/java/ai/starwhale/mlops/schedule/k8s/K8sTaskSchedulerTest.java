@@ -71,6 +71,19 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 public class K8sTaskSchedulerTest {
 
+    static final String CONDARC = "channels:\n"
+            + "  - defaults\n"
+            + "show_channel_urls: true\n"
+            + "default_channels:\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/main\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/r\n"
+            + "  - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
+            + "custom_channels:\n"
+            + "  conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
+            + "ssl_verify: false\n"
+            + "default_threads: 10";
+
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
@@ -84,7 +97,7 @@ public class K8sTaskSchedulerTest {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH", 1, 2));
+                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
@@ -116,7 +129,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
+                CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -152,7 +166,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
+                CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -192,7 +207,8 @@ public class K8sTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2));
+        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
+                CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -294,6 +310,18 @@ public class K8sTaskSchedulerTest {
             expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
             expectedEnvs.put("SW_PYPI_RETRIES", "1");
             expectedEnvs.put("SW_PYPI_TIMEOUT", "2");
+            expectedEnvs.put("SW_CONDA_CONFIG", "channels:\n"
+                    + "  - defaults\n"
+                    + "show_channel_urls: true\n"
+                    + "default_channels:\n"
+                    + "  - http://nexus.starwhale.ai/repository/anaconda/main\n"
+                    + "  - http://nexus.starwhale.ai/repository/anaconda/r\n"
+                    + "  - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
+                    + "custom_channels:\n"
+                    + "  conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
+                    + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
+                    + "ssl_verify: false\n"
+                    + "default_threads: 10");
             Map<String, String> actualEnv = worker.getEnvs().stream()
                     .filter(envVar -> envVar.getValue() != null)
                     .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
