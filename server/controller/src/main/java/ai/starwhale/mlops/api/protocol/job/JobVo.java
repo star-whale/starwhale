@@ -82,7 +82,7 @@ public class JobVo implements Serializable {
     // expose links is used to get the serving url of the model, it may contain:
     // 1. vscode url when the model is running under dev mode
     // 2. serving url when the model is running a web handler (which using the non-zero expose handler decorator)
-    private List<String> exposedLinks;
+    private List<ExposedLinkVo> exposedLinks;
 
     @JsonProperty("duration")
     public Long getDuration() {

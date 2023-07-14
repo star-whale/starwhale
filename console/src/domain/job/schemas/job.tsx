@@ -22,6 +22,17 @@ export enum JobStatusType {
     UNKNOWN = 'UNKNOWN',
 }
 
+export enum ExposedLinkType {
+    DEV_MODE = 'DEV_MODE',
+    WEB_HANDLER = 'WEB_HANDLER',
+}
+
+export interface IExposedLinkSchema {
+    type: ExposedLinkType
+    name: string
+    link: string
+}
+
 export interface IJobSchema extends IResourceSchema {
     uuid: string
     name: string
@@ -39,7 +50,7 @@ export interface IJobSchema extends IResourceSchema {
     stopTime?: number
     createdTime?: number
     pinnedTime?: number
-    exposedLinks?: string[]
+    exposedLinks?: IExposedLinkSchema[]
     isTimeToLiveInSec?: boolean
     timeToLiveInSec?: number
 }

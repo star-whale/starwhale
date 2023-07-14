@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 
+import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
@@ -24,12 +25,14 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -40,12 +43,12 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import reactor.function.Consumer4;
 
 @Component
 public class JobConverter {
@@ -99,38 +102,38 @@ public class JobConverter {
      * @param jobId job id
      * @return exposed links
      */
-    private List<String> generateJobExposedLinks(Long jobId) {
-        var links = new ArrayList<String>();
+    private List<ExposedLinkVo> generateJobExposedLinks(Long jobId) {
+        var exposed = new ArrayList<ExposedLinkVo>();
         var jobs = hotJobHolder.ofIds(List.of(jobId));
         if (CollectionUtils.isEmpty(jobs)) {
-            return links;
+            return exposed;
         }
         var job = jobs.stream().findAny().get();
 
         // only running job should generate exposed links
         var jobStatus = job.getStatus();
         if (jobStatus != JobStatus.RUNNING) {
-            return links;
+            return exposed;
         }
         // check if job has exposed port in step spec
         var stepSpecStr = job.getStepSpec();
         if (!StringUtils.hasText(stepSpecStr)) {
-            return links;
+            return exposed;
         }
 
         List<StepSpec> stepSpecs;
         try {
             stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecStr);
         } catch (JsonProcessingException e) {
-            return links;
+            return exposed;
         }
         if (CollectionUtils.isEmpty(stepSpecs)) {
-            return links;
+            return exposed;
         }
 
         var steps = job.getSteps();
 
-        BiConsumer<Task, Integer> addRunningTask = (task, port) -> {
+        Consumer4<Task, Integer, ExposedType, String> addRunningTask = (task, port, type, name) -> {
             if (task.getStatus() != TaskStatus.RUNNING) {
                 return;
             }
@@ -139,13 +142,13 @@ public class JobConverter {
                 return;
             }
             var link = webServerInTask.generateGatewayUrl(task.getId(), task.getIp(), port);
-            links.add(link);
+            exposed.add(ExposedLinkVo.builder().type(type).name(name).link(link).build());
         };
 
         // dev mode
         if (job.isDevMode()) {
             job.getSteps().stream().flatMap(s -> s.getTasks().stream())
-                    .forEach(task -> addRunningTask.accept(task, devPort));
+                    .forEach(task -> addRunningTask.accept(task, devPort, ExposedType.DEV_MODE, DevWay.VS_CODE.name()));
         }
 
         // web handler
@@ -165,10 +168,17 @@ public class JobConverter {
             if (CollectionUtils.isEmpty(tasks)) {
                 return;
             }
-            tasks.forEach(task -> addRunningTask.accept(task, exposedPort));
+            String name;
+            // https://github.com/star-whale/starwhale/blob/c924313166d065ab941a99fa1dec04b7bfbe5fa7/client/starwhale/core/model/model.py#L246-L252
+            if (Boolean.TRUE.equals(stepSpec.getVirtual()) && stepSpec.getName().equals("serving")) {
+                name = "online evaluation";
+            } else {
+                name = stepSpec.getName();
+            }
+            tasks.forEach(t -> addRunningTask.accept(t, exposedPort, ExposedType.WEB_HANDLER, name));
         });
 
-        return links;
+        return exposed;
     }
 
     public JobVo convert(Job job) throws ConvertException {
