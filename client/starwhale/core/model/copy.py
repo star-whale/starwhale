@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import struct
 import typing as t
 import hashlib
@@ -52,6 +53,7 @@ class _Node:
         self.file_proto.type = pb2.FILE_TYPE_DIRECTORY
         self.dirs: t.List[_Node] = []
         self.files: t.List[pb2.File] = []
+        self.links: t.List[pb2.File] = []
 
 
 def _prepare_common_contextvars() -> None:
@@ -329,26 +331,40 @@ async def _merge_files(
 
 def _scan_dir(workdir: Path) -> t.List[_Node]:
     nodes = [_Node(workdir)]
+    inode_path_dict: t.Dict[int, Path] = {}
     i = 0
     while i < len(nodes):
         for child in sorted(nodes[i].path.glob("*")):
             if i == 0 and child.name != "src" and child.name != DEFAULT_MANIFEST_NAME:
                 continue
             stat = child.stat()
-            if child.is_dir():
+            if child.is_dir() and not child.is_symlink():
                 new_node = _Node(child)
                 new_node.file_proto.name = child.name
                 new_node.file_proto.type = pb2.FILE_TYPE_DIRECTORY
                 new_node.file_proto.permission = stat.st_mode
                 nodes[i].dirs.append(new_node)
                 nodes.append(new_node)
-            elif child.is_file():
+            else:
                 file = pb2.File()
                 file.name = child.name
-                file.type = pb2.FILE_TYPE_REGULAR
-                file.size = stat.st_size
-                file.permission = stat.st_mode
-                nodes[i].files.append(file)
+                if child.is_symlink():
+                    file.type = pb2.FILE_TYPE_SYMLINK
+                    file.link = os.readlink(child)
+                    nodes[i].links.append(file)
+                elif child.is_file():
+                    if stat.st_ino in inode_path_dict:
+                        file.type = pb2.FILE_TYPE_HARDLINK
+                        file.link = (
+                            inode_path_dict[stat.st_ino].relative_to(workdir).as_posix()
+                        )
+                        nodes[i].links.append(file)
+                    else:
+                        file.type = pb2.FILE_TYPE_REGULAR
+                        file.size = stat.st_size
+                        file.permission = stat.st_mode
+                        nodes[i].files.append(file)
+                        inode_path_dict[stat.st_ino] = child
         i += 1
     return nodes
 
@@ -376,6 +392,7 @@ def _prepare_meta_blobs(nodes: t.List[_Node], meta_blobs: t.List[pb2.MetaBlob]) 
                     files.append(ref_file)
                 del f.blob_ids[:]
                 f.to_file_index = len(files)
+        files.extend(node.links)
         node.file_proto.to_file_index = len(files)
     estimated_blob_size = meta_blobs[0].ByteSize()
     for file in files:
@@ -532,6 +549,11 @@ def _prepare_nodes(meta_blobs: t.List[pb2.MetaBlob], workdir: Path) -> t.List[_N
                 nodes.append(_Node(nodes[i].path / files[j].name))
                 nodes[-1].file_proto = files[j]
                 nodes[i].dirs.append(nodes[-1])
+            elif (
+                files[j].type == pb2.FILE_TYPE_SYMLINK
+                or files[j].type == pb2.FILE_TYPE_HARDLINK
+            ):
+                nodes[i].links.append(files[j])
             else:
                 if files[j].type == pb2.FILE_TYPE_HUGE:
                     for k in range(files[j].from_file_index, files[j].to_file_index):
@@ -717,6 +739,7 @@ async def download_model(
     workdir: Path,
     store: LocalFileStore,
     progress: Progress,
+    force: bool,
 ) -> None:
     cloud_blob_cache.init()
     _progress.set(progress)
@@ -751,3 +774,23 @@ async def download_model(
                         else:
                             await _file_sem.get().acquire()
                             nursery.start_soon(_download_file, path, file, store)
+        for node in nodes:
+            for link in node.links:
+                dest = node.path / link.name
+                if dest.is_symlink():
+                    if force:
+                        dest.unlink()
+                    else:
+                        raise RuntimeError(f"can not overwrite {dest}")
+                elif dest.exists():
+                    if force:
+                        if dest.is_dir():
+                            shutil.rmtree(dest)
+                        else:
+                            os.remove(dest)
+                    else:
+                        raise RuntimeError(f"can not overwrite {dest}")
+                if link.type == pb2.FILE_TYPE_SYMLINK:
+                    os.symlink(link.link, node.path / link.name)
+                elif link.type == pb2.FILE_TYPE_HARDLINK:
+                    os.link(workdir / link.link, node.path / link.name)

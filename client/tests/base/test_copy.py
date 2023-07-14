@@ -1,3 +1,4 @@
+import os
 import json
 import random
 import struct
@@ -430,7 +431,7 @@ class TestBundleCopy(BaseTestCase):
                         name="d",
                         permission=0o700,
                         from_file_index=5,
-                        to_file_index=7,
+                        to_file_index=10,
                     ),
                     pb2.File(
                         blob_ids=["0000000000000064", "0000000000000065"],
@@ -454,6 +455,21 @@ class TestBundleCopy(BaseTestCase):
                         blob_offset=6,
                         blob_size=1,
                         md5=bytes.fromhex("e358efa489f58062f10dd7316b65649e"),
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_HARDLINK,
+                        name="another_readme",
+                        link="readme",
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_SYMLINK,
+                        name="x",
+                        link="d",
+                    ),
+                    pb2.File(
+                        type=pb2.FILE_TYPE_SYMLINK,
+                        name="y",
+                        link="./readme",
                     ),
                 ]
             )
@@ -516,6 +532,14 @@ class TestBundleCopy(BaseTestCase):
                 self.assertEqual(
                     b"0" * 65536 + b"1" * 65536 + b"2" * 65536 + b"3" * 65536, data
                 )
+            self.assertEqual(
+                os.stat(swmp_path / "readme").st_ino,
+                os.stat(swmp_path / "d" / "another_readme").st_ino,
+            )
+            self.assertTrue((swmp_path / "d" / "x").is_symlink())
+            self.assertEqual(os.readlink(swmp_path / "d" / "x"), "d")
+            self.assertTrue((swmp_path / "d" / "y").is_symlink())
+            self.assertEqual(os.readlink(swmp_path / "d" / "y"), "./readme")
         BundleCopy(
             src_uri=cloud_uri,
             dest_uri=cases[0]["dest_uri"],
@@ -751,6 +775,11 @@ class TestBundleCopy(BaseTestCase):
         ensure_file(swmp_path / "src" / "t" / "z", tzFile, parents=True)
         ensure_file(swmp_path / "src" / "empty", "")
         ensure_dir(swmp_path / "src" / "empty_dir")
+        os.link(swmp_path / "src" / "empty", swmp_path / "src" / "empty_link")
+        os.symlink(
+            swmp_path / "src" / "empty_dir", swmp_path / "src" / "empty_dir_symlink"
+        )
+        os.symlink(swmp_path / "src" / "empty", swmp_path / "src" / "empty_symlink")
         BundleCopy(
             src_uri="mnist/v1",
             dest_uri="cloud://pre-bare/project/mnist/model/mnist-alias",
@@ -785,8 +814,11 @@ class TestBundleCopy(BaseTestCase):
                 self.assertIsNotNone(f1)
                 self.assertIsNotNone(f2)
                 self.assertEqual(f1.name, f2.name)
-                self.assertEqual(f1.is_dir(), f2.is_dir())
-                if f1.is_dir():
+                if f1.is_symlink():
+                    self.assertTrue(f2.is_symlink())
+                    self.assertEqual(os.readlink(f1), os.readlink(f2))
+                elif f1.is_dir():
+                    self.assertTrue(f2.is_dir())
                     compare(f1, f2)
                 else:
                     with open(f1, "rb") as a:
@@ -800,6 +832,10 @@ class TestBundleCopy(BaseTestCase):
                             )
 
         compare(swmp_path, dest_path)
+        self.assertEqual(
+            os.stat(dest_path / "src" / "empty").st_ino,
+            os.stat(dest_path / "src" / "empty_link").st_ino,
+        )
 
     def _prepare_local_dataset(self) -> t.Tuple[str, str]:
         name = "mnist"

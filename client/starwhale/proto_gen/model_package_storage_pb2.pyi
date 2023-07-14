@@ -63,12 +63,16 @@ class _FileTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumT
     FILE_TYPE_REGULAR: _FileType.ValueType  # 0
     FILE_TYPE_HUGE: _FileType.ValueType  # 1
     FILE_TYPE_DIRECTORY: _FileType.ValueType  # 2
+    FILE_TYPE_SYMLINK: _FileType.ValueType  # 3
+    FILE_TYPE_HARDLINK: _FileType.ValueType  # 4
 
 class FileType(_FileType, metaclass=_FileTypeEnumTypeWrapper): ...
 
 FILE_TYPE_REGULAR: FileType.ValueType  # 0
 FILE_TYPE_HUGE: FileType.ValueType  # 1
 FILE_TYPE_DIRECTORY: FileType.ValueType  # 2
+FILE_TYPE_SYMLINK: FileType.ValueType  # 3
+FILE_TYPE_HARDLINK: FileType.ValueType  # 4
 global___FileType = FileType
 
 @typing_extensions.final
@@ -87,6 +91,7 @@ class File(google.protobuf.message.Message):
     COMPRESSION_ALGORITHM_FIELD_NUMBER: builtins.int
     FROM_FILE_INDEX_FIELD_NUMBER: builtins.int
     TO_FILE_INDEX_FIELD_NUMBER: builtins.int
+    LINK_FIELD_NUMBER: builtins.int
     type: global___FileType.ValueType
     name: builtins.str
     size: builtins.int
@@ -110,6 +115,8 @@ class File(google.protobuf.message.Message):
     of data blobs references. from_file_index is inclusive, to_file_index is exclusive.
     """
     to_file_index: builtins.int
+    link: builtins.str
+    """stores link target, either hardlink or symlink"""
     def __init__(
         self,
         *,
@@ -125,8 +132,9 @@ class File(google.protobuf.message.Message):
         compression_algorithm: global___CompressionAlgorithm.ValueType = ...,
         from_file_index: builtins.int = ...,
         to_file_index: builtins.int = ...,
+        link: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["blob_ids", b"blob_ids", "blob_offset", b"blob_offset", "blob_size", b"blob_size", "compression_algorithm", b"compression_algorithm", "from_file_index", b"from_file_index", "md5", b"md5", "name", b"name", "permission", b"permission", "signed_urls", b"signed_urls", "size", b"size", "to_file_index", b"to_file_index", "type", b"type"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["blob_ids", b"blob_ids", "blob_offset", b"blob_offset", "blob_size", b"blob_size", "compression_algorithm", b"compression_algorithm", "from_file_index", b"from_file_index", "link", b"link", "md5", b"md5", "name", b"name", "permission", b"permission", "signed_urls", b"signed_urls", "size", b"size", "to_file_index", b"to_file_index", "type", b"type"]) -> None: ...
 
 global___File = File
 

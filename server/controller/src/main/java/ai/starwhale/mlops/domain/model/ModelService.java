@@ -614,12 +614,24 @@ public class ModelService {
 
     private LengthAbleInputStream getFileData(ModelPackageStorage.MetaBlob metaBlob, String path) {
         var files = new LinkedList<>(this.getFile(metaBlob, path));
-        var size = files.get(0).getSize();
+        var mainFile = files.get(0);
+        var size = mainFile.getSize();
+        if (mainFile.getType() == FileType.FILE_TYPE_HARDLINK
+                || mainFile.getType() == FileType.FILE_TYPE_SYMLINK) {
+            String prefix;
+            if (mainFile.getType() == FileType.FILE_TYPE_HARDLINK) {
+                prefix = "hardlink:";
+            } else {
+                prefix = "symlink:";
+            }
+            var content = (prefix + mainFile.getLink()).getBytes(StandardCharsets.UTF_8);
+            return new LengthAbleInputStream(new ByteArrayInputStream(content), content.length);
+        }
         if (size == 0) {
             return new LengthAbleInputStream(new ByteArrayInputStream(new byte[0]), 0);
         }
         var compressionAlgorithm = files.get(0).getCompressionAlgorithm();
-        if (files.get(0).getBlobIdsCount() == 0) {
+        if (mainFile.getBlobIdsCount() == 0) {
             files.removeFirst();
         }
         var in = new SequenceInputStream(new Enumeration<>() {
@@ -799,6 +811,8 @@ public class ModelService {
                 });
                 break;
             case FILE_TYPE_REGULAR:
+            case FILE_TYPE_SYMLINK:
+            case FILE_TYPE_HARDLINK:
                 ret.add(result.get());
                 break;
             default:

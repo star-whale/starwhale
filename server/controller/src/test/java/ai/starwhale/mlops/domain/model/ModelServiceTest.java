@@ -214,14 +214,26 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
     private static final LZ4Compressor lz4Compressor = lz4Factory.fastCompressor();
 
+    private static class Link {
+
+        private final FileType type;
+        public final String target;
+
+        public Link(ModelPackageStorage.FileType type, String target) {
+            this.type = type;
+            this.target = target;
+        }
+    }
+
     private class ModelBuilder {
+
 
         private final Map<String, Object> dataMap = new HashMap<>();
         private final ByteBuffer dataBuf = ByteBuffer.allocate(4 * 1024 * 1024);
         private final ArrayList<ModelPackageStorage.File.Builder> fileList = new ArrayList<>();
         private final Random random = new Random();
 
-        public void add(String path, byte[] data) {
+        public void add(String path, Object data) {
             var pathList = path.split("/");
             var current = dataMap;
             for (int i = 0; i < pathList.length; ++i) {
@@ -427,12 +439,15 @@ public class ModelServiceTest extends MySqlContainerHolder {
                         }
                     });
                     dir.forEach((k, v) -> {
-                        if (v instanceof byte[]) {
+                        if (v instanceof byte[] || v instanceof Link) {
                             var child = ModelPackageStorage.File.newBuilder().setName(k);
                             nodeList.add(Pair.of(child, v));
                         }
                     });
                     f.setToFileIndex(nodeList.size());
+                } else if (data instanceof Link) {
+                    f.setType(((Link) data).type);
+                    f.setLink(((Link) data).target);
                 }
             }
             var firstMetaBlob = ModelPackageStorage.MetaBlob.newBuilder();
@@ -530,6 +545,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
             }
         }
 
+        modelBuilder.add("xx", new Link(FileType.FILE_TYPE_HARDLINK, "t1"));
+        modelBuilder.add("yy", new Link(FileType.FILE_TYPE_SYMLINK, "t2"));
         this.modelService.createModelVersion("1", "m", "v1",
                 new CreateModelVersionRequest(modelBuilder.build(), null, false));
 
@@ -857,6 +874,10 @@ public class ModelServiceTest extends MySqlContainerHolder {
                                 hasProperty("type", is(FileNode.Type.DIRECTORY))),
                         allOf(hasProperty("name", is("t")),
                                 hasProperty("type", is(FileNode.Type.DIRECTORY))),
+                        allOf(hasProperty("name", is("xx")),
+                                hasProperty("type", is(FileNode.Type.FILE))),
+                        allOf(hasProperty("name", is("yy")),
+                                hasProperty("type", is(FileNode.Type.FILE))),
                         allOf(hasProperty("name", is("v")),
                                 hasProperty("type", is(FileNode.Type.DIRECTORY))),
                         allOf(hasProperty("name", is("readme")),
@@ -916,6 +937,10 @@ public class ModelServiceTest extends MySqlContainerHolder {
         assertThat(this.modelService.getFileData("1", "m", "v1", "t/empty").readAllBytes(), is(new byte[0]));
 
         assertThat(this.modelService.getFileData("1", "m1", "v1", "s").readAllBytes(), is(this.fileS));
+        assertThat(this.modelService.getFileData("1", "m", "v1", "xx").readAllBytes(),
+                is("hardlink:t1".getBytes(StandardCharsets.UTF_8)));
+        assertThat(this.modelService.getFileData("1", "m", "v1", "yy").readAllBytes(),
+                is("symlink:t2".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test
