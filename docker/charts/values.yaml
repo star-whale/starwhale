@@ -82,6 +82,7 @@ controller:
     username: starwhale
     password: abcd1234
   containerPort: 8082
+  managementPort: 9082
   ingress:
     enabled: true
     ingressClassName: nginx

@@ -16,46 +16,17 @@
 
 package ai.starwhale.mlops;
 
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
-import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
-import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
-import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
-import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
-import ai.starwhale.mlops.domain.job.step.trigger.SimpleStepTrigger;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.util.List;
 
 public class ObjectMockHolder {
-
-    public static TaskMapper taskMapper = mock(TaskMapper.class);
-
     public static JobDao jobDao = mock(JobDao.class);
-
-    public static StepMapper stepMapper = mock(StepMapper.class);
-
-    public static TaskStatusMachine taskStatusMachine() {
-        return new TaskStatusMachine();
-    }
-
-    public static JobStatusMachine jobStatusMachine() {
-        return new JobStatusMachine();
-    }
-
-    public static StepStatusMachine stepStatusMachine() {
-        return new StepStatusMachine();
-    }
 
     public static StoragePathCoordinator storagePathCoordinator() {
         return new StoragePathCoordinator("/test/sys/starwhale");
@@ -76,24 +47,4 @@ public class ObjectMockHolder {
     public static StorageAccessService storageAccessService() {
         return mock(StorageAccessService.class);
     }
-
-    public static SimpleStepTrigger evalPplStepTrigger() {
-        StorageAccessService storageAccessService = storageAccessService();
-        try {
-            when(storageAccessService.list(anyString())).thenReturn(List.of("a", "b", "c").stream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new SimpleStepTrigger(storageAccessService);
-    }
-
-    public static HotJobHolderImpl hotJobHolder() {
-        return new HotJobHolderImpl();
-    }
-
-    public static JobStatusCalculator jobStatusCalculator() {
-        return new JobStatusCalculator();
-    }
-
-
 }

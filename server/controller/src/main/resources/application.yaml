@@ -150,3 +150,8 @@ management:
     web:
       exposure:
         include: ${SW_BIZ_MANAGMENT_EXPOSURE_ENDPOINTS:httptrace,loggers,health,info,metrics}
+  server:
+    port: ${SW_MANAGEMENT_PORT:9082}
+  metrics:
+    tags:
+      application: ${spring.application.name}

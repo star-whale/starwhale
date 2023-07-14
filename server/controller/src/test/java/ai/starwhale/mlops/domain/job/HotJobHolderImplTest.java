@@ -16,12 +16,15 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import static org.mockito.Mockito.mock;
+
 import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +38,7 @@ public class HotJobHolderImplTest {
 
     @Test
     public void testHotJobHolderImpl() {
-        final HotJobHolderImpl hotJobHolder = new HotJobHolderImpl();
+        final HotJobHolderImpl hotJobHolder = new HotJobHolderImpl(mock(MeterRegistry.class));
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job job1 = jobMockHolder.mockJob();
         Job job2 = jobMockHolder.mockJob();
