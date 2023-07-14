@@ -68,7 +68,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         }
         var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
         if (StringUtils.hasText(type)) {
-            log.debug("job({}) {} for {}.", type, "onUpdate", getJobNameAsId(newObj));
+            log.debug("job({}) {} for {}.", type, "onUpdate", newObj.getMetadata().getLabels().get("job-name"));
             switch (type) {
                 case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
                     updateEvalTask(newObj);
