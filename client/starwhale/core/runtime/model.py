@@ -132,6 +132,15 @@ _SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
 _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
 _SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
+# workaround popular libs with some setup_requires dependencies in the setup.py(pip)
+_SUPPORT_PIP_SETUP_REQUIRES_LIBS = {
+    # basicsr is the StableDiffusion-Web-UI dependency. https://github.com/XPixelGroup/BasicSR/blob/master/setup.py#L168
+    "basicsr": ("torch", "numpy", "cython"),
+}
+_SUPPORT_PIP_SETUP_REQUIRES_DEPS = {
+    lib for _, libs in _SUPPORT_PIP_SETUP_REQUIRES_LIBS.items() for lib in libs
+}
+
 
 @unique
 class RuntimeInfoFilter(Enum):
@@ -1028,6 +1037,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         swrt_config = self._load_runtime_config(yaml_path)
 
         lock_paths: t.List[Path] = []
+        setup_requires_deps: t.List[t.List] = []
         if not disable_env_lock:
             console.print(
                 f":alien: try to lock environment dependencies to {workdir} ..."
@@ -1044,11 +1054,37 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_use_shell=env_use_shell,
                 emit_pip_options=emit_pip_options,
             )
-            # try getting starwhale version
+            _version_map = {}
+            _setup_requires_libs = []
             for line in content.splitlines():
+                line = line.strip().lstrip("-").strip()
+                if not line or line.startswith("#"):
+                    continue
+
+                # try getting starwhale version
                 if line.startswith("starwhale=="):
                     self._detected_sw_version = line.split("==")[1].strip()
-                    break
+
+                # pip pkg format: "aiohttp==3.8.4" or "dummy @ git+https://github.com/star-whale/starwhale.git#egg=dummy"
+                # conda pkg format: "zlib=1.2.13=h5eee18b_0"
+                # we only care about pip libs because of the setup_requires feature in the setup.py.
+                if "==" not in line and " @ " not in line:
+                    continue
+
+                # ingest known setup_requires libs
+                req_name = line.split("==", 1)[0]
+                if req_name in _SUPPORT_PIP_SETUP_REQUIRES_DEPS:
+                    _version_map[req_name] = line
+                elif req_name in _SUPPORT_PIP_SETUP_REQUIRES_LIBS:
+                    _setup_requires_libs.append(req_name)
+
+            for _lib in _setup_requires_libs:
+                setup_requires_deps.append(
+                    [
+                        _version_map.get(d, d)
+                        for d in _SUPPORT_PIP_SETUP_REQUIRES_LIBS[_lib]
+                    ]
+                )
 
             if lock_fpath is not None:
                 lock_paths.append(lock_fpath)
@@ -1085,6 +1121,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     include_editable=include_editable,
                     env_prefix_path=env_prefix_path,
                     env_name=env_name,
+                    setup_requires_deps=setup_requires_deps,
                 ),
             ),
             (
@@ -1327,12 +1364,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         include_editable: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
+        setup_requires_deps: t.Optional[t.List[t.List]] = None,
     ) -> None:
         console.print(":bagel: dump dependencies info...")
         deps = deps or Dependencies()
+        setup_requires_deps = setup_requires_deps or []
 
         self._manifest["dependencies"] = {
             "raw_deps": deps.flatten_raw_deps(),
+            "setup_requires": [
+                {"kind": DependencyType.PIP_PKG.value, "deps": _deps}
+                for _deps in setup_requires_deps
+            ],
             "local_packaged_env": False,
             # compatibility with starwhale <= 0.3.0
             "pip_pkgs": deps._pip_pkgs,
@@ -2023,8 +2066,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             DependencyType.PIP_REQ_FILE: RuntimeArtifactType.DEPEND,
         }
 
+        raw_deps = deps.get("setup_requires", [])
         if lock_files:
-            raw_deps = []
             # run commands in the first place
             for dep in deps["raw_deps"]:
                 if DependencyType(dep["kind"]) == DependencyType.COMMAND:
@@ -2048,7 +2091,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 if kind in (DependencyType.NATIVE_FILE, DependencyType.WHEEL):
                     raw_deps.append(dep)
         else:
-            raw_deps = deps["raw_deps"]
+            raw_deps += deps["raw_deps"]
 
         for dep in raw_deps:
             kind = DependencyType(dep["kind"])
