@@ -2,7 +2,7 @@ from pathlib import Path
 
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
-from starwhale import PipelineHandler, multi_classification
+from starwhale import Text, PipelineHandler, multi_classification
 
 ROOTDIR = Path(__file__).parent.parent
 _LABEL_NAMES = ["LABEL_0", "LABEL_1", "LABEL_2", "LABEL_3"]
@@ -15,12 +15,15 @@ class TextClassificationHandler(PipelineHandler):
         model = AutoModelForSequenceClassification.from_pretrained(
             str(ROOTDIR / "models")
         )
-        self.mode = pipeline(
+        self.model = pipeline(
             task="text-classification", model=model, tokenizer=tokenizer
         )
 
     def ppl(self, data):
-        _r = self.mode(data["text"])
+        content = (
+            data["text"].content if isinstance(data["text"], Text) else data["text"]
+        )
+        _r = self.model(content)
         return _LABEL_NAMES.index(_r[0]["label"])
 
     @multi_classification(
