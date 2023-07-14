@@ -65,7 +65,8 @@ public class PodEventHandlerTest {
         taskModifyReceiver = mock(TaskModifyReceiver.class);
         podEventHandler = new PodEventHandler(taskLogK8sCollector, buildLogCollector, taskModifyReceiver, hotJobHolder);
         v1Pod = new V1Pod()
-                .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")).name("3-xxx"))
+                .metadata(new V1ObjectMeta()
+                        .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
                 .status(new V1PodStatus()
                         .containerStatuses(List.of(
                                 new V1ContainerStatus().state(

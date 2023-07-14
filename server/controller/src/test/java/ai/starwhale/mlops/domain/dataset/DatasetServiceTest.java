@@ -592,7 +592,7 @@ public class DatasetServiceTest {
         verify(k8sJobTemplate, times(2)).updateAnnotations(any(), any());
         verify(datasetBuildTokenValidator, times(1)).getToken(any(), any());
         verify(k8sJobTemplate, times(1)).renderJob(
-                any(), eq("test-build-ds-null"), eq("Never"), eq(1), any(), any(), isNull(), isNull());
+                any(), eq("test-build-ds-null"), eq("Never"), eq(0), any(), any(), isNull(), isNull());
         verify(k8sClient, times(1)).deployJob(any());
     }
 

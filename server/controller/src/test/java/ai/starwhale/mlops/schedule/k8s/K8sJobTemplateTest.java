@@ -152,8 +152,13 @@ public class K8sJobTemplateTest {
         job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
         k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), null, null);
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
-        assertThat(labels, is(Map.of(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
-                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true")));
+        assertThat(labels, is(Map.of(
+                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
+                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true",
+                "job-type", "eval",
+                "job-name", "foo",
+                "owner", "starwhale"
+            )));
     }
 
     @Test
