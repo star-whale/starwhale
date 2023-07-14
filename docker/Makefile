@@ -117,6 +117,8 @@ build-console: build-gradio-ui
 MVN_IMG=maven:3.8.5-openjdk-11
 MVN_VOLUME=maven-repo
 build-jar:
+	# clean the console assets
+	rm -rvf ${ROOT_DIR}/server/controller/src/main/resources/static/*
 	docker volume create --name ${MVN_VOLUME} && \
 	docker run --rm -v ${MVN_VOLUME}:/app ${MVN_IMG} /bin/sh -c "chown $(shell id -u):$(shell id -g) -R /app" && \
 	docker run --rm -u $(shell id -u):$(shell id -g) \
