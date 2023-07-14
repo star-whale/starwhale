@@ -13,6 +13,7 @@ export const getUploadType = (file: UploadFile) => {
 
 export const getUploadName = (file: UploadFile | RcFile | any) => {
     if (!file) return ''
+    if (file.path) return file.path
     if (file.originFileObj) return file.originFileObj?.webkitRelativePath ?? file.name
     return file.webkitRelativePath ?? file.name
 }
@@ -47,6 +48,9 @@ export const getSignName = (file: UploadFile) => file.originFileObj?.webkitRelat
 
 export const getSignUrls = (fileList: UploadFile[]) =>
     fileList.reduce((acc, file) => {
+        if (file.path) {
+            acc.push(file.path)
+        }
         if (file.originFileObj?.webkitRelativePath) {
             acc.push(file.originFileObj?.webkitRelativePath)
         }

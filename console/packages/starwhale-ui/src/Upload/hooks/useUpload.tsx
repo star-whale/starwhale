@@ -13,6 +13,57 @@ type StatusT = UploadFileStatus | 'error_exist' | 'error_max'
 
 const UPLOAD_MAX = 1000
 
+export function ItemRender({ file }: { file: UploadFile }) {
+    // return originNode
+    const type = getUploadType(file)
+    const name = getUploadName(file)
+    const icons = {
+        IMAGE: 'image',
+        VIDEO: 'video',
+        AUDIO: 'audio',
+        CSV: 'txt',
+        JSON: 'txt',
+        JSONL: 'txt',
+    }
+
+    return (
+        <div className='ant-upload-list-item-container'>
+            <div className='ant-upload-list-item'>
+                <div className='ant-upload-icon'>
+                    {/* @ts-ignore */}
+                    <IconFont type={icons[type] ?? 'file2'} />
+                </div>
+                <div className='ant-upload-list-item-name'>{name}</div>
+                <div className='ant-upload-list-item-size'>{getReadableStorageQuantityStr(file.size ?? 0)}</div>
+                <div className='ant-upload-list-item-actions'>
+                    <Button
+                        as='link'
+                        icon='delete'
+                        onClick={() => handleRemove(file)}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    'marginLeft': '16px',
+                                    'backgroundColor': 'transparent',
+                                    'color': ' rgba(2,16,43,0.40);',
+                                    ':hover .icon-container': {
+                                        color: '#D65E5E !important',
+                                        backgroundColor: 'transparent',
+                                    },
+                                    ':focus': {
+                                        color: '#D65E5E !important',
+                                        backgroundColor: 'transparent',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                </div>
+            </div>
+        </div>
+    )
+}
+
 function useUpload(props: UploadProps = {}) {
     const { resetSign, signPrefix } = useSign()
     const [fileList, setFileList] = useState<UploadFile[]>([])
@@ -39,53 +90,7 @@ function useUpload(props: UploadProps = {}) {
         currentFileList: UploadFile[]
     ): React.ReactNode => {
         // return originNode
-        const type = getUploadType(file)
-        const name = getUploadName(file)
-        const icons = {
-            IMAGE: 'image',
-            VIDEO: 'video',
-            AUDIO: 'audio',
-            CSV: 'txt',
-            JSON: 'txt',
-            JSONL: 'txt',
-        }
-
-        return (
-            <div className='ant-upload-list-item-container'>
-                <div className='ant-upload-list-item'>
-                    <div className='ant-upload-icon'>
-                        {/* @ts-ignore */}
-                        <IconFont type={icons[type] ?? 'file2'} />
-                    </div>
-                    <div className='ant-upload-list-item-name'>{name}</div>
-                    <div className='ant-upload-list-item-size'>{getReadableStorageQuantityStr(file.size ?? 0)}</div>
-                    <div className='ant-upload-list-item-actions'>
-                        <Button
-                            as='link'
-                            icon='delete'
-                            onClick={() => handleRemove(file)}
-                            overrides={{
-                                BaseButton: {
-                                    style: {
-                                        'marginLeft': '16px',
-                                        'backgroundColor': 'transparent',
-                                        'color': ' rgba(2,16,43,0.40);',
-                                        ':hover .icon-container': {
-                                            color: '#D65E5E !important',
-                                            backgroundColor: 'transparent',
-                                        },
-                                        ':focus': {
-                                            color: '#D65E5E !important',
-                                            backgroundColor: 'transparent',
-                                        },
-                                    },
-                                },
-                            }}
-                        />
-                    </div>
-                </div>
-            </div>
-        )
+        return <ItemRender file={file} />
     }
 
     // mock: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
@@ -138,7 +143,7 @@ function useUpload(props: UploadProps = {}) {
         return _.groupBy([...fileList, ...fileFailedList], 'status') as any
     }, [fileList, fileFailedList])
 
-    console.log(statusMap, fileMap)
+    // console.log(statusMap, fileMap)
 
     return {
         getProps: React.useCallback(
@@ -169,6 +174,7 @@ function useUpload(props: UploadProps = {}) {
         fileMap,
         statusMap,
         reset,
+        ItemRender,
     }
 }
 

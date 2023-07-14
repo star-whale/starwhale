@@ -48,12 +48,20 @@ export interface IDatasetTreeSchema {
     versions: IDatasetTreeVersionSchema[]
 }
 
-export interface IDatasetTaskBuildListSchema {
+export interface IDatasetTaskBuildSchema {
     id: string
     datasetId: string
     projectId: string
     datasetName: string
-    status: 'CREATED' | 'BUILDING' | 'SUCCESS' | 'FAILED'
+    status: TaskBuildStatusType
     type: string
     createTime: number
+}
+
+export enum TaskBuildStatusType {
+    CREATED = 'CREATED',
+    UPLOADING = 'UPLOADING',
+    BUILDING = 'BUILDING',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED',
 }

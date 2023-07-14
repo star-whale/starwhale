@@ -5,7 +5,7 @@ import {
     IDatasetDetailSchema,
     IDatasetTreeSchema,
     ICreateDatasetQuerySchema,
-    IDatasetTaskBuildListSchema,
+    IDatasetTaskBuildSchema,
 } from '../schemas/dataset'
 
 export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
@@ -45,8 +45,8 @@ export async function removeDataset(projectId: string, datasetId: string): Promi
 export async function fetchDatasetBuildList(
     projectId: string,
     query: Partial<IListQuerySchema> & { status: 'CREATED' | 'BUILDING' | 'SUCCESS' | 'FAILED' }
-): Promise<IListSchema<IDatasetTaskBuildListSchema>> {
-    const resp = await axios.get<IDatasetTaskBuildListSchema>(`/api/v1/project/${projectId}/dataset/build/list`, {
+): Promise<IListSchema<IDatasetTaskBuildSchema>> {
+    const resp = await axios.get<IDatasetTaskBuildSchema>(`/api/v1/project/${projectId}/dataset/build/list`, {
         params: query,
     })
     return resp.data

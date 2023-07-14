@@ -2,13 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 import _ from 'lodash'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
-import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
-import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
 import { toaster } from 'baseui/toast'
 import { BusyPlaceholder } from '@starwhale/ui'
 import DatasetTaskBuildList from './DatasetBuildList'
 import { fetchDatasetTaskOfflineLogFiles } from '@/domain/dataset/services/dataset'
+import { IDatasetTaskBuildSchema } from '@/domain/dataset/schemas/dataset'
 
 const ComplexToolbarLogViewer = React.lazy(() => import('@/components/LogViewer/LogViewer'))
 
@@ -20,11 +19,11 @@ export interface IScrollProps {
 
 export default function DatasetBuildListCard() {
     const [t] = useTranslation()
-    const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
+    const [currentTask, setCurrentTask] = useState<IDatasetTaskBuildSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
 
-    const onAction = useCallback(async (type, task: ITaskSchema) => {
+    const onAction = useCallback(async (type, task: IDatasetTaskBuildSchema) => {
         console.log(task)
         setCurrentTask(task)
         const files: Record<string, string> = {}
