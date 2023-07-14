@@ -46,9 +46,12 @@ export async function fetchDatasetBuildList(
     projectId: string,
     query: Partial<IListQuerySchema> & { status: 'CREATED' | 'BUILDING' | 'SUCCESS' | 'FAILED' }
 ): Promise<IListSchema<IDatasetTaskBuildSchema>> {
-    const resp = await axios.get<IDatasetTaskBuildSchema>(`/api/v1/project/${projectId}/dataset/build/list`, {
-        params: query,
-    })
+    const resp = await axios.get<IListSchema<IDatasetTaskBuildSchema>>(
+        `/api/v1/project/${projectId}/dataset/build/list`,
+        {
+            params: query,
+        }
+    )
     return resp.data
 }
 

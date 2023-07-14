@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import _ from 'lodash'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
 import { getToken } from '@/api'
@@ -24,7 +23,7 @@ export default function DatasetBuildListCard() {
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
 
     const onAction = useCallback(async (type, task: IDatasetTaskBuildSchema) => {
-        console.log(task)
+        // console.log(task)
         setCurrentTask(task)
         const files: Record<string, string> = {}
         const key = [task?.datasetName, task?.id].join('@')

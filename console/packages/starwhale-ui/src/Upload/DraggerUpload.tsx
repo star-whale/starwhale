@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { useUpload } from './hooks/useUpload'
 import { findMostFrequentType, getSignUrls, getUploadName, pickAttr } from './utils'
 import Button from '../Button'
 import { createUseStyles } from 'react-jss'
@@ -7,11 +6,13 @@ import useTranslation from '@/hooks/useTranslation'
 import { getReadableStorageQuantityStr } from '../utils/index'
 import Text from '../Text/Text'
 import { useDropzone } from './react-dropzone'
-import { sign } from '@/domain/base/services/filestore'
+import { deleteFiles, sign } from '@/domain/base/services/filestore'
 import _ from 'lodash'
 import useUploadingControl from './hooks/useUploadingControl'
 import { UploadFile } from './types'
 import { ItemRender } from './UploadItem'
+import { useEvent } from '@starwhale/core'
+import { useSign } from './hooks/useSign'
 
 const useStyles = createUseStyles({
     drag: {
@@ -30,6 +31,9 @@ const useStyles = createUseStyles({
             ':hover': {
                 border: '1px solid #5181E0; !important',
             },
+        },
+        '& .ant-upload-icon': {
+            margin: '0 8px 0 12px',
         },
         '& .ant-upload-drag-icon': {
             color: 'rgba(2,16,43,0.40) !important',
@@ -113,8 +117,7 @@ type UploadControlT = {
 function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const styles = useStyles()
     const [t] = useTranslation()
-    const { getProps, signPrefix, reset } = useUpload()
-    const rest = getProps()
+    const { resetSign, signPrefix } = useSign()
     const [fileList, setFileList] = React.useState<UploadFile[]>([])
     const [fileSuccessList, setFileSuccessList] = React.useState<UploadFile[]>([])
     const [fileFailedList, setFileFailedList] = React.useState<UploadFile[]>([])
@@ -129,12 +132,19 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const isMax = React.useMemo(() => fileList.length > UPLOAD_MAX, [fileList])
     const isExist = React.useCallback((file) => !!fileMap[getUploadName(file)], [fileMap])
 
-    const handleReset = React.useCallback(() => {
-        reset()
+    const handleReset = useEvent(() => {
+        resetSign()
         setFileList([])
         setFileSuccessList([])
         setFileFailedList([])
-    }, [])
+    })
+
+    const handleRemove = useEvent(async (file: UploadFile) => {
+        const name = getUploadName(file)
+        await deleteFiles([name], signPrefix)
+        setFileList((prev) => prev.filter((f) => f.path !== file.path))
+        setFileSuccessList((prev) => prev.filter((f) => f.path !== file.path))
+    })
 
     const beforeUpload = (file: UploadFile) => {
         // console.log('beforeUpload', file, !!isExist(file))
@@ -143,7 +153,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 ...prev,
                 {
                     ...file,
-                    status: 'error_max' as any,
+                    status: 'errorMax' as any,
                 },
             ])
             return false
@@ -153,10 +163,9 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 ...prev,
                 {
                     ...file,
-                    status: 'error_exist' as any,
+                    status: 'errorExist' as any,
                 },
             ])
-            console.log('false')
             return false
         }
         return true
@@ -164,18 +173,18 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     // use hooks
     const { uploadQueue } = useUploadingControl<UploadControlT>({
         onUpload: (file) => {
-            console.log('onUpload', file)
+            // console.log('onUpload', file)
             return fetch(file.oss, {
                 method: 'PUT',
                 body: file.file,
             })
         },
         onDone: (res) => {
-            console.log('onDone', res)
+            // console.log('onDone', res)
             setFileSuccessList((prev) => [
                 ...prev,
                 {
-                    ...pickAttr(res),
+                    ...pickAttr(res.file),
                     status: 'done',
                 },
             ])
@@ -188,11 +197,11 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             const validateFiles: any[] = []
             files.forEach((file) => {
                 if (!beforeUpload(file)) {
-                    return false
+                    return
                 }
                 validateFiles.push(file)
             })
-            if (validateFiles.length == 0) return
+            if (validateFiles.length === 0) return
             setFileList((prev) => [...prev, ...validateFiles])
             const signedUrls = await getSignUrls(validateFiles)
             const data = await sign(signedUrls, signPrefix)
@@ -209,7 +218,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const mostFrequentType = React.useMemo(() => {
         if (!fileList?.length) return null
         return findMostFrequentType(fileList)
-    }, [rest.fileList])
+    }, [fileList])
     const total = fileList?.length ?? 0
     const totalSize = getReadableStorageQuantityStr(fileList?.reduce((acc, cur) => acc + cur.size ?? 0, 0) ?? 0)
     const getFile = (f: UploadFile) => (f.name ? f : fileMap?.[f.path])
@@ -224,15 +233,18 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         [isFocused, isDragAccept, isDragReject]
     )
     const dir = { directory: 'true', webkitdirectory: 'true' }
-    const items = React.useMemo(() => fileList.map((file) => <ItemRender file={file} />), [fileList])
+    const items = React.useMemo(
+        () => fileList.map((file) => <ItemRender key={file.path} file={file} onRemove={handleRemove} />),
+        [fileList, handleRemove]
+    )
     // @ts-ignore
     const successCount = ['done', 'success'].reduce((acc, cur: any) => acc + (statusMap[cur]?.length ?? 0), 0)
-    const errorCount = ['error', 'error_exist', 'error_max'].reduce(
+    const errorCount = ['error', 'errorExist', 'errorMax'].reduce(
         // @ts-ignore
         (acc, cur: any) => acc + (statusMap[cur]?.length ?? 0),
         0
     )
-    console.log(statusMap)
+    // console.log(statusMap)
 
     // effect
     useEffect(() => {
@@ -257,7 +269,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         <div className={styles.drag}>
             {/* <input type='file' multiple {...dir} /> */}
             <div
-                {...getRootProps({ className: 'dropzone ant-upload-btn' + ' ' })}
+                {...getRootProps({ className: 'dropzone ant-upload-btn' })}
                 style={{
                     ...style,
                     width: '100%',
@@ -266,11 +278,11 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 }}
             >
                 <input {...getInputProps()} multiple {...dir} />
-                <p>Drag 'n' drop some files here, or click to select files</p>
+                <p>{t('dataset.create.upload.drag.desc')}</p>
             </div>
             <div className='ant-upload-list'>{items}</div>
             {total > 0 && (
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: 10 }}>
+                <div style={{ width: '100%', display: 'flex', gap: '10px', alignItems: 'flex-start', marginTop: 10 }}>
                     <div style={{ flex: 1 }}>
                         <p style={{ color: 'rgba(2,16,43,0.60)' }}>
                             {t('dataset.create.upload.total.desc', [successCount, totalSize])}
@@ -278,26 +290,23 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                         {errorCount ? (
                             <p style={{ color: '#CC3D3D', display: 'inline-flex', gap: '5px' }}>
                                 {t('dataset.create.upload.error.desc')}
-                                {[
-                                    statusMap['error_exist']?.length && (
-                                        <Text
-                                            key='exist'
-                                            tooltip={<pre>{statusMap['error_exist'].map(getFileName).join('\n')}</pre>}
-                                        >
-                                            {statusMap['error_exist'].length}&nbsp; (
-                                            {t('dataset.create.upload.error.exist')})
-                                        </Text>
-                                    ),
-                                    statusMap['error_max']?.length && (
-                                        <Text
-                                            key='max'
-                                            tooltip={<pre>{statusMap['error_max'].map(getFileName).join('\n')}</pre>}
-                                        >
-                                            {t('dataset.create.upload.error.max')}&nbsp;
-                                            {statusMap['error_max'].length}
-                                        </Text>
-                                    ),
-                                ]}
+                                {statusMap.errorExist && statusMap.errorExist?.length && (
+                                    <Text
+                                        key='exist'
+                                        tooltip={<pre>{statusMap.errorExist.map(getFileName).join('\n')}</pre>}
+                                    >
+                                        {statusMap.errorExist.length}&nbsp; ({t('dataset.create.upload.error.exist')})
+                                    </Text>
+                                )}
+                                {statusMap.errorMax && statusMap.errorMax?.length && (
+                                    <Text
+                                        key='max'
+                                        tooltip={<pre>{statusMap.errorMax.map(getFileName).join('\n')}</pre>}
+                                    >
+                                        {t('dataset.create.upload.error.max')}&nbsp;
+                                        {statusMap.errorMax.length}
+                                    </Text>
+                                )}
                             </p>
                         ) : null}
                         {!mostFrequentType && (

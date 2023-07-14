@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "36453407",
+      "name": "微信",
+      "font_class": "weixin",
+      "unicode": "e665",
+      "unicode_decimal": 58981
+    },
+    {
+      "icon_id": "36432264",
+      "name": "Version history",
+      "font_class": "a-Versionhistory",
+      "unicode": "e673",
+      "unicode_decimal": 58995
+    },
+    {
       "icon_id": "36423030",
       "name": "file3",
       "font_class": "file3",
@@ -95,13 +109,6 @@
       "font_class": "select",
       "unicode": "e666",
       "unicode_decimal": 58982
-    },
-    {
-      "icon_id": "35260847",
-      "name": "WeChat",
-      "font_class": "WeChat",
-      "unicode": "e665",
-      "unicode_decimal": 58981
     },
     {
       "icon_id": "35120427",

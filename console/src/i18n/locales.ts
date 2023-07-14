@@ -139,6 +139,10 @@ const dataset = {
         en: 'File size exceeds the maximum limit',
         zh: '文件大小超过最大限制',
     },
+    'dataset.create.upload.drag.desc': {
+        en: "Drag 'n' drop some files here, or click to select files",
+        zh: '拖拽文件到此处，或点击选择文件',
+    },
 }
 
 const runtime = {

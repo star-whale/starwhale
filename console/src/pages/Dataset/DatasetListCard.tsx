@@ -27,10 +27,8 @@ export default function DatasetListCard() {
     const query = { status: 'BUILDING', ...page }
 
     const datasetBuildList = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
-        fetchDatasetBuildList(projectId, query)
+        fetchDatasetBuildList(projectId, query as any)
     )
-
-    console.log(datasetBuildList.data)
 
     return (
         <>
@@ -77,13 +75,11 @@ export default function DatasetListCard() {
                                 <div key='version-history' style={{ display: 'flex', gap: '5px' }}>
                                     <Button
                                         as='link'
-                                        kind='tertiary'
+                                        icon='a-Versionhistory'
                                         onClick={() =>
                                             history.push(`/projects/${projectId}/datasets/${dataset.id}/versions`)
                                         }
-                                    >
-                                        {t('Version History')}
-                                    </Button>
+                                    />
                                     <Button
                                         as='link'
                                         icon='upload'
@@ -108,26 +104,28 @@ export default function DatasetListCard() {
                 />
             </Card>
 
-            <div
-                className='dataset-build-list flex'
-                style={{
-                    position: 'absolute',
-                    bottom: 60,
-                    right: '-20px',
-                    width: '100px',
-                    height: '58px',
-                    borderRadius: '100px 0 0 100px',
-                    boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
-                    backgroundColor: '#fff',
-                    zIndex: 2,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}
-            >
-                <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
-                    build list{' '}
-                </Button>
-            </div>
+            {datasetBuildList.data?.list && datasetBuildList.data?.list?.length > 0 && (
+                <div
+                    className='dataset-build-list flex'
+                    style={{
+                        position: 'absolute',
+                        bottom: 60,
+                        right: '-20px',
+                        width: '100px',
+                        height: '58px',
+                        borderRadius: '100px 0 0 100px',
+                        boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
+                        backgroundColor: '#fff',
+                        zIndex: 2,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
+                        {datasetBuildList.data?.list?.length}
+                    </Button>
+                </div>
+            )}
         </>
     )
 }

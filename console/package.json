@@ -40,7 +40,6 @@
     "@types/styletron-standard": "^2.0.2",
     "@types/uuid": "^8.3.1",
     "@uiw/react-md-editor": "^3.9.3",
-    "antd": "^5.6.4",
     "axios": "^0.21.1",
     "base64-js": "^1.5.1",
     "baseui": "12.2.0",

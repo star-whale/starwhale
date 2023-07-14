@@ -64,7 +64,6 @@ export default function DatasetBuildList({ header, onAction }: ITaskListCardProp
                             task.status,
                             <p key='action' style={{ display: 'flex', gap: '10px' }}>
                                 <StyledLink
-                                    key={task.uuid}
                                     onClick={(e: any) => {
                                         // eslint-disalbe-next-line no-unused-expressions
                                         const trDom = e.currentTarget.closest('tr')

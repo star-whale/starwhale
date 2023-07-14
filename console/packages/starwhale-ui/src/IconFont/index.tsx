@@ -117,6 +117,7 @@ export type IconTypesT =
     | 'copy'
     | 'a-copylink'
     | 'upload'
+    | 'a-Versionhistory'
 
 interface IIconFontProps {
     style?: React.CSSProperties
