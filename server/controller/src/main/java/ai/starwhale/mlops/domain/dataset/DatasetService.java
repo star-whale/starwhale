@@ -426,6 +426,18 @@ public class DatasetService {
                     "The dataset:{0} in project:{1} is already exists, please use another name.",
                     request.getDatasetName(), project.getName()));
             }
+        } else {
+            var ds = datasetMapper.find(request.getDatasetId());
+            if (null == ds) {
+                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
+                    "The dataset:{0} in project:{1} doesn't exists, please check it.",
+                    request.getDatasetName(), project.getName()));
+            }
+            if (!ds.getDatasetName().equalsIgnoreCase(request.getDatasetName())) {
+                throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
+                    "The dataset:{0} is different with the exist dataset:{1}.",
+                    request.getDatasetName(), ds.getDatasetName()));
+            }
         }
         var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
                     project.getId(), request.getDatasetName());
