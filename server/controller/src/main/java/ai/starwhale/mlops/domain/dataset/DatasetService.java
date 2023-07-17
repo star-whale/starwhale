@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
+import static ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec.RESOURCE_CPU;
+import static ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec.RESOURCE_MEMORY;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
@@ -58,6 +60,7 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -75,6 +78,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.k8s.ContainerOverwriteSpec;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -485,19 +489,26 @@ public class DatasetService {
                 new V1EnvVar().name("DATASET_BUILD_TYPE").value(String.valueOf(entity.getType())),
                 new V1EnvVar().name("DATASET_BUILD_DIR_PREFIX").value(entity.getStoragePath())
             );
+            String rp = null;
+            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null) {
+                rp = systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool();
+            }
+            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
             k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(envVars);
                 containerOverwriteSpec.setImage(
                         image.resolve(systemSettingService.getDockerSetting().getRegistryForPull()));
                 containerOverwriteSpec.setCmds(List.of("dataset_build"));
+                List<RuntimeResource> resources = Objects.isNull(pool) ? List.of()
+                        : pool.validateAndPatchResource(List.of(
+                            RuntimeResource.builder().type(RESOURCE_CPU).build(),
+                            RuntimeResource.builder().type(RESOURCE_MEMORY).build()));
+                log.info("using resource pool {}, patched resources {}", pool, resources);
+                containerOverwriteSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(resources));
+
                 ret.put(templateContainer.getName(), containerOverwriteSpec);
             });
-            String rp = null;
-            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null) {
-                rp = systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool();
-            }
-            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             var toleration = pool != null ? pool.getTolerations() : null;
             k8sJobTemplate.renderJob(job, String.format("%s-%d", entity.getDatasetName(), entity.getId()),
