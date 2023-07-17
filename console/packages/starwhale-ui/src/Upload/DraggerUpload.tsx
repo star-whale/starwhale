@@ -224,6 +224,17 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             ])
             setFileUploadingList((prev) => prev.filter((f) => f.path !== res.file.path))
         },
+        onError: (file) => {
+            // console.log('onError', res)
+            setFileFailedList((prev) => [
+                ...prev,
+                {
+                    ...pickAttr(file),
+                    status: 'errorUnknown',
+                },
+            ])
+            setFileUploadingList((prev) => prev.filter((f) => f.path !== file.path))
+        },
     })
     const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } = useDropzone({
         // Note how this callback is never invoked if drop occurs on the inner dropzone
@@ -281,7 +292,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     )
     // @ts-ignore
     const successCount = ['done', 'success'].reduce((acc, cur: any) => acc + (statusMap[cur]?.length ?? 0), 0)
-    const errorCount = ['error', 'errorExist', 'errorMax'].reduce(
+    const errorCount = ['error', 'errorExist', 'errorMax', 'errorUnknown'].reduce(
         // @ts-ignore
         (acc, cur: any) => acc + (statusMap[cur]?.length ?? 0),
         0
@@ -348,8 +359,16 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                                         key='max'
                                         tooltip={<pre>{statusMap.errorMax.map(getFileName).join('\n')}</pre>}
                                     >
-                                        {t('dataset.create.upload.error.max')}&nbsp;
-                                        {statusMap.errorMax.length}
+                                        {statusMap.errorMax.length}&nbsp;({t('dataset.create.upload.error.max')})
+                                    </Text>
+                                )}
+                                {statusMap.errorUnknown && statusMap.errorUnknown?.length && (
+                                    <Text
+                                        key='max'
+                                        tooltip={<pre>{statusMap.errorUnknown.map(getFileName).join('\n')}</pre>}
+                                    >
+                                        {statusMap.errorUnknown.length}&nbsp;({t('dataset.create.upload.error.unknown')}
+                                        )
                                     </Text>
                                 )}
                             </p>

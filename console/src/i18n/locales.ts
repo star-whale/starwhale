@@ -135,6 +135,10 @@ const dataset = {
         en: 'File already exists',
         zh: '文件已存在',
     },
+    'dataset.create.upload.error.unknown': {
+        en: 'File already exists',
+        zh: '文件异常',
+    },
     'dataset.create.upload.error.max': {
         en: 'File size exceeds the maximum limit',
         zh: '文件大小超过最大限制',

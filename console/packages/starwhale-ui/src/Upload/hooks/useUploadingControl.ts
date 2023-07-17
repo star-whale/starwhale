@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react'
-import { Subject, Subscription, mergeMap } from 'rxjs'
+import { Subject, Subscription, catchError, mergeMap, throwError } from 'rxjs'
 
 function useUploadingControl<FileUpload>({
     concurrent = 4,
     onUpload,
     onDone,
+    onError,
 }: {
     concurrent?: number
     onUpload?: (args: FileUpload) => Promise<any>
     onDone?: (args: FileUpload & { resp: any }) => void
-    onError?: (args: FileUpload & { resp: any }) => void
+    onError?: (args: FileUpload & { resp: any }, error: any) => void
 }) {
     const uploadQRef = useRef<Subject<FileUpload>>(new Subject<FileUpload>())
 
@@ -30,12 +31,20 @@ function useUploadingControl<FileUpload>({
                     //         resolve(fu)
                     //     }, 2000)
                     // })
-                }, concurrent)
+                }, concurrent),
+                catchError((error) => {
+                    return throwError(() => error)
+                })
             )
-            .subscribe((res: any) => {
-                // process result
-                // console.log(res, 'done')
-                onDone?.(res)
+            .subscribe({
+                next: (res: any) => {
+                    // console.log(res, 'done')
+                    onDone?.(res)
+                },
+                error: (error) => {
+                    // console.log('ERROR >>>>', error)
+                    onError?.(error?.config?.data, error)
+                },
             })
 
         subscription.add(uploadQSubscription)

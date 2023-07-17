@@ -5,4 +5,4 @@ export type UploadFile = File & {
     percent?: number
 }
 
-type StatusT = 'uploading' | 'error' | 'done' | 'error_max' | 'erroexist'
+type StatusT = 'uploading' | 'error' | 'done' | 'errorMax' | 'errorExist' | 'errorUnknown'
