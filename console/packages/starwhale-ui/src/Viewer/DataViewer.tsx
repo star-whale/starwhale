@@ -99,9 +99,11 @@ export default function DataViewer({
                 return <AudioViewer data={data as IArtifactAudio} isZoom={isZoom} />
             case ArtifactType.Video:
                 return <VideoViewer data={data as IArtifactVideo} isZoom={isZoom} />
+            case ArtifactType.Text:
+                return <TextViewer data={data} isZoom={isZoom} />
             default:
                 // @ts-ignore
-                if (isZoom && _.isObject(data) && !data._extendSrc && !data._content) {
+                if (isZoom && _.isObject(data)) {
                     return (
                         <JSONView
                             data={data}
@@ -112,7 +114,7 @@ export default function DataViewer({
                     )
                 }
                 try {
-                    return <TextViewer data={data} isZoom={isZoom} />
+                    return <TextViewer data={typeof data === 'string' ? data : JSON.stringify(data)} isZoom={isZoom} />
                 } catch {
                     return <Placeholder />
                 }
