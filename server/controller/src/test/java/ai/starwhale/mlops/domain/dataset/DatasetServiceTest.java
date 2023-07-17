@@ -541,7 +541,24 @@ public class DatasetServiceTest {
         given(projectService.findProject(String.valueOf(projectId)))
                 .willReturn(Project.builder().id(projectId).build());
 
-        // case1: create and already exist the same name dataset
+        // case1-1: patch and the dataset is not exist
+        given(datasetMapper.find(1L)).willReturn(null);
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(1L)
+                .datasetName(datasetName)
+                .projectUrl(String.valueOf(projectId))
+                .build())
+        );
+        // case1-2: patch and the dataset name in param is not right
+        given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("already-dataset").build());
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(1L)
+                .datasetName(datasetName)
+                .projectUrl(String.valueOf(projectId))
+                .build())
+        );
+
+        // case2: create and already exist the same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true))
                 .willReturn(DatasetEntity.builder().build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
@@ -551,7 +568,7 @@ public class DatasetServiceTest {
                     .build())
         );
 
-        // case2: create and not exist the same name, but already building a same name dataset
+        // case3: create and not exist the same name, but already building a same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true)).willReturn(null);
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
                 .willReturn(List.of(BuildRecordEntity.builder().build()));
@@ -562,7 +579,7 @@ public class DatasetServiceTest {
                     .build())
         );
 
-        // case3: insert to db failed
+        // case4: insert to db failed
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
         given(buildRecordMapper.insert(any())).willReturn(0);
         assertThrows(SwProcessException.class, () -> service.build(CreateBuildRecordRequest.builder()
@@ -572,7 +589,7 @@ public class DatasetServiceTest {
                 .build())
         );
 
-        // case4: normal build
+        // case5: normal build
         given(buildRecordMapper.insert(any())).willReturn(1);
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta()
