@@ -29,15 +29,13 @@ public class CancellableJobLogK8sCollector implements CancellableJobLogCollector
     public static final String WORKER_CONTAINER = "worker";
     final K8sClient k8sClient;
     final Call call;
-    final Response resp;
-    final BufferedReader bufferedReader;
+    Response resp;
+    BufferedReader bufferedReader;
 
     public CancellableJobLogK8sCollector(K8sClient k8sClient, String jobName)
             throws IOException, ApiException {
         this.k8sClient = k8sClient;
         call = k8sClient.readLog(getPodName(jobName), WORKER_CONTAINER, true);
-        resp = call.execute();
-        bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
     }
 
     private String getPodName(String taskId) throws ApiException {
@@ -50,12 +48,25 @@ public class CancellableJobLogK8sCollector implements CancellableJobLogCollector
 
     @Override
     public String readLine() throws IOException {
+        if (bufferedReader == null) {
+            resp = call.execute();
+            if (resp.isSuccessful()) {
+                bufferedReader = new BufferedReader(
+                        new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
+            } else {
+                return resp.message();
+            }
+        }
         return bufferedReader.readLine();
     }
 
     @Override
     public void cancel() {
-        resp.close();
-        call.cancel();
+        if (null != call) {
+            resp.close();
+        }
+        if (null != call) {
+            call.cancel();
+        }
     }
 }
