@@ -24,6 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -63,7 +64,8 @@ public class PodEventHandlerTest {
         taskLogK8sCollector = mock(TaskLogK8sCollector.class);
         buildLogCollector = mock(BuildLogCollector.class);
         taskModifyReceiver = mock(TaskModifyReceiver.class);
-        podEventHandler = new PodEventHandler(taskLogK8sCollector, buildLogCollector, taskModifyReceiver, hotJobHolder);
+        podEventHandler = new PodEventHandler(
+                taskLogK8sCollector, buildLogCollector, taskModifyReceiver, hotJobHolder, mock(DatasetService.class));
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta()
                         .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))

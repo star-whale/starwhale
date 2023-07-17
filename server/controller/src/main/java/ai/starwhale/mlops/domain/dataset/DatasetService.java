@@ -457,7 +457,7 @@ public class DatasetService {
                 .datasetName(request.getDatasetName())
                 .storagePath(request.getStoragePath())
                 .type(request.getType())
-                .status(BuildStatus.BUILDING)
+                .status(BuildStatus.CREATED)
                 .createdTime(new Date())
                 .build();
         var res = buildRecordMapper.insert(entity) > 0;

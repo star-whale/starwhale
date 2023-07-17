@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.dataset.DatasetService;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -40,16 +42,19 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     final BuildLogCollector buildLogCollector;
     final TaskModifyReceiver taskModifyReceiver;
     final HotJobHolder jobHolder;
+    final DatasetService datasetService;
 
     public PodEventHandler(
             TaskLogK8sCollector taskLogK8sCollector,
             BuildLogCollector buildLogCollector,
             TaskModifyReceiver taskModifyReceiver,
-            HotJobHolder jobHolder) {
+            HotJobHolder jobHolder,
+            DatasetService datasetService) {
         this.taskLogK8sCollector = taskLogK8sCollector;
         this.buildLogCollector = buildLogCollector;
         this.taskModifyReceiver = taskModifyReceiver;
         this.jobHolder = jobHolder;
+        this.datasetService = datasetService;
     }
 
     @Override
@@ -75,7 +80,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                     collectLog(newObj, type);
                     break;
                 case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
-                    // build dataset only receive fail or success status in jobEventHandler
+                    updateDatasetBuild(newObj);
                     collectLog(newObj, type);
                     break;
                 default:
@@ -102,6 +107,23 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             id = null;
         }
         return id;
+    }
+
+    private void updateDatasetBuild(V1Pod pod) {
+        if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
+            return;
+        }
+        var phase = pod.getStatus().getPhase();
+        if (StringUtils.hasText(phase)) {
+            switch (phase) {
+                case "Running":
+                    var id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
+                    datasetService.updateBuildStatus(id, BuildStatus.BUILDING);
+                    break;
+                default:
+
+            }
+        }
     }
 
     private void updateEvalTask(V1Pod pod) {
