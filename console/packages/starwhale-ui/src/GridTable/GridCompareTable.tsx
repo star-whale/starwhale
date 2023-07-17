@@ -173,27 +173,24 @@ export function BaseGridCompareTable({
     React.useEffect(() => {
         if (records.length === 0) return
 
-        const row = records.find((r) => val(getId(r)) === comparePinnedKey)
-        // const pinKey = row ? store.compare?.comparePinnedKey : val(records[0].id)
-
-        // console.log(row, pinKey, store.compare?.comparePinnedKey, val(records[0].id))
+        const row = records.find((r) => val(getId(r)) === comparePinnedKey && comparePinnedKey)
 
         onCompareUpdate({
-            comparePinnedKey: row ? comparePinnedKey : val(records[0].id),
+            comparePinnedKey: row ? comparePinnedKey : val(getId(records[0])),
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [records, onCompareUpdate])
 
     const comparePinnedRow: any = useMemo(() => {
-        return records.find((r) => val(r.id) === comparePinnedKey) ?? records[0]
-    }, [records, comparePinnedKey])
+        return records.find((r) => val(getId(r)) === comparePinnedKey) ?? records[0]
+    }, [records, comparePinnedKey, getId])
 
     const comparePinnedRowIndex = useMemo(() => {
         return Math.max(
-            records.findIndex((r) => val(r.id) === comparePinnedKey),
+            records.findIndex((r) => val(getId(r)) === comparePinnedKey),
             0
         )
-    }, [records, comparePinnedKey])
+    }, [records, comparePinnedKey, getId])
 
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs: RowT[] = []
@@ -217,7 +214,7 @@ export function BaseGridCompareTable({
                     title: attr.name,
                     name: attr.name,
                     values,
-                    renderValue: (v: any) => (_.isNumber(val(v)) ? durationToStr(val(v)) : '-'),
+                    renderValue: (v: any) => (!_.isNaN(Number(val(v))) ? durationToStr(val(v)) : '-'),
                 })
                 return
             }
@@ -256,7 +253,8 @@ export function BaseGridCompareTable({
                 CustomColumn({
                     minWidth: 200,
                     key: val(getId(row)),
-                    title: [val(row['sys/model_name']), val(row['sys/id'])].join('-'),
+                    title:
+                        (row['sys/id'] ? [val(row['sys/model_name']), val(row['sys/id'])].join('-') : getId(row)) || '',
                     fillWidth: false,
                     // @ts-ignore
                     renderCell: (props: any) => {
