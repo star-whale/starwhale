@@ -103,29 +103,26 @@ export default function DatasetListCard() {
                     }}
                 />
             </Card>
-
-            {datasetBuildList.data?.list && datasetBuildList.data?.list?.length > 0 && (
-                <div
-                    className='dataset-build-list flex'
-                    style={{
-                        position: 'absolute',
-                        bottom: 60,
-                        right: '-20px',
-                        width: '100px',
-                        height: '58px',
-                        borderRadius: '100px 0 0 100px',
-                        boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
-                        backgroundColor: '#fff',
-                        zIndex: 2,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
-                        {datasetBuildList.data?.list?.length}
-                    </Button>
-                </div>
-            )}
+            <div
+                className='dataset-build-list flex'
+                style={{
+                    position: 'absolute',
+                    bottom: 60,
+                    right: '-20px',
+                    width: '100px',
+                    height: '58px',
+                    borderRadius: '100px 0 0 100px',
+                    boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
+                    backgroundColor: '#fff',
+                    zIndex: 2,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+            >
+                <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
+                    {datasetBuildList.data?.list?.length}
+                </Button>
+            </div>
         </>
     )
 }

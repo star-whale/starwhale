@@ -265,7 +265,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         if (!fileSuccessList?.length) return null
         return findMostFrequentType(fileSuccessList)
     }, [fileSuccessList])
-    const total = fileList?.length ?? 0
+    const total = fileSuccessList?.length ?? 0
     const totalSize = getReadableStorageQuantityStr(fileSuccessList?.reduce((acc, cur) => acc + cur.size ?? 0, 0) ?? 0)
     const getFileName = (f: UploadFile) => getUploadName(f)
     const style = React.useMemo(
@@ -375,7 +375,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                             <p style={{ color: '#CC3D3D' }}>{t('dataset.create.upload.error.type')}</p>
                         )}
                     </div>
-                    <Button onClick={handleReset} as='link'>
+                    <Button onClick={handleReset} as='link' disabled={fileUploadingList.length > 0}>
                         {t('Reset')}
                     </Button>
                 </div>
