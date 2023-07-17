@@ -19,12 +19,15 @@ package ai.starwhale.mlops.domain.dataset.build.mapper;
 import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import java.util.List;
+import java.util.Objects;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.jdbc.SQL;
 
 @Mapper
 public interface BuildRecordMapper {
@@ -35,8 +38,7 @@ public interface BuildRecordMapper {
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record WHERE id = #{id}")
     BuildRecordEntity selectById(Long id);
 
-    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM dataset_build_record "
-            + "WHERE project_id = #{projectId} AND status = #{status}")
+    @SelectProvider(value = SqlProvider.class, method = "listByStatus")
     List<BuildRecordEntity> selectByStatus(
             @Param("projectId") Long projectId, @Param("status") BuildStatus status);
 
@@ -66,4 +68,22 @@ public interface BuildRecordMapper {
             + ")")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(BuildRecordEntity buildRecord);
+
+    class SqlProvider {
+        public String listByStatus(@Param("projectId") Long projectId, @Param("status") BuildStatus status) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS_FOR_SELECT);
+                    FROM("dataset_build_record");
+                    if (Objects.nonNull(projectId)) {
+                        WHERE("project_id = #{projectId}");
+                    }
+                    if (null != status) {
+                        WHERE("status = #{status}");
+                    }
+                    ORDER_BY("id desc");
+                }
+            }.toString();
+        }
+    }
 }
