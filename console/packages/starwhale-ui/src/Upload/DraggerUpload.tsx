@@ -132,7 +132,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const fileMap: Record<string, UploadFile[]> = React.useMemo(() => {
         return _.keyBy(fileList, 'path') as any
     }, [fileList])
-    const isMax = React.useMemo(() => fileList.length > UPLOAD_MAX, [fileList])
+    const isMax = React.useMemo(() => fileList.length - fileFailedList.length > UPLOAD_MAX, [fileList, fileFailedList])
     const isExist = React.useCallback((file) => !!fileMap[getUploadName(file)], [fileMap])
 
     const handleReset = useEvent(() => {
@@ -262,11 +262,11 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
 
     // memo
     const mostFrequentType = React.useMemo(() => {
-        if (!fileList?.length) return null
-        return findMostFrequentType(fileList)
-    }, [fileList])
+        if (!fileSuccessList?.length) return null
+        return findMostFrequentType(fileSuccessList)
+    }, [fileSuccessList])
     const total = fileList?.length ?? 0
-    const totalSize = getReadableStorageQuantityStr(fileList?.reduce((acc, cur) => acc + cur.size ?? 0, 0) ?? 0)
+    const totalSize = getReadableStorageQuantityStr(fileSuccessList?.reduce((acc, cur) => acc + cur.size ?? 0, 0) ?? 0)
     const getFile = (f: UploadFile) => (f.name ? f : fileMap?.[f.path])
     const getFileName = (f: UploadFile) => getUploadName(getFile(f))
     const style = React.useMemo(
@@ -306,7 +306,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             if (!isDone) {
                 return
             }
-            const type = fileList ? findMostFrequentType(fileList) : ''
+            const type = fileSuccessList ? findMostFrequentType(fileSuccessList) : ''
             onChange?.({
                 storagePath: signPrefix,
                 type,
@@ -316,7 +316,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             clearTimeout(timer)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fileList, signPrefix])
+    }, [fileList, fileSuccessList, signPrefix])
 
     return (
         <div className={styles.drag}>
