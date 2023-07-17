@@ -1217,6 +1217,7 @@ class MemoryTable:
 
     def dump(self, root_path: str, if_dirty: bool = True) -> None:
         root = Path(root_path)
+        ensure_dir(root)
         lock = root / ".lock"
         with FileLock(lock):
             return self._dump(root, if_dirty)
@@ -1696,7 +1697,11 @@ class TableWriter(threading.Thread):
                 self._stopped = True
                 self._cond.notify()
         self.join()
-        self._raise_run_exceptions(0)
+        try:
+            if isinstance(self.data_store, LocalDataStore):
+                self.data_store.dump()
+        finally:
+            self._raise_run_exceptions(0)
 
     def _raise_run_exceptions(self, limits: int) -> None:
         if len(self._queue_run_exceptions) > limits:
