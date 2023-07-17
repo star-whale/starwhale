@@ -21,10 +21,12 @@ import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.autofit.aliyun.CompatibleStorageAccessServiceBuilderAliyun;
 import ai.starwhale.mlops.storage.autofit.fs.CompatibleStorageAccessServiceBuilderFs;
 import ai.starwhale.mlops.storage.autofit.minio.CompatibleStorageAccessServiceBuilderMinio;
+import ai.starwhale.mlops.storage.autofit.qcloud.CompatibleStorageAccessServiceBuilderQcloud;
 import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceBuilderS3;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
+import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -43,6 +45,11 @@ public class StorageAccessConfig {
     @Bean
     public CompatibleStorageAccessServiceBuilderAliyun compatibleStorageAccessServiceBuilderAliyun() {
         return new CompatibleStorageAccessServiceBuilderAliyun();
+    }
+
+    @Bean
+    public CompatibleStorageAccessServiceBuilderQcloud compatibleStorageAccessServiceBuilderQcloud() {
+        return new CompatibleStorageAccessServiceBuilderQcloud();
     }
 
     @Bean
@@ -71,6 +78,12 @@ public class StorageAccessConfig {
     @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "aliyun")
     public StorageAccessService aliyun(StorageProperties storageProperties) {
         return new StorageAccessServiceAliyun(storageProperties.getS3Config());
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "sw.storage", name = "type", havingValue = "tencent")
+    public StorageAccessService qcloud(StorageProperties storageProperties) {
+        return new StorageAccessServiceQcloud(storageProperties.getS3Config());
     }
 
     @Bean
