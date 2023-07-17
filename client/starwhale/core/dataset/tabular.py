@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import json
 import typing as t
 import urllib
@@ -17,6 +18,7 @@ from typing_extensions import Protocol
 
 from starwhale.utils import console, validate_obj_name
 from starwhale.consts import ENV_POD_NAME
+from starwhale.utils.fs import DIGEST_SIZE
 from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.utils.error import (
     NoSupportError,
@@ -109,6 +111,9 @@ class TabularDatasetInfo(UserDict):
 
 class TabularDatasetRow(ASDictMixin):
     _FEATURES_PREFIX = "features/"
+    # encode min size = DIGEST_SIZE + Text/Binary + Link Object size
+    # TODO: use the better way to calculate the min size
+    _ENCODE_MIN_SIZE = sys.getsizeof(DIGEST_SIZE) + 512
 
     def __init__(
         self,
@@ -185,6 +190,58 @@ class TabularDatasetRow(ASDictMixin):
     @property
     def artifacts(self) -> t.List[BaseArtifact]:
         return TabularDatasetRow.artifacts_of(self.features)
+
+    def encode_feature_types(self) -> None:
+        """Encode some feature types for the efficient storage.
+
+        Supported types:
+            string(>32) -> Text
+            bytes(>32)  -> Binary
+
+        32 ->
+        """
+
+        def _transform(data: t.Any) -> t.Any:
+            from starwhale.core.dataset.type import Text, Binary
+
+            if isinstance(data, str) and sys.getsizeof(data) > self._ENCODE_MIN_SIZE:
+                return Text(content=data, auto_convert_to_str=True)
+            elif (
+                isinstance(data, bytes) and sys.getsizeof(data) > self._ENCODE_MIN_SIZE
+            ):
+                return Binary(fp=data, auto_convert_to_bytes=True)
+            elif isinstance(data, dict):
+                return {k: _transform(v) for k, v in data.items()}
+            elif isinstance(data, (list, tuple)):
+                return type(data)([_transform(v) for v in data])
+            else:
+                return data
+
+        self.features = {k: _transform(v) for k, v in self.features.items()}
+
+    def decode_feature_types(self) -> None:
+        """Decode the encoded feature types to the original types.
+
+        Supported types:
+            Text(encoded) -> string
+            Binary(encoded) -> bytes
+        """
+
+        def _transform(data: t.Any) -> t.Any:
+            from starwhale.core.dataset.type import Text, Binary
+
+            if isinstance(data, Text) and data.auto_convert_to_str:
+                return data.content
+            elif isinstance(data, Binary) and data.auto_convert_to_bytes:
+                return data.to_bytes()
+            elif isinstance(data, dict):
+                return {k: _transform(v) for k, v in data.items()}
+            elif isinstance(data, (list, tuple)):
+                return type(data)([_transform(v) for v in data])
+            else:
+                return data
+
+        self.features = {k: _transform(v) for k, v in self.features.items()}
 
 
 _TDType = t.TypeVar("_TDType", bound="TabularDataset")

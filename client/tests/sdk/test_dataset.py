@@ -1253,6 +1253,32 @@ class TestTabularDataset(TestCase):
         with self.assertRaisesRegex(RuntimeError, "project is not set"):
             TabularDataset(name="a123", project="")
 
+    def test_encode_decode_feature_types(self) -> None:
+        raw_features = {
+            "str": "abc",
+            "large_str": "abc" * 1000,
+            "bytes": b"abc",
+            "large_bytes": b"abc" * 1000,
+        }
+        row = TabularDatasetRow(
+            id=0,
+            features=raw_features,
+        )
+        row.encode_feature_types()
+
+        assert row.features["str"] == raw_features["str"]
+        assert isinstance(row.features["large_str"], Text)
+        assert row.features["large_str"].content == raw_features["large_str"]
+        assert row.features["bytes"] == raw_features["bytes"]
+        assert row.features["large_bytes"].to_bytes() == raw_features["large_bytes"]
+        assert isinstance(row.features["large_bytes"], Binary)
+
+        row.decode_feature_types()
+        assert row.features["str"] == raw_features["str"]
+        assert row.features["large_str"] == raw_features["large_str"]
+        assert row.features["bytes"] == raw_features["bytes"]
+        assert row.features["large_bytes"] == raw_features["large_bytes"]
+
     def test_row(self) -> None:
         s_row = TabularDatasetRow(
             id=0, features={"l": Image(link=Link("abcdef"), shape=[1, 2, 3]), "a": 1}

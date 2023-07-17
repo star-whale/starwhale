@@ -253,6 +253,8 @@ class DataLoader:
             artifact.owner = self.dataset_uri
             if not skip_fetch_data:
                 artifact.fetch_data()
+
+        row.decode_feature_types()
         if self._field_transformer is not None:
             _features = transform_dict(row.features, self._field_transformer)
             row.features.update(_features)
