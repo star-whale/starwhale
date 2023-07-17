@@ -129,11 +129,11 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const statusMap: Record<string, UploadFile[]> = React.useMemo(() => {
         return _.groupBy([...fileSuccessList, ...fileFailedList], 'status') as any
     }, [fileSuccessList, fileFailedList])
-    const fileMap: Record<string, UploadFile[]> = React.useMemo(() => {
-        return _.keyBy(fileList, 'path') as any
-    }, [fileList])
     const isMax = React.useMemo(() => fileList.length - fileFailedList.length > UPLOAD_MAX, [fileList, fileFailedList])
-    const isExist = React.useCallback((file) => !!fileMap[getUploadName(file)], [fileMap])
+    const isExist = React.useCallback(
+        (tmp) => fileSuccessList.some((f: any) => f.path === getUploadName(tmp)),
+        [fileSuccessList]
+    )
 
     const handleReset = useEvent(() => {
         resetSign()
@@ -213,18 +213,18 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 },
             })
         },
-        onDone: (res) => {
+        onDone: (file: UploadFile) => {
             // console.log('onDone', res)
             setFileSuccessList((prev) => [
                 ...prev,
                 {
-                    ...pickAttr(res.file),
+                    ...pickAttr(file),
                     status: 'done',
                 },
             ])
-            setFileUploadingList((prev) => prev.filter((f) => f.path !== res.file.path))
+            setFileUploadingList((prev) => prev.filter((f) => f.path !== file.path))
         },
-        onError: (file) => {
+        onError: (file: UploadFile) => {
             // console.log('onError', res)
             setFileFailedList((prev) => [
                 ...prev,
@@ -267,8 +267,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     }, [fileSuccessList])
     const total = fileList?.length ?? 0
     const totalSize = getReadableStorageQuantityStr(fileSuccessList?.reduce((acc, cur) => acc + cur.size ?? 0, 0) ?? 0)
-    const getFile = (f: UploadFile) => (f.name ? f : fileMap?.[f.path])
-    const getFileName = (f: UploadFile) => getUploadName(getFile(f))
+    const getFileName = (f: UploadFile) => getUploadName(f)
     const style = React.useMemo(
         () => ({
             ...baseStyle,
@@ -297,7 +296,6 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         (acc, cur: any) => acc + (statusMap[cur]?.length ?? 0),
         0
     )
-    // console.log(statusMap)
 
     // effect
     useEffect(() => {

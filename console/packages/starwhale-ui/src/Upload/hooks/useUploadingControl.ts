@@ -1,18 +1,18 @@
 import { useEffect, useRef } from 'react'
-import { Subject, Subscription, catchError, mergeMap, throwError } from 'rxjs'
+import { Subject, Subscription, catchError, from, mergeMap, of } from 'rxjs'
 
-function useUploadingControl<FileUpload>({
+function useUploadingControl<T>({
     concurrent = 4,
     onUpload,
     onDone,
     onError,
 }: {
     concurrent?: number
-    onUpload?: (args: FileUpload) => Promise<any>
-    onDone?: (args: FileUpload & { resp: any }) => void
-    onError?: (args: FileUpload & { resp: any }, error: any) => void
+    onUpload: (args: T) => Promise<any>
+    onDone?: (args: any) => void
+    onError?: (args: any, error: any) => void
 }) {
-    const uploadQRef = useRef<Subject<FileUpload>>(new Subject<FileUpload>())
+    const uploadQRef = useRef<Subject<T>>(new Subject<T>())
 
     useEffect(() => {
         const subscription = new Subscription()
@@ -20,30 +20,21 @@ function useUploadingControl<FileUpload>({
         const uploadQSubscription = uploadQ
             .asObservable()
             .pipe(
-                mergeMap(async (args: FileUpload) => {
-                    const resp = await onUpload?.(args)
-                    return {
-                        ...args,
-                        resp,
-                    }
-                    // return new Promise((resolve, reject) => {
-                    //     setTimeout(() => {
-                    //         resolve(fu)
-                    //     }, 2000)
-                    // })
-                }, concurrent),
-                catchError((error) => {
-                    return throwError(() => error)
-                })
+                mergeMap((args: T) => {
+                    return from(onUpload(args)).pipe(catchError((error) => of(error)))
+                }, concurrent)
             )
             .subscribe({
                 next: (res: any) => {
-                    // console.log(res, 'done')
-                    onDone?.(res)
-                },
-                error: (error) => {
-                    // console.log('ERROR >>>>', error)
-                    onError?.(error?.config?.data, error)
+                    const file = res.config?.data
+                    if (!file) return
+
+                    if (res instanceof Error) {
+                        onError?.(file, res)
+                        return
+                    }
+
+                    onDone?.(file)
                 },
             })
 
