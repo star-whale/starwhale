@@ -206,9 +206,8 @@ ds_build_and_upload () {
       if [ ! -d "$filedir" ]; then
         mkdir -p "$filedir"
       fi
-
-      curl -o "$file" "$signedurl"
-    done
+      echo "$file $signedurl"
+    done | xargs -I {} -n 2 -P 10 sh -c 'curl -o "$1" "$2"' sh
     cd -
 
     cmd="swcli dataset build -n $DATASET_BUILD_NAME"
