@@ -361,6 +361,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "local_packaged_env": False,
             "pip_files": [],
             "pip_pkgs": ["starwhale"],
+            "setup_requires": [],
             "raw_deps": [{"deps": ["starwhale"], "kind": "pip_pkg"}],
         }
         assert _manifest["environment"] == {
@@ -486,6 +487,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "local_packaged_env": False,
             "pip_files": [],
             "pip_pkgs": ["starwhale"],
+            "setup_requires": [],
             "raw_deps": [{"deps": ["starwhale"], "kind": "pip_pkg"}],
         }
         assert _manifest["environment"] == {
@@ -610,6 +612,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "local_packaged_env": False,
             "pip_files": [],
             "pip_pkgs": ["starwhale"],
+            "setup_requires": [],
             "raw_deps": [{"deps": ["starwhale"], "kind": "pip_pkg"}],
         }
         assert _manifest["environment"] == {
@@ -1132,6 +1135,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "local_packaged_env": False,
             "pip_files": [],
             "pip_pkgs": ["starwhale"],
+            "setup_requires": [],
             "raw_deps": [{"deps": ["starwhale"], "kind": "pip_pkg"}],
         }
         assert _manifest["configs"] == {
@@ -2069,6 +2073,100 @@ class StandaloneRuntimeTestCase(TestCase):
         assert str(m_tar.call_args[0][0]) == tar_path
 
         RuntimeTermView.restore(uri)
+
+    @patch("os.environ", {})
+    @patch("starwhale.utils.venv.check_user_python_pkg_exists")
+    @patch("starwhale.utils.venv.virtualenv.cli_run")
+    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
+    @patch("starwhale.utils.venv.check_call")
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.subprocess.check_output")
+    def test_pip_setup_requires_libs(
+        self, m_output: MagicMock, m_py_bin: MagicMock, m_call: MagicMock, *args: t.Any
+    ) -> None:
+        sw = SWCliConfigMixed()
+        workdir = "/home/starwhale/myproject"
+
+        m_output.return_value = b"3.7"
+        name = "rttest"
+
+        venv_dir = os.path.join(workdir, ".starwhale", "venv")
+        ensure_dir(venv_dir)
+        self.fs.create_file(os.path.join(venv_dir, "pyvenv.cfg"))
+        venv_path = os.path.join(venv_dir, "bin/python3")
+        os.environ[ENV_VENV] = venv_dir
+        m_py_bin.return_value = venv_path
+
+        runtime_yaml_path = os.path.join(workdir, "runtime.yaml")
+        self.fs.create_file(
+            runtime_yaml_path,
+            contents=yaml.safe_dump(
+                {
+                    "name": name,
+                    "mode": "venv",
+                    "environment": {
+                        "arch": ["noarch"],
+                    },
+                    "dependencies": [{"pip": ["test", "basicsr"]}],
+                }
+            ),
+        )
+
+        def _patch_pip_freeze(*args: t.Any, **kwargs: t.Any) -> t.Any:
+            if "pip freeze" in args[0]:
+                lock_file = args[0].split(">>")[1].strip()
+                ensure_file(
+                    lock_file,
+                    "\n".join(
+                        [
+                            "",
+                            "#torch==1.1.1",
+                            "torch==0.0.1",
+                            "- numpy==0.0.1",
+                            "basicsr==0.0.1",
+                            "test",
+                            "- other-lib==1.1.1",
+                        ]
+                    ),
+                )
+            return MagicMock()
+
+        m_call.side_effect = _patch_pip_freeze
+        uri = Resource(name, typ=ResourceType.runtime)
+        sr = StandaloneRuntime(uri)
+        sr.build_from_runtime_yaml(workdir=workdir, yaml_path=runtime_yaml_path)
+        runtime_workdir = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            sr._version[:VERSION_PREFIX_CNT],
+            sr._version,
+        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+        assert _manifest["dependencies"]["setup_requires"] == [
+            {"deps": ["torch==0.0.1", "numpy==0.0.1", "cython"], "kind": "pip_pkg"}
+        ]
+
+        m_call.reset_mock()
+        Runtime.restore(Path(runtime_workdir))
+        deps_seq = [d[0][0][6:] for d in m_call.call_args_list]
+        assert deps_seq == [
+            ["torch==0.0.1"],
+            ["numpy==0.0.1"],
+            ["cython"],
+            [
+                "-r",
+                os.path.join(
+                    runtime_workdir,
+                    "dependencies",
+                    ".starwhale",
+                    "lock",
+                    "requirements-sw-lock.txt",
+                ),
+            ],
+        ]
 
     @patch("starwhale.utils.venv.virtualenv")
     @patch("starwhale.utils.venv.check_call")
