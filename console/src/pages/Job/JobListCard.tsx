@@ -171,14 +171,11 @@ export default function JobListCard() {
                         }
 
                         const pinBtnStyle: ConfigurationOverride = {
-                            'position': 'absolute',
-                            'top': 0,
-                            'bottom': 0,
-                            'left': '-8px',
-                            'display': job.pinnedTime ? 'block' : 'none',
-                            '& .iconfont': {
-                                color: '#666',
-                            },
+                            position: 'absolute',
+                            top: 0,
+                            bottom: 0,
+                            left: '-8px',
+                            display: job.pinnedTime ? 'block' : 'none',
                         }
                         if (canPinOrUnpin) {
                             pinBtnStyle[':hover .iconfont'] = {
@@ -210,6 +207,9 @@ export default function JobListCard() {
                                                 // eslint-disable-next-line no-nested-ternary
                                                 canPinOrUnpin ? (job.pinnedTime ? t('job.unpin') : t('job.pin')) : null
                                             }
+                                            style={{
+                                                color: job.pinnedTime ? '#FFB23D' : 'rgba(2,16,43,0.40)',
+                                            }}
                                             icon='top'
                                         />
                                     )}
