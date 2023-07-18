@@ -20,6 +20,7 @@ import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.configuration.DataSourceProperties;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.FeaturesProperties;
+import ai.starwhale.mlops.configuration.ModulesProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.mybatis.spring.annotation.MapperScan;
@@ -33,7 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAdminServer
 @MapperScan({"ai.starwhale.mlops.domain.**.mapper"})
 @EnableConfigurationProperties({ControllerProperties.class, RunTimeProperties.class, DockerSetting.class,
-        DataSourceProperties.class, FeaturesProperties.class})
+        DataSourceProperties.class, FeaturesProperties.class, ModulesProperties.class})
 public class StarwhaleControllerApplication {
 
     public static void main(String[] args) {

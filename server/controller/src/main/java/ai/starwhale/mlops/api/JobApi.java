@@ -38,6 +38,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +53,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Job")
 @Validated
+@ConditionalOnProperty(name = "sw.modules.jobs.enabled", havingValue = "true")
 public interface JobApi {
 
 

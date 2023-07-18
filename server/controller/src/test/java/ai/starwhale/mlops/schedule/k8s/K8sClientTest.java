@@ -69,7 +69,7 @@ public class K8sClientTest {
         batchV1Api = mock(BatchV1Api.class);
         appsV1Api = mock(AppsV1Api.class);
         informerFactory = mock(SharedInformerFactory.class);
-        k8sClient = new K8sClient(client, coreV1Api, batchV1Api, appsV1Api, nameSpace, informerFactory);
+        k8sClient = new K8sClientImpl(client, coreV1Api, batchV1Api, appsV1Api, nameSpace, informerFactory);
     }
 
     @Test

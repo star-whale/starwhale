@@ -47,7 +47,7 @@ public class EventWatcher {
         this.resourceEventHolder = resourceEventHolder;
     }
 
-    @EventListener
+    @EventListener(condition = "@modulesProperties.jobs.enabled")
     public void handleContextReadyEvent(ApplicationReadyEvent event) {
         log.info("spring context ready now, watching events from k8s");
         // for monitor eval task and image builder processing
