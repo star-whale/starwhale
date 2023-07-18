@@ -37,9 +37,12 @@ if ! test -f "$regctl_file"; then
     $regctl_file registry set --tls=disabled $target_registry
 fi
 
-declare -i page=1
-declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
+function copy_image() {
+  $regctl_file image copy "$source_registry/$1" "$target_registry/$2"
+}
 
+# start to sync sw-version images
+declare -i page=1
 while true
 do
   release=$(curl \
@@ -59,10 +62,6 @@ do
 done
 last_version_file="$work_dir/last_version"
 
-function copy_image() {
-  $regctl_file image copy "$source_registry/$1" "$target_registry/$2"
-}
-
 if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
   echo "release already synced"
@@ -71,15 +70,31 @@ else
   copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:$release_version"
   copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:latest"
   copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:latest"
+  echo "$release_version" > "$last_version_file"
+fi
 
+# start to sync base images
+release_version=${FIXED_VERSION_BASE_IMAGE:-"0.2.7"}
+
+last_version_file="$work_dir/last_version_for_base"
+
+if last_version=$(cat "$last_version_file") ; then echo "last_version_for_base is $last_version"; fi
+if [ "$last_version"  == "$release_version" ] ; then
+  echo "release already synced"
+else
+  # base image
+  copy_image "$source_repo_name/base:$release_version" "$target_repo_name1/base:$release_version"
+  copy_image "$source_repo_name/base:$release_version" "$target_repo_name2/base:$release_version"
+  copy_image "$source_repo_name/base:$release_version" "$target_repo_name1/base:latest"
+  copy_image "$source_repo_name/base:$release_version" "$target_repo_name2/base:latest"
+
+  # cuda image
+  declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
   for suf in "${starwhale_image_suffix[@]}"
     do
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:$release_version$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:$release_version$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:latest$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:latest$suf"
+      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name1/base:$release_version$suf"
+      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name2/base:$release_version$suf"
+      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name1/base:latest$suf"
+      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name2/base:latest$suf"
     done
-
-  echo "$release_version" > "$last_version_file"
-
 fi

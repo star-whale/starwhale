@@ -27,6 +27,8 @@ sw:
       index-url: ${SW_PYPI_INDEX_URL:}
       extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:}
       trusted-host: ${SW_PYPI_TRUSTED_HOST:}
+      retries: ${SW_PYPI_RETRIES:10}
+      timeout: ${SW_PYPI_TIMEOUT:90}
     condarc: ${SW_CONDA_CONFIG:}
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}

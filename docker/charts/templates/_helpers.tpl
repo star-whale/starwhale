@@ -81,6 +81,10 @@ Config mirror environment
   value: "{{ .Values.mirror.pypi.extraIndexUrl }}"
 - name: SW_PYPI_TRUSTED_HOST
   value: "{{ .Values.mirror.pypi.trustedHost }}"
+- name: SW_PYPI_RETRIES
+  value: "{{ .Values.mirror.pypi.retries }}"
+- name: SW_PYPI_TIMEOUT
+  value: "{{ .Values.mirror.pypi.timeout }}"
 {{- end}}
 {{- end}}
 
