@@ -115,6 +115,10 @@ const dataset = {
         en: 'Dataset Type',
         zh: '数据集类型',
     },
+    'dataset.create.build.desc': {
+        en: '{{0}} Datasets are building',
+        zh: '{{0}} 个数据集正在构建',
+    },
     'dataset.create.upload.desc': {
         en: 'Drag or click to upload files',
         zh: '拖拽或点击上传文件',

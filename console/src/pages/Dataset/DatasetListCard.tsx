@@ -7,7 +7,7 @@ import Table from '@/components/Table'
 import { useHistory, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 import { TextLink } from '@/components/Link'
-import { Button } from '@starwhale/ui'
+import { Button, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
 import { WithCurrentAuth } from '@/api/WithAuth'
@@ -15,6 +15,7 @@ import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
 import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
+import Text from '@starwhale/ui/Text'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -29,6 +30,8 @@ export default function DatasetListCard() {
     const datasetBuildList = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
         fetchDatasetBuildList(projectId, query as any)
     )
+
+    const buildCount = datasetBuildList.data?.list?.length ?? 0
 
     return (
         <>
@@ -117,10 +120,21 @@ export default function DatasetListCard() {
                     zIndex: 2,
                     justifyContent: 'center',
                     alignItems: 'center',
+                    gap: '20px',
                 }}
             >
                 <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
-                    {datasetBuildList.data?.list?.length}
+                    {buildCount > 0 && (
+                        <Text
+                            tooltip={t('dataset.create.build.desc', [buildCount])}
+                            style={{
+                                marginRight: '20px',
+                            }}
+                        >
+                            {buildCount}
+                        </Text>
+                    )}
+                    <IconFont type='unfold21' style={{ color: 'rgba(2,16,43,0.40)' }} />
                 </Button>
             </div>
         </>

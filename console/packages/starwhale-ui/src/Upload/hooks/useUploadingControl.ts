@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Subject, Subscription, catchError, from, mergeMap, of } from 'rxjs'
+import { Subject, Subscription, catchError, from, mergeMap, of, takeUntil } from 'rxjs'
 
 function useUploadingControl<T>({
     concurrent = 4,
@@ -13,6 +13,7 @@ function useUploadingControl<T>({
     onError?: (args: any, error: any) => void
 }) {
     const uploadQRef = useRef<Subject<T>>(new Subject<T>())
+    const stopSignalRef = useRef<Subject<void>>(new Subject<void>())
 
     useEffect(() => {
         const subscription = new Subscription()
@@ -22,7 +23,8 @@ function useUploadingControl<T>({
             .pipe(
                 mergeMap((args: T) => {
                     return from(onUpload(args)).pipe(catchError((error) => of(error)))
-                }, concurrent)
+                }, concurrent),
+                takeUntil(stopSignalRef.current)
             )
             .subscribe({
                 next: (res: any) => {
@@ -46,10 +48,15 @@ function useUploadingControl<T>({
             subscription.unsubscribe()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [stopSignalRef.current])
 
     return {
         uploadQueue: uploadQRef.current,
+        cancel: () => {
+            stopSignalRef.current.next()
+            stopSignalRef.current.complete()
+            stopSignalRef.current = new Subject<void>()
+        },
     }
 }
 

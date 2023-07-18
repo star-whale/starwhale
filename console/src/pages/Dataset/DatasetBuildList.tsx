@@ -23,7 +23,7 @@ export default function DatasetBuildList({ header, onAction }: ITaskListCardProp
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const location = useLocation()
     const id = qs.parse(location.search, { ignoreQueryPrefix: true })?.id ?? ''
-    const query = { status: 'BUILDING', ...page }
+    const query = { ...page }
     const tasksInfo = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
         fetchDatasetBuildList(projectId, query as any)
     )

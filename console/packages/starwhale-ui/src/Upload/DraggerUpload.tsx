@@ -14,6 +14,7 @@ import { ItemRender } from './UploadItem'
 import { useEvent } from '@starwhale/core'
 import { useSign } from './hooks/useSign'
 import axios from 'axios'
+import IconFont from '../IconFont'
 
 const useStyles = createUseStyles({
     drag: {
@@ -134,23 +135,6 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         (tmp) => fileSuccessList.some((f: any) => f.path === getUploadName(tmp)),
         [fileSuccessList]
     )
-
-    const handleReset = useEvent(() => {
-        resetSign()
-        setFileList([])
-        setFileSuccessList([])
-        setFileFailedList([])
-        setFileUploadingList([])
-    })
-
-    const handleRemove = useEvent(async (file: UploadFile) => {
-        const name = getUploadName(file)
-        await deleteFiles([name], signPrefix)
-        setFileList((prev) => prev.filter((f) => f.path !== file.path))
-        setFileSuccessList((prev) => prev.filter((f) => f.path !== file.path))
-        setFileFailedList((prev) => prev.filter((f) => f.path !== file.path))
-    })
-
     const beforeUpload = (file: UploadFile) => {
         // console.log('beforeUpload', file, !!isExist(file))
         if (isMax) {
@@ -175,10 +159,20 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         }
         return true
     }
+
     // use hooks
-    const { uploadQueue } = useUploadingControl<UploadControlT>({
-        onUpload: (file) => {
+    const { uploadQueue, cancel: cancelQueue } = useUploadingControl<UploadControlT>({
+        onUpload: useEvent((file) => {
             const uninterceptedAxiosInstance = axios.create()
+            setFileUploadingList((prev) => {
+                return [
+                    ...prev,
+                    {
+                        ...pickAttr(file.file),
+                        status: 'uploading',
+                    },
+                ]
+            })
             return uninterceptedAxiosInstance({
                 method: 'PUT',
                 url: file.oss,
@@ -191,13 +185,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                     setFileUploadingList((prev) => {
                         const index = prev.findIndex((f) => f.path === file.file.path)
                         if (index === -1) {
-                            return [
-                                ...prev,
-                                {
-                                    ...pickAttr(file.file),
-                                    status: 'uploading',
-                                },
-                            ]
+                            return [...prev]
                         }
                         const newFile = {
                             ...prev[index],
@@ -212,9 +200,8 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                     return 100 * (p.loaded / p.total)
                 },
             })
-        },
+        }),
         onDone: (file: UploadFile) => {
-            // console.log('onDone', res)
             setFileSuccessList((prev) => [
                 ...prev,
                 {
@@ -251,13 +238,30 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             setFileList((prev) => [...prev, ...validateFiles])
             const signedUrls = await getSignUrls(validateFiles)
             const data = await sign(signedUrls, signPrefix)
-            files.map((file) =>
+            files.forEach((file) => {
                 uploadQueue.next({
                     file,
                     oss: data.signedUrls[file.path],
                 } as UploadControlT)
-            )
+            })
         },
+    })
+
+    const handleReset = useEvent(() => {
+        resetSign()
+        setFileList([])
+        setFileSuccessList([])
+        setFileFailedList([])
+        setFileUploadingList([])
+        cancelQueue()
+    })
+
+    const handleRemove = useEvent(async (file: UploadFile) => {
+        const name = getUploadName(file)
+        await deleteFiles([name], signPrefix)
+        setFileList((prev) => prev.filter((f) => f.path !== file.path))
+        setFileSuccessList((prev) => prev.filter((f) => f.path !== file.path))
+        setFileFailedList((prev) => prev.filter((f) => f.path !== file.path))
     })
 
     // memo
@@ -277,7 +281,8 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         }),
         [isFocused, isDragAccept, isDragReject]
     )
-    const dir = { directory: 'true', webkitdirectory: 'true' }
+    // const dir = { directory: 'true', webkitdirectory: 'true' }
+    const dir = {}
     const itemsUploading = React.useMemo(
         () =>
             fileUploadingList.map((file) => (
@@ -299,8 +304,9 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
 
     // effect
     useEffect(() => {
-        const isDone = fileList?.every((item) => item.status !== 'uploading')
         const timer = setTimeout(() => {
+            const isDone = fileList?.every((item) => item.status !== 'uploading')
+
             if (!isDone) {
                 return
             }
@@ -315,6 +321,8 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fileList, fileSuccessList, signPrefix])
+
+    // console.log(fileSuccessList, fileUploadingList)
 
     return (
         <div className={styles.drag}>
@@ -331,6 +339,13 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 <input {...getInputProps()} multiple {...dir} />
                 <p>{t('dataset.create.upload.drag.desc')}</p>
             </div>
+            {(total > 0 || fileUploadingList.length > 0) && (
+                <div style={{ display: 'flex', width: '100%', flex: 1, justifyContent: 'flex-end' }}>
+                    <Button kind='secondary' onClick={handleReset} startEnhancer={<IconFont type='reset' />}>
+                        {t('Reset')}
+                    </Button>
+                </div>
+            )}
             <div className='ant-upload-list'>
                 {itemsUploading}
                 {items}
@@ -375,9 +390,6 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                             <p style={{ color: '#CC3D3D' }}>{t('dataset.create.upload.error.type')}</p>
                         )}
                     </div>
-                    <Button onClick={handleReset} as='link' disabled={fileUploadingList.length > 0}>
-                        {t('Reset')}
-                    </Button>
                 </div>
             )}
         </div>

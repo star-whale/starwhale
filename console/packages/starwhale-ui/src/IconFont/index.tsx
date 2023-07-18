@@ -118,6 +118,8 @@ export type IconTypesT =
     | 'a-copylink'
     | 'upload'
     | 'a-Versionhistory'
+    | 'fold21'
+    | 'unfold21'
 
 interface IIconFontProps {
     style?: React.CSSProperties
