@@ -21,10 +21,12 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
+import ai.starwhale.mlops.storage.baidu.StorageAccessServiceBos;
 import ai.starwhale.mlops.storage.fs.FsConfig;
 import ai.starwhale.mlops.storage.fs.StorageAccessServiceFile;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
 import ai.starwhale.mlops.storage.minio.StorageAccessServiceMinio;
+import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import ai.starwhale.mlops.storage.s3.StorageAccessServiceS3;
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
@@ -36,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
@@ -139,5 +142,35 @@ public class StorageAccessServiceTest {
     @Test
     public void testMemory() throws Exception {
         this.run(new StorageAccessServiceMemory());
+    }
+
+    // test using real qcloud account
+    @Disabled
+    @Test
+    public void testQcloud() throws Exception {
+        this.run(new StorageAccessServiceQcloud(
+                S3Config.builder()
+                        .bucket("bucket")
+                        .accessKey("ak")
+                        .secretKey("sk")
+                        .region("ap-beijing")
+                        .hugeFileThreshold(10 * 1024 * 1024)
+                        .hugeFilePartSize(5 * 1024 * 1024)
+                        .build()));
+    }
+
+    // test using real bos account
+    @Disabled
+    @Test
+    public void testBos() throws Exception {
+        this.run(new StorageAccessServiceBos(
+                S3Config.builder()
+                        .bucket("bucket")
+                        .accessKey("ak")
+                        .secretKey("sk")
+                        .region("BJ")
+                        .hugeFileThreshold(10 * 1024 * 1024)
+                        .hugeFilePartSize(5 * 1024 * 1024)
+                        .build()));
     }
 }
