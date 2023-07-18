@@ -121,7 +121,8 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
 
-    def test_build_from_image_folder(self) -> None:
+    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
+    def test_build_from_image_folder(self, m_dump: MagicMock) -> None:
         image_folder = Path("/tmp/workdir/images")
         ensure_file(image_folder / "1.jpg", "1", parents=True)
         ensure_file(image_folder / "1.txt", "1", parents=True)
@@ -159,6 +160,7 @@ class StandaloneDatasetTestCase(TestCase):
             alignment_size="128",
             volume_size="128M",
         )
+        assert m_dump.call_count == 1
 
     @patch("starwhale.api._impl.dataset.model.Dataset.from_huggingface")
     def test_build_from_huggingface(self, m_hf: MagicMock) -> None:
@@ -314,6 +316,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args[1].attr.volume_size == D_FILE_VOLUME_SIZE
 
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
+    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
     def test_build_workflow(self, *args: t.Any) -> None:
         class _MockBuildExecutor:
             def __iter__(self) -> t.Generator:
@@ -399,6 +402,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0
 
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
+    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
     def test_head(self, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
@@ -447,7 +451,8 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
 
     @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
-    def test_from_json(self, *args: t.Any) -> None:
+    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
+    def test_from_json(self, m_dump: MagicMock, *args: t.Any) -> None:
         from starwhale.api._impl.dataset import Dataset as SDKDataset
 
         myds = SDKDataset.from_json(
@@ -462,6 +467,7 @@ class StandaloneDatasetTestCase(TestCase):
             "content.child_content",
         )
         assert myds[1].features["zh-cn"] == "最近怎么样"
+        assert m_dump.call_count == 2
 
 
 class TestJsonDict(TestCase):
