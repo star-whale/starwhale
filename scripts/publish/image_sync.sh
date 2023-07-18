@@ -74,7 +74,7 @@ else
 fi
 
 # start to sync base images
-release_version=${FIXED_VERSION_BASE_IMAGE:-"0.2.7"}
+release_version=${FIXED_VERSION_BASE_IMAGE:-"0.3.0"}
 
 last_version_file="$work_dir/last_version_for_base"
 
