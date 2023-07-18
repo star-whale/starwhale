@@ -16,22 +16,22 @@
 
 package ai.starwhale.mlops.storage.autofit.qcloud;
 
-import ai.starwhale.mlops.storage.aliyun.StorageAccessServiceAliyun;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessServiceBuilder;
 import ai.starwhale.mlops.storage.autofit.s3.CompatibleStorageAccessServiceS3Like;
+import ai.starwhale.mlops.storage.qcloud.StorageAccessServiceQcloud;
 import ai.starwhale.mlops.storage.s3.S3Config;
 import java.util.Map;
 import java.util.Set;
 
 public class CompatibleStorageAccessServiceBuilderQcloud implements CompatibleStorageAccessServiceBuilder {
 
-    public static final Set<String> TYPES = Set.of("tencent", "oss");
+    public static final Set<String> TYPES = Set.of("tencent");
 
     @Override
     public CompatibleStorageAccessService build(Map<String, String> connectionToken) {
         S3Config s3Config = new S3Config(connectionToken);
-        return new CompatibleStorageAccessServiceS3Like(new StorageAccessServiceAliyun(s3Config), s3Config, TYPES);
+        return new CompatibleStorageAccessServiceS3Like(new StorageAccessServiceQcloud(s3Config), s3Config, TYPES);
     }
 
     @Override
