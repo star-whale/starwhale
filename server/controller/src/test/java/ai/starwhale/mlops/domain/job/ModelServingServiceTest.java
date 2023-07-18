@@ -203,6 +203,8 @@ public class ModelServingServiceTest {
                 "SW_MODEL_SERVING_BASE_URI", "/gateway/model-serving/7",
                 "SW_PRODUCTION", "1"
         ));
+        expectedEnvs.put("SW_RUNTIME_PYTHON_VERSION", "3.10");
+        expectedEnvs.put("SW_VERSION", "0.4.7.dev609150619");
         expectedEnvs.put("SW_PYPI_RETRIES", "1");
         expectedEnvs.put("SW_PYPI_TIMEOUT", "2");
         expectedEnvs.put("a", "b");
