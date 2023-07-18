@@ -79,8 +79,11 @@ public class RuntimeVersionConverterTest {
         assertThat("image", dockerImage.toString(), is("self.registry:5000/starwhale:0.4.7.builtin"));
 
         // case 2: use custom
-        runtime.setVersionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE);
-
+        runtime = RuntimeVersionEntity.builder()
+                .id(1L)
+                .versionName("123456")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
+                .build();
         dockerImage = new DockerImage(runtime.getImage("self.registry:5000"));
         assertThat("registry", dockerImage.getRepo(), is(RuntimeTestConstants.CUSTOM_REPO));
         assertThat("image", dockerImage.toString(), is(RuntimeTestConstants.CUSTOM_IMAGE));

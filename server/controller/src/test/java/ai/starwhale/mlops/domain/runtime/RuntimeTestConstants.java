@@ -54,7 +54,11 @@ public interface RuntimeTestConstants {
             + "    repo: " + BUILTIN_REPO + "\n"
             + "    tag: 0.4.7.builtin\n"
             + "  custom_run_image: ''\n"
-            + "version: m3hxue5f6nie7r36i6pv6cdl6jzxmiz7ptzesudw\n";
+            + "version: m3hxue5f6nie7r36i6pv6cdl6jzxmiz7ptzesudw\n"
+            + "environment:\n"
+            + "  python: 3.10\n"
+            + "  lock:\n"
+            + "    starwhale_version: 0.4.7.dev609150619\n";
 
     String MANIFEST_WITHOUT_BUILTIN_IMAGE = "artifacts:\n"
             + "  dependencies:\n"
@@ -88,5 +92,9 @@ public interface RuntimeTestConstants {
             + "    repo: " + CUSTOM_REPO + "\n"
             + "    tag: 0.4.7.builtin\n"
             + "  custom_run_image: '" + CUSTOM_IMAGE + "'\n"
-            + "version: m3hxue5f6nie7r36i6pv6cdl6jzxmiz7ptzesudw\n";
+            + "version: m3hxue5f6nie7r36i6pv6cdl6jzxmiz7ptzesudw\n"
+            + "environment:\n"
+            + "  python: 3.10\n"
+            + "  lock:\n"
+            + "    starwhale_version: 0.4.7.dev609150619\n";
 }

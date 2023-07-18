@@ -524,6 +524,8 @@ public class RuntimeService {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class RuntimeManifest {
 
