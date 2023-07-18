@@ -16,19 +16,16 @@
 
 package ai.starwhale.mlops.storage.autofit;
 
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.StorageUri;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.stream.Stream;
+import lombok.experimental.Delegate;
 
 /**
  * if it is compatible with an uri
  */
 public abstract class CompatibleStorageAccessService implements StorageAccessService {
 
+    @Delegate
     protected final StorageAccessService storageAccessService;
 
     public CompatibleStorageAccessService(StorageAccessService storageAccessService) {
@@ -42,54 +39,4 @@ public abstract class CompatibleStorageAccessService implements StorageAccessSer
      * @return if it is compatible with an uri
      */
     public abstract boolean compatibleWith(StorageUri uri);
-
-    @Override
-    public StorageObjectInfo head(String path) throws IOException {
-        return storageAccessService.head(path);
-    }
-
-    @Override
-    public void put(String path, InputStream inputStream, long size) throws IOException {
-        storageAccessService.put(path, inputStream, size);
-    }
-
-    @Override
-    public void put(String path, byte[] body) throws IOException {
-        storageAccessService.put(path, body);
-    }
-
-    @Override
-    public void put(String path, InputStream inputStream) throws IOException {
-        storageAccessService.put(path, inputStream);
-    }
-
-    @Override
-    public LengthAbleInputStream get(String path) throws IOException {
-        return storageAccessService.get(path);
-    }
-
-    @Override
-    public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
-        return storageAccessService.get(path, offset, size);
-    }
-
-    @Override
-    public Stream<String> list(String path) throws IOException {
-        return storageAccessService.list(path);
-    }
-
-    @Override
-    public void delete(String path) throws IOException {
-        storageAccessService.delete(path);
-    }
-
-    @Override
-    public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return storageAccessService.signedUrl(path, expTimeMillis);
-    }
-
-    @Override
-    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return storageAccessService.signedPutUrl(path, contentType, expTimeMillis);
-    }
 }

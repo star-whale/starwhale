@@ -16,18 +16,13 @@
 
 package ai.starwhale.mlops.storage.autofit.s3;
 
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
 import ai.starwhale.mlops.storage.StorageUri;
 import ai.starwhale.mlops.storage.autofit.CompatibleStorageAccessService;
 import ai.starwhale.mlops.storage.s3.S3Config;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import software.amazon.awssdk.regions.Region;
@@ -80,60 +75,5 @@ public class CompatibleStorageAccessServiceS3Like extends CompatibleStorageAcces
             return endpointUri.getPort() == uri.getPort();
         }
         return true;
-    }
-
-    @Override
-    public StorageObjectInfo head(String path) throws IOException {
-        return storageAccessService.head(path);
-    }
-
-    @Override
-    public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
-        return storageAccessService.head(path, md5sum);
-    }
-
-    @Override
-    public void put(String path, InputStream inputStream, long size) throws IOException {
-        storageAccessService.put(path, inputStream, size);
-    }
-
-    @Override
-    public void put(String path, byte[] body) throws IOException {
-        storageAccessService.put(path, body);
-    }
-
-    @Override
-    public void put(String path, InputStream inputStream) throws IOException {
-        storageAccessService.put(path, inputStream);
-    }
-
-    @Override
-    public LengthAbleInputStream get(String path) throws IOException {
-        return storageAccessService.get(path);
-    }
-
-    @Override
-    public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
-        return storageAccessService.get(path, offset, size);
-    }
-
-    @Override
-    public Stream<String> list(String path) throws IOException {
-        return storageAccessService.list(path);
-    }
-
-    @Override
-    public void delete(String path) throws IOException {
-        storageAccessService.delete(path);
-    }
-
-    @Override
-    public String signedUrl(String path, Long expTimeMillis) throws IOException {
-        return storageAccessService.signedUrl(path, expTimeMillis);
-    }
-
-    @Override
-    public String signedPutUrl(String path, String contentType, Long expTimeMillis) throws IOException {
-        return storageAccessService.signedPutUrl(path, contentType, expTimeMillis);
     }
 }
