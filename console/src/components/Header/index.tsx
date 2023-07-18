@@ -327,7 +327,12 @@ export default function Header() {
                 }}
             >
                 <LanguageSelector />
-                <a target='_blank' rel='noreferrer' href={isZH ? docsZH : docsEN} style={{ color: '#FFF' }}>
+                <a
+                    target='_blank'
+                    rel='noreferrer'
+                    href={isZH ? docsZH : docsEN}
+                    style={{ color: '#FFF', textDecoration: 'none', lineHeight: '20px' }}
+                >
                     {t('docs')}
                 </a>
             </div>
