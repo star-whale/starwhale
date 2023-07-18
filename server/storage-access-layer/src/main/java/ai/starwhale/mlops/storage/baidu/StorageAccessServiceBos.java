@@ -56,7 +56,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
 
     private final long partSize;
 
-    private final BosClient ossClient;
+    private final BosClient bosClient;
 
     private final Set<String> notFoundErrorCodes = Set.of("NoSuchKey", "NoSuchUpload", "NoSuchBucket", "NoSuchVersion");
 
@@ -70,7 +70,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
             config.setEndpoint(s3Config.getEndpoint());
             config.setCnameEnabled(true);
         }
-        this.ossClient = new BosClient(config);
+        this.bosClient = new BosClient(config);
     }
 
     private boolean isNotFount(BceServiceException e) {
@@ -86,7 +86,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
     @Override
     public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
-            var resp = this.ossClient.getObjectMetadata(this.bucket, path);
+            var resp = this.bosClient.getObjectMetadata(this.bucket, path);
             return new StorageObjectInfo(
                     true,
                     resp.getContentLength(),
@@ -105,7 +105,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
     public void put(String path, InputStream inputStream, long size) throws IOException {
         var metadata = new ObjectMetadata();
         metadata.setContentLength(size);
-        this.ossClient.putObject(this.bucket, path, inputStream, metadata);
+        this.bosClient.putObject(this.bucket, path, inputStream, metadata);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
     @Override
     public void put(String path, InputStream inputStream) throws IOException {
         var initReq = new InitiateMultipartUploadRequest(this.bucket, path);
-        var uploadId = this.ossClient.initiateMultipartUpload(initReq).getUploadId();
+        var uploadId = this.bosClient.initiateMultipartUpload(initReq).getUploadId();
         var parts = new ArrayList<PartETag>();
         try {
             for (int i = 1; ; i++) {
@@ -132,7 +132,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
                         .withInputStream(new ByteArrayInputStream(data))
                         .withPartSize(data.length)
                         .withPartNumber(i);
-                var partResp = this.ossClient.uploadPart(partReq);
+                var partResp = this.bosClient.uploadPart(partReq);
                 parts.add(partResp.getPartETag());
                 if (data.length < this.partSize) {
                     break;
@@ -140,10 +140,10 @@ public class StorageAccessServiceBos implements StorageAccessService {
             }
 
             var req = new CompleteMultipartUploadRequest(this.bucket, path, uploadId, parts);
-            this.ossClient.completeMultipartUpload(req);
+            this.bosClient.completeMultipartUpload(req);
         } catch (Throwable t) {
             var req = new AbortMultipartUploadRequest(this.bucket, path, uploadId);
-            this.ossClient.abortMultipartUpload(req);
+            this.bosClient.abortMultipartUpload(req);
             throw new IOException(t);
         }
     }
@@ -151,7 +151,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
     @Override
     public LengthAbleInputStream get(String path) throws IOException {
         try {
-            var resp = this.ossClient.getObject(this.bucket, path);
+            var resp = this.bosClient.getObject(this.bucket, path);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (BceServiceException e) {
             if (isNotFount(e)) {
@@ -166,7 +166,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
     public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
         try {
             var req = new GetObjectRequest(bucket, path).withRange(offset, offset + size - 1);
-            var resp = this.ossClient.getObject(req);
+            var resp = this.bosClient.getObject(req);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (BceServiceException e) {
             if (isNotFount(e)) {
@@ -185,7 +185,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
 
             ListObjectsResponse resp;
             do {
-                resp = this.ossClient.listObjects(req);
+                resp = this.bosClient.listObjects(req);
                 files = Streams.concat(files, resp.getContents().stream().map(BosObjectSummary::getKey));
                 req.setMarker(resp.getNextMarker());
             } while (resp.isTruncated());
@@ -200,7 +200,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
 
     @Override
     public void delete(String path) throws IOException {
-        this.ossClient.deleteObject(this.bucket, path);
+        this.bosClient.deleteObject(this.bucket, path);
     }
 
     @Override
@@ -210,7 +210,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
         if (expTimeMillis != null) {
             expirationInSeconds = (int) (expTimeMillis / 1000);
         }
-        return ossClient.generatePresignedUrl(this.bucket, path, expirationInSeconds).toString();
+        return bosClient.generatePresignedUrl(this.bucket, path, expirationInSeconds).toString();
     }
 
     @Override
@@ -222,6 +222,6 @@ public class StorageAccessServiceBos implements StorageAccessService {
         }
         request.setExpiration(expirationInSeconds);
         request.setContentType(contentType);
-        return ossClient.generatePresignedUrl(request).toString();
+        return bosClient.generatePresignedUrl(request).toString();
     }
 }
