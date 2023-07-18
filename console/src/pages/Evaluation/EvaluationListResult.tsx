@@ -12,8 +12,8 @@ import { useEvaluationDetailStore } from '@starwhale/ui/GridTable/store'
 import useTranslation from '@/hooks/useTranslation'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 
-function prefixColumn(row: any, prefix: string | number) {
-    return `${[row?.['sys/model_name']?.value, prefix].filter((v) => v !== undefined).join('/')}@`
+function prefixColumn(row: any) {
+    return `${[row?.['sys/model_name']?.value, row?.['sys/id']?.value].filter((v) => v !== undefined).join('-')}@`
 }
 
 function getPrefixId(row: any, prefix: string | number) {
@@ -29,17 +29,18 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
 
     const tables = React.useMemo(
         () =>
-            rows?.map((row, i) => {
+            rows?.map((row) => {
                 return {
                     tableName: tableNameOfResult(projectId, val(row.id)),
-                    columnPrefix: prefixColumn(row, i),
+                    columnPrefix: prefixColumn(row),
                 }
             }) ?? [],
         [rows, projectId]
     )
+
     const getId = useCallback(
         (row) => {
-            return rows?.map((v, i) => getPrefixId(row, prefixColumn(rows[i], i))).filter((v) => !!v)[0]
+            return rows?.map((v, i) => getPrefixId(row, prefixColumn(rows[i]))).filter((v) => !!v)[0]
         },
         [rows]
     )
@@ -63,6 +64,7 @@ export default function DatastoreDiffTables({ rows }: { rows: ITableProps['recor
                 isLoading={recordInfo.isLoading}
                 store={useEvaluationDetailStore}
                 columnable
+                compareable
                 title={t('evaluation.detail.title')}
                 titleOfCompare={t('evaluation.detail.compare')}
                 selectable
