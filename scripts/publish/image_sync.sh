@@ -89,12 +89,12 @@ else
   copy_image "$source_repo_name/base:$release_version" "$target_repo_name2/base:latest"
 
   # cuda image
-  declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
-  for suf in "${starwhale_image_suffix[@]}"
+  declare -a starwhale_image_prefix=("" "11.3" "11.3-cudnn8" "11.4" "11.4-cudnn8" "11.5" "11.5-cudnn8" "11.6" "11.6-cudnn8" "11.7")
+  for pre in "${starwhale_image_prefix[@]}"
     do
-      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name1/base:$release_version$suf"
-      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name2/base:$release_version$suf"
-      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name1/base:latest$suf"
-      copy_image "$source_repo_name/base:$release_version$suf" "$target_repo_name2/base:latest$suf"
+      # starwhaleai/cuda:11.5-cudnn8-base0.2.7
+      # starwhaleai/cuda:11.7-base0.2.5
+      copy_image "$source_repo_name/cuda:$pre-base$release_version" "$target_repo_name1/cuda:$pre-base$release_version"
+      copy_image "$source_repo_name/cuda:$pre-base$release_version" "$target_repo_name2/cuda:$pre-base$release_version"
     done
 fi
