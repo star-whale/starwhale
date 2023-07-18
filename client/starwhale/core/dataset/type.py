@@ -322,7 +322,9 @@ class Binary(BaseArtifact, SwObject):
         mime_type: MIMEType = MIMEType.UNDEFINED,
         dtype: t.Type = numpy.bytes_,
         link: t.Optional[Link] = None,
+        auto_convert_to_bytes: bool = False,
     ) -> None:
+        self.auto_convert_to_bytes = auto_convert_to_bytes
         super().__init__(
             fp,
             ArtifactType.Binary,
@@ -724,9 +726,11 @@ class Text(BaseArtifact, SwObject):
         content: str = "",
         encoding: str = DEFAULT_ENCODING,
         link: t.Optional[Link] = None,
+        auto_convert_to_str: bool = False,
     ) -> None:
         # TODO: add encoding validate
         self._content = content
+        self.auto_convert_to_str = auto_convert_to_str
         super().__init__(
             fp=b"",
             type=ArtifactType.Text,
@@ -762,6 +766,11 @@ class Text(BaseArtifact, SwObject):
             return str(self.link.to_bytes(), encoding or self.encoding)
         else:
             return ""
+
+    def __str__(self) -> str:
+        return self.content
+
+    __repr__ = __str__
 
 
 # TODO: support tensorflow transform

@@ -12,24 +12,12 @@ except ImportError:  # pragma: no cover
     raise ImportError("Please install huggingface/datasets with `pip install datasets`")
 
 from starwhale.utils import console
-from starwhale.utils.fs import DIGEST_SIZE
-from starwhale.core.dataset.type import Text, Audio, Image, Binary, MIMEType
+from starwhale.core.dataset.type import Audio, Image, MIMEType
 
 
 def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:
     if isinstance(feature, hf_datasets.Value):
-        if feature.dtype in ("large_string", "string"):
-            if len(data) > DIGEST_SIZE:
-                return Text(content=data)
-            else:
-                return data
-        elif feature.dtype in ("large_binary", "binary"):
-            if len(data) > DIGEST_SIZE:
-                return Binary(fp=data)
-            else:
-                return data
-        else:
-            return data
+        return data
     elif isinstance(feature, hf_datasets.Audio):
         if data.get("path") is not None:
             return Audio(fp=data["path"])

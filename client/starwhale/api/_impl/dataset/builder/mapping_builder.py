@@ -271,6 +271,7 @@ class MappingDatasetBuilder:
     def _handle_row_put(self, row: DataRow) -> None:
         td_row = TabularDatasetRow(id=row.index, features=row.features)
 
+        td_row.encode_feature_types()
         for artifact in td_row.artifacts:
             # TODO: refactor BaseArtifact Type, parse link by fp, such as: fp="s3://xx/yy/zz", fp="http://xx/yy/zz"
             if not artifact.link:

@@ -244,6 +244,24 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaises(TypeError):
             ds[DataRow(1, Binary())] = DataRow(1, Binary())  # type: ignore
 
+    def test_setitem_with_auto_encode(self) -> None:
+        ds = dataset("ds-auto-encode")
+        raw_features = {
+            "str": "abc",
+            "large_str": "abc" * 1000,
+            "bytes": b"abc",
+            "large_bytes": b"abc" * 1000,
+        }
+        ds.append(raw_features)
+        ds.commit()
+        ds.close()
+
+        load_ds = dataset(ds.uri)
+        assert load_ds[0].features["str"] == raw_features["str"]
+        assert load_ds[0].features["large_str"] == raw_features["large_str"]
+        assert load_ds[0].features["bytes"] == raw_features["bytes"]
+        assert load_ds[0].features["large_bytes"] == raw_features["large_bytes"]
+
     def test_parallel_setitem(self) -> None:
         ds = dataset("mnist")
 
@@ -1860,13 +1878,13 @@ class TestHuggingface(_DatasetSDKTestBase):
             (1, hf_datasets.Value("int64"), 1),
             (1.0, hf_datasets.Value("float64"), 1.0),
             (b"000", hf_datasets.Value("binary"), b"000"),
-            (b"000" * 32, hf_datasets.Value("binary"), Binary(b"000" * 32)),
+            (b"000" * 1000, hf_datasets.Value("binary"), b"000" * 1000),
             (b"000", hf_datasets.Value("large_binary"), b"000"),
-            (b"000" * 32, hf_datasets.Value("large_binary"), Binary(b"000" * 32)),
+            (b"000" * 1001, hf_datasets.Value("large_binary"), b"000" * 1001),
             ("000", hf_datasets.Value("string"), "000"),
-            ("000" * 32, hf_datasets.Value("string"), Text("000" * 32)),
+            ("000" * 999, hf_datasets.Value("string"), "000" * 999),
             ("000", hf_datasets.Value("large_string"), "000"),
-            ("000" * 32, hf_datasets.Value("large_string"), Text("000" * 32)),
+            ("000" * 500, hf_datasets.Value("large_string"), "000" * 500),
             (1, hf_datasets.ClassLabel(num_classes=3, names=["a", "b", "c"]), 1),
             (
                 [[1, 2], [11, 22]],
@@ -2071,13 +2089,13 @@ class TestHuggingface(_DatasetSDKTestBase):
         assert simple_ds["train/0"].features.bin == b"test1"
         large_str = simple_ds["train/0"].features["large_str"]
         large_bin = simple_ds["train/0"].features["large_bin"]
-        assert isinstance(large_str, Text)
-        assert isinstance(large_bin, Binary)
-        assert large_str.to_str() == "test1" * 20
-        assert large_bin.to_bytes() == b"test1" * 20
+        assert isinstance(large_str, str)
+        assert isinstance(large_bin, bytes)
+        assert large_str == "test1" * 20
+        assert large_bin == b"test1" * 20
 
         assert simple_ds["train/1"].features.int == 2
-        assert simple_ds["train/1"].features["large_bin"].to_bytes() == b"test2" * 20
+        assert simple_ds["train/1"].features["large_bin"] == b"test2" * 20
 
         m_load_dataset.return_value = hf_complex_ds
         complex_ds = Dataset.from_huggingface(name="complex", repo="complex")
