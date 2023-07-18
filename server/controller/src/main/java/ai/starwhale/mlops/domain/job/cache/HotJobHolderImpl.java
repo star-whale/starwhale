@@ -20,6 +20,9 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -36,6 +39,17 @@ public class HotJobHolderImpl implements HotJobHolder {
     ConcurrentHashMap<Long, Job> jobMap = new ConcurrentHashMap<>();
 
     ConcurrentHashMap<Long, Task> taskMap = new ConcurrentHashMap<>();
+
+    public HotJobHolderImpl(MeterRegistry meterRegistry) {
+        for (JobStatus jobStatus : JobStatus.values()) {
+            meterRegistry.gauge("sw.job.cache.size", Tags.of("status", jobStatus.name()), jobMap,
+                    (jobMap) -> jobMap.values().stream().filter(job -> job.getStatus() == jobStatus).count());
+        }
+        for (TaskStatus taskStatus : TaskStatus.values()) {
+            meterRegistry.gauge("sw.task.cache.size", Tags.of("status", taskStatus.name()), taskMap,
+                    (taskMap) -> taskMap.values().stream().filter(task -> task.getStatus() == taskStatus).count());
+        }
+    }
 
     public void adopt(Job job) {
         jobMap.put(job.getId(), job);

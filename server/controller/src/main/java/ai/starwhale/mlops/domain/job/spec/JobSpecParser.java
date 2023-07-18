@@ -38,7 +38,6 @@ public class JobSpecParser {
             return Constants.yamlMapper.readValue(yamlContent, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
-            log.info("yaml in map format, {}", yamlContent);
             return parseAllStepFromYaml(yamlContent);
         }
     }

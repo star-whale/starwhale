@@ -56,7 +56,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: {{ .Values.controller.containerPort }}
+              port: {{ .Values.controller.managementPort }}
             initialDelaySeconds: 50
             periodSeconds: 10
             timeoutSeconds: 90
@@ -85,6 +85,8 @@ spec:
               value: controller
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
+            - name: SW_MANAGEMENT_PORT
+              value: "{{ .Values.controller.managementPort }}"
             - name: SW_JWT_TOKEN_EXPIRE_MINUTES
               value: "{{ .Values.controller.jwt.tokenExpireMinutes }}"
             - name: SW_UPLOAD_MAX_FILE_SIZE

@@ -87,6 +87,7 @@ import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import de.codecentric.boot.admin.server.config.AdminServerProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -137,7 +138,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
         "ai.starwhale.mlops.resulting",
         "ai.starwhale.mlops.configuration.security"},
         excludeFilters = {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)})
-@Import({K8sJobTemplate.class, ResourceEventHolder.class})
+@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModelServiceTest extends MySqlContainerHolder {
 

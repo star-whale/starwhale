@@ -51,6 +51,7 @@ import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,7 +92,7 @@ public class DatasetUploaderTest {
                 Project.builder().id(1L).build());
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
 
-        HotJobHolder hotJobHolder = new HotJobHolderImpl();
+        HotJobHolder hotJobHolder = new HotJobHolderImpl(mock(MeterRegistry.class));
 
         DatasetDao datasetDao = mock(DatasetDao.class);
 
