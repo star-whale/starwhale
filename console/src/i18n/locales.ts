@@ -1625,6 +1625,14 @@ const locales0 = {
         en: 'Google',
         zh: 'Google',
     },
+    'Wechat': {
+        en: 'Wechat',
+        zh: '微信',
+    },
+    'copyright': {
+        en: 'Copyright © 2023 Starwhale, Inc. All rights reserved. ',
+        zh: '版权所有 © 2023 Starwhale, Inc. 保留所有权利。',
+    },
     ...basic,
     ...dataset,
     ...model,
