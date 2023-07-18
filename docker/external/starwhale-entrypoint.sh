@@ -78,5 +78,13 @@ set_py_and_sw() {
     ln -s /opt/starwhale.venv/bin/sw-docker-entrypoint /usr/local/bin/sw-docker-entrypoint
 }
 
-set_py_and_sw
-sw-docker-entrypoint "$1"
+if [ "${RUNTIME_RESTORED}" != "1" ]; then
+  set_py_and_sw
+fi
+
+if [ -z "${USE_CUSTOM_CMD}" ]; then
+  sw-docker-entrypoint "$1"
+else
+  exec "$@"
+fi
+

@@ -96,6 +96,8 @@ deploy() {
     --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
     --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
     --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
+    --set mirror.pypi.retries=10 \
+    --set mirror.pypi.timeout=600 \
     --set mysql.image=docker-registry.starwhale.cn/bitnami/mysql:8.0.29-debian-10-r2 \
     --set mysql.initImage=docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6 \
     --set minio.initImage=docker-registry.starwhale.cn/bitnami/bitnami-shell:11-debian-11-r6 \
@@ -181,8 +183,6 @@ cli() {
   -v() {
     echo "pypi version used is $PYPI_RELEASE_VERSION"
     echo "pypi repo used is http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple"
-    echo "runtime base image  used is $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION"
-    echo "run docker to try swcli you just built: docker run -it --entrypoint /bin/bash $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION"
     echo "do not forget to set env : export SW_IMAGE_REPO=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER before you use swcli"
   }
   -s() {
@@ -190,21 +190,6 @@ cli() {
     python3 -m pip install -r requirements-install.txt
     timeout 1h bash -c 'while true; do make build-wheel && break; done'
     if ! twine upload --repository nexus dist/* ; then echo "[ERROR] Something wrong while uploading pypi version , press CTL+C to interrupt execution if needed"; fi
-    popd
-    pushd ../../docker
-    docker build --network=host -t starwhale -f Dockerfile.starwhale  \
-        --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 \
-        --build-arg PORT_NEXUS=$PORT_NEXUS \
-        --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME \
-        --build-arg SW_VERSION=$PYPI_RELEASE_VERSION \
-        --build-arg HTTP_PROXY=$HTTP_PROXY \
-        --build-arg HTTPS_PROXY=$HTTPS_PROXY \
-        --build-arg NO_PROXY=$NO_PROXY \
-        --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
-    docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-    docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
-    if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
-    if ! docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION ; then echo "[ERROR] Something wrong while pushing , press CTL+C to interrupt execution if needed"; fi
     popd
     -v
   }

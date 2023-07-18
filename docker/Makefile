@@ -66,15 +66,6 @@ build-release-base:
 	docker manifest inspect $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) || \
 	$(call build-image,,Dockerfile.base,base:${FIXED_VERSION_BASE_IMAGE} base:latest)
 
-STARWHALE_TAGS:=starwhale:${RELEASE_VERSION} starwhale:${PYPI_FMT_RELEASE_VERSION} starwhale:latest
-build-release-starwhale:
-	$(call build-image,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_TAGS})
-
-# the $(version) is provided by the caller which in the github workflow `release.yaml`
-STARWHALE_CUDA_TAGS:=$(foreach tag,${STARWHALE_TAGS},$(tag)-cuda$(version))
-build-release-starwhale-cuda:
-	$(call build-image,${GHCR_IO_REPO}/cuda:$(version)-base${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_CUDA_TAGS})
-
 build-cuda:
 	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)
 	bash cuda/.dfs/docker-build.sh

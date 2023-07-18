@@ -8,6 +8,10 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
+ENV SW_CONTAINER=1
+ENV TARGETARCH=${TARGETARCH}
+ENV COLUMNS=250
+
 SHELL ["/bin/bash", "-c"]
 
 COPY external/render_sources_list.sh /tmp/render_sources_list.sh
@@ -45,6 +49,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     && bash /tmp/conda.sh -b -p /opt/miniconda3 \
     && /opt/miniconda3/bin/conda clean -a -y -f \
     && rm -rf /tmp/conda.sh
+COPY external/condarc /root/.condarc
 
 RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.8 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
@@ -55,21 +60,10 @@ RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.11 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3 -m pip install yq && python3 -m pip cache purge
 
-ARG LOCAL_PYPI_HOSTNAME=host.nexus
-ARG PORT_NEXUS=8081
-ARG ENABLE_E2E_TEST_PYPI_REPO=0
-ARG SW_PYPI_EXTRA_INDEX_URL=https://pypi.org/simple
-COPY external/config-e2e-pypi-repo.sh /tmp/
-RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENABLE_E2E_TEST_PYPI_REPO} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS} ${SW_PYPI_EXTRA_INDEX_URL}
-
+# code-server
 RUN curl -fsSL --compressed  https://code-server.dev/install.sh | sh
 
-COPY external/condarc /root/.condarc
-
-ENV SW_CONTAINER=1
-ENV TARGETARCH=${TARGETARCH}
-ENV COLUMNS=250
-
+# stable entrypoint
 WORKDIR /opt/starwhale/swmp
 COPY external/starwhale-entrypoint.sh entrypoint
 ENTRYPOINT ["entrypoint"]
