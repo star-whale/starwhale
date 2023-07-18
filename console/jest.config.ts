@@ -26,7 +26,12 @@ export default {
     coverageDirectory: 'coverage',
 
     // An array of regexp pattern strings used to skip coverage collection
-    coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/src/_generated_', '<rootDir>/src/stories'],
+    coveragePathIgnorePatterns: [
+        '/node_modules/',
+        '<rootDir>/src/_generated_',
+        '<rootDir>/src/stories',
+        '<rootDir>/packages/starwhale-ui/src/Upload/react-dropzone',
+    ],
 
     // Indicates which provider should be used to instrument code for coverage
     // coverageProvider: "babel",

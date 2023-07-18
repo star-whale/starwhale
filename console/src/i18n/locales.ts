@@ -44,6 +44,14 @@ const basic = {
         en: 'Docs',
         zh: '文档',
     },
+    'form.upload.error.exist': {
+        en: 'File already exists',
+        zh: '文件已存在',
+    },
+    'form.rule.min': {
+        en: '{{0}} must be at least 3 characters',
+        zh: '{{0}} 至少需要3个字符',
+    },
 }
 
 const dataset = {
@@ -82,6 +90,66 @@ const dataset = {
     'dataset.selector.view': {
         en: 'View',
         zh: '查看',
+    },
+    'dataset.create': {
+        en: 'Create Dataset',
+        zh: '创建数据集',
+    },
+    'dataset.update': {
+        en: 'Update Dataset',
+        zh: '更新数据集',
+    },
+    'dataset.create.title': {
+        en: 'Dataset Build Task',
+        zh: '数据集构建任务',
+    },
+    'dataset.create.owner': {
+        en: 'Owner',
+        zh: '拥有者',
+    },
+    'dataset.create.files': {
+        en: 'Dataset Files',
+        zh: '数据集文件',
+    },
+    'dataset.create.type': {
+        en: 'Dataset Type',
+        zh: '数据集类型',
+    },
+    'dataset.create.build.desc': {
+        en: '{{0}} Datasets are building',
+        zh: '{{0}} 个数据集正在构建',
+    },
+    'dataset.create.upload.desc': {
+        en: 'Drag or click to upload files',
+        zh: '拖拽或点击上传文件',
+    },
+    'dataset.create.upload.total.desc': {
+        en: '{{0}} files, total size {{1}}',
+        zh: '{{0}} 个文件，共 {{1}}',
+    },
+    'dataset.create.upload.error.type': {
+        zh: '文件主类型异常, 建议格式 image/video/audio/csv/json/jsonl .',
+        en: 'File main type is invalid, suggest format image/video/audio/csv/json/jsonl.',
+    },
+    'dataset.create.upload.error.desc': {
+        en: 'the following files have an invalid status: ',
+        zh: '以下文件上传状态异常: ',
+    },
+    'dataset.create.upload.error.exist': {
+        en: 'File already exists',
+        zh: '文件已存在',
+    },
+    'dataset.create.upload.error.unknown': {
+        en: 'File already exists',
+        zh: '文件异常',
+    },
+    'dataset.create.upload.error.max': {
+        en: 'File size exceeds the maximum limit',
+        zh: '文件大小超过最大限制',
+    },
+    'dataset.create.upload.drag.desc': {
+        en: "Drag 'n' drop some files here, or click to select files",
+        zh: '拖拽文件到此处，或点击选择文件',
     },
 }
 
@@ -1223,6 +1291,10 @@ const locales0 = {
     'Files': {
         en: 'Files',
         zh: '文件',
+    },
+    'Directory': {
+        en: 'Directory',
+        zh: '目录',
     },
     'Version ID': {
         en: 'Version ID',

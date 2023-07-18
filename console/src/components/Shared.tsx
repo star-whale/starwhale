@@ -8,7 +8,7 @@ export function Shared({ shared = 0, isTextShow = false }: { shared?: number; is
     if (shared === 0 && !isTextShow) return null
 
     return (
-        <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
+        <div className='shared' style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
             {shared === 1 && (
                 <div
                     style={{

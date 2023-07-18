@@ -24,11 +24,20 @@ export interface IDatasetDetailSchema {
 export interface IUpdateDatasetSchema {
     description?: string
 }
-
-export interface ICreateDatasetSchema {
+export interface ICreateDatasetFormSchema {
     datasetName: string
-    zipFile?: FileList
-    importPath?: string
+    shared?: number
+    upload?: {
+        storagePath?: string
+        type?: string
+    }
+}
+
+export interface ICreateDatasetQuerySchema {
+    datasetId?: string
+    shared?: number
+    type: 'IMAGE' | 'VIDEO' | 'AUDIO'
+    storagePath: string
 }
 
 export interface IDatasetTreeSchema {
@@ -37,4 +46,22 @@ export interface IDatasetTreeSchema {
     datasetName: string
     shared: number
     versions: IDatasetTreeVersionSchema[]
+}
+
+export interface IDatasetTaskBuildSchema {
+    id: string
+    datasetId: string
+    projectId: string
+    datasetName: string
+    status: TaskBuildStatusType
+    type: string
+    createTime: number
+}
+
+export enum TaskBuildStatusType {
+    CREATED = 'CREATED',
+    UPLOADING = 'UPLOADING',
+    BUILDING = 'BUILDING',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED',
 }

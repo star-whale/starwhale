@@ -1,5 +1,16 @@
 .formItem {
     margin-bottom: 10px;
+    > label {
+        line-height: 1;
+        display: flex;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    > div:first {
+        display: flex;
+        align-items: 'center';
+    }
 }
 
 .formItem:last-child {

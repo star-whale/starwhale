@@ -1,3 +1,4 @@
+// eslint-disable
 import useGlobalState from '@/hooks/global'
 
 export const useCurrentUser = () => {
