@@ -156,12 +156,6 @@ jobs:
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh upload_pypi_to_nexus
 
-      - name: Build runtime image
-        working-directory: ./scripts/e2e_test
-        run: |
-          eval $(minikube docker-env)
-          bash start_test.sh build_runtime_image
-
       - name: Wait and check starwhale service
         working-directory: ./scripts/e2e_test
         run: bash start_test.sh check_controller_service
