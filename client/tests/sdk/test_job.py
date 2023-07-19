@@ -516,7 +516,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
-                "require_dataset": False,
+                "require_dataset": True,
             }
         ]
         steps = Step.get_steps_from_yaml(
