@@ -31,7 +31,6 @@ from starwhale.utils import (
 )
 from starwhale.consts import (
     SupportOS,
-    LATEST_TAG,
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
@@ -41,6 +40,7 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     SW_PYPI_PKG_NAME,
+    DEFAULT_IMAGE_TAG,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_NAME,
@@ -1276,13 +1276,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         custom_run_image = config.environment.docker.image
 
         image = DEFAULT_IMAGE_NAME
-        tag = config._starwhale_version or LATEST_TAG
+        tag = DEFAULT_IMAGE_TAG
         _cuda = config.environment.cuda
         _cudnn = config.environment.cudnn
         if _cuda:
-            # starwhaleai/cuda:11.5-cudnn8-base0.3.0
-            _tags = []
-            _tags.append(_cuda)
+            # star-whale/cuda:11.5-cudnn8-base0.3.0
+            _tags = [_cuda]
 
             if _cudnn:
                 _tags.append(f"-cudnn{_cudnn}")

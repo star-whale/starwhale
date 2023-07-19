@@ -80,7 +80,7 @@ last_version_file="$work_dir/last_version_for_base"
 
 if last_version=$(cat "$last_version_file") ; then echo "last_version_for_base is $last_version"; fi
 if [ "$last_version"  == "$release_version" ] ; then
-  echo "release already synced"
+  echo "base release already synced"
 else
   # base image
   copy_image "$source_repo_name/base:$release_version" "$target_repo_name1/base:$release_version"
