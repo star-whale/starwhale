@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.domain.dataset.build.converter;
 
-import java.io.IOException;
-
-public interface CancellableTaskLogCollector {
-
-    String readLine() throws IOException;
-
-    void cancel();
+public class BuildRecordVoConverter {
 }

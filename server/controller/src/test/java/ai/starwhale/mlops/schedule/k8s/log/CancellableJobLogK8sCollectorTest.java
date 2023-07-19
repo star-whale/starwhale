@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.log;
+package ai.starwhale.mlops.schedule.k8s.log;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,24 +35,36 @@ import java.util.List;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CancellableTaskLogK8sCollectorFactoryTest {
+public class CancellableJobLogK8sCollectorTest {
+    K8sClient k8sClient;
+
+    @BeforeEach
+    public void setup() {
+        k8sClient = mock(K8sClient.class);
+    }
+
     @Test
-    public void testMake() throws IOException, ApiException {
-        var k8sClient = mock(K8sClient.class);
-        when(k8sClient.getPodsByJobName("1"))
-                .thenReturn(new V1PodList().items(List.of(new V1Pod().metadata(new V1ObjectMeta().name("1-xx")))));
+    public void testInitAndRead() throws IOException, ApiException {
+        var podMeta = new V1ObjectMeta().name("1-xxx");
+        when(k8sClient.getPodsByJobName("1")).thenReturn(new V1PodList().items(List.of(new V1Pod().metadata(podMeta))));
+
+        var line = "abc";
+
         var call = mock(Call.class);
         var resp = mock(Response.class);
         var respBody = mock(ResponseBody.class);
-        when(respBody.byteStream()).thenReturn(new ByteArrayInputStream("".getBytes()));
+        when(respBody.byteStream()).thenReturn(new ByteArrayInputStream(line.getBytes()));
         when(resp.body()).thenReturn(respBody);
         when(call.execute()).thenReturn(resp);
+
         when(k8sClient.readLog(anyString(), anyString(), anyBoolean())).thenReturn(call);
-        var factory = new CancellableTaskLogK8sCollectorFactory(k8sClient);
-        var collector = factory.make(1L);
-        Assertions.assertNotNull(collector);
+        var ins = new CancellableJobLogK8sCollector(k8sClient, "1");
+
+        assertThat(ins.readLine(), is(line));
+        verify(k8sClient).getPodsByJobName("1");
+        verify(call).execute();
     }
 }

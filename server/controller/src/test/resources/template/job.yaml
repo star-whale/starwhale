@@ -7,6 +7,9 @@ spec:
   parallelism: 1
   completionMode: Indexed
   template:
+    metadata:
+      labels:
+        owner: starwhale
     spec:
       restartPolicy: Never
       containers:

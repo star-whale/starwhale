@@ -16,6 +16,9 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.domain.dataset.DatasetService;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
+import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -36,14 +39,22 @@ import org.springframework.util.StringUtils;
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     final TaskLogK8sCollector taskLogK8sCollector;
+    final BuildLogCollector buildLogCollector;
     final TaskModifyReceiver taskModifyReceiver;
     final HotJobHolder jobHolder;
+    final DatasetService datasetService;
 
     public PodEventHandler(
-            TaskLogK8sCollector taskLogK8sCollector, TaskModifyReceiver taskModifyReceiver, HotJobHolder jobHolder) {
+            TaskLogK8sCollector taskLogK8sCollector,
+            BuildLogCollector buildLogCollector,
+            TaskModifyReceiver taskModifyReceiver,
+            HotJobHolder jobHolder,
+            DatasetService datasetService) {
         this.taskLogK8sCollector = taskLogK8sCollector;
+        this.buildLogCollector = buildLogCollector;
         this.taskModifyReceiver = taskModifyReceiver;
         this.jobHolder = jobHolder;
+        this.datasetService = datasetService;
     }
 
     @Override
@@ -52,29 +63,67 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     @Override
     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
-        // one task one k8s job
-        updateEvalTask(newObj);
-        collectLog(newObj);
+        var metaData = newObj.getMetadata();
+        if (metaData == null) {
+            return;
+        }
+        var labels = metaData.getLabels();
+        if (CollectionUtils.isEmpty(labels)) {
+            return;
+        }
+        var type = labels.get(K8sJobTemplate.JOB_TYPE_LABEL);
+        if (StringUtils.hasText(type)) {
+            log.debug("job({}) {} for {}.", type, "onUpdate", newObj.getMetadata().getLabels().get("job-name"));
+            switch (type) {
+                case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
+                    updateEvalTask(newObj);
+                    collectLog(newObj, type);
+                    break;
+                case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
+                    updateDatasetBuild(newObj);
+                    collectLog(newObj, type);
+                    break;
+                default:
+            }
+        }
+
     }
 
     @Override
     public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) {
     }
 
-    private Long getTaskId(V1Pod pod) {
-        String taskId = pod.getMetadata().getLabels().get("job-name");
-        if (null == taskId || taskId.isBlank()) {
-            log.info("no task id found for pod {}", taskId);
+    private Long getJobNameAsId(V1Pod pod) {
+        String jobName = pod.getMetadata().getLabels().get("job-name");
+        if (null == jobName || jobName.isBlank()) {
+            log.info("no id found for pod {}", jobName);
             return null;
         }
-        Long tid;
+        Long id;
         try {
-            tid = Long.valueOf(taskId);
+            id = Long.valueOf(jobName);
         } catch (Exception e) {
-            log.warn("task id is not number {}", taskId);
-            tid = null;
+            log.warn("id is not number {}", jobName);
+            id = null;
         }
-        return tid;
+        return id;
+    }
+
+    private void updateDatasetBuild(V1Pod pod) {
+        if (null == pod.getStatus() || null == pod.getStatus().getPhase()) {
+            return;
+        }
+        var phase = pod.getStatus().getPhase();
+        if (StringUtils.hasText(phase)) {
+            switch (phase) {
+                case "Running":
+                    var id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
+                    datasetService.updateBuildStatus(id, BuildStatus.BUILDING);
+                    break;
+                default:
+
+            }
+        }
     }
 
     private void updateEvalTask(V1Pod pod) {
@@ -87,8 +136,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
             log.info("pod {} is being deleted", pod.getMetadata().getName());
             return;
         }
-
-        Long tid = getTaskId(pod);
+        Long tid = getJobNameAsId(pod);
         if (tid == null) {
             return;
         }
@@ -136,7 +184,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         taskModifyReceiver.receive(List.of(report));
     }
 
-    private void collectLog(V1Pod pod) {
+    private void collectLog(V1Pod pod, String type) {
         log.debug("collect log for pod {} status {}", pod.getMetadata().getName(), pod.getStatus());
         if (null == pod.getStatus()
                 || null == pod.getStatus().getContainerStatuses()
@@ -149,16 +197,29 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
         if (pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() != null) {
             return;
         }
-        Long tid = getTaskId(pod);
-        if (tid != null) {
-            Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(tid));
-            if (CollectionUtils.isEmpty(optionalTasks)) {
-                log.warn("no tasks found for pod {}", pod.getMetadata().getName());
-                return;
-            }
-            Task task = optionalTasks.stream().findAny().get();
-            taskLogK8sCollector.collect(task);
+        Long id;
+        switch (type) {
+            case K8sJobTemplate.WORKLOAD_TYPE_EVAL:
+                id = getJobNameAsId(pod);
+                if (id != null) {
+                    Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(id));
+                    if (CollectionUtils.isEmpty(optionalTasks)) {
+                        log.warn("no tasks found for pod {}", pod.getMetadata().getName());
+                        return;
+                    }
+                    Task task = optionalTasks.stream().findAny().get();
+                    taskLogK8sCollector.collect(task);
+                }
+                break;
+            case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:
+                String jobName = pod.getMetadata().getLabels().get("job-name");
+                id = Long.parseLong(pod.getMetadata().getAnnotations().get("id"));
+                buildLogCollector.collect(jobName, id);
+                break;
+            default:
         }
+
+
     }
 
 }
