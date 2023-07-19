@@ -75,13 +75,18 @@ set_py_and_sw() {
     python3 -m pip install "starwhale==${SW_VERSION}" || exit 1
 }
 
-if [ "${RUNTIME_RESTORED}" != "1" ]; then
-  set_py_and_sw
-fi
-
-if [ -z "${USE_CUSTOM_CMD}" ]; then
-  sw-docker-entrypoint "$1"
-else
-  exec "$@"
-fi
-
+case "$1" in
+    set_environment)
+        set_py_and_sw
+        ;;
+    *)
+        if [ "${RUNTIME_RESTORED}" != "1" ]; then
+          set_py_and_sw
+        fi
+        if [ -z "${USE_CUSTOM_CMD}" ]; then
+          sw-docker-entrypoint "$1"
+        else
+          exec "$@"
+        fi
+        ;;
+esac

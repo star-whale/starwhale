@@ -1847,9 +1847,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 base_image=get_docker_run_image_by_manifest(manifest=_manifest),
                 runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
-                pypi_index_url=_pip.get("index_url", ""),
-                pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
-                pypi_trusted_host=" ".join(_pip.get("trusted_host", [])),
+                pypi_index_url=os.environ.get("SW_PYPI_INDEX_URL")
+                or _pip.get("index_url", ""),
+                pypi_extra_index_url=os.environ.get("SW_PYPI_EXTRA_INDEX_URL")
+                or " ".join(_pip.get("extra_index_url", [])),
+                pypi_trusted_host=os.environ.get("SW_PYPI_TRUSTED_HOST")
+                or " ".join(_pip.get("trusted_host", [])),
                 python_version=_manifest["environment"]["python"],
                 starwhale_version=_manifest["environment"]["lock"]["starwhale_version"],
                 mode=_manifest["environment"]["mode"],
