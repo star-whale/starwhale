@@ -16,6 +16,7 @@ exclude = '''
     | dist
     | \.history
     | example/LLM/belle-bloom/BELLE
+    | example/LLM/llama2/llama
     | starwhale/proto_gen
   )/
 )
@@ -53,4 +54,4 @@ multi_line_output = 3
 length_sort = true
 order_by_type = true
 force_alphabetical_sort_within_sections = true
-extend_skip_glob="../example/LLM/belle-bloom/BELLE/*,starwhale/proto_gen/*"
+extend_skip_glob="*/example/LLM/llama2/llama/*,*/example/LLM/belle-bloom/BELLE/*,starwhale/proto_gen/*,"
