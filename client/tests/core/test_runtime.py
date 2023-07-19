@@ -343,14 +343,14 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8"
+            == "docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-baselatest"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8",
-                "name": "starwhale",
+                "fullname": "docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-baselatest",
+                "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest-cuda11.4-cudnn8",
+                "tag": "11.4-cudnn8-baselatest",
             },
             "custom_run_image": "",
         }
@@ -479,7 +479,7 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4"
+            == "docker-registry.starwhale.cn/star-whale/cuda:11.4-baselatest"
         )
         assert _manifest["dependencies"] == {
             "conda_files": [],
@@ -595,12 +595,12 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest"
+            == "docker-registry.starwhale.cn/star-whale/base:latest"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
-                "name": "starwhale",
+                "fullname": "docker-registry.starwhale.cn/star-whale/base:latest",
+                "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
                 "tag": "latest",
             },
@@ -880,7 +880,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.5-cudnn8"
+            == "docker-registry.starwhale.cn/star-whale/cuda:11.5-cudnn8-baselatest"
         )
 
         assert (
@@ -1419,8 +1419,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["base_image"] == docker_image
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
-                "name": "starwhale",
+                "fullname": "docker-registry.starwhale.cn/star-whale/base:latest",
+                "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
                 "tag": "latest",
             },
@@ -2684,7 +2684,7 @@ class StandaloneRuntimeTestCase(TestCase):
         return {
             "name": "rttest",
             "version": "112233",
-            "base_image": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4",
+            "base_image": "docker-registry.starwhale.cn/star-whale/base:latest-cuda11.4",
             "dependencies": {
                 "conda_files": [],
                 "conda_pkgs": [],
