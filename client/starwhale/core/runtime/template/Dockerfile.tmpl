@@ -18,7 +18,7 @@ ENV SW_PYPI_TRUSTED_HOST "{{pypi_trusted_host}}"
 ENV SW_PIP_CACHE_DIR=/root/.cache/pip
 ENV SW_RUNTIME_PYTHON_VERSION={{python_version}}
 ENV SW_VERSION={{starwhale_version}}
-RUN entrypoint set_py_and_sw || true
+RUN /opt/starwhale.bin/starwhale-entrypoint set_environment || true
 
 RUN swcli -vvv runtime restore /opt/starwhale.user/runtime \
     && $(bash /opt/starwhale.user/runtime/activate.sw)
