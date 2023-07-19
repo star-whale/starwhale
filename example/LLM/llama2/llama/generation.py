@@ -1,23 +1,22 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
-import json
 import os
 import sys
+import json
 import time
+from typing import List, Tuple, Literal, Optional, TypedDict
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple, TypedDict
 
 import torch
 import torch.nn.functional as F
+from llama.model import ModelArgs, Transformer
+from llama.tokenizer import Tokenizer
 from fairscale.nn.model_parallel.initialize import (
     get_model_parallel_rank,
     initialize_model_parallel,
     model_parallel_is_initialized,
 )
-
-from llama.model import ModelArgs, Transformer
-from llama.tokenizer import Tokenizer
 
 Role = Literal["system", "user", "assistant"]
 
@@ -167,6 +166,7 @@ class Llama:
             # cut to max gen len
             start = 0 if echo else len(prompt_tokens[i])
             toks = toks[start : len(prompt_tokens[i]) + max_gen_len]
+            probs = None
             if logprobs:
                 probs = token_logprobs[i][start : len(prompt_tokens[i]) + max_gen_len]
             # cut to eos tok if any
