@@ -1,0 +1,16 @@
+name: llama2
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: "3.10"
+dependencies:
+  - pip:
+      - torch
+      - fairscale
+      - fire
+      - sentencepiece
+      - gradio >= 3.37.0
+      # external starwhale dependencies
+      - starwhale[serve] >= 0.5.5
