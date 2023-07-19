@@ -73,9 +73,6 @@ set_py_and_sw() {
     echo "-->[Preparing] Install starwhale:${SW_VERSION}."
     # install starwhale for current python
     python3 -m pip install "starwhale==${SW_VERSION}" || exit 1
-    rm -rf /usr/local/bin/swcli /usr/local/bin/sw-docker-entrypoint
-    ln -s /opt/starwhale.venv/bin/swcli /usr/local/bin/swcli
-    ln -s /opt/starwhale.venv/bin/sw-docker-entrypoint /usr/local/bin/sw-docker-entrypoint
 }
 
 if [ "${RUNTIME_RESTORED}" != "1" ]; then

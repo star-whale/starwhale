@@ -64,6 +64,7 @@ RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
 RUN curl -fsSL --compressed  https://code-server.dev/install.sh | sh
 
 # stable entrypoint
-WORKDIR /opt/starwhale/swmp
-COPY external/starwhale-entrypoint.sh /usr/local/bin/entrypoint
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
+WORKDIR /opt/starwhale.bin
+COPY external/starwhale-entrypoint.sh starwhale-entrypoint
+RUN chmod +x starwhale-entrypoint
+ENTRYPOINT ["/opt/starwhale.bin/starwhale-entrypoint"]

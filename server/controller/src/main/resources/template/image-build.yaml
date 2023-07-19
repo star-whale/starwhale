@@ -23,6 +23,7 @@ spec:
             - -c
             - >-
               set -x;
+              /opt/starwhale.bin/starwhale-entrypoint set_py_and_sw;
               swcli instance login --token="$SW_TOKEN" --alias server $SW_INSTANCE_URI;
               swcli runtime copy cloud://server/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION .;
               swcli runtime extract --target-dir /tmp/extract/ $SW_RUNTIME_VERSION;
