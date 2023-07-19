@@ -194,6 +194,7 @@ YAML_TYPES = (".yaml", ".yml")
 
 DEFAULT_IMAGE_REPO = "docker-registry.starwhale.cn/star-whale"
 DEFAULT_IMAGE_NAME = "base"
+DEFAULT_IMAGE_TAG = LATEST_TAG  # "0.3.0"
 SW_IMAGE_FMT = "{repo}/{name}:{tag}"
 DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(
     repo=DEFAULT_IMAGE_REPO, name=DEFAULT_IMAGE_NAME, tag=LATEST_TAG
