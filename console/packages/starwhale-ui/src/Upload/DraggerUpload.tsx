@@ -177,7 +177,8 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                 method: 'PUT',
                 url: file.oss,
                 headers: {
-                    'Content-Type': file.file.type,
+                    // https://github.com/star-whale/starwhale/blob/7c7ff4faabd947e430e924cfeeb8a0c17e57afb8/server/controller/src/main/java/ai/starwhale/mlops/domain/filestorage/FileStorageService.java#L93
+                    'Content-Type': 'application/octet-stream',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 data: file.file,
