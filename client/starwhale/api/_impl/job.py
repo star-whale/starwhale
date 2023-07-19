@@ -40,6 +40,8 @@ class Handler(ASDictMixin):
         expose: int = 0,
         virtual: bool = False,
         require_dataset: bool = False,
+        parameters_sig: t.Dict = {},
+        ext_cmd_args: str = '',
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -57,6 +59,8 @@ class Handler(ASDictMixin):
         # virtual marks that the handler is not a real user handler and can not find in the user's code
         self.virtual = virtual
         self.require_dataset = require_dataset
+        self.parameters_sig = parameters_sig
+        self.ext_cmd_args = ext_cmd_args
 
     def __str__(self) -> str:
         return f"Handler[{self.name}]: name-{self.show_name}"
@@ -191,6 +195,9 @@ class Handler(ASDictMixin):
 
                 key_name_needs.append(f"{n.__module__}:{n.__qualname__}")
 
+            sig=inspect.signature(func)
+            parameters_sig = [{'name':p[0],'required':p[1].default is inspect._empty} for p in sig.parameters.items()]
+            ext_cmd_args = ' '.join([f'--{p.get("name")}' for p in parameters_sig if p.get('required')])
             _handler = cls(
                 name=key_name,
                 show_name=name or func_name,
@@ -205,11 +212,28 @@ class Handler(ASDictMixin):
                 extra_kwargs=extra_kwargs,
                 expose=expose,
                 require_dataset=require_dataset,
+                parameters_sig=parameters_sig,
+                ext_cmd_args=ext_cmd_args,
             )
 
             cls._register(_handler, func)
             setattr(func, DecoratorInjectAttr.Step, True)
-            return func
+            import functools
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                import inspect
+                sig=inspect.signature(func)
+                for p in sig.parameters.items():
+                    name = p[0]
+                    #TODO: keyword args supported only. users must declare their handler parameters kyeword only
+                    kwargs.update({name:fetch_real_args(p,kwargs.get(name,None)) })
+                func(*args, **kwargs)
+            def fetch_real_args(parameter, defaults_to) -> t.Any:
+                if isinstance(parameter[1].default,DsInput) :
+                    from starwhale import dataset
+                    return dataset(defaults_to)
+                return defaults_to
+            return wrapper
 
         return decorator
 
@@ -321,3 +345,6 @@ def generate_jobs_yaml(
         ),
         parents=True,
     )
+
+class DsInput:
+    pass

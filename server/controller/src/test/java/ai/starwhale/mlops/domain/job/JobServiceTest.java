@@ -281,6 +281,14 @@ public class JobServiceTest {
                 + "    request: 1\n"
                 + "    limit: 1\n"
                 + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                + "  parameters_sig:\n"
+                + "    - name: a\n"
+                + "      required: 'true'\n"
+                + "    - name: b\n"
+                + "      required: 'false'\n"
+                + "    - name: c\n"
+                + "      required: 'false'\n"
+                + "  ext_cmd_args: '--a'\n"
                 + "  replicas: 1";
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());

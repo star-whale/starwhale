@@ -40,3 +40,4 @@ trio-typing[mypy] >= 0.7.0
 # So we need to install async_generator>=1.9 to workaround the warning.
 async_generator >= 1.9
 types-protobuf
+fire

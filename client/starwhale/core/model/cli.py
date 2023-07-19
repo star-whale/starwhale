@@ -346,7 +346,13 @@ def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
 
-@model_cmd.command("run")
+@model_cmd.command(
+    name='run',
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
 @optgroup.group(
     "\n ** Model Selectors",
     cls=RequiredMutuallyExclusiveOptionGroup,

@@ -17,15 +17,25 @@
 package ai.starwhale.mlops.domain.job.spec;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.springframework.util.CollectionUtils;
 
 @Data
 @Builder
@@ -34,6 +44,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.NON_NULL)
 public class StepSpec {
 
     /**
@@ -64,6 +75,35 @@ public class StepSpec {
 
     @JsonProperty("require_dataset")
     private Boolean requireDataset;
+
+    @JsonProperty("parameters_sig")
+    private List<Map<String, String>> parametersSig;
+
+    @JsonProperty("ext_cmd_args")
+    private String extraCmdArgs;
+
+    public void verifyStepSpecArgs() {
+        if (CollectionUtils.isEmpty(this.getParametersSig())) {
+            return;
+        }
+        Options options = new Options();
+        for (Map<String, String> map : this.getParametersSig()) {
+            Option option = Option.builder()
+                    .option(map.get("name"))
+                    .longOpt(map.get("name"))
+                    .hasArg()
+                    .required("true".equalsIgnoreCase(map.get("required")))
+                    .build();
+            options.addOption(option);
+        }
+        try {
+            new DefaultParser().parse(options, this.getExtraCmdArgs().split(" "));
+        } catch (ParseException e) {
+            throw new SwValidationException(ValidSubject.JOB, e.getMessage(), e);
+        } catch (IllegalArgumentException ie) {
+            throw new SwValidationException(ValidSubject.JOB, ie.getMessage(), ie);
+        }
+    }
 }
 
 
