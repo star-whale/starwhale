@@ -1275,22 +1275,24 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _dump_docker_image(self, config: RuntimeConfig) -> None:
         custom_run_image = config.environment.docker.image
 
+        image = DEFAULT_IMAGE_NAME
         tag = config._starwhale_version or LATEST_TAG
         _cuda = config.environment.cuda
         _cudnn = config.environment.cudnn
         if _cuda:
-            _suffix = []
-            _suffix.append(f"-cuda{_cuda}")
+            # starwhaleai/cuda:11.5-cudnn8-base0.3.0
+            _tags = []
+            _tags.append(_cuda)
 
             if _cudnn:
-                _suffix.append(f"-cudnn{_cudnn}")
+                _tags.append(f"-cudnn{_cudnn}")
+            _tags.append(f"-base{tag}")
 
-            tag += "".join(_suffix)
+            image = "cuda"
+            tag = "".join(_tags)
 
         repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        builtin_run_image = SW_IMAGE_FMT.format(
-            repo=repo, name=DEFAULT_IMAGE_NAME, tag=tag
-        )
+        builtin_run_image = SW_IMAGE_FMT.format(repo=repo, name=image, tag=tag)
 
         if custom_run_image:
             console.print(
