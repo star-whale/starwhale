@@ -5,5 +5,8 @@ environment:
   arch: noarch
   os: ubuntu:20.04
   cuda: 11.4
+  docker:
+    # change this to your custom docker image
+    image: mycustom.com/docker/image:tag
 mode: venv
 name: stable-diffusion
