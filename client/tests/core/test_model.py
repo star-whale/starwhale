@@ -168,7 +168,7 @@ class StandaloneModelTestCase(TestCase):
                     "virtual": False,
                     "require_dataset": False,
                     "parameters_sig": [],
-                    "ext_cmd_args": '',
+                    "ext_cmd_args": "",
                 }
             ],
             "depend": [
@@ -188,7 +188,7 @@ class StandaloneModelTestCase(TestCase):
                     "virtual": False,
                     "require_dataset": False,
                     "parameters_sig": [],
-                    "ext_cmd_args": '',
+                    "ext_cmd_args": "",
                 },
                 {
                     "cls_name": "",
@@ -206,7 +206,7 @@ class StandaloneModelTestCase(TestCase):
                     "virtual": False,
                     "require_dataset": False,
                     "parameters_sig": [],
-                    "ext_cmd_args": '',
+                    "ext_cmd_args": "",
                 },
             ],
             "serving": [
@@ -228,7 +228,7 @@ class StandaloneModelTestCase(TestCase):
                     "virtual": True,
                     "require_dataset": False,
                     "parameters_sig": [],
-                    "ext_cmd_args": '',
+                    "ext_cmd_args": "",
                 }
             ],
         }

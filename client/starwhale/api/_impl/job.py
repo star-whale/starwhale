@@ -133,6 +133,7 @@ class Handler(ASDictMixin):
         name: str = "",
         expose: int = 0,
         require_dataset: bool = False,
+        build_in: bool = False,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control concurrency and replicas of handler run.
@@ -195,13 +196,15 @@ class Handler(ASDictMixin):
 
                 key_name_needs.append(f"{n.__module__}:{n.__qualname__}")
 
-            ext_cmd_args = ''
+            ext_cmd_args = ""
             parameters_sig = []
-            if name not in ("predict","evaluate","fine_tune"): #  common handlers
+            #  user defined handlers i.e. not predict/evaluate/fine_tune
+            if not build_in:
                 sig = inspect.signature(func)
                 parameters_sig = [
                     {"name": p[0], "required": p[1].default is inspect._empty}
-                    for p in sig.parameters.items()
+                    for idx, p in enumerate(sig.parameters.items())
+                    if idx != 0 or "self" != p[0]
                 ]
                 ext_cmd_args = " ".join(
                     [f'--{p.get("name")}' for p in parameters_sig if p.get("required")]
@@ -228,27 +231,40 @@ class Handler(ASDictMixin):
             setattr(func, DecoratorInjectAttr.Step, True)
             import functools
 
-            @functools.wraps(func)
-            def wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-                import inspect
+            if build_in:
+                return func
+            else:
 
-                sig = inspect.signature(func)
-                for p in sig.parameters.items():
-                    name = p[0]
-                    # TODO: keyword args supported only. users must declare their handler parameters kyeword only
-                    kwargs.update({name: fetch_real_args(p, kwargs.get(name, None))})
-                func(*args, **kwargs)
+                @functools.wraps(func)
+                def wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+                    import inspect
 
-            def fetch_real_args(
-                parameter: t.Tuple[str, inspect.Parameter], defaults_to: t.Any
-            ) -> t.Any:
-                if isinstance(parameter[1].default, DsInput):
-                    from starwhale import dataset
+                    sig = inspect.signature(func)
+                    for idx, p in enumerate(sig.parameters.items()):
+                        name = p[0]
+                        if idx == 0 and "self" == name:
+                            continue
+                        # TODO: keyword args supported only. users must declare their handler parameters kyeword only
+                        kwargs.update(
+                            {name: fetch_real_args(p, kwargs.get(name, None))}
+                        )
+                    func(*args, **kwargs)
 
-                    return dataset(defaults_to)
-                return defaults_to
+                def fetch_real_args(
+                    parameter: t.Tuple[str, inspect.Parameter], defaults_to: t.Any
+                ) -> t.Any:
+                    if isinstance(parameter[1].default, DsInput):
+                        from starwhale import dataset
 
-            return wrapper
+                        return dataset(defaults_to)
+                    elif isinstance(parameter[1].default, ContextInput):
+                        from starwhale import Context
+
+                        return Context.get_runtime_context()
+                    else:
+                        return defaults_to
+
+                return wrapper
 
         return decorator
 
@@ -321,11 +337,14 @@ class Handler(ASDictMixin):
                     # compatible with old version: ppl and cmp function are renamed to predict and evaluate
                     predict_func = getattr(v, "predict", None) or getattr(v, "ppl")
                     evaluate_func = getattr(v, "evaluate", None) or getattr(v, "cmp")
-                    Handler.register(replicas=1, name="predict")(predict_func)
+                    Handler.register(replicas=1, name="predict", build_in=True)(
+                        predict_func
+                    )
                     Handler.register(
                         replicas=1,
                         needs=[predict_func],
                         name="evaluate",
+                        build_in=True,
                     )(evaluate_func)
 
     @classmethod
@@ -363,4 +382,8 @@ def generate_jobs_yaml(
 
 
 class DsInput:
+    pass
+
+
+class ContextInput:
     pass

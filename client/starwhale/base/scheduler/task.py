@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 import asyncio
 from pathlib import Path
 from functools import wraps
+
+import fire
+from fire.parser import SeparateFlagArgs
 
 from starwhale.utils import console
 from starwhale.consts import RunStatus, DecoratorInjectAttr
@@ -128,14 +132,9 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 elif getattr(func, DecoratorInjectAttr.Step, False):
-                    import sys
-
-                    import fire
-                    from fire.parser import SeparateFlagArgs
-
                     # TODO: currently command line supported only, make it support sdk call
-                    _, flag_args =SeparateFlagArgs(sys.argv[1:])
-                    fire.Fire(func,flag_args)
+                    _, flag_args = SeparateFlagArgs(sys.argv[1:])
+                    fire.Fire(func, flag_args)
                 else:
                     raise NoSupportError(
                         f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
@@ -155,7 +154,9 @@ class TaskExecutor:
                     elif getattr(func, DecoratorInjectAttr.Predict, False):
                         self._run_in_pipeline_handler_cls(func, "predict")
                     else:
-                        func()
+                        # TODO: currently command line supported only, make it support sdk call
+                        _, flag_args = SeparateFlagArgs(sys.argv[1:])
+                        fire.Fire(func, flag_args)
             else:
                 func = getattr(cls_(), func_name)
                 if getattr(func, DecoratorInjectAttr.Evaluate, False):
@@ -163,7 +164,9 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 else:
-                    func()
+                    # TODO: currently command line supported only, make it support sdk call
+                    _, flag_args = SeparateFlagArgs(sys.argv[1:])
+                    fire.Fire(func, flag_args)
 
     def execute(self) -> TaskResult:
         console.info(f"start to execute task with context({self.context}) ...")

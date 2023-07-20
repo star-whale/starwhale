@@ -185,7 +185,7 @@ model.build(modules=[handle], workdir=ROOTDIR, name="inner")
                         "virtual": False,
                         "require_dataset": False,
                         "parameters_sig": [],
-                        "ext_cmd_args": '',
+                        "ext_cmd_args": "",
                     }
                 ]
             }

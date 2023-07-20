@@ -1,3 +1,3 @@
-from ._impl.job import DsInput, Handler
+from ._impl.job import DsInput, Handler, ContextInput
 
-__all__ = ["Handler", "DsInput"]
+__all__ = ["Handler", "DsInput", "ContextInput"]
