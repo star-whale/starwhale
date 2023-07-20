@@ -51,6 +51,8 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
@@ -175,7 +177,10 @@ public class DatasetServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         datasetBuildTokenValidator = mock(DatasetBuildTokenValidator.class);
-        systemSettingService = mock(SystemSettingService.class);
+        systemSettingService = new SystemSettingService(null, List.of(),
+                new RunTimeProperties("", new RunTimeProperties.RunConfig(), new RunTimeProperties.RunConfig(),
+                        new RunTimeProperties.Pypi("url1", "url2", "host1", 11, 91), ""),
+                new DockerSetting("", "", "", "", false), userService);
 
         service = new DatasetService(
                 projectService,

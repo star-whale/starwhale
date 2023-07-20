@@ -464,14 +464,24 @@ public class DatasetService {
         if (res) {
             // start build
             var user = userService.currentUserDetail();
-            DockerImage image;
-            var runtimeProperties = systemSettingService.getRunTimeProperties();
-            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null
-                    && StringUtils.hasText(runtimeProperties.getDatasetBuild().getImage())) {
-                image = new DockerImage(systemSettingService.getRunTimeProperties().getDatasetBuild().getImage());
-            } else {
-                image = new DockerImage("docker-registry.starwhale.cn/star-whale/starwhale:latest");
+            DockerImage image = new DockerImage("docker-registry.starwhale.cn/star-whale/starwhale:latest");
+            String swVersion = "0.5.6";
+            String pyVersion = "3.10";
+            String rp = null;
+            var runConfig = systemSettingService.getRunTimeProperties();
+            if (runConfig != null && runConfig.getDatasetBuild() != null) {
+                rp = runConfig.getDatasetBuild().getResourcePool();
+                if (StringUtils.hasText(runConfig.getDatasetBuild().getImage())) {
+                    image = new DockerImage(runConfig.getDatasetBuild().getImage());
+                }
+                if (StringUtils.hasText(runConfig.getDatasetBuild().getClientVersion())) {
+                    swVersion = runConfig.getDatasetBuild().getClientVersion();
+                }
+                if (StringUtils.hasText(runConfig.getDatasetBuild().getPythonVersion())) {
+                    pyVersion = runConfig.getDatasetBuild().getPythonVersion();
+                }
             }
+            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
 
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD);
 
@@ -482,6 +492,13 @@ public class DatasetService {
 
             Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
             var envVars = List.of(
+                new V1EnvVar().name("SW_VERSION").value(swVersion),
+                new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(pyVersion),
+                new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runConfig.getPypi().getIndexUrl()),
+                new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runConfig.getPypi().getExtraIndexUrl()),
+                new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runConfig.getPypi().getTrustedHost()),
+                new V1EnvVar().name("SW_PYPI_TIMEOUT").value(String.valueOf(runConfig.getPypi().getTimeout())),
+                new V1EnvVar().name("SW_PYPI_RETRIES").value(String.valueOf(runConfig.getPypi().getRetries())),
                 new V1EnvVar().name("SW_INSTANCE_URI").value(instanceUri),
                 new V1EnvVar().name("SW_PROJECT").value(project.getName()),
                 new V1EnvVar().name("SW_TOKEN").value(datasetBuildTokenValidator.getToken(user, entity.getId())),
@@ -489,16 +506,12 @@ public class DatasetService {
                 new V1EnvVar().name("DATASET_BUILD_TYPE").value(String.valueOf(entity.getType())),
                 new V1EnvVar().name("DATASET_BUILD_DIR_PREFIX").value(entity.getStoragePath())
             );
-            String rp = null;
-            if (runtimeProperties != null && runtimeProperties.getDatasetBuild() != null) {
-                rp = systemSettingService.getRunTimeProperties().getDatasetBuild().getResourcePool();
-            }
-            var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
+            DockerImage finalImage = image;
             k8sJobTemplate.getContainersTemplates(job).forEach(templateContainer -> {
                 ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
                 containerOverwriteSpec.setEnvs(envVars);
                 containerOverwriteSpec.setImage(
-                        image.resolve(systemSettingService.getDockerSetting().getRegistryForPull()));
+                        finalImage.resolve(systemSettingService.getDockerSetting().getRegistryForPull()));
                 containerOverwriteSpec.setCmds(List.of("dataset_build"));
                 List<RuntimeResource> resources = Objects.isNull(pool) ? List.of()
                         : pool.validateAndPatchResource(List.of(
