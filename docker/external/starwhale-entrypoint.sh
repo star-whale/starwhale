@@ -11,6 +11,7 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/"${SW_USER:-root}"/.cache/pip}
 PYTHON_VERSION=${SW_RUNTIME_PYTHON_VERSION:-"3.8"}
+RUNTIME_RESTORED=${SW_USER_RUNTIME_RESTORED:-0}
 
 set_python_alter() {
     echo "-->[Preparing] set python/python3 to $PYTHON_VERSION ..."
