@@ -1,5 +1,5 @@
 from starwhale.api import model, track, evaluation
-from starwhale.api.job import Handler, DsInput
+from starwhale.api.job import DsInput, Handler
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.api.metric import multi_classification
 from starwhale.api.dataset import (

@@ -167,6 +167,8 @@ class StandaloneModelTestCase(TestCase):
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ],
             "depend": [
@@ -185,6 +187,8 @@ class StandaloneModelTestCase(TestCase):
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 },
                 {
                     "cls_name": "",
@@ -201,6 +205,8 @@ class StandaloneModelTestCase(TestCase):
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 },
             ],
             "serving": [
@@ -221,6 +227,8 @@ class StandaloneModelTestCase(TestCase):
                     "show_name": "virtual handler for model serving",
                     "virtual": True,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ],
         }

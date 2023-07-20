@@ -222,6 +222,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "",
@@ -238,6 +240,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
 
@@ -264,6 +268,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "",
@@ -280,6 +286,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
 
@@ -330,6 +338,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 },
                 {
                     "cls_name": "",
@@ -346,6 +356,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 },
             ],
             "mock_user_module:predict_handler": [
@@ -371,6 +383,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ],
         }
@@ -483,6 +497,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "MockHandler",
@@ -499,6 +515,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -517,6 +535,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             }
         ]
         steps = Step.get_steps_from_yaml(
@@ -586,6 +606,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             }
         ]
 
@@ -612,6 +634,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "MockHandler",
@@ -628,6 +652,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
 
@@ -682,16 +708,17 @@ def run(): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ]
         }
 
     def test_handler_with_other_decorator(self) -> None:
         content = """
-from starwhale import handler, pass_context
+from starwhale import handler
 
 @handler(replicas=2)
-@pass_context
 def handle(context): ...
         """
 
@@ -717,6 +744,8 @@ def handle(context): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [{'name':'context','required':True}],
+                    "ext_cmd_args": '--context',
                 }
             ]
         }
@@ -753,6 +782,8 @@ def ft2(): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ],
             "mock_user_module:ft2": [
@@ -771,6 +802,8 @@ def ft2(): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": '',
                 }
             ],
         }
@@ -817,6 +850,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": '',
         } in report_handler
 
         assert {
@@ -834,6 +869,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": '',
         } in report_handler
 
         assert {
@@ -854,6 +891,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": '',
         } in report_handler
 
         assert {
@@ -871,6 +910,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": '',
         } in report_handler
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
@@ -889,6 +930,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "",
@@ -905,6 +948,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
@@ -923,6 +968,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
             {
                 "cls_name": "",
@@ -939,6 +986,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             },
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
@@ -957,6 +1006,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": '',
             }
         ]
 

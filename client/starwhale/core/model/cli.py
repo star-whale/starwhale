@@ -347,7 +347,7 @@ def _recover(model: str, force: bool) -> None:
 
 
 @model_cmd.command(
-    name='run',
+    name="run",
     context_settings=dict(
         ignore_unknown_options=True,
         allow_extra_args=True,

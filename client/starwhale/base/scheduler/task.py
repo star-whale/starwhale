@@ -128,9 +128,11 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 elif getattr(func, DecoratorInjectAttr.Step, False):
-                    from fire.parser import SeparateFlagArgs
-                    import fire
                     import sys
+
+                    import fire
+                    from fire.parser import SeparateFlagArgs
+
                     # TODO: currently command line supported only, make it support sdk call
                     _, flag_args =SeparateFlagArgs(sys.argv[1:])
                     fire.Fire(func,flag_args)
