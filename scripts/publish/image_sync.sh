@@ -89,7 +89,7 @@ else
   copy_image "$source_repo_name/base:$release_version" "$target_repo_name2/base:latest"
 
   # cuda image
-  declare -a starwhale_image_prefix=("" "11.3" "11.3-cudnn8" "11.4" "11.4-cudnn8" "11.5" "11.5-cudnn8" "11.6" "11.6-cudnn8" "11.7")
+  declare -a starwhale_image_prefix=("11.3" "11.3-cudnn8" "11.4" "11.4-cudnn8" "11.5" "11.5-cudnn8" "11.6" "11.6-cudnn8" "11.7")
   for pre in "${starwhale_image_prefix[@]}"
     do
       # starwhaleai/cuda:11.5-cudnn8-base0.2.7
