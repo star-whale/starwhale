@@ -11,8 +11,10 @@ from starwhale.api.service import api
 
 try:
     from .llama import Llama
+    from .utils import get_base_model_path
 except ImportError:
     from llama import Llama
+    from utils import get_base_model_path
 
 # hack for torchrun
 os.environ["WORLD_SIZE"] = "1"
@@ -29,7 +31,6 @@ max_seq_len = int(_env("MAX_SEQ_LEN", 10240))
 max_batch_size = int(_env("MAX_BATCH_SIZE", 1))
 temperature = int(_env("TEMPERATURE", 0.7))
 top_p = float(_env("TOP_P", 0.9))
-top_k = int(_env("TOP_K", 0))
 repetition_penalty = float(_env("REPETITION_PENALTY", 1.1))
 
 
@@ -38,17 +39,15 @@ _g_model = None
 
 def _load_llama_model() -> Llama:
     global _g_model
-    model_name = os.environ.get("MODEL_NAME", "llama-2-7b-chat")
 
     if _g_model is None:
         _g_model = Llama.build(
-            ckpt_dir=str(PRETRAINED_MODELS_DIR / f"{model_name}"),
+            ckpt_dir=str(get_base_model_path()),
             tokenizer_path=str(PRETRAINED_MODELS_DIR / "tokenizer.model"),
             max_seq_len=max_seq_len,
             max_batch_size=max_batch_size,
             model_parallel_size=1,
         )
-
     return _g_model
 
 
