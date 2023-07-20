@@ -21,7 +21,6 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import io.jsonwebtoken.lang.Strings;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
