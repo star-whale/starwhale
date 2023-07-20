@@ -33,6 +33,8 @@ public class DatasetVersionViewVo {
 
     private String alias;
 
+    private Boolean latest;
+
     private Integer shared;
 
     private Long createdTime;

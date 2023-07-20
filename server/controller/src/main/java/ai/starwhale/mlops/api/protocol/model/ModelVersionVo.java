@@ -41,6 +41,8 @@ public class ModelVersionVo implements Serializable {
     @JsonProperty("alias")
     private String alias;
 
+    private Boolean latest;
+
     @JsonProperty("tag")
     private String tag;
 
@@ -62,6 +64,6 @@ public class ModelVersionVo implements Serializable {
     private List<StepSpec> stepSpecs;
 
     public static ModelVersionVo empty() {
-        return new ModelVersionVo("", "", "", "", 0L, -1L, UserVo.empty(), 0, "", List.of());
+        return new ModelVersionVo("", "", "", false, "", 0L, -1L, UserVo.empty(), 0, "", List.of());
     }
 }

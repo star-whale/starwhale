@@ -43,12 +43,6 @@ public class VersionAliasConverterTest {
 
         res = versionAliasConvertor.convert(100L);
         assertThat(res, is("v100"));
-
-        res = versionAliasConvertor.convert(2L, () -> 3L, () -> 3L);
-        assertThat(res, is("latest"));
-
-        res = versionAliasConvertor.convert(2L, () -> 3L, () -> 4L);
-        assertThat(res, is("v2"));
     }
 
     @Test

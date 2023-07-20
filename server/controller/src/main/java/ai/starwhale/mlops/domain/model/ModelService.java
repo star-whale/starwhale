@@ -96,7 +96,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -345,13 +344,7 @@ public class ModelService {
         List<ModelVersionEntity> entities = modelVersionMapper.list(
                 modelId, query.getVersionName(), query.getVersionTag());
         ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
-        return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
-            return vo;
-        });
+        return PageUtil.toPageInfo(entities, entity -> versionConvertor.convert(entity, latest));
     }
 
     public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
@@ -395,7 +388,8 @@ public class ModelService {
                         .add(ModelVersionViewVo.builder()
                                 .id(idConvertor.convert(entity.getId()))
                                 .versionName(entity.getVersionName())
-                                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                                .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                                 .createdTime(entity.getCreatedTime().getTime())
                                 .shared(toInt(entity.getShared()))
                                 .builtInRuntime(entity.getBuiltInRuntime())

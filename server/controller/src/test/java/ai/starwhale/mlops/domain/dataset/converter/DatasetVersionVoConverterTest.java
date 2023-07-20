@@ -42,6 +42,10 @@ public class DatasetVersionVoConverterTest {
 
     @Test
     public void testConvert() {
+        var latest = DatasetVersionEntity.builder()
+                .id(2L)
+                .versionOrder(2L)
+                .build();
         var res = datasetVersionVoConverter.convert(DatasetVersionEntity.builder()
                 .id(1L)
                 .shared(true)
@@ -49,14 +53,15 @@ public class DatasetVersionVoConverterTest {
                 .versionOrder(2L)
                 .versionTag("tag1")
                 .versionMeta("meta1")
-                .build());
+                .build(), latest);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("shared", is(1)),
                 hasProperty("alias", is("v2")),
                 hasProperty("tag", is("tag1")),
-                hasProperty("meta", is("meta1"))
+                hasProperty("meta", is("meta1")),
+                hasProperty("latest", is(false))
         ));
     }
 }

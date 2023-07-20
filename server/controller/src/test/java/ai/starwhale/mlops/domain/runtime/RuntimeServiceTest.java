@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -696,6 +697,10 @@ public class RuntimeServiceTest {
                         RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).runtimeName("rt4").build()
                 ));
+        given(runtimeVersionMapper.findByLatest(same(2L)))
+                .willReturn(RuntimeVersionEntity.builder().id(8L).build());
+        given(runtimeVersionMapper.findByLatest(same(4L)))
+                .willReturn(RuntimeVersionEntity.builder().id(6L).build());
 
         var res = service.listRuntimeVersionView("1");
         assertEquals(4, res.size());
@@ -707,8 +712,10 @@ public class RuntimeServiceTest {
         assertEquals(2, res.get(1).getVersions().size());
         assertEquals(2, res.get(2).getVersions().size());
         assertEquals(1, res.get(3).getVersions().size());
-        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
-        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
+        assertTrue(res.get(0).getVersions().get(0).getLatest());
+        assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
+        assertTrue(res.get(1).getVersions().get(0).getLatest());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }

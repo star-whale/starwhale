@@ -244,7 +244,8 @@ public class RuntimeService {
                     .add(RuntimeVersionViewVo.builder()
                             .id(idConvertor.convert(entity.getId()))
                             .versionName(entity.getVersionName())
-                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
+                            .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                            .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                             .createdTime(entity.getCreatedTime().getTime())
                             .shared(toInt(entity.getShared()))
                             .build());

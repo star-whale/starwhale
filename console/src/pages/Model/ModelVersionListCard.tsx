@@ -20,6 +20,7 @@ import useCliMate from '@/hooks/useCliMate'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
 import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -62,7 +63,7 @@ export default function ModelVersionListCard() {
                             >
                                 <MonoText>{model.name}</MonoText>
                             </TextLink>,
-                            <Alias key='alias' alias={model.alias} />,
+                            <Alias key='alias' alias={getAliasStr(model)} />,
                             <Shared key='shared' shared={model.shared} isTextShow />,
                             model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),

@@ -5,6 +5,7 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
 import { IDatasetTreeSchema } from '../schemas/dataset'
 import { IDatasetTreeVersionSchema } from '../schemas/datasetVersion'
+import { getAliasStr } from '@base/utils/alias'
 
 export const DatasetLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -46,7 +47,7 @@ export function DatasetLabel({
     style?: React.CSSProperties
 }) {
     const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={version.alias} />
+    const alias = <Alias alias={getAliasStr(version)} />
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
     const name = version?.versionName ?? version?.name
     const v = (name ?? '').substring(0, 8)

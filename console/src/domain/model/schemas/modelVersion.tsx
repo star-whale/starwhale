@@ -1,11 +1,9 @@
 import { IFileSchema } from '@/domain/base/schemas/file'
-import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IHasTagSchema, IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
 
-export interface IModelVersionSchema extends IResourceSchema {
+export interface IModelVersionSchema extends IResourceSchema, IHasTagSchema {
     name: string
-    tag: string
-    alias: string
     size: string
     owner?: IUserSchema
     stepSpecs: StepSpec[]

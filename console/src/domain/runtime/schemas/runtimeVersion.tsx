@@ -1,12 +1,10 @@
-import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IHasTagSchema, IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
-import { IListQuerySchema } from '../../base/schemas/list'
+import { IListQuerySchema } from '@base/schemas/list'
 
-export interface IRuntimeVersionSchema extends IResourceSchema {
+export interface IRuntimeVersionSchema extends IResourceSchema, IHasTagSchema {
     name: string
-    tag: string
     owner?: IUserSchema
-    alias: string
     image: string
     builtImage: string
     runtimeId: string
