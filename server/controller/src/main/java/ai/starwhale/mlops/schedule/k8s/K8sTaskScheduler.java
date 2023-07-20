@@ -27,6 +27,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
@@ -114,6 +115,11 @@ public class K8sTaskScheduler implements SwTaskScheduler {
                 // K8s do not support job suspend before 1.24, so we collect logs and delete job directly
                 // https://kubernetes.io/docs/concepts/workloads/controllers/job/#suspending-a-job
                 taskLogK8sCollector.collect(task);
+            } catch (StarwhaleException e) {
+                log.warn("collect task {} log failed, {}", task.getId(), e.getMessage());
+            }
+
+            try {
                 k8sClient.deleteJob(task.getId().toString());
             } catch (ApiException e) {
                 log.warn("delete k8s job failed {}, {}", task.getId(), e.getResponseBody(), e);
