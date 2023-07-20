@@ -557,6 +557,13 @@ public class DatasetServiceTest {
                 .projectUrl(String.valueOf(projectId))
                 .build())
         );
+        given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("Test-build-ds").build());
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(1L)
+                .datasetName(datasetName)
+                .projectUrl(String.valueOf(projectId))
+                .build())
+        );
 
         // case2: create and already exist the same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true))
