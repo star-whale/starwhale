@@ -437,7 +437,7 @@ public class DatasetService {
                     "The dataset:{0} in project:{1} doesn't exists, please check it.",
                     request.getDatasetName(), project.getName()));
             }
-            if (!ds.getDatasetName().equalsIgnoreCase(request.getDatasetName())) {
+            if (!ds.getDatasetName().equals(request.getDatasetName())) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                     "The dataset:{0} is different with the exist dataset:{1}.",
                     request.getDatasetName(), ds.getDatasetName()));
