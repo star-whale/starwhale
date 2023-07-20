@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -381,5 +382,40 @@ public class K8sTaskSchedulerTest {
         verify(client).execInPod("7", null, "ls");
         assertEquals("stdout", resp[0]);
         assertEquals("stderr", resp[1]);
+    }
+
+    @Test
+    public void testStop() throws ApiException {
+        var client = mock(K8sClient.class);
+        var instanceUri = "";
+        var devPort = 8080;
+        var datasetLoadBatchSize = 10;
+        var restartPolicy = "";
+        var backoffLimit = 2;
+
+        var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+        threadPoolTaskScheduler.initialize();
+        var taskLogK8sCollector = mock(TaskLogK8sCollector.class);
+
+        var scheduler = new K8sTaskScheduler(
+                client,
+                mock(TaskTokenValidator.class),
+                mock(RunTimeProperties.class),
+                mock(K8sJobTemplate.class),
+                instanceUri,
+                devPort,
+                datasetLoadBatchSize,
+                restartPolicy,
+                backoffLimit,
+                mock(StorageAccessService.class),
+                taskLogK8sCollector,
+                threadPoolTaskScheduler
+        );
+
+        var task = Task.builder().id(7L).build();
+        doThrow(new SwProcessException(SwProcessException.ErrorType.K8S)).when(taskLogK8sCollector).collect(task);
+        scheduler.stop(List.of(task));
+        // make sure the job is deleted even if exception occurs when collecting logs
+        verify(client).deleteJob("7");
     }
 }
