@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -51,8 +52,7 @@ public class FileStorageServiceTest {
 
     @BeforeEach
     public void init() {
-        fileStorageService = new FileStorageService(
-                storageAccessService, rootPath, "4h");
+        fileStorageService = new FileStorageService(storageAccessService, rootPath, "4h", "https://localhost:8080");
     }
 
     @Test
@@ -66,18 +66,28 @@ public class FileStorageServiceTest {
 
     @Test
     public void testGeneratePutUrl() throws IOException {
-        given(storageAccessService.signedPutUrl(any(), any(), any())).willReturn("signedUrl");
+        given(storageAccessService.signedPutUrl(eq(pathPrefix + "a.txt"), any(), any())).willReturn("http://signedUrl");
+        given(storageAccessService.signedPutUrl(eq(pathPrefix + "b.txt"), any(), any())).willReturn("https://signedUrl");
         assertThrows(SwValidationException.class, () ->
                 fileStorageService.generateSignedPutUrls("invalidPath", Set.of("a.txt", "b.txt", "c.txt")));
 
         assertThat("signed put urls",
                 fileStorageService.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "b.txt")),
                 is(Map.of(
-                    "a.txt", "signedUrl",
-                    "b.txt", "signedUrl"
+                    "a.txt", "https://signedUrl",
+                    "b.txt", "https://signedUrl"
                 ))
         );
 
+        // use the original schema of the storage access service
+        var fssHttp = new FileStorageService(storageAccessService, rootPath, "4h", "http://localhost:8080");
+        assertThat("signed put urls",
+                fssHttp.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "b.txt")),
+                is(Map.of(
+                    "a.txt", "http://signedUrl",
+                    "b.txt", "https://signedUrl"
+                ))
+        );
     }
 
     @Test

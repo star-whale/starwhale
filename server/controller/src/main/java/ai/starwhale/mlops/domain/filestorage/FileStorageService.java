@@ -40,10 +40,14 @@ public class FileStorageService {
     private final StorageAccessService storageAccessService;
     private final String dataRootPath;
     private final Long urlExpirationTimeMillis;
+    private final boolean isServerHttps;
 
-    public FileStorageService(StorageAccessService storageAccessService,
-                              @Value("${sw.filestorage.data-root-path:files}") String dataRootPath,
-                              @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime) {
+    public FileStorageService(
+            StorageAccessService storageAccessService,
+            @Value("${sw.filestorage.data-root-path:files}") String dataRootPath,
+            @Value("${sw.filestorage.url-expiration-time:24h}") String urlExpirationTime,
+            @Value("${sw.instance-uri}") String instanceUrl
+    ) {
         this.storageAccessService = storageAccessService;
         if (dataRootPath.endsWith("/")) {
             this.dataRootPath = dataRootPath;
@@ -51,6 +55,8 @@ public class FileStorageService {
             this.dataRootPath = dataRootPath + "/";
         }
         this.urlExpirationTimeMillis = DurationStyle.detectAndParse(urlExpirationTime).toMillis();
+
+        isServerHttps = instanceUrl.startsWith("https://");
     }
 
     /**
@@ -91,6 +97,11 @@ public class FileStorageService {
             try {
                 var url = storageAccessService.signedPutUrl(
                         pathPrefix + file, APPLICATION_OCTET_STREAM_VALUE, urlExpirationTimeMillis);
+                // force to use https if server is https
+                if (isServerHttps && url.startsWith("http://")) {
+                    url = url.replaceFirst("http://", "https://");
+                }
+
                 signedUrls.put(file, url);
             } catch (IOException e) {
                 log.error("generate signed put url error", e);
