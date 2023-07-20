@@ -99,7 +99,7 @@ pydantic==1.10.5
 pydeck==0.8.0
 pyDeprecate==0.3.1
 pydub==0.25.1
-Pygments==2.14.0
+Pygments==2.15.0
 Pympler==1.0.1
 PyNaCl==1.5.0
 pyparsing==3.0.9
