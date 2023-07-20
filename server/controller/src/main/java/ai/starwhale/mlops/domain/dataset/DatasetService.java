@@ -178,9 +178,9 @@ public class DatasetService {
 
 
     public PageInfo<DatasetVo> listDataset(DatasetQuery query, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<DatasetEntity> entities = datasetMapper.list(projectId,
                 query.getNamePrefix(), userId, null);
 

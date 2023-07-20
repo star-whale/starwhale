@@ -63,8 +63,8 @@ public class TaskService {
     }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Job job = jobDao.findJob(jobUrl);
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<TaskVo> tasks = taskMapper.listTasks(job.getId()).stream().map(taskConvertor::convert)
                 .peek(taskVo -> {
                     if (!StringUtils.hasText(taskVo.getResourcePool())) {

@@ -197,9 +197,9 @@ public class RuntimeService {
     }
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(runtimeQuery.getProjectUrl());
         Long userId = userService.getUserId(runtimeQuery.getOwner());
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, rt -> {
