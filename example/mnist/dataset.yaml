@@ -6,5 +6,5 @@ handler: mnist.dataset:iter_mnist_item
 desc: MNIST data and label test dataset
 
 attr:
-  alignment_size: 1k
-  volume_size: 4M
+  alignment_size: 128
+  volume_size: 16M
