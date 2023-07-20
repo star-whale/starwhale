@@ -464,7 +464,7 @@ public class DatasetService {
         if (res) {
             // start build
             var user = userService.currentUserDetail();
-            DockerImage image = new DockerImage("docker-registry.starwhale.cn/star-whale/starwhale:latest");
+            DockerImage image = new DockerImage("docker-registry.starwhale.cn/star-whale/base:latest");
             String swVersion = "0.5.6";
             String pyVersion = "3.10";
             String rp = null;
