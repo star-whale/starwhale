@@ -190,7 +190,7 @@ public class K8sJobTemplate {
         var origin = meta.getAnnotations();
         origin = origin == null ? new HashMap<>() : origin;
         origin.putAll(annotations);
-        meta.annotations(annotations);
+        meta.annotations(origin);
     }
 
     public V1StatefulSet renderModelServingOrch(
