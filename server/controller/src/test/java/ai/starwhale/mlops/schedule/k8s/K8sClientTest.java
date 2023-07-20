@@ -23,6 +23,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.protobuf.Api;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -38,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
@@ -92,6 +95,54 @@ public class K8sClientTest {
                 null)).thenReturn(
                 t);
         Assertions.assertEquals(t, k8sClient.getJobs("ls"));
+    }
+
+    @Test
+    public void testCreateSecret() throws ApiException {
+        var secret = new V1Secret();
+        k8sClient.createSecret(secret);
+        verify(coreV1Api).createNamespacedSecret(eq(nameSpace), eq(secret), any(), eq(null), any(), any());
+    }
+
+    @Test
+    public void testReplaceSecret() throws ApiException {
+        var secret = new V1Secret();
+        k8sClient.replaceSecret("foo", secret);
+        verify(coreV1Api).replaceNamespacedSecret(eq("foo"), eq(nameSpace), eq(secret), any(), eq(null), any(), any());
+    }
+
+    @Test
+    public void testDeleteSecret() throws ApiException {
+        k8sClient.deleteSecret("foo");
+        verify(coreV1Api).deleteNamespacedSecret(eq("foo"), eq(nameSpace), eq(null), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testGetSecret() throws ApiException {
+        k8sClient.getSecret("foo");
+        verify(coreV1Api).readNamespacedSecret(eq("foo"), eq(nameSpace), eq(null));
+    }
+
+    @Test
+    public void testPatchDeployment() throws ApiException {
+        var name = "foo";
+        var patch = new V1Patch("foo");
+        var patchFormat = "json";
+        var call = mock(Call.class);
+        var request = mock(okhttp3.Request.class);
+        when(call.request()).thenReturn(request);
+        when(request.body()).thenReturn(mock(okhttp3.RequestBody.class));
+        when(appsV1Api.patchNamespacedDeploymentCall(any(), any(), any(), any(), any(), any(), any(),
+                any(), any())).thenReturn(call);
+        k8sClient.patchDeployment(name, patch, patchFormat);
+        verify(appsV1Api).patchNamespacedDeploymentCall(eq(name), eq(nameSpace), eq(patch), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testListDeployment() throws ApiException {
+        var labelSelector = "foo";
+        k8sClient.listDeployment(labelSelector);
+        verify(appsV1Api).listNamespacedDeployment(eq(nameSpace), eq(null), eq(null), eq(null), eq(null), eq(labelSelector), eq(null), eq(null), eq(null), eq(null), eq(null));
     }
 
     @Test
