@@ -496,7 +496,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
-                "require_dataset": False,
+                "require_dataset": True,
                 "parameters_sig": [],
                 "ext_cmd_args": "",
             },
@@ -534,7 +534,7 @@ class MockHandler(PipelineHandler):
                 "show_name": "predict",
                 "expose": 0,
                 "virtual": False,
-                "require_dataset": False,
+                "require_dataset": True,
                 "parameters_sig": [],
                 "ext_cmd_args": "",
             }

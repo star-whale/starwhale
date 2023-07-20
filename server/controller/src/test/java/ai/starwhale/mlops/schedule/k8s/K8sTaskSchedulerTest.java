@@ -20,14 +20,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.RunTimeProperties.ImageBuild;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
+import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -97,7 +98,7 @@ public class K8sTaskSchedulerTest {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new ImageBuild(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
+                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
@@ -129,8 +130,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -166,8 +167,8 @@ public class K8sTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -207,8 +208,8 @@ public class K8sTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties("", new ImageBuild(), new Pypi("", "", "", 1, 2),
-                CONDARC);
+        var runTimeProperties = new RunTimeProperties(
+                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8sTaskScheduler(
                 client,
@@ -400,5 +401,40 @@ public class K8sTaskSchedulerTest {
         verify(client).execInPod("7", null, "ls");
         assertEquals("stdout", resp[0]);
         assertEquals("stderr", resp[1]);
+    }
+
+    @Test
+    public void testStop() throws ApiException {
+        var client = mock(K8sClient.class);
+        var instanceUri = "";
+        var devPort = 8080;
+        var datasetLoadBatchSize = 10;
+        var restartPolicy = "";
+        var backoffLimit = 2;
+
+        var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+        threadPoolTaskScheduler.initialize();
+        var taskLogK8sCollector = mock(TaskLogK8sCollector.class);
+
+        var scheduler = new K8sTaskScheduler(
+                client,
+                mock(TaskTokenValidator.class),
+                mock(RunTimeProperties.class),
+                mock(K8sJobTemplate.class),
+                instanceUri,
+                devPort,
+                datasetLoadBatchSize,
+                restartPolicy,
+                backoffLimit,
+                mock(StorageAccessService.class),
+                taskLogK8sCollector,
+                threadPoolTaskScheduler
+        );
+
+        var task = Task.builder().id(7L).build();
+        doThrow(new SwProcessException(SwProcessException.ErrorType.K8S)).when(taskLogK8sCollector).collect(task);
+        scheduler.stop(List.of(task));
+        // make sure the job is deleted even if exception occurs when collecting logs
+        verify(client).deleteJob("7");
     }
 }

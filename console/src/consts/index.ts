@@ -24,5 +24,5 @@ export const languages = [
     },
 ]
 export const cliMateServer = 'http://127.0.0.1:8007'
-export const docsZH = 'https://doc.starwhale.ai/zh/docs/'
-export const docsEN = 'https://doc.starwhale.ai/docs/'
+export const docsZH = 'https://starwhale.cn/docs'
+export const docsEN = 'https://doc.starwhale.ai'

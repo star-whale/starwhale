@@ -36,18 +36,29 @@ function Tooltip({ children, ...props }: ITooltipProps) {
     )
 }
 
-function IconTooltip({ content, icon, ...props }: { content: React.ReactNode; icon: IconTypesT }) {
+function IconTooltip({
+    content,
+    icon,
+    style = {},
+    ...props
+}: {
+    content: React.ReactNode
+    icon: IconTypesT
+    style?: React.CSSProperties
+}) {
     const [css] = themedUseStyletron()
 
     return (
         <Tooltip content={content} showArrow placement='top' {...props}>
             <p
+                // @ts-ignore
                 className={css({
                     'cursor': 'pointer',
                     'color': 'rgba(2,16,43,0.40)',
                     ':hover': {
                         color: '#5181E0',
                     },
+                    ...style,
                 })}
             >
                 <IconFont type={icon} />

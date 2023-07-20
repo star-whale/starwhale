@@ -30,6 +30,9 @@ def init() -> None:
             _servers = []
 
 
+_index = 0
+
+
 # This module is not thread safe. This function should be invoked by async
 # funtions in the same event loop.
 def replace_url(url: str, replace: bool) -> t.Generator[str, None, None]:
@@ -40,9 +43,9 @@ def replace_url(url: str, replace: bool) -> t.Generator[str, None, None]:
             yield url
     else:
         result = result._replace(scheme="http")
-        index = 0
         while True:
+            global _index
+            _index += 1
             yield result._replace(
-                netloc=f"{_servers[index % len(_servers)].ip}:{_cache_server_port}"
+                netloc=f"{_servers[_index % len(_servers)].ip}:{_cache_server_port}"
             ).geturl()
-            index += 1

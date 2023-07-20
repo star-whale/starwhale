@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('iconfont.woff2?t=1688627096806') format('woff2'),
-       url('iconfont.woff?t=1688627096806') format('woff'),
-       url('iconfont.ttf?t=1688627096806') format('truetype');
+  src: url('iconfont.woff2?t=1689660767619') format('woff2'),
+       url('iconfont.woff?t=1689660767619') format('woff'),
+       url('iconfont.ttf?t=1689660767619') format('truetype');
 }
 
 .iconfont {
@@ -13,8 +13,76 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-a-BuildImage:before {
+  content: "\e674";
+}
+
+.icon-Cancel:before {
+  content: "\e675";
+}
+
+.icon-Restore:before {
+  content: "\e676";
+}
+
+.icon-a-Pushlocal:before {
+  content: "\e677";
+}
+
+.icon-a-SecuritySettings:before {
+  content: "\e678";
+}
+
+.icon-a-onlineevaluation:before {
+  content: "\e679";
+}
+
+.icon-fold21:before {
+  content: "\e67a";
+}
+
+.icon-Rerun:before {
+  content: "\e67b";
+}
+
+.icon-unfold21:before {
+  content: "\e67c";
+}
+
+.icon-a-ViewTasks:before {
+  content: "\e67d";
+}
+
+.icon-a-ImageBuilt:before {
+  content: "\e67e";
+}
+
+.icon-link:before {
+  content: "\e680";
+}
+
+.icon-a-runmodel:before {
+  content: "\e681";
+}
+
+.icon-weixin:before {
+  content: "\e665";
+}
+
+.icon-a-Versionhistory:before {
+  content: "\e673";
+}
+
+.icon-file3:before {
+  content: "\e672";
+}
+
 .icon-a-copylink:before {
   content: "\e66f";
+}
+
+.icon-a-Viewlog:before {
+  content: "\e671";
 }
 
 .icon-copy:before {
@@ -55,10 +123,6 @@
 
 .icon-select:before {
   content: "\e666";
-}
-
-.icon-WeChat:before {
-  content: "\e665";
 }
 
 .icon-account:before {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.schedule.k8s.log;
 
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -25,23 +25,23 @@ import java.nio.charset.StandardCharsets;
 import okhttp3.Call;
 import okhttp3.Response;
 
-public class CancellableTaskLogK8sCollector implements CancellableTaskLogCollector {
+public class CancellableJobLogK8sCollector implements CancellableJobLogCollector {
     public static final String WORKER_CONTAINER = "worker";
     final K8sClient k8sClient;
     final Call call;
     final Response resp;
     final BufferedReader bufferedReader;
 
-    public CancellableTaskLogK8sCollector(K8sClient k8sClient, Long taskId)
+    public CancellableJobLogK8sCollector(K8sClient k8sClient, String jobName)
             throws IOException, ApiException {
         this.k8sClient = k8sClient;
-        call = k8sClient.readLog(getPodName(taskId), WORKER_CONTAINER, true);
+        call = k8sClient.readLog(getPodName(jobName), WORKER_CONTAINER, true);
         resp = call.execute();
         bufferedReader = new BufferedReader(new InputStreamReader(resp.body().byteStream(), StandardCharsets.UTF_8));
     }
 
-    private String getPodName(Long taskId) throws ApiException {
-        var podList = k8sClient.getPodsByJobName(taskId.toString());
+    private String getPodName(String taskId) throws ApiException {
+        var podList = k8sClient.getPodsByJobName(taskId);
         if (podList.getItems().isEmpty()) {
             throw new ApiException("get empty pod list by job name " + taskId);
         }

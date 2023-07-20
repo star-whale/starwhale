@@ -71,6 +71,9 @@ function Button(
                         ':hover': {
                             backgroundColor: 'transparent',
                         },
+                        ':focus': {
+                            backgroundColor: 'transparent',
+                        },
                     },
                 },
             },

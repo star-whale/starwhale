@@ -58,6 +58,10 @@ public class K8sJobTemplateTest {
         Map<String, ContainerOverwriteSpec> containerSpecMap = buildContainerSpecMap();
         Map<String, String> nodeSelectors = Map.of("label.pool.bj01", "true");
         var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
+        var originalAnnotations = new HashMap<String, String>() {{
+                put("foo", "bar");
+            }};
+        job.getSpec().getTemplate().getMetadata().annotations(originalAnnotations);
         var toleration = new Toleration("key1", "Equal", "value1", "NoSchedule", 100L);
         var annotations = Map.of("annotation1", "value1", "annotation2", "value2");
         k8sJobTemplate.renderJob(job, "yxz", "OnFailure", 10, containerSpecMap,
@@ -87,9 +91,10 @@ public class K8sJobTemplateTest {
         Assertions.assertEquals(100L, tolerationInJob.getTolerationSeconds());
 
         var podMeta = job.getSpec().getTemplate().getMetadata();
-        Assertions.assertEquals(2, podMeta.getAnnotations().size());
+        Assertions.assertEquals(3, podMeta.getAnnotations().size());
         assertThat(podMeta.getAnnotations(), hasEntry("annotation1", "value1"));
         assertThat(podMeta.getAnnotations(), hasEntry("annotation2", "value2"));
+        assertThat(podMeta.getAnnotations(), hasEntry("foo", "bar"));
     }
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
@@ -152,8 +157,13 @@ public class K8sJobTemplateTest {
         job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL);
         k8sJobTemplate.renderJob(job, "foo", "OnFailure", 10, specs, Map.of(), null, null);
         labels = job.getSpec().getTemplate().getMetadata().getLabels();
-        assertThat(labels, is(Map.of(K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
-                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true")));
+        assertThat(labels, is(Map.of(
+                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "nvidia.com/gpu", "true",
+                K8sJobTemplate.DEVICE_LABEL_NAME_PREFIX + "cpu", "true",
+                "job-type", "eval",
+                "job-name", "foo",
+                "owner", "starwhale"
+            )));
     }
 
     @Test

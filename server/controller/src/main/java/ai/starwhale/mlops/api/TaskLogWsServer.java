@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogCollector;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogCollector;
+import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +43,7 @@ public class TaskLogWsServer {
 
     private static IdConverter idConvertor;
 
-    private static CancellableTaskLogK8sCollectorFactory logCollectorFactory;
+    private static CancellableJobLogK8sCollectorFactory logCollectorFactory;
 
     private Session session;
 
@@ -51,7 +51,7 @@ public class TaskLogWsServer {
 
     private Long id;
 
-    private CancellableTaskLogCollector logCollector;
+    private CancellableJobLogCollector logCollector;
 
 
     @Autowired
@@ -60,7 +60,7 @@ public class TaskLogWsServer {
     }
 
     @Autowired
-    public void setLogCollectorFactory(CancellableTaskLogK8sCollectorFactory factory) {
+    public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
         TaskLogWsServer.logCollectorFactory = factory;
     }
 
@@ -70,7 +70,7 @@ public class TaskLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
         try {
-            logCollector = logCollectorFactory.make(this.id);
+            logCollector = logCollectorFactory.make(taskId);
         } catch (IOException | ApiException e) {
             log.error("make k8s log collector failed", e);
         }

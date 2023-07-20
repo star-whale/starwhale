@@ -24,6 +24,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.domain.dataset.DatasetService;
+import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -49,6 +51,7 @@ public class PodEventHandlerTest {
     PodEventHandler podEventHandler;
 
     TaskLogK8sCollector taskLogK8sCollector;
+    BuildLogCollector buildLogCollector;
     TaskModifyReceiver taskModifyReceiver;
 
     HotJobHolder hotJobHolder;
@@ -59,10 +62,13 @@ public class PodEventHandlerTest {
     public void setup() {
         hotJobHolder = mock(HotJobHolder.class);
         taskLogK8sCollector = mock(TaskLogK8sCollector.class);
+        buildLogCollector = mock(BuildLogCollector.class);
         taskModifyReceiver = mock(TaskModifyReceiver.class);
-        podEventHandler = new PodEventHandler(taskLogK8sCollector, taskModifyReceiver, hotJobHolder);
+        podEventHandler = new PodEventHandler(
+                taskLogK8sCollector, buildLogCollector, taskModifyReceiver, hotJobHolder, mock(DatasetService.class));
         v1Pod = new V1Pod()
-                .metadata(new V1ObjectMeta().labels(Map.of("job-name", "3")).name("3-xxx"))
+                .metadata(new V1ObjectMeta()
+                        .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
                 .status(new V1PodStatus()
                         .containerStatuses(List.of(
                                 new V1ContainerStatus().state(

@@ -25,10 +25,13 @@ import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
+import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
+import ai.starwhale.mlops.api.protocol.dataset.build.DatasetBuildRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.api.protocol.upload.UploadResult;
+import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -429,5 +432,33 @@ public interface DatasetApi {
             @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
             @PathVariable("versionUrl")
             String versionUrl);
+
+    @Operation(summary = "Build Dataset", description = "Build Dataset")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping("/project/{projectUrl}/dataset/{datasetName}/build")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> buildDataset(
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable(name = "projectUrl")
+            String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable(name = "datasetName")
+            String datasetName,
+            @Valid @RequestBody DatasetBuildRequest datasetBuildRequest);
+
+    @Operation(summary = "List Build Records", description = "List Build Records")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping("/project/{projectUrl}/dataset/build/list")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<PageInfo<BuildRecordVo>>> listBuildRecords(
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable(name = "projectUrl")
+            String projectUrl,
+            @RequestParam(value = "status", required = false)
+            BuildStatus status,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1")
+            Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10")
+            Integer pageSize);
 
 }

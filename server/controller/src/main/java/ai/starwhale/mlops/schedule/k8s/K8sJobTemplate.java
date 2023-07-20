@@ -65,6 +65,7 @@ public class K8sJobTemplate {
     public static final String LABEL_APP = "app";
     public static final String LABEL_WORKLOAD_TYPE = "starwhale-workload-type";
     public static final String WORKLOAD_TYPE_EVAL = "eval";
+    public static final String WORKLOAD_TYPE_DATASET_BUILD = "dataset-build";
     public static final String WORKLOAD_TYPE_ONLINE_EVAL = "online-eval";
     public static final String WORKLOAD_TYPE_IMAGE_BUILDER = "image-builder";
     public static final int ONLINE_EVAL_PORT_IN_POD = 8080;
@@ -106,6 +107,7 @@ public class K8sJobTemplate {
         V1Job job;
         switch (type) {
             case WORKLOAD_TYPE_EVAL:
+            case WORKLOAD_TYPE_DATASET_BUILD:
                 job = Yaml.loadAs(evalJobTemplate, V1Job.class);
                 break;
             case WORKLOAD_TYPE_IMAGE_BUILDER:
@@ -174,6 +176,11 @@ public class K8sJobTemplate {
         originLabels = originLabels == null ? new HashMap<>() : originLabels;
         originLabels.putAll(labels);
         job.getMetadata().labels(originLabels);
+
+        var specLabels = job.getSpec().getTemplate().getMetadata().getLabels();
+        specLabels = specLabels == null ? new HashMap<>() : specLabels;
+        specLabels.putAll(labels);
+        job.getSpec().getTemplate().getMetadata().labels(specLabels);
     }
 
     public void updateAnnotations(V1ObjectMeta meta, Map<String, String> annotations) {
@@ -183,7 +190,7 @@ public class K8sJobTemplate {
         var origin = meta.getAnnotations();
         origin = origin == null ? new HashMap<>() : origin;
         origin.putAll(annotations);
-        meta.annotations(annotations);
+        meta.annotations(origin);
     }
 
     public V1StatefulSet renderModelServingOrch(

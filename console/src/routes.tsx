@@ -14,6 +14,7 @@ import ModelVersionListCard from '@/pages/Model/ModelVersionListCard'
 import DatasetVersionListCard from '@/pages/Dataset/DatasetVersionListCard'
 import DatasetOverviewLayout from '@/pages/Dataset/DatasetOverviewLayout'
 import JobNewCard from '@/pages/Project/JobNewCard'
+import DatasetNewCard from '@/pages/Project/DatasetNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
 import JobWidgetResults from '@/pages/Job/JobWidgetResults'
@@ -52,6 +53,7 @@ import TrashListCard from '@/pages/Trash/TrashListCard'
 import OnlineEval from '@/pages/Project/OnlineEval'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
+import DatasetBuildListCard from './pages/Dataset/DatasetBuildListCard'
 
 // const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
 
@@ -178,6 +180,15 @@ const Routes = () => {
                                 </JobOverviewLayout>
                             </Route>
                             {/* datasets */}
+                            <Route exact path='/projects/:projectId/datasets/builds'>
+                                <ProjectLayout>
+                                    <Route
+                                        exact
+                                        path='/projects/:projectId/datasets/builds'
+                                        component={DatasetBuildListCard}
+                                    />
+                                </ProjectLayout>
+                            </Route>
                             <Route
                                 exact
                                 path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?/:fileId?'
@@ -312,6 +323,11 @@ const Routes = () => {
                                         />
                                         <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                         <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/new_dataset/:datasetId?'
+                                            component={DatasetNewCard}
+                                        />
                                         <Route
                                             exact
                                             path='/projects/:projectId/online_eval/:modelId/:modelVersionId?'

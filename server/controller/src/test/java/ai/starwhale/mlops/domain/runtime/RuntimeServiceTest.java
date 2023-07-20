@@ -203,7 +203,8 @@ public class RuntimeServiceTest {
                 runtimeTokenValidator,
                 systemSettingService,
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
-                new RunTimeProperties("", new RunTimeProperties.ImageBuild("rc", ""),
+                new RunTimeProperties(
+                        "", new RunTimeProperties.RunConfig("rc", ""), new RunTimeProperties.RunConfig("rc", ""),
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io", 1, 2), ""),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);

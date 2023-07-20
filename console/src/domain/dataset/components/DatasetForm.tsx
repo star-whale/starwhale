@@ -1,22 +1,68 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
-import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
-import { isModified } from '@/utils'
-import { RadioGroup, Radio, ALIGN } from '@starwhale/ui/Radio'
-import { ICreateDatasetSchema, IDatasetSchema } from '../schemas/dataset'
+import { ICreateDatasetFormSchema, IDatasetSchema } from '../schemas/dataset'
+import { createUseStyles } from 'react-jss'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
+import User from '@/domain/user/components/User'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { Toggle } from '@starwhale/ui/Select'
+import { useHistory } from 'react-router-dom'
+import { useQueryArgs } from '@starwhale/core'
+import { DraggerUpload } from '@starwhale/ui/Upload'
+import Button from '@starwhale/ui/Button'
+import Shared from '@/components/Shared'
+import Input from '@starwhale/ui/Input'
 
-const { Form, FormItem } = createForm<ICreateDatasetSchema>()
+const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateDatasetFormSchema>()
+
+const useStyles = createUseStyles({
+    datasetName: {
+        display: 'flex',
+        alignContent: 'stretch',
+        alignItems: 'flex-start',
+        gap: '8px',
+    },
+    shared: {
+        'display': 'flex',
+        'alignItems': 'center',
+        '& [data-baseweb=form-control-container]': {
+            marginBottom: '0 !important',
+        },
+        '& > div:first-child': {
+            marginLeft: '22px',
+        },
+        'marginBottom': '20px',
+    },
+    row: {
+        display: 'grid',
+        gap: 40,
+        gridTemplateColumns: '660px',
+        gridTemplateRows: 'minmax(0px, max-content)',
+        marginBottom: '20px',
+    },
+    upload: {
+        'marginBottom': '20px',
+        '& .ant-upload-btn': {
+            height: '200px !important',
+        },
+    },
+})
 
 export interface IDatasetFormProps {
     dataset?: IDatasetSchema
-    onSubmit: (data: ICreateDatasetSchema) => Promise<void>
+    onSubmit: (data: ICreateDatasetFormSchema) => Promise<void>
 }
 
 export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
-    const [values, setValues] = useState<ICreateDatasetSchema | undefined>(undefined)
-    const [importBy, setImportBy] = useState('upload')
+    const [values, setValues] = useState<ICreateDatasetFormSchema | undefined>(undefined)
+    const { query } = useQueryArgs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { currentUser } = useCurrentUser()
+    const { project } = useProject()
+    const styles = useStyles()
+    const [form] = useForm()
+    const history = useHistory()
 
     useEffect(() => {
         if (!dataset) {
@@ -47,51 +93,80 @@ export default function DatasetForm({ dataset, onSubmit }: IDatasetFormProps) {
 
     const [t] = useTranslation()
 
-    return (
-        <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <FormItem name='datasetName' label={t('sth name', [t('Dataset')])}>
-                <Input size='compact' disabled={dataset !== undefined ? true : undefined} />
-            </FormItem>
-            <div style={{ marginBottom: 20 }}>
-                <RadioGroup
-                    name='number'
-                    align={ALIGN.horizontal}
-                    value={importBy}
-                    onChange={(e) => setImportBy(e.currentTarget.value)}
-                >
-                    <Radio value='server'>{t('Import from server')}</Radio>
-                    <Radio value='upload'>{t('Upload')}</Radio>
-                </RadioGroup>
-            </div>
-            {importBy === 'server' && (
-                <FormItem name='importPath' label={t('Import Path')}>
-                    <Input size='compact' disabled={dataset !== undefined ? true : undefined} />
-                </FormItem>
-            )}
-            {importBy === 'upload' && (
-                // TODO: beauty file upload plugin
-                <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
-                    <Input
-                        size='compact'
-                        name='files'
-                        disabled={dataset !== undefined ? true : undefined}
-                        type='file'
-                    />
+    const formResetField = useCallback(
+        (key: any, value: any) => {
+            form.setFieldsValue({
+                [key]: value,
+            })
 
-                    {/* <FileUploader
-                    onDrop={(acceptedFiles, rejectedFiles) => {}}
-                    // progressAmount is a number from 0 - 100 which indicates the percent of file transfer completed
-                /> */}
+            setValues(
+                (prev) =>
+                    ({
+                        ...prev,
+                        [key]: value,
+                    } as any)
+            )
+        },
+        [form]
+    )
+
+    useEffect(() => {
+        if (query.datasetName) {
+            formResetField('datasetName', query.datasetName)
+        }
+    }, [query.datasetName, formResetField])
+
+    const disabled = !values?.datasetName || !values?.upload?.type
+
+    return (
+        <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+            <div className={styles.datasetName}>
+                <FormItemLabel label={t('dataset.create.owner')}>
+                    <div className='flex' style={{ height: '32px', alignItems: 'center', gap: '8px' }}>
+                        <User user={currentUser} /> /
+                    </div>
+                </FormItemLabel>
+                <FormItemLabel label={t('Project Name')}>
+                    <div className='flex' style={{ height: '32px', alignItems: 'center', gap: '8px' }}>
+                        {project?.name} /
+                    </div>
+                </FormItemLabel>
+                <FormItem
+                    name='datasetName'
+                    // @ts-ignore
+                    rules={[{ type: 'string', min: 3, message: t('form.rule.min', [t('sth name', [t('Dataset')])]) }]}
+                    label={t('sth name', [t('Dataset')])}
+                    style={{ minWidth: 280 }}
+                    required
+                >
+                    <Input size='compact' />
                 </FormItem>
-            )}
+            </div>
+            <div className={styles.shared}>
+                {t('Shared')}:
+                <Shared shared={form.getFieldValue('shared') ? 1 : 0} />
+                <FormItem name='shared'>
+                    <Toggle />
+                </FormItem>
+            </div>
+            <div className={styles.upload} style={{ overflow: 'auto', maxWidth: 800, width: '100%' }}>
+                <FormItem name='upload' label={t('dataset.create.files')} required>
+                    <DraggerUpload />
+                </FormItem>
+            </div>
+
             <FormItem>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1 }} />
+                <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
                     <Button
-                        isLoading={loading}
-                        // size={ButtonSize.compact}
-                        disabled={!isModified(dataset, values)}
+                        kind='secondary'
+                        type='button'
+                        onClick={() => {
+                            history.goBack()
+                        }}
                     >
+                        {t('Cancel')}
+                    </Button>
+                    <Button isLoading={loading} type='submit' disabled={disabled}>
                         {t('submit')}
                     </Button>
                 </div>

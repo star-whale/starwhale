@@ -106,7 +106,7 @@ export function createShouldUpdate(
 }
 
 const defaultFormItemClassName: Required<FormItemClassName> = {
-    item: 'rc-form-item',
+    item: `rc-form-item ${styles.formItem}`,
     label: 'rc-form-item-label',
     error: styles.error,
     touched: 'rc-form-item-touched',
@@ -197,8 +197,8 @@ export function createForm<S extends {} = Store>({
                             'div',
                             { style: { display: 'flex', alignItems: 'center', gap: 4 } },
                             [
-                                React.createElement('div', {}, '*'),
                                 React.createElement('div', { style: { flexShrink: 0 } }, label),
+                                React.createElement('div', {}, '*'),
                             ]
                         )
                     }

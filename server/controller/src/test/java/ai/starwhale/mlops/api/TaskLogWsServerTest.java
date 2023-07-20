@@ -22,8 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollector;
-import ai.starwhale.mlops.domain.task.status.watchers.log.CancellableTaskLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollector;
+import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -32,17 +32,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class TaskLogWsServerTest {
-    private CancellableTaskLogK8sCollectorFactory factory;
-    private CancellableTaskLogK8sCollector logK8sCollector;
+    private CancellableJobLogK8sCollectorFactory factory;
+    private CancellableJobLogK8sCollector logK8sCollector;
     private IdConverter idConvertor;
     private Session session;
 
     @BeforeEach
     public void setup() {
-        factory = mock(CancellableTaskLogK8sCollectorFactory.class);
+        factory = mock(CancellableJobLogK8sCollectorFactory.class);
         idConvertor = mock(IdConverter.class);
         session = mock(Session.class);
-        logK8sCollector = mock(CancellableTaskLogK8sCollector.class);
+        logK8sCollector = mock(CancellableJobLogK8sCollector.class);
     }
 
     @Test
@@ -52,12 +52,12 @@ public class TaskLogWsServerTest {
         server.setLogCollectorFactory(factory);
 
         final Long taskId = 1L;
-        when(factory.make(taskId)).thenReturn(logK8sCollector);
+        when(factory.make(taskId.toString())).thenReturn(logK8sCollector);
         when(session.getId()).thenReturn("1");
         when(idConvertor.revert(any())).thenReturn(taskId);
         when(logK8sCollector.readLine()).thenReturn("foo");
         server.onOpen(session, "1");
-        verify(factory).make(taskId);
+        verify(factory).make(taskId.toString());
         TimeUnit.MILLISECONDS.sleep(500);
         verify(logK8sCollector).readLine();
     }

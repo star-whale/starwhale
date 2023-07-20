@@ -337,7 +337,7 @@ class Handler(ASDictMixin):
                     # compatible with old version: ppl and cmp function are renamed to predict and evaluate
                     predict_func = getattr(v, "predict", None) or getattr(v, "ppl")
                     evaluate_func = getattr(v, "evaluate", None) or getattr(v, "cmp")
-                    Handler.register(replicas=1, name="predict", build_in=True)(
+                    Handler.register(replicas=1, name="predict", require_dataset=True, build_in=True)(
                         predict_func
                     )
                     Handler.register(

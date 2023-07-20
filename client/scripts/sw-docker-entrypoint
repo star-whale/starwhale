@@ -191,7 +191,54 @@ run_code_server () {
     echo "-->[Preparing] run code-server done."
 }
 
-welcome $1
+ds_build_and_upload () {
+    echo "-->[Preparing] Downloading files..."
+    BUILD_DIR=$DATASET_BUILD_NAME
+    mkdir -p "$BUILD_DIR"
+    cd "$BUILD_DIR"
+
+    SIGNED_URLS=$(curl -X 'GET' "$SW_INSTANCE_URI/api/v1/filestorage/signedurl?pathPrefix=$DATASET_BUILD_DIR_PREFIX"  -H 'accept: application/json'  -H "Authorization: $SW_TOKEN" | jq  ".data.signedUrls")
+
+    for entry in $(echo "$SIGNED_URLS" | jq -r 'to_entries|map("\(.key)@\(.value)")|.[]'); do
+      IFS='@' read -r file signedurl <<< "$entry"
+
+      filedir=$(dirname "$file")
+      if [ ! -d "$filedir" ]; then
+        mkdir -p "$filedir"
+      fi
+      echo "$file $signedurl"
+    done | xargs -I {} -n 2 -P 10 sh -c 'curl -o "$1" "$2"' sh
+    cd -
+
+    cmd="swcli dataset build -n $DATASET_BUILD_NAME"
+    if [ "$DATASET_BUILD_TYPE" = "IMAGE" ]; then
+      cmd="$cmd -if $BUILD_DIR"
+    elif [ "$DATASET_BUILD_TYPE" = "VIDEO" ]; then
+      cmd="$cmd -vf $BUILD_DIR"
+    elif [ "$DATASET_BUILD_TYPE" = "AUDIO" ]; then
+      cmd="$cmd -af $BUILD_DIR"
+    elif [ "$DATASET_BUILD_TYPE" = "JSON" ]; then
+      cmd="$cmd -jf $BUILD_DIR"
+      if [ -z "$DATASET_BUILD_EXTRA" ]; then
+        cmd="$cmd --field-selector $DATASET_BUILD_EXTRA"
+      fi
+    elif [ "$DATASET_BUILD_TYPE" = "HANDLER" ]; then
+      cmd="$cmd -h $DATASET_BUILD_HANDLER"
+    elif [ "$DATASET_BUILD_TYPE" = "YAML" ]; then
+      cmd="$cmd -f $DATASET_BUILD_YAML"
+    else
+      echo "Unknown type: $DATASET_BUILD_TYPE" && exit 1
+    fi
+
+    echo "-->[Building] Start to build dataset: $DATASET_BUILD_NAME..."
+    eval "$cmd" || exit 1
+
+    echo "-->[Uploading] Start to upload dataset: $DATASET_BUILD_NAME..."
+    swcli instance login --token "$SW_TOKEN" --alias server "$SW_INSTANCE_URI"
+    swcli dataset copy --patch "$DATASET_BUILD_NAME"/version/latest cloud://server/project/"$SW_PROJECT" || exit 1
+}
+
+welcome "$1"
 case "$1" in
     pre_config)
         pre_config
@@ -205,6 +252,9 @@ case "$1" in
     dev)
         prepare && install_code_server && run_code_server
         tail -f /var/log/dev.log
+        ;;
+    dataset_build)
+        ds_build_and_upload
         ;;
     *)
         prepare "starwhale" && exec "$@"

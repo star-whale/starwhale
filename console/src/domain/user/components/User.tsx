@@ -3,13 +3,13 @@ import { IUserSchema } from '@user/schemas/user'
 import Text, { ITextProps } from '@/components/Text'
 
 export interface IUserProps {
-    user: IUserSchema
+    user?: IUserSchema
     style?: React.CSSProperties
     size?: ITextProps['size']
 }
 
 export default function User({ user, style, size = 'medium' }: IUserProps) {
-    const { name } = user
+    const { name } = user || {}
 
     return (
         <div
