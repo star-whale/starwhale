@@ -116,11 +116,8 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     }
 
 
-    public List<Job> listJobs(Long projectId, Long modelId) {
-        return jobMapper.listJobs(projectId, modelId)
-                .stream()
-                .map(jobBoConverter::fromEntity)
-                .collect(Collectors.toList());
+    public List<JobEntity> listJobs(Long projectId, Long modelId) {
+        return jobMapper.listJobs(projectId, modelId);
     }
 
     public List<Job> findJobByStatusIn(List<JobStatus> jobStatuses) {
@@ -174,6 +171,14 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
             return jobBoConverter.fromEntity(jobMapper.findJobById(idConvertor.revert(jobUrl)));
         } else {
             return jobBoConverter.fromEntity(jobMapper.findJobByUuid(jobUrl));
+        }
+    }
+
+    public JobEntity findJobEntity(String jobUrl) {
+        if (idConvertor.isId(jobUrl)) {
+            return jobMapper.findJobById(idConvertor.revert(jobUrl));
+        } else {
+            return jobMapper.findJobByUuid(jobUrl);
         }
     }
 

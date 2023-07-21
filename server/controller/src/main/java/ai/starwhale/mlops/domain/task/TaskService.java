@@ -19,8 +19,8 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -63,16 +63,16 @@ public class TaskService {
     }
 
     public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
-        Job job = jobDao.findJob(jobUrl);
+        var job = jobDao.findJobEntity(jobUrl);
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<TaskVo> tasks = taskMapper.listTasks(job.getId()).stream().map(taskConvertor::convert)
-                .peek(taskVo -> {
-                    if (!StringUtils.hasText(taskVo.getResourcePool())) {
-                        taskVo.setResourcePool(job.getResourcePool().getName());
-                    }
-                })
-                .collect(Collectors.toList());
-        return PageInfo.of(tasks);
+        var entities = taskMapper.listTasks(job.getId());
+        return PageUtil.toPageInfo(entities, entity -> {
+            var vo = taskConvertor.convert(entity);
+            if (!StringUtils.hasText(vo.getResourcePool())) {
+                vo.setResourcePool(job.getResourcePool());
+            }
+            return vo;
+        });
 
     }
 
