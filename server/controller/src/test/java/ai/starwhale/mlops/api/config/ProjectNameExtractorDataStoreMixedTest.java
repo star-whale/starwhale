@@ -185,5 +185,22 @@ public class ProjectNameExtractorDataStoreMixedTest {
             Assertions.assertThrows(SwNotFoundException.class,
                     () -> projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request));
         }
+
+        // test the resource does not exist
+        for (var uri : List.of(
+                "/api/v1/project/p1/runtime/r2",
+                "/api/v1/project/p1/runtime/r2/foo/bar",
+                "/api/v1/project/p1/runtime/r2/foo/bar/",
+                "/api/v1/project/p1/runtime/r2/foo/bar?a=b",
+                "/api/v1/project/p1/runtime/r2/foo/bar?a=b&c=d",
+                "/api/v1/project/p1/runtime/r2/foo/bar/?a=b&c=d",
+                "/api/v1/project/p1/dataset/d2",
+                "/api/v1/project/p1/model/m2",
+                "/api/v1/project/p1/job/j2"
+        )) {
+            when(request.getRequestURI()).thenReturn(uri);
+            // no exception
+            projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
+        }
     }
 }

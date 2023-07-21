@@ -204,7 +204,12 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         }
         var dao = accessor.get(resourceType);
         var resource = dao.findByUrl(resourceUrl);
-        if (resource == null || !resource.getProjectId().equals(projectEntity.getId())) {
+        if (resource == null) {
+            // let it go
+            // the biz logic will check the resource existence or do the creation
+            return;
+        }
+        if (!resource.getProjectId().equals(projectEntity.getId())) {
             throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE, resourceUrl);
         }
     }
