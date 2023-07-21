@@ -54,6 +54,9 @@ public interface ModelMapper {
     @Select("select " + COLUMNS + " from model_info where id = #{id}")
     ModelEntity find(@Param("id") Long id);
 
+    @Select("select " + COLUMNS + " from model_info where model_name = #{name}")
+    ModelEntity findByNameOnly(@Param("name") String name);
+
     @Select("select " + COLUMNS + " from model_info where id in (${ids})")
     List<ModelEntity> findByIds(@Param("ids") String ids);
 

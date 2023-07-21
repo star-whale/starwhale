@@ -70,7 +70,7 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         if (jobEntity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(SwValidationException.ValidSubject.JOB,
-                        String.format("Unable to find job %s", jobUrl)),
+                            String.format("Unable to find job %s", jobUrl)),
                     HttpStatus.BAD_REQUEST);
         }
         return jobEntity.getId();
@@ -190,6 +190,14 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     @Override
     public BundleEntity findById(Long id) {
         return jobMapper.findJobById(id);
+    }
+
+    @Override
+    public BundleEntity findByUrl(String url) {
+        if (idConvertor.isId(url)) {
+            return jobMapper.findJobById(idConvertor.revert(url));
+        }
+        return jobMapper.findJobByUuid(url);
     }
 
     @Override

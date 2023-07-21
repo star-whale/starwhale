@@ -55,6 +55,9 @@ public interface RuntimeMapper {
     @Select("select " + COLUMNS + " from runtime_info where id = #{id}")
     RuntimeEntity find(@Param("id") Long id);
 
+    @Select("select " + COLUMNS + " from runtime_info where runtime_name = #{name}")
+    RuntimeEntity findByNameOnly(@Param("name") String name);
+
     @Select("select " + COLUMNS + " from runtime_info where id in (${ids})")
     List<RuntimeEntity> findByIds(@Param("ids") String ids);
 

@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.bundle.base;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+public interface HasProjectId {
 
-public interface BundleAccessor {
-
-    BundleEntity findById(Long id);
-
-    BundleEntity findByUrl(String url);
-
-    BundleEntity findByNameForUpdate(String name, Long projectId);
+    Long getProjectId();
 }

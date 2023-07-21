@@ -122,6 +122,7 @@ public class BundleManagerTest {
 
         private Long id;
         private String name;
+        private Long projectId;
 
         private Date modifiedTime;
 
