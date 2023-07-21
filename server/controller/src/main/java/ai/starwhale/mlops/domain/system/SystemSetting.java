@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
+import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.storage.autofit.StorageConnectionToken;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -35,6 +36,10 @@ public class SystemSetting {
     DockerSetting dockerSetting;
 
     Pypi pypiSetting;
+
+    RunConfig imageBuild;
+
+    RunConfig datasetBuild;
 
     String condaSetting;
 

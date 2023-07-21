@@ -83,6 +83,12 @@ public class SystemSettingService implements CommandLineRunner {
             if (null == systemSetting.getPypiSetting()) {
                 systemSetting.setPypiSetting(Pypi.empty());
             }
+            if (null == systemSetting.getImageBuild()) {
+                systemSetting.setImageBuild(RunTimeProperties.RunConfig.empty());
+            }
+            if (null == systemSetting.getDatasetBuild()) {
+                systemSetting.setDatasetBuild(RunTimeProperties.RunConfig.empty());
+            }
             if (null == systemSetting.getDockerSetting()) {
                 systemSetting.setDockerSetting(DockerSetting.empty());
             }

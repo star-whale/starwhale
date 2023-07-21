@@ -89,21 +89,15 @@ serve() {
     fi
 }
 
-install_code_server () {
-    if command -v code-server &> /dev/null
-    then
-        echo "code-server is installed"
-    else
-        echo "-->[Preparing] install code-server ..."
-        curl -fsSL https://code-server.dev/install.sh | sh
-        echo "-->[Preparing] install code-server done."
-    fi
-}
-
 run_code_server () {
     echo "-->[Preparing] run code-server ..."
-    PASSWORD=${SW_DEV_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:${SW_DEV_PORT:-8000} --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/dev.log 2>&1 &
-    echo "-->[Preparing] run code-server done."
+    if command -v code-server &> /dev/null
+    then
+        PASSWORD=${SW_DEV_TOKEN:=$SW_JOB_VERSION} nohup code-server --bind-addr 0.0.0.0:${SW_DEV_PORT:-8000} --disable-telemetry --disable-update-check --user-data-dir /tmp/code-server-data > /var/log/dev.log 2>&1 &
+        echo "-->[Prepared] run code-server done."
+    else
+        echo "code-server is not installed, now will exit." && exit 1
+    fi
 }
 
 ds_build_and_upload () {
@@ -162,7 +156,7 @@ case "$1" in
         prepare && serve
         ;;
     dev)
-        prepare && install_code_server && run_code_server
+        prepare && run_code_server
         tail -f /var/log/dev.log
         ;;
     dataset_build)

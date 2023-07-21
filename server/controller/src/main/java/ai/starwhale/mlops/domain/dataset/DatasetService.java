@@ -464,9 +464,9 @@ public class DatasetService {
         if (res) {
             // start build
             var user = userService.currentUserDetail();
-            DockerImage image = new DockerImage("docker-registry.starwhale.cn/star-whale/base:latest");
-            String swVersion = "0.5.6";
-            String pyVersion = "3.10";
+            DockerImage image = null;
+            String swVersion = "";
+            String pyVersion = "";
             String rp = null;
             var runConfig = systemSettingService.getRunTimeProperties();
             if (runConfig != null && runConfig.getDatasetBuild() != null) {
@@ -480,6 +480,9 @@ public class DatasetService {
                 if (StringUtils.hasText(runConfig.getDatasetBuild().getPythonVersion())) {
                     pyVersion = runConfig.getDatasetBuild().getPythonVersion();
                 }
+            }
+            if (null == image || !StringUtils.hasText(swVersion) || !StringUtils.hasText(pyVersion)) {
+                throw new SwValidationException(ValidSubject.DATASET, "Please config dataset build setting!");
             }
             var pool = Objects.isNull(rp) ? null : systemSettingService.queryResourcePool(rp);
 
