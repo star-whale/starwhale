@@ -56,19 +56,19 @@
 
 ## What is Starwhale
 
-Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime**, **Model**, and **Dataset**.
+Starwhale is an MLOps/LLMOps platform. It provides **Instance**, **Project**, **Runtime**, **Model**, and **Dataset**.
 
 - **Instance**: Each installation of Starwhale is called an instance.
-  - 👻 **Standalone Instance**: The simplest form that requires only the Starwhale Client(`swcli`). `swcli` is written by pure python3.
-  - 🎍 **On-Premises Instance**: Cloud form, we call it **private cloud instance**. Kubernetes and BareMetal both meet the basic environmental requirements.
-  - ☁️ **Cloud Hosted Instance**: Cloud form, we call it **public cloud instance**. Starwhale team maintains the web service.
+  - 👻 **Starwhale Standalone**:  Rather than a running service, Starwhale Standalone is actually a repository that resides in your local file system. It is created and managed by the Starwhale Client (SWCLI). You only need to install SWCLI to use it. Currently, each user on a single machine can have only ONE Starwhale Standalone instance. We recommend you use the Starwhale Standalone to build and test your datasets, runtime, and models before pushing them to Starwhale Server/Cloud instances.
+  - 🎍 **Starwhale Server**:  Starwhale Server is a service deployed on your local server. Besides text-only results from the Starwhale Client (SWCLI), Starwhale Server provides Web UI for you to manage your datasets and models, evaluate your models in your local Kubernetes cluster, and review the evaluation results.
+  - ☁️ **Starwhale Cloud**: Starwhale Cloud is a managed service hosted on public clouds. By registering an account on https://cloud.starwhale.cn , you are ready to use Starwhale without needing to install, operate, and maintain your own instances. Starwhale Cloud also provides public resources for you to download, like datasets, runtimes, and models. Check the "starwhale/public" project on Starwhale Cloud for more details.
 
   **Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between them.**
 
 - **Project**: The basic unit for organizing different resources.
 
 - **ML Basic Elements**: The Machine Learning/Deep Learning running environments or artifacts. Starwhale empowers the ML/DL essential elements with packaging, versioning, reproducibility, and shareability.
-  - 🐌 **Runtime**: Software dependencies description to "run" a model, which includes python libraries, native libraries, native binaries, etc.
+  - 🐌 **Runtime**: Software dependencies description to "run" a model, which includes Python libraries, native libraries, native binaries, etc.
   - 🐇 **Model**: The standard model format used in model delivery.
   - 🐫 **Dataset**: A unified description of how the data and labels are stored and organized. Starwhale datasets can be loaded efficiently.
 
@@ -79,19 +79,19 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 - **Scenarios**: Starwhale provides the best practice and out-of-the-box for different ML/DL scenarios.
   - 🚝 **Model Training(WIP)**: Use Starwhale Python SDK to record experiment meta, metric, log, and artifact.
-  - 🛥️ **Model Evaluation**: `PipelineHandler` and some report decorators can give you complete, helpful, and user-friendly evaluation reports with only a few lines of codes.
+  - 🛥️ **Model Evaluation**: `PipelineHandler` and some report decorators can give you complete, helpful, and user-friendly evaluation reports with only a few lines of code.
   - 🛫 **Model Serving(TBD)**: Starwhale Model can be deployed as a web service or stream service in production with deployment capability, observability, and scalability. Data scientists do not need to write ML/DL irrelevant codes.
 
-## MNIST Quick Tour for the standalone instance
+## MNIST Quick Tour for the Starwhale Standalone Instance
 
 ### Use Notebook
 
-- You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/mnist/notebook.ipynb)
-- Or run [example/mnist/notebook.ipynb](example/mnist/notebook.ipynb) locally using [vscode](https://code.visualstudio.com/) or [jupyterlab](https://github.com/jupyterlab/jupyterlab)
+- You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/quickstart-standalone.ipynb)
+- Or run [quickstart example](example/notebooks/quickstart-standalone.ipynb) locally using [vscode](https://code.visualstudio.com/) or [jupyterlab](https://github.com/jupyterlab/jupyterlab)
 
-### Use your own python env
+### Use your own Python env
 
-![Core Job Workflow](docs/docs/img/standalone-core-workflow.gif)
+![Core Job Workflow](https://doc.starwhale.ai/assets/images/standalone-core-workflow-270ac0f0cb5b20dbe5ccd11727e2620b.gif)
 
 - 🍰 **STEP1**: Installing Starwhale
 
@@ -117,14 +117,14 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     > ```conf
     > [global]
     > cache-dir = ~/.cache/pip
-    > index-url = https://mirrors.aliyun.com/pypi/simple/
-    > extra-index-url = https://pypi.doubanio.com/simple
+    > index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+    > extra-index-url = https://mirrors.aliyun.com/pypi/simple/
     > ```
 
     ```bash
-    swcli runtime build example/runtime/pytorch
+    swcli runtime build --yaml example/runtime/pytorch/runtime.yaml
     swcli runtime list
-    swcli runtime info pytorch/version/latest
+    swcli runtime info pytorch
     ```
 
 - 🍞 **STEP4**: Building a model
@@ -195,9 +195,9 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
   - Run one command to build the model.
 
     ```bash
-    swcli model build example/mnist --runtime pytorch/version/latest
+    swcli model build example/mnist --runtime pytorch
     swcli model list
-    swcli model info mnist/version/latest
+    swcli model info mnist
     ```
 
 - 🍺 **STEP5**: Building a dataset
@@ -248,26 +248,26 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
   - Run one command to build the dataset.
 
     ```bash
-    swcli dataset build example/mnist --handler mnist.dataset:iter_swds_bin_item --runtime pytorch/version/latest
-    swcli dataset info mnist/version/latest
-    swcli dataset head mnist/version/latest
+    swcli dataset build --yaml example/mnist/dataset.yaml
+    swcli dataset info mnist
+    swcli dataset head mnist
     ```
 
-  Starwhale also supports build dataset with pure python sdk. You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/dataset-sdk.ipynb).
+  Starwhale also supports building datasets with pure Python SDK. You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/notebooks/dataset-sdk.ipynb).
 
 - 🍖 **STEP6**: Running an evaluation job
 
     ```bash
-    swcli eval run --model mnist/version/latest --dataset mnist/version/latest --runtime pytorch/version/latest
-    swcli eval list
-    swcli eval info $(swcli eval list | grep mnist | grep success | awk '{print $1}' | head -n 1)
+    swcli -vvv model run --uri mnist --dataset mnist --runtime pytorch
+    swcli job list
+    swcli job info $(swcli job list | grep mnist | grep success | awk '{print $1}' | head -n 1)
     ```
 
 **👏 Now, you have completed the fundamental steps for Starwhale standalone. Let's go ahead and finish the tutorial on the on-premises instance.**
 
-## MNIST Quick Tour for on-premises instance
+## MNIST Quick Tour for Starwhale Server Instance
 
-![Create Job Workflow](docs/docs/img/console-create-job.gif)
+![Create Job Workflow](https://doc.starwhale.ai/assets/images/console-artifacts-fd7bf6e54d06dc37d234019e769031e6.gif)
 
 - 🍰 **STEP1**: Install minikube and helm
 
@@ -334,7 +334,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
         - run: kubectl port-forward --namespace starwhale svc/mysql 3306:3306
         - visit: mysql -h 127.0.0.1 -P 3306 -ustarwhale -pstarwhale
     Please run the following command for the domains searching:
-        echo "$(minikube ip) controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc " | sudo tee -a /etc/hosts
+        echo "$(sudo minikube ip) controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc " | sudo tee -a /etc/hosts
     ******************************************
     Login Info:
     - starwhale: u:starwhale, p:abcd1234
@@ -343,7 +343,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     *_* Enjoy to use Starwhale Platform. *_*
     ```
 
-    Then keep checking the minikube service status until all deployments are running.
+    Then keep checking the minikube service status until all deployments are running(waiting for 3~5 mins).
 
     ```bash
     kubectl get deployments -n starwhale
@@ -358,8 +358,10 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
     Make the Starwhale controller accessible locally with the following command:
 
     ```bash
-    kubectl port-forward --namespace starwhale svc/controller 8082:8082
+    echo "$(sudo minikube ip) controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc " | sudo tee -a /etc/hosts
     ```
+
+    Then you can visit http://controller.starwhale.svc in your local web browser.
 
 - ☕ **STEP4**: Upload the artifacts to the cloud instance
 
@@ -376,33 +378,23 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
         First, log in to the server:
 
         ```bash
-        swcli instance login --username starwhale --password abcd1234 --alias dev http://localhost:8082
+        swcli instance login --username starwhale --password abcd1234 --alias dev http://controller.starwhale.svc
         ```
 
     2. Start copying the model, dataset, and runtime that we constructed earlier:
 
         ```bash
-        swcli model copy mnist/version/latest dev/project/starwhale
-        swcli dataset copy mnist/version/latest dev/project/starwhale
-        swcli runtime copy pytorch/version/latest dev/project/starwhale
+        swcli model copy mnist cloud://dev/project/starwhale
+        swcli dataset copy mnist cloud://dev/project/starwhale
+        swcli runtime copy pytorch cloud://dev/project/starwhale
         ```
 
 - 🍞 **STEP5**: Use the web UI to run an evaluation
 
-    1. Log in Starwhale instance: let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://localhost:8082/>).
+    1. Log in Starwhale instance: let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://controller.starwhale.svc>).
 
-    2. Then, we will see the project named 'project_for_mnist' that we created earlier with swcli. Click the project name, you will see the model, runtime, and dataset uploaded in the previous step.
-        <details>
-            <summary>Show the uploaded artifacts screenshots</summary>
-
-        ![Console Artifacts](docs/docs/img/console-artifacts.gif)
-        </details>
-    3. Create and view an evaluation job
-        <details>
-            <summary>Show create job screenshot</summary>
-
-        ![Console Create Job](docs/docs/img/console-create-job.gif)
-        </details>
+    2. Then, we will see the project named 'starwhale/starwhale' that we created earlier with swcli. Click the project name, you will see the model, runtime, and dataset uploaded in the previous step.
+    3. Create and view an evaluation job.
 
 **👏 Congratulations! You have completed the evaluation process for a model.**
 

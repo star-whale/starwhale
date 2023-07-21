@@ -47,7 +47,7 @@ MySQL:
 
 {{- if and .Values.minikube.enabled (or .Values.controller.ingress.enabled .Values.minio.ingress.enabled ) }}
 Please run the following command for the domains searching:
-    echo "$(minikube ip) controller.{{ .Release.Namespace }}.svc minio.{{ .Release.Namespace }}.svc  minio-admin.{{ .Release.Namespace }}.svc " | sudo tee -a /etc/hosts
+    echo "$(sudo minikube ip) controller.{{ .Release.Namespace }}.svc minio.{{ .Release.Namespace }}.svc  minio-admin.{{ .Release.Namespace }}.svc " | sudo tee -a /etc/hosts
 {{- end}}
 ******************************************
 Login Info:
