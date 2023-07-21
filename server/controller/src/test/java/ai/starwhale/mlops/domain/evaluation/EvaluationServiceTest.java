@@ -39,7 +39,6 @@ import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -137,9 +136,9 @@ public class EvaluationServiceTest {
                                 .jobStatus(JobStatus.SUCCESS)
                                 .build()
                 ));
-        given(jobConvertor.convert(any(Job.class)))
+        given(jobConvertor.convert(any(JobEntity.class)))
                 .willAnswer(invocation -> {
-                    Job entity = invocation.getArgument(0);
+                    JobEntity entity = invocation.getArgument(0);
                     return JobVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .uuid("uuid" + entity.getId())

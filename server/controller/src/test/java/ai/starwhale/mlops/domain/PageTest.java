@@ -18,10 +18,8 @@ package ai.starwhale.mlops.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -67,8 +65,6 @@ import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
@@ -79,6 +75,7 @@ import org.springframework.context.annotation.Import;
         basePackages = {
             "ai.starwhale.mlops.common",
             "ai.starwhale.mlops.domain",
+            "ai.starwhale.mlops.datastore",
             "ai.starwhale.mlops.reporting",
             "ai.starwhale.mlops.resulting",
             "ai.starwhale.mlops.configuration.security"},
@@ -124,14 +121,6 @@ public class PageTest extends MySqlContainerHolder {
     private ProjectMapper projectMapper;
     @Autowired
     private UserMapper userMapper;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        DataStore dataStore() {
-            return mock(DataStore.class);
-        }
-    }
 
     String userName = "user-test";
     String projectName = "project-test";
