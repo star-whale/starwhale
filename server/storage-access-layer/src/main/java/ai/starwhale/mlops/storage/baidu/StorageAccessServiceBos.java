@@ -73,7 +73,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
         this.bosClient = new BosClient(config);
     }
 
-    private boolean isNotFount(BceServiceException e) {
+    private boolean isNotFound(BceServiceException e) {
         // https://cloud.baidu.com/doc/BOS/s/Ajwvysfpl
         return e.getStatusCode() == SC_NOT_FOUND || notFoundErrorCodes.contains(e.getErrorCode());
     }
@@ -94,7 +94,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
                     MetaHelper.mapToString(resp.getUserMetadata())
             );
         } catch (BceServiceException e) {
-            if (isNotFount(e)) {
+            if (isNotFound(e)) {
                 return new StorageObjectInfo(false, 0L, null, null);
             }
             throw new IOException(e);
@@ -154,7 +154,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
             var resp = this.bosClient.getObject(this.bucket, path);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (BceServiceException e) {
-            if (isNotFount(e)) {
+            if (isNotFound(e)) {
                 throw new FileNotFoundException(path);
             }
             log.error("get object fails", e);
@@ -169,7 +169,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
             var resp = this.bosClient.getObject(req);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (BceServiceException e) {
-            if (isNotFount(e)) {
+            if (isNotFound(e)) {
                 throw new FileNotFoundException(path);
             }
             log.error("get object fails", e);
@@ -191,7 +191,7 @@ public class StorageAccessServiceBos implements StorageAccessService {
             } while (resp.isTruncated());
             return files;
         } catch (BceServiceException e) {
-            if (isNotFount(e)) {
+            if (isNotFound(e)) {
                 return files;
             }
             throw e;
