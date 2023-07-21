@@ -288,7 +288,7 @@ public class JobServiceTest {
                 + "      required: 'false'\n"
                 + "    - name: c\n"
                 + "      required: 'false'\n"
-                + "  ext_cmd_args: '--a'\n"
+                + "  ext_cmd_args: ''\n"
                 + "  replicas: 1";
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).build());

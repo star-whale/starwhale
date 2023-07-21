@@ -1168,3 +1168,124 @@ def predict_handler(): ...
         yaml_path = self.workdir / "job.yaml"
         with self.assertRaisesRegex(RuntimeError, "dependency not found"):
             generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
+
+    def test_handler_args(self) -> None:
+        content = """
+from starwhale import DsInput, handler, ContextInput, Dataset, Context
+
+class X:
+    def __init__(self) -> None:
+        self.a = 1
+
+    @handler()
+    def f(self, *, x, ds=DsInput(), ctx=ContextInput()):
+        assert self.a+x is 3
+        assert isinstance(ds, Dataset)
+        assert isinstance(ctx, Context)
+
+
+@handler()
+def f(*, x, ds=DsInput(), ctx=ContextInput()):
+    assert x is 2
+    assert isinstance(ds, Dataset)
+    assert isinstance(ctx, Context)
+
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml(
+            [f"{self.module_name}:X", self.module_name], self.workdir, yaml_path
+        )
+        jobs_info = load_yaml(yaml_path)
+        assert jobs_info["mock_user_module:X.f"] == [
+            {
+                "cls_name": "X",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "f",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:X.f",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "f",
+                "expose": 0,
+                "virtual": False,
+                "require_dataset": False,
+                "parameters_sig": [
+                    {
+                        "name": "x",
+                        "required": True,
+                    },
+                    {
+                        "name": "ds",
+                        "required": False,
+                    },
+                    {
+                        "name": "ctx",
+                        "required": False,
+                    },
+                ],
+                "ext_cmd_args": "--x",
+            },
+        ]
+        assert jobs_info["mock_user_module:f"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "f",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:f",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "f",
+                "expose": 0,
+                "virtual": False,
+                "require_dataset": False,
+                "parameters_sig": [
+                    {
+                        "name": "x",
+                        "required": True,
+                    },
+                    {
+                        "name": "ds",
+                        "required": False,
+                    },
+                    {
+                        "name": "ctx",
+                        "required": False,
+                    },
+                ],
+                "ext_cmd_args": "--x",
+            },
+        ]
+        with patch(
+            "sys.argv",
+            "swcli model run -w . -m th --handler th:f -- --x 2 --ds dsabc".split(" "),
+        ):
+            steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
+            context = Context(
+                workdir=self.workdir,
+                project="test",
+                version="123",
+            )
+            task = TaskExecutor(
+                index=1, context=context, workdir=self.workdir, step=steps[0]
+            )
+            result = task.execute()
+            assert result.status == "success"
+            steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
+            context = Context(
+                workdir=self.workdir,
+                project="test",
+                version="123",
+            )
+            task = TaskExecutor(
+                index=1, context=context, workdir=self.workdir, step=steps[0]
+            )
+            result = task.execute()
+            assert result.status == "success"
