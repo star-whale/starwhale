@@ -99,6 +99,11 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                 pattern: '/\\/overview\\/?',
             },
             {
+                title: 'README',
+                path: `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/readme`,
+                pattern: '/\\/overview\\/?',
+            },
+            {
                 title: t('Files'),
                 path: `/projects/${projectId}/models/${modelId}/versions/${modelVersionId}/files`,
                 pattern: '/\\/files\\/?',
@@ -207,7 +212,7 @@ export default function ModelOverviewLayout({ children }: IModelLayoutProps) {
                             }}
                             kind='secondary'
                             startEnhancer={() => <IconFont type='runtime' />}
-                            onClick={() => history.push(`/projects/${projectId}/models/${modelVersionId}`)}
+                            onClick={() => history.push(`/projects/${projectId}/models/${modelId}`)}
                         >
                             {t('History')}
                         </Button>

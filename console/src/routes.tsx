@@ -54,8 +54,7 @@ import OnlineEval from '@/pages/Project/OnlineEval'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 import DatasetBuildListCard from './pages/Dataset/DatasetBuildListCard'
-
-// const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
+import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -272,6 +271,11 @@ const Routes = () => {
                                             exact
                                             path='/projects/:projectId/models/:modelId/versions/:modelVersionId/overview'
                                             component={ModelVersionOverview}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/readme'
+                                            component={ModelReadmeOverview}
                                         />
                                         <Route
                                             exact
