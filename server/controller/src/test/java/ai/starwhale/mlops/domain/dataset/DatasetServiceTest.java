@@ -594,6 +594,7 @@ public class DatasetServiceTest {
                 .build())
         );
 
+
         // case5: normal build
         given(buildRecordMapper.insert(any())).willReturn(1);
         V1Job v1Job = new V1Job();
@@ -602,6 +603,18 @@ public class DatasetServiceTest {
         v1Job.setSpec(new V1JobSpec().template(new V1PodTemplateSpec().metadata(new V1ObjectMeta())));
         given(k8sJobTemplate.loadJob(WORKLOAD_TYPE_DATASET_BUILD)).willReturn(v1Job);
 
+        // without configs
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(null)
+                .datasetName(datasetName)
+                .shared(true)
+                .type(BuildType.IMAGE)
+                .projectUrl(String.valueOf(projectId))
+                .storagePath("storage-path")
+                .build()));
+        // set config
+        systemSettingService.getRunTimeProperties().setDatasetBuild(
+                new RunTimeProperties.RunConfig(null, "image", "0.5.6", "3.10"));
         service.build(CreateBuildRecordRequest.builder()
                 .datasetId(null)
                 .datasetName(datasetName)
