@@ -106,37 +106,39 @@ export default function DatasetListCard() {
                     }}
                 />
             </Card>
-            <div
-                className='dataset-build-list flex'
-                style={{
-                    position: 'absolute',
-                    bottom: 60,
-                    right: '-20px',
-                    width: '100px',
-                    height: '58px',
-                    borderRadius: '100px 0 0 100px',
-                    boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
-                    backgroundColor: '#fff',
-                    zIndex: 2,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '20px',
-                }}
-            >
-                <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
-                    {buildCount > 0 && (
-                        <Text
-                            tooltip={t('dataset.create.build.desc', [buildCount])}
-                            style={{
-                                marginRight: '20px',
-                            }}
-                        >
-                            {buildCount}
-                        </Text>
-                    )}
-                    <IconFont type='unfold21' style={{ color: 'rgba(2,16,43,0.40)' }} />
-                </Button>
-            </div>
+            <WithCurrentAuth id='dataset.create.read'>
+                <div
+                    className='dataset-build-list flex'
+                    style={{
+                        position: 'absolute',
+                        bottom: 60,
+                        right: '-20px',
+                        width: '100px',
+                        height: '58px',
+                        borderRadius: '100px 0 0 100px',
+                        boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
+                        backgroundColor: '#fff',
+                        zIndex: 2,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '20px',
+                    }}
+                >
+                    <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
+                        {buildCount > 0 && (
+                            <Text
+                                tooltip={t('dataset.create.build.desc', [buildCount])}
+                                style={{
+                                    marginRight: '20px',
+                                }}
+                            >
+                                {buildCount}
+                            </Text>
+                        )}
+                        <IconFont type='unfold21' style={{ color: 'rgba(2,16,43,0.40)' }} />
+                    </Button>
+                </div>
+            </WithCurrentAuth>
         </>
     )
 }
