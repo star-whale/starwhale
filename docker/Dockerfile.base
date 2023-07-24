@@ -65,6 +65,6 @@ RUN curl -fsSL --compressed  https://code-server.dev/install.sh | sh
 
 # stable entrypoint
 WORKDIR /opt/starwhale.bin
-COPY external/starwhale-entrypoint.sh starwhale-entrypoint
-RUN chmod +x starwhale-entrypoint
-ENTRYPOINT ["/opt/starwhale.bin/starwhale-entrypoint"]
+COPY external/base-entrypoint.sh base-entrypoint
+RUN chmod +x base-entrypoint
+ENTRYPOINT ["/opt/starwhale.bin/base-entrypoint"]
