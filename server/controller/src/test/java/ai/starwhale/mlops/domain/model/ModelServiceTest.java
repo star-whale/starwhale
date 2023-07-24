@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -787,23 +788,30 @@ public class ModelServiceTest extends MySqlContainerHolder {
     @Test
     public void testListModelVersionView() {
         var res = modelService.listModelVersionView("1");
-        assertThat(res, hasItems(
-                allOf(hasProperty("projectName", is("starwhale")),
-                        hasProperty("modelName", is("m")),
-                        hasProperty("versions", hasItems(
+        assertEquals(2, res.size());
+        assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
+                        hasProperty("modelName", is("m"))));
+
+        assertThat(res.get(0), allOf(hasProperty("projectName", is("starwhale")),
+                hasProperty("modelName", is("m1")),
+                hasProperty("versions", hasItems(
+                        allOf(hasProperty("versionName", is("v1")),
+                                hasProperty("alias", is("v1")),
+                                hasProperty("latest", is(true)))))));
+
+        assertThat(res.get(1).getVersions(), hasItems(
                                 allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("v1"))),
+                                        hasProperty("alias", is("v1")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v2")),
-                                        hasProperty("alias", is("v2"))),
+                                        hasProperty("alias", is("v2")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v3")),
-                                        hasProperty("alias", is("v3"))),
+                                        hasProperty("alias", is("v3")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v4")),
-                                        hasProperty("alias", is("latest")))))),
-                allOf(hasProperty("projectName", is("starwhale")),
-                        hasProperty("modelName", is("m1")),
-                        hasProperty("versions", hasItems(
-                                allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("latest"))))))));
+                                        hasProperty("alias", is("v4")),
+                                        hasProperty("latest", is(true)))));
     }
 
     @Test

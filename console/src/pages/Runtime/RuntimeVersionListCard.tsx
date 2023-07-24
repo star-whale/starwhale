@@ -17,6 +17,7 @@ import Alias from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -72,7 +73,7 @@ export default function RuntimeVersionListCard() {
                         >
                             <MonoText>{runtime.name}</MonoText>
                         </TextLink>,
-                        <Alias key='alias' alias={runtime.alias} />,
+                        <Alias key='alias' alias={getAliasStr(runtime)} />,
                         <Shared key='shared' shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,

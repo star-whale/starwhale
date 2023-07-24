@@ -58,6 +58,7 @@ public class RuntimeVersionConverterTest {
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
+                hasProperty("latest", is(false)),
                 hasProperty("tag", is("tag1")),
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),

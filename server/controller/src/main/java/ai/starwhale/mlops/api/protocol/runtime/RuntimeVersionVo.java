@@ -45,6 +45,8 @@ public class RuntimeVersionVo implements Serializable {
     @JsonProperty("alias")
     private String alias;
 
+    private Boolean latest;
+
     @JsonProperty("meta")
     private Object meta;
 
