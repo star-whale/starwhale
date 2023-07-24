@@ -83,13 +83,19 @@ set_py_and_sw() {
     set_python_alter
     set_pip_cache
 
-    if [ -z "${SW_VERSION}" ]; then
+    if [ -z "$SW_VERSION" ]; then
       echo "-->[Preparing] Can't detect starwhale version, use the latest version."
       python3 -m pip install starwhale || exit 1
     else
-      echo "-->[Preparing] Install starwhale:${SW_VERSION}."
       # install starwhale for current python
-      python3 -m pip install "starwhale==${SW_VERSION}" || exit 1
+      if [[ $SW_VERSION =~ ^git ]]; then
+        echo "-->[Preparing] Install starwhale from git:${SW_VERSION}."
+        # SW_VERSION=git+https://github.com/star-whale/starwhale.git@main#subdirectory=client&setup_py=client/setup.py#egg=starwhale
+        python3 -m pip install -e "$SW_VERSION" || exit 1
+      else
+        echo "-->[Preparing] Install starwhale:${SW_VERSION}."
+        python3 -m pip install "starwhale==$SW_VERSION" || exit 1
+      fi
     fi
 
 }
