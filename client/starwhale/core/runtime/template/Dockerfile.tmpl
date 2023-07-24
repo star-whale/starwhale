@@ -15,14 +15,10 @@ COPY . /opt/starwhale.user/runtime
 ENV SW_PYPI_INDEX_URL "{{pypi_index_url}}"
 ENV SW_PYPI_EXTRA_INDEX_URL "{{pypi_extra_index_url}}"
 ENV SW_PYPI_TRUSTED_HOST "{{pypi_trusted_host}}"
-RUN sw-docker-entrypoint pre_config || true
-
-ENV SW_USER_RUNTIME_PYTHON_VERSION={{python_version}}
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${SW_USER_RUNTIME_PYTHON_VERSION} 10 \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python${SW_USER_RUNTIME_PYTHON_VERSION} 10
-
 ENV SW_PIP_CACHE_DIR=/root/.cache/pip
-RUN python3 -m pip config set global.cache-dir ${SW_PIP_CACHE_DIR}
+ENV SW_RUNTIME_PYTHON_VERSION={{python_version}}
+ENV SW_VERSION={{starwhale_version}}
+RUN /opt/starwhale.bin/base-entrypoint set_environment || true
 
 RUN swcli -vvv runtime restore /opt/starwhale.user/runtime \
     && $(bash /opt/starwhale.user/runtime/activate.sw)

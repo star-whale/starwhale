@@ -203,8 +203,9 @@ public class RuntimeServiceTest {
                 runtimeTokenValidator,
                 systemSettingService,
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
-                new RunTimeProperties(
-                        "", new RunTimeProperties.RunConfig("rc", ""), new RunTimeProperties.RunConfig("rc", ""),
+                new RunTimeProperties("",
+                        new RunTimeProperties.RunConfig("rc", "", "", ""),
+                        new RunTimeProperties.RunConfig("rc", "", "", ""),
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io", 1, 2), ""),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);
@@ -650,8 +651,8 @@ public class RuntimeServiceTest {
                 argThat(containerOverwriteSpecMap -> {
                     var prepareBuilder = containerOverwriteSpecMap.get("prepare-runtime");
                     var imageBuilder = containerOverwriteSpecMap.get("image-builder");
-                    return prepareBuilder.getEnvs().size() == 10
-                        && imageBuilder.getEnvs().size() == 10
+                    return prepareBuilder.getEnvs().size() == 12
+                        && imageBuilder.getEnvs().size() == 12
                         && imageBuilder.getCmds().size() == 6;
                 }),
                 any(), any(), isNull());

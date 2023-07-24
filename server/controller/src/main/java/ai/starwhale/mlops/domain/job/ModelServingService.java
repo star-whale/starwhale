@@ -286,6 +286,8 @@ public class ModelServingService {
         var md = modelMapper.find(model.getModelId());
 
         var envs = new HashMap<String, String>();
+        envs.put("SW_RUNTIME_PYTHON_VERSION", runtime.getPythonVersion());
+        envs.put("SW_VERSION", runtime.getSwVersion());
         envs.put("SW_RUNTIME_VERSION", String.format("%s/version/%s", rt.getRuntimeName(), runtime.getVersionName()));
         envs.put("SW_MODEL_VERSION", String.format("%s/version/%s", md.getModelName(), model.getVersionName()));
         envs.put("SW_INSTANCE_URI", instanceUri);

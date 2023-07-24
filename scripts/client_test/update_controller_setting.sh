@@ -23,31 +23,7 @@ done
 
 export auth_header=$(echo ${auth_header%$'\r'})
 
-if in_github_action; then
-  data=$(cat << EOF
----
-storageSetting:
-- type: "minio"
-  tokens:
-    bucket: "users"
-    ak: "starwhale"
-    sk: "starwhale"
-    endpoint: "http://10.131.0.1:9000"
-    region: "local"
-    hugeFileThreshold: "10485760"
-    hugeFilePartSize: "5242880"
-- type: "s3"
-  tokens:
-    bucket: "users"
-    ak: "starwhale"
-    sk: "starwhale"
-    endpoint: "http://10.131.0.1:9000"
-    region: "local"
-    hugeFileThreshold: "10485760"
-    hugeFilePartSize: "5242880"
-EOF
-  )
-else
+if ! in_github_action; then
   data=$(cat << EOF
 ---
 storageSetting:
@@ -79,14 +55,13 @@ resourcePoolSetting:
     - name: "nvidia.com/gpu"
 EOF
   )
-fi
-
-curl -X 'POST' \
+  curl -X 'POST' \
   "$CONTROLLER_URL/api/v1/system/setting" \
   -H 'accept: application/json' \
   -H "$auth_header"\
   -H 'Content-Type: text/plain' \
   --data-binary "${data}"
+fi
 
 ) || exit 1
 

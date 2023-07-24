@@ -53,6 +53,7 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
     private String versionTag;
 
     private String versionMeta;
+    private RuntimeService.RuntimeManifest versionMetaObj;
 
     private String storagePath;
 
@@ -69,36 +70,47 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
         return versionName;
     }
 
-    public static String extractImage(String manifest, String replaceableBuiltinRegistry) {
-        try {
-            var manifestObj = Constants.yamlMapper.readValue(
-                    manifest, RuntimeService.RuntimeManifest.class);
-            if (manifestObj == null) {
-                return null;
-            }
-            if (manifestObj.getDocker() != null) {
-                var docker = manifestObj.getDocker();
-                if (StringUtils.hasText(docker.getCustomImage())) {
-                    return docker.getCustomImage();
-                } else {
-                    var dockerImage = new DockerImage(docker.getBuiltinImage().getFullName());
-                    return StringUtils.hasText(replaceableBuiltinRegistry)
-                            ? dockerImage.resolve(replaceableBuiltinRegistry) : dockerImage.toString();
-                }
+    private static String extractImage(RuntimeService.RuntimeManifest manifest, String replaceableBuiltinRegistry) {
+        if (manifest.getDocker() != null) {
+            var docker = manifest.getDocker();
+            if (StringUtils.hasText(docker.getCustomImage())) {
+                return docker.getCustomImage();
             } else {
-                return manifestObj.getBaseImage();
+                var dockerImage = new DockerImage(docker.getBuiltinImage().getFullName());
+                return StringUtils.hasText(replaceableBuiltinRegistry)
+                        ? dockerImage.resolve(replaceableBuiltinRegistry) : dockerImage.toString();
             }
+        } else {
+            return manifest.getBaseImage();
+        }
+    }
+
+    public String getSwVersion() {
+        return getVersionMetaObj().getEnvironment().getLock().getSwVersion();
+    }
+
+    public String getPythonVersion() {
+        return getVersionMetaObj().getEnvironment().getPython();
+    }
+
+    public synchronized RuntimeService.RuntimeManifest getVersionMetaObj() {
+        if (versionMetaObj != null) {
+            return versionMetaObj;
+        }
+        try {
+            versionMetaObj = Constants.yamlMapper.readValue(versionMeta, RuntimeService.RuntimeManifest.class);
         } catch (JsonProcessingException e) {
             log.error("runtime manifest parse error", e);
             throw new SwValidationException(SwValidationException.ValidSubject.RUNTIME, "manifest parse error");
         }
+        return versionMetaObj;
     }
 
     public String getImage() {
-        return extractImage(this.versionMeta, null);
+        return extractImage(this.getVersionMetaObj(), null);
     }
 
     public String getImage(String newRegistry) {
-        return extractImage(this.versionMeta, newRegistry);
+        return extractImage(this.getVersionMetaObj(), newRegistry);
     }
 }

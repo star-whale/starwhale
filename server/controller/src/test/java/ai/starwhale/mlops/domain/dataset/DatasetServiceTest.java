@@ -51,6 +51,8 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
@@ -175,7 +177,10 @@ public class DatasetServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         datasetBuildTokenValidator = mock(DatasetBuildTokenValidator.class);
-        systemSettingService = mock(SystemSettingService.class);
+        systemSettingService = new SystemSettingService(null, List.of(),
+                new RunTimeProperties("", new RunTimeProperties.RunConfig(), new RunTimeProperties.RunConfig(),
+                        new RunTimeProperties.Pypi("url1", "url2", "host1", 11, 91), ""),
+                new DockerSetting("", "", "", "", false), userService);
 
         service = new DatasetService(
                 projectService,
@@ -596,6 +601,7 @@ public class DatasetServiceTest {
                 .build())
         );
 
+
         // case5: normal build
         given(buildRecordMapper.insert(any())).willReturn(1);
         V1Job v1Job = new V1Job();
@@ -604,6 +610,18 @@ public class DatasetServiceTest {
         v1Job.setSpec(new V1JobSpec().template(new V1PodTemplateSpec().metadata(new V1ObjectMeta())));
         given(k8sJobTemplate.loadJob(WORKLOAD_TYPE_DATASET_BUILD)).willReturn(v1Job);
 
+        // without configs
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                .datasetId(null)
+                .datasetName(datasetName)
+                .shared(true)
+                .type(BuildType.IMAGE)
+                .projectUrl(String.valueOf(projectId))
+                .storagePath("storage-path")
+                .build()));
+        // set config
+        systemSettingService.getRunTimeProperties().setDatasetBuild(
+                new RunTimeProperties.RunConfig(null, "image", "0.5.6", "3.10"));
         service.build(CreateBuildRecordRequest.builder()
                 .datasetId(null)
                 .datasetName(datasetName)

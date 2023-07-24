@@ -40,9 +40,11 @@ public class RunTimeProperties {
 
         String resourcePool;
         String image;
+        String clientVersion;
+        String pythonVersion;
 
         public static RunConfig empty() {
-            return new RunConfig("", "");
+            return new RunConfig("", "", "", "");
         }
     }
 

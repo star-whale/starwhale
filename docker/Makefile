@@ -9,7 +9,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 
 # Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
-FIXED_VERSION_BASE_IMAGE := 0.2.7
+FIXED_VERSION_BASE_IMAGE := 0.3.4
 FIXED_VERSION_NODEJS_IMAGE := 0.1.4
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.2
 
@@ -65,15 +65,6 @@ build-release-base:
 	# build if not exist
 	docker manifest inspect $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) || \
 	$(call build-image,,Dockerfile.base,base:${FIXED_VERSION_BASE_IMAGE} base:latest)
-
-STARWHALE_TAGS:=starwhale:${RELEASE_VERSION} starwhale:${PYPI_FMT_RELEASE_VERSION} starwhale:latest
-build-release-starwhale:
-	$(call build-image,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_TAGS})
-
-# the $(version) is provided by the caller which in the github workflow `release.yaml`
-STARWHALE_CUDA_TAGS:=$(foreach tag,${STARWHALE_TAGS},$(tag)-cuda$(version))
-build-release-starwhale-cuda:
-	$(call build-image,${GHCR_IO_REPO}/cuda:$(version)-base${FIXED_VERSION_BASE_IMAGE},Dockerfile.starwhale,${STARWHALE_CUDA_TAGS})
 
 build-cuda:
 	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)

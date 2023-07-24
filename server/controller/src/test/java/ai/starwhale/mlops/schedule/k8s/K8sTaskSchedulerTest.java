@@ -39,6 +39,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
@@ -240,7 +241,15 @@ public class K8sTaskSchedulerTest {
                 .id(1L)
                 .model(Model.builder().name("swmpN").version("swmpV").projectId(101L).build())
                 .jobRuntime(JobRuntime.builder()
-                                .name("swrtN").version("swrtV").image("imageRT").storagePath("path_rt").projectId(102L)
+                                .name("swrtN")
+                                .version("swrtV")
+                                .image("imageRT")
+                                .storagePath("path_rt")
+                                .projectId(102L)
+                                .manifest(new RuntimeService.RuntimeManifest(
+                                        "",
+                                        new RuntimeService.RuntimeManifest.Environment("3.10",
+                                                new RuntimeService.RuntimeManifest.Lock("0.5.1")), null))
                                 .build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)
@@ -291,6 +300,8 @@ public class K8sTaskSchedulerTest {
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
             Map<String, String> expectedEnvs = new HashMap<>() {
             };
+            expectedEnvs.put("SW_RUNTIME_PYTHON_VERSION", "3.10");
+            expectedEnvs.put("SW_VERSION", "0.5.1");
             expectedEnvs.put("SW_ENV", "test");
             expectedEnvs.put("SW_PROJECT", "project");
             expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");

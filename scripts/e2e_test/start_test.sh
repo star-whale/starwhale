@@ -42,7 +42,7 @@ declare_env() {
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
   export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
-  export SW_IMAGE_REPO="${SW_IMAGE_REPO:=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER}"
+  # export SW_IMAGE_REPO="${SW_IMAGE_REPO:=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER}"
   export IP_MINIKUBE_BRIDGE_RANGE="${IP_MINIKUBE_BRIDGE_RANGE:=192.0.0.0/8}"
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
@@ -167,32 +167,13 @@ upload_pypi_to_nexus() {
   popd
 }
 
-build_runtime_image() {
-  pushd ../../docker
-  docker build -f Dockerfile.starwhale \
-    --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 \
-    --build-arg PORT_NEXUS=$PORT_NEXUS \
-    --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE \
-    --build-arg SW_VERSION="$PYPI_RELEASE_VERSION" \
-    --tag $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION \
-    --build-arg SW_PYPI_EXTRA_INDEX_URL="$SW_PYPI_EXTRA_INDEX_URL" .
-  popd
-}
-
 push_images_to_nexus() {
     push_server_image_to_nexus
-    push_runtime_images_to_nexus
 }
 
 push_server_image_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
-}
-
-push_runtime_images_to_nexus() {
-  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
 }
 
 start_starwhale() {
@@ -208,6 +189,8 @@ start_starwhale() {
   --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
   --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
   --set mirror.pypi.trustedHost=$NEXUS_HOSTNAME \
+  --set mirror.pypi.retries=10 \
+  --set mirror.pypi.timeout=600 \
   --set controller.ingress.enabled=true \
   --set controller.ingress.host=$CONTROLLER_HOST \
   --set minio.ingress.enabled=true \
@@ -311,7 +294,6 @@ publish_to_mini_k8s() {
   check_nexus_service
   create_repository_in_nexus
   upload_pypi_to_nexus
-  build_runtime_image
   push_images_to_nexus
   start_starwhale
   check_controller_service

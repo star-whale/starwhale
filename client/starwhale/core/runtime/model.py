@@ -31,7 +31,6 @@ from starwhale.utils import (
 )
 from starwhale.consts import (
     SupportOS,
-    LATEST_TAG,
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
@@ -41,6 +40,7 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     SW_PYPI_PKG_NAME,
+    DEFAULT_IMAGE_TAG,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_NAME,
@@ -1275,22 +1275,23 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _dump_docker_image(self, config: RuntimeConfig) -> None:
         custom_run_image = config.environment.docker.image
 
-        tag = config._starwhale_version or LATEST_TAG
+        image = DEFAULT_IMAGE_NAME
+        tag = DEFAULT_IMAGE_TAG
         _cuda = config.environment.cuda
         _cudnn = config.environment.cudnn
         if _cuda:
-            _suffix = []
-            _suffix.append(f"-cuda{_cuda}")
+            # star-whale/cuda:11.5-cudnn8-base0.3.0
+            _tags = [_cuda]
 
             if _cudnn:
-                _suffix.append(f"-cudnn{_cudnn}")
+                _tags.append(f"-cudnn{_cudnn}")
+            _tags.append(f"-base{tag}")
 
-            tag += "".join(_suffix)
+            image = "cuda"
+            tag = "".join(_tags)
 
         repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        builtin_run_image = SW_IMAGE_FMT.format(
-            repo=repo, name=DEFAULT_IMAGE_NAME, tag=tag
-        )
+        builtin_run_image = SW_IMAGE_FMT.format(repo=repo, name=image, tag=tag)
 
         if custom_run_image:
             console.print(
@@ -1846,10 +1847,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 base_image=get_docker_run_image_by_manifest(manifest=_manifest),
                 runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
-                pypi_index_url=_pip.get("index_url", ""),
-                pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
-                pypi_trusted_host=" ".join(_pip.get("trusted_host", [])),
+                pypi_index_url=os.environ.get("SW_PYPI_INDEX_URL")
+                or _pip.get("index_url", ""),
+                pypi_extra_index_url=os.environ.get("SW_PYPI_EXTRA_INDEX_URL")
+                or " ".join(_pip.get("extra_index_url", [])),
+                pypi_trusted_host=os.environ.get("SW_PYPI_TRUSTED_HOST")
+                or " ".join(_pip.get("trusted_host", [])),
                 python_version=_manifest["environment"]["python"],
+                starwhale_version=_manifest["environment"]["lock"]["starwhale_version"],
                 mode=_manifest["environment"]["mode"],
                 local_packaged_env=_manifest["dependencies"].get(
                     "local_packaged_env", False
