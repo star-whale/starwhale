@@ -679,10 +679,8 @@ public class RuntimeService {
                             runTimeProperties.getPypi().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
                             runtimeTokenValidator.getToken(user, runtimeVersion.getId())),
-                    new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(
-                        runtimeVersion.getVersionMetaObj().getEnvironment().getPython()),
-                    new V1EnvVar().name("SW_VERSION").value(
-                        runtimeVersion.getVersionMetaObj().getEnvironment().getLock().getSwVersion())
+                    new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(runtimeVersion.getPythonVersion()),
+                    new V1EnvVar().name("SW_VERSION").value(runtimeVersion.getSwVersion())
             ));
             if (null != runConfig && null != runConfig.getEnvVars()) {
                 List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(K8sJobTemplate::toEnvVar)

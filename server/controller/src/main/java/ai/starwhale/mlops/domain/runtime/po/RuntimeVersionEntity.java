@@ -85,6 +85,14 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
         }
     }
 
+    public String getSwVersion() {
+        return getVersionMetaObj().getEnvironment().getLock().getSwVersion();
+    }
+
+    public String getPythonVersion() {
+        return getVersionMetaObj().getEnvironment().getPython();
+    }
+
     public synchronized RuntimeService.RuntimeManifest getVersionMetaObj() {
         if (versionMetaObj != null) {
             return versionMetaObj;
