@@ -10,12 +10,13 @@ import { TextLink } from '@/components/Link'
 import { Button, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
 import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
 import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
 import Text from '@starwhale/ui/Text'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -27,8 +28,14 @@ export default function DatasetListCard() {
 
     const query = { status: 'BUILDING', ...page }
 
-    const datasetBuildList = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
-        fetchDatasetBuildList(projectId, query as any)
+    const { isPrivileged } = useAuthPrivileged({ role: useProjectRole().role, id: 'dataset.create.read' })
+
+    const datasetBuildList = useQuery(
+        `fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`,
+        () => fetchDatasetBuildList(projectId, query as any),
+        {
+            enabled: isPrivileged,
+        }
     )
 
     const buildCount = datasetBuildList.data?.list?.length ?? 0
