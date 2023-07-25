@@ -77,8 +77,7 @@ export function DataTable({
     const locale = React.useContext(LocaleContext)
 
     const rowHeightAtIndex = React.useCallback(
-        // eslint-disable-next-line
-        (index) => {
+        (index: number) => {
             return rowHeight
         },
         [rowHeight]
@@ -101,17 +100,17 @@ export function DataTable({
     })
 
     const handleItemsRendered = useEventCallback(
-        _.throttle(
-            ({
-                overscanColumnStartIndex,
-                overscanColumnStopIndex,
-                overscanRowStartIndex,
-                overscanRowStopIndex,
-                visibleColumnStartIndex,
-                visibleColumnStopIndex,
-                visibleRowStartIndex,
-                visibleRowStopIndex,
-            }) => {
+        ({
+            overscanColumnStartIndex,
+            overscanColumnStopIndex,
+            overscanRowStartIndex,
+            overscanRowStopIndex,
+            visibleColumnStartIndex,
+            visibleColumnStopIndex,
+            visibleRowStartIndex,
+            visibleRowStopIndex,
+        }) => {
+            startTransition(() => {
                 setItemIndexs({
                     overscanColumnStartIndex,
                     overscanColumnStopIndex,
@@ -122,9 +121,8 @@ export function DataTable({
                     visibleRowStartIndex,
                     visibleRowStopIndex,
                 })
-            },
-            200
-        )
+            })
+        }
     )
 
     const columnKeys = React.useMemo(() => columns.map((c) => c.key).join(','), [columns])
@@ -165,6 +163,7 @@ export function DataTable({
     })
     const [isScrollingX, setIsScrollingX] = React.useState(false)
     const [recentlyScrolledX, setRecentlyScrolledX] = React.useState(false)
+    const [, startTransition] = React.useTransition()
     React.useLayoutEffect(() => {
         if (recentlyScrolledX !== isScrollingX) {
             setIsScrollingX(recentlyScrolledX)
@@ -179,16 +178,16 @@ export function DataTable({
         return () => {}
     }, [recentlyScrolledX, isScrollingX])
 
-    const handleScroll = React.useCallback(
-        (params) => {
-            const eventScrollLeft = params.scrollLeft
+    const handleScroll = useEventCallback((params) => {
+        const eventScrollLeft = params.scrollLeft
+
+        startTransition(() => {
             setScrollLeft(eventScrollLeft)
             if (eventScrollLeft !== scrollLeft) {
                 setRecentlyScrolledX(true)
             }
-        },
-        [scrollLeft, setScrollLeft, setRecentlyScrolledX]
-    )
+        })
+    })
 
     const sortedIndices = React.useMemo(() => {
         const toSort = allRows.map((r, i) => [r, i])

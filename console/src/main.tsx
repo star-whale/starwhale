@@ -1,6 +1,6 @@
 import './wdyr'
 import React from 'react'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
 import '@/styles/_global.scss'
 import i18n, { initI18n } from '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
@@ -45,12 +45,9 @@ async function init() {
         i18n.changeLanguage('zh')
     }
 
-    ReactDOM.render(
-        <React.StrictMode>
-            <App />
-        </React.StrictMode>,
-        document.getElementById('root')
-    )
+    const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
+
+    root.render(<App />)
 }
 
 init()
