@@ -3,12 +3,13 @@ services:
     image: bitnami/mysql:8.0.29-debian-10-r2
     restart: always
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/bitnami/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=starwhale
       - MYSQL_USER=starwhale
       - MYSQL_PASSWORD=starwhale
       - MYSQL_DATABASE=starwhale
+    network_mode: "host"
 
   oss:
     image: bitnami/minio:2022.6.20-debian-11-r0
@@ -21,31 +22,57 @@ services:
       - MINIO_CONSOLE_PORT_NUMBER=9001
     volumes:
       - oss_data:/data
+    network_mode: "host"
+
+  minikube:
+    image: minikube
+    restart: always
+    privileged: true
+    healthcheck:
+      test: ["CMD","minikube", "kubectl", "--", "get", "pods", "-A"]
+    volumes:
+      - minikube_data:/root/.minikube
+      - kube_data:/root/.kube
+      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: "host"
 
   controller:
-    image: ghcr.io/star-whale/server:latest
+    image: homepage-bj.intra.starwhale.ai:5000/starwhaleai/server:latest
     restart: always
+    healthcheck:
+      test: [ "CMD","curl", "-f", "http://localhost:8082"]
+      interval: "60s"
+      timeout: "3s"
+      retries: 10
     depends_on:
       - db
       - oss
-    ports:
-      - 8082:8082
+      - minikube
+#    entrypoint: ["sh", "-c", "java $JAVA_OPTS -XX:InitialRAMPercentage=40.0 -XX:MaxRAMPercentage=80.0 org.springframework.boot.loader.JarLauncher"]
+#    ports:
+#      - 8082:8082
     environment:
       - JAR=controller
-      - SW_HOST_IP=127.0.0.1
+      - KUBECONFIG=/root/.kube/config
+      - SW_IMAGE_BUILD_IMAGE=docker-registry.starwhale.cn/kaniko-cloud:v0.3
       - SW_JWT_TOKEN_EXPIRE_MINUTES=144000
       - SW_UPLOAD_MAX_FILE_SIZE=20480MB
-      - SW_METADATA_STORAGE_IP=db
+      - SW_METADATA_STORAGE_IP=192.168.1.20
       - SW_METADATA_STORAGE_PORT=3306
       - SW_METADATA_STORAGE_USER=starwhale
       - SW_METADATA_STORAGE_PASSWORD=starwhale
       - SW_STORAGE_BUCKET=starwhale
       - SW_STORAGE_ACCESSKEY=minioadmin
       - SW_STORAGE_SECRETKEY=minioadmin
-      - SW_STORAGE_ENDPOINT=http://oss:9000
+      - SW_STORAGE_ENDPOINT=http://192.168.1.20:9000
+      - SW_INSTANCE_URI=http://192.168.1.20:8082
+    volumes:
+      - minikube_data:/root/.minikube
+      - kube_data:/root/.kube
+    network_mode: "host"
 
 volumes:
-  db_data: {}
-  oss_data: {}
-  agent_data: {}
-  taskset_dind_data: {}
+  db_data:
+  oss_data:
+  minikube_data:
+  kube_data:
