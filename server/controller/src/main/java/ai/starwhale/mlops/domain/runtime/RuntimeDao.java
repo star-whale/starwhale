@@ -104,6 +104,14 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
+    public BundleEntity findByUrl(String url) {
+        if (idConvertor.isId(url)) {
+            return runtimeMapper.find(idConvertor.revert(url));
+        }
+        return runtimeMapper.findByNameOnly(url);
+    }
+
+    @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
         return runtimeMapper.findByName(name, projectId, true);
     }

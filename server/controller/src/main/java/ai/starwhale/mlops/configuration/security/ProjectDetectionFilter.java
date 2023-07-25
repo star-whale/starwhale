@@ -16,11 +16,15 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.common.util.HttpUtil;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -36,9 +40,17 @@ public class ProjectDetectionFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        request.setAttribute(ATTRIBUTE_PROJECT, projectNameExtractor.extractProjectName(request));
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            @NotNull HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        try {
+            request.setAttribute(ATTRIBUTE_PROJECT, projectNameExtractor.extractProjectName(request));
+        } catch (SwNotFoundException e) {
+            HttpUtil.error(response, HttpServletResponse.SC_NOT_FOUND, Code.validationException, e.getMessage());
+            return;
+        }
         filterChain.doFilter(request, response);
     }
 

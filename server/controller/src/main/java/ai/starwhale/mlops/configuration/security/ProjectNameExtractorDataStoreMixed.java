@@ -22,6 +22,12 @@ import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.HttpUtil.Resources;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -53,15 +60,37 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
 
     final ObjectMapper objectMapper;
 
+    private final ProjectService projectService;
+
+    private final JobDao jobDao;
+    private final ModelDao modelDao;
+    private final DatasetDao datasetDao;
+    private final RuntimeDao runtimeDao;
+
     static final String PATH_LIST_TABLES = "/datastore/listTables";
     static final String PATH_UPDATE_TABLE = "/datastore/updateTable";
     static final String PATH_QUERY_TABLE = "/datastore/queryTable";
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
-    public ProjectNameExtractorDataStoreMixed(@Value("${sw.controller.api-prefix}") String apiPrefix,
-            ObjectMapper objectMapper) {
+    private static final Pattern RESOURCE_PATTERN =
+            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model)/([^/]+).*$");
+
+    public ProjectNameExtractorDataStoreMixed(
+            @Value("${sw.controller.api-prefix}") String apiPrefix,
+            ObjectMapper objectMapper,
+            ProjectService projectService,
+            JobDao jobDao,
+            ModelDao modelDao,
+            DatasetDao datasetDao,
+            RuntimeDao runtimeDao
+    ) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
+        this.projectService = projectService;
+        this.jobDao = jobDao;
+        this.modelDao = modelDao;
+        this.datasetDao = datasetDao;
+        this.runtimeDao = runtimeDao;
     }
 
     @Override
@@ -139,9 +168,49 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
 
     private Set<String> projectsOfNoneDataStore(HttpServletRequest request) {
         var projectUrl = HttpUtil.getResourceUrlFromPath(request.getRequestURI(), Resources.PROJECT);
-        if (!StrUtil.isEmpty(projectUrl)) {
-            return Set.of(URLDecoder.decode(projectUrl, Charset.defaultCharset()));
+        if (StrUtil.isEmpty(projectUrl)) {
+            return Set.of(SYSTEM_PROJECT);
         }
-        return Set.of(SYSTEM_PROJECT);
+
+        checkResourceOwnerShip(request);
+        return Set.of(URLDecoder.decode(projectUrl, Charset.defaultCharset()));
+    }
+
+    public void checkResourceOwnerShip(HttpServletRequest request) {
+        if (isDataStore(request)) {
+            return;
+        }
+        String path = request.getRequestURI().replace(apiPrefix, "");
+        Matcher matcher = RESOURCE_PATTERN.matcher(path);
+        if (!matcher.matches()) {
+            return;
+        }
+        String project = matcher.group(1);
+        var projectEntity = projectService.findProject(project);
+        if (projectEntity == null) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.PROJECT, project);
+        }
+
+        String resourceType = matcher.group(2);
+        String resourceUrl = matcher.group(3);
+        var accessor = Map.of(
+                "runtime", runtimeDao,
+                "job", jobDao,
+                "dataset", datasetDao,
+                "model", modelDao
+        );
+        if (!accessor.containsKey(resourceType)) {
+            return;
+        }
+        var dao = accessor.get(resourceType);
+        var resource = dao.findByUrl(resourceUrl);
+        if (resource == null) {
+            // let it go
+            // the biz logic will check the resource existence or do the creation
+            return;
+        }
+        if (!resource.getProjectId().equals(projectEntity.getId())) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE, resourceUrl);
+        }
     }
 }

@@ -26,6 +26,8 @@ public class HasTagWrapper implements HasTag {
 
     private Long id;
 
+    private Long projectId;
+
     private String name;
 
     private String tag;
