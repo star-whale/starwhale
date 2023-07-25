@@ -265,7 +265,6 @@ console_test() {
 
 restore_env() {
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION
-  docker image rm server
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
   cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
