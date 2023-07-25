@@ -173,9 +173,9 @@ public class ModelService {
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVo vo = modelVoConverter.convert(entity);

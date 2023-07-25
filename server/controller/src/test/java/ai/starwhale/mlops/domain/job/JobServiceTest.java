@@ -52,6 +52,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
@@ -149,7 +150,7 @@ public class JobServiceTest {
     @Test
     public void testListJobs() {
         given(jobDao.listJobs(same(1L), same(1L)))
-                .willReturn(List.of(Job.builder().build(), Job.builder().build()));
+                .willReturn(List.of(JobEntity.builder().build(), JobEntity.builder().build()));
         var res = service.listJobs("1", 1L, new PageParams(1, 10));
         assertThat(res, allOf(
                 notNullValue(),

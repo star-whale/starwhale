@@ -140,9 +140,9 @@ public class JobService {
     }
 
     public PageInfo<JobVo> listJobs(String projectUrl, Long modelId, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(projectUrl);
-        List<Job> jobEntities = jobDao.listJobs(projectId, modelId);
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        var jobEntities = jobDao.listJobs(projectId, modelId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
