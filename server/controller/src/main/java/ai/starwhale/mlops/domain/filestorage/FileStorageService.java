@@ -68,7 +68,7 @@ public class FileStorageService {
         if (!StringUtils.hasText(flag)) {
             throw new SwValidationException(SwValidationException.ValidSubject.OBJECT_STORE, "flag can't be null");
         }
-        return String.format("%s%s/%s/", dataRootPath, flag, UUID.randomUUID());
+        return standardPath(String.format("%s/%s/%s/", dataRootPath, flag, UUID.randomUUID()));
     }
 
     /**
@@ -96,7 +96,7 @@ public class FileStorageService {
         for (String file : files) {
             try {
                 var url = storageAccessService.signedPutUrl(
-                        pathPrefix + file, APPLICATION_OCTET_STREAM_VALUE, urlExpirationTimeMillis);
+                        standardPath(pathPrefix + file), APPLICATION_OCTET_STREAM_VALUE, urlExpirationTimeMillis);
                 // force to use https if server is https
                 if (isServerHttps && url.startsWith("http://")) {
                     url = url.replaceFirst("http://", "https://");
@@ -117,7 +117,7 @@ public class FileStorageService {
         }
         for (String file : files) {
             try {
-                storageAccessService.delete(pathPrefix + file);
+                storageAccessService.delete(standardPath(pathPrefix + file));
             } catch (IOException e) {
                 log.error("delete path:{} error.", pathPrefix + file, e);
                 throw new SwProcessException(SwProcessException.ErrorType.STORAGE, e.getMessage());
@@ -152,5 +152,9 @@ public class FileStorageService {
             log.error("path:{} list files error", pathPrefix, e);
             throw new SwProcessException(SwProcessException.ErrorType.STORAGE, e.getMessage());
         }
+    }
+
+    private String standardPath(String path) {
+        return path.replaceAll("//+", "/");
     }
 }
