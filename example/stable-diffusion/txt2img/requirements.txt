@@ -17,7 +17,7 @@ braceexpand==0.1.7
 brotlipy==0.7.0
 cachetools==5.3.0
 cattrs==22.2.0
-certifi==2022.12.7
+certifi==2023.7.22
 click==8.1.3
 click-option-group==0.5.5
 coloredlogs==15.0.1
