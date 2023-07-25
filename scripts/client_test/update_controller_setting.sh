@@ -53,6 +53,17 @@ resourcePoolSetting:
     - name: "memory"
       defaults: 3145728
     - name: "nvidia.com/gpu"
+pypiSetting:
+  indexUrl: "http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple"
+  extraIndexUrl: "$SW_PYPI_EXTRA_INDEX_URL"
+  trustedHost: "$NEXUS_HOSTNAME"
+  retries: 10
+  timeout: 90
+datasetBuild:
+  resourcePool: "default"
+  image: "docker-registry.starwhale.cn/star-whale/base:latest"
+  clientVersion: "$PYPI_RELEASE_VERSION"
+  pythonVersion: "3.10"
 EOF
   )
   curl -X 'POST' \
