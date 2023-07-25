@@ -1,8 +1,6 @@
 image:
   registry: "ghcr.io"
   org: "star-whale"
-  base:
-    repo: "starwhale"
   server:
     repo: "server"
 
