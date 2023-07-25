@@ -237,7 +237,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     useEffect(() => {
         if (query.modelId && modelTree) {
             setModelId(query.modelId)
-            let vid = null
+            let vid = ''
             modelTree?.forEach((v) => {
                 if (v.modelId === modelId) {
                     vid = v.versions?.[0]?.id

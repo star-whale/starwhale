@@ -4,6 +4,7 @@ import React from 'react'
 import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { getHeatmapConfig } from '@starwhale/ui/Plotly/utils'
+import { useDatastoreDecodeRecords } from '@starwhale/core/datastore'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
@@ -18,7 +19,12 @@ function PanelConfusionMatrixWidget(props: WidgetRendererProps<any, any>) {
     const { data: formData } = fieldConfig ?? {}
     const title = formData?.chartTitle ?? ''
 
-    const { labels, binarylabel } = useParseConfusionMatrix(data)
+    const $records = useDatastoreDecodeRecords(data?.records)
+
+    const { labels, binarylabel } = useParseConfusionMatrix({
+        ...data,
+        records: $records,
+    })
     const heatmapData = getHeatmapConfig(title, labels as any, binarylabel)
 
     return (

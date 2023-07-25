@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * [Get segments from path]
  *

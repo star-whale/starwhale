@@ -84,7 +84,7 @@ const MAX_SAMPLE_SIZE = 20
 
 // @ts-ignore
 function generateSampleIndices(inputMin, inputMax, maxSamples) {
-    const indices = []
+    const indices: number[] = []
     const queue = [[inputMin, inputMax]]
 
     while (queue.length > 0) {

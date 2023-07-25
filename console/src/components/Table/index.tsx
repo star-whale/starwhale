@@ -7,8 +7,9 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import { BusyPlaceholder } from '@starwhale/ui'
 
-export interface ITableProps extends BaseTableProps {
+export interface ITableProps extends Omit<BaseTableProps, 'data'> {
     paginationProps?: IPaginationProps
+    data?: any
 }
 
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
@@ -20,7 +21,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
             <TableSemantic
                 isLoading={isLoading}
                 columns={columns}
-                data={data}
+                data={data as any}
                 overrides={{
                     TableBodyRow: {
                         style: {

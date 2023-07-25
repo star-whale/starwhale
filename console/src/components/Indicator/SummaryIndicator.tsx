@@ -77,7 +77,8 @@ export default function SummaryIndicator({ data, isTreeView = false }: ISummaryI
                                 {_.isObject(subV) && (
                                     <ul key={`ul-${subK}`}>
                                         {_.map(subV, (subSubV, subSubK) => (
-                                            <li className={styles.summaryLi} key={subSubK} style={{}}>
+                                            // @ts-ignore
+                                            <li className={styles.summaryLi} key={subSubK}>
                                                 <span
                                                     style={{
                                                         color: 'rgba(2,16,43,0.60)',

@@ -116,6 +116,7 @@ export default function ModelVersionFiles() {
                     return {
                         id,
                         label: (
+                            // @ts-ignore
                             <TreeLabelInteractable>
                                 <div
                                     role='button'
