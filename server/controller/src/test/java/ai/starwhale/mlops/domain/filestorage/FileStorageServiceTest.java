@@ -72,20 +72,20 @@ public class FileStorageServiceTest {
                 fileStorageService.generateSignedPutUrls("invalidPath", Set.of("a.txt", "b.txt", "c.txt")));
 
         assertThat("signed put urls",
-                fileStorageService.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "b.txt")),
+                fileStorageService.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "/b.txt")),
                 is(Map.of(
                     "a.txt", "https://signedUrl",
-                    "b.txt", "https://signedUrl"
+                    "/b.txt", "https://signedUrl"
                 ))
         );
 
         // use the original schema of the storage access service
         var fssHttp = new FileStorageService(storageAccessService, rootPath, "4h", "http://localhost:8080");
         assertThat("signed put urls",
-                fssHttp.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "b.txt")),
+                fssHttp.generateSignedPutUrls(pathPrefix, Set.of("a.txt", "/b.txt")),
                 is(Map.of(
                     "a.txt", "http://signedUrl",
-                    "b.txt", "https://signedUrl"
+                    "/b.txt", "https://signedUrl"
                 ))
         );
     }
@@ -111,7 +111,7 @@ public class FileStorageServiceTest {
         assertThrows(SwValidationException.class, () ->
                 fileStorageService.deleteFiles("invalidPath", Set.of()));
 
-        fileStorageService.deleteFiles(pathPrefix, Set.of("a.txt", "b.txt"));
+        fileStorageService.deleteFiles(pathPrefix, Set.of("a.txt", "/b.txt"));
         verify(storageAccessService, times(2)).delete(any());
     }
 
