@@ -18,7 +18,7 @@ welcome() {
     echo "StarWhale Base Entrypoint"
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Starwhale Version: ${SW_VERSION}"
-    echo "Python Version: ${SW_RUNTIME_VERSION}"
+    echo "Python Version: ${PYTHON_VERSION}"
     echo "Runtime Restored: ${RUNTIME_RESTORED}"
     echo "Command type(Whether use custom command): ${USE_CUSTOM_CMD}"
     echo "Run: $1"

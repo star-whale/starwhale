@@ -1,4 +1,5 @@
-starwhale[serve]
+# use e2e version
+starwhale[serve]==${PYPI_RELEASE_VERSION}
 # for pfp
 pycocotools
 # for ucf101
