@@ -4,6 +4,7 @@ import React from 'react'
 
 export interface IErrorBoundaryProps {
     fallback?: React.ReactElement
+    children?: React.ReactNode
 }
 
 export interface IErrorBoundaryState {

@@ -147,7 +147,7 @@ export const Page = React.forwardRef<HTMLDivElement, PageProps>((props, forwarde
 
             const origin = isHorizontal ? originOffset.x : originOffset.y
 
-            const pages = React.Children.map(children, (child, index) => {
+            const pages = React.Children.map(children, (child: React.ReactNode, index) => {
                 const e = typeof effect === 'string' ? defaultEffects[effect] : effect
 
                 const normalizedOffset = (offset - origin + index * step) / step

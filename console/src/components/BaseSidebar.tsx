@@ -55,7 +55,7 @@ export interface IComposedSidebarProps {
 
 export interface INavItem {
     title: string | React.ReactNode
-    icon?: React.ComponentType<IconBaseProps> | React.ReactNode
+    icon?: React.ComponentType<IconBaseProps> | React.ReactNode | any
     path?: string
     children?: INavItem[]
     disabled?: boolean
@@ -96,7 +96,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             justifyContent: ctx.expanded ? 'flex-start' : 'center',
                         }}
                     >
-                        {ctx.expanded && Icon}
+                        {ctx.expanded && (Icon as any)}
                         {ctx.expanded && <span>{item.title}</span>}
                         {!ctx.expanded && (
                             <StatefulTooltip content={item.title} placement='bottomRight'>

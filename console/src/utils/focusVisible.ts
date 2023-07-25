@@ -123,7 +123,7 @@ export interface IUseIsFocusVisibleResult {
 }
 
 export default function useIsFocusVisible(): IUseIsFocusVisibleResult {
-    const ref = React.useCallback((node) => {
+    const ref = React.useCallback((node: any) => {
         if (node !== null) {
             prepare(node.ownerDocument)
         }

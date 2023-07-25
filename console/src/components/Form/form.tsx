@@ -120,7 +120,7 @@ export function createForm<S extends {} = Store>({
 }: Partial<FormItemProps<S>> & { itemClassName?: FormItemClassName } = {}) {
     const ClassNames = { ...defaultFormItemClassName, ...itemClassName }
 
-    const FormItemLabel: React.FC<{ label: string }> = ({ children, label }) =>
+    const FormItemLabel: React.FC<{ label: string; children: any }> = ({ children, label }) =>
         React.createElement(
             'div',
             { className: ClassNames.item },
@@ -172,6 +172,7 @@ export function createForm<S extends {} = Store>({
                 ...(deps.length ? { dependencies: deps, shouldUpdate: createShouldUpdate(deps) } : {}),
                 ...props,
             },
+            // @ts-ignore
             (control: any, { errors }: FieldData, form: FormInstance<S>) => {
                 const { getFieldsValue } = form
 
@@ -235,7 +236,7 @@ export function createForm<S extends {} = Store>({
                             onFinish(beforeSubmit ? beforeSubmit(store) : store)
                         }),
                 } as any,
-                children
+                children as any
             )
     )
 

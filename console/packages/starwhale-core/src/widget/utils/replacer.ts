@@ -1,3 +1,4 @@
+// @ts-nocheck
 import produce from 'immer'
 import _ from 'lodash'
 

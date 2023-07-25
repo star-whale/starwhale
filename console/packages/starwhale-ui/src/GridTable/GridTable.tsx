@@ -55,7 +55,7 @@ const useStyles = createUseStyles({
     },
 })
 
-const loadingMessage = () => (
+const loadingMessage: any = () => (
     <Skeleton
         overrides={{
             Root: {
@@ -70,7 +70,7 @@ const loadingMessage = () => (
         animation
     />
 )
-const defaultEmptyMessage = () => <BusyPlaceholder type='notfound' style={{ minHeight: '300px' }} />
+const defaultEmptyMessage: any = () => <BusyPlaceholder type='notfound' style={{ minHeight: '300px' }} />
 
 const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,

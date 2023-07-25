@@ -205,8 +205,8 @@ const InnerTableElement = React.forwardRef<HTMLDivElement, InnerTableElementProp
                 }}
                 onMouseLeave={ctx?.onRowMouseLeave}
             >
-                {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
-                {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
+                {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage as any}</LoadingOrEmptyMessage>}
+                {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage as any}</LoadingOrEmptyMessage>}
                 {viewState === RENDERING && $children}
                 {$background}
             </div>

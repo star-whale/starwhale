@@ -16,17 +16,20 @@
         "noEmit": true,
         "jsx": "react",
         "typeRoots": ["./types", "./node_modules/@types"],
-        "types": ["vite/client", "node", "jest"]
+        "types": ["vite/client", "node", "jest"],
+        "noImplicitAny": false
     },
     "include": ["src", "types", "packages", "extensions"],
     "exclude": [
+        "packages/starwhale-ui/src/base/**",
+        "packages/starwhale-ui/src/base/tree-view",
+        "@starwhale/ui/base/**",
         "baseui/**",
         "node_modules/**",
         "**/stories/**",
         "**/iconfont.js",
         "**/__generated__/**",
         // "**/__tests__/**",
-        "**/build/**",
-        "packages/starwhale-ui/src/base/**/*"
+        "**/build/**"
     ]
 }

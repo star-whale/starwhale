@@ -1,4 +1,5 @@
 import React from 'react'
+// @ts-ignore
 import { processSelectValue, WidgetProps } from '@rjsf/utils'
 import Select, { SIZE } from '../../../Select'
 

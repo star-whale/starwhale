@@ -230,8 +230,7 @@ export function DataTable({
             })
 
         if (textQuery) {
-            // @ts-ignore
-            const stringishColumnIndices = []
+            const stringishColumnIndices: number[] = []
             for (let i = 0; i < columns.length; i++) {
                 if (columns[i].textQueryFilter) {
                     stringishColumnIndices.push(i)
@@ -302,7 +301,7 @@ export function DataTable({
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
             if (padding > 0) {
-                const result = []
+                const result: number[] = []
                 // -1 so that we loop over all but the last item
                 for (let i = 0; i < resizedWidths.length - 1; i++) {
                     if (columns[i] && columns[i].fillWidth) {

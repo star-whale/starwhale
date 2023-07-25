@@ -5,7 +5,7 @@ import Button from '../Button'
 
 export interface ICopyToClipboardProps {
     content: string
-    children?: React.ReactNode
+    children?: React.ReactNode | React.FC
 }
 
 function CopyToClipboard({
@@ -22,6 +22,7 @@ function CopyToClipboard({
             }}
         >
             <Button as='link' kind='tertiary'>
+                {/* @ts-ignore */}
                 {typeof children === 'function' ? children(copied) : children}
             </Button>
         </Copy>

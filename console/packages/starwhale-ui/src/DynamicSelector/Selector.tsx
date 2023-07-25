@@ -113,7 +113,7 @@ export function DynamicSelector<T = any>({
     }
 
     const handleChange = (newValue: any, index: number) => {
-        let newValues = []
+        let newValues: any[] = []
         if (!newValue) {
             newValues = values.filter((key, i) => i !== index)
         } else {

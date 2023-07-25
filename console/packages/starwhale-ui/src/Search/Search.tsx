@@ -124,7 +124,7 @@ export default function Search({ value = [], onChange, fields }: ISearchProps) {
                     // @ts-ignore
                     containerRef={ref}
                     onChange={(newValue: any) => {
-                        let newItems = []
+                        let newItems: any[] = []
                         if (!newValue) {
                             newItems = items.filter((key, i) => i !== index)
                         } else {
