@@ -28,6 +28,7 @@ export default function App(): any {
     }, [])
 
     return (
+        // @ts-ignore
         <QueryClientProvider client={queryClient}>
             <StyletronProvider value={engine}>
                 <BaseProvider theme={DeepTheme}>

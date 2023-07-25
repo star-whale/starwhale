@@ -75,6 +75,7 @@ export const CONFIG: WidgetConfig = {
     },
 }
 
+// eslint-disable-next-line
 type Option = typeof CONFIG['optionConfig']
 
 // @ts-ignore
