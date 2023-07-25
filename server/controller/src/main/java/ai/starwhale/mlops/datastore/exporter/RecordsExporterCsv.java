@@ -22,6 +22,7 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -68,6 +69,6 @@ public class RecordsExporterCsv implements RecordsExporter {
                 }
             });
         }
-        return stringBuilder.toString().getBytes();
+        return stringBuilder.toString().getBytes(StandardCharsets.UTF_8);
     }
 }
