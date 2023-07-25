@@ -43,7 +43,7 @@ export default function WithAuth({
 }: {
     role: Role
     id: keyof IPrivileges
-    children: React.ReactNode | Function
+    children: React.ReactNode | ((isPrivileged: boolean, isCommunity: boolean) => any)
 }) {
     const { isPrivileged } = useAuthPrivileged({ role, id })
 
