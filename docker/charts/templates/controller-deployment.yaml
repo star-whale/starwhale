@@ -95,8 +95,6 @@ spec:
               value: "{{ .Release.Name }}"
             - name: SW_STORAGE_FS_ROOT_DIR
               value: "{{ .Values.controller.fs.rootdir }}"
-            - name: SW_RUNTIME_IMAGE_DEFAULT
-              value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             - name: SW_DOCKER_REGISTRY_URL
               value: "{{ .Values.image.registry }}"
             - name: SW_HOST_IP

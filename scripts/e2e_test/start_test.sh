@@ -34,6 +34,7 @@ fi
 
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
+  export SERVER_RELEASE_VERSION="${SERVER_RELEASE_VERSION:=100.0.0}"
   export RELEASE_VERSION="${RELEASE_VERSION:=0.0.0-dev}"
   export NEXUS_HOSTNAME="${NEXUS_HOSTNAME:=host.minikube.internal}"
   export NEXUS_IMAGE="${NEXUS_IMAGE:=sonatype/nexus3:3.40.1}"
@@ -101,7 +102,7 @@ build_server_image() {
   pushd ../../docker
   docker build \
     --build-arg BASE_IMAGE=ghcr.io/star-whale/base_server:latest \
-    --tag $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION \
+    --tag $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION \
     -f Dockerfile.server .
   popd
 }
@@ -173,7 +174,7 @@ push_images_to_nexus() {
 
 push_server_image_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION
 }
 
 start_starwhale() {
@@ -184,7 +185,7 @@ start_starwhale() {
   --set minio.resources.requests.cpu=200m \
   --set minikube.enabled=true \
   --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
-  --set image.tag=$PYPI_RELEASE_VERSION \
+  --set image.server.tag=$SERVER_RELEASE_VERSION \
   --set mirror.pypi.enabled=true \
   --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
   --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
@@ -263,9 +264,7 @@ console_test() {
 }
 
 restore_env() {
-  docker image rm starwhale
-  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$SERVER_RELEASE_VERSION
   docker image rm server
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
   cd $script_dir/../../

@@ -91,7 +91,7 @@ deploy() {
   pushd ../../docker/charts
   helm upgrade --install ${SWNAME//./-} . -n $SWNS --create-namespace \
     --set image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER \
-    --set image.tag=$SERVER_RELEASE_VERSION \
+    --set image.server.tag=$SERVER_RELEASE_VERSION \
     --set mirror.pypi.enabled=true \
     --set mirror.pypi.indexUrl=http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple \
     --set mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL \
