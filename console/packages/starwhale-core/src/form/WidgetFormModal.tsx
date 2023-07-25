@@ -39,6 +39,7 @@ export default function WidgetFormModal({
     const formRef = React.useRef(null)
 
     const handleFormChange = (data: any) => {
+        console.log(data)
         setFormData(data)
     }
 

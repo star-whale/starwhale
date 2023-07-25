@@ -1,6 +1,5 @@
 import React from 'react'
-// @ts-ignore
-import { processSelectValue, WidgetProps } from '@rjsf/utils'
+import { WidgetProps } from '@rjsf/utils'
 import Select, { SIZE } from '../../../Select'
 
 const SELECT_STYLE = {
@@ -20,7 +19,6 @@ const SelectWidget = ({
     options,
     placeholder,
     readonly,
-    schema,
     value,
 }: WidgetProps) => {
     const { readonlyAsDisabled = true } = formContext
@@ -28,22 +26,17 @@ const SelectWidget = ({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { enumOptions, enumDisabled } = options
 
-    const handleChange = (nextValue: any) =>
-        !multiple
-            ? onChange(processSelectValue(schema, nextValue?.option?.id as string, options))
+    const handleChange = (nextValue: any) => {
+        return !multiple
+            ? onChange(nextValue?.option?.id as string)
             : onChange(
-                  processSelectValue(
-                      schema,
-                      nextValue.value
-                          ?.map((item: any) => (item.id as string) ?? '')
-                          .filter((name: string) => name !== ''),
-                      options
-                  )
+                  nextValue.value?.map((item: any) => (item.id as string) ?? '').filter((name: string) => name !== '')
               )
+    }
 
-    const handleBlur = () => onBlur(id, processSelectValue(schema, value, options))
+    const handleBlur = () => onBlur(id, value)
 
-    const handleFocus = () => onFocus(id, processSelectValue(schema, value, options))
+    const handleFocus = () => onFocus(id, value)
 
     const stringify = (currentValue: any) =>
         Array.isArray(currentValue) ? value.map((v: any) => ({ id: String(v) })) : [{ id: String(value) }]
