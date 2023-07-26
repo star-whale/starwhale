@@ -1,13 +1,12 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
-import inspect from 'vite-plugin-inspect'
-import router from './vite-plugin-react-routes'
-import { readFileSync } from 'fs'
-
+// import inspect from 'vite-plugin-inspect'
+// import router from './vite-plugin-react-routes'
 // import eslint from 'vite-plugin-eslint'
 // import mpa from '../../vite-plugin-mpa'
 // import { visualizer } from 'rollup-plugin-visualizer'
+
 const { execSync } = require('child_process')
 const commitNumber = execSync('git rev-parse HEAD').toString().trim()
 
@@ -56,8 +55,30 @@ let extendProxies = {}
 //         },
 //     }
 
+const htmlPlugin = (mode) => {
+    return {
+        name: 'html-transform',
+        transformIndexHtml(html) {
+            if (mode === 'extend')
+                return html.replace(
+                    /%__INJECT__%/,
+                    `<script>
+          var _hmt = _hmt || []
+          ;(function () {
+              var hm = document.createElement('script')
+              hm.src = 'https://hm.baidu.com/hm.js?82145850946f2ffce3c1366524ebe861'
+              var s = document.getElementsByTagName('script')[0]
+              s.parentNode.insertBefore(hm, s)
+          })()
+      </script>`
+                )
+            return html
+        },
+    }
+}
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     define: {
         'process.env': {
             GIT_COMMIT_HASH: JSON.stringify(commitNumber),
@@ -97,8 +118,9 @@ export default defineConfig({
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
+        htmlPlugin(mode),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
     },
-})
+}))

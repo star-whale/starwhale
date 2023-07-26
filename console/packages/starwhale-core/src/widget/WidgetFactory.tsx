@@ -59,3 +59,15 @@ modules.forEach((w: WidgetPlugin<any>) => {
 })
 
 export default WidgetFactory
+
+// @ts-ignore
+if (import.meta.hot) {
+    // @ts-ignore
+    import.meta.hot.accept(() => {
+        // eslint-disable-next-line no-console
+        console.log('hot reload widget modules')
+        modules.forEach((w: WidgetPlugin<any>) => {
+            WidgetFactory.register(w.getType(), w)
+        })
+    })
+}
