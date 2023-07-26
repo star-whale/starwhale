@@ -45,7 +45,20 @@ public class CancellableJobLogK8sCollector implements CancellableJobLogCollector
         if (podList.getItems().isEmpty()) {
             throw new ApiException("get empty pod list by job name " + taskId);
         }
-        return podList.getItems().get(0).getMetadata().getName();
+        // returns the running pod
+        var thePod = podList.getItems().stream().filter(pod -> {
+            if (pod.getStatus() == null) {
+                return false;
+            }
+            if (pod.getStatus().getPhase() == null) {
+                return false;
+            }
+            return pod.getStatus().getPhase().equals("Running");
+        }).findFirst();
+        if (thePod.isEmpty()) {
+            throw new ApiException("get empty running pod by job name " + taskId);
+        }
+        return thePod.get().getMetadata().getName();
     }
 
     @Override
