@@ -198,14 +198,6 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     }
 
     @Override
-    public BundleEntity findByUrl(String url) {
-        if (idConvertor.isId(url)) {
-            return jobMapper.findJobById(idConvertor.revert(url));
-        }
-        return jobMapper.findJobByUuid(url);
-    }
-
-    @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
         return jobMapper.findJobByUuid(name);
     }

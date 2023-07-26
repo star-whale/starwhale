@@ -20,8 +20,10 @@ import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.HttpUtil.Resources;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
@@ -62,6 +64,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
 
     private final ProjectService projectService;
 
+    private final IdConverter idConverter;
     private final JobDao jobDao;
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
@@ -79,6 +82,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             @Value("${sw.controller.api-prefix}") String apiPrefix,
             ObjectMapper objectMapper,
             ProjectService projectService,
+            IdConverter idConverter,
             JobDao jobDao,
             ModelDao modelDao,
             DatasetDao datasetDao,
@@ -87,6 +91,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
         this.projectService = projectService;
+        this.idConverter = idConverter;
         this.jobDao = jobDao;
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
@@ -202,14 +207,21 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         if (!accessor.containsKey(resourceType)) {
             return;
         }
+
         var dao = accessor.get(resourceType);
-        var resource = dao.findByUrl(resourceUrl);
-        if (resource == null) {
-            // let it go
-            // the biz logic will check the resource existence or do the creation
-            return;
+
+        BundleEntity resource;
+        if (!idConverter.isId(resourceUrl)) {
+            // no need to validate resource with name, the biz will always touch the resource with project id
+            // BUT job has uuid, it is a special case
+            if (!resourceType.equals("job")) {
+                return;
+            }
+            resource = dao.findByNameForUpdate(resourceUrl, projectEntity.getId());
+        } else {
+            resource = dao.findById(idConverter.revert(resourceUrl));
         }
-        if (!resource.getProjectId().equals(projectEntity.getId())) {
+        if (resource == null || !resource.getProjectId().equals(projectEntity.getId())) {
             throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE, resourceUrl);
         }
     }

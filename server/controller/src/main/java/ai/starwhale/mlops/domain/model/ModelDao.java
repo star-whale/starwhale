@@ -86,14 +86,6 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
     }
 
     @Override
-    public BundleEntity findByUrl(String url) {
-        if (idConvertor.isId(url)) {
-            return modelMapper.find(idConvertor.revert(url));
-        }
-        return modelMapper.findByNameOnly(url);
-    }
-
-    @Override
     public HasTag findObjectWithTagById(Long id) {
         ModelVersionEntity entity = versionMapper.find(id);
         return HasTagWrapper.builder()

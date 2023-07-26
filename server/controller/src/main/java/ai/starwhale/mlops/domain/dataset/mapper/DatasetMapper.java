@@ -54,9 +54,6 @@ public interface DatasetMapper {
     @Select("select " + COLUMNS + " from dataset_info where id = #{id}")
     DatasetEntity find(@Param("id") Long id);
 
-    @Select("select " + COLUMNS + " from dataset_info where dataset_name = #{name}")
-    DatasetEntity findByNameOnly(@Param("name") String name);
-
     @SelectProvider(value = DatasetProvider.class, method = "findByNameSql")
     DatasetEntity findByName(@Param("name") String name, @Param("projectId") Long projectId,
             @Param("forUpdate") Boolean forUpdate);

@@ -118,14 +118,6 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public BundleEntity findByUrl(String url) {
-        if (idConvertor.isId(url)) {
-            return datasetMapper.find(idConvertor.revert(url));
-        }
-        return datasetMapper.findByNameOnly(url);
-    }
-
-    @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
         return datasetMapper.findByName(name, projectId, true);
     }
