@@ -72,25 +72,34 @@ def _recover(job: str, force: bool) -> None:
     JobTermView(job).recover(force)
 
 
-@job_cmd.command("pause", help="Pause job")
+@job_cmd.command("pause")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to pause")
 def _pause(job: str, force: bool) -> None:
+    """Pause job.
+    On Standalone instance, this command only takes effect for containerized jobs.
+    """
     click.confirm("continue to pause?", abort=True)
     JobTermView(job).pause(force)
 
 
-@job_cmd.command("resume", help="Resume job")
+@job_cmd.command("resume")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to resume")
 def _resume(job: str, force: bool) -> None:
+    """Resume job.
+    On Standalone instance, this command only takes effect for containerized jobs.
+    """
     JobTermView(job).resume(force)
 
 
-@job_cmd.command("cancel", help="Cancel job")
+@job_cmd.command("cancel")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to cancel")
 def _cancel(job: str, force: bool) -> None:
+    """Cancel job.
+    On Standalone instance, this command only takes effect for containerized jobs.
+    """
     click.confirm("continue to cancel?", abort=True)
     JobTermView(job).cancel(force)
 

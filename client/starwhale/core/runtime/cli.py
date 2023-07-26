@@ -211,7 +211,7 @@ def _quickstart(
 )
 @optgroup.group(
     "\n  ** Conda/Venv/Shell Sources Configurations",
-    help="The configurations only work for `--from-conda-name`, `--from-conda-prefix-path`, `--from-venv-prefix-path` and `--from-shell` sources",
+    help="The configurations only work for `--conda`, `--conda-prefix`, `--venv` and `--shell` sources",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--cuda",
@@ -233,6 +233,14 @@ def _quickstart(
     ),
     default=SupportArch.NOARCH,
     help="system architecture, works for shell, conda name, conda prefix path and venv prefix path sources",
+)
+@optgroup.group("\n  ** Global Configurations")
+@optgroup.option("-n", "--name", default="", help="runtime name")  # type: ignore[no-untyped-call]
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-dad",
@@ -266,14 +274,6 @@ def _quickstart(
     is_flag=True,
     help="Include local wheel packages",
     hidden=True,
-)
-@optgroup.group("\n  ** Global Configurations")
-@optgroup.option("-n", "--name", default="", help="runtime name")  # type: ignore[no-untyped-call]
-@optgroup.option(  # type: ignore[no-untyped-call]
-    "-p",
-    "--project",
-    default="",
-    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
 )
 def _build(
     name: str,
