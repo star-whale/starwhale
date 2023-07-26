@@ -154,7 +154,13 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
 
     const Nodes = useMemo(() => {
         return tree.map((node: WidgetTreeNode, i: number) => (
-            <WrapedWidgetNode key={node.id} id={node.id} type={node.type} path={[i]} childWidgets={node.children} />
+            <WrapedWidgetNode
+                key={node.id ?? i}
+                id={node.id}
+                type={node.type}
+                path={[i]}
+                childWidgets={node.children}
+            />
         ))
     }, [tree])
 
