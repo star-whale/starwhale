@@ -59,10 +59,10 @@ const htmlPlugin = (mode) => {
     return {
         name: 'html-transform',
         transformIndexHtml(html) {
-            if (mode === 'extend')
-                return html.replace(
-                    /%__INJECT__%/,
-                    `<script>
+            return html.replace(
+                /<!--__INJECT__-->/,
+                mode === 'extend'
+                    ? `<script>
           var _hmt = _hmt || []
           ;(function () {
               var hm = document.createElement('script')
@@ -71,8 +71,8 @@ const htmlPlugin = (mode) => {
               s.parentNode.insertBefore(hm, s)
           })()
       </script>`
-                )
-            return html
+                    : ''
+            )
         },
     }
 }
