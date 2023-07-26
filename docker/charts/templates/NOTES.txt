@@ -3,9 +3,7 @@ Chart Name: {{ .Chart.Name }}
 Chart Version: {{ .Chart.Version }}
 App Version: {{ .Chart.AppVersion }}
 Starwhale Image:
-  - server: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
-Runtime default Image:
-  - runtime image: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+  - server: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Values.image.server.tag | default .Chart.AppVersion }}
 
 ******************************************
 Controller:
