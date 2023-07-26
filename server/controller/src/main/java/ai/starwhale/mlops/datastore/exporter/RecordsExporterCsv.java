@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * export as <a href="https://www.rfc-editor.org/rfc/rfc4180">csv format</a>
@@ -46,7 +47,13 @@ public class RecordsExporterCsv implements RecordsExporter {
 
     public byte[] asBytes(RecordList recordList) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
+        if (CollectionUtils.isEmpty(recordList.getRecords())) {
+            return new byte[]{};
+        }
         try (final CSVPrinter printer = new CSVPrinter(stringBuilder, CSVFormat.RFC4180)) {
+            List<String> headers = recordList.getRecords().get(0).entrySet().stream().sorted(Entry.comparingByKey())
+                    .map(Entry::getKey).collect(Collectors.toList());
+            printer.printRecord(headers);
             recordList.getRecords().forEach(r -> {
                 List<String> values = r.entrySet().stream().sorted(Entry.comparingByKey()).map(record -> {
                     if (record.getValue() instanceof String) {
