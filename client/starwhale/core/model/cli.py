@@ -45,7 +45,7 @@ def model_cmd(ctx: click.Context) -> None:
     "-f",
     "--model-yaml",
     default=None,
-    help="mode yaml path, default use ${workdir}/model.yaml file",
+    help="model yaml path, default use ${workdir}/model.yaml file",
 )
 @click.option(
     "-r",
@@ -67,7 +67,8 @@ def model_cmd(ctx: click.Context) -> None:
     is_flag=True,
     default=True,
     show_default=True,
-    help="Package Starwhale Runtime into the model.",
+    help="When using the `--runtime` parameter, by default, the corresponding Starwhale runtime will become the built-in runtime for the Starwhale model. "
+    "This feature can be disabled with the `--no-package-runtime` parameter.",
 )
 @click.option(
     "--add-all",
@@ -146,7 +147,7 @@ def _extract(model: str, target_dir: str, force: bool) -> None:
         \b
         - extract mnist model package to current directory
             swcli model extract mnist/version/xxxx .
-
+        \b
         - extract mnist model package to current directory and force to overwrite the files
             swcli model extract mnist/version/xxxx . -f
     """
@@ -407,7 +408,9 @@ def _recover(model: str, force: bool) -> None:
     "-fs",
     "--forbid-snapshot",
     is_flag=True,
-    help="[ONLY STANDALONE]Forbid to use model run snapshot dir, use model src dir directly. When the `--workdir` option is set, this option will be ignored.",
+    help="In model URI mode, each model run uses a new snapshot directory."
+    "Setting this parameter will directly use the model's workdir as the run directory."
+    "In local dev mode, this parameter does not take effect, each run is in the `--workdir` specified directory.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--cleanup-snapshot/--no-cleanup-snapshot",
@@ -437,7 +440,7 @@ def _recover(model: str, force: bool) -> None:
     "-i",
     "--image",
     default="",
-    help="[ONLY Standalone]docker image, works only when --use-docker is set",
+    help="[ONLY Standalone]docker image, works only when --in-container  is set",
 )
 @click.option(
     "--version",
@@ -596,8 +599,10 @@ def _run(
     help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option("-r", "--runtime", default="", help="runtime uri")
-@click.option("--host", default="", help="The host to listen on")
-@click.option("--port", default=8080, help="The port of the server")
+@click.option(
+    "--host", default="127.0.0.1", show_default=True, help="The host to listen on"
+)
+@click.option("--port", default=8080, show_default=True, help="The port of the server")
 @click.option(
     "-fpr",
     "--forbid-packaged-runtime",
