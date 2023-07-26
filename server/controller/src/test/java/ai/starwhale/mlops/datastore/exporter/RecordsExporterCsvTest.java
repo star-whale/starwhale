@@ -26,17 +26,17 @@ import org.junit.jupiter.api.Test;
 
 public class RecordsExporterCsvTest {
 
-    private static final String EXPECTED = "v1,\"{\"\"mk\"\":\"\"mv\"\"}\",\"[1,2,3]\"\r\n"
-            + "V1,\"{\"\"MK\"\":\"\"MV\"\"}\",\"[4,5,6]\"\r\n";
+    private static final String EXPECTED = "v1,\"{\"\"mk\"\":\"\"mv中文\"\"}\",\"[1,2,3]\"\r\n"
+            + "V1,\"{\"\"MK\"\":\"\"MV鈤\"\"}\",\"[4,5,6]\"\r\n";
 
     private static final RecordList RECORD_LIST = new RecordList(
             null,
             null,
             List.of(
                     Map.of("ke1", "v1",
-                            "ke2", Map.of("mk", "mv"),
+                            "ke2", Map.of("mk", "mv中文"),
                             "ke3", List.of(1, 2, 3)),
-                    Map.of("ke2", Map.of("MK", "MV"),
+                    Map.of("ke2", Map.of("MK", "MV鈤"),
                             "ke1", "V1",
                             "ke3", List.of(4, 5, 6))
             ),
