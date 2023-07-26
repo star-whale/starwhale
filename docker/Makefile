@@ -77,6 +77,9 @@ build-release-base-server:
 build-server:
 	$(call build-image,$(GHCR_IO_REPO)/base_server:latest,Dockerfile.server,server:${RELEASE_VERSION} server:latest)
 
+build-dataset-builder:
+	$(call build-image,$(GHCR_IO_REPO)/base:latest,Dockerfile.dataset_build,dataset_builder:${RELEASE_VERSION} dataset_builder:latest)
+
 build-server-all: build-console build-jar build-server
 
 build-server-for-local-usage:
