@@ -195,7 +195,6 @@ jobs:
     runs-on: self-hosted
     needs:
       - helm-charts-release
-      - starwhale-image-release
 
     steps:
       - name: Helm Charts Upgrade
