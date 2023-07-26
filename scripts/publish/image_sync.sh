@@ -97,4 +97,5 @@ else
       copy_image "$source_repo_name/cuda:$pre-base$release_version" "$target_repo_name1/cuda:$pre-base$release_version"
       copy_image "$source_repo_name/cuda:$pre-base$release_version" "$target_repo_name2/cuda:$pre-base$release_version"
     done
+  echo "$release_version" > "$last_version_file"
 fi
