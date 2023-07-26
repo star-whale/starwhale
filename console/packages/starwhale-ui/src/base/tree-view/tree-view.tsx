@@ -173,10 +173,10 @@ export default function TreeView(props: TreeViewProps) {
 
     return (
         <Root role='tree' {...getOverrideProps(RootOverride)}>
-            {data.map((node) => (
+            {data.map((node, i) => (
                 <TreeNode
                     indentGuides={indentGuides}
-                    key={getId(node)}
+                    key={[getId(node), i].join('/')}
                     node={node}
                     getId={getId}
                     onToggle={(node) => {

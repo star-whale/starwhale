@@ -198,8 +198,8 @@ export function createForm<S extends {} = Store>({
                             'div',
                             { style: { display: 'flex', alignItems: 'center', gap: 4 } },
                             [
-                                React.createElement('div', { style: { flexShrink: 0 } }, label),
-                                React.createElement('div', {}, '*'),
+                                React.createElement('div', { style: { flexShrink: 0 }, key: 0 }, label),
+                                React.createElement('div', { key: 1 }, '*'),
                             ]
                         )
                     }
