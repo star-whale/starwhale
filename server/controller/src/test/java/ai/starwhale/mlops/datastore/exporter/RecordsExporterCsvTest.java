@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 public class RecordsExporterCsvTest {
 
-    private static final String EXPECTED = "v1,\"{\"\"mk\"\":\"\"mv中文\"\"}\",\"[1,2,3]\"\r\n"
+    private static final String EXPECTED = "ke1,ke2,ke3\r\nv1,\"{\"\"mk\"\":\"\"mv中文\"\"}\",\"[1,2,3]\"\r\n"
             + "V1,\"{\"\"MK\"\":\"\"MV鈤\"\"}\",\"[4,5,6]\"\r\n";
 
     private static final RecordList RECORD_LIST = new RecordList(
