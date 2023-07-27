@@ -22,6 +22,7 @@ import { useProjectRole } from '@project/hooks/useProjectRole'
 import { ConfigurationOverride } from '@starwhale/ui/base/helpers/overrides'
 import { ConfirmButton } from '@starwhale/ui'
 import ExposedLink from '@job/components/ExposedLink'
+import qs from 'qs'
 
 interface IActionButtonProps {
     jobId: string
@@ -186,6 +187,24 @@ export default function JobListCard() {
                             }
                         }
 
+                        const rerun = (
+                            <Button
+                                kind='tertiary'
+                                onClick={() =>
+                                    history.push(
+                                        `/projects/${projectId}/new_job?${qs.stringify({
+                                            modelVersionUrl: job?.modelVersion,
+                                            datasetVersionUrls: job?.datasets?.join(','),
+                                            runtimeVersionUrl: job?.runtime?.version?.name,
+                                            resourcePool: job?.resourcePool,
+                                        })}`
+                                    )
+                                }
+                            >
+                                {t('Rerun')}
+                            </Button>
+                        )
+
                         return [
                             <div key='id' style={{ gap: '8px', position: 'relative', paddingLeft: '12px' }}>
                                 <Button
@@ -228,6 +247,7 @@ export default function JobListCard() {
                             <JobStatus key='jobStatus' status={job.jobStatus as any} />,
                             <div key='action' style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 {actions[job.jobStatus] ?? ''}
+                                {rerun}
                                 {job.exposedLinks?.map((exposed) => (
                                     <ExposedLink key={exposed.link} data={exposed} />
                                 ))}

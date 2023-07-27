@@ -33,6 +33,11 @@ export interface IExposedLinkSchema {
     link: string
 }
 
+export enum RuntimeType {
+    BUILTIN = 'builtin',
+    OTHER = 'other',
+}
+
 export interface IJobSchema extends IResourceSchema {
     uuid: string
     name: string
@@ -69,24 +74,24 @@ export interface ICreateJobSchema {
     timeToLiveInSec?: number
 }
 
-export interface IJobFormSchema extends IJobSchema {
-    modelId: string
-    runtimeId: string
-    runtimeVersionUrl: string
-    datasetId: string
-    datasetVersionId: string
-    datasetVersionIdsArr?: Array<string>
-}
+// export interface IJobFormSchema extends IJobSchema {
+//     modelId: string
+//     runtimeId: string
+//     runtimeVersionUrl: string
+//     datasetId: string
+//     datasetVersionId: string
+//     datasetVersionIdsArr?: Array<string>
+// }
 
 export interface ICreateJobFormSchema extends Omit<ICreateJobSchema, 'stepSpecOverWrites'> {
-    modelId: string
-    runtimeId: string
     runtimeVersionUrl: string
+    runtimeType?: string
     datasetId: string
     datasetVersionId: string
-    datasetVersionIdsArr?: Array<string>
+    datasetVersionUrls?: Array<string>
     resourcePool: string
-    stepSpecOverWrites: StepSpec[]
+    resourcePoolTmp?: string
+    stepSpecOverWrites: string
     rawType: boolean
     modelVersionHandler: string
     devMode: boolean
