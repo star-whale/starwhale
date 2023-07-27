@@ -187,7 +187,7 @@ public class JobConverter {
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())
-                .handler(extractHandler(jobEntity.getStepSpec()))
+                .jobName(extractJobName(jobEntity.getStepSpec()))
                 .createdTime(jobEntity.getCreatedTime().getTime())
                 .runtime(runtime)
                 .builtinRuntime(runtime.getVersion().getName()
@@ -203,7 +203,7 @@ public class JobConverter {
                 .build();
     }
 
-    private String extractHandler(String stepSpecStr) {
+    private String extractJobName(String stepSpecStr) {
         if (StringUtils.hasText(stepSpecStr)) {
             List<StepSpec> stepSpecs;
             try {

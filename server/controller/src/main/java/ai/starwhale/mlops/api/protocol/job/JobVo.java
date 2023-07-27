@@ -46,8 +46,8 @@ public class JobVo implements Serializable {
     @JsonProperty("modelVersion")
     private String modelVersion;
 
-    @JsonProperty("handler")
-    private String handler;
+    @JsonProperty("jobName")
+    private String jobName;
 
     @JsonProperty("datasets")
     @Valid

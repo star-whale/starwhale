@@ -124,7 +124,7 @@ public class JobConverterTest {
                 hasProperty("owner", isA(UserVo.class)),
                 hasProperty("modelName", is("model")),
                 hasProperty("modelVersion", is("v1")),
-                hasProperty("handler", is("src.evaluator:evaluate")),
+                hasProperty("jobName", is("src.evaluator:evaluate")),
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
                 hasProperty("builtinRuntime", is(false)),
