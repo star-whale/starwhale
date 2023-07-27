@@ -61,14 +61,17 @@ public class ModelVersionConverterTest {
                 .versionTag("tag1")
                 .jobs("default:\n- concurrency: 2")
                 .shared(true)
-                .build(), latest);
+                .build(),
+                latest,
+                "tag2"
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
                 hasProperty("shared", is(1)),
-                hasProperty("tag", is("tag1")),
+                hasProperty("tag", is("tag2")), // use the tag from the parameter
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
         ));

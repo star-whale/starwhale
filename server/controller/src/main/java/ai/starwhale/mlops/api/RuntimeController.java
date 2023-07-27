@@ -27,7 +27,6 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.job.spec.RunConfig;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
@@ -35,8 +34,6 @@ import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -148,30 +145,41 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(String projectUrl, String runtimeUrl,
-            String runtimeVersionUrl, Boolean shared) {
-        runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
+    public ResponseEntity<ResponseMessage<String>> addRuntimeVersionTag(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            RuntimeTagRequest runtimeTagRequest
+    ) {
+        runtimeService.addRuntimeVersionTag(projectUrl, runtimeUrl, versionUrl, runtimeTagRequest.getTag());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> manageRuntimeTag(String projectUrl,
-            String runtimeUrl, String versionUrl, RuntimeTagRequest tagRequest) {
-        TagAction ta;
-        try {
-            ta = TagAction.of(tagRequest.getAction(), tagRequest.getTag());
-        } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME,
-                            String.format("Unknown tag action %s ", tagRequest.getAction()),
-                            e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        Boolean res = runtimeService.manageVersionTag(projectUrl, runtimeUrl, versionUrl, ta);
-        if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update runtime tag failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ResponseMessage<List<String>>> listRuntimeVersionTags(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl
+    ) {
+        var tags = runtimeService.listRuntimeVersionTags(projectUrl, runtimeUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(tags));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteRuntimeVersionTag(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            String tag
+    ) {
+        runtimeService.deleteRuntimeVersionTag(projectUrl, runtimeUrl, versionUrl, tag);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(String projectUrl, String runtimeUrl,
+            String runtimeVersionUrl, Boolean shared) {
+        runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

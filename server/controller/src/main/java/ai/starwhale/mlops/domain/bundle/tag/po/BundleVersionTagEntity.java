@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.domain.bundle.tag.po;
 
-import cn.hutool.core.util.StrUtil;
+import java.util.Date;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-public class TagAction {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BundleVersionTagEntity {
 
-    private Action action;
+    private Long id;
 
-    private String tags;
+    private String type;
 
-    public enum Action {
-        ADD, REMOVE, SET
-    }
+    private Long bundleId;
 
-    public static TagAction of(String action, String tags) throws IllegalArgumentException {
-        if (StrUtil.isEmpty(action)) {
-            throw new IllegalArgumentException("action is empty");
-        }
-        TagAction obj = new TagAction();
-        obj.setAction(Action.valueOf(action.toUpperCase()));
-        obj.setTags(tags);
-        return obj;
-    }
+    private Long versionId;
+
+    private String tag;
+
+    private Date createdTime;
+
+    private Long ownerId;
 }

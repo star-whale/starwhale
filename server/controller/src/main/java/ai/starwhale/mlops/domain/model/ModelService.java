@@ -31,17 +31,16 @@ import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.blob.BlobService;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
-import ai.starwhale.mlops.domain.bundle.tag.TagException;
-import ai.starwhale.mlops.domain.bundle.tag.TagManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -133,12 +132,14 @@ public class ModelService {
     private final TrashService trashService;
     private final JobSpecParser jobSpecParser;
     private final BlobService blobService;
+    private final BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
     public ModelService(
             ModelMapper modelMapper,
             ModelVersionMapper modelVersionMapper,
+            BundleVersionTagDao bundleVersionTagDao,
             IdConverter idConvertor,
             VersionAliasConverter versionAliasConvertor,
             ModelVoConverter modelVoConverter,
@@ -167,9 +168,11 @@ public class ModelService {
                 versionAliasConvertor,
                 projectService,
                 modelDao,
-                modelDao
+                modelDao,
+                bundleVersionTagDao
         );
         this.blobService = blobService;
+        this.bundleVersionTagDao = bundleVersionTagDao;
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
@@ -319,19 +322,6 @@ public class ModelService {
         return update > 0;
     }
 
-
-    public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
-            TagAction tagAction) {
-        try {
-            return TagManager.create(bundleManager, modelDao)
-                    .updateTag(
-                            BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
-                            tagAction);
-        } catch (TagException e) {
-            throw new SwValidationException(ValidSubject.MODEL, "failed to create tag manager", e);
-        }
-    }
-
     public Boolean revertVersionTo(String projectUrl, String modelUrl, String versionUrl) {
         return RevertManager.create(bundleManager, modelDao)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
@@ -341,10 +331,10 @@ public class ModelService {
         Long modelId = bundleManager.getBundleId(BundleUrl
                 .create(query.getProjectUrl(), query.getModelUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ModelVersionEntity> entities = modelVersionMapper.list(
-                modelId, query.getVersionName(), query.getVersionTag());
-        ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
-        return PageUtil.toPageInfo(entities, entity -> versionConvertor.convert(entity, latest));
+        var entities = modelVersionMapper.list(modelId, query.getVersionName(), query.getVersionTag());
+        var latest = modelVersionMapper.findByLatest(modelId);
+        var tags = bundleVersionTagDao.getJoinedTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
+        return PageUtil.toPageInfo(entities, i -> versionConvertor.convert(i, latest, tags.get(i.getId())));
     }
 
     public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
@@ -815,10 +805,12 @@ public class ModelService {
         return ret;
     }
 
-    private void iterateDir(AtomicReference<ModelPackageStorage.MetaBlob> metaBlob,
+    private void iterateDir(
+            AtomicReference<ModelPackageStorage.MetaBlob> metaBlob,
             LinkedList<ModelPackageStorage.MetaBlobIndex> indexes,
             ModelPackageStorage.File dir,
-            Function<File, Boolean> processor) {
+            Function<File, Boolean> processor
+    ) {
         var from = dir.getFromFileIndex();
         var to = dir.getToFileIndex();
         for (int i = from; i < to; ++i) {
@@ -852,10 +844,22 @@ public class ModelService {
         return modelVersionEntity.getName();
     }
 
-    private ModelVersionEntity getModelVersion(
-            String projectUrl, String modelUrl, String versionUrl) {
+    private ModelVersionEntity getModelVersion(String projectUrl, String modelUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(
                 BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
         return modelVersionMapper.find(versionId);
+    }
+
+    public void addModelVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag) {
+        var userId = userService.currentUserDetail().getId();
+        bundleManager.addBundleVersionTag(BundleAccessor.Type.MODEL, projectUrl, modelUrl, versionUrl, tag, userId);
+    }
+
+    public List<String> listModelVersionTags(String projectUrl, String modelUrl, String versionUrl) {
+        return bundleManager.listBundleVersionTags(BundleAccessor.Type.MODEL, projectUrl, modelUrl, versionUrl);
+    }
+
+    public void deleteModelVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag) {
+        bundleManager.deleteBundleVersionTag(BundleAccessor.Type.MODEL, projectUrl, modelUrl, versionUrl, tag);
     }
 }

@@ -134,14 +134,31 @@ public interface ModelApi {
             @PathVariable String versionUrl,
             @Valid @RequestBody ModelUpdateRequest modelUpdateRequest);
 
-    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+    @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<String>> manageModelTag(
+    ResponseEntity<ResponseMessage<String>> addModelVersionTag(
             @PathVariable String projectUrl,
             @PathVariable String modelUrl,
             @PathVariable String versionUrl,
             @Valid @RequestBody ModelTagRequest modelTagRequest);
+
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<String>>> listModelVersionTags(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl);
+
+    @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteModelVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
+            @PathVariable String versionUrl,
+            @PathVariable String tag);
 
     @PostMapping(value = "/blob", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(

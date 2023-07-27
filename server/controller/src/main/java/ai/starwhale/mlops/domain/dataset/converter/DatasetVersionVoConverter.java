@@ -37,7 +37,7 @@ public class DatasetVersionVoConverter {
         this.versionAliasConvertor = versionAliasConvertor;
     }
 
-    public DatasetVersionVo convert(DatasetVersionEntity entity, DatasetVersionEntity latest)
+    public DatasetVersionVo convert(DatasetVersionEntity entity, DatasetVersionEntity latest, String tag)
             throws ConvertException {
         if (entity == null) {
             return null;
@@ -47,7 +47,7 @@ public class DatasetVersionVoConverter {
                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                 .name(entity.getVersionName())
-                .tag(entity.getVersionTag())
+                .tag(tag)
                 .meta(entity.getVersionMeta())
                 .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())

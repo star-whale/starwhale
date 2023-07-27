@@ -21,17 +21,26 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +52,7 @@ public class BundleManagerTest {
     private ProjectAccessor projectAccessor;
     private BundleAccessor bundleAccessor;
     private BundleVersionAccessor bundleVersionAccessor;
+    private BundleVersionTagDao bundleVersionTagDao;
 
     @BeforeEach
     public void setUp() {
@@ -54,15 +64,18 @@ public class BundleManagerTest {
                 .willReturn(EntityWrapper.builder().id(1L).build());
         given(bundleAccessor.findByNameForUpdate(same("bundle1"), anyLong()))
                 .willReturn(EntityWrapper.builder().id(2L).name("bundle1").build());
+        given(bundleAccessor.getType()).willReturn(BundleAccessor.Type.JOB);
         given(projectAccessor.getProjectId(anyString()))
                 .willReturn(1L);
         bundleVersionAccessor = mock(BundleVersionAccessor.class);
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
         bundleManager = new BundleManager(
                 new IdConverter(),
                 new VersionAliasConverter(),
                 projectAccessor,
                 bundleAccessor,
-                bundleVersionAccessor
+                bundleVersionAccessor,
+                bundleVersionTagDao
         );
     }
 
@@ -94,26 +107,62 @@ public class BundleManagerTest {
                 BundleVersionUrl.create("1", "1", "1"));
         assertThat(res, is(1L));
 
-        res = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create("", "", "1"), 1L);
+        res = bundleManager.getBundleVersionId(1L, "1");
         assertThat(res, is(1L));
 
-        res = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create("", "", "v1"), 1L);
+        res = bundleManager.getBundleVersionId(1L, "v1");
         assertThat(res, is(2L));
 
-        res = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create("", "", "vName"), 1L);
+        res = bundleManager.getBundleVersionId(1L, "vName");
         assertThat(res, is(3L));
 
-        res = bundleManager.getBundleVersionId(
-                BundleVersionUrl.create("", "", "latest"), 1L);
+        res = bundleManager.getBundleVersionId(1L, "latest");
         assertThat(res, is(4L));
 
         assertThrows(StarwhaleException.class,
-                () -> bundleManager.getBundleVersionId(BundleVersionUrl.create("", "", "2"), 1L));
+                () -> bundleManager.getBundleVersionId(1L, "2"));
+    }
 
+    @Test
+    public void testGetBundleVersion() {
+        // test getting by tag
+        var tagEntity = BundleVersionTagEntity.builder()
+                .type(BundleAccessor.Type.JOB.name())
+                .bundleId(1L)
+                .versionId(1L)
+                .tag("tag1")
+                .build();
+        given(bundleVersionTagDao.findTag(BundleAccessor.Type.JOB, anyLong(), anyString())).willReturn(tagEntity);
+        var version = bundleManager.getBundleVersion(BundleVersionUrl.create("1", "1", "tag1"));
+        assertThat(version.getId(), is(1L));
+    }
 
+    @Test
+    public void testBundleVersionTag() {
+        var spyBundleManager = spy(bundleManager);
+        doReturn(2L).when(spyBundleManager).getBundleId(BundleUrl.create("1", "2"));
+        doReturn(3L).when(spyBundleManager).getBundleVersionId(2L, "3");
+
+        doNothing().when(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
+        spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", "tag1", 4L);
+        verify(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
+
+        doNothing().when(bundleVersionTagDao).delete(eq(BundleAccessor.Type.JOB), eq(2L), eq(3L), eq("tag1"));
+        spyBundleManager.deleteBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", "tag1");
+        verify(bundleVersionTagDao).delete(eq(BundleAccessor.Type.JOB), eq(2L), eq(3L), eq("tag1"));
+
+        var tagEntity = BundleVersionTagEntity.builder()
+                .type(BundleAccessor.Type.JOB.name())
+                .bundleId(2L)
+                .versionId(3L)
+                .tag("tag1")
+                .build();
+        given(bundleVersionTagDao.listByVersionIds(BundleAccessor.Type.JOB, 2L, List.of(3L)))
+                .willReturn(Map.of(3L, List.of(tagEntity)));
+
+        var res = spyBundleManager.listBundleVersionTags(BundleAccessor.Type.JOB, "1", "2", "3");
+        assertThat(res.size(), is(1));
+        assertThat(res.get(0), is("tag1"));
     }
 
     @Data

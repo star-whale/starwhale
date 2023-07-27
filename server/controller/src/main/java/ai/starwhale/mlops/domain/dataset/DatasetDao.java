@@ -194,4 +194,9 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         }
         return r > 0;
     }
+
+    @Override
+    public Type getType() {
+        return Type.DATASET;
+    }
 }

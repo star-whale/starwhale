@@ -32,7 +32,6 @@ import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.api.protocol.upload.UploadResult;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
@@ -48,7 +47,6 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -80,8 +78,12 @@ public class DatasetController implements DatasetApi {
     private final DatasetUploader datasetUploader;
     private final HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory;
 
-    public DatasetController(DatasetService datasetService, IdConverter idConvertor, DatasetUploader datasetUploader,
-            HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory) {
+    public DatasetController(
+            DatasetService datasetService,
+            IdConverter idConvertor,
+            DatasetUploader datasetUploader,
+            HashNamedDatasetObjectStoreFactory hashNamedDatasetObjectStoreFactory
+    ) {
         this.datasetService = datasetService;
         this.idConvertor = idConvertor;
         this.datasetUploader = datasetUploader;
@@ -89,8 +91,11 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectUrl,
-            String modelUrl, RevertDatasetRequest revertRequest) {
+    public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
+            String projectUrl,
+            String modelUrl,
+            RevertDatasetRequest revertRequest
+    ) {
         Boolean res = datasetService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert dataset version failed."),
@@ -100,8 +105,7 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteDataset(String projectUrl,
-            String datasetUrl) {
+    public ResponseEntity<ResponseMessage<String>> deleteDataset(String projectUrl, String datasetUrl) {
         Boolean res = datasetService.deleteDataset(
                 DatasetQuery.builder()
                         .projectUrl(projectUrl)
@@ -115,8 +119,7 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> recoverDataset(String projectUrl,
-            String datasetUrl) {
+    public ResponseEntity<ResponseMessage<String>> recoverDataset(String projectUrl, String datasetUrl) {
         Boolean res = datasetService.recoverDataset(projectUrl, datasetUrl);
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover dataset failed."),
@@ -126,8 +129,11 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<DatasetInfoVo>> getDatasetInfo(String projectUrl,
-            String datasetUrl, String versionUrl) {
+    public ResponseEntity<ResponseMessage<DatasetInfoVo>> getDatasetInfo(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl
+    ) {
         DatasetInfoVo datasetInfo = datasetService.getDatasetInfo(
                 DatasetQuery.builder()
                         .projectUrl(projectUrl)
@@ -139,10 +145,12 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(String projectUrl,
+    public ResponseEntity<ResponseMessage<DataIndexDesc>> consumeNextData(
+            String projectUrl,
             String datasetUrl,
             String versionUrl,
-            DataConsumptionRequest dataRangeRequest) {
+            DataConsumptionRequest dataRangeRequest
+    ) {
         var dataset = datasetService.query(projectUrl, datasetUrl, versionUrl);
 
         return ResponseEntity.ok(Code.success.asResponse(datasetService.nextData(
@@ -166,7 +174,13 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVo>>> listDatasetVersion(
-            String projectUrl, String datasetUrl, String versionName, String tag, Integer pageNum, Integer pageSize) {
+            String projectUrl,
+            String datasetUrl,
+            String versionName,
+            String tag,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<DatasetVersionVo> pageInfo = datasetService.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
                         .projectUrl(projectUrl)
@@ -183,8 +197,12 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<UploadResult>> uploadDs(
-            String projectUrl, String datasetUrl, String versionUrl,
-            MultipartFile dsFile, DatasetUploadRequest uploadRequest) {
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            MultipartFile dsFile,
+            DatasetUploadRequest uploadRequest
+    ) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
         Long uploadId = uploadRequest.getUploadId();
@@ -227,8 +245,13 @@ public class DatasetController implements DatasetApi {
      */
     @Deprecated
     @Override
-    public void pullDs(String projectUrl, String datasetUrl, String versionUrl,
-            String blobHash, HttpServletResponse httpResponse) {
+    public void pullDs(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            String blobHash,
+            HttpServletResponse httpResponse
+    ) {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
@@ -238,8 +261,12 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> uploadHashedBlob(String projectUrl, String datasetName, String hash,
-            MultipartFile dsFile) {
+    public ResponseEntity<ResponseMessage<String>> uploadHashedBlob(
+            String projectUrl,
+            String datasetName,
+            String hash,
+            MultipartFile dsFile
+    ) {
         return ResponseEntity.ok(
                 Code.success.asResponse(datasetUploader.uploadHashedBlob(projectUrl, datasetName, dsFile, hash)));
     }
@@ -261,9 +288,10 @@ public class DatasetController implements DatasetApi {
     }
 
     public void getHashedBlob(String project, String datasetName, String blobHash, HttpServletResponse httpResponse) {
-        try (LengthAbleInputStream inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName)
-                .get(blobHash.trim());
-                ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+        try (
+                var inputStream = hashNamedDatasetObjectStoreFactory.of(project, datasetName).get(blobHash.trim());
+                var outputStream = httpResponse.getOutputStream()
+        ) {
             httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + blobHash + "\"");
             httpResponse.addHeader("Content-Length", String.valueOf(inputStream.getSize()));
             inputStream.transferTo(outputStream);
@@ -274,8 +302,14 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public void pullUriContent(String project, String datasetName, String uri, Long offset, Long size,
-            HttpServletResponse httpResponse) {
+    public void pullUriContent(
+            String project,
+            String datasetName,
+            String uri,
+            Long offset,
+            Long size,
+            HttpServletResponse httpResponse
+    ) {
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             outputStream.write(datasetService.dataOf(project, datasetName, uri, offset, size));
@@ -286,42 +320,68 @@ public class DatasetController implements DatasetApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<Map>> signLinks(String project, String datasetName, Set<String> uris,
-            Long expTimeMillis) {
+    public ResponseEntity<ResponseMessage<Map>> signLinks(
+            String project,
+            String datasetName,
+            Set<String> uris,
+            Long expTimeMillis
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(
                 datasetService.signLinks(project, datasetName, uris, expTimeMillis)));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> shareDatasetVersion(String projectUrl, String datasetUrl,
-            String versionUrl, Boolean shared) {
+    public ResponseEntity<ResponseMessage<String>> shareDatasetVersion(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            Boolean shared
+    ) {
         datasetService.shareDatasetVersion(projectUrl, datasetUrl, versionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> manageDatasetTag(String projectUrl,
-            String datasetUrl, String versionUrl, DatasetTagRequest datasetTagRequest) {
-        TagAction ta;
-        try {
-            ta = TagAction.of(datasetTagRequest.getAction(), datasetTagRequest.getTag());
-        } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.DATASET,
-                            String.format("Unknown tag action %s ", datasetTagRequest.getAction())),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        Boolean res = datasetService.manageVersionTag(projectUrl, datasetUrl, versionUrl, ta);
-        if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update dataset tag failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ResponseMessage<String>> addDatasetVersionTag(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            DatasetTagRequest datasetTagRequest
+    ) {
+        datasetService.addDatasetVersionTag(projectUrl, datasetUrl, versionUrl, datasetTagRequest.getTag());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<DatasetVo>>> listDataset(String projectUrl, String versionId,
-            String name, String owner, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<List<String>>> listDatasetVersionTags(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl
+    ) {
+        var tags = datasetService.listDatasetVersionTags(projectUrl, datasetUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(tags));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteDatasetVersionTag(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            String tag
+    ) {
+        datasetService.deleteDatasetVersionTag(projectUrl, datasetUrl, versionUrl, tag);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<PageInfo<DatasetVo>>> listDataset(
+            String projectUrl,
+            String versionId,
+            String name,
+            String owner,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<DatasetVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
             List<DatasetVo> voList = datasetService.findDatasetsByVersionIds(
@@ -362,7 +422,10 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> buildDataset(
-                String projectUrl, String datasetName, DatasetBuildRequest datasetBuildRequest) {
+            String projectUrl,
+            String datasetName,
+            DatasetBuildRequest datasetBuildRequest
+    ) {
         datasetService.build(CreateBuildRecordRequest.builder()
                 .datasetId(datasetBuildRequest.getDatasetId())
                 .datasetName(datasetName)
@@ -376,7 +439,11 @@ public class DatasetController implements DatasetApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<BuildRecordVo>>> listBuildRecords(
-                String projectUrl, BuildStatus status, Integer pageNum, Integer pageSize) {
+            String projectUrl,
+            BuildStatus status,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         return ResponseEntity.ok(Code.success.asResponse(
                 datasetService.listBuildRecords(projectUrl, status, new PageParams(pageNum, pageSize))));
     }

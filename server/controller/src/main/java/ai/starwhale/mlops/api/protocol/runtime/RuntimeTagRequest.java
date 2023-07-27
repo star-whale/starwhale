@@ -28,7 +28,4 @@ public class RuntimeTagRequest {
     @NotNull
     @JsonProperty("tag")
     private String tag;
-
-    @JsonProperty("action")
-    private String action;
 }

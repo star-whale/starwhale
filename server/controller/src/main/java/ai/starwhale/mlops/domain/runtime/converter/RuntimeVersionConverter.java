@@ -44,17 +44,17 @@ public class RuntimeVersionConverter {
 
     public RuntimeVersionVo convert(RuntimeVersionEntity entity)
             throws ConvertException {
-        return convert(entity, null);
+        return convert(entity, null, null);
     }
 
-    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest)
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest, String tag)
             throws ConvertException {
         return RuntimeVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getVersionName())
                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                 .latest(entity.getId() != null && latest != null && entity.getId().equals(latest.getId()))
-                .tag(entity.getVersionTag())
+                .tag(tag)
                 .meta(entity.getVersionMeta())
                 .image(entity.getImage(dockerSetting.getRegistryForPull()))
                 .builtImage(entity.getBuiltImage())

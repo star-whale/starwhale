@@ -39,6 +39,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -55,12 +56,14 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
@@ -102,6 +105,7 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,6 +130,7 @@ public class DatasetServiceTest {
     private K8sJobTemplate k8sJobTemplate;
     private DatasetBuildTokenValidator datasetBuildTokenValidator;
     private SystemSettingService systemSettingService;
+    private BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
@@ -145,7 +150,7 @@ public class DatasetServiceTest {
                             .build();
                 });
         versionConvertor = mock(DatasetVersionVoConverter.class);
-        given(versionConvertor.convert(any(DatasetVersionEntity.class), any()))
+        given(versionConvertor.convert(any(DatasetVersionEntity.class), any(), any()))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
                     return DatasetVersionVo.builder()
@@ -182,11 +187,13 @@ public class DatasetServiceTest {
                 new RunTimeProperties("", new RunTimeProperties.RunConfig(), new RunTimeProperties.RunConfig(),
                         new RunTimeProperties.Pypi("url1", "url2", "host1", 11, 91), ""),
                 new DockerSetting("", "", "", "", false), userService);
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         service = new DatasetService(
                 projectService,
                 datasetMapper,
                 datasetVersionMapper,
+                bundleVersionTagDao,
                 buildRecordMapper,
                 datasetConvertor,
                 versionConvertor,
@@ -458,6 +465,7 @@ public class DatasetServiceTest {
                 projectService,
                 mock(DatasetMapper.class),
                 datasetVersionMapper,
+                mock(BundleVersionTagDao.class),
                 mock(BuildRecordMapper.class),
                 mock(DatasetVoConverter.class),
                 mock(DatasetVersionVoConverter.class),
@@ -699,4 +707,26 @@ public class DatasetServiceTest {
         ));
     }
 
+    @Test
+    public void testAddDatasetVersionTag() {
+        when(userService.currentUserDetail()).thenReturn(User.builder().id(1L).build());
+        doNothing().when(bundleManager).addBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1", 1L);
+        service.addDatasetVersionTag("p1", "d1", "v1", "tag1");
+        verify(bundleManager, times(1)).addBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1", 1L);
+    }
+
+    @Test
+    public void testListDatasetVersionTags() {
+        when(bundleManager.listBundleVersionTags(BundleAccessor.Type.DATASET, "p1", "d1", "v1"))
+                .thenReturn(List.of("tag1", "tag2"));
+        var res = service.listDatasetVersionTags("p1", "d1", "v1");
+        AssertionsForInterfaceTypes.assertThat(res).containsExactly("tag1", "tag2");
+    }
+
+    @Test
+    public void testDeleteDatasetVersionTag() {
+        doNothing().when(bundleManager).deleteBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1");
+        service.deleteDatasetVersionTag("p1", "d1", "v1", "tag1");
+        verify(bundleManager, times(1)).deleteBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1");
+    }
 }

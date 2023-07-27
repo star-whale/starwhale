@@ -28,7 +28,4 @@ public class ModelTagRequest {
     @NotNull
     @JsonProperty("tag")
     private String tag;
-
-    @JsonProperty("action")
-    private String action;
 }

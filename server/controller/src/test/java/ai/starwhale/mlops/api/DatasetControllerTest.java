@@ -33,6 +33,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
@@ -67,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -275,38 +278,6 @@ public class DatasetControllerTest {
     }
 
     @Test
-    public void testManageModelTag() {
-        given(datasetService.manageVersionTag(same("p1"), same("d1"), same("v1"), argThat(
-                argument -> Objects.equals(argument.getTags(), "tag1")))).willReturn(true);
-
-        DatasetTagRequest reqeust = new DatasetTagRequest();
-        reqeust.setTag("tag1");
-        reqeust.setAction("add");
-        var resp = controller.manageDatasetTag("p1", "d1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("remove");
-        resp = controller.manageDatasetTag("p1", "d1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("set");
-        resp = controller.manageDatasetTag("p1", "d1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageDatasetTag("p2", "d1", "v1", reqeust));
-
-        reqeust.setAction("unknown");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageDatasetTag("p1", "d1", "v1", reqeust));
-
-        reqeust.setAction("add");
-        reqeust.setTag("no-tag");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageDatasetTag("p1", "d1", "v1", reqeust));
-    }
-
-    @Test
     public void testListDataset() {
         given(datasetService.findDatasetsByVersionIds(anyList()))
                 .willReturn(List.of(DatasetVo.builder().id("1").build()));
@@ -420,4 +391,33 @@ public class DatasetControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
     }
 
+    @Test
+    public void testAddDatasetVersionTag() {
+        doNothing().when(datasetService).addDatasetVersionTag("1", "2", "3", "tag1");
+
+        var req = new DatasetTagRequest();
+        req.setTag("tag1");
+        var resp = controller.addDatasetVersionTag("1", "2", "3", req);
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(datasetService).addDatasetVersionTag("1", "2", "3", "tag1");
+    }
+
+    @Test
+    public void testListDatasetVersionTags() {
+        given(datasetService.listDatasetVersionTags("1", "2", "3")).willReturn(List.of("tag1", "tag2"));
+
+        var resp = controller.listDatasetVersionTags("1", "2", "3");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        AssertionsForInterfaceTypes.assertThat(resp.getBody().getData()).containsExactlyInAnyOrder("tag1", "tag2");
+    }
+
+    @Test
+    public void testDeleteDatasetVersionTag() {
+        doNothing().when(datasetService).deleteDatasetVersionTag("1", "2", "3", "tag1");
+
+        var resp = controller.deleteDatasetVersionTag("1", "2", "3", "tag1");
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(datasetService).deleteDatasetVersionTag("1", "2", "3", "tag1");
+    }
 }

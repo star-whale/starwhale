@@ -20,9 +20,13 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,17 +38,22 @@ public class BundleManager {
     private final VersionAliasConverter versionAliasConvertor;
     private final BundleAccessor bundleAccessor;
     private final BundleVersionAccessor bundleVersionAccessor;
+    private final BundleVersionTagDao bundleVersionTagDao;
 
-    public BundleManager(IdConverter idConvertor,
+    public BundleManager(
+            IdConverter idConvertor,
             VersionAliasConverter versionAliasConvertor,
             ProjectAccessor projectAccessor,
             BundleAccessor bundleAccessor,
-            BundleVersionAccessor bundleVersionAccessor) {
+            BundleVersionAccessor bundleVersionAccessor,
+            BundleVersionTagDao bundleVersionTagDao
+    ) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.projectAccessor = projectAccessor;
         this.bundleAccessor = bundleAccessor;
         this.bundleVersionAccessor = bundleVersionAccessor;
+        this.bundleVersionTagDao = bundleVersionTagDao;
     }
 
     public Long getBundleId(BundleUrl bundleUrl) {
@@ -75,11 +84,11 @@ public class BundleManager {
 
     public Long getBundleVersionId(BundleVersionUrl bundleVersionUrl) {
         Long bundleId = getBundleId(bundleVersionUrl.getBundleUrl());
-        return getBundleVersionId(bundleVersionUrl, bundleId);
+        return getBundleVersionId(bundleId, bundleVersionUrl.getVersionUrl());
     }
 
-    public Long getBundleVersionId(BundleVersionUrl bundleVersionUrl, Long bundleId) {
-        return getBundleVersion(bundleVersionUrl.getVersionUrl(), bundleId).getId();
+    public Long getBundleVersionId(Long bundleId, String versionUrl) {
+        return getBundleVersion(versionUrl, bundleId).getId();
     }
 
     public BundleVersionEntity getBundleVersion(BundleVersionUrl bundleVersionUrl) {
@@ -97,6 +106,13 @@ public class BundleManager {
             entity = bundleVersionAccessor.findLatestVersionByBundleId(bundleId);
         } else {
             entity = bundleVersionAccessor.findVersionByNameAndBundleId(versionUrl, bundleId);
+            if (entity == null) {
+                // find by tag
+                var tag = bundleVersionTagDao.findTag(bundleAccessor.getType(), bundleId, versionUrl);
+                if (tag != null) {
+                    entity = bundleVersionAccessor.findVersionById(tag.getVersionId());
+                }
+            }
         }
         if (entity == null) {
             throw new SwNotFoundException(ResourceType.BUNDLE_VERSION, String.format("Unable to find %s", versionUrl));
@@ -104,4 +120,42 @@ public class BundleManager {
         return entity;
     }
 
+    public void addBundleVersionTag(
+            BundleAccessor.Type type,
+            String projectUrl,
+            String bundleUrl,
+            String bundleVersionUrl,
+            String tag,
+            Long userId
+    ) {
+        var bundleId = getBundleId(BundleUrl.create(projectUrl, bundleUrl));
+        var versionId = getBundleVersionId(bundleId, bundleVersionUrl);
+        bundleVersionTagDao.add(type, bundleId, versionId, tag, userId);
+    }
+
+    public List<String> listBundleVersionTags(
+            BundleAccessor.Type type,
+            String projectUrl,
+            String modelUrl,
+            String versionUrl
+    ) {
+        var bundleId = getBundleId(BundleUrl.create(projectUrl, modelUrl));
+        var versionId = getBundleVersionId(bundleId, versionUrl);
+        var tags = bundleVersionTagDao.listByVersionIds(type, bundleId, List.of(versionId));
+        return tags.get(versionId).stream()
+                .map(BundleVersionTagEntity::getTag)
+                .collect(Collectors.toList());
+    }
+
+    public void deleteBundleVersionTag(
+            BundleAccessor.Type type,
+            String projectUrl,
+            String modelUrl,
+            String versionUrl,
+            String tag
+    ) {
+        var bundleId = getBundleId(BundleUrl.create(projectUrl, modelUrl));
+        var versionId = getBundleVersionId(bundleId, versionUrl);
+        bundleVersionTagDao.delete(type, bundleId, versionId, tag);
+    }
 }

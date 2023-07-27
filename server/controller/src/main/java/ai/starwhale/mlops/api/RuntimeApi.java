@@ -171,6 +171,32 @@ public interface RuntimeApi {
             @PathVariable("runtimeVersionUrl") String runtimeVersionUrl,
             @Valid @RequestBody RuntimeTagRequest tagRequest);
 
+    @PostMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> addRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @Valid @RequestBody RuntimeTagRequest runtimeTagRequest);
+
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<String>>> listRuntimeVersionTags(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl);
+
+    @DeleteMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String versionUrl,
+            @PathVariable String tag);
+
 
     @Operation(summary = "Share or unshare the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -192,22 +218,6 @@ public interface RuntimeApi {
                     schema = @Schema())
             @RequestParam(value = "shared") Boolean shared
     );
-
-    @Operation(summary = "Manage tag of the runtime version")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<String>> manageRuntimeTag(
-            @Parameter(in = ParameterIn.PATH, required = true, description = "Project url", schema = @Schema())
-            @PathVariable("projectUrl") String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("runtimeUrl") String runtimeUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl") String versionUrl,
-            @Valid @RequestBody RuntimeTagRequest tagRequest);
-
 
     @Operation(summary = "Get the list of the runtime versions")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

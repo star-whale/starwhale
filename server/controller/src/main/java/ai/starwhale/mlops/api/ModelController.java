@@ -33,15 +33,12 @@ import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelQuery;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.model.bo.ModelVersionQuery;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -72,8 +69,14 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(String projectUrl, String versionId,
-            String name, String owner, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
+            String projectUrl,
+            String versionId,
+            String name,
+            String owner,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<ModelVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
             List<ModelVo> voList = modelService
@@ -96,8 +99,11 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectUrl, String modelUrl,
-            RevertModelVersionRequest revertRequest) {
+    public ResponseEntity<ResponseMessage<String>> revertModelVersion(
+            String projectUrl,
+            String modelUrl,
+            RevertModelVersionRequest revertRequest
+    ) {
         Boolean res = modelService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
             throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert model version failed."),
@@ -150,8 +156,14 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(String projectUrl,
-            String modelUrl, String name, String tag, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<ModelVersionVo>>> listModelVersion(
+            String projectUrl,
+            String modelUrl,
+            String name,
+            String tag,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<ModelVersionVo> pageInfo = modelService.listModelVersionHistory(
                 ModelVersionQuery.builder()
                         .projectUrl(projectUrl)
@@ -194,25 +206,37 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> manageModelTag(String projectUrl,
-            String modelUrl, String versionUrl, ModelTagRequest modelTagRequest) {
-        TagAction ta;
-        try {
-            ta = TagAction.of(modelTagRequest.getAction(), modelTagRequest.getTag());
-        } catch (IllegalArgumentException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.MODEL,
-                            String.format("Unknown tag action %s ", modelTagRequest.getAction()),
-                            e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        Boolean res = modelService.manageVersionTag(projectUrl, modelUrl, versionUrl, ta);
-        if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model tag failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ResponseMessage<String>> addModelVersionTag(
+            String projectUrl,
+            String modelUrl,
+            String versionUrl,
+            ModelTagRequest modelTagRequest
+    ) {
+        modelService.addModelVersionTag(projectUrl, modelUrl, versionUrl, modelTagRequest.getTag());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<String>>> listModelVersionTags(
+            String projectUrl,
+            String modelUrl,
+            String versionUrl
+    ) {
+        var tags = modelService.listModelVersionTags(projectUrl, modelUrl, versionUrl);
+        return ResponseEntity.ok(Code.success.asResponse(tags));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteModelVersionTag(
+            String projectUrl,
+            String modelUrl,
+            String versionUrl,
+            String tag
+    ) {
+        modelService.deleteModelVersionTag(projectUrl, modelUrl, versionUrl, tag);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
 
     @Override
     public ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
@@ -229,7 +253,7 @@ public class ModelController implements ModelApi {
 
     @Override
     public void createModelVersion(String project, String model, String version,
-            CreateModelVersionRequest createModelVersionRequest) {
+                                   CreateModelVersionRequest createModelVersionRequest) {
         this.modelService.createModelVersion(project, model, version, createModelVersionRequest);
     }
 

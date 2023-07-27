@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
@@ -34,6 +35,7 @@ import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -46,13 +48,20 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
     private final ModelVersionMapper versionMapper;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
+    private final BundleVersionTagDao bundleVersionTagDao;
 
-    public ModelDao(ModelMapper modelMapper, ModelVersionMapper versionMapper,
-            IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
+    public ModelDao(
+            ModelMapper modelMapper,
+            ModelVersionMapper versionMapper,
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor,
+            BundleVersionTagDao bundleVersionTagDao
+    ) {
         this.modelMapper = modelMapper;
         this.versionMapper = versionMapper;
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
+        this.bundleVersionTagDao = bundleVersionTagDao;
     }
 
     public ModelEntity getModel(Long id) {
@@ -88,9 +97,13 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
     @Override
     public HasTag findObjectWithTagById(Long id) {
         ModelVersionEntity entity = versionMapper.find(id);
+        if (entity == null) {
+            return null;
+        }
+        var tags = bundleVersionTagDao.getJoinedTagsByBundleVersions(getType(), entity.getModelId(), List.of(entity));
         return HasTagWrapper.builder()
                 .id(entity.getId())
-                .tag(entity.getVersionTag())
+                .tag(tags.get(entity.getId()))
                 .build();
     }
 
@@ -162,5 +175,10 @@ public class ModelDao implements BundleAccessor, BundleVersionAccessor, TagAcces
             log.info("Model has been removed. ID={}", id);
         }
         return r > 0;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.MODEL;
     }
 }

@@ -51,6 +51,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.blob.BlobService;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -754,6 +755,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         var svc = new ModelService(
                 mock(ModelMapper.class),
                 modelVersionMapper,
+                mock(BundleVersionTagDao.class),
                 new IdConverter(),
                 versionAliasConverter,
                 mock(ModelVoConverter.class),
@@ -958,6 +960,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         var modelService = new ModelService(
                 mock(ModelMapper.class),
                 mock(ModelVersionMapper.class),
+                mock(BundleVersionTagDao.class),
                 mock(IdConverter.class),
                 mock(VersionAliasConverter.class),
                 mock(ModelVoConverter.class),
