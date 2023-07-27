@@ -20,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -48,8 +50,11 @@ public class CancellableJobLogK8sCollectorTest {
 
     @Test
     public void testInitAndRead() throws IOException, ApiException {
-        var podMeta = new V1ObjectMeta().name("1-xxx");
-        when(k8sClient.getPodsByJobName("1")).thenReturn(new V1PodList().items(List.of(new V1Pod().metadata(podMeta))));
+        var runningPodMeta = new V1ObjectMeta().name("running-pod");
+        var runningPod = new V1Pod().metadata(runningPodMeta).status(new V1PodStatus().phase("Running"));
+        var failedPodMeta = new V1ObjectMeta().name("failed-pod");
+        var failedPod = new V1Pod().metadata(failedPodMeta).status(new V1PodStatus().phase("Failed"));
+        when(k8sClient.getPodsByJobName("1")).thenReturn(new V1PodList().items(List.of(runningPod, failedPod)));
 
         var line = "abc";
 
@@ -60,7 +65,7 @@ public class CancellableJobLogK8sCollectorTest {
         when(resp.body()).thenReturn(respBody);
         when(call.execute()).thenReturn(resp);
 
-        when(k8sClient.readLog(anyString(), anyString(), anyBoolean())).thenReturn(call);
+        when(k8sClient.readLog(eq("running-pod"), anyString(), anyBoolean())).thenReturn(call);
         var ins = new CancellableJobLogK8sCollector(k8sClient, "1");
 
         assertThat(ins.readLine(), is(line));
