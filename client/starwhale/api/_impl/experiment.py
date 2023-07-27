@@ -16,13 +16,13 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
 
     Examples:
     ```python
-    from starwhale import experiment
+    from starwhale import fine_tune
 
-    @experiment.fine_tune
+    @fine_tune
     def ft():
         ...
 
-    @experiment.fine_tune(resources={"nvidia.com/gpu": 1}, needs=[prepare_handler])
+    @fine_tune(resources={"nvidia.com/gpu": 1}, needs=[prepare_handler])
     def ft():
         ...
     ```
@@ -36,7 +36,7 @@ def fine_tune(*args: Any, **kw: Any) -> Any:
     else:
 
         def _wrap(func: Callable) -> Any:
-            _register_ft(func, resources=kw.get("resources"))
+            _register_ft(func, resources=kw.get("resources"), needs=kw.get("needs"))
             setattr(func, DecoratorInjectAttr.FineTune, True)
             return func
 
