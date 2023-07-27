@@ -45,10 +45,10 @@ public interface ModelMapper {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     long insert(ModelEntity entity);
 
-    @Update("update model_info set is_deleted = 1 where id = #{id}")
+    @Update("update model_info set is_deleted = 1, deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
     int remove(@Param("id") Long id);
 
-    @Update("update model_info set is_deleted = 0 where id = #{id}")
+    @Update("update model_info set is_deleted = 0, deleted_time = 0 where id = #{id}")
     int recover(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from model_info where id = #{id}")
