@@ -29,6 +29,7 @@ import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -65,8 +66,14 @@ public class JobConverterTest {
     @BeforeEach
     public void setUp() {
         RuntimeService runtimeService = mock(RuntimeService.class);
-        given(runtimeService.findRuntimeByVersionIds(anyList()))
-                .willReturn(List.of(RuntimeVo.builder().id("1").build()));
+        given(runtimeService.findRuntimeByVersionIds(anyList())).willReturn(List.of(
+                RuntimeVo.builder()
+                    .id("1")
+                    .version(RuntimeVersionVo.builder()
+                        .name("rt-v1")
+                        .build())
+                    .build()
+        ));
         DatasetDao datasetDao = mock(DatasetDao.class);
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
@@ -87,21 +94,27 @@ public class JobConverterTest {
     }
 
     @Test
-    public void testConvert() {
+    public void testConvert() throws JsonProcessingException {
         JobEntity entity = JobEntity.builder()
                 .id(1L)
                 .jobUuid("job-uuid")
                 .owner(UserEntity.builder().build())
                 .modelName("model")
-                .modelVersion(ModelVersionEntity.builder().versionName("v1").build())
+                .modelVersion(ModelVersionEntity.builder().versionName("v1").builtInRuntime(null).build())
                 .runtimeVersionId(1L)
                 .createdTime(new Date(1000L))
                 .jobStatus(JobStatus.SUCCESS)
                 .finishedTime(new Date(1001L))
                 .comment("job-comment")
                 .resourcePool("rp")
+                .stepSpec("spec")
                 .pinnedTime(new Date(1002L))
                 .build();
+        var stepSpec = StepSpec.builder()
+                .name("step")
+                .jobName("src.evaluator:evaluate")
+                .build();
+        when(jobSpecParser.parseAndFlattenStepFromYaml(anyString())).thenReturn(List.of(stepSpec));
 
         var res = jobConvertor.convert(entity);
         assertThat(res, allOf(
@@ -111,8 +124,10 @@ public class JobConverterTest {
                 hasProperty("owner", isA(UserVo.class)),
                 hasProperty("modelName", is("model")),
                 hasProperty("modelVersion", is("v1")),
+                hasProperty("handler", is("src.evaluator:evaluate")),
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
+                hasProperty("builtinRuntime", is(false)),
                 hasProperty("datasets", isA(List.class)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),

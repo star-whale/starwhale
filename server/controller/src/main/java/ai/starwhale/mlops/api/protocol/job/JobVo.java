@@ -46,12 +46,18 @@ public class JobVo implements Serializable {
     @JsonProperty("modelVersion")
     private String modelVersion;
 
+    @JsonProperty("handler")
+    private String handler;
+
     @JsonProperty("datasets")
     @Valid
     private List<String> datasets;
 
     @JsonProperty("runtime")
     private RuntimeVo runtime;
+
+    @JsonProperty("isBuiltinRuntime")
+    private Boolean builtinRuntime;
 
     @JsonProperty("device")
     private String device;

@@ -26,7 +26,6 @@ import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.job.DevWay;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -44,12 +43,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import reactor.function.Consumer4;
 
+@Slf4j
 @Component
 public class JobConverter {
 
@@ -175,31 +176,8 @@ public class JobConverter {
         return exposed;
     }
 
-    public JobVo convert(Job job) throws ConvertException {
-        var runtimes = findRuntimeByVersionIds(List.of(job.getJobRuntime().getId()));
-        var datasets = findDatasetVersionNamesByJobId(job.getId());
-
-        return JobVo.builder()
-                .id(idConvertor.convert(job.getId()))
-                .uuid(job.getUuid())
-                .owner(UserVo.from(job.getOwner(), idConvertor))
-                .modelName(job.getModel().getName())
-                .modelVersion(job.getModel().getVersion())
-                .createdTime(job.getCreatedTime().getTime())
-                .runtime(runtimes.get(0))
-                .datasets(datasets)
-                .jobStatus(job.getStatus())
-                .stopTime(job.getFinishedTime().getTime())
-                .duration(job.getDurationMs())
-                .comment(job.getComment())
-                .resourcePool(job.getResourcePool().getName())
-                .pinnedTime(job.getPinnedTime() == null ? null : job.getPinnedTime().getTime())
-                .exposedLinks(generateJobExposedLinks(job.getId()))
-                .build();
-    }
-
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
-        var runtimes = findRuntimeByVersionIds(List.of(jobEntity.getRuntimeVersionId()));
+        var runtime = findRuntimeByVersionIds(List.of(jobEntity.getRuntimeVersionId())).get(0);
         var datasets = findDatasetVersionNamesByJobId(jobEntity.getId());
         Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
@@ -209,8 +187,11 @@ public class JobConverter {
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())
+                .handler(extractHandler(jobEntity.getStepSpec()))
                 .createdTime(jobEntity.getCreatedTime().getTime())
-                .runtime(runtimes.get(0))
+                .runtime(runtime)
+                .builtinRuntime(runtime.getVersion().getName()
+                        .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
                 .datasets(datasets)
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
@@ -220,6 +201,22 @@ public class JobConverter {
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
                 .pinnedTime(pinnedTime)
                 .build();
+    }
+
+    private String extractHandler(String stepSpecStr) {
+        if (StringUtils.hasText(stepSpecStr)) {
+            List<StepSpec> stepSpecs;
+            try {
+                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecStr);
+                var spec = stepSpecs.stream().findFirst();
+                if (spec.isPresent()) {
+                    return spec.get().getJobName();
+                }
+            } catch (JsonProcessingException e) {
+                log.error("parse step spec error: {}", e.getMessage(), e);
+            }
+        }
+        return "";
     }
 
 }
