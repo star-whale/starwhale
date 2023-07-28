@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -46,12 +48,18 @@ public class JobVo implements Serializable {
     @JsonProperty("modelVersion")
     private String modelVersion;
 
+    @JsonProperty("model")
+    private ModelVo model;
+
     @JsonProperty("jobName")
     private String jobName;
 
     @JsonProperty("datasets")
     @Valid
     private List<String> datasets;
+
+    @JsonProperty("datasetList")
+    private List<DatasetVo> datasetList;
 
     @JsonProperty("runtime")
     private RuntimeVo runtime;

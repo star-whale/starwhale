@@ -187,6 +187,7 @@ public class ModelService {
         });
     }
 
+
     public Model findModel(Long modelId) {
         ModelEntity entity = modelDao.getModel(modelId);
         return Model.fromEntity(entity);
@@ -394,21 +395,16 @@ public class ModelService {
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
-
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
-        List<Long> ids = versions.stream()
-                .map(ModelVersionEntity::getModelId)
-                .collect(Collectors.toList());
-
-        List<ModelEntity> models = modelMapper.findByIds(Joiner.on(",").join(ids));
-
-        return models.stream()
-                .map(model -> {
-                    ModelVo vo = modelVoConverter.convert(model);
-                    vo.setOwner(userService.findUserById(model.getOwnerId()));
-                    return vo;
-                }).collect(Collectors.toList());
+        return versions.stream().map(version -> {
+            ModelEntity model = modelMapper.find(version.getModelId());
+            ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
+            ModelVo vo = modelVoConverter.convert(model);
+            vo.setOwner(userService.findUserById(model.getOwnerId()));
+            vo.setVersion(versionConvertor.convert(version, latest));
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     private Long getOwner() {

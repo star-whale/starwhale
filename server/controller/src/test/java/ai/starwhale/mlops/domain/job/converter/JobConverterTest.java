@@ -28,13 +28,18 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -43,6 +48,7 @@ import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -74,6 +80,24 @@ public class JobConverterTest {
                         .build())
                     .build()
         ));
+        ModelService modelService = mock(ModelService.class);
+        given(modelService.findModelByVersionId(anyList())).willReturn(List.of(
+                ModelVo.builder()
+                    .id("1")
+                    .version(ModelVersionVo.builder()
+                        .name("model-v1")
+                        .build())
+                    .build()
+        ));
+        DatasetService datasetService = mock(DatasetService.class);
+        given(datasetService.findDatasetsByVersionIds(anyList())).willReturn(List.of(
+                DatasetVo.builder()
+                    .id("1")
+                    .version(DatasetVersionVo.builder()
+                        .name("ds-v1")
+                        .build())
+                    .build()
+        ));
         DatasetDao datasetDao = mock(DatasetDao.class);
         IdConverter idConvertor = new IdConverter();
         SystemSettingService systemSettingService = mock(SystemSettingService.class);
@@ -83,8 +107,7 @@ public class JobConverterTest {
         webServerInTask = mock(WebServerInTask.class);
         jobConvertor = new JobConverter(
                 idConvertor,
-                runtimeService,
-                datasetDao,
+                runtimeService, datasetService, modelService, datasetDao,
                 systemSettingService,
                 hotJobHolder,
                 jobSpecParser,
@@ -101,6 +124,7 @@ public class JobConverterTest {
                 .owner(UserEntity.builder().build())
                 .modelName("model")
                 .modelVersion(ModelVersionEntity.builder().versionName("v1").builtInRuntime(null).build())
+                .modelVersionId(1L)
                 .runtimeVersionId(1L)
                 .createdTime(new Date(1000L))
                 .jobStatus(JobStatus.SUCCESS)
@@ -124,11 +148,13 @@ public class JobConverterTest {
                 hasProperty("owner", isA(UserVo.class)),
                 hasProperty("modelName", is("model")),
                 hasProperty("modelVersion", is("v1")),
+                hasProperty("model", isA(ModelVo.class)),
                 hasProperty("jobName", is("src.evaluator:evaluate")),
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
                 hasProperty("builtinRuntime", is(false)),
                 hasProperty("datasets", isA(List.class)),
+                hasProperty("datasetList", isA(List.class)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),
                 hasProperty("comment", is("job-comment")),
@@ -145,6 +171,7 @@ public class JobConverterTest {
                 .owner(UserEntity.builder().build())
                 .modelName("model")
                 .modelVersion(ModelVersionEntity.builder().versionName("v1").build())
+                .modelVersionId(1L)
                 .runtimeVersionId(1L)
                 .jobStatus(JobStatus.SUCCESS)
                 .comment("job-comment")
