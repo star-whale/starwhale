@@ -1171,21 +1171,21 @@ def predict_handler(): ...
 
     def test_handler_args(self) -> None:
         content = """
-from starwhale import DsInput, handler, ContextInput, Dataset, Context
+from starwhale import DatasetInput, handler, ContextInput, Dataset, Context
 
 class X:
     def __init__(self) -> None:
         self.a = 1
 
     @handler()
-    def f(self, *, x, ds=DsInput(), ctx=ContextInput()):
+    def f(self, *, x, ds=DatasetInput(), ctx=ContextInput()):
         assert self.a+x is 3
         assert isinstance(ds, Dataset)
         assert isinstance(ctx, Context)
 
 
 @handler()
-def f(*, x, ds=DsInput(), ctx=ContextInput()):
+def f(*, x, ds=DatasetInput(), ctx=ContextInput()):
     assert x is 2
     assert isinstance(ds, Dataset)
     assert isinstance(ctx, Context)

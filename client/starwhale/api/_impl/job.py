@@ -253,7 +253,7 @@ class Handler(ASDictMixin):
                 def fetch_real_args(
                     parameter: t.Tuple[str, inspect.Parameter], defaults_to: t.Any
                 ) -> t.Any:
-                    if isinstance(parameter[1].default, DsInput):
+                    if isinstance(parameter[1].default, DatasetInput):
                         from starwhale import dataset
 
                         return dataset(defaults_to)
@@ -381,7 +381,7 @@ def generate_jobs_yaml(
     )
 
 
-class DsInput:
+class DatasetInput:
     pass
 
 

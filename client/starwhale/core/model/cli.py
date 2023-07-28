@@ -473,6 +473,7 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY STANDALONE]Forbid to use packaged runtime in the model",
     hidden=True,
 )
+@click.option("--ext_args", "-ext", "ext_args", type=(str, str), multiple=True)
 def _run(
     workdir: str,
     uri: str,
@@ -492,6 +493,7 @@ def _run(
     forbid_packaged_runtime: bool,
     forbid_snapshot: bool,
     cleanup_snapshot: bool,
+    ext_args: t.Dict[str, str],
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -580,6 +582,7 @@ def _run(
                 "task_num": override_task_num,
             },
             force_generate_jobs_yaml=uri is None,
+            ext_args=ext_args,
         )
 
 
