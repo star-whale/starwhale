@@ -168,10 +168,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             runtimeType: job.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
             runtimeVersionUrl: job.runtime?.version?.id,
             resourcePool: job.resourcePool,
-            datasetVersionUrls: job.datasets,
+            datasetVersionUrls: job.datasetList?.map((v) => v.version?.id) as string[],
             modelVersionUrl: job.model?.version?.id,
             modelVersionHandler: job.jobName,
         })
+        forceUpdate()
     }, [form, job])
 
     return (

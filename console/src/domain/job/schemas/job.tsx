@@ -3,6 +3,7 @@ import { IDeviceSchema } from '@/domain/setting/schemas/system'
 import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
 import { IModelSchema } from '@/domain/model/schemas/model'
+import { IDatasetSchema } from '@/domain/dataset/schemas/dataset'
 
 export enum JobActionType {
     CANCEL = 'cancel',
@@ -45,6 +46,7 @@ export interface IJobSchema extends IResourceSchema {
     modelName?: string
     modelVersion?: string
     datasets?: string[]
+    datasetList?: IDatasetSchema[]
     runtime?: IRuntimeSchema
     model?: IModelSchema
     device?: IDeviceSchema
