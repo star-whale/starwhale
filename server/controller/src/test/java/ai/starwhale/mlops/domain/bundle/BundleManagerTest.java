@@ -129,12 +129,16 @@ public class BundleManagerTest {
         var tagEntity = BundleVersionTagEntity.builder()
                 .type(BundleAccessor.Type.JOB.name())
                 .bundleId(1L)
-                .versionId(1L)
+                .versionId(2L)
                 .tag("tag1")
                 .build();
-        given(bundleVersionTagDao.findTag(BundleAccessor.Type.JOB, anyLong(), anyString())).willReturn(tagEntity);
-        var version = bundleManager.getBundleVersion(BundleVersionUrl.create("1", "1", "tag1"));
-        assertThat(version.getId(), is(1L));
+        given(bundleVersionTagDao.findTag(BundleAccessor.Type.JOB, 2L, "tag1")).willReturn(tagEntity);
+        given(bundleVersionAccessor.findVersionById(2L))
+                .willReturn(VersionEntityWrapper.builder().id(2L).build());
+        var spyBundleManager = spy(bundleManager);
+        doReturn(2L).when(spyBundleManager).getBundleId(BundleUrl.create("1", "2"));
+        var version = spyBundleManager.getBundleVersion(BundleVersionUrl.create("1", "2", "tag1"));
+        assertThat(version.getId(), is(2L));
     }
 
     @Test
