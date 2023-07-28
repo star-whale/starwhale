@@ -391,6 +391,9 @@ public class RuntimeService {
 
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
         var versions = runtimeVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
         var tags = new HashMap<Long, String>();

@@ -341,6 +341,9 @@ public class DatasetService {
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
         List<DatasetVersionEntity> versions = datasetVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
         var tags = new HashMap<Long, String>();

@@ -395,6 +395,9 @@ public class ModelService {
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
         return versions.stream().map(version -> {
