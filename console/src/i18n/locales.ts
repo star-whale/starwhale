@@ -421,6 +421,10 @@ const job = {
         en: 'Open Expose Service',
         zh: '开启外部访问',
     },
+    'job.rerun': {
+        en: 'Rerun',
+        zh: '重新运行',
+    },
 }
 
 const evaluation = {

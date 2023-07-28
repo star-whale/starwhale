@@ -26,7 +26,6 @@ function FormFieldModel({
     FormItem,
     // eslint-disable-next-line
     EventEmitter,
-    modelVersionUrl,
     stepSource,
     setModelTree,
     fullStepSource,
@@ -35,7 +34,6 @@ function FormFieldModel({
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
     EventEmitter: EventEmitter<any>
-    modelVersionUrl?: string
     stepSource?: StepSpec[]
     setModelTree: (obj: any) => void
     fullStepSource?: StepSpec[]
@@ -86,13 +84,6 @@ function FormFieldModel({
         forceUpdate()
     }, [form, fullStepSource, modelVersionHandler, forceUpdate])
 
-    useEffect(() => {
-        form.setFieldsValue({ modelVersionUrl })
-        forceUpdate()
-    }, [form, modelVersionUrl, forceUpdate])
-
-    console.log(fullStepSource)
-
     return (
         <>
             <div className={styles.modelField}>
@@ -100,7 +91,7 @@ function FormFieldModel({
                     <ModelTreeSelector
                         projectId={projectId}
                         onDataChange={setModelTree}
-                        getId={(obj) => obj.versionName}
+                        // getId={(obj) => obj.versionName}
                     />
                 </FormItem>
                 {_modelVersionUrl && fullStepSource && (
@@ -183,21 +174,9 @@ function FormFieldModel({
                             </div>
                         )
                     })}
-                <div
-                    style={{
-                        display: rawType ? 'block' : 'none',
-                    }}
-                >
+                <div style={{ display: rawType ? 'block' : 'none' }}>
                     <FormItem label='' required name='stepSpecOverWrites'>
-                        <Editor
-                            height='500px'
-                            width='960px'
-                            defaultLanguage='yaml'
-                            // value={stepSpecOverWrites}
-                            theme='vs-dark'
-                            // @ts-ignore
-                            // onChange={handleEditorChange}
-                        />
+                        <Editor height='500px' width='960px' defaultLanguage='yaml' theme='vs-dark' />
                     </FormItem>
                 </div>
             </div>

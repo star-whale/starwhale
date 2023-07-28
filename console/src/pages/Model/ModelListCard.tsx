@@ -62,7 +62,7 @@ export default function ModelListCard() {
                                                     kind='tertiary'
                                                     onClick={() =>
                                                         history.push(
-                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&handler=serving`
+                                                            `/projects/${projectId}/new_job/?serveModelId=${model.id}`
                                                         )
                                                     }
                                                 >

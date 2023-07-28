@@ -1,10 +1,11 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
-import { IModelTreeVersionSchema } from './modelVersion'
+import { IModelTreeVersionSchema, IModelVersionSchema } from './modelVersion'
 
 export interface IModelSchema extends IResourceSchema {
     name: string
     owner?: IUserSchema
+    version?: IModelVersionSchema
 }
 
 export interface IModelDetailSchema {

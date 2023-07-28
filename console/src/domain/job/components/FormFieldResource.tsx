@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { FormInstance, FormItemProps } from '@/components/Form/form'
 import { ICreateJobFormSchema } from '../schemas/job'
 import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
-import { useQueryArgs } from '@/hooks/useQueryArgs'
 
 function FormFieldResource({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     form,
     FormItem,
     setResource,
@@ -15,14 +15,6 @@ function FormFieldResource({
     setResource: (resource: any) => void
 }) {
     const [t] = useTranslation()
-    const { query } = useQueryArgs()
-    const { resourcePool } = query
-
-    useEffect(() => {
-        form.setFieldsValue({
-            resourcePool,
-        })
-    }, [form, resourcePool])
 
     return (
         <div

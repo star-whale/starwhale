@@ -10,12 +10,10 @@ function FormFieldRuntime({
     form,
     FormItem,
     builtInRuntime,
-    runtimeType,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
     builtInRuntime?: string
-    runtimeType?: RuntimeType | string
 }) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ projectId: string }>()
@@ -23,12 +21,10 @@ function FormFieldRuntime({
     const type = form.getFieldValue('runtimeType')
 
     useEffect(() => {
-        form.setFieldsValue({ runtimeVersionUrl: builtInRuntime })
-    }, [form, builtInRuntime])
-
-    useEffect(() => {
-        form.setFieldsValue({ runtimeType })
-    }, [form, runtimeType])
+        if (type === RuntimeType.OTHER) {
+            form.setFieldsValue({ runtimeVersionUrl: undefined })
+        }
+    }, [form, type])
 
     return (
         <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
@@ -72,7 +68,7 @@ function FormFieldRuntime({
             )}
             {(type === RuntimeType.OTHER || !builtInRuntime) && (
                 <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
-                    <RuntimeTreeSelector projectId={projectId} getId={(obj) => obj.versionName} />
+                    <RuntimeTreeSelector projectId={projectId} />
                 </FormItem>
             )}
         </div>

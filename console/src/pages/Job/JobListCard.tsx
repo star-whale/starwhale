@@ -193,15 +193,12 @@ export default function JobListCard() {
                                 onClick={() =>
                                     history.push(
                                         `/projects/${projectId}/new_job?${qs.stringify({
-                                            modelVersionUrl: job?.modelVersion,
-                                            datasetVersionUrls: job?.datasets?.join(','),
-                                            runtimeVersionUrl: job?.runtime?.version?.name,
-                                            resourcePool: job?.resourcePool,
+                                            rid: job?.id,
                                         })}`
                                     )
                                 }
                             >
-                                {t('Rerun')}
+                                {t('job.rerun')}
                             </Button>
                         )
 

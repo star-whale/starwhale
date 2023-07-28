@@ -1,23 +1,15 @@
-import React, { useCallback, useReducer, useState } from 'react'
+import React, { useCallback, useEffect, useReducer, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { isModified } from '@/utils'
 import Divider from '@/components/Divider'
-import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import yaml from 'js-yaml'
-import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobSchema, RuntimeType } from '../schemas/job'
-import { Toggle } from '@starwhale/ui/Select'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
-import Input, { NumberInput } from '@starwhale/ui/Input'
-import generatePassword from '@/utils/passwordGenerator'
-import CopyToClipboard from 'react-copy-to-clipboard'
-import { IconFont } from '@starwhale/ui'
-import { WithCurrentAuth } from '@/api/WithAuth'
 import { useQueryArgs } from '@starwhale/core/utils'
 import FormFieldRuntime from './FormFieldRuntime'
 import { useEventEmitter } from 'ahooks'
@@ -29,26 +21,6 @@ import { FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extens
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
-const useStyles = createUseStyles({
-    row3: {
-        display: 'grid',
-        gap: 40,
-        gridTemplateColumns: '280px 300px 280px',
-        gridTemplateRows: 'minmax(0px, max-content)',
-    },
-    row4: {
-        display: 'grid',
-        columnGap: 40,
-        gridTemplateColumns: '120px 120px 480px 100px',
-    },
-    resource: {
-        gridColumnStart: 3,
-        display: 'grid',
-        columnGap: 40,
-        gridTemplateColumns: '260px 120px 40px',
-    },
-})
-
 export interface IJobFormProps {
     job?: IJobSchema
     onSubmit: (data: ICreateJobSchema) => Promise<void>
@@ -56,30 +28,26 @@ export interface IJobFormProps {
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const EventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
-    const styles = useStyles()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
     const [resource, setResource] = React.useState<any>()
-    const [t] = useTranslation()
     const [, forceUpdate] = useReducer((x) => x + 1, 0)
-    // const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
-
+    const [loading, setLoading] = useState(false)
     const { query } = useQueryArgs()
-    const [form] = useForm()
+    const [t] = useTranslation()
     const history = useHistory()
+    const [form] = useForm()
 
     const modelVersionHandler = form.getFieldValue('modelVersionHandler')
     const stepSpecOverWrites = form.getFieldValue('stepSpecOverWrites') as string
     const _modelVersionId = form.getFieldValue('modelVersionUrl')
-
-    const [loading, setLoading] = useState(false)
 
     const modelVersion: IModelVersionSchema | undefined = React.useMemo(() => {
         if (!modelTree || !_modelVersionId) return undefined
         let version: IModelVersionSchema | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
-                if (versionTmp.versionName === _modelVersionId) {
+                if (versionTmp.id === _modelVersionId) {
                     version = versionTmp
                 }
             })
@@ -122,7 +90,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             setLoading(true)
             const tmp = {
                 datasetVersionUrls: values_.datasetVersionUrls?.join(','),
-                resourcePool: values_.resourcePoolTmp || values_.resourcePool,
+                resourcePool: resource?.resourceId ?? resource?.name,
                 stepSpecOverWrites: values_.stepSpecOverWrites,
                 runtimeVersionUrl: values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
                 modelVersionUrl: values_.modelVersionUrl,
@@ -130,9 +98,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 devPassword: values_.devPassword,
                 timeToLiveInSec: values_.timeToLiveInSec,
             }
-            console.log(tmp)
-            return
-            if (values_.rawType && !checkStepSource(values_.stepSpecOverWrites)) return
+            if (values_.rawType && !checkStepSource(values_.stepSpecOverWrites)) {
+                setLoading(false)
+                return
+            }
             try {
                 await onSubmit(tmp)
                 history.goBack()
@@ -140,7 +109,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 setLoading(false)
             }
         },
-        [onSubmit, history, checkStepSource]
+        [onSubmit, history, checkStepSource, resource]
     )
 
     const handleValuesChange = useCallback(
@@ -149,92 +118,61 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 changes: _changes,
                 values: values_,
             })
-            if ('devMode' in _changes && _changes.devMode) {
-                form.setFieldsValue({
-                    devPassword: generatePassword(),
-                })
-            }
             setValues({
                 ...values_,
             })
         },
-        [EventEmitter, form]
+        [EventEmitter]
     )
 
-    const sharedFormProps = {
-        form,
-        FormItem,
-        EventEmitter,
-        forceUpdate,
-    }
-
-    const getRuntimeProps = () => {
-        let builtInRuntime
-        let runtimeType: RuntimeType = RuntimeType.OTHER
-        if (
-            query.runtimeVersionUrl &&
-            modelVersion?.builtInRuntime &&
-            query.runtimeVersionUrl === modelVersion?.builtInRuntime
-        ) {
-            return {
-                builtInRuntime: modelVersion?.builtInRuntime,
-                runtimeType: RuntimeType.BUILTIN,
-            }
-        }
-        if (query.runtimeVersionUrl && !modelVersion?.builtInRuntime) {
-            return {
-                builtInRuntime: query?.runtimeVersionUrl,
-                runtimeType: '',
-            }
-        }
-        if (modelVersion?.builtInRuntime) {
-            builtInRuntime = modelVersion?.builtInRuntime
-            runtimeType = RuntimeType.BUILTIN
-        }
-        return {
-            builtInRuntime,
-            runtimeType,
-        }
-    }
-
-    const getModelProps = () => {
-        // eslint-disable-next-line
-        let { modelId: _modelId, modelVersionUrl: _modelVersionUrl, modelVersionHandler: _modelVersionHandler } = query
-        if (modelTree && _modelId) {
-            modelTree?.forEach((v) => {
-                if (v.modelId === _modelId) {
-                    _modelVersionUrl = v.versions?.[0]?.id
-                }
-            })
-        }
-        return {
-            modelVersionUrl: _modelVersionUrl,
-            modelVersionHandler: _modelVersionHandler,
-            setModelTree,
-            fullStepSource,
-            stepSource,
-        }
-    }
-
-    const getDatasetProps = () => {
-        const { datasetVersionUrls } = query
-        return {
-            datasetVersionUrls,
-        }
-    }
-
-    const getResourcePoolProps = () => {
-        return {
-            resource,
-            setResource,
-        }
-    }
+    const sharedFormProps = { form, FormItem, EventEmitter, forceUpdate }
+    const getModelProps = () => ({ setModelTree, fullStepSource, stepSource })
+    const getResourcePoolProps = () => ({ resource, setResource })
+    const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
 
     const isModifiedDataset = React.useMemo(() => {
         return stepSource?.some((v) => v.require_dataset === null || v.require_dataset)
     }, [stepSource])
 
-    console.log(resource, form.getFieldsValue())
+    useEffect(() => {
+        // init by new model
+        if (modelVersion) {
+            form.setFieldsValue({
+                runtimeVersionUrl: modelVersion?.builtInRuntime,
+                runtimeType: modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+            })
+        }
+        if (modelVersion) {
+            form.setFieldsValue({
+                modelVersionHandler: modelVersion.stepSpecs?.find((v) => v)?.job_name ?? '',
+            })
+        }
+        // init by online eval args, auto select the first version
+        if (modelTree && query.serveModelId) {
+            modelTree?.forEach((v) => {
+                if (v.modelId === query.serveModelId) {
+                    form.setFieldsValue({
+                        modelVersionUrl: v.versions?.[0]?.id,
+                        modelVersionHandler: 'serving',
+                    })
+                }
+            })
+        }
+        forceUpdate()
+    }, [form, query, modelTree, modelVersion])
+
+    useEffect(() => {
+        // init by rerun job details
+        if (!job) return
+        form.setFieldsValue({
+            runtimeType: job.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+            runtimeVersionUrl: job.runtime?.version?.id,
+            resourcePool: job.resourcePool,
+            datasetVersionUrls: job.datasets,
+            modelVersionUrl: job.model?.version?.id,
+            modelVersionHandler: job.jobName,
+        })
+    }, [form, job])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -246,7 +184,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             <FormFieldModel {...sharedFormProps} {...getModelProps()} />
             {/* dataset config */}
             {isModifiedDataset && <Divider orientation='top'>{t('Datasets')}</Divider>}
-            {isModifiedDataset && <FormFieldDataset {...sharedFormProps} {...getDatasetProps()} />}
+            {isModifiedDataset && <FormFieldDataset {...sharedFormProps} />}
             {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
             <FormFieldRuntime {...sharedFormProps} {...getRuntimeProps()} />
