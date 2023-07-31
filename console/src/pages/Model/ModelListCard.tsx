@@ -45,7 +45,7 @@ export default function ModelListCard() {
                             </TextLink>,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <div style={{ display: 'flex', gap: '5px' }}>
+                            <div key='action' style={{ display: 'flex', gap: '5px' }}>
                                 <Button
                                     kind='tertiary'
                                     onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
