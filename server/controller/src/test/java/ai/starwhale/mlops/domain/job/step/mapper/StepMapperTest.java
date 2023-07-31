@@ -112,4 +112,24 @@ public class StepMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(1, list.size());
         Assertions.assertEquals(now, list.get(0).getStartedTime().getTime());
     }
+
+    @Test
+    public void testAddAndGetWithId() {
+        var step = StepEntity.builder()
+                .uuid("uuid")
+                .name("name")
+                .jobId(4L)
+                .lastStepId(5L)
+                .status(StepStatus.RUNNING)
+                .concurrency(3)
+                .taskNum(10)
+                .originJson("{\"foo\": \"bar\"}")
+                .build();
+
+        stepMapper.save(step);
+        var step2 = stepMapper.findById(step.getId());
+        step.setCreatedTime(step2.getCreatedTime());
+        step.setModifiedTime(step2.getModifiedTime());
+        Assertions.assertEquals(step, step2);
+    }
 }

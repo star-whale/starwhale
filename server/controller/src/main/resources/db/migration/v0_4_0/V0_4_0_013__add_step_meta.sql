@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-public interface Constants {
-    YAMLMapper yamlMapper = new YAMLMapper();
-    String SW_BUILT_IN_RUNTIME = "starwhale-built-in";
-    ObjectMapper objectMapper = new ObjectMapper();
-}
+alter table step
+    add origin_json json null;

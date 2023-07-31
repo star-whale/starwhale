@@ -18,7 +18,9 @@ package ai.starwhale.mlops.domain.job.spec;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 @Data
 @Builder
@@ -34,6 +37,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StepSpec {
 
     /**
@@ -64,6 +68,9 @@ public class StepSpec {
 
     @JsonProperty("require_dataset")
     private Boolean requireDataset;
+
+    @JsonIgnore
+    public String getFriendlyName() {
+        return StringUtils.hasText(showName) ? showName : name;
+    }
 }
-
-
