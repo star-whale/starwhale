@@ -1,5 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IAgentSchema } from './agent'
+import { IExposedLinkSchema } from '@job/schemas/job'
 
 export enum TaskStatusType {
     CREATED = 'CREATED',
@@ -21,7 +22,7 @@ export interface ITaskSchema extends IResourceSchema {
     taskStatus: TaskStatusType
     stepName: string
     retryNum: number
-    devUrl?: string
+    exposedLinks?: IExposedLinkSchema[]
     startedTime: number
     finishedTime: number
     failedReason?: string
