@@ -99,9 +99,10 @@ public interface ModelVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into model_version "
-            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared)"
+            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared, "
+            + "storage_size)"
             + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{jobs}, "
-            + "#{builtInRuntime}, #{metaBlobId}, #{shared})")
+            + "#{builtInRuntime}, #{metaBlobId}, #{shared}, #{storageSize})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 
@@ -170,6 +171,12 @@ public interface ModelVersionMapper {
                     }
                     if (StrUtil.isNotEmpty(version.getJobs())) {
                         SET("jobs=#{jobs}");
+                    }
+                    if (StrUtil.isNotEmpty(version.getMetaBlobId())) {
+                        SET("meta_blob_id=#{metaBlobId}");
+                    }
+                    if (Objects.nonNull(version.getStorageSize())) {
+                        SET("storage_size=#{storageSize}");
                     }
                     WHERE("id = #{id}");
                 }
