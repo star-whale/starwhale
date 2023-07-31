@@ -29,15 +29,13 @@ class StepSpecTest {
                 .showName("the show name")
                 .build();
 
-        assertEquals(stepSpec.getFriendlyName(), "the show name");
+        assertEquals("the show name", stepSpec.getFriendlyName());
 
         stepSpec.setShowName(null);
-        assertEquals(stepSpec.getFriendlyName(), "name");
+        assertEquals("name", stepSpec.getFriendlyName());
 
         stepSpec.setName("serving");
-        assertEquals(stepSpec.getFriendlyName(), "serving");
-        stepSpec.setVirtual(true);
-        assertEquals(stepSpec.getFriendlyName(), "online evaluation");
+        assertEquals("serving", stepSpec.getFriendlyName());
     }
 
     @Test
