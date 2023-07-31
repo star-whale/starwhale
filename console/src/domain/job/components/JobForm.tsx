@@ -147,14 +147,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             })
         }
         // init by online eval args, auto select the first version
-        if (modelTree && query.serveModelId) {
+        if (modelTree && query.modelId) {
             modelTree?.forEach((v) => {
-                if (v.modelId === query.serveModelId) {
+                if (v.modelId === query.modelId) {
                     form.setFieldsValue({
                         modelVersionUrl: v.versions?.[0]?.id,
-                        modelVersionHandler: 'serving',
                     })
                 }
+            })
+        }
+        if (query.modelVersionHandler) {
+            form.setFieldsValue({
+                modelVersionHandler: query.modelVersionHandler,
             })
         }
         forceUpdate()

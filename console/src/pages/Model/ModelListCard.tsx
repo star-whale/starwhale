@@ -45,14 +45,23 @@ export default function ModelListCard() {
                             </TextLink>,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <>
+                            <div style={{ display: 'flex', gap: '5px' }}>
                                 <Button
                                     kind='tertiary'
                                     onClick={() => history.push(`/projects/${projectId}/models/${model.id}/versions`)}
                                 >
                                     {t('Version History')}
                                 </Button>
-                                &nbsp;&nbsp;
+                                <WithCurrentAuth id='model.run'>
+                                    <Button
+                                        kind='tertiary'
+                                        onClick={() =>
+                                            history.push(`/projects/${projectId}/new_job/?modelId=${model.id}`)
+                                        }
+                                    >
+                                        {t('model.run')}
+                                    </Button>
+                                </WithCurrentAuth>
                                 <WithCurrentAuth id='online-eval'>
                                     {(isPrivileged: boolean, isCommunity: boolean) => {
                                         if (!isPrivileged) return null
@@ -62,7 +71,7 @@ export default function ModelListCard() {
                                                     kind='tertiary'
                                                     onClick={() =>
                                                         history.push(
-                                                            `/projects/${projectId}/new_job/?serveModelId=${model.id}`
+                                                            `/projects/${projectId}/new_job/?modelId=${model.id}&modelVersionHandler=serving`
                                                         )
                                                     }
                                                 >
@@ -82,7 +91,7 @@ export default function ModelListCard() {
                                         )
                                     }}
                                 </WithCurrentAuth>
-                            </>,
+                            </div>,
                         ]
                     }) ?? []
                 }

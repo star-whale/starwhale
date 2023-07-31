@@ -245,6 +245,10 @@ const model = {
         en: 'e.g. 1.5G',
         zh: '例如：1.5G',
     },
+    'model.run': {
+        en: 'Run Model',
+        zh: '运行模型',
+    },
 }
 const trash = {
     'trash.title': {
