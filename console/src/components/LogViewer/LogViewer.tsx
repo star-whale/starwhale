@@ -62,7 +62,7 @@ const ComplexToolbarLogViewer = ({
     }[]
 }) => {
     const [isPaused, setIsPaused] = React.useState(false)
-    const [isFullScreen, setIsFullScreen] = React.useState(true)
+    const [, setIsFullScreen] = React.useState(true)
     const [currentItemCount, setCurrentItemCount] = React.useState(0)
     const [renderData, setRenderData] = React.useState('')
     const [selectedDataSource, setSelectedDataSource] = React.useState(dataSources[0]?.id)

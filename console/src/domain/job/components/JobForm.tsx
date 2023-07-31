@@ -16,7 +16,6 @@ import { useEventEmitter } from 'ahooks'
 import FormFieldModel from './FormFieldModel'
 import FormFieldDataset from './FormFieldDataset'
 import FormFieldDevMode from './FormFieldDevMode'
-import FormFieldAutoRelease from './FormFieldAutoRelease'
 import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
@@ -174,8 +173,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         })
         forceUpdate()
     }, [form, job])
-
-    console.log(form.getFieldsValue())
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>

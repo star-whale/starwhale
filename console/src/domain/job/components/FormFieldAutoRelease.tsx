@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import useTranslation from '@/hooks/useTranslation'
 import { FormInstance, FormItemProps } from '@/components/Form/form'
 import { ICreateJobFormSchema } from '../schemas/job'
