@@ -40,7 +40,6 @@ from starwhale.consts import (
     SW_AUTO_DIRNAME,
     DEFAULT_PAGE_IDX,
     SW_PYPI_PKG_NAME,
-    DEFAULT_IMAGE_TAG,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_NAME,
@@ -50,6 +49,7 @@ from starwhale.consts import (
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
+    FIXED_RELEASE_BASE_IMAGE_VERSION,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
@@ -1276,11 +1276,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         custom_run_image = config.environment.docker.image
 
         image = DEFAULT_IMAGE_NAME
-        tag = DEFAULT_IMAGE_TAG
+        tag = os.environ.get(
+            "SW_CUSTOM_BASE_IMAGE_VERSION", FIXED_RELEASE_BASE_IMAGE_VERSION
+        )
         _cuda = config.environment.cuda
         _cudnn = config.environment.cudnn
         if _cuda:
-            # star-whale/cuda:11.5-cudnn8-base0.3.0
+            # star-whale/cuda:11.5-cudnn8-base0.3.4
             _tags = [_cuda]
 
             if _cudnn:
@@ -1307,13 +1309,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["docker"] = {
             "custom_run_image": custom_run_image,
             # builtin run image example:
-            # - fullname = docker-registry.starwhale.cn/star-whale/starwhale:0.4.5-cuda11.7
+            # - fullname = docker-registry.starwhale.cn/star-whale/cuda:11.7-base0.3.4
             # - repo = docker-registry.starwhale.cn/star-whale
-            # - name = starwhale
-            # - tag = 0.4.5-cuda11.7
+            # - name = cuda
+            # - tag = 11.7-base0.3.4
             "builtin_run_image": {
                 "repo": repo,
-                "name": DEFAULT_IMAGE_NAME,
+                "name": image,
                 "tag": tag,
                 "fullname": builtin_run_image,
             },
