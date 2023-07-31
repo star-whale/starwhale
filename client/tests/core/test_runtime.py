@@ -27,6 +27,7 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_SW_TASK_RUN_IMAGE,
+    FIXED_RELEASE_BASE_IMAGE_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import BundleType, DependencyType, RuntimeLockFileType
@@ -343,14 +344,14 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-baselatest"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-baselatest",
-                "name": "base",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}",
+                "name": "cuda",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "11.4-cudnn8-baselatest",
+                "tag": f"11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}",
             },
             "custom_run_image": "",
         }
@@ -479,8 +480,9 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/cuda:11.4-baselatest"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.4-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
+
         assert _manifest["dependencies"] == {
             "conda_files": [],
             "conda_pkgs": [],
@@ -595,14 +597,14 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/base:latest"
+            == f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/base:latest",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}",
                 "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest",
+                "tag": FIXED_RELEASE_BASE_IMAGE_VERSION,
             },
             "custom_run_image": "",
         }
@@ -880,7 +882,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/cuda:11.5-cudnn8-baselatest"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.5-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
 
         assert (
@@ -1419,10 +1421,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["base_image"] == docker_image
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/base:latest",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}",
                 "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest",
+                "tag": FIXED_RELEASE_BASE_IMAGE_VERSION,
             },
             "custom_run_image": "user-defined-image:latest",
         }

@@ -9,6 +9,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 
 # Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
+# When you want to release a new version, please update the FIXED_RELEASE_BASE_IMAGE_VERSION field in client/starwhale/consts/__init__.py.
 FIXED_VERSION_BASE_IMAGE := 0.3.4
 FIXED_VERSION_NODEJS_IMAGE := 0.1.4
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.2
