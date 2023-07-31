@@ -1,6 +1,6 @@
 import '@patternfly/react-core/dist/styles/base.css'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer'
 import {
     Button,
@@ -62,7 +62,7 @@ const ComplexToolbarLogViewer = ({
     }[]
 }) => {
     const [isPaused, setIsPaused] = React.useState(false)
-    const [isFullScreen, setIsFullScreen] = React.useState(false)
+    const [isFullScreen, setIsFullScreen] = React.useState(true)
     const [currentItemCount, setCurrentItemCount] = React.useState(0)
     const [renderData, setRenderData] = React.useState('')
     const [selectedDataSource, setSelectedDataSource] = React.useState(dataSources[0]?.id)
@@ -117,7 +117,9 @@ const ComplexToolbarLogViewer = ({
     // @ts-ignore
     const onExpandClick = () => {
         const element = document.querySelector('#complex-toolbar-demo')
-        if (!isFullScreen) {
+        if (!document.fullscreenElement) {
+            setIsFullScreen(true)
+
             if (element?.requestFullscreen) {
                 element.requestFullscreen()
                 // @ts-ignore
@@ -129,8 +131,9 @@ const ComplexToolbarLogViewer = ({
                 // @ts-ignore
                 element?.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
             }
-            setIsFullScreen(true)
         } else {
+            setIsFullScreen(false)
+
             if (document.exitFullscreen) {
                 document.exitFullscreen()
                 // @ts-ignore
@@ -144,9 +147,23 @@ const ComplexToolbarLogViewer = ({
                 // @ts-ignore
                 document.msExitFullscreen()
             }
-            setIsFullScreen(false)
         }
     }
+
+    useEffect(() => {
+        const element = document.querySelector('#complex-toolbar-demo')
+        if (element?.requestFullscreen) {
+            element.requestFullscreen()
+            // @ts-ignore
+        } else if (element?.mozRequestFullScreen) {
+            // @ts-ignore
+            element?.mozRequestFullScreen()
+            // @ts-ignore
+        } else if (element?.webkitRequestFullScreen) {
+            // @ts-ignore
+            element?.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+        }
+    }, [])
 
     const onDownloadClick = () => {
         const element = document.createElement('a')
