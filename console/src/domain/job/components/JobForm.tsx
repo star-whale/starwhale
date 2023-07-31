@@ -17,7 +17,7 @@ import FormFieldModel from './FormFieldModel'
 import FormFieldDataset from './FormFieldDataset'
 import FormFieldDevMode from './FormFieldDevMode'
 import FormFieldAutoRelease from './FormFieldAutoRelease'
-import { FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
+import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -175,6 +175,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         forceUpdate()
     }, [form, job])
 
+    console.log(form.getFieldsValue())
+
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             {/* env config */}
@@ -194,7 +196,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             {/* debug config */}
             <FormFieldDevMode {...sharedFormProps} />
             {/* auto release time config */}
-            <FormFieldAutoRelease {...sharedFormProps} />
+            <FormFieldAutoReleaseExtend {...sharedFormProps} />
             <FormFieldPriExtend {...sharedFormProps} {...getResourcePoolProps()} />
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
