@@ -33,7 +33,7 @@ def build(
     Build function will search all handlers from the `modules` argument or imported modules, and then build Starwhale Model Package.
 
     Arguments:
-        modules: (List[str|object] optional) The search modules supports object(function, class or module) or str(example: "to.path.module", "to.path.module:object").
+        modules: (List[str|object], optional) The search modules supports object(function, class or module) or str(example: "to.path.module", "to.path.module:object").
             If the argument is not specified, the search modules are the imported modules.
         name: (str, optional) The name of Starwhale Model Package, default is the current work dir.
         workdir: (str, Pathlib.Path, optional) The path of the rootdir. The default workdir is the current working dir.

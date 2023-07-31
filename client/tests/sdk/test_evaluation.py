@@ -554,8 +554,7 @@ class TestModelPipelineHandler(TestCase):
             index=0,
         )
         Context.set_runtime_context(context)
-        # mock
-        with Dummy(flush_result=True) as _handler:
+        with Dummy() as _handler:
             _handler._starwhale_internal_run_predict()
 
         context = Context(

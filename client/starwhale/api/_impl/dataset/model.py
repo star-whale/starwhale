@@ -348,7 +348,6 @@ class Dataset:
         ds.commit()
         ds.close()
         ```
-
         Returns:
             A Dataset Object
         """
@@ -420,7 +419,25 @@ class Dataset:
     def batch_iter(
         self, batch_size: int = 1, drop_not_full: bool = False
     ) -> t.Iterator[t.List[DataRow]]:
-        """Batch data into lists of length n. The last batch may be shorter."""
+        """Batch data into lists of length n. The last batch may be shorter.
+
+        Arguments:
+            batch_size: (int, optional) The size of each batch. Default is 1.
+            drop_not_full: (bool, optional) Whether to drop the last batch if it is not full.
+
+        Returns:
+            A generator of lists of length n.
+
+        Examples:
+        ```python
+        from starwhale import dataset
+
+        ds = dataset("mnist")
+        for batch_rows in ds.batch_iter(batch_size=2):
+            assert len(batch_rows) == 2
+            print(batch_rows[0].features)
+        ```
+        """
         it = self.__iter__()
         while True:
             batch_data = list(islice(it, batch_size))
@@ -624,6 +641,53 @@ class Dataset:
         drop_index: bool = True,
         skip_default_transform: bool = False,
     ) -> TorchDataset:
+        """Convert Starwhale Dataset to PyTorch Dataset.
+
+        Arguments:
+            transform: (callable, optional) A transform function for input data.
+            drop_index: (bool, optional) Whether to drop the index column.
+            skip_default_transform: (bool, optional) If `transform` is not set,
+                by default the built-in Starwhale transform function will be used to transform the data.
+                This can be disabled with the `skip_default_transform` parameter.
+
+        Returns:
+            torch.utils.data.Dataset
+
+        Examples:
+        ```python
+        import torch.utils.data as tdata
+        from starwhale import dataset
+
+        ds = dataset("mnist")
+
+        torch_ds = ds.to_pytorch()
+        torch_loader = tdata.DataLoader(torch_ds, batch_size=2)
+        ```
+
+        ```python
+        import torch.utils.data as tdata
+        from starwhale import dataset
+
+        with dataset("mnist") as ds:
+            for i in range(0, 10):
+                ds.append({"txt": Text(f"data-{i}"), "label": i})
+
+            ds.commit()
+
+        def _custom_transform(data: t.Any) -> t.Any:
+            data = data.copy()
+            txt = data["txt"].to_str()
+            data["txt"] = f"custom-{txt}"
+            return data
+
+        torch_loader = tdata.DataLoader(
+            dataset(ds.uri).to_pytorch(transform=_custom_transform), batch_size=1
+        )
+        item = next(iter(torch_loader))
+        assert isinstance(item["label"], torch.Tensor)
+        assert item["txt"][0] in ("custom-data-0", "custom-data-1")
+        ```
+        """
         from starwhale.integrations.pytorch import TorchIterableDataset
 
         return TorchIterableDataset(
@@ -637,6 +701,25 @@ class Dataset:
         self,
         drop_index: bool = True,
     ) -> tf.data.Dataset:
+        """Convert Starwhale Dataset to Tensorflow Dataset.
+
+        Arguments:
+            drop_index: (bool, optional) Whether to drop the index column.
+
+        Returns:
+            tensorflow.data.Dataset object
+
+        Examples:
+
+        ```python
+        from starwhale import dataset
+        import tensorflow as tf
+
+        ds = dataset("mnist")
+        tf_ds = ds.to_tensorflow(drop_index=True)
+        assert isinstance(tf_ds, tf.data.Dataset)
+        ```
+        """
         from starwhale.integrations.tensorflow import to_tf_dataset
 
         return to_tf_dataset(dataset=self, drop_index=drop_index)
@@ -745,7 +828,7 @@ class Dataset:
     def pending_commit_version(self) -> str:
         """Next commit version.
         When you call the `commit` function, the pending_commit_version will be recorded in
-        the Standalone instance ,or Cloud instance.
+        the Standalone instance ,Server instance or Cloud instance.
 
         Returns:
             A str version
@@ -953,15 +1036,24 @@ class Dataset:
     ) -> None:
         """Copy dataset to another instance.
 
-        Args:
+        Arguments:
             dest_uri: (str, required) destination dataset uri
             dest_local_project_uri: (str, optional) destination local project uri
             force: (bool, optional) force to copy
             mode: (str, optional) copy mode, default is 'patch'. Mode choices are: 'patch', 'overwrite'.
               `patch` mode: only update the changed rows and columns for the remote dataset;
               `overwrite` mode: update records and delete extraneous rows from the remote dataset
+
         Returns:
             None
+
+        Examples:
+
+        ```python
+        from starwhale import dataset
+        ds = dataset("mnist")
+        ds.copy("cloud://remote-instance/project/starwhale")
+        ```
         """
         CoreDataset.copy(
             self.uri,
@@ -999,7 +1091,7 @@ class Dataset:
         the dataset will be created automatically.
 
         Arguments:
-            uri: (str, Resource, required) The dataset uri.
+            uri: (str, Resource, required) The dataset uri str or Resource object.
             create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
                 `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
                 `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
@@ -1079,9 +1171,10 @@ class Dataset:
             repo: (str, required) The huggingface datasets repo name.
             subset: (str, optional) The subset name. If the huggingface dataset has multiple subsets, you must specify the subset name.
             split: (str, optional) The split name. If the split name is not specified, the all splits dataset will be built.
-            revision: (str, optional) The huggingface datasets revision. The default value is `main`. If the split name is not specified, the all splits dataset will be built.
+            revision: (str, optional) The huggingface datasets revision. The default value is `main`. The option value accepts tag name, or branch name, or commit hash.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
-            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            volume_size: (int|str, optional) The maximum size of a dataset blob file. A new blob file will be generated when the size exceeds this limit.
+              The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
             cache: (bool, optional) Whether to use huggingface dataset cache(download + local hf dataset). The default value is True.
 
@@ -1149,7 +1242,7 @@ class Dataset:
             name: (str, required) The dataset name you would like to use.
             json_text: (str, required) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
-                The default value is "" which indicates that the dict is an array contains all the items.
+                The default value is "" which indicates that the json object is an array contains all the items.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
@@ -1161,8 +1254,8 @@ class Dataset:
         ```python
         from starwhale import Dataset
         myds = Dataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+            name="translation",
+            json_text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
         )
         print(myds[0].features.en)
         ```
@@ -1170,9 +1263,9 @@ class Dataset:
         ```python
         from starwhale import Dataset
         myds = Dataset.from_json(
-            "translation",
-            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
-            "content.child_content"
+            name="translation",
+            json_text='{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
+            field_selector="content.child_content"
         )
         print(myds[0].features["zh-cn"])
         ```
@@ -1227,18 +1320,18 @@ class Dataset:
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
     ) -> Dataset:
-        """Create a dataset from a folder of image files.
+        """Create a dataset from a folder of image/video/audio files.
 
-        The image folder building supports the following features:
+        The image/video/audio folder building supports the following features:
 
         - search the folder recursively.
         - support three kinds of folder type:
           - `image`: png/jpg/jpeg/webp/svg/apng types. The image file will be converted to Starwhale.Image type.
           - `video`: mp4/webm/avi types. The video file will be converted to Starwhale.Video type.
           - `audio`: mp3/wav types. The audio file will be converted to Starwhale.Audio type.
-        - auto labeling by the common prefix parent dir name.
+        - If `auto_label=True`, the name of the parent directory will be used as the label for that data item, corresponding to the `label` field. Files in the root directory will not be labeled.
         - auto fill caption with the txt file which is named the same as the image file, and located in the same folder.
-        - auto import metadata.csv or metadata.jsonl as the additional metadata information.
+        - auto import metadata.csv or metadata.jsonl (in the root dir) as the additional metadata information.
 
         When the auto_label is True, the function will try to ingest the label from the image folder(sub-folder) name.
         If the image file's folder is equal to the root folder, the label is empty.
@@ -1281,6 +1374,7 @@ class Dataset:
         Arguments:
             folder: (str|Path, required) The folder path from which you would like to create this dataset.
             kind: (str|DatasetFolderSourceType, required) The dataset source type you would like to use, the choices are: image, video and audio.
+               Recursively searching for files of the specified `kind` in `folder`. Other file types will be ignored.
             name: (str|Resource, optional) The dataset name you would like to use. If not specified, the name is the folder name.
             auto_label: (bool, optional) Whether to auto label by the sub-folder name. The default value is True.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
@@ -1294,7 +1388,12 @@ class Dataset:
         ```python
         from starwhale import Dataset
 
-        ds = Dataset.from_folder("/path/to/image", "image", "my-image-dataset")  # create a my-image-dataset dataset from /path/to/image folder.
+        # create a my-image-dataset dataset from /path/to/image folder.
+        ds = Dataset.from_folder(
+            folder="/path/to/image",
+            kind="image",
+            name="my-image-dataset"
+        )
         ```
         """
         rootdir = Path(folder)
