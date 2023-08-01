@@ -1,7 +1,7 @@
 import { IHasTagSchema } from '@base/schemas/resource'
 
-export function getAlias({ tag, alias, latest }: IHasTagSchema): string[] {
-    return [tag, alias, latest ? 'latest' : ''].filter(Boolean) as string[]
+export function getAlias({ tags, alias, latest }: IHasTagSchema): string[] {
+    return [alias, latest ? 'latest' : '', ...(tags ?? [])].filter(Boolean) as string[]
 }
 
 export function getAliasStr(resource: IHasTagSchema, separator = ','): string {

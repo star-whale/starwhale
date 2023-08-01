@@ -3,7 +3,7 @@ import { DynamicSelector, SelectorItemByTree } from '@starwhale/ui/DynamicSelect
 import { TreeNodeData } from '@starwhale/ui/base/tree-view'
 import React, { useEffect } from 'react'
 import { useFetchDatasetTree } from '../hooks/useFetchDatasetTree'
-import DatasetLabel, { getDatastLabel } from './DatasetLabel'
+import DatasetLabel, { getDatasetLabel } from './DatasetLabel'
 import { themedStyled } from '@starwhale/ui/theme/styletron'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
@@ -72,7 +72,7 @@ export function DatasetTreeSelector(
                             ),
                             info: {
                                 labelView: <DatasetLabel version={item} dataset={dataset} isProjectShow />,
-                                labelTitle: getDatastLabel(item, dataset),
+                                labelTitle: getDatasetLabel(item, dataset),
                             },
                             isExpanded: true,
                         }

@@ -6,7 +6,7 @@ export interface IResourceSchema extends IBaseSchema {
 }
 
 export interface IHasTagSchema {
-    tag: string
+    tags: string[]
     alias: string
     latest: boolean
 }

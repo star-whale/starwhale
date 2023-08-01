@@ -136,3 +136,27 @@ export async function updateModelVersionShared(
     )
     return resp.data
 }
+
+export async function addModelVersionTag(
+    projectId: string,
+    modelId: string,
+    modelVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.post<void>(`/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/tag`, {
+        tag,
+    })
+    return resp.data
+}
+
+export async function deleteModelVersionTag(
+    projectId: string,
+    modelId: string,
+    modelVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.delete<void>(
+        `/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/tag/${tag}`
+    )
+    return resp.data
+}

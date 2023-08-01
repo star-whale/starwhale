@@ -14,6 +14,7 @@ import { MonoText } from '@/components/Text'
 import { buildImageForRuntimeVersion } from '@runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -47,7 +48,7 @@ export default function RuntimeListCard() {
                                 {runtime.name}
                             </TextLink>,
                             <MonoText key='name'>{runtime.version?.name ?? '-'}</MonoText>,
-                            <Alias key='alias' alias={runtime.version?.alias} />,
+                            runtime.version && <Alias key='alias' alias={getAliasStr(runtime.version)} />,
                             runtime.version?.image ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.version?.createdTime && formatTimestampDateTime(runtime.version?.createdTime),

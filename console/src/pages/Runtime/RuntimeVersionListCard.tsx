@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -8,16 +8,20 @@ import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
 import Button from '@starwhale/ui/Button'
 import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
-import { buildImageForRuntimeVersion, revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
+import {
+    addRuntimeVersionTag,
+    buildImageForRuntimeVersion,
+    deleteRuntimeVersionTag,
+    revertRuntimeVersion,
+} from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
 import { WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
-import Alias from '@/components/Alias'
+import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
-import { getAliasStr } from '@base/utils/alias'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -34,36 +38,25 @@ export default function RuntimeVersionListCard() {
     )
     const { hasCliMate, doPull } = useCliMate()
 
+    const handleTagAdd = useCallback(
+        async (runtimeVersionId: string, tag: string) => {
+            await addRuntimeVersionTag(projectId, runtimeId, runtimeVersionId, tag)
+            await runtimesInfo.refetch()
+        },
+        [projectId, runtimeId, runtimesInfo]
+    )
+    const handelTagRemove = useCallback(
+        async (runtimeVersionId: string, tag: string) => {
+            await deleteRuntimeVersionTag(projectId, runtimeId, runtimeVersionId, tag)
+            await runtimesInfo.refetch()
+        },
+        [projectId, runtimeId, runtimesInfo]
+    )
+
     return (
         <Table
             isLoading={runtimesInfo.isLoading}
-            columns={[
-                t('Runtime Version'),
-                t('Alias'),
-                t('Shared'),
-                // {
-                //     type: 'tags',
-                //     title: t('Tag'),
-                //     minWidth: 200,
-                //     onAsyncChange: async (value: any, columnIndex: number, rowIndex: number) => {
-                //         const data = runtimesInfo.data?.list?.[rowIndex]
-                //         try {
-                //             await updateRuntimeVersion(projectId, runtimeId, data?.id as string, { tag: value })
-                //             await runtimesInfo.refetch()
-                //         } catch (e) {
-                //             // console.error(e)
-                //         }
-                //     },
-                //     mapDataToValue: (item: any) => {
-                //         // tag index
-                //         return item[1] ?? ''
-                //     },
-                // },
-                // t('Tag'),
-                t('Created'),
-                t('Owner'),
-                t('Action'),
-            ]}
+            columns={[t('Runtime Version'), t('Alias'), t('Shared'), t('Created'), t('Owner'), t('Action')]}
             data={
                 runtimesInfo.data?.list.map((runtime, i) => {
                     return [
@@ -73,7 +66,12 @@ export default function RuntimeVersionListCard() {
                         >
                             <MonoText>{runtime.name}</MonoText>
                         </TextLink>,
-                        <Alias key='alias' alias={getAliasStr(runtime)} />,
+                        <EditableAlias
+                            key='alias'
+                            resource={runtime}
+                            onAddTag={(tag) => handleTagAdd(runtime.id, tag)}
+                            onRemoveTag={(tag) => handelTagRemove(runtime.id, tag)}
+                        />,
                         <Shared key='shared' shared={runtime.shared} isTextShow />,
                         runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                         runtime.owner && <User user={runtime.owner} />,

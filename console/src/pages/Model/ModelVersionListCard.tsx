@@ -1,6 +1,11 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createModelVersion, revertModelVersion } from '@model/services/modelVersion'
+import {
+    addModelVersionTag,
+    createModelVersion,
+    deleteModelVersionTag,
+    revertModelVersion,
+} from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
 import { ICreateModelVersionSchema } from '@model/schemas/modelVersion'
 import ModelVersionForm from '@model/components/ModelVersionForm'
@@ -18,9 +23,8 @@ import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
-import Alias from '@/components/Alias'
+import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
-import { getAliasStr } from '@base/utils/alias'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -49,6 +53,22 @@ export default function ModelVersionListCard() {
         [modelsInfo, projectId, modelId, t]
     )
 
+    const handleTagAdd = useCallback(
+        async (modelVersionId: string, tag: string) => {
+            await addModelVersionTag(projectId, modelId, modelVersionId, tag)
+            await modelsInfo.refetch()
+        },
+        [modelId, modelsInfo, projectId]
+    )
+
+    const handelTagRemove = useCallback(
+        async (modelVersionId: string, tag: string) => {
+            await deleteModelVersionTag(projectId, modelId, modelVersionId, tag)
+            await modelsInfo.refetch()
+        },
+        [modelId, modelsInfo, projectId]
+    )
+
     return (
         <Card title={t('model versions')}>
             <Table
@@ -63,7 +83,12 @@ export default function ModelVersionListCard() {
                             >
                                 <MonoText>{model.name}</MonoText>
                             </TextLink>,
-                            <Alias key='alias' alias={getAliasStr(model)} />,
+                            <EditableAlias
+                                key='alias'
+                                resource={model}
+                                onAddTag={(tag) => handleTagAdd(model.id, tag)}
+                                onRemoveTag={(tag) => handelTagRemove(model.id, tag)}
+                            />,
                             <Shared key='shared' shared={model.shared} isTextShow />,
                             model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),

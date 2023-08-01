@@ -17,6 +17,7 @@ import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
 import Text from '@starwhale/ui/Text'
 import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -79,7 +80,7 @@ export default function DatasetListCard() {
                                     {dataset.name}
                                 </TextLink>,
                                 <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
-                                <Alias key='alias' alias={dataset.version?.alias} />,
+                                dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                                 <div key='version-history' style={{ display: 'flex', gap: '5px' }}>
