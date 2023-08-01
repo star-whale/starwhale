@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useReducer, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { isModified } from '@/utils'
 import Divider from '@/components/Divider'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
 import yaml from 'js-yaml'
@@ -210,9 +209,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         {t('Cancel')}
                     </Button>
-                    <Button isLoading={loading} disabled={!isModified(job, values)}>
-                        {t('submit')}
-                    </Button>
+                    <Button isLoading={loading}>{t('submit')}</Button>
                 </div>
             </FormItem>
         </Form>
