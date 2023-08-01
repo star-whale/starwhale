@@ -182,6 +182,12 @@ public class ModelService {
         List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVo vo = modelVoConverter.convert(entity);
+            var modelVersion = modelVersionMapper.findByLatest(entity.getId());
+            if (modelVersion != null) {
+                var versionVo = versionConvertor.convert(modelVersion, modelVersion);
+                versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
+                vo.setVersion(versionVo);
+            }
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });

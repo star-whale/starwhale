@@ -37,8 +37,10 @@ public class ModelVo implements Serializable {
 
     private UserVo owner;
 
+    private ModelVersionVo version;
+
     public static ModelVo empty() {
-        return new ModelVo("", "", -1L, UserVo.empty());
+        return new ModelVo("", "", -1L, UserVo.empty(), null);
     }
 
 }
