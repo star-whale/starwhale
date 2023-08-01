@@ -598,6 +598,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
         model_config: ModelConfig = kw["model_config"]
+        tags: t.List[str] = kw.get("tags", [])
+        StandaloneTag.check_tags_validation(tags)
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -659,7 +661,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 5,
                 "render manifest",
             ),
-            (self._make_auto_tags, 5, "make auto tags"),
+            (self._make_tags, 5, "make tags", dict(tags=tags)),
         ]
 
         run_with_progress_bar("model bundle building...", operations)

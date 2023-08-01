@@ -29,6 +29,7 @@ from starwhale.consts import (
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.version import STARWHALE_VERSION
+from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.cloud import CloudRequestMixed
@@ -875,13 +876,13 @@ class Dataset:
         return self._updated_rows_by_commit != 0 or self._deleted_rows_by_commit != 0
 
     @_check_readonly
-    def commit(self, tags: t.Optional[t.List[str]] = None, message: str = "") -> str:
+    def commit(self, tags: t.List[str] | None = None, message: str = "") -> str:
         """Commit into dataset
         Commit will flush and generate a version of the dataset. At the same time, commit
         operation will also generate auto-increment tag, such as v0, v1, v2. Only one commit is allowed.
 
         Arguments:
-            tags: (list(str), optional) Specify the tags for the version. Default is None.
+            tags: (list(str), optional) Specify the tags for the version. Default is None. `latest` and `^v\d+$` tags are reserved tags.
             message: (str, optional) Commit message. Default is empty str.
 
         Example:
@@ -998,6 +999,8 @@ class Dataset:
 
         if self.__has_committed:
             raise RuntimeError("Dataset has already committed")
+
+        StandaloneTag.check_tags_validation(tags)
 
         dataset_revision = self.flush(artifacts_flush=True)
         info_revision = _save_info()
@@ -1163,6 +1166,7 @@ class Dataset:
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
         cache: bool = True,
+        tags: t.List[str] | None = None,
     ) -> Dataset:
         """Create a new dataset from huggingface datasets.
 
@@ -1177,6 +1181,7 @@ class Dataset:
               The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
             cache: (bool, optional) Whether to use huggingface dataset cache(download + local hf dataset). The default value is True.
+            tags: (list(str), optional) The tags for the dataset version.
 
         Returns:
                 A Dataset Object
@@ -1194,6 +1199,8 @@ class Dataset:
         ```
         """
         from starwhale.integrations.huggingface import iter_dataset
+
+        StandaloneTag.check_tags_validation(tags)
 
         # TODO: support auto build all subset datasets
         # TODO: support huggingface dataset info
@@ -1222,7 +1229,7 @@ class Dataset:
                 total += 1
 
             console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
+            ds.commit(tags=tags)
 
         return ds
 
@@ -1235,6 +1242,7 @@ class Dataset:
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> Dataset:
         """Create a new dataset from a json text.
 
@@ -1246,6 +1254,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
 
         Returns:
                 A Dataset Object
@@ -1272,6 +1281,7 @@ class Dataset:
         """
         mode = DatasetChangeMode(mode)
         data_items = json.loads(json_text)
+        StandaloneTag.check_tags_validation(tags)
 
         if field_selector:
             # Split field selector by dots
@@ -1306,7 +1316,7 @@ class Dataset:
                 total += 1
 
             console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
+            ds.commit(tags=tags)
         return ds
 
     @classmethod
@@ -1319,6 +1329,7 @@ class Dataset:
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> Dataset:
         """Create a dataset from a folder of image/video/audio files.
 
@@ -1380,6 +1391,7 @@ class Dataset:
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version. `latest` and `^v\d+$` tags are reserved tags.
 
         Returns:
             A Dataset Object.
@@ -1399,6 +1411,8 @@ class Dataset:
         rootdir = Path(folder)
         if not rootdir.exists():
             raise RuntimeError(f"folder {rootdir} doesn't exist")
+
+        StandaloneTag.check_tags_validation(tags)
 
         name = name or rootdir.name
         mode = DatasetChangeMode(mode)
@@ -1487,6 +1501,6 @@ class Dataset:
                 total += 1
 
             console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
+            ds.commit(tags=tags)
 
         return ds

@@ -172,6 +172,7 @@ class DatasetTermView(BaseTermView):
         revision: str = "main",
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
+        tags: t.List[str] | None = None,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -189,6 +190,7 @@ class DatasetTermView(BaseTermView):
             volume_size=volume_size,
             mode=mode,
             cache=cache,
+            tags=tags,
         )
 
     @classmethod
@@ -202,6 +204,7 @@ class DatasetTermView(BaseTermView):
         volume_size: int | str,
         field_selector: str = "",
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -216,6 +219,7 @@ class DatasetTermView(BaseTermView):
             alignment_size=alignment_size,
             volume_size=volume_size,
             mode=mode,
+            tags=tags,
         )
 
     @classmethod
@@ -230,6 +234,7 @@ class DatasetTermView(BaseTermView):
         alignment_size: int | str,
         volume_size: int | str,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -245,6 +250,7 @@ class DatasetTermView(BaseTermView):
             alignment_size=alignment_size,
             volume_size=volume_size,
             mode=mode,
+            tags=tags,
         )
 
     @classmethod
@@ -254,6 +260,7 @@ class DatasetTermView(BaseTermView):
         workdir: str | Path,
         config: DatasetConfig,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         if config.runtime_uri:
             RuntimeProcess(uri=config.runtime_uri).run()
@@ -265,7 +272,7 @@ class DatasetTermView(BaseTermView):
                 auto_gen_version=False,
             )
             ds = Dataset.get_dataset(dataset_uri)
-            ds.build(workdir=Path(workdir), config=config, mode=mode)
+            ds.build(workdir=Path(workdir), config=config, mode=mode, tags=tags)
 
     @classmethod
     def copy(

@@ -83,6 +83,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -93,6 +94,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -106,6 +108,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -271,6 +274,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
+        tags: t.List[str] | None = None,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
@@ -284,6 +288,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             volume_size=volume_size,
             mode=mode,
             cache=cache,
+            tags=tags,
         )
         console.print(
             f":hibiscus: congratulation! dataset build from https://huggingface.co/datasets/{repo} has been built. You can run "
@@ -297,6 +302,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
@@ -320,6 +326,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             alignment_size=alignment_size,
             volume_size=volume_size,
             mode=mode,
+            tags=tags,
         )
 
         console.print(
@@ -335,6 +342,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
@@ -346,6 +354,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             volume_size=volume_size,
             auto_label=auto_label,
             mode=mode,
+            tags=tags,
         )
 
         console.print(
@@ -355,6 +364,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def build(self, *args: t.Any, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+        tags = kwargs.get("tags", [])
+        StandaloneTag.check_tags_validation(tags)
 
         mode = DatasetChangeMode(kwargs.get("mode", DatasetChangeMode.PATCH))
         dataset_config: DatasetConfig = kwargs["config"]
@@ -373,7 +385,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 f":new: pending commit version: {sds.pending_commit_version[:SHORT_VERSION_CNT]}"
             )
             self._build_from_iterable_handler(sds, dataset_config)
-            version = sds.commit()
+            version = sds.commit(tags=tags)
             self._version = self.uri.version = version
 
             console.print(
