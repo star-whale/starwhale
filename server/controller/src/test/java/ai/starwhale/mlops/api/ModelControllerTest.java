@@ -152,7 +152,7 @@ public class ModelControllerTest {
                         ModelVersionVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listModelVersion("p1", "m1", "v1", "", 1, 5);
+        var resp = controller.listModelVersion("p1", "m1", "v1", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
@@ -205,14 +205,15 @@ public class ModelControllerTest {
 
     @Test
     public void testAddModelVersionTag() {
-        doNothing().when(modelService).addModelVersionTag("1", "2", "3", "tag1");
+        doNothing().when(modelService).addModelVersionTag("1", "2", "3", "tag1", null);
 
         var req = new ModelTagRequest();
         req.setTag("tag1");
+        req.setForce(null);
         var resp = controller.addModelVersionTag("1", "2", "3", req);
 
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        verify(modelService).addModelVersionTag("1", "2", "3", "tag1");
+        verify(modelService).addModelVersionTag("1", "2", "3", "tag1", null);
     }
 
     @Test

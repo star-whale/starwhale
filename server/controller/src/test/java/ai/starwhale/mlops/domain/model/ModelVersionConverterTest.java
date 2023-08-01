@@ -63,7 +63,7 @@ public class ModelVersionConverterTest {
                 .shared(true)
                 .build(),
                 latest,
-                "tag2"
+                List.of("tag2")
         );
         assertThat(res, allOf(
                 notNullValue(),
@@ -71,7 +71,7 @@ public class ModelVersionConverterTest {
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
                 hasProperty("shared", is(1)),
-                hasProperty("tag", is("tag2")), // use the tag from the parameter
+                hasProperty("tags", is(List.of("tag2"))), // use the tag from the parameter
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
         ));

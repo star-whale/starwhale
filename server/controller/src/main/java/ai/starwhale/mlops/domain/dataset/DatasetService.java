@@ -41,6 +41,7 @@ import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
@@ -157,7 +158,8 @@ public class DatasetService {
             K8sJobTemplate k8sJobTemplate,
             DatasetBuildTokenValidator datasetBuildTokenValidator,
             SystemSettingService systemSettingService,
-            @Value("${sw.instance-uri}") String instanceUri) {
+            @Value("${sw.instance-uri}") String instanceUri
+    ) {
         this.projectService = projectService;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
@@ -200,7 +202,7 @@ public class DatasetService {
             DatasetVo vo = datasetVoConverter.convert(ds);
             DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
             if (version != null) {
-                var tags = bundleVersionTagDao.getJoinedTagsByBundleVersions(
+                var tags = bundleVersionTagDao.getTagsByBundleVersions(
                         BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
                 vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
             }
@@ -221,7 +223,8 @@ public class DatasetService {
         Map<Long, DatasetViewVo> map = new LinkedHashMap<>();
         for (DatasetVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getDatasetId())) {
-                map.put(entity.getDatasetId(),
+                map.put(
+                        entity.getDatasetId(),
                         DatasetViewVo.builder()
                                 .ownerName(entity.getUserName())
                                 .projectName(entity.getProjectName())
@@ -229,19 +232,20 @@ public class DatasetService {
                                 .datasetName(entity.getDatasetName())
                                 .shared(toInt(shared))
                                 .versions(new ArrayList<>())
-                                .build());
+                                .build()
+                );
             }
             DatasetVersionEntity latest = datasetVersionMapper.findByLatest(entity.getDatasetId());
             map.get(entity.getDatasetId())
                     .getVersions()
                     .add(DatasetVersionViewVo.builder()
-                            .id(idConvertor.convert(entity.getId()))
-                            .versionName(entity.getVersionName())
-                            .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                            .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                            .createdTime(entity.getCreatedTime().getTime())
-                            .shared(toInt(entity.getShared()))
-                            .build());
+                                 .id(idConvertor.convert(entity.getId()))
+                                 .versionName(entity.getVersionName())
+                                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                                 .createdTime(entity.getCreatedTime().getTime())
+                                 .shared(toInt(entity.getShared()))
+                                 .build());
         }
         return map.values();
     }
@@ -283,8 +287,10 @@ public class DatasetService {
             versionEntity = datasetVersionMapper.findByLatest(ds.getId());
         }
         if (versionEntity == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    "Unable to find the latest version of dataset " + query.getDatasetUrl());
+            throw new SwNotFoundException(
+                    ResourceType.BUNDLE_VERSION,
+                    "Unable to find the latest version of dataset " + query.getDatasetUrl()
+            );
         }
         return toDatasetInfoVo(ds, versionEntity);
 
@@ -313,7 +319,8 @@ public class DatasetService {
         } catch (IOException e) {
             throw new StarwhaleApiException(
                     new SwProcessException(ErrorType.STORAGE, "list dataset storage", e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -334,20 +341,20 @@ public class DatasetService {
     public PageInfo<DatasetVersionVo> listDatasetVersionHistory(DatasetVersionQuery query, PageParams pageParams) {
         Long datasetId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getDatasetUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var entities = datasetVersionMapper.list(datasetId, query.getVersionName(), query.getVersionTag());
+        var entities = datasetVersionMapper.list(datasetId, query.getVersionName());
         var latest = datasetVersionMapper.findByLatest(datasetId);
-        var tags = bundleVersionTagDao.getJoinedTagsByBundleVersions(BundleAccessor.Type.DATASET, datasetId, entities);
+        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.DATASET, datasetId, entities);
         return PageUtil.toPageInfo(entities, item -> versionConvertor.convert(item, latest, tags.get(item.getId())));
     }
 
     public List<DatasetVo> findDatasetsByVersionIds(List<Long> versionIds) {
         List<DatasetVersionEntity> versions = datasetVersionMapper.findByIds(Joiner.on(",").join(versionIds));
 
-        var tags = new HashMap<Long, String>();
+        var tags = new HashMap<Long, List<String>>();
         // group by dataset id and then query by the dataset id and dataset version id list
         versions.stream().collect(Collectors.groupingBy(DatasetVersionEntity::getDatasetId))
                 .forEach((datasetId, versionList) -> tags.putAll(
-                        bundleVersionTagDao.getJoinedTagsByBundleVersions(
+                        bundleVersionTagDao.getTagsByBundleVersions(
                                 BundleAccessor.Type.DATASET, datasetId, versionList)));
 
         return versions.stream().map(version -> {
@@ -381,8 +388,7 @@ public class DatasetService {
     }
 
     private List<DatasetInfoVo> swDatasetInfoOfDs(DatasetEntity ds) {
-        List<DatasetVersionEntity> versionEntities = datasetVersionMapper.list(
-                ds.getId(), null, null);
+        List<DatasetVersionEntity> versionEntities = datasetVersionMapper.list(ds.getId(), null);
         if (null == versionEntities || versionEntities.isEmpty()) {
             return List.of();
         }
@@ -392,7 +398,7 @@ public class DatasetService {
 
     public DatasetVersion query(String projectUrl, String datasetUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, datasetUrl, versionUrl));
+                                                                  .create(projectUrl, datasetUrl, versionUrl));
         return datasetDao.getDatasetVersion(versionId);
     }
 
@@ -405,8 +411,10 @@ public class DatasetService {
                 .build();
     }
 
-    public byte[] dataOf(String project, String datasetName, String uri, Long offset,
-                         Long size) {
+    public byte[] dataOf(
+            String project, String datasetName, String uri, Long offset,
+            Long size
+    ) {
         return uriAccessor.dataOf(projectService.findProject(project).getId(), datasetName, uri, offset, size);
     }
 
@@ -434,19 +442,22 @@ public class DatasetService {
             if (null != ds) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                         "The dataset:{0} in project:{1} is already exists, please use another name.",
-                        request.getDatasetName(), project.getName()));
+                        request.getDatasetName(), project.getName()
+                ));
             }
         } else {
             var ds = datasetMapper.find(request.getDatasetId());
             if (null == ds) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                         "The dataset:{0} in project:{1} doesn't exists, please check it.",
-                        request.getDatasetName(), project.getName()));
+                        request.getDatasetName(), project.getName()
+                ));
             }
             if (!ds.getDatasetName().equals(request.getDatasetName())) {
                 throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                         "The dataset:{0} is different with the exist dataset:{1}.",
-                        request.getDatasetName(), ds.getDatasetName()));
+                        request.getDatasetName(), ds.getDatasetName()
+                ));
             }
         }
         var buildings = buildRecordMapper.selectBuildingInOneProjectForUpdate(
@@ -454,7 +465,8 @@ public class DatasetService {
         if (buildings.size() > 0) {
             throw new SwValidationException(ValidSubject.DATASET, MessageFormat.format(
                     "The dataset:{0} in project:{1} is already in building.",
-                    request.getDatasetName(), project.getName()));
+                    request.getDatasetName(), project.getName()
+            ));
         }
         var entity = BuildRecordEntity.builder()
                 .datasetId(request.getDatasetId())
@@ -525,7 +537,8 @@ public class DatasetService {
                 List<RuntimeResource> resources = Objects.isNull(pool) ? List.of()
                         : pool.validateAndPatchResource(List.of(
                         RuntimeResource.builder().type(RESOURCE_CPU).build(),
-                        RuntimeResource.builder().type(RESOURCE_MEMORY).build()));
+                        RuntimeResource.builder().type(RESOURCE_MEMORY).build()
+                ));
                 log.info("using resource pool {}, patched resources {}", pool, resources);
                 containerOverwriteSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(resources));
 
@@ -534,7 +547,8 @@ public class DatasetService {
             Map<String, String> nodeSelector = pool != null ? pool.getNodeSelector() : Map.of();
             var toleration = pool != null ? pool.getTolerations() : null;
             k8sJobTemplate.renderJob(job, String.format("%s-%d", entity.getDatasetName(), entity.getId()),
-                    "Never", 0, ret, nodeSelector, toleration, null);
+                                     "Never", 0, ret, nodeSelector, toleration, null
+            );
 
             log.debug("deploying dataset build job to k8s :{}", JSONUtil.toJsonStr(job));
             try {
@@ -590,22 +604,41 @@ public class DatasetService {
                 return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new SwProcessException(ErrorType.DB,
-                        MessageFormat.format("read build log path failed {}", id), e);
+                                             MessageFormat.format("read build log path failed {}", id), e
+                );
             }
         }
         return "";
     }
 
-    public void addDatasetVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag) {
+    public void addDatasetVersionTag(
+            String projectUrl,
+            String datasetUrl,
+            String versionUrl,
+            String tag,
+            Boolean force
+    ) {
         var userId = userService.currentUserDetail().getId();
-        bundleManager.addBundleVersionTag(BundleAccessor.Type.DATASET, projectUrl, modelUrl, versionUrl, tag, userId);
+        bundleManager.addBundleVersionTag(
+                BundleAccessor.Type.DATASET,
+                projectUrl,
+                datasetUrl,
+                versionUrl,
+                tag,
+                userId,
+                force
+        );
     }
 
-    public List<String> listDatasetVersionTags(String projectUrl, String modelUrl, String versionUrl) {
-        return bundleManager.listBundleVersionTags(BundleAccessor.Type.DATASET, projectUrl, modelUrl, versionUrl);
+    public List<String> listDatasetVersionTags(String projectUrl, String datasetUrl, String versionUrl) {
+        return bundleManager.listBundleVersionTags(BundleAccessor.Type.DATASET, projectUrl, datasetUrl, versionUrl);
     }
 
-    public void deleteDatasetVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag) {
-        bundleManager.deleteBundleVersionTag(BundleAccessor.Type.DATASET, projectUrl, modelUrl, versionUrl, tag);
+    public void deleteDatasetVersionTag(String projectUrl, String datasetUrl, String versionUrl, String tag) {
+        bundleManager.deleteBundleVersionTag(BundleAccessor.Type.DATASET, projectUrl, datasetUrl, versionUrl, tag);
+    }
+
+    public BundleVersionTagEntity getDatasetVersionTag(String projectUrl, String datasetUrl, String tag) {
+        return bundleManager.getBundleVersionTag(BundleAccessor.Type.RUNTIME, projectUrl, datasetUrl, tag);
     }
 }

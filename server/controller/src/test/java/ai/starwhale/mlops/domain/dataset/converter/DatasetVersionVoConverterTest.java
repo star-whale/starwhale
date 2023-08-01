@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,23 +47,23 @@ public class DatasetVersionVoConverterTest {
                 .id(2L)
                 .versionOrder(2L)
                 .build();
-        var res = datasetVersionVoConverter.convert(DatasetVersionEntity.builder()
-                .id(1L)
-                .shared(true)
-                .versionName("name1")
-                .versionOrder(2L)
-                .versionTag("tag1")
-                .versionMeta("meta1")
-                .build(),
+        var res = datasetVersionVoConverter.convert(
+                DatasetVersionEntity.builder()
+                        .id(1L)
+                        .shared(true)
+                        .versionName("name1")
+                        .versionOrder(2L)
+                        .versionMeta("meta1")
+                        .build(),
                 latest,
-                "the outer tag"
+                List.of("the outer tag")
         );
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("shared", is(1)),
                 hasProperty("alias", is("v2")),
-                hasProperty("tag", is("the outer tag")),
+                hasProperty("tags", is(List.of("the outer tag"))),
                 hasProperty("meta", is("meta1")),
                 hasProperty("latest", is(false))
         ));

@@ -21,9 +21,12 @@ import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.HasId;
 import ai.starwhale.mlops.domain.bundle.tag.mapper.BundleVersionTagMapper;
 import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
+import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,7 +45,12 @@ public class BundleVersionTagDao {
                 .tag(tag)
                 .ownerId(userId)
                 .build();
-        bundleVersionTagMapper.add(entity);
+        // catch the mysql duplicate key error
+        try {
+            bundleVersionTagMapper.add(entity);
+        } catch (DataIntegrityViolationException e) {
+            throw new SwValidationException(SwValidationException.ValidSubject.TAG, "tag already exists");
+        }
     }
 
 
@@ -65,19 +73,20 @@ public class BundleVersionTagDao {
         return entities.stream().collect(Collectors.groupingBy(BundleVersionTagEntity::getVersionId));
     }
 
-    public Map<Long, String> getJoinedTagsByVersionIds(BundleAccessor.Type type, Long bundleId, List<Long> versionIds) {
+    public Map<Long, List<String>> getTagsByVersionIds(BundleAccessor.Type type, Long bundleId, List<Long> versionIds) {
         var tags = listByVersionIds(type, bundleId, versionIds);
-        // make versionId as key, joined tags with "," as value
         return tags.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                i -> i.getValue().stream().map(BundleVersionTagEntity::getTag).collect(Collectors.joining(","))));
+                i -> i.getValue().stream().sorted(
+                        Comparator.comparing(BundleVersionTagEntity::getCreatedTime)
+                ).map(BundleVersionTagEntity::getTag).collect(Collectors.toList())));
     }
 
-    public Map<Long, String> getJoinedTagsByBundleVersions(
+    public Map<Long, List<String>> getTagsByBundleVersions(
             BundleAccessor.Type type,
             Long bundleId,
             List<? extends HasId> versionIds
     ) {
         var ids = versionIds.stream().map(HasId::getId).collect(Collectors.toList());
-        return getJoinedTagsByVersionIds(type, bundleId, ids);
+        return getTagsByVersionIds(type, bundleId, ids);
     }
 }

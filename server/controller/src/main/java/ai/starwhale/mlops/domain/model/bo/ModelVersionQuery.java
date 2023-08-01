@@ -28,6 +28,4 @@ public class ModelVersionQuery {
     private String modelUrl;
 
     private String versionName;
-
-    private String versionTag;
 }

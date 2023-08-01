@@ -25,14 +25,20 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
+import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class BundleManager {
 
     public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
+    // any character a-z, A-Z or 0-9, and _ or - or . and length 2-80, can not be "latest" nor v{number} nor pure number
+    private static final Pattern BUNDLE_TAG_PATTERN = Pattern.compile("^(?!latest$)(?!v\\d+$)(?!\\d+$)[\\w._-]{2,80}$");
+
     private final ProjectAccessor projectAccessor;
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
@@ -120,16 +126,27 @@ public class BundleManager {
         return entity;
     }
 
-    public void addBundleVersionTag(
+    @Transactional
+    public synchronized void addBundleVersionTag(
             BundleAccessor.Type type,
             String projectUrl,
             String bundleUrl,
             String bundleVersionUrl,
             String tag,
-            Long userId
+            Long userId,
+            Boolean force
     ) {
+        if (!BUNDLE_TAG_PATTERN.matcher(tag).matches()) {
+            throw new SwValidationException(SwValidationException.ValidSubject.TAG,
+                    String.format("Invalid tag %s, must match %s", tag, BUNDLE_TAG_PATTERN.pattern())
+            );
+        }
         var bundleId = getBundleId(BundleUrl.create(projectUrl, bundleUrl));
         var versionId = getBundleVersionId(bundleId, bundleVersionUrl);
+        if (Boolean.TRUE.equals(force) && bundleVersionTagDao.findTag(type, bundleId, tag) != null) {
+            bundleVersionTagDao.delete(type, bundleId, versionId, tag);
+        }
+
         bundleVersionTagDao.add(type, bundleId, versionId, tag, userId);
     }
 
@@ -157,5 +174,15 @@ public class BundleManager {
         var bundleId = getBundleId(BundleUrl.create(projectUrl, modelUrl));
         var versionId = getBundleVersionId(bundleId, versionUrl);
         bundleVersionTagDao.delete(type, bundleId, versionId, tag);
+    }
+
+    public BundleVersionTagEntity getBundleVersionTag(
+            BundleAccessor.Type type,
+            String projectUrl,
+            String modelUrl,
+            String tag
+    ) {
+        var bundleId = getBundleId(BundleUrl.create(projectUrl, modelUrl));
+        return bundleVersionTagDao.findTag(type, bundleId, tag);
     }
 }

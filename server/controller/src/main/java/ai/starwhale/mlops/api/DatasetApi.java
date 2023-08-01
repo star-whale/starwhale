@@ -195,12 +195,6 @@ public interface DatasetApi {
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
             String name,
-            @Parameter(
-                    in = ParameterIn.QUERY,
-                    description = "Dataset version tag",
-                    schema = @Schema())
-            @RequestParam(value = "tag", required = false)
-            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -382,6 +376,14 @@ public interface DatasetApi {
             @PathVariable String projectUrl,
             @PathVariable String datasetUrl,
             @PathVariable String versionUrl,
+            @PathVariable String tag);
+
+    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getDatasetVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String datasetUrl,
             @PathVariable String tag);
 
     @Operation(summary = "Get the list of the datasets")

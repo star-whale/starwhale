@@ -25,9 +25,6 @@ import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
-import ai.starwhale.mlops.domain.bundle.tag.HasTag;
-import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
@@ -43,7 +40,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAccessor,
+public class DatasetDao implements BundleAccessor, BundleVersionAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     private final DatasetMapper datasetMapper;
@@ -141,24 +138,6 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     @Override
     public BundleVersionEntity findLatestVersionByBundleId(Long bundleId) {
         return datasetVersionMapper.findByLatest(bundleId);
-    }
-
-    @Override
-    public HasTag findObjectWithTagById(Long id) {
-        DatasetVersionEntity entity = datasetVersionMapper.find(id);
-        return HasTagWrapper.builder()
-                .id(entity.getId())
-                .tag(entity.getVersionTag())
-                .build();
-    }
-
-    @Override
-    public Boolean updateTag(HasTag entity) {
-        int r = datasetVersionMapper.updateTag(entity.getId(), entity.getTag());
-        if (r > 0) {
-            log.info("Dataset Version Tag has been modified. ID={}", entity.getId());
-        }
-        return r > 0;
     }
 
     @Override

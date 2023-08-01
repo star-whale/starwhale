@@ -135,7 +135,7 @@ public class RuntimeControllerTest {
                         RuntimeVersionVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listRuntimeVersion("p1", "r1", "v1", "", 1, 5);
+        var resp = controller.listRuntimeVersion("p1", "r1", "v1", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
@@ -199,14 +199,15 @@ public class RuntimeControllerTest {
 
     @Test
     public void testAddModelVersionTag() {
-        doNothing().when(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1");
+        doNothing().when(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1", false);
 
         var req = new RuntimeTagRequest();
         req.setTag("tag1");
+        req.setForce(false);
         var resp = controller.addRuntimeVersionTag("1", "2", "3", req);
 
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        verify(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1");
+        verify(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1", false);
     }
 
     @Test

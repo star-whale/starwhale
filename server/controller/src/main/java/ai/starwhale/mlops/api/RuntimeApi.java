@@ -197,6 +197,13 @@ public interface RuntimeApi {
             @PathVariable String versionUrl,
             @PathVariable String tag);
 
+    @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getRuntimeVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String runtimeUrl,
+            @PathVariable String tag);
 
     @Operation(summary = "Share or unshare the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -246,12 +253,6 @@ public interface RuntimeApi {
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
             String name,
-            @Parameter(
-                    in = ParameterIn.QUERY,
-                    description = "Runtime version tag",
-                    schema = @Schema())
-            @RequestParam(value = "tag", required = false)
-            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
