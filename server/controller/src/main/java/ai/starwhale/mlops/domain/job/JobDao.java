@@ -212,4 +212,9 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     public Boolean recover(Long id) {
         return jobMapper.recoverJob(id) > 0 && jobRepo.recoverJob(id) > 0;
     }
+
+    @Override
+    public Type getType() {
+        return Type.JOB;
+    }
 }

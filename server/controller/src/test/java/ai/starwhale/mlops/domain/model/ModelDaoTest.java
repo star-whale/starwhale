@@ -25,17 +25,22 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,16 +49,19 @@ public class ModelDaoTest {
     private ModelDao manager;
     private ModelMapper modelMapper;
     private ModelVersionMapper versionMapper;
+    private BundleVersionTagDao bundleVersionTagDao;
 
     @BeforeEach
     public void setUp() {
         modelMapper = mock(ModelMapper.class);
         versionMapper = mock(ModelVersionMapper.class);
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
         manager = new ModelDao(
                 modelMapper,
                 versionMapper,
                 new IdConverter(),
-                new VersionAliasConverter()
+                new VersionAliasConverter(),
+                bundleVersionTagDao
         );
     }
 
@@ -73,22 +81,32 @@ public class ModelDaoTest {
 
     @Test
     public void testFindObjectWithTagById() {
+        // the tag in ModelVersionEntity is not used
         given(versionMapper.find(anyLong()))
                 .willAnswer(invocation -> {
                     Long id = invocation.getArgument(0);
                     return ModelVersionEntity.builder().id(id).versionTag("tag").build();
                 });
 
+        when(bundleVersionTagDao.getJoinedTagsByBundleVersions(eq(BundleAccessor.Type.MODEL), any(), any()))
+                .thenReturn(Map.of(1L, "foo,bar", 2L, "baz"));
+
         var res = manager.findObjectWithTagById(1L);
         assertThat(res, allOf(
                 hasProperty("id", is(1L)),
-                hasProperty("tag", is("tag"))
+                hasProperty("tag", is("foo,bar"))
         ));
 
         res = manager.findObjectWithTagById(2L);
         assertThat(res, allOf(
                 hasProperty("id", is(2L)),
-                hasProperty("tag", is("tag"))
+                hasProperty("tag", is("baz"))
+        ));
+
+        res = manager.findObjectWithTagById(3L);
+        assertThat(res, allOf(
+                hasProperty("id", is(3L)),
+                hasProperty("tag", nullValue())
         ));
     }
 

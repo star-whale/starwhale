@@ -23,4 +23,10 @@ public interface BundleAccessor {
     BundleEntity findById(Long id);
 
     BundleEntity findByNameForUpdate(String name, Long projectId);
+
+    Type getType();
+
+    enum Type {
+        MODEL, DATASET, RUNTIME, JOB
+    }
 }

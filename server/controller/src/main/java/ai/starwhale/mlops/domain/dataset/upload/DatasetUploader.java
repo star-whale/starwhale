@@ -23,6 +23,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -87,15 +88,27 @@ public class DatasetUploader {
     final IdConverter idConvertor;
     final VersionAliasConverter versionAliasConvertor;
 
-    public DatasetUploader(HotDatasetHolder hotDatasetHolder, DatasetMapper datasetMapper,
-            DatasetVersionMapper datasetVersionMapper, StoragePathCoordinator storagePathCoordinator,
-            StorageAccessService storageAccessService, UserService userService,
+    private final BundleVersionTagDao bundleVersionTagDao;
+
+    public DatasetUploader(
+            HotDatasetHolder hotDatasetHolder,
+            DatasetMapper datasetMapper,
+            DatasetVersionMapper datasetVersionMapper,
+            BundleVersionTagDao bundleVersionTagDao,
+            StoragePathCoordinator storagePathCoordinator,
+            StorageAccessService storageAccessService,
+            UserService userService,
             HotJobHolder jobHolder,
-            ProjectService projectService, DataStoreTableNameHelper dataStoreTableNameHelper,
-            DatasetDao datasetDao, IdConverter idConvertor, VersionAliasConverter versionAliasConvertor) {
+            ProjectService projectService,
+            DataStoreTableNameHelper dataStoreTableNameHelper,
+            DatasetDao datasetDao,
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor
+    ) {
         this.hotDatasetHolder = hotDatasetHolder;
         this.datasetMapper = datasetMapper;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.bundleVersionTagDao = bundleVersionTagDao;
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.userService = userService;
@@ -185,7 +198,8 @@ public class DatasetUploader {
                     versionAliasConvertor,
                     projectService,
                     datasetDao,
-                    datasetDao
+                    datasetDao,
+                    this.bundleVersionTagDao
             ), datasetDao).revertVersionTo(datasetEntity.getId(), datasetVersionEntity.getId());
         } else {
             // dataset already created
@@ -265,7 +279,7 @@ public class DatasetUploader {
      */
     public void pull(String project, String name, String version, String blobHash, HttpServletResponse httpResponse) {
         BundleManager bundleManager = new BundleManager(idConvertor, versionAliasConvertor,
-                projectService, datasetDao, datasetDao);
+                projectService, datasetDao, datasetDao, this.bundleVersionTagDao);
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl.create(project, name, version));
         DatasetVersionEntity datasetVersionEntity = datasetVersionMapper.find(versionId);
         if (null == datasetVersionEntity) {

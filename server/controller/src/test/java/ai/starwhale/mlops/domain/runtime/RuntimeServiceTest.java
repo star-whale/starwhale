@@ -62,6 +62,7 @@ import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -133,6 +134,7 @@ public class RuntimeServiceTest {
     private K8sClient k8sClient;
     private K8sJobTemplate k8sJobTemplate;
     private RuntimeTokenValidator runtimeTokenValidator;
+    private BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
@@ -151,7 +153,7 @@ public class RuntimeServiceTest {
                             .build();
                 });
         versionConvertor = mock(RuntimeVersionConverter.class);
-        given(versionConvertor.convert(any(RuntimeVersionEntity.class), any()))
+        given(versionConvertor.convert(any(RuntimeVersionEntity.class), any(), any()))
                 .willAnswer(invocation -> {
                     RuntimeVersionEntity entity = invocation.getArgument(0);
                     return RuntimeVersionVo.builder()
@@ -183,10 +185,12 @@ public class RuntimeServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         runtimeTokenValidator = mock(RuntimeTokenValidator.class);
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         service = new RuntimeService(
                 runtimeMapper,
                 runtimeVersionMapper,
+                bundleVersionTagDao,
                 storageService,
                 projectService,
                 runtimeConvertor,
@@ -461,6 +465,7 @@ public class RuntimeServiceTest {
         var svc = new RuntimeService(
                 mock(RuntimeMapper.class),
                 runtimeVersionMapper,
+                mock(BundleVersionTagDao.class),
                 mock(StorageService.class),
                 projectService,
                 mock(RuntimeConverter.class),

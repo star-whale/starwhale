@@ -44,15 +44,18 @@ public class ModelVersionVoConverter {
         this.jobSpecParser = jobSpecParser;
     }
 
-    public ModelVersionVo convert(ModelVersionEntity entity, ModelVersionEntity latest)
-            throws ConvertException {
+    public ModelVersionVo convert(
+            ModelVersionEntity entity,
+            ModelVersionEntity latest,
+            String tags
+    ) throws ConvertException {
         try {
             return ModelVersionVo.builder()
                     .id(idConvertor.convert(entity.getId()))
                     .name(entity.getVersionName())
                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
                     .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                    .tag(entity.getVersionTag())
+                    .tag(tags)
                     .builtInRuntime(entity.getBuiltInRuntime())
                     .createdTime(entity.getCreatedTime().getTime())
                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))

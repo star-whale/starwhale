@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
@@ -45,7 +46,7 @@ public class RuntimeVersionConverterTest {
 
     @Test
     public void testConvert() {
-        var res = runtimeVersionConvertor.convert(RuntimeVersionEntity.builder()
+        var entity = RuntimeVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
                 .versionOrder(2L)
@@ -53,18 +54,31 @@ public class RuntimeVersionConverterTest {
                 .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .image("image1")
                 .shared(true)
-                .build());
+                .build();
+        var res = runtimeVersionConvertor.convert(entity);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
-                hasProperty("tag", is("tag1")),
+                hasProperty("tag", nullValue()), // tag is not set
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
         assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
+
+        res = runtimeVersionConvertor.convert(entity, entity, "tag2");
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name1")),
+                hasProperty("alias", is("v2")),
+                hasProperty("latest", is(true)),
+                hasProperty("tag", is("tag2")), // use the tag from parameter
+                hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
+                hasProperty("shared", is(1)),
+                hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
+        ));
     }
 
     @Test

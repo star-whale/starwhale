@@ -39,7 +39,7 @@ public class RevertManager {
 
     public Boolean revertVersionTo(BundleVersionUrl bundleVersionUrl) {
         Long bundleId = bundleManager.getBundleId(bundleVersionUrl.getBundleUrl());
-        Long versionId = bundleManager.getBundleVersionId(bundleVersionUrl, bundleId);
+        Long versionId = bundleManager.getBundleVersionId(bundleId, bundleVersionUrl.getVersionUrl());
 
         return revertVersionTo(bundleId, versionId);
     }
