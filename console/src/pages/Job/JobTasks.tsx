@@ -85,14 +85,16 @@ export default function JobTasks() {
         >
             <TaskListCard header={null} onAction={onAction} />
 
-            <Card
-                outTitle={t('Logs collected')}
-                style={{ padding: 0, flex: 1, margin: 0, position: 'relative', flexDirection: 'column' }}
-            >
-                <React.Suspense fallback={<BusyPlaceholder />}>
-                    <ComplexToolbarLogViewer sources={sources} />
-                </React.Suspense>
-            </Card>
+            {sources.length > 0 && (
+                <Card
+                    outTitle={t('Logs collected')}
+                    style={{ padding: 0, flex: 1, margin: 0, position: 'relative', flexDirection: 'column' }}
+                >
+                    <React.Suspense fallback={<BusyPlaceholder />}>
+                        <ComplexToolbarLogViewer sources={sources} />
+                    </React.Suspense>
+                </Card>
+            )}
         </div>
     )
 }

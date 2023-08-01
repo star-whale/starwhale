@@ -245,6 +245,10 @@ const model = {
         en: 'e.g. 1.5G',
         zh: '例如：1.5G',
     },
+    'model.run': {
+        en: 'Run Model',
+        zh: '运行模型',
+    },
 }
 const trash = {
     'trash.title': {
@@ -420,6 +424,10 @@ const job = {
     'job.expose.title': {
         en: 'Open Expose Service',
         zh: '开启外部访问',
+    },
+    'job.rerun': {
+        en: 'Rerun',
+        zh: '重新运行',
     },
 }
 

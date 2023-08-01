@@ -26,6 +26,7 @@ export const alias = {
     'js-yaml': path.resolve(__dirname, './node_modules/js-yaml'),
     'qs': path.resolve(__dirname, './node_modules/qs'),
     'axios': path.resolve(__dirname, './node_modules/axios'),
+    'ahooks': path.resolve(__dirname, './node_modules/ahooks'),
     '@monaco-editor/react': path.resolve(__dirname, './node_modules/@monaco-editor/react'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
@@ -38,7 +39,10 @@ export const alias = {
     '@starwhale/ui': path.resolve(__dirname, './packages/starwhale-ui/src'),
     '@starwhale/core': path.resolve(__dirname, './packages/starwhale-core/src'),
     '@starwhale/widgets': path.resolve(__dirname, './packages/starwhale-widgets/src'),
+    '.*': path.resolve(__dirname, './src'),
+    '*': path.resolve(__dirname, './node_modules'),
 }
+const projectRootDir = path.resolve(__dirname)
 
 let extendProxies = {}
 // if (process.env.VITE_EXTENDS === 'true')
@@ -112,7 +116,9 @@ export default defineConfig(({ mode }) => ({
         // minify: false,
         // sourcemap: true,
     },
-    resolve: { alias },
+    resolve: {
+        alias,
+    },
     plugins: [
         // eslint(),
         react({
