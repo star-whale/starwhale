@@ -5,9 +5,7 @@ import typing as t
 from pathlib import Path
 
 from starwhale.utils.fs import blake2b_file
-
-PathLike = t.Union[str, Path]
-OptionalPathLike = t.Optional[PathLike]
+from starwhale.base.type import PathLike
 
 
 class BlakeFile:

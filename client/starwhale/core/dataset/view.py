@@ -9,7 +9,7 @@ from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
-from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
+from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -165,15 +165,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         repo: str,
         name: str,
         project_uri: str,
-        alignment_size: int | str,
-        volume_size: int | str,
-        subsets: t.List[str] | None = None,
-        split: str | None = None,
-        revision: str = "main",
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        cache: bool = True,
-        tags: t.List[str] | None = None,
-        add_info: bool = True,
+        **kwargs: t.Any,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -182,18 +174,21 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_huggingface(
-            repo=repo,
-            subsets=subsets,
-            split=split,
-            revision=revision,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            cache=cache,
-            tags=tags,
-            add_info=add_info,
+        ds.build_from_huggingface(repo=repo, **kwargs)
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def build_from_csv_files(
+        cls, paths: t.List[PathLike], name: str, project_uri: str, **kwargs: t.Any
+    ) -> None:
+        dataset_uri = cls.prepare_build_bundle(
+            project=project_uri,
+            bundle_name=name,
+            typ=ResourceType.dataset,
+            auto_gen_version=False,
         )
+        ds = Dataset.get_dataset(dataset_uri)
+        ds.build_from_csv_files(paths, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone
@@ -202,11 +197,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         json_file_path: str,
         name: str,
         project_uri: str,
-        alignment_size: int | str,
-        volume_size: int | str,
-        field_selector: str = "",
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
+        **kwargs: t.Any,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -215,14 +206,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_json_file(
-            json_file_path=json_file_path,
-            field_selector=field_selector,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            tags=tags,
-        )
+        ds.build_from_json_file(json_file_path=json_file_path, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone
@@ -232,11 +216,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         kind: DatasetFolderSourceType,
         name: str,
         project_uri: str,
-        auto_label: bool,
-        alignment_size: int | str,
-        volume_size: int | str,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
+        **kwargs: t.Any,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -245,15 +225,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_folder(
-            folder=folder,
-            kind=kind,
-            auto_label=auto_label,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            tags=tags,
-        )
+        ds.build_from_folder(folder=folder, kind=kind, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone

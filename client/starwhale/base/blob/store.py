@@ -9,9 +9,10 @@ from abc import ABC
 from pathlib import Path
 
 from starwhale.utils import console, pretty_bytes
+from starwhale.base.type import PathLike, OptionalPathLike
 from starwhale.utils.venv import check_valid_venv_prefix, check_valid_conda_prefix
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.blob.file import PathLike, BlakeFile, OptionalPathLike
+from starwhale.base.blob.file import BlakeFile
 
 BuiltinPyExcludes = ["__pycache__/", "*.py[cod]", "*$py.class"]
 

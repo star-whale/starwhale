@@ -5,7 +5,7 @@
 # E731: do not assign a lambda expression, use a def
 # W605: invalid escape sequence '\#'
 ignore= H101,W503,E203,E731,W605,C901
-max-line-length = 200
+max-line-length = 251
 max-complexity = 18
 exclude =
     .eggs

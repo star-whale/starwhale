@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
+from starwhale.utils import random_str
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.utils.cli import AliasedGroup
@@ -85,6 +86,14 @@ def dataset_cmd(ctx: click.Context) -> None:
     help=(
         "Build dataset from huggingface dataset, the huggingface option is a huggingface repo name"
     ),
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_files",
+    "-c",
+    "--csv",
+    multiple=True,
+    help="Build dataset from csv files. The option is a csv file path, dir path or a http downloaded url."
+    "The option can be used multiple times.",
 )
 @optgroup.group(
     "\n  ** Build Mode Selectors",
@@ -195,6 +204,51 @@ def dataset_cmd(ctx: click.Context) -> None:
     show_default=True,
     help="Whether to use huggingface dataset cache(download + local hf dataset).",
 )
+@optgroup.group("\n  ** CSV Files Build Source Configurations")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_dialect",
+    "--dialect",
+    type=click.Choice(["excel", "excel-tab", "unix"]),
+    default="excel",
+    show_default=True,
+    help="The csv file dialect, the default is excel.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_delimiter",
+    "--delimiter",
+    default=",",
+    show_default=True,
+    help="A one-character string used to separate fields for the csv file.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_quotechar",
+    "--quotechar",
+    default='"',
+    show_default=True,
+    help="A one-character string used to quote fields containing special characters,"
+    "such as the delimiter or quotechar, or which contain new-line characters.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_skipinitialspace",
+    "--skipinitialspace/--no-skipinitialspace",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Whether to skip spaces after delimiter for the csv file.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_strict",
+    "--strict/--no-strict",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="When True, raise exception Error if the csv is not well formed.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_encoding",
+    "--encoding",
+    help="The csv file encoding.",
+)
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -221,6 +275,13 @@ def _build(
     hf_cache: bool,
     hf_info: bool,
     tags: t.List[str],
+    csv_files: t.List[str],
+    csv_dialect: str,
+    csv_delimiter: str,
+    csv_quotechar: str,
+    csv_skipinitialspace: bool,
+    csv_strict: bool,
+    csv_encoding: str,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -237,6 +298,7 @@ def _build(
         - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without any code.
         - json file: The json-file is a starwhale dataset builder designed to quickly build a dataset with a json file without any code.
         - huggingface dataset: The huggingface dataset is a starwhale dataset builder designed to quickly build a dataset from huggingface dataset without any code.
+        - csv files: The csv-file is a starwhale dataset builder designed to quickly build a dataset with csv files without any code.
 
     Examples:
 
@@ -277,6 +339,14 @@ def _build(
         swcli dataset build --huggingface mnist
         swcli dataset build -hf mnist --no-cache
         swcli dataset build -hf cais/mmlu --subset anatomy --split auxiliary_train --revision 7456cfb
+
+        \b
+        - from csv files
+        swcli dataset build --csv /path/to/example.csv
+        swcli dataset build --csv /path/to/example.csv --csv-file /path/to/example2.csv
+        swcli dataset build --csv /path/to/csv-dir
+        swcli dataset build --csv http://example.com/example.csv
+        swcli dataset build --name product-desc-modelscope --csv https://modelscope.cn/api/v1/datasets/lcl193798/product_description_generation/repo\?Revision\=master\&FilePath\=test.csv --encoding=utf-8-sig
     """
     # TODO: add dry-run
     # TODO: add compress args
@@ -314,6 +384,22 @@ def _build(
             field_selector=field_selector,
             mode=mode_type,
             tags=tags,
+        )
+    elif csv_files:
+        view.build_from_csv_files(
+            csv_files,
+            name=name or f"csv-{random_str()}",
+            project_uri=project,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode_type,
+            tags=tags,
+            dialect=csv_dialect,
+            delimiter=csv_delimiter,
+            quotechar=csv_quotechar,
+            skipinitialspace=csv_skipinitialspace,
+            strict=csv_strict,
+            encoding=csv_encoding,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()

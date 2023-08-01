@@ -1721,7 +1721,7 @@ class TableWriter(threading.Thread):
                     and ch != ":"
                     and not ch.isspace()
                 ):
-                    raise RuntimeError(f"invalid field {k}")
+                    raise RuntimeError(f"invalid field {k!r}")
         self._insert(record)
 
     def delete(self, key: Any) -> None:

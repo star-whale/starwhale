@@ -30,8 +30,14 @@ from starwhale.consts import (
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
-from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
+from starwhale.utils.fs import (
+    copy_file,
+    empty_dir,
+    ensure_dir,
+    ensure_file,
+    iter_pathlike_io,
+)
+from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
@@ -1200,6 +1206,8 @@ class Dataset:
     ) -> Dataset:
         """Create a new dataset from huggingface datasets.
 
+        The dataset created by the huggingface will use the f"{split}/index" or str(index) as the row index.
+
         Arguments:
             name: (str, required) The dataset name you would like to use.
             repo: (str, required) The huggingface datasets repo name.
@@ -1234,8 +1242,7 @@ class Dataset:
         """
         from starwhale.integrations.huggingface import iter_dataset
 
-        StandaloneTag.check_tags_validation(tags)
-
+        # TODO: support auto build all subset datasets
         # TODO: support huggingface dataset info
         data_items = iter_dataset(
             repo=repo,
@@ -1246,26 +1253,14 @@ class Dataset:
             add_info=add_info,
         )
 
-        with cls.dataset(name) as ds:
-            ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
-            )
-
-            if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
-                for row in ds:
-                    del ds[row.index]
-
-            total = 0
-            for key, item in data_items:
-                ds[key] = item
-                total += 1
-
-            console.print(f":butterfly: update {total} records into dataset")
-            ds.commit(tags=tags)
-
-        return ds
+        return cls.from_dict_items(
+            data_items,
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
 
     @classmethod
     def from_json(
@@ -1279,6 +1274,8 @@ class Dataset:
         tags: t.List[str] | None = None,
     ) -> Dataset:
         """Create a new dataset from a json text.
+
+        The dataset created by the json text will use the auto increment index as the row index.
 
         Arguments:
             name: (str, required) The dataset name you would like to use.
@@ -1315,7 +1312,6 @@ class Dataset:
         """
         mode = DatasetChangeMode(mode)
         data_items = json.loads(json_text)
-        StandaloneTag.check_tags_validation(tags)
 
         if field_selector:
             # Split field selector by dots
@@ -1333,30 +1329,184 @@ class Dataset:
                 f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
             )
 
+        return cls.from_dict_items(
+            data_items,
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
+
+    @classmethod
+    def from_csv(
+        cls,
+        path: PathLike | t.List[PathLike],
+        name: str,
+        dialect: str = "excel",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
+        delimiter: str = ",",
+        quotechar: str = '"',
+        skipinitialspace: bool = False,
+        strict: bool = False,
+        encoding: str | None = None,
+    ) -> Dataset:
+        """Create a new dataset from one and more csv files.
+
+        The dataset created by the csv files will use the auto increment index as the row index.
+
+        All fields in the csv file will be treated as string type.
+
+        Arguments:
+            path: (str|Path|List[str]|List[Path], required) The csv file path or a list of csv file paths from which you would like to create this dataset.
+              - If the element filename ends with .csv, the function will create the specified csv file as a dataset.
+              - If the element is a local directory, the function will create a dataset from all csv files in the directory and its subdirectories.
+              - If the element is a http url and ends with .csv, the function will download the csv file and create a dataset from it.
+            name: (str, required) The dataset name.
+            dialect: (str, optional) The csv dialect name which following the design of python standard csv lib. The default value is `excel`.
+              The option accepts `excel`, `excel-tab` and `unix` dialects.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            delimiter: (str, optional) A one-character string used to separate fields. It defaults to ','.
+            quotechar: (str, optional) A one-character string used to quote fields containing special characters,
+              such as the delimiter or quotechar, or which contain new-line characters. It defaults to '"'.
+            skipinitialspace: (bool, optional) When True, whitespace immediately following the delimiter is ignored.
+              The default is False.
+            strict: (bool, optional) When True, raise exception Error if the csv is not well formed. The default is False.
+            encoding: (str, optional) The encoding used to decode the input file. The default is None.
+
+        Returns:
+            A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+
+        # create a dataset from /path/to/data.csv file.
+        ds = Dataset.from_csv(path="/path/to/data.csv", name="my-csv-dataset")
+
+        # create a dataset from /path/to/data.csv file with utf-8 encoding.
+        ds = Dataset.from_csv(path="/path/to/data.csv", name="my-csv-dataset", encoding="utf-8")
+
+        # create a dataset from /path/to/dir folder.
+        ds = Dataset.from_csv(path="/path/to/dir", name="my-csv-dataset")
+
+        # create a dataset from /path/to/data1.cvs, /path/to/data2.csv
+        ds = Dataset.from_csv(path=["/path/to/data1.csv", "/path/to/data2.csv"], name="my-csv-dataset")
+
+        # create a dataset from http://example.com/data.csv file.
+        ds = Dataset.from_csv(path="http://example.com/data.csv", name="my-csv-dataset")
+        ```
+        """
+
+        def _iter_records() -> t.Iterator[t.Dict[str, t.Any]]:
+            for fp in iter_pathlike_io(
+                path=path, encoding=encoding, newline="", accepted_file_types=[".csv"]
+            ):
+                for record in csv.DictReader(
+                    fp,  # type: ignore
+                    dialect=dialect,
+                    delimiter=delimiter,
+                    quotechar=quotechar,
+                    skipinitialspace=skipinitialspace,
+                    strict=strict,
+                ):
+                    yield record
+
+        return cls.from_dict_items(
+            _iter_records(),
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
+
+    @classmethod
+    def from_dict_items(
+        cls,
+        records: t.Iterable[
+            t.Dict[str, t.Any] | t.Tuple[str | int, t.Dict[str, t.Any]]
+        ],
+        name: str | Resource,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
+    ) -> Dataset:
+        """Create a new dataset from a dict iterator or a list[dict].
+
+        The dataset created by the dict items will use the auto increment index or user custom index parsed from record[0] as the row index.
+
+        Arguments:
+            records: (Iterable[dict]|Iterable[(str|int, dict)], required) The dict or (str|int, dict) iterator from which you would like to create this dataset. )
+            name: (str|Resource, required) The dataset name.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+
+        Returns:
+            A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+        # create a dataset from a list of dict
+        ds = Dataset.from_dict_items([{"a": 1, "b: 2, "c": 3}], name="my-dataset")
+
+        # create a dataset from a dict iterator
+        ds = Dataset.from_dict_items(iter([{"a": 1, "b: 2, "c": 3}]), name="my-dataset")
+
+        # create a dataset from a dict generator
+        def _iter_records():
+            for i in range(10):
+                yield {"a": i, "b": i * 2, "c": i * 3}
+        ds = Dataset.from_dict_items(_iter_records(), name="my-dataset")
+
+        # create a dataset from a dict iterator with key
+        ds = Dataset.from_dict_items(iter([(1, {"a": 1, "b: 2, "c": 3})]), name="my-dataset")
+        ```
+        """
+        StandaloneTag.check_tags_validation(tags)
+
         with cls.dataset(name) as ds:
+            console.print(f":ocean: creating dataset {ds.uri}...")
             ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
+                volume_size=volume_size, alignment_size=alignment_size
             )
 
             if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
                 for row in ds:
                     del ds[row.index]
 
             total = 0
-            for item in data_items:
-                ds.append(item)
+            for record in records:
+                if isinstance(record, (tuple, list)):
+                    key, record = record
+                    ds[key] = record
+                elif isinstance(record, dict):
+                    ds.append(record)
+                else:
+                    raise TypeError(
+                        f"record type {type(record)} is not expected, dict or tuple is ok"
+                    )
                 total += 1
 
             console.print(f":butterfly: update {total} records into dataset")
             ds.commit(tags=tags)
+
         return ds
 
     @classmethod
     def from_folder(
         cls,
-        folder: str | Path,
+        folder: PathLike,
         kind: str | DatasetFolderSourceType,
         name: str | Resource = "",
         auto_label: bool = True,
@@ -1415,6 +1565,7 @@ class Dataset:
         folder/dog/1.png
         folder/dog/1.txt
         ```
+        The dataset created by the folder will use the relative path name as the row index.
 
         Arguments:
             folder: (str|Path, required) The folder path from which you would like to create this dataset.
@@ -1446,8 +1597,6 @@ class Dataset:
         if not rootdir.exists():
             raise RuntimeError(f"folder {rootdir} doesn't exist")
 
-        StandaloneTag.check_tags_validation(tags)
-
         name = name or rootdir.name
         mode = DatasetChangeMode(mode)
 
@@ -1463,7 +1612,7 @@ class Dataset:
 
             _meta = {}
             if _meta_csv_path.exists():
-                with _meta_csv_path.open() as f:
+                with _meta_csv_path.open(newline="") as f:
                     for record in csv.DictReader(f):
                         _meta[record["file_name"]] = record
             elif _meta_jsonl_path.exists():
@@ -1472,7 +1621,7 @@ class Dataset:
                         _meta[record["file_name"]] = record
             return _meta
 
-        def _iter_records() -> t.Iterator[t.Dict]:
+        def _iter_records() -> t.Iterator[t.Tuple[str, t.Dict]]:
             from starwhale.core.dataset.type import Audio, Image, Video
 
             _dfst = DatasetFolderSourceType
@@ -1515,26 +1664,13 @@ class Dataset:
                     display_name=p.name,
                     mime_type=MIMEType.create_by_file_suffix(p),
                 )
-                yield record
+                yield record["file_name"], record
 
-        with cls.dataset(name) as ds:
-            console.print(f":ocean: creating dataset {ds.uri} from folder {rootdir}...")
-            ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
-            )
-
-            if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
-                for row in ds:
-                    del ds[row.index]
-
-            total = 0
-            for record in _iter_records():
-                ds[record["file_name"]] = record
-                total += 1
-
-            console.print(f":butterfly: update {total} records into dataset")
-            ds.commit(tags=tags)
-
-        return ds
+        return cls.from_dict_items(
+            _iter_records(),
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
