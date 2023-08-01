@@ -36,6 +36,7 @@
         <aliyunoss.version>3.15.1</aliyunoss.version>
         <minio.version>8.4.4</minio.version>
         <tencentoss.version>5.6.153</tencentoss.version>
+        <baiduoss.version>0.10.252</baiduoss.version>
         <test.mybatis.version>2.2.2</test.mybatis.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -209,6 +210,11 @@
                 <groupId>com.qcloud</groupId>
                 <artifactId>cos_api</artifactId>
                 <version>${tencentoss.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baidubce</groupId>
+                <artifactId>bce-java-sdk</artifactId>
+                <version>${baiduoss.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.parquet</groupId>
