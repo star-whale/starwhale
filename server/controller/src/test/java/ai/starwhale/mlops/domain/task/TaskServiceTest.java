@@ -29,6 +29,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -62,7 +63,13 @@ public class TaskServiceTest {
                 setName("ppl");
             }
         });
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, mock(WebServerInTask.class));
+        taskConvertor = new TaskConverter(
+                new IdConverter(),
+                stepMapper,
+                8000,
+                mock(WebServerInTask.class),
+                mock(JobSpecParser.class)
+        );
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobDao = mock(JobDao.class);

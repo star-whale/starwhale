@@ -92,12 +92,9 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
-            + "  expose: null\n"
-            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
-            + "  require_dataset: null\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
             + "  - \"ppl\"\n"
@@ -107,12 +104,9 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
-            + "  expose: null\n"
-            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
-            + "  show_name: \"cmp\"\n"
-            + "  require_dataset: null\n";
+            + "  show_name: \"cmp\"\n";
 
     static final String YAML3 = "---\n"
             + "- concurrency: 1\n"
@@ -123,12 +117,9 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
-            + "  expose: null\n"
-            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"ppl\"\n"
             + "  show_name: \"ppl\"\n"
-            + "  require_dataset: null\n"
             + "- concurrency: 1\n"
             + "  needs:\n"
             + "  - \"ppl\"\n"
@@ -138,12 +129,9 @@ public class JobSpecTest {
             + "    limit: 1.0\n"
             + "  env: []\n"
             + "  replicas: 1\n"
-            + "  expose: null\n"
-            + "  virtual: null\n"
             + "  job_name: \"default\"\n"
             + "  name: \"cmp\"\n"
-            + "  show_name: \"cmp\"\n"
-            + "  require_dataset: null\n";
+            + "  show_name: \"cmp\"\n";
 
     private JobSpecParser jobSpecParser;
 

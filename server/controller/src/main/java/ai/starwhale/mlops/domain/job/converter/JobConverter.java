@@ -168,13 +168,7 @@ public class JobConverter {
             if (CollectionUtils.isEmpty(tasks)) {
                 return;
             }
-            String name;
-            // https://github.com/star-whale/starwhale/blob/c924313166d065ab941a99fa1dec04b7bfbe5fa7/client/starwhale/core/model/model.py#L246-L252
-            if (Boolean.TRUE.equals(stepSpec.getVirtual()) && stepSpec.getName().equals("serving")) {
-                name = "online evaluation";
-            } else {
-                name = stepSpec.getName();
-            }
+            var name = stepSpec.getFriendlyName();
             tasks.forEach(t -> addRunningTask.accept(t, exposedPort, ExposedType.WEB_HANDLER, name));
         });
 

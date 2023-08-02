@@ -123,6 +123,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
                     .concurrency(stepSpec.getConcurrency())
                     .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                     .poolInfo(poolInfo)
+                    .originJson(jobSpecParser.stepToJsonQuietly(stepSpec))
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
