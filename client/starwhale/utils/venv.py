@@ -573,11 +573,14 @@ def get_conda_prefix_path(name: str = "") -> str:
 def get_conda_log_verbose(lvl_name: str = "") -> str:
     lvl_name = lvl_name or os.environ.get(ENV_LOG_LEVEL, "")
     lvl_name = lvl_name.upper()
+    # conda debug level is too verbose for the Starwhale users, so we use the following mapping:
+    # s: Starwhale, c: conda
+    #   (s)TRACE -> (c)DEBUG
+    #   (s)DEBUG -> (c)INFO
+    #   (s)INFO  -> (c)WARNING
     if lvl_name == "TRACE":
-        return "-vvv"
-    elif lvl_name == "DEBUG":
         return "-vv"
-    elif lvl_name == "INFO":
+    elif lvl_name == "DEBUG":
         return "-v"
     else:
         return ""
