@@ -373,7 +373,7 @@ public class DatasetServiceTest {
         given(datasetMapper.find(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
-        var res = service.findDatasetsByVersionIds(List.of());
+        var res = service.findDatasetsByVersionIds(List.of(1L));
         assertThat(res, allOf(
                 iterableWithSize(1),
                 hasItem(hasProperty("id", is("1")))
