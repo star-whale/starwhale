@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from dataclasses import dataclass
 from unittest.mock import Mock, patch, MagicMock
@@ -6,7 +7,8 @@ import yaml
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.utils.fs import ensure_file
+from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.base.uri.exceptions import NoMatchException, MultipleMatchException
@@ -68,6 +70,34 @@ class TestResource(TestCase):
                 typ=ResourceType.dataset,
                 project=p,
             )
+
+    def test_refine_local_rc_info(self) -> None:
+        root = SWCliConfigMixed().rootdir / "self" / "model" / "mnist"
+        version = "rmnfvqjrozps2ybnwamd3bailizz2qtcqidjskhv"
+
+        ensure_file(
+            root / "_manifest.yaml",
+            yaml.safe_dump({"tags": {"latest": version, "v0": version, "t1": version}}),
+            parents=True,
+        )
+        ensure_dir(root / version[:2] / f"{version}.swmp")
+
+        uri_cases = [
+            "mnist",
+            "mnist/version/latest",
+            "mnist/version/v0",
+            "mnist/t1",
+            f"mnist/version/{version[:10]}",
+            f"mnist/version/{version[:4]}",
+        ]
+
+        for uri in uri_cases:
+            r = Resource(uri=uri, typ=ResourceType.model, refine=True)
+            assert r.version == version
+
+        os.unlink(root / "_manifest.yaml")
+        r = Resource(uri=f"mnist/{version[:10]}", typ=ResourceType.model, refine=True)
+        assert r.version == version
 
     @patch("starwhale.base.uri.resource.Project.parse_from_full_uri")
     def test_with_full_uri(self, mock_parse: MagicMock) -> None:
