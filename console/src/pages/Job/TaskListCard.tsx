@@ -18,6 +18,7 @@ import Button from '@starwhale/ui/Button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import ExecutorForm from '@job/components/ExecutorForm'
 import Text from '@starwhale/ui/Text'
+import ExposedLink from '@job/components/ExposedLink'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -92,16 +93,10 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                                 >
                                     {t('View Log')}
                                 </StyledLink>
-                                <WithCurrentAuth id='job-dev' key='devUrl'>
-                                    {(bool: boolean) =>
-                                        bool && task.devUrl && task.taskStatus === TaskStatusType.RUNNING ? (
-                                            <a target='_blank' href={task.devUrl} rel='noreferrer' title='debug'>
-                                                <IconFont type='vscode' size={14} />
-                                            </a>
-                                        ) : (
-                                            ''
-                                        )
-                                    }
+                                <WithCurrentAuth id='job-dev' key='exposed'>
+                                    {task.exposedLinks?.map((exposed) => (
+                                        <ExposedLink key={exposed.link} data={exposed} />
+                                    ))}
                                 </WithCurrentAuth>
                                 <WithCurrentAuth id='task.execute'>
                                     {task.taskStatus === TaskStatusType.RUNNING && (
