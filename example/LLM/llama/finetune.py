@@ -197,10 +197,8 @@ def train_llama(
     training_args = Seq2SeqTrainingArguments(
         output_dir=adapter_model_path,
         logging_steps=10,
-        save_strategy="steps",
-        save_steps=2,  # 200,
-        save_total_limit=40,
-        evaluation_strategy="steps",
+        save_strategy="no",  # no need to save checkpoint for fine-tuning
+        evaluation_strategy="epoch",
         weight_decay=0.0,
         learning_rate=0.0001,
         max_steps=max_train_steps,
