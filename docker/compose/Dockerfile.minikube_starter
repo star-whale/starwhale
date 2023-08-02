@@ -1,0 +1,36 @@
+FROM    ubuntu:22.04
+
+# installing docker
+RUN     apt-get -y update
+RUN     apt-get -y install \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+
+RUN     mkdir -p /etc/apt/keyrings
+RUN     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+RUN     echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+RUN     apt-get -y update
+RUN     apt-get -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# installing kubectl
+#RUN     apt-get install -y ca-certificates curl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+
+# installing other dependencies
+RUN     apt-get install conntrack
+
+# installing minikube
+RUN     curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+
+RUN     mkdir -p /usr/local/bin/
+RUN     install minikube-linux-amd64 /usr/local/bin/minikube
+
+CMD     minikube start --force --driver='docker' && tail -F /dev/null

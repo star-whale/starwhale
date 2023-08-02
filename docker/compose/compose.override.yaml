@@ -1,3 +1,5 @@
 services:
   controller:
-    image: homepage-bj.intra.starwhale.ai:5000/starwhaleai/server:0.5.6
+    image: docker-registry.starwhale.cn/starwhaleai/server:latest
+  minikube:
+    entrypoint: ["bash","-c","minikube update-context && minikube start --force --driver='docker' --image-mirror-country='cn' && tail -F /dev/null"]

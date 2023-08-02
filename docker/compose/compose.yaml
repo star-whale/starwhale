@@ -25,7 +25,7 @@ services:
     network_mode: "host"
 
   minikube:
-    image: minikube
+    image: docker-registry.starwhale.cn/star-whale/minikube-starter:latest
     restart: always
     privileged: true
     healthcheck:
@@ -37,35 +37,28 @@ services:
     network_mode: "host"
 
   controller:
-    image: homepage-bj.intra.starwhale.ai:5000/starwhaleai/server:latest
+    image: docker-registry.starwhale.cn/starwhaleai/server:latest
     restart: always
-    healthcheck:
-      test: [ "CMD","curl", "-f", "http://localhost:8082"]
-      interval: "60s"
-      timeout: "3s"
-      retries: 10
     depends_on:
       - db
       - oss
       - minikube
-#    entrypoint: ["sh", "-c", "java $JAVA_OPTS -XX:InitialRAMPercentage=40.0 -XX:MaxRAMPercentage=80.0 org.springframework.boot.loader.JarLauncher"]
-#    ports:
-#      - 8082:8082
     environment:
       - JAR=controller
       - KUBECONFIG=/root/.kube/config
       - SW_IMAGE_BUILD_IMAGE=docker-registry.starwhale.cn/kaniko-cloud:v0.3
       - SW_JWT_TOKEN_EXPIRE_MINUTES=144000
       - SW_UPLOAD_MAX_FILE_SIZE=20480MB
-      - SW_METADATA_STORAGE_IP=192.168.1.20
+      # the ${GLOBAL_IP} should be the ip of the host machine that is accessible by all swcli clients including swcli in a user shell and swcli in pods
+      - SW_METADATA_STORAGE_IP=${GLOBAL_IP}
       - SW_METADATA_STORAGE_PORT=3306
       - SW_METADATA_STORAGE_USER=starwhale
       - SW_METADATA_STORAGE_PASSWORD=starwhale
       - SW_STORAGE_BUCKET=starwhale
       - SW_STORAGE_ACCESSKEY=minioadmin
       - SW_STORAGE_SECRETKEY=minioadmin
-      - SW_STORAGE_ENDPOINT=http://192.168.1.20:9000
-      - SW_INSTANCE_URI=http://192.168.1.20:8082
+      - SW_STORAGE_ENDPOINT=http://${GLOBAL_IP}:9000
+      - SW_INSTANCE_URI=http://${GLOBAL_IP}:8082
     volumes:
       - minikube_data:/root/.minikube
       - kube_data:/root/.kube
