@@ -90,6 +90,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -186,7 +187,6 @@ public class ModelService {
             return vo;
         });
     }
-
 
     public Model findModel(Long modelId) {
         ModelEntity entity = modelDao.getModel(modelId);
@@ -399,13 +399,17 @@ public class ModelService {
             return List.of();
         }
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
-
+        var tags = new HashMap<Long, String>();
+        versions.stream().collect(Collectors.groupingBy(ModelVersionEntity::getModelId))
+                .forEach((id, versionList) -> tags.putAll(
+                        bundleVersionTagDao.getJoinedTagsByBundleVersions(
+                                BundleAccessor.Type.RUNTIME, id, versionList)));
         return versions.stream().map(version -> {
             ModelEntity model = modelMapper.find(version.getModelId());
             ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
             ModelVo vo = modelVoConverter.convert(model);
             vo.setOwner(userService.findUserById(model.getOwnerId()));
-            vo.setVersion(versionConvertor.convert(version, latest));
+            vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
             return vo;
         }).collect(Collectors.toList());
     }
