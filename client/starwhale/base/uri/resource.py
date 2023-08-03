@@ -253,19 +253,6 @@ class Resource:
 
     def _refine_local_rc_info(self) -> None:
         root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
-        ver = self.version
-        if ver == "":
-            ver = "latest"
-        if ver == "latest" or (ver.startswith("v") and ver[1:].isnumeric()):
-            if not self.name:
-                raise VerifyException("name is required for latest version")
-            # get version from manifest
-            manifest = root / self.typ.name / self.name / "_manifest.yaml"
-            if not manifest.exists():
-                raise VerifyException(f"manifest file not found: {manifest}")
-            content = load_yaml(manifest)
-            self.version = content.get("tags", {}).get(ver, "")
-            return
 
         if self.typ == ResourceType.job:
             p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
@@ -275,15 +262,35 @@ class Resource:
                 self.version = self.path_to_version(version)
             else:
                 raise NoMatchException(self.version, list(m))
+            return
+
+        if not self.name:
+            raise VerifyException("name is required for local resource")
+
+        # get version from manifest
+        manifest = root / self.typ.name / self.name / "_manifest.yaml"
+        if manifest.exists():
+            content = load_yaml(manifest)
+            tags = content.get("tags", {})
         else:
-            # storage-root/project/type/name/prefix/full-version
-            p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
-            m = glob(p)
-            if len(m) == 1:
-                _, _, self.name, _, version = Path(m[0]).as_posix().rsplit("/", 4)
-                self.version = self.path_to_version(version)
-            else:
-                raise NoMatchException(self.version, list(m))
+            tags = {}
+
+        ver = self.version
+        if ver == "":
+            ver = "latest"
+
+        if ver in tags:
+            self.version = tags[ver]
+            return
+
+        # storage-root/project/type/name/prefix/full-version
+        p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
+        m = glob(p)
+        if len(m) == 1:
+            _, _, self.name, _, version = Path(m[0]).as_posix().rsplit("/", 4)
+            self.version = self.path_to_version(version)
+        else:
+            raise NoMatchException(self.version, list(m))
 
     @staticmethod
     def path_to_version(path: str) -> str:
