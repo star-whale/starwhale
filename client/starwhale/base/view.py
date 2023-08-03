@@ -25,6 +25,7 @@ from starwhale.consts import (
     STANDALONE_INSTANCE,
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
+from starwhale.base.bundle import BaseBundle
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.project import Project
@@ -325,3 +326,36 @@ class BaseTermView(SWCliConfigMixed):
             "Please specify the project uri with --project or set the default project for current instance"
         )
         sys.exit(1)
+
+
+class TagViewMixin:
+    @BaseTermView._header
+    def tag(
+        self,
+        tags: t.List[str],
+        remove: bool = False,
+        ignore_errors: bool = False,
+        force_add: bool = False,
+    ) -> None:
+        uri = self.uri  # type: ignore
+
+        obj = None
+        for attr in ("runtime", "model", "dataset"):
+            obj = getattr(self, attr, None)
+            if obj:
+                break
+
+        if obj is None or not isinstance(obj, BaseBundle):
+            raise RuntimeError(
+                "no valid obj found, only support runtime, model, dataset"
+            )
+
+        if tags:
+            if remove:
+                console.print(f":golfer: remove tags [red]{tags}[/] @ {uri}...")
+                obj.remove_tags(tags, ignore_errors)
+            else:
+                console.print(f":surfer: add tags [red]{tags}[/] @ {uri}...")
+                obj.add_tags(tags, ignore_errors, force_add)
+        else:
+            console.print(f":compass: tags: {','.join(obj.list_tags())}")

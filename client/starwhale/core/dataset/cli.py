@@ -569,7 +569,7 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
     )
 
 
-@dataset_cmd.command("tag", help="Dataset tag management, add or remove")
+@dataset_cmd.command("tag")
 @click.argument("dataset")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -579,6 +579,12 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
 @click.pass_obj
 def _tag(
     view: t.Type[DatasetTermView],
@@ -586,8 +592,32 @@ def _tag(
     tags: t.List[str],
     remove: bool,
     quiet: bool,
+    force_add: bool,
 ) -> None:
-    view(dataset).tag(tags, remove, quiet)
+    """Dataset tag management: add, remove and list
+
+    DATASET: argument use the `Dataset URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the mnist dataset
+        swcli dataset tag mnist
+
+        \b
+        - add tags for the mnist dataset
+        swcli dataset tag mnist -t t1 -t t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist/version/latest -t t1 --force-add
+        swcli dataset tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the mnist dataset
+        swcli dataset tag mnist -r -t t1 -t t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist --remove -t t1
+    """
+    view(dataset).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @dataset_cmd.command("head")

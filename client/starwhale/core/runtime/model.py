@@ -887,8 +887,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
 
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
-        self.tag.add(tags, ignore_errors)
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = False
+    ) -> None:
+        self.tag.add(tags, ignore_errors, force=force)
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)

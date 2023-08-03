@@ -82,10 +82,15 @@ class _Tags:
     def __init__(self, core_dataset: CoreDataset) -> None:
         self.__core_dataset = core_dataset
 
-    def add(self, tags: t.Union[str, t.List[str]], ignore_errors: bool = False) -> None:
+    def add(
+        self,
+        tags: t.Union[str, t.List[str]],
+        ignore_errors: bool = False,
+        force: bool = False,
+    ) -> None:
         if isinstance(tags, str):
             tags = [tags]
-        self.__core_dataset.add_tags(tags, ignore_errors)
+        self.__core_dataset.add_tags(tags, ignore_errors=ignore_errors, force=force)
 
     def remove(
         self, tags: t.Union[str, t.List[str]], ignore_errors: bool = False
@@ -876,7 +881,13 @@ class Dataset:
         return self._updated_rows_by_commit != 0 or self._deleted_rows_by_commit != 0
 
     @_check_readonly
-    def commit(self, tags: t.List[str] | None = None, message: str = "") -> str:
+    def commit(
+        self,
+        tags: t.Optional[t.List[str]] = None,
+        message: str = "",
+        force_add_tags: bool = False,
+        ignore_add_tags_errors: bool = False,
+    ) -> str:
         """Commit into dataset
         Commit will flush and generate a version of the dataset. At the same time, commit
         operation will also generate auto-increment tag, such as v0, v1, v2. Only one commit is allowed.
@@ -884,6 +895,8 @@ class Dataset:
         Arguments:
             tags: (list(str), optional) Specify the tags for the version. Default is None. `latest` and `^v\d+$` tags are reserved tags.
             message: (str, optional) Commit message. Default is empty str.
+            force_add_tags: (bool, optional) Force to add tags. Default is False.
+            ignore_add_tags_errors: (bool, optional) Ignore add tags errors. Default is False.
 
         Example:
         ```python
@@ -898,9 +911,17 @@ class Dataset:
         """
         # TODO: forbid commit many times
         with self._commit_lock:
-            return self._commit(tags or [], message)
+            return self._commit(
+                tags or [], message, force_add_tags, ignore_add_tags_errors
+            )
 
-    def _commit(self, tags: t.List[str], message: str) -> str:
+    def _commit(
+        self,
+        tags: t.List[str],
+        message: str,
+        force_add_tags: bool,
+        ignore_add_tags_errors: bool,
+    ) -> str:
         def _save_info() -> str:
             revision = ""
             if self.__info is not None and self._info_ds_wrapper is not None:
@@ -1016,7 +1037,9 @@ class Dataset:
         os.unlink(manifest_path)
 
         if tags:
-            self.__pending_commit_core_dataset.add_tags(tags)
+            self.__pending_commit_core_dataset.add_tags(
+                tags, ignore_errors=ignore_add_tags_errors, force=force_add_tags
+            )
 
         self.__has_committed = True
         return self._pending_commit_version
