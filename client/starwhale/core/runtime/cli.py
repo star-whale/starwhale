@@ -546,13 +546,27 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="ignore tags to copy. The option can be used multiple times.",
+)
+def _copy(
+    src: str, dest: str, force: bool, dest_local_project: str, ignore_tags: t.List[str]
+) -> None:
     """
     Copy Runtime between Standalone Instance and Cloud Instance
 
     SRC: runtime uri with version
 
     DEST: project uri or runtime uri with name.
+
+    In default, copy runtime with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other runtime version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -591,8 +605,12 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         \b
         - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
             swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy without some tags
+            swcli runtime cp pytorch cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
-    RuntimeTermView.copy(src, dest, force, dest_local_project)
+    RuntimeTermView.copy(src, dest, force, dest_local_project, ignore_tags)
 
 
 @runtime_cmd.command("tag")

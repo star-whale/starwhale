@@ -1048,7 +1048,7 @@ class CloudModelTest(TestCase):
         add_tag_request = rm.post(tag_url)
         ModelTermView(uri).tag(tags=["t1", "t2"], force_add=True)
         assert add_tag_request.call_count == 2
-        assert add_tag_request.last_request.text == "force=True&tag=t2"
+        assert add_tag_request.last_request.json() == {"force": True, "tag": "t2"}
 
         error_message = "failed to add tags"
         add_tag_request = rm.post(

@@ -130,5 +130,5 @@ class StandaloneTagTestCase(TestCase):
         with self.assertRaisesRegex(FormatError, "tag:latest is builtin"):
             _chk(["latest"])
 
-        with self.assertRaisesRegex(FormatError, "tag:v0 is auto-incremental"):
+        with self.assertRaisesRegex(FormatError, "tag:v0 is builtin"):
             _chk(["v0"])

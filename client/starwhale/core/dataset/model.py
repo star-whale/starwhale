@@ -125,6 +125,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         dest_local_project_uri: str = "",
         force: bool = False,
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         dc = DatasetCopy(
             src_uri=src_uri,
@@ -132,6 +133,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
             force=force,
             mode=mode,
             dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
         )
         dc.do()
 

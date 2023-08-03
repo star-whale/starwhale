@@ -370,9 +370,16 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         src = Resource(src_uri, typ=ResourceType.runtime)
-        Runtime.copy(src, dest_uri, force, dest_local_project_uri)
+        Runtime.copy(
+            src_uri=src,
+            dest_uri=dest_uri,
+            force=force,
+            dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
+        )
         console.print(":clap: copy done.")
 
 

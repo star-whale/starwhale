@@ -493,6 +493,13 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="Ignore tags to copy. The option can be used multiple times.",
+)
 @optgroup.group(
     "\n **  Copy Mode Selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -513,13 +520,25 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     flag_value=DatasetChangeMode.OVERWRITE.value,
     help="Overwrite mode, update records and delete extraneous rows from the remote dataset.",
 )
-def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) -> None:
+def _copy(
+    src: str,
+    dest: str,
+    dest_local_project: str,
+    mode: str,
+    force: bool,
+    ignore_tags: t.List[str],
+) -> None:
     """
     Copy Dataset between Standalone Instance and Cloud Instance
 
     SRC: dataset uri with version
 
     DEST: project uri or dataset uri with name.
+
+    In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other dataset version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -559,6 +578,9 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
         - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
             swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
 
+        \b
+        - copy without some tags
+           swcli dataset cp mnist cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
     DatasetTermView.copy(
         src_uri=src,
@@ -566,6 +588,7 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
         mode=DatasetChangeMode(mode),
         dest_local_project_uri=dest_local_project,
         force=force,
+        ignore_tags=ignore_tags,
     )
 
 

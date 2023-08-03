@@ -1059,6 +1059,7 @@ class Dataset:
         dest_local_project_uri: str = "",
         force: bool = False,
         mode: str = DatasetChangeMode.PATCH.value,
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         """Copy dataset to another instance.
 
@@ -1069,6 +1070,9 @@ class Dataset:
             mode: (str, optional) copy mode, default is 'patch'. Mode choices are: 'patch', 'overwrite'.
               `patch` mode: only update the changed rows and columns for the remote dataset;
               `overwrite` mode: update records and delete extraneous rows from the remote dataset
+            ignore_tags: (list(str), optional) ignore tags when copying.
+              In default, copy dataset with all user custom tags. `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+              When the tags are already used for the other dataset version in the dest instance, you should use `force` option or adjust the tags.
 
         Returns:
             None
@@ -1079,6 +1083,7 @@ class Dataset:
         from starwhale import dataset
         ds = dataset("mnist")
         ds.copy("cloud://remote-instance/project/starwhale")
+        ds.copy("cloud://cloud.starwhale.cn/project/public:starwhale", ignore_tags=["t1"])
         ```
         """
         CoreDataset.copy(
@@ -1087,6 +1092,7 @@ class Dataset:
             dest_local_project_uri=dest_local_project_uri,
             force=force,
             mode=DatasetChangeMode(mode),
+            ignore_tags=ignore_tags,
         )
 
     @classmethod

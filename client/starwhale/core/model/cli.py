@@ -215,13 +215,27 @@ def _tag(
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy model")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="ignore tags to copy. The option can be used multiple times.",
+)
+def _copy(
+    src: str, dest: str, force: bool, dest_local_project: str, ignore_tags: t.List[str]
+) -> None:
     """
     Copy Model between Standalone Instance and Cloud Instance
 
     SRC: model uri with version
 
     DEST: project uri or model uri with name.
+
+    In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other model version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -260,8 +274,12 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         \b
         - copy standalone instance(local) project(myproject)'s mnist-local model to cloud instance(pre-k8s) mnist project with standalone instance model name 'mnist-local'
             swcli model cp local/project/myproject/model/mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy without some tags
+           swcli model cp mnist cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
-    ModelTermView.copy(src, dest, force, dest_local_project)
+    ModelTermView.copy(src, dest, force, dest_local_project, ignore_tags)
 
 
 @model_cmd.command("info")

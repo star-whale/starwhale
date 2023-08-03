@@ -1446,7 +1446,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         with self.assertRaisesRegex(FormatError, "tag:latest is builtin"):
             ds.commit(tags=["latest"])
 
-        with self.assertRaisesRegex(FormatError, "tag:v0 is auto-incremental"):
+        with self.assertRaisesRegex(FormatError, "tag:v0 is builtin"):
             ds.commit(tags=["v0"])
 
         ds.commit(tags=["test1", "test2"])

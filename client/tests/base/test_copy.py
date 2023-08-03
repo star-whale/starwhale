@@ -141,6 +141,11 @@ class TestBundleCopy(BaseTestCase):
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
         rm.request(
             HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch/version/{version}/tag",
+            json={"data": ["t1", "t2", "t3"]},
+        )
+        rm.request(
+            HTTPMethod.GET,
             "http://1.1.1.1:8182/api/v1/project/myproject/runtime/pytorch",
             json={"data": {"id": 1, "versionName": version, "versionId": 100}},
             status_code=HTTPStatus.OK,
@@ -201,6 +206,9 @@ class TestBundleCopy(BaseTestCase):
                 dest_local_project_uri=case["dest_local_project_uri"],
             ).do()
             assert swrt_path.is_file()
+
+        st = StandaloneTag(Resource("pytorch", typ=ResourceType.runtime))
+        assert set(st.list()) == {"latest", "t1", "t2", "t3", "v0"}
 
         with self.assertRaises(Exception):
             BundleCopy(
@@ -350,6 +358,12 @@ class TestBundleCopy(BaseTestCase):
         version = "ge3tkylgha2tenrtmftdgyjzni3dayq"
 
         cloud_uri = f"cloud://pre-bare/project/myproject/model/mnist/version/{version}"
+
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/model/mnist/version/{version}/tag",
+            json={"data": ""},
+        )
 
         rm.request(
             HTTPMethod.GET,
@@ -798,6 +812,11 @@ class TestBundleCopy(BaseTestCase):
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/model/mnist-alias/version/{version}/tag",
+            json={"data": ["t1", "t2", "t3"]},
+        )
         BundleCopy(
             src_uri="cloud://pre-bare/project/mnist/model/mnist-alias/version/v1",
             dest_uri="mnist/v2",
@@ -872,8 +891,15 @@ class TestBundleCopy(BaseTestCase):
                     "fast_tag_seq": 0,
                     "name": name,
                     "typ": "dataset",
-                    "tags": {"latest": version, "v1": version},
-                    "versions": {version: {"latest": True, "v1": True}},
+                    "tags": {
+                        "latest": version,
+                        "v1": version,
+                        "t1": version,
+                        "t2": version,
+                    },
+                    "versions": {
+                        version: {"latest": True, "v1": True, "t1": True, "t2": True}
+                    },
                 }
             ),
         )
@@ -917,6 +943,12 @@ class TestBundleCopy(BaseTestCase):
             HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist?versionUrl={version}",
             json={"data": {"versionMeta": yaml.safe_dump({"version": version})}},
+        )
+
+        rm.request(
+            HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/myproject/dataset/mnist/version/{version}/tag",
+            json={"data": ["t1", "t2", "t3"]},
         )
 
         cloud_uri = Resource(
@@ -1013,6 +1045,11 @@ class TestBundleCopy(BaseTestCase):
         )
         dest_uri = "cloud://pre-bare/project/mnist"
 
+        tag_request = rm.request(
+            HTTPMethod.POST,
+            f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/mnist/version/{version}/tag",
+        )
+
         head_request = rm.request(
             HTTPMethod.HEAD,
             f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{name}",
@@ -1022,6 +1059,8 @@ class TestBundleCopy(BaseTestCase):
         DatasetCopy(src_uri, dest_uri, force=True).do()
         assert head_request.call_count == 0
         assert not m_td_delete.called
+        assert tag_request.call_count == 2
+        assert tag_request.last_request.json() == {"force": True, "tag": "t2"}
 
         head_request = rm.request(
             HTTPMethod.HEAD,
@@ -1167,11 +1206,16 @@ class TestBundleCopy(BaseTestCase):
                 f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/file",
                 json={"data": {"uploadId": 1}},
             )
+            tag_request = rm.request(
+                HTTPMethod.POST,
+                f"http://1.1.1.1:8182/api/v1/project/mnist/dataset/{case['dest_dataset']}/version/{version}/tag",
+            )
             try:
                 DatasetCopy(
                     src_uri=Resource(case["src_uri"], typ=ResourceType.dataset),
                     dest_uri=case["dest_uri"],
                     mode=case["mode"],
+                    ignore_tags=["t1"],
                 ).do()
             except Exception as e:
                 print(f"case: {case}")
@@ -1179,6 +1223,7 @@ class TestBundleCopy(BaseTestCase):
 
             assert head_request.call_count == case["head_call_count"]
             assert upload_request.call_count == 2
+            assert tag_request.last_request.json() == {"force": False, "tag": "t2"}
 
         # TODO: support the flowing case
         with self.assertRaises(NoSupportError):
@@ -1232,6 +1277,11 @@ class TestBundleCopy(BaseTestCase):
         version_name = "runtime-version"
         rm.request(
             HTTPMethod.GET,
+            f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist/version/{version_name}/tag",
+            json={"data": ["t1", "t2", "t3", "t4"]},
+        )
+        rm.request(
+            HTTPMethod.GET,
             f"http://1.1.1.1:8182/api/v1/project/1/runtime/mnist?versionUrl={version}",
             json={"data": {"id": 1, "name": "mnist", "versionName": version_name}},
         )
@@ -1261,6 +1311,7 @@ class TestBundleCopy(BaseTestCase):
             dest_uri="",
             dest_local_project_uri="self",
             typ=ResourceType.runtime,
+            ignore_tags=["t1", "t2"],
         )
         bc.do()
         swrt_path = dest_dir / f"{version_name}.swrt"
@@ -1273,4 +1324,4 @@ class TestBundleCopy(BaseTestCase):
                 typ=ResourceType.runtime,
             )
         )
-        assert st.list() == ["latest", "v0"]
+        assert set(st.list()) == {"latest", "v0", "t3", "t4"}
