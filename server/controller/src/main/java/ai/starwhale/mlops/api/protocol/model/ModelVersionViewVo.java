@@ -37,6 +37,8 @@ public class ModelVersionViewVo {
 
     private Boolean latest;
 
+    private List<String> tags;
+
     private Integer shared;
 
     private List<StepSpec> stepSpecs;

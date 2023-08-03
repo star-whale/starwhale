@@ -91,6 +91,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -363,6 +364,16 @@ public class ModelService {
 
     private Collection<ModelViewVo> viewEntityToVo(List<ModelVersionViewEntity> list, Boolean shared) {
         Map<Long, ModelViewVo> map = new LinkedHashMap<>();
+        var tags = new HashMap<Long, Map<Long, List<String>>>();
+        // group by modelId
+        var modelGroups = list.stream().collect(Collectors.groupingBy(ModelVersionViewEntity::getModelId));
+        for (var entry : modelGroups.entrySet()) {
+            var modelId = entry.getKey();
+            var entities = entry.getValue();
+            var tagsMap = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
+            tags.put(modelId, tagsMap);
+        }
+
         for (ModelVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getModelId())) {
                 map.put(
@@ -378,6 +389,8 @@ public class ModelService {
                 );
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
+            var versionTags =
+                    tags.get(entity.getModelId()) == null ? null : tags.get(entity.getModelId()).get(entity.getId());
             try {
                 map.get(entity.getModelId())
                         .getVersions()
@@ -385,6 +398,7 @@ public class ModelService {
                                      .id(idConvertor.convert(entity.getId()))
                                      .versionName(entity.getVersionName())
                                      .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                                     .tags(versionTags)
                                      .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
                                      .createdTime(entity.getCreatedTime().getTime())
                                      .shared(toInt(entity.getShared()))
