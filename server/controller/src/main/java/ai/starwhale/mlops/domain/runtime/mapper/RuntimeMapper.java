@@ -33,7 +33,9 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface RuntimeMapper {
 
-    String COLUMNS = "id, runtime_name, project_id, owner_id, is_deleted, created_time, modified_time";
+    String COLUMNS = "id, runtime_name, project_id, owner_id, created_time, modified_time, "
+            + "IF(deleted_time > 0, 1, 0) as is_deleted, "
+            + "IF(deleted_time > 0, deleted_time, null) as deleted_time";
 
     @SelectProvider(value = RuntimeProvider.class, method = "listSql")
     List<RuntimeEntity> list(@Param("projectId") Long projectId,
@@ -46,10 +48,10 @@ public interface RuntimeMapper {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(RuntimeEntity runtime);
 
-    @Update("update runtime_info set is_deleted = 1, deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
+    @Update("update runtime_info set deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
     int remove(@Param("id") Long id);
 
-    @Update("update runtime_info set is_deleted = 0, deleted_time = 0 where id = #{id}")
+    @Update("update runtime_info set deleted_time = 0 where id = #{id}")
     int recover(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from runtime_info where id = #{id}")
@@ -63,7 +65,7 @@ public interface RuntimeMapper {
             @Param("projectId") Long projectId,
             @Param("forUpdate") Boolean forUpdate);
 
-    @Select("select " + COLUMNS + " from runtime_info where id = #{id} and is_deleted = 1")
+    @Select("select " + COLUMNS + " from runtime_info where id = #{id} and deleted_time > 0")
     RuntimeEntity findDeleted(@Param("id") Long id);
 
 
@@ -77,7 +79,7 @@ public interface RuntimeMapper {
                 {
                     SELECT(COLUMNS);
                     FROM("runtime_info");
-                    WHERE("is_deleted = 0 and runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'");
+                    WHERE("deleted_time = 0 and runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
@@ -104,7 +106,7 @@ public interface RuntimeMapper {
                     SELECT(COLUMNS);
                     FROM("runtime_info");
                     WHERE("runtime_name = #{name}");
-                    WHERE("is_deleted = 0");
+                    WHERE("deleted_time = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }

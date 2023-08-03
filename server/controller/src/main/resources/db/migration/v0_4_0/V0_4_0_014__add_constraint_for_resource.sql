@@ -26,3 +26,7 @@ UPDATE dataset_info set deleted_time = UNIX_TIMESTAMP(modified_time) * 1000 wher
 ALTER TABLE model_info ADD CONSTRAINT model_info_UK UNIQUE KEY (model_name,project_id,deleted_time);
 ALTER TABLE runtime_info ADD CONSTRAINT runtime_info_UK UNIQUE KEY (runtime_name,project_id,deleted_time);
 ALTER TABLE dataset_info ADD CONSTRAINT dataset_info_UK UNIQUE KEY (dataset_name,project_id,deleted_time);
+
+ALTER TABLE model_info DROP COLUMN is_deleted;
+ALTER TABLE runtime_info DROP COLUMN is_deleted;
+ALTER TABLE dataset_info DROP COLUMN is_deleted;

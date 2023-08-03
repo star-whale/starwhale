@@ -32,7 +32,9 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface DatasetMapper {
 
-    String COLUMNS = "id, dataset_name, project_id, owner_id, is_deleted, created_time, modified_time";
+    String COLUMNS = "id, dataset_name, project_id, owner_id, created_time, modified_time, "
+                + "IF(deleted_time > 0, 1, 0) as is_deleted, "
+                + "IF(deleted_time > 0, deleted_time, null) as deleted_time";
 
     @SelectProvider(value = DatasetProvider.class, method = "listSql")
     List<DatasetEntity> list(@Param("projectId") Long projectId,
@@ -45,10 +47,10 @@ public interface DatasetMapper {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(DatasetEntity dataset);
 
-    @Update("update dataset_info set is_deleted = 1, deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
+    @Update("update dataset_info set deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
     int remove(@Param("id") Long id);
 
-    @Update("update dataset_info set is_deleted = 0, deleted_time = 0 where id = #{id}")
+    @Update("update dataset_info set deleted_time = 0 where id = #{id}")
     int recover(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from dataset_info where id = #{id}")
@@ -58,7 +60,7 @@ public interface DatasetMapper {
     DatasetEntity findByName(@Param("name") String name, @Param("projectId") Long projectId,
             @Param("forUpdate") Boolean forUpdate);
 
-    @Select("select " + COLUMNS + " from dataset_info where is_deleted = 1 and id = #{id}")
+    @Select("select " + COLUMNS + " from dataset_info where deleted_time > 0 and id = #{id}")
     DatasetEntity findDeleted(@Param("id") Long id);
 
     class DatasetProvider {
@@ -71,7 +73,7 @@ public interface DatasetMapper {
                 {
                     SELECT(COLUMNS);
                     FROM("dataset_info");
-                    WHERE("is_deleted = 0");
+                    WHERE("deleted_time = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
@@ -98,7 +100,7 @@ public interface DatasetMapper {
                     SELECT(COLUMNS);
                     FROM("dataset_info");
                     WHERE("dataset_name = #{name}");
-                    WHERE("is_deleted = 0");
+                    WHERE("deleted_time = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
