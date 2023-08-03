@@ -66,7 +66,7 @@ public interface ModelVersionMapper {
             + " where v.model_id = m.id"
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
-            + " and m.is_deleted = 0"
+            + " and m.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by m.id desc, v.version_order desc")
@@ -78,7 +78,7 @@ public interface ModelVersionMapper {
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and p.is_deleted = 0"
-            + " and m.is_deleted = 0"
+            + " and m.deleted_time = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
             + " and p.id != #{excludeProjectId}"
