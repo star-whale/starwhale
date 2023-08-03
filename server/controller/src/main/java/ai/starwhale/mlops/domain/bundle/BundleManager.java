@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.project.ProjectAccessor;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -159,6 +160,9 @@ public class BundleManager {
         var bundleId = getBundleId(BundleUrl.create(projectUrl, modelUrl));
         var versionId = getBundleVersionId(bundleId, versionUrl);
         var tags = bundleVersionTagDao.listByVersionIds(type, bundleId, List.of(versionId));
+        if (tags.get(versionId) == null) {
+            return Collections.emptyList();
+        }
         return tags.get(versionId).stream()
                 .map(BundleVersionTagEntity::getTag)
                 .collect(Collectors.toList());
