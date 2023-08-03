@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.reporting;
+package ai.starwhale.mlops.schedule.reporting;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -32,13 +32,13 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Service
-public class SimpleTaskModifyReceiver implements TaskModifyReceiver {
+public class SimpleTaskReportReceiver implements TaskReportReceiver {
 
     final HotJobHolder jobHolder;
 
     final TaskMapper taskMapper;
 
-    public SimpleTaskModifyReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
+    public SimpleTaskReportReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
         this.jobHolder = jobHolder;
         this.taskMapper = taskMapper;
     }

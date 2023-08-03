@@ -47,8 +47,13 @@ import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
 import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.K8SSwTaskScheduler;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -71,7 +76,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-public class K8sTaskSchedulerTest {
+public class K8SSwTaskSchedulerTest {
 
     static final String CONDARC = "channels:\n"
             + "  - defaults\n"
@@ -89,13 +94,13 @@ public class K8sTaskSchedulerTest {
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
-        K8sTaskScheduler scheduler = buildK8sScheduler(k8sClient);
+        K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         scheduler.schedule(Set.of(mockTask(false)));
         verify(k8sClient).deployJob(any());
     }
 
     @NotNull
-    private K8sTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
+    private K8SSwTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         RunTimeProperties runTimeProperties = new RunTimeProperties(
@@ -103,7 +108,7 @@ public class K8sTaskSchedulerTest {
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
-        return new K8sTaskScheduler(k8sClient,
+        return new K8SSwTaskScheduler(k8sClient,
                 taskTokenValidator,
                 runTimeProperties,
                 new K8sJobTemplateMock(""),
@@ -121,7 +126,7 @@ public class K8sTaskSchedulerTest {
     public void testException() throws ApiException, IOException {
         K8sClient k8sClient = mock(K8sClient.class);
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
-        K8sTaskScheduler scheduler = buildK8sScheduler(k8sClient);
+        K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         Task task = mockTask(false);
         scheduler.schedule(Set.of(task));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
@@ -134,7 +139,7 @@ public class K8sTaskSchedulerTest {
         var runTimeProperties = new RunTimeProperties(
                 "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sTaskScheduler(
+        var scheduler = new K8SSwTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
@@ -171,7 +176,7 @@ public class K8sTaskSchedulerTest {
         var runTimeProperties = new RunTimeProperties(
                 "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sTaskScheduler(
+        var scheduler = new K8SSwTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
@@ -212,7 +217,7 @@ public class K8sTaskSchedulerTest {
         var runTimeProperties = new RunTimeProperties(
                 "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sTaskScheduler(
+        var scheduler = new K8SSwTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
                 runTimeProperties,
@@ -359,7 +364,7 @@ public class K8sTaskSchedulerTest {
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
 
-        var scheduler = new K8sTaskScheduler(
+        var scheduler = new K8SSwTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
                 mock(RunTimeProperties.class),
@@ -408,7 +413,7 @@ public class K8sTaskSchedulerTest {
         threadPoolTaskScheduler.initialize();
         var taskLogK8sCollector = mock(TaskLogK8sCollector.class);
 
-        var scheduler = new K8sTaskScheduler(
+        var scheduler = new K8SSwTaskScheduler(
                 client,
                 mock(TaskTokenValidator.class),
                 mock(RunTimeProperties.class),

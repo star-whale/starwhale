@@ -22,8 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollector;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SStreamingCollector;
+import ai.starwhale.mlops.schedule.impl.k8s.log.CancellableJobLogK8sCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 
 public class TaskLogWsServerTest {
     private CancellableJobLogK8sCollectorFactory factory;
-    private CancellableJobLogK8sCollector logK8sCollector;
+    private TaskLogK8SStreamingCollector logK8sCollector;
     private IdConverter idConvertor;
     private Session session;
 
@@ -42,12 +42,12 @@ public class TaskLogWsServerTest {
         factory = mock(CancellableJobLogK8sCollectorFactory.class);
         idConvertor = mock(IdConverter.class);
         session = mock(Session.class);
-        logK8sCollector = mock(CancellableJobLogK8sCollector.class);
+        logK8sCollector = mock(TaskLogK8SStreamingCollector.class);
     }
 
     @Test
     public void testOpen() throws IOException, ApiException, InterruptedException {
-        var server = new TaskLogWsServer();
+        var server = new TaskLogWsServer(taskLogCollector);
         server.setIdConvertor(idConvertor);
         server.setLogCollectorFactory(factory);
 

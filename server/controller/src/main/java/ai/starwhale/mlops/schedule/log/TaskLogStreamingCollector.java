@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.configuration.schedule;
+package ai.starwhale.mlops.schedule.log;
 
-import org.springframework.boot.task.TaskSchedulerCustomizer;
-import org.springframework.context.annotation.Bean;
+import java.io.IOException;
 
-public class ScheduleConfig {
+public interface TaskLogStreamingCollector {
 
-    /**
-     * when system receive kill signal and there are scheduled tasks running, system should wait for running tasks to
-     * be done to exit
-     *
-     */
-    @Bean
-    TaskSchedulerCustomizer taskSchedulerCustomizer() {
-        return taskScheduler -> {
-            taskScheduler.setAwaitTerminationSeconds(60);
-            taskScheduler.setWaitForTasksToCompleteOnShutdown(true);
-        };
-    }
+    String readLine() throws IOException;
 
+    void cancel();
 }

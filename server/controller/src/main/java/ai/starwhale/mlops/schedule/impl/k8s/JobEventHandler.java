@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.schedule.reporting.ReportedTask;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -41,19 +41,19 @@ import org.springframework.util.StringUtils;
 @Component
 public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
-    private final TaskModifyReceiver taskModifyReceiver;
+    private final TaskReportReceiver taskReportReceiver;
     private final TaskStatusMachine taskStatusMachine;
     private final RuntimeService runtimeService;
     private final DatasetService datasetService;
     private final K8sClient k8sClient;
 
     public JobEventHandler(
-            TaskModifyReceiver taskModifyReceiver,
+            TaskReportReceiver taskReportReceiver,
             TaskStatusMachine taskStatusMachine,
             RuntimeService runtimeService,
             DatasetService datasetService,
             K8sClient k8sClient) {
-        this.taskModifyReceiver = taskModifyReceiver;
+        this.taskReportReceiver = taskReportReceiver;
         this.taskStatusMachine = taskStatusMachine;
         this.runtimeService = runtimeService;
         this.datasetService = datasetService;
@@ -224,7 +224,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 .retryCount(retryNum)
                 .failedReason(StringUtils.hasText(failedReason) ? failedReason : null)
                 .build();
-        taskModifyReceiver.receive(List.of(report));
+        taskReportReceiver.receive(List.of(report));
     }
 
     private String conditionsLogString(List<V1JobCondition> conditions) {

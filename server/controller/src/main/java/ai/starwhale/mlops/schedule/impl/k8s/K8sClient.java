@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s;
 
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.custom.V1Patch;
@@ -62,7 +62,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component
 public class K8sClient {
 
     private final ApiClient client;

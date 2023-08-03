@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
-import static ai.starwhale.mlops.schedule.k8s.K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD;
+import static ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate.JOB_TYPE_LABEL;
+import static ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
@@ -91,8 +91,8 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;

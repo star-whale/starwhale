@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s;
 
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
@@ -26,11 +26,10 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.openapi.ApiException;
@@ -47,15 +46,12 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-@Service
 @Slf4j
-public class K8sTaskScheduler implements SwTaskScheduler {
+public class K8SSwTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
@@ -71,23 +67,20 @@ public class K8sTaskScheduler implements SwTaskScheduler {
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
-    final ThreadPoolTaskScheduler taskScheduler;
+    final ThreadPoolTaskScheduler cmdExecThreadPool;
 
-    private final TaskLogK8sCollector taskLogK8sCollector;
-
-    public K8sTaskScheduler(
+    public K8SSwTaskScheduler(
             K8sClient k8sClient,
             TaskTokenValidator taskTokenValidator,
             RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
-            @Value("${sw.instance-uri}") String instanceUri,
-            @Value("${sw.task.dev-port}") int devPort,
-            @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
-            @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
-            @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
+            String instanceUri,
+            int devPort,
+            int datasetLoadBatchSize,
+            String restartPolicy,
+            Integer backoffLimit,
             StorageAccessService storageAccessService,
-            TaskLogK8sCollector taskLogK8sCollector,
-            ThreadPoolTaskScheduler taskScheduler
+            ThreadPoolTaskScheduler cmdExecThreadPool
     ) {
         this.k8sClient = k8sClient;
         this.taskTokenValidator = taskTokenValidator;
@@ -99,26 +92,17 @@ public class K8sTaskScheduler implements SwTaskScheduler {
         this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
-        this.taskLogK8sCollector = taskLogK8sCollector;
-        this.taskScheduler = taskScheduler;
+        this.cmdExecThreadPool = cmdExecThreadPool;
     }
 
     @Override
-    public void schedule(Collection<Task> tasks) {
+    public void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver) {
         tasks.forEach(this::deployTaskToK8s);
     }
 
     @Override
     public void stop(Collection<Task> tasks) {
         tasks.forEach(task -> {
-            try {
-                // K8s do not support job suspend before 1.24, so we collect logs and delete job directly
-                // https://kubernetes.io/docs/concepts/workloads/controllers/job/#suspending-a-job
-                taskLogK8sCollector.collect(task);
-            } catch (StarwhaleException e) {
-                log.warn("collect task {} log failed, {}", task.getId(), e.getMessage());
-            }
-
             try {
                 k8sClient.deleteJob(task.getId().toString());
             } catch (ApiException e) {
@@ -137,7 +121,7 @@ public class K8sTaskScheduler implements SwTaskScheduler {
             if (pods.getItems().size() != 1) {
                 throw new SwProcessException(ErrorType.K8S, "multiple pods found for task " + task.getId());
             }
-            return taskScheduler.submit(
+            return cmdExecThreadPool.submit(
                     () -> k8sClient.execInPod(pods.getItems().get(0).getMetadata().getName(), null, command));
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.K8S, "exec command failed: " + e.getResponseBody(), e);

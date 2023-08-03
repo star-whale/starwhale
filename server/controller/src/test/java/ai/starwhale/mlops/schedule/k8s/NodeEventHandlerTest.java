@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
+import ai.starwhale.mlops.schedule.impl.k8s.reporting.NodeEventHandler;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeAddress;

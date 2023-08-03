@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset;
 
-import static ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec.RESOURCE_CPU;
-import static ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec.RESOURCE_MEMORY;
+import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_CPU;
+import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_MEMORY;
 import static cn.hutool.core.util.BooleanUtil.toInt;
 
 import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
@@ -74,10 +74,10 @@ import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.k8s.ContainerOverwriteSpec;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;

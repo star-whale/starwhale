@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;

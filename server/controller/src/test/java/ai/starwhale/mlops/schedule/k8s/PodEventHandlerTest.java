@@ -29,9 +29,10 @@ import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.schedule.reporting.ReportedTask;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import ai.starwhale.mlops.schedule.impl.k8s.reporting.PodEventHandler;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -52,7 +53,7 @@ public class PodEventHandlerTest {
 
     TaskLogK8sCollector taskLogK8sCollector;
     BuildLogCollector buildLogCollector;
-    TaskModifyReceiver taskModifyReceiver;
+    TaskReportReceiver taskReportReceiver;
 
     HotJobHolder hotJobHolder;
 
@@ -63,9 +64,9 @@ public class PodEventHandlerTest {
         hotJobHolder = mock(HotJobHolder.class);
         taskLogK8sCollector = mock(TaskLogK8sCollector.class);
         buildLogCollector = mock(BuildLogCollector.class);
-        taskModifyReceiver = mock(TaskModifyReceiver.class);
+        taskReportReceiver = mock(TaskReportReceiver.class);
         podEventHandler = new PodEventHandler(
-                taskLogK8sCollector, buildLogCollector, taskModifyReceiver, hotJobHolder, mock(DatasetService.class));
+                taskLogK8sCollector, buildLogCollector, taskReportReceiver, hotJobHolder, mock(DatasetService.class));
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta()
                         .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
@@ -91,8 +92,8 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().podIP("127.0.0.1");
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector, times(0)).collect(any());
-        verify(taskModifyReceiver, times(1)).receive(any());
-        verify(taskModifyReceiver).receive(argThat(tasks ->
+        verify(taskReportReceiver, times(1)).receive(any());
+        verify(taskReportReceiver).receive(argThat(tasks ->
                 tasks.size() == 1
                         && tasks.get(0).getId() == 3L
                         && tasks.get(0).getStatus() == TaskStatus.PREPARING
@@ -117,7 +118,7 @@ public class PodEventHandlerTest {
                 .id(3L)
                 .status(TaskStatus.PREPARING)
                 .build();
-        verify(taskModifyReceiver, times(1)).receive(List.of(expect));
+        verify(taskReportReceiver, times(1)).receive(List.of(expect));
     }
 
     @Test
@@ -126,6 +127,6 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().setPhase("Running");
         podEventHandler.onUpdate(null, v1Pod);
         verify(taskLogK8sCollector, never()).collect(any());
-        verify(taskModifyReceiver, never()).receive(any());
+        verify(taskReportReceiver, never()).receive(any());
     }
 }

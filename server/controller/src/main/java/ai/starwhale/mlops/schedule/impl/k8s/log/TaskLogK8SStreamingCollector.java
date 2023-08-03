@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s.log;
+package ai.starwhale.mlops.schedule.impl.k8s.log;
 
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,14 +26,14 @@ import java.nio.charset.StandardCharsets;
 import okhttp3.Call;
 import okhttp3.Response;
 
-public class CancellableJobLogK8sCollector implements CancellableJobLogCollector {
+public class TaskLogK8SStreamingCollector implements TaskLogStreamingCollector {
     public static final String WORKER_CONTAINER = "worker";
     final K8sClient k8sClient;
     final Call call;
     final Response resp;
     final BufferedReader bufferedReader;
 
-    public CancellableJobLogK8sCollector(K8sClient k8sClient, String jobName)
+    public TaskLogK8SStreamingCollector(K8sClient k8sClient, String jobName)
             throws IOException, ApiException {
         this.k8sClient = k8sClient;
         call = k8sClient.readLog(getPodName(jobName), WORKER_CONTAINER, true);

@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,11 +45,14 @@ public class JobLoader {
 
     final SwTaskScheduler swTaskScheduler;
 
+    final TaskReportReceiver taskReportReceiver;
+
     public JobLoader(HotJobHolder jobHolder, WatchableTaskFactory watchableTaskFactory,
-            SwTaskScheduler swTaskScheduler) {
+            SwTaskScheduler swTaskScheduler, TaskReportReceiver taskReportReceiver) {
         this.jobHolder = jobHolder;
         this.watchableTaskFactory = watchableTaskFactory;
         this.swTaskScheduler = swTaskScheduler;
+        this.taskReportReceiver = taskReportReceiver;
     }
 
     public Job load(@NotNull Job job, Boolean resumePausedOrFailTasks) {
@@ -91,7 +95,7 @@ public class JobLoader {
         if (CollectionUtils.isEmpty(tasks)) {
             return;
         }
-        swTaskScheduler.schedule(tasks);
+        swTaskScheduler.schedule(tasks, taskReportReceiver);
     }
 
 }

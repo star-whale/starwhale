@@ -57,7 +57,7 @@ public class JobLoaderTest {
         jobHolder = mock(HotJobHolder.class);
         watchableTaskFactory = mock(WatchableTaskFactory.class);
         swTaskScheduler = mock(SwTaskScheduler.class);
-        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler);
+        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler, taskReportReceiver);
     }
 
 

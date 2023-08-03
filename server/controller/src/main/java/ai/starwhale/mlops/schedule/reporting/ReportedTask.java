@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.reporting;
 
-import java.time.OffsetDateTime;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-public class Util {
-    public static Long k8sTimeToMs(OffsetDateTime time) {
-        if (time == null) {
-            return null;
-        }
-        return time.toInstant().toEpochMilli();
-    }
+/**
+ * convert taskReport to
+ */
+@Getter
+@AllArgsConstructor
+@EqualsAndHashCode
+@Builder
+public class ReportedTask {
+
+    final Long id;
+    final TaskStatus status;
+    final Integer retryCount;
+    final String ip;
+    final Long startTimeMillis;
+    final Long stopTimeMillis;
+    final String failedReason;
 }

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.custom.Quantity;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;

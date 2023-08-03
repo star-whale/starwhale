@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s.log;
+package ai.starwhale.mlops.schedule.reporting;
 
-import java.io.IOException;
+import java.util.List;
 
-public interface CancellableJobLogCollector {
+/**
+ * receive task status from agents
+ */
+public interface TaskReportReceiver {
 
-    String readLine() throws IOException;
+    /**
+     * process the report from Agent
+     */
+    void receive(List<ReportedTask> tasks);
 
-    void cancel();
 }

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;

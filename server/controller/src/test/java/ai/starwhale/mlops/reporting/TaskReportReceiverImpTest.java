@@ -25,6 +25,8 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.schedule.reporting.ReportedTask;
+import ai.starwhale.mlops.schedule.reporting.SimpleTaskReportReceiver;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -33,11 +35,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * test for {@link SimpleTaskModifyReceiver}
+ * test for {@link SimpleTaskReportReceiver}
  */
-public class TaskModifyReceiverImpTest {
+public class TaskReportReceiverImpTest {
 
-    SimpleTaskModifyReceiver taskStatusReceiver;
+    SimpleTaskReportReceiver taskStatusReceiver;
     HotJobHolder jobHolder;
 
     TaskMapper taskMapper;
@@ -46,7 +48,7 @@ public class TaskModifyReceiverImpTest {
     public void setup() {
         jobHolder = mock(HotJobHolder.class);
         taskMapper = mock(TaskMapper.class);
-        taskStatusReceiver = new SimpleTaskModifyReceiver(jobHolder, taskMapper);
+        taskStatusReceiver = new SimpleTaskReportReceiver(jobHolder, taskMapper);
     }
 
     @Test

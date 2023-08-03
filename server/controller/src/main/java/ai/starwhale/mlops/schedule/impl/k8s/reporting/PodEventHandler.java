@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s.reporting;
 
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
@@ -22,9 +22,11 @@ import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.reporting.TaskModifyReceiver;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.Util;
+import ai.starwhale.mlops.schedule.log.TaskLogSaver;
+import ai.starwhale.mlops.schedule.reporting.ReportedTask;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.Collection;
@@ -38,21 +40,21 @@ import org.springframework.util.StringUtils;
 @Component
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
-    final TaskLogK8sCollector taskLogK8sCollector;
+    final TaskLogSaver taskLogSaver;
     final BuildLogCollector buildLogCollector;
-    final TaskModifyReceiver taskModifyReceiver;
+    final TaskReportReceiver taskReportReceiver;
     final HotJobHolder jobHolder;
     final DatasetService datasetService;
 
     public PodEventHandler(
-            TaskLogK8sCollector taskLogK8sCollector,
+            TaskLogSaver taskLogSaver,
             BuildLogCollector buildLogCollector,
-            TaskModifyReceiver taskModifyReceiver,
+            TaskReportReceiver taskReportReceiver,
             HotJobHolder jobHolder,
             DatasetService datasetService) {
-        this.taskLogK8sCollector = taskLogK8sCollector;
+        this.taskLogSaver = taskLogSaver;
         this.buildLogCollector = buildLogCollector;
-        this.taskModifyReceiver = taskModifyReceiver;
+        this.taskReportReceiver = taskReportReceiver;
         this.jobHolder = jobHolder;
         this.datasetService = datasetService;
     }
@@ -181,9 +183,16 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                 .startTimeMillis(startTime)
                 .stopTimeMillis(null)
                 .build();
-        taskModifyReceiver.receive(List.of(report));
+        taskReportReceiver.receive(List.of(report));
     }
 
+    /**
+     * In k8s implementation of taskScheduler there is task retry support
+     * So, every time a pod finishes we collect the log for the pod.
+     * This is a compensation for the log collecting in task watcher which only collect log once just before task finishes
+     * @param pod
+     * @param type
+     */
     private void collectLog(V1Pod pod, String type) {
         log.debug("collect log for pod {} status {}", pod.getMetadata().getName(), pod.getStatus());
         if (null == pod.getStatus()
@@ -208,7 +217,7 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
                         return;
                     }
                     Task task = optionalTasks.stream().findAny().get();
-                    taskLogK8sCollector.collect(task);
+                    taskLogSaver.saveLog(task);
                 }
                 break;
             case K8sJobTemplate.WORKLOAD_TYPE_DATASET_BUILD:

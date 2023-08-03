@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.reporting;
+package ai.starwhale.mlops.schedule;
 
+
+import ai.starwhale.mlops.schedule.log.TaskLogCollector;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.List;
 
 /**
- * receive task status from agents
+ * This interface produces a family of objects that are sufficient to implement the scheduler function
+ * In addition to implementing the methods inside this interface , implements should call {@link TaskReportReceiver#receive(List)} at proper place.
  */
-public interface TaskModifyReceiver {
+public interface SwSchedulerAbstractFactory {
 
-    /**
-     * process the report from Agent
-     */
-    void receive(List<ReportedTask> tasks);
+    SwTaskScheduler buildSwTaskScheduler();
+
+    TaskLogCollector buildTaskLogCollector();
+
+
 
 }

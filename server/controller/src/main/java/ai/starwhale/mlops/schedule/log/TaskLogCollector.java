@@ -14,13 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.schedule.log;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
+import io.vavr.Tuple2;
 
 public interface TaskLogCollector {
 
-    void collect(Task task) throws StarwhaleException;
+    /**
+     * collect the whole log of a task with the name of the execution
+     * @param task
+     * @return name of the execution, log content
+     * @throws StarwhaleException
+     */
+    Tuple2<String,String> collect(Task task) throws StarwhaleException;
+
+    /**
+     * return a streaming task log reader which could be closed at anytime
+     * @param task
+     * @return
+     * @throws StarwhaleException
+     */
+    TaskLogStreamingCollector streaming(Task task) throws StarwhaleException;
 
 }

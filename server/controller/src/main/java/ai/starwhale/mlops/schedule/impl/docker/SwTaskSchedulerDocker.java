@@ -14,31 +14,34 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
+import com.github.dockerjava.api.DockerClient;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
-/**
- * schedule tasks of jobs
- * Spring framework has a class named TaskScheduler with a bean in the context. To avoid bean conflict the name here is SwTaskScheduler
- */
-public interface SwTaskScheduler {
+public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
+    final DockerClient dockerClient;
 
-    /**
-     * scheduler should maintain the tasks to be scheduled
-     *
-     * @param tasks       tasks to be scheduled
-     */
-    void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver);
+    public SwTaskSchedulerDocker(DockerClient dockerClient){
+         this.dockerClient = dockerClient;
+    }
 
-    /**
-     * @param tasks tasks to be stopped
-     */
-    void stop(Collection<Task> tasks);
+    @Override
+    public void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver) {
+    }
 
-    Future<String[]> exec(Task task, String ...command);
+    @Override
+    public void stop(Collection<Task> tasks) {
+
+    }
+
+    @Override
+    public Future<String[]> exec(Task task, String... command) {
+        return null;
+    }
 }

@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogCollector;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.exception.StarwhaleException;
+import ai.starwhale.mlops.schedule.log.TaskLogCollector;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +45,7 @@ public class TaskLogWsServer {
 
     private static IdConverter idConvertor;
 
-    private static CancellableJobLogK8sCollectorFactory logCollectorFactory;
+    final private TaskLogCollector taskLogCollector;
 
     private Session session;
 
@@ -51,7 +53,11 @@ public class TaskLogWsServer {
 
     private Long id;
 
-    private CancellableJobLogCollector logCollector;
+    private TaskLogStreamingCollector logCollector;
+
+    public TaskLogWsServer(TaskLogCollector taskLogCollector) {
+        this.taskLogCollector = taskLogCollector;
+    }
 
 
     @Autowired
@@ -59,10 +65,6 @@ public class TaskLogWsServer {
         TaskLogWsServer.idConvertor = idConvertor;
     }
 
-    @Autowired
-    public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
-        TaskLogWsServer.logCollectorFactory = factory;
-    }
 
     @OnOpen
     public void onOpen(Session session, @PathParam("taskId") String taskId) {
@@ -70,8 +72,8 @@ public class TaskLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
         try {
-            logCollector = logCollectorFactory.make(taskId);
-        } catch (IOException | ApiException e) {
+            logCollector = taskLogCollector.streaming(Task.builder().id(id).build());
+        } catch (StarwhaleException e) {
             log.error("make k8s log collector failed", e);
         }
         log.info("Task log ws opened. reader={}, task={}", readerId, id);

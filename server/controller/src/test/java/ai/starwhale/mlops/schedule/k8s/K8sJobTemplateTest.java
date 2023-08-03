@@ -22,6 +22,9 @@ import static org.hamcrest.Matchers.is;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
+import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;

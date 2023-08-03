@@ -14,72 +14,50 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.status.watchers.log;
+package ai.starwhale.mlops.schedule.log;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Slf4j
-@Component
-public class TaskLogK8sCollector implements TaskLogCollector {
+@Service
+public class TaskLogSaver {
 
+    final TaskLogCollector logCollector;
 
     final StorageAccessService storageService;
 
-    final K8sClient k8sClient;
-
-    final List<String> containers;
-
-    public TaskLogK8sCollector(StorageAccessService storageService,
-            K8sClient k8sClient, K8sJobTemplate k8sJobTemplate) {
+    public TaskLogSaver(TaskLogCollector logCollector, StorageAccessService storageService) {
+        this.logCollector = logCollector;
         this.storageService = storageService;
-        this.k8sClient = k8sClient;
-        this.containers = k8sJobTemplate.getJobContainerNames(
-                k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_EVAL));
     }
 
-    @Override
-    public void collect(Task task) throws StarwhaleException {
+    public void saveLog(Task task) throws StarwhaleException {
         log.debug("logging for task {} begins...", task.getId());
         try {
-            V1Pod v1Pod = k8sClient.podOfJob(K8sClient.toV1LabelSelector(Map.of(
-                    K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())));
-            if (null == v1Pod) {
-                log.warn("pod not exists for task {}", task.getId());
-                return;
-            }
-            String logName = v1Pod.getMetadata().getName();
-            String taskLog = k8sClient.logOfPod(v1Pod, containers);
+            Tuple2<String,String> logInfo = logCollector.collect(task);
+            String taskLog = logInfo._2();
             log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");
-            String logPath = resolveLogPath(task, logName);
+            String logPath = resolveLogPath(task, logInfo._1());
             log.debug("putting log to storage at path {}", logPath);
             storageService.put(logPath, taskLog.getBytes(StandardCharsets.UTF_8));
-        } catch (ApiException e) {
-            throw new SwProcessException(ErrorType.INFRA,
-                    MessageFormat.format("k8s api exception {}", e.getResponseBody()),
-                    e);
         } catch (IOException e) {
-            throw new SwProcessException(ErrorType.STORAGE, "uploading log failed", e);
+            throw new SwProcessException(ErrorType.STORAGE, "uploading log to storage failed", e);
         }
     }
 
     private String resolveLogPath(Task task, String logName) {
         return task.getResultRootPath().logDir() + "/" + logName;
     }
+
 }
