@@ -250,7 +250,7 @@ client_test() {
 api_test() {
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
-  pytest --host ${CONTROLLER_HOST} --port 80
+  pytest --host ${CONTROLLER_HOST} --port 80 || exit 1
   popd
   if ! in_github_action; then
     source upgrade_test.sh
