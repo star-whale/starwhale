@@ -24,7 +24,7 @@ export const DatasetLabelText = themedStyled('div', () => ({
     fontFamily: 'Roboto Mono',
 }))
 
-export function getDatastLabel(version: IDatasetTreeVersionSchema, dataset?: IDatasetTreeSchema) {
+export function getDatasetLabel(version: IDatasetTreeVersionSchema, dataset?: IDatasetTreeSchema) {
     const p = dataset ? [dataset.ownerName, dataset.projectName, dataset.datasetName].join('/') : ''
     const name = version?.versionName ?? version?.name
     const v = (name ?? '').substring(0, 8)

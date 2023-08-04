@@ -104,3 +104,30 @@ export async function buildImageForRuntimeVersion(
     )
     return resp.data
 }
+
+export async function addRuntimeVersionTag(
+    projectId: string,
+    runtimeId: string,
+    runtimeVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.post<void>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/tag`,
+        {
+            tag,
+        }
+    )
+    return resp.data
+}
+
+export async function deleteRuntimeVersionTag(
+    projectId: string,
+    runtimeId: string,
+    runtimeVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.delete<void>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/tag/${tag}`
+    )
+    return resp.data
+}

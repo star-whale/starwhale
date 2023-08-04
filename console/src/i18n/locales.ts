@@ -648,6 +648,10 @@ const locales0 = {
         en: 'Delete {{0}}',
         zh: '删除{{0}}',
     },
+    'delete sth confirm': {
+        en: 'Are you sure to delete "{{0}}"?',
+        zh: '确定要删除 "{{0}}" 吗？',
+    },
     'select sth': {
         en: 'Select {{0}}',
         zh: '选择{{0}}',
