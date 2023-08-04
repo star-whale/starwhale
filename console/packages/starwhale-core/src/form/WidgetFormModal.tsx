@@ -12,7 +12,7 @@ import useTranslation from '@/hooks/useTranslation'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
 import { useFetchDatastoreByTable } from '../datastore'
 
-const PAGE_TABLE_SIZE = 100
+const PAGE_TABLE_SIZE = 200
 
 export default function WidgetFormModal({
     store,
@@ -39,7 +39,17 @@ export default function WidgetFormModal({
     const formRef = React.useRef(null)
 
     const handleFormChange = (data: any) => {
-        setFormData(data)
+        setFormData((prev) => {
+            if (data.chartType !== prev.chartType) {
+                return {
+                    ...data,
+                    tableName: undefined,
+                }
+            }
+            return {
+                ...data,
+            }
+        })
     }
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix)
@@ -48,21 +58,14 @@ export default function WidgetFormModal({
         pageSize: PAGE_TABLE_SIZE,
         tableName,
     })
-    const { recordInfo, columnTypes, records } = useFetchDatastoreByTable(params)
-    const $data = React.useMemo(() => {
-        if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
-        return {
-            records,
-            columnTypes,
-        }
-    }, [recordInfo.isSuccess, records, columnTypes])
+    const $data = useFetchDatastoreByTable(params)
 
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
     }
 
     form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(columnTypes)
+    form.addDataTableColumnsField($data.getTableDistinctColumnTypes())
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})

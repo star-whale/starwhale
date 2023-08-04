@@ -37,10 +37,11 @@ export default function WidgetPreviewModal({
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {
+            params,
             records,
             columnTypes,
         }
-    }, [recordInfo.isSuccess, records, columnTypes])
+    }, [recordInfo.isSuccess, params, records, columnTypes])
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})

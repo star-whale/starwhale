@@ -1,11 +1,10 @@
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
-import { useParseBarChart } from '@starwhale/core/datastore/hooks/useParseDatastore'
 import React from 'react'
 import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/core/types'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { UI_DATA } from '@starwhale/core/form/schemas/fields'
 import { getBarChartConfig } from '@starwhale/ui/Plotly/utils'
-import { useDatastoreDecodeRecords } from '@starwhale/core/datastore'
+import { decordRecords, getTableShortName } from '@starwhale/core/datastore'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
@@ -24,7 +23,7 @@ export const CONFIG: WidgetConfig = {
                  * framework define field type
                  * 1. use type = 'array' to make field multiple
                  */
-                // type: 'array',
+                type: 'array',
             },
             x: {
                 title: 'X',
@@ -50,17 +49,35 @@ export const CONFIG: WidgetConfig = {
     },
 }
 
-function PanelPlotlyBarWidget(props: WidgetRendererProps<any, any>) {
+function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
     // console.log('PanelRocAucWidget', props)
 
     const { fieldConfig, data = {} } = props
-    const { records = [] } = data
+    const { getTableRecordMap } = data
     const { data: formData } = fieldConfig ?? {}
-    const { chartTitle: title, x, y } = formData ?? {}
+    const { chartTitle: title, x: xattr, y: yattr } = formData ?? {}
 
-    const $records = useDatastoreDecodeRecords(records)
-    const barData = useParseBarChart({ records: $records, x, y })
-    const vizData = getBarChartConfig(title, { x, y }, barData as any)
+    const m = getTableRecordMap()
+
+    const barData = Object.entries(m).map(([k, records]) => {
+        const x: number[] = []
+        const y: number[] = []
+        if (records)
+            decordRecords(records as any).forEach((item: any) => {
+                const xnum = item?.[xattr]
+                const ynum = item?.[yattr]
+                if (xnum && !Number.isNaN(xnum)) x.push(Number(xnum))
+                if (ynum && !Number.isNaN(ynum)) y.push(Number(ynum))
+            })
+        return {
+            x,
+            y,
+            type: 'bar',
+            name: getTableShortName(k),
+        }
+    })
+
+    const vizData = getBarChartConfig(title, { x: xattr, y: yattr }, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>
@@ -69,6 +86,6 @@ function PanelPlotlyBarWidget(props: WidgetRendererProps<any, any>) {
     )
 }
 
-const widget = new WidgetPlugin(PanelPlotlyBarWidget, CONFIG)
+const widget = new WidgetPlugin(PanelBarChartWidget, CONFIG)
 
 export default widget

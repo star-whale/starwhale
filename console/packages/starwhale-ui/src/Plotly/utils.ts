@@ -126,7 +126,6 @@ export function getBarChartConfig(
         y: any[]
     }
 ) {
-    const { x, y } = data
     const layout = {
         ...Layout.init,
         title,
@@ -143,14 +142,7 @@ export function getBarChartConfig(
     }
 
     const rocAucData = {
-        data: [
-            {
-                x,
-                y,
-                name: `label ${0}`,
-                type: 'bar',
-            },
-        ],
+        data,
         layout: {
             barmode: 'group',
             ...layout,

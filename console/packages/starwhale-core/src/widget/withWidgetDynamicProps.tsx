@@ -73,7 +73,14 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         })
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
-        const { recordInfo, recordQuery: query, columnTypes, records } = useFetchDatastoreByTable(params, enableLoad)
+        const {
+            recordInfo,
+            recordQuery: query,
+            columnTypes,
+            records,
+            getTableRecordMap,
+            getTableColumnTypeMap,
+        } = useFetchDatastoreByTable(params, enableLoad)
         useEffect(() => {
             if (enableLoad) return
             if (inViewport) setEnableload(true)
@@ -107,10 +114,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const $data = React.useMemo(() => {
             if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
             return {
+                recordQuery: query,
                 records,
                 columnTypes,
+                getTableRecordMap,
+                getTableColumnTypeMap,
             }
-        }, [recordInfo.isSuccess, records, columnTypes])
+        }, [recordInfo.isSuccess, query, records, columnTypes, getTableRecordMap, getTableColumnTypeMap])
 
         return (
             <div

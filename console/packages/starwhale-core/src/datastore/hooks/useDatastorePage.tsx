@@ -1,4 +1,4 @@
-import { DatastorePageT } from '@starwhale/core/datastore'
+import { DatastorePageT, getTableShortName } from '@starwhale/core/datastore'
 import { getQuery, getScanQuery } from '@starwhale/core/datastore/hooks/useDatastoreQueryParams'
 import React from 'react'
 import _ from 'lodash'
@@ -68,7 +68,7 @@ function useDatastorePage({
                 if (_.isObject(t) && 'columnPrefix' in t) return t
                 return {
                     tableName: t,
-                    columnPrefix: `${t.split('/').splice(5).join('/')}-`,
+                    columnPrefix: getTableShortName(t),
                 }
             })
 
