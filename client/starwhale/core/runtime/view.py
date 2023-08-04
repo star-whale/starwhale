@@ -14,7 +14,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
 )
-from starwhale.base.view import BaseTermView
+from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
 from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
@@ -24,7 +24,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
 
 
-class RuntimeTermView(BaseTermView):
+class RuntimeTermView(BaseTermView, TagViewMixin):
     def __init__(self, runtime_uri: str | Resource) -> None:
         super().__init__()
 
@@ -374,18 +374,6 @@ class RuntimeTermView(BaseTermView):
         src = Resource(src_uri, typ=ResourceType.runtime)
         Runtime.copy(src, dest_uri, force, dest_local_project_uri)
         console.print(":clap: copy done.")
-
-    @BaseTermView._header
-    def tag(
-        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
-    ) -> None:
-        # TODO: refactor model/runtime/dataset tag view-model
-        if remove:
-            console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.remove_tags(tags, ignore_errors)
-        else:
-            console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.add_tags(tags, ignore_errors)
 
 
 class RuntimeTermViewRich(RuntimeTermView):

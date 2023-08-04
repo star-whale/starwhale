@@ -1023,12 +1023,65 @@ class StandaloneModelTestCase(TestCase):
 
 class CloudModelTest(TestCase):
     def setUp(self) -> None:
-        sw_config._config = {}
+        sw_config._config = {
+            "storage": {"root": "/tmp/mock"},
+            "instances": {"foo": {"uri": "https://foo.com", "user_name": "test"}},
+            "current_instance": "foo",
+        }
 
     @Mocker()
-    @patch("starwhale.utils.config.load_swcli_config")
-    def test_run(self, rm: Mocker, load_conf: MagicMock) -> None:
-        load_conf.return_value = {"instances": {"foo": {"uri": "https://foo.com"}}}
+    def test_tag(self, rm: Mocker) -> None:
+        uri = "cloud://foo/project/starwhale/model/mnist/version/123456a"
+        rm.get(
+            "https://foo.com/api/v1/project/starwhale/model/mnist",
+            json={
+                "data": {
+                    "versionId": "100",
+                    "name": "mnist",
+                    "versionName": "123456a",
+                }
+            },
+        )
+        tag_url = (
+            "https://foo.com/api/v1/project/starwhale/model/mnist/version/123456a/tag"
+        )
+        add_tag_request = rm.post(tag_url)
+        ModelTermView(uri).tag(tags=["t1", "t2"], force_add=True)
+        assert add_tag_request.call_count == 2
+        assert add_tag_request.last_request.text == "force=True&tag=t2"
+
+        error_message = "failed to add tags"
+        add_tag_request = rm.post(
+            tag_url,
+            json={"data": "failed", "code": 500, "message": error_message},
+            status_code=500,
+        )
+        ModelTermView(uri).tag(tags=["t1"], ignore_errors=True, force_add=False)
+        assert add_tag_request.call_count == 1
+
+        with self.assertRaisesRegex(RuntimeError, error_message):
+            ModelTermView(uri).tag(tags=["t1"], ignore_errors=False, force_add=False)
+
+        remove_tag_request = rm.delete(f"{tag_url}/t1")
+        ModelTermView(uri).tag(tags=["t1"], remove=True)
+        assert remove_tag_request.call_count == 1
+
+        remove_tag_request = rm.delete(
+            f"{tag_url}/t1",
+            status_code=500,
+            json={"data": "failed", "code": 500, "message": error_message},
+        )
+        ModelTermView(uri).tag(tags=["t1"], ignore_errors=True, remove=True)
+        assert remove_tag_request.call_count == 1
+        with self.assertRaisesRegex(RuntimeError, error_message):
+            ModelTermView(uri).tag(tags=["t1"], ignore_errors=False, remove=True)
+
+        list_tag_request = rm.get(tag_url, json={"data": ["t1", "t2"]})
+        ModelTermView(uri).tag(tags=[])
+        assert list_tag_request.call_count == 1
+
+    @Mocker()
+    def test_run(self, rm: Mocker) -> None:
         rm.get(
             "https://foo.com/api/v1/project/starwhale/model/mnist",
             json={

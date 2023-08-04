@@ -79,9 +79,12 @@ class StandaloneTag:
         tags: t.List[str],
         ignore_errors: bool = False,
         manifest: t.Optional[t.Dict] = None,
+        force: bool = False,
     ) -> None:
         _manifest = manifest or self._get_manifest()
         _version = self.uri.version
+
+        # TODO: support to force add tag for the used by the other version, current skip the used validation for the Standalone instance.
 
         if not _version and not ignore_errors:
             raise MissingFieldError(f"uri version, {self.uri}")

@@ -595,7 +595,7 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
     RuntimeTermView.copy(src, dest, force, dest_local_project)
 
 
-@runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
+@runtime_cmd.command("tag")
 @click.argument("runtime")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -605,8 +605,39 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
-    RuntimeTermView(runtime).tag(tags, remove, quiet)
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
+def _tag(
+    runtime: str, tags: t.List[str], remove: bool, quiet: bool, force_add: bool
+) -> None:
+    """Runtime tag management: add, remove and list
+
+    RUNTIME: argument use the `Runtime URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the pytorch runtime
+        swcli runtime tag pytorch
+
+        \b
+        - add tags for the pytorch runtime
+        swcli runtime tag mnist -t t1 -t t2
+        swcli runtime tag cloud://cloud.starwhale.cn/project/public:starwhale/runtime/pytorch/version/latest -t t1 --force-add
+        swcli runtime tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the pytorch runtime
+        swcli runtime tag mnist -r -t t1 -t t2
+        swcli runtime tag cloud://cloud.starwhale.cn/project/public:starwhale/runtime/pytorch --remove -t t1
+    """
+    RuntimeTermView(runtime).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @runtime_cmd.command(

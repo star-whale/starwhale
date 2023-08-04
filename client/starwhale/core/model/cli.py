@@ -165,7 +165,7 @@ def _extract(model: str, target_dir: str, force: bool) -> None:
     ModelTermView(model).extract(target=Path(target_dir), force=force)
 
 
-@model_cmd.command("tag", help="Model Tag Management, add or remove")
+@model_cmd.command("tag")
 @click.argument("model")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -175,8 +175,39 @@ def _extract(model: str, target_dir: str, force: bool) -> None:
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
-    ModelTermView(model).tag(tags, remove, quiet)
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
+def _tag(
+    model: str, tags: t.List[str], remove: bool, quiet: bool, force_add: bool
+) -> None:
+    """Model tag management: add, remove and list
+
+    MODEL: argument use the `Model URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the mnist model
+        swcli model tag mnist
+
+        \b
+        - add tags for the mnist model
+        swcli model tag mnist -t t1 -t t2
+        swcli model tag cloud://cloud.starwhale.cn/project/public:starwhale/model/mnist/version/latest -t t1 --force-add
+        swcli model tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the mnist model
+        swcli model tag mnist -r -t t1 -t t2
+        swcli model tag cloud://cloud.starwhale.cn/project/public:starwhale/model/mnist --remove -t t1
+    """
+    ModelTermView(model).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @model_cmd.command("copy", aliases=["cp"])

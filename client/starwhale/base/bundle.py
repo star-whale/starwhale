@@ -58,7 +58,9 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = True
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod

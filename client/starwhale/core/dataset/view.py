@@ -10,7 +10,7 @@ from rich.pretty import Pretty
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
 from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
-from starwhale.base.view import BaseTermView
+from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Text, DatasetConfig
@@ -19,7 +19,7 @@ from starwhale.core.runtime.process import Process as RuntimeProcess
 from .model import Dataset
 
 
-class DatasetTermView(BaseTermView):
+class DatasetTermView(BaseTermView, TagViewMixin):
     def __init__(self, dataset_uri: str | Resource) -> None:
         super().__init__()
 
@@ -291,17 +291,6 @@ class DatasetTermView(BaseTermView):
             force=force,
         )
         console.print(":clap: copy done")
-
-    @BaseTermView._header
-    def tag(
-        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
-    ) -> None:
-        if remove:
-            console.print(f":golfer: remove tags {tags} @ {self.uri}...")
-            self.dataset.remove_tags(tags, ignore_errors)
-        else:
-            console.print(f":surfer: add tags {tags} @ {self.uri}...")
-            self.dataset.add_tags(tags, ignore_errors)
 
     @BaseTermView._header
     def head(
