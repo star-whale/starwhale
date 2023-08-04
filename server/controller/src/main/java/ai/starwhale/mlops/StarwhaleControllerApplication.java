@@ -25,7 +25,9 @@ import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.event.ApplicationFailedEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
@@ -37,6 +39,20 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class StarwhaleControllerApplication {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder(StarwhaleControllerApplication.class).run(args);
+        SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(
+                StarwhaleControllerApplication.class);
+        springApplicationBuilder.application().addListeners(new FailFast());
+        springApplicationBuilder.run(args);
+    }
+
+    /**
+     * sometimes JVM won't exit even the spring context is initialized with error
+     */
+    static class FailFast implements ApplicationListener<ApplicationFailedEvent> {
+
+        @Override
+        public void onApplicationEvent(ApplicationFailedEvent event) {
+            System.exit(1);
+        }
     }
 }

@@ -1,3 +1,5 @@
 services:
   controller:
-    image: ghcr.io/star-whale/server:0.2.0-beta.20
+    image: docker-registry.starwhale.cn/starwhaleai/server:latest
+  minikube:
+    entrypoint: ["bash","-c","minikube start --force --driver='docker' --image-mirror-country='cn' && tail -F /dev/null"]
