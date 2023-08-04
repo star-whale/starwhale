@@ -1,18 +1,16 @@
 import sys
 import typing as t
-from http import HTTPStatus
 
-import requests
 from rich import box
 from rich.panel import Panel
 from rich.table import Table
 
-from starwhale.utils import console, fmt_http_server
-from starwhale.consts import HTTPMethod, UserRoleType, STANDALONE_INSTANCE
+from starwhale.utils import console
+from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.base.view import BaseTermView
 from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.base.uri.instance import Instance
+from starwhale.api._impl.instance import login, logout
 
 DEFAULT_HTTP_TIMEOUT = 90
 
@@ -37,65 +35,28 @@ class InstanceTermView(BaseTermView, CloudRequestMixed):
             console.print(f":pinching_hand: skip {instance} instance login")
             return
 
-        instance = instance or self.sw_remote_addr
-        server = fmt_http_server(instance)
-        if kw.get("token"):
-            r = self._login_request_by_token(server, kw["token"])
-        else:
-            r = self._login_request_by_username(server, kw)
-
-        if r.status_code == HTTPStatus.OK:
-            console.print(f":man_cook: login {server} successfully!")
-            token = r.headers.get("Authorization") or kw.get("token")
-            if not token:
-                console.print("cannot get token, please contract starwhale")
-                sys.exit(1)
-
-            _d = r.json()["data"]
-            _role = _d.get("role", {}).get("roleName") if isinstance(_d, dict) else None
-
-            self.update_instance(
-                uri=server,
-                user_name=_d.get("name", ""),
-                user_role=_role or UserRoleType.NORMAL,
-                sw_token=token,
-                alias=alias,
+        try:
+            login(instance, alias, **kw)
+            console.print(f":man_cook: login {instance} successfully!")
+        except Exception as e:
+            console.exception(
+                f":person_shrugging: failed to login {instance}, reason: {e}"
             )
-        else:
-            wrap_sw_error_resp(r, "login failed!", exit=True)
+            sys.exit(1)
 
-    def _login_request_by_token(self, server: str, token: str) -> requests.Response:
-        return self.do_http_request(  # type: ignore[no-any-return]
-            path="/user/current",
-            instance=Instance(uri=server, token=token),
-            method=HTTPMethod.GET,
-            timeout=DEFAULT_HTTP_TIMEOUT,
-        )
-
-    def _login_request_by_username(
-        self, server: str, auth_request: t.Dict[str, str]
-    ) -> requests.Response:
-        return self.do_http_request(  # type: ignore[no-any-return]
-            path="/login",
-            instance=server,
-            method=HTTPMethod.POST,
-            timeout=DEFAULT_HTTP_TIMEOUT,
-            disable_default_content_type=True,
-            data={
-                "userName": auth_request["username"],
-                "userPwd": auth_request["password"],
-            },
-        )
-
-    def logout(self, instance: str = "") -> None:
-        # TODO: do real logout request
-        instance = instance or self.current_instance
-
+    def logout(self, instance: str) -> None:
         if instance == STANDALONE_INSTANCE:
             console.print(f":pinching_hand: skip {instance} instance logout")
             return
-        self.delete_instance(instance)
-        console.print(":wink: bye.")
+
+        try:
+            logout(instance)
+            console.print(":wink: bye.")
+        except Exception as e:
+            console.exception(
+                f":person_shrugging: failed to logout {instance}, reason: {e}"
+            )
+            sys.exit(1)
 
     def info(self, uri: str = "") -> t.Dict:
         instance = Instance(uri or self.current_instance)
