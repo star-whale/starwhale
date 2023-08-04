@@ -19,9 +19,8 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
-import ai.starwhale.mlops.schedule.log.TaskLogCollector;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
-import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +44,7 @@ public class TaskLogWsServer {
 
     private static IdConverter idConvertor;
 
-    final private TaskLogCollector taskLogCollector;
+    final private TaskLogCollectorFactory taskLogCollectorFactory;
 
     private Session session;
 
@@ -55,8 +54,8 @@ public class TaskLogWsServer {
 
     private TaskLogStreamingCollector logCollector;
 
-    public TaskLogWsServer(TaskLogCollector taskLogCollector) {
-        this.taskLogCollector = taskLogCollector;
+    public TaskLogWsServer(TaskLogCollectorFactory taskLogCollectorFactory) {
+        this.taskLogCollectorFactory = taskLogCollectorFactory;
     }
 
 
@@ -72,7 +71,7 @@ public class TaskLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
         try {
-            logCollector = taskLogCollector.streaming(Task.builder().id(id).build());
+            logCollector = taskLogCollectorFactory.streamingCollector(Task.builder().id(id).build());
         } catch (StarwhaleException e) {
             log.error("make k8s log collector failed", e);
         }

@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.schedule.impl.docker;
 
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import com.github.dockerjava.api.DockerClient;
 
-import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
+public interface DockerClientFinder {
 
-/**
- * This interface produces a family of objects that are sufficient to implement the scheduler function
- */
-public interface SwSchedulerAbstractFactory {
-
-    SwTaskScheduler buildSwTaskScheduler();
-
-    TaskLogCollectorFactory buildTaskLogCollectorFactory();
-
-
+    /**
+     * given a specific resourcePool find a unique DockerClient
+     * The DockerClient must be consistent among different calls
+     * @param resourcePool
+     * @return
+     */
+    DockerClient findProperDockerClient(ResourcePool resourcePool);
 
 }

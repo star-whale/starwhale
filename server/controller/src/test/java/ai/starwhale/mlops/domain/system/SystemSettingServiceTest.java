@@ -148,7 +148,7 @@ public class SystemSettingServiceTest {
                 systemSettingService.getSystemSetting().getDockerSetting().getPassword());
         Assertions.assertFalse(systemSettingService.getSystemSetting().getDockerSetting().isInsecure());
         // get the custom resource pool
-        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(1, systemSettingService.getResourcePoolsFromWeb().size());
         Assertions.assertEquals(3, systemSettingService.queryResourcePool("custom").getResources().size());
         // get the default resource pool
         Assertions.assertEquals(ResourcePool.defaults(), systemSettingService.queryResourcePool("not_exists"));
@@ -264,12 +264,12 @@ public class SystemSettingServiceTest {
     @Test
     public void testUpdateResourcePools() {
         systemSettingService.updateSetting(YAML2);
-        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(1, systemSettingService.getResourcePoolsFromWeb().size());
         verify(listener).onUpdate(systemSettingService.getSystemSetting());
 
         var pool = ResourcePool.builder().name("foo").metadata(Map.of("bar", "baz")).build();
         systemSettingService.updateResourcePools(List.of(pool));
-        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(1, systemSettingService.getResourcePoolsFromWeb().size());
         Assertions.assertEquals(pool, systemSettingService.queryResourcePool("foo"));
         verify(listener, times(2)).onUpdate(systemSettingService.getSystemSetting());
     }
@@ -279,12 +279,12 @@ public class SystemSettingServiceTest {
         // private pool should not be visible to any users
         var pool = ResourcePool.builder().name("foo").isPrivate(true).build();
         systemSettingService.updateResourcePools(List.of(pool));
-        Assertions.assertEquals(0, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(0, systemSettingService.getResourcePoolsFromWeb().size());
 
         // update pool to be visible to user 2
         pool.setVisibleUserIds(List.of(2L));
         systemSettingService.updateResourcePools(List.of(pool));
-        Assertions.assertEquals(1, systemSettingService.getResourcePools().size());
+        Assertions.assertEquals(1, systemSettingService.getResourcePoolsFromWeb().size());
         Assertions.assertEquals(pool, systemSettingService.queryResourcePool("foo"));
 
         // get the rendered yaml, should contain visibleUserIds

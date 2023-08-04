@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
@@ -29,6 +26,7 @@ import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.json.JSONUtil;
@@ -48,22 +46,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 public class K8SSwTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
-    final RunTimeProperties runTimeProperties;
-
-    final TaskTokenValidator taskTokenValidator;
-
     final K8sJobTemplate k8sJobTemplate;
 
-    final String instanceUri;
-    final int devPort;
-    final int datasetLoadBatchSize;
+    final TaskRunningEnvBuilder taskRunningEnvBuilder;
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
@@ -71,25 +62,17 @@ public class K8SSwTaskScheduler implements SwTaskScheduler {
 
     public K8SSwTaskScheduler(
             K8sClient k8sClient,
-            TaskTokenValidator taskTokenValidator,
-            RunTimeProperties runTimeProperties,
             K8sJobTemplate k8sJobTemplate,
-            String instanceUri,
-            int devPort,
-            int datasetLoadBatchSize,
+            TaskRunningEnvBuilder taskRunningEnvBuilder,
             String restartPolicy,
             Integer backoffLimit,
             StorageAccessService storageAccessService,
             ThreadPoolTaskScheduler cmdExecThreadPool
     ) {
         this.k8sClient = k8sClient;
-        this.taskTokenValidator = taskTokenValidator;
-        this.runTimeProperties = runTimeProperties;
         this.k8sJobTemplate = k8sJobTemplate;
-        this.instanceUri = instanceUri;
-        this.devPort = devPort;
+        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
         this.storageAccessService = storageAccessService;
-        this.datasetLoadBatchSize = datasetLoadBatchSize;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
         this.cmdExecThreadPool = cmdExecThreadPool;
@@ -127,13 +110,6 @@ public class K8SSwTaskScheduler implements SwTaskScheduler {
             throw new SwProcessException(ErrorType.K8S, "exec command failed: " + e.getResponseBody(), e);
         }
     }
-
-    /**
-     * {instance}/project/{projectName}/dataset/{datasetName}/version/{version}
-     */
-    static final String FORMATTER_URI_ARTIFACT = "%s/project/%s/%s/%s/version/%s";
-
-    static final String FORMATTER_VERSION_ARTIFACT = "%s/version/%s";
 
     static final String ANNOTATION_KEY_JOB_ID = "starwhale.ai/job-id";
     static final String ANNOTATION_KEY_TASK_ID = "starwhale.ai/task-id";
@@ -238,85 +214,7 @@ public class K8SSwTaskScheduler implements SwTaskScheduler {
 
     @NotNull
     private List<V1EnvVar> buildCoreContainerEnvs(Task task) {
-        Job swJob = task.getStep().getJob();
-        var model = swJob.getModel();
-        var runtime = swJob.getJobRuntime();
-        Map<String, String> coreContainerEnvs = new HashMap<>();
-        var taskEnv = task.getTaskRequest().getEnv();
-        if (!CollectionUtils.isEmpty(taskEnv)) {
-            taskEnv.forEach(env -> coreContainerEnvs.put(env.getName(), env.getValue()));
-        }
-        coreContainerEnvs.put("SW_RUNTIME_PYTHON_VERSION", runtime.getManifest().getEnvironment().getPython());
-        coreContainerEnvs.put("SW_VERSION", runtime.getManifest().getEnvironment().getLock().getSwVersion());
-        coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
-        coreContainerEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", String.valueOf(datasetLoadBatchSize));
-        // support multi dataset uris
-        coreContainerEnvs.put("SW_DATASET_URI",
-                swJob.getDataSets().stream()
-                    .map(dataSet -> String.format(
-                                FORMATTER_URI_ARTIFACT,
-                                instanceUri,
-                                dataSet.getProjectId(),
-                                "dataset",
-                                dataSet.getName(),
-                                dataSet.getVersion())
-                    ).collect(Collectors.joining(" ")));
-        coreContainerEnvs.put("SW_MODEL_URI",
-                String.format(
-                        FORMATTER_URI_ARTIFACT,
-                        instanceUri,
-                        model.getProjectId(),
-                        "model",
-                        model.getName(),
-                        model.getVersion()));
-        coreContainerEnvs.put("SW_RUNTIME_URI",
-                String.format(
-                        FORMATTER_URI_ARTIFACT,
-                        instanceUri,
-                        runtime.getProjectId(),
-                        "runtime",
-                        runtime.getName(),
-                        runtime.getVersion()));
-        coreContainerEnvs.put("SW_MODEL_VERSION",
-                String.format(FORMATTER_VERSION_ARTIFACT,
-                        model.getName(), model.getVersion()));
-        coreContainerEnvs.put("SW_RUNTIME_VERSION",
-                String.format(FORMATTER_VERSION_ARTIFACT,
-                        runtime.getName(), runtime.getVersion()));
-        coreContainerEnvs.put("SW_RUN_HANDLER", task.getTaskRequest().getJobName());
-        coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
-        coreContainerEnvs.put("SW_TASK_NUM", String.valueOf(task.getTaskRequest().getTotal()));
-        coreContainerEnvs.put("SW_JOB_VERSION", swJob.getUuid());
-
-        // datastore env
-        coreContainerEnvs.put("SW_TOKEN", taskTokenValidator.getTaskToken(swJob.getOwner(), task.getId()));
-        coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
-        coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
-        coreContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
-        coreContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
-        coreContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
-        coreContainerEnvs.put("SW_PYPI_TIMEOUT", String.valueOf(runTimeProperties.getPypi().getTimeout()));
-        coreContainerEnvs.put("SW_PYPI_RETRIES", String.valueOf(runTimeProperties.getPypi().getRetries()));
-        if (StringUtils.hasText(runTimeProperties.getCondarc())) {
-            coreContainerEnvs.put("SW_CONDA_CONFIG", runTimeProperties.getCondarc());
-        }
-
-        // GPU resource
-        var resources = getPatchedResources(task).stream();
-        var gpu = resources.anyMatch(r -> r.getType().equals(ResourceOverwriteSpec.RESOURCE_GPU) && r.getRequest() > 0);
-        // overwrite visible devices to none
-        if (!gpu) {
-            // https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration
-            coreContainerEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
-        }
-
-        if (swJob.isDevMode()) {
-            coreContainerEnvs.put("SW_DEV_TOKEN", swJob.getDevPassword());
-            coreContainerEnvs.put("SW_DEV_PORT", String.valueOf(devPort));
-        }
-
-        var envs = mapToEnv(coreContainerEnvs);
-
+        var envs = mapToEnv(taskRunningEnvBuilder.buildCoreContainerEnvs(task));
         envs.add(
                 new V1EnvVar()
                         .name("SW_POD_NAME")

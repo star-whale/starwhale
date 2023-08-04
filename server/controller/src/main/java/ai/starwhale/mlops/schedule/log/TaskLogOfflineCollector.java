@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule;
+package ai.starwhale.mlops.schedule.log;
 
+import io.vavr.Tuple2;
 
-import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
+public interface TaskLogOfflineCollector {
 
-/**
- * This interface produces a family of objects that are sufficient to implement the scheduler function
- */
-public interface SwSchedulerAbstractFactory {
-
-    SwTaskScheduler buildSwTaskScheduler();
-
-    TaskLogCollectorFactory buildTaskLogCollectorFactory();
-
-
+    Tuple2<String,String> collect();
 
 }

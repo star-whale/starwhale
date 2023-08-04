@@ -32,19 +32,19 @@ import org.springframework.util.StringUtils;
 @Service
 public class TaskLogSaver {
 
-    final TaskLogCollector logCollector;
+    final TaskLogCollectorFactory taskLogCollectorFactory;
 
     final StorageAccessService storageService;
 
-    public TaskLogSaver(TaskLogCollector logCollector, StorageAccessService storageService) {
-        this.logCollector = logCollector;
+    public TaskLogSaver(TaskLogCollectorFactory taskLogCollectorFactory, StorageAccessService storageService) {
+        this.taskLogCollectorFactory = taskLogCollectorFactory;
         this.storageService = storageService;
     }
 
     public void saveLog(Task task) throws StarwhaleException {
         log.debug("logging for task {} begins...", task.getId());
         try {
-            Tuple2<String,String> logInfo = logCollector.collect(task);
+            Tuple2<String,String> logInfo = taskLogCollectorFactory.offlineCollector(task).collect();
             String taskLog = logInfo._2();
             log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");

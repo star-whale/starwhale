@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -29,7 +29,8 @@ import ai.starwhale.mlops.domain.dataset.build.log.BuildLogCollector;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogSaver;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.schedule.impl.k8s.reporting.PodEventHandler;
@@ -51,7 +52,7 @@ public class PodEventHandlerTest {
 
     PodEventHandler podEventHandler;
 
-    TaskLogK8sCollector taskLogK8sCollector;
+    TaskLogSaver taskLogSaver;
     BuildLogCollector buildLogCollector;
     TaskReportReceiver taskReportReceiver;
 
@@ -62,11 +63,11 @@ public class PodEventHandlerTest {
     @BeforeEach
     public void setup() {
         hotJobHolder = mock(HotJobHolder.class);
-        taskLogK8sCollector = mock(TaskLogK8sCollector.class);
+        taskLogSaver = mock(TaskLogSaver.class);
         buildLogCollector = mock(BuildLogCollector.class);
         taskReportReceiver = mock(TaskReportReceiver.class);
         podEventHandler = new PodEventHandler(
-                taskLogK8sCollector, buildLogCollector, taskReportReceiver, hotJobHolder, mock(DatasetService.class));
+                taskLogSaver, buildLogCollector, taskReportReceiver, hotJobHolder, mock(DatasetService.class));
         v1Pod = new V1Pod()
                 .metadata(new V1ObjectMeta()
                         .labels(Map.of("job-name", "3", "job-type", "eval")).name("3-xxx"))
@@ -82,7 +83,7 @@ public class PodEventHandlerTest {
         Task task = mock(Task.class);
         when(hotJobHolder.tasksOfIds(List.of(3L))).thenReturn(List.of(task));
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogK8sCollector).collect(task);
+        verify(taskLogSaver).saveLog(task);
     }
 
     @Test
@@ -91,7 +92,7 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().phase("Pending");
         v1Pod.getStatus().podIP("127.0.0.1");
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogK8sCollector, times(0)).collect(any());
+        verify(taskLogSaver, times(0)).saveLog(any());
         verify(taskReportReceiver, times(1)).receive(any());
         verify(taskReportReceiver).receive(argThat(tasks ->
                 tasks.size() == 1
@@ -104,7 +105,7 @@ public class PodEventHandlerTest {
     public void testTaskNotFound() {
         when(hotJobHolder.tasksOfIds(List.of(3L))).thenReturn(List.of());
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogK8sCollector, times(0)).collect(any());
+        verify(taskLogSaver, times(0)).saveLog(any());
     }
 
     @Test
@@ -113,7 +114,7 @@ public class PodEventHandlerTest {
         v1Pod.getStatus().phase("Pending");
         v1Pod.getStatus().conditions(List.of(new V1PodCondition().status("True").type("PodScheduled")));
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogK8sCollector, times(0)).collect(any());
+        verify(taskLogSaver, times(0)).saveLog(any());
         var expect = ReportedTask.builder()
                 .id(3L)
                 .status(TaskStatus.PREPARING)
@@ -126,7 +127,7 @@ public class PodEventHandlerTest {
         v1Pod.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
         v1Pod.getStatus().setPhase("Running");
         podEventHandler.onUpdate(null, v1Pod);
-        verify(taskLogK8sCollector, never()).collect(any());
+        verify(taskLogSaver, never()).saveLog(any());
         verify(taskReportReceiver, never()).receive(any());
     }
 }

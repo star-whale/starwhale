@@ -33,7 +33,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Builder
 @Getter
 public class Task extends TimeConcern {
 

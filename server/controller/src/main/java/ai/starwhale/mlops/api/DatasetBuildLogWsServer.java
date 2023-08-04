@@ -43,7 +43,7 @@ public class DatasetBuildLogWsServer {
 
     private static IdConverter idConvertor;
 
-    private static CancellableJobLogK8sCollectorFactory logCollectorFactory;
+    private CancellableJobLogK8sCollectorFactory logCollectorFactory;
 
     private Session session;
 
@@ -61,7 +61,7 @@ public class DatasetBuildLogWsServer {
 
     @Autowired
     public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
-        DatasetBuildLogWsServer.logCollectorFactory = factory;
+        this.logCollectorFactory = factory;
     }
 
     @OnOpen

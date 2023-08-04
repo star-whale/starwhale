@@ -24,9 +24,11 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeSpec;
 import io.kubernetes.client.openapi.models.V1NodeStatus;
 import java.math.BigDecimal;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
 public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     final AgentCache agentCache;

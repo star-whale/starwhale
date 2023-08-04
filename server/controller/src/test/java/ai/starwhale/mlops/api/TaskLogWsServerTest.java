@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SStreamingCollector;
 import ai.starwhale.mlops.schedule.impl.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -47,9 +48,8 @@ public class TaskLogWsServerTest {
 
     @Test
     public void testOpen() throws IOException, ApiException, InterruptedException {
-        var server = new TaskLogWsServer(taskLogCollector);
+        var server = new TaskLogWsServer(mock(TaskLogCollectorFactory.class));
         server.setIdConvertor(idConvertor);
-        server.setLogCollectorFactory(factory);
 
         final Long taskId = 1L;
         when(factory.make(taskId.toString())).thenReturn(logK8sCollector);

@@ -18,9 +18,8 @@ package ai.starwhale.mlops.schedule.log;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
-import io.vavr.Tuple2;
 
-public interface TaskLogCollector {
+public interface TaskLogCollectorFactory {
 
     /**
      * collect the whole log of a task with the name of the execution
@@ -28,7 +27,7 @@ public interface TaskLogCollector {
      * @return name of the execution, log content
      * @throws StarwhaleException
      */
-    Tuple2<String,String> collect(Task task) throws StarwhaleException;
+    TaskLogOfflineCollector offlineCollector(Task task) throws StarwhaleException;
 
     /**
      * return a streaming task log reader which could be closed at anytime
@@ -36,6 +35,6 @@ public interface TaskLogCollector {
      * @return
      * @throws StarwhaleException
      */
-    TaskLogStreamingCollector streaming(Task task) throws StarwhaleException;
+    TaskLogStreamingCollector streamingCollector(Task task) throws StarwhaleException;
 
 }

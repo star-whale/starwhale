@@ -25,34 +25,33 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.schedule.log.TaskLogOfflineCollector;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TaskLogK8sCollectorTest {
-
-    StorageAccessService storageService;
+public class TaskLogK8sCollectorFactoryTest {
 
     K8sClient k8sClient;
 
     K8sJobTemplate k8sJobTemplate;
 
-    TaskLogK8sCollector taskLogK8sCollector;
+    TaskLogK8SCollectorFactory taskLogK8sCollector;
 
     @BeforeEach
     public void setup() {
-        storageService = mock(StorageAccessService.class);
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
-        taskLogK8sCollector = new TaskLogK8sCollector(storageService, k8sClient, k8sJobTemplate);
+        taskLogK8sCollector = new TaskLogK8SCollectorFactory(k8sClient, k8sJobTemplate);
     }
 
     @Test
@@ -61,8 +60,8 @@ public class TaskLogK8sCollectorTest {
         V1Pod v1Pod = new V1Pod().metadata(new V1ObjectMeta().name("x"));
         when(k8sClient.podOfJob(anyString())).thenReturn(v1Pod);
         when(k8sClient.logOfPod(eq(v1Pod), anyList())).thenReturn(log);
-        taskLogK8sCollector.collect(Task.builder().id(1L).resultRootPath(new ResultPath("root")).build());
-        verify(storageService).put(anyString(), eq(log.getBytes(StandardCharsets.UTF_8)));
+        Assertions.assertInstanceOf(TaskLogOfflineCollector.class, taskLogK8sCollector.offlineCollector(new Task()));
+        Assertions.assertInstanceOf(TaskLogStreamingCollector.class, taskLogK8sCollector.streamingCollector(new Task()));
 
     }
 

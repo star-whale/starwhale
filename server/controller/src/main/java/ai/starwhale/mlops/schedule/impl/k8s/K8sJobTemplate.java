@@ -51,7 +51,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Component
-@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
+//@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s") TODO add this line when ds building/ model serving/ runtime building are decoupled from k8s
 public class K8sJobTemplate {
 
     public static final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");

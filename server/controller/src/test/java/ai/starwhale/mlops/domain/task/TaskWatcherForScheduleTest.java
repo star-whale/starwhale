@@ -28,6 +28,8 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.log.TaskLogSaver;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,10 @@ import org.junit.jupiter.api.Test;
 public class TaskWatcherForScheduleTest {
 
     final TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
+
+    TaskLogSaver taskLogSaver = mock(TaskLogSaver.class);
+
+    TaskReportReceiver taskReportReceiver = mock(TaskReportReceiver.class);
 
     @Test
     public void testChangeAdopt() {
@@ -52,7 +58,7 @@ public class TaskWatcherForScheduleTest {
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
-        verify(swTaskScheduler).schedule(List.of(task));
+        verify(swTaskScheduler).schedule(List.of(task), taskReportReceiver);
         verify(swTaskScheduler, times(0)).stop(List.of(task));
     }
 
@@ -73,7 +79,7 @@ public class TaskWatcherForScheduleTest {
         verify(swTaskScheduler).stop(List.of(task));
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
-        verify(swTaskScheduler, times(0)).schedule(List.of(task));
+        verify(swTaskScheduler, times(0)).schedule(List.of(task), taskReportReceiver);
         // canceled do not trigger schedule
         verify(swTaskScheduler).stop(List.of(task));
     }
@@ -118,7 +124,7 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.SUCCESS);
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
-        verify(swTaskScheduler, times(0)).schedule(List.of(task));
+        verify(swTaskScheduler, times(0)).schedule(List.of(task), taskReportReceiver);
         verify(swTaskScheduler, times(0)).stop(List.of(task));
     }
 
@@ -134,7 +140,7 @@ public class TaskWatcherForScheduleTest {
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().build()).build()).build())
                 .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.RUNNING);
-        verify(swTaskScheduler, times(0)).schedule(List.of(task));
+        verify(swTaskScheduler, times(0)).schedule(List.of(task), taskReportReceiver);
         verify(swTaskScheduler, times(1)).stop(List.of(task));
     }
 }

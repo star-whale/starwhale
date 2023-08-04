@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.schedule.k8s;
+package ai.starwhale.mlops.schedule.impl.k8s;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,13 +47,15 @@ import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.K8SSwTaskScheduler;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -78,46 +80,29 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 public class K8SSwTaskSchedulerTest {
 
-    static final String CONDARC = "channels:\n"
-            + "  - defaults\n"
-            + "show_channel_urls: true\n"
-            + "default_channels:\n"
-            + "  - http://nexus.starwhale.ai/repository/anaconda/main\n"
-            + "  - http://nexus.starwhale.ai/repository/anaconda/r\n"
-            + "  - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
-            + "custom_channels:\n"
-            + "  conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
-            + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
-            + "ssl_verify: false\n"
-            + "default_threads: 10";
+
 
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
         K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
-        scheduler.schedule(Set.of(mockTask(false)));
+        scheduler.schedule(Set.of(mockTask(false)),mock(TaskReportReceiver.class));
         verify(k8sClient).deployJob(any());
     }
 
     @NotNull
     private K8SSwTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
-        TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
-        when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
-        RunTimeProperties runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("indexU", "extraU", "trustedH", 1, 2), CONDARC);
+
+
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
         return new K8SSwTaskScheduler(k8sClient,
-                taskTokenValidator,
-                runTimeProperties,
                 new K8sJobTemplateMock(""),
-                "http://instanceUri",
-                 8000,
-                 50,
-                "OnFailure", 10,
+                mock(TaskRunningEnvBuilder.class),
+                "rp",
+                10,
                 storageAccessService,
-                mock(TaskLogK8sCollector.class),
                 mock(ThreadPoolTaskScheduler.class)
         );
     }
@@ -128,7 +113,7 @@ public class K8SSwTaskSchedulerTest {
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
         K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         Task task = mockTask(false);
-        scheduler.schedule(Set.of(task));
+        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
 
@@ -136,29 +121,22 @@ public class K8SSwTaskSchedulerTest {
     public void testRenderWithoutGpuResource() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8SSwTaskScheduler(
                 client,
-                mock(TaskTokenValidator.class),
-                runTimeProperties,
                 k8sJobTemplate,
-                "",
-                8000,
+                mock(TaskRunningEnvBuilder.class),
+                "rp",
                 50,
-                "OnFailure",
-                10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class),
                 mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(false);
-        scheduler.schedule(Set.of(task));
+        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         task.getTaskRequest()
                 .setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
-        scheduler.schedule(Set.of(task));
+        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
 
         verify(client, times(2)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
@@ -173,21 +151,14 @@ public class K8SSwTaskSchedulerTest {
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8SSwTaskScheduler(
                 client,
-                mock(TaskTokenValidator.class),
-                runTimeProperties,
                 k8sJobTemplate,
-                "",
-                8000,
+                mock(TaskRunningEnvBuilder.class),
+                "rp",
                 50,
-                "OnFailure",
-                10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class),
                 mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(false);
@@ -199,7 +170,7 @@ public class K8SSwTaskSchedulerTest {
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         // set no resource spec in task
         task.getTaskRequest().setRuntimeResources(List.of());
-        scheduler.schedule(Set.of(task));
+        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
 
         verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
@@ -214,25 +185,18 @@ public class K8SSwTaskSchedulerTest {
     public void testDevMode() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
-        var runTimeProperties = new RunTimeProperties(
-                "", new RunConfig(), new RunConfig(), new Pypi("", "", "", 1, 2), CONDARC);
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
         var scheduler = new K8SSwTaskScheduler(
                 client,
-                mock(TaskTokenValidator.class),
-                runTimeProperties,
                 k8sJobTemplate,
-                "",
-                8000,
+                mock(TaskRunningEnvBuilder.class),
+                "rp",
                 50,
-                "OnFailure",
-                10,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class),
                 mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(true);
-        scheduler.schedule(Set.of(task));
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
 
         verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
@@ -303,46 +267,6 @@ public class K8SSwTaskSchedulerTest {
             Assertions.assertEquals("imageRT", worker.getImage());
             Assertions.assertIterableEquals(Map.of("cpu", new Quantity("1000m")).entrySet(),
                     worker.getResourceOverwriteSpec().getResourceSelector().getRequests().entrySet());
-            Map<String, String> expectedEnvs = new HashMap<>() {
-            };
-            expectedEnvs.put("SW_RUNTIME_PYTHON_VERSION", "3.10");
-            expectedEnvs.put("SW_VERSION", "0.5.1");
-            expectedEnvs.put("SW_ENV", "test");
-            expectedEnvs.put("SW_PROJECT", "project");
-            expectedEnvs.put("DATASET_CONSUMPTION_BATCH_SIZE", "50");
-            expectedEnvs.put("SW_DATASET_URI", "http://instanceUri/project/103/dataset/swdsN/version/swdsV");
-            expectedEnvs.put("SW_MODEL_URI", "http://instanceUri/project/101/model/swmpN/version/swmpV");
-            expectedEnvs.put("SW_RUNTIME_URI", "http://instanceUri/project/102/runtime/swrtN/version/swrtV");
-            expectedEnvs.put("SW_MODEL_VERSION", "swmpN/version/swmpV");
-            expectedEnvs.put("SW_RUNTIME_VERSION", "swrtN/version/swrtV");
-            expectedEnvs.put("SW_TASK_INDEX", "1");
-            expectedEnvs.put("SW_TASK_NUM", "1");
-            expectedEnvs.put("SW_PYPI_INDEX_URL", "indexU");
-            expectedEnvs.put("SW_PYPI_EXTRA_INDEX_URL", "extraU");
-            expectedEnvs.put("SW_PYPI_TRUSTED_HOST", "trustedH");
-            expectedEnvs.put("SW_JOB_VERSION", "juuid");
-            expectedEnvs.put("SW_TOKEN", "tt");
-            expectedEnvs.put("SW_INSTANCE_URI", "http://instanceUri");
-            expectedEnvs.put("SW_TASK_STEP", "cmp");
-            expectedEnvs.put("NVIDIA_VISIBLE_DEVICES", "");
-            expectedEnvs.put("SW_PYPI_RETRIES", "1");
-            expectedEnvs.put("SW_PYPI_TIMEOUT", "2");
-            expectedEnvs.put("SW_CONDA_CONFIG", "channels:\n"
-                    + "  - defaults\n"
-                    + "show_channel_urls: true\n"
-                    + "default_channels:\n"
-                    + "  - http://nexus.starwhale.ai/repository/anaconda/main\n"
-                    + "  - http://nexus.starwhale.ai/repository/anaconda/r\n"
-                    + "  - http://nexus.starwhale.ai/repository/anaconda/msys2\n"
-                    + "custom_channels:\n"
-                    + "  conda-forge: http://nexus.starwhale.ai/repository/conda-cloud\n"
-                    + "  nvidia: http://nexus.starwhale.ai/repository/conda-cloud\n"
-                    + "ssl_verify: false\n"
-                    + "default_threads: 10");
-            Map<String, String> actualEnv = worker.getEnvs().stream()
-                    .filter(envVar -> envVar.getValue() != null)
-                    .collect(Collectors.toMap(V1EnvVar::getName, V1EnvVar::getValue));
-            assertMapEquals(expectedEnvs, actualEnv);
             return null;
         }
 
@@ -355,9 +279,6 @@ public class K8SSwTaskSchedulerTest {
     @Test
     public void testExec() throws ApiException, IOException, InterruptedException, ExecutionException {
         var client = mock(K8sClient.class);
-        var instanceUri = "";
-        var devPort = 8080;
-        var datasetLoadBatchSize = 10;
         var restartPolicy = "";
         var backoffLimit = 2;
 
@@ -366,16 +287,11 @@ public class K8SSwTaskSchedulerTest {
 
         var scheduler = new K8SSwTaskScheduler(
                 client,
-                mock(TaskTokenValidator.class),
-                mock(RunTimeProperties.class),
                 mock(K8sJobTemplate.class),
-                instanceUri,
-                devPort,
-                datasetLoadBatchSize,
+                mock(TaskRunningEnvBuilder.class),
                 restartPolicy,
                 backoffLimit,
                 mock(StorageAccessService.class),
-                mock(TaskLogK8sCollector.class),
                 threadPoolTaskScheduler
         );
 
@@ -403,33 +319,23 @@ public class K8SSwTaskSchedulerTest {
     @Test
     public void testStop() throws ApiException {
         var client = mock(K8sClient.class);
-        var instanceUri = "";
-        var devPort = 8080;
-        var datasetLoadBatchSize = 10;
         var restartPolicy = "";
         var backoffLimit = 2;
 
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
-        var taskLogK8sCollector = mock(TaskLogK8sCollector.class);
 
         var scheduler = new K8SSwTaskScheduler(
                 client,
-                mock(TaskTokenValidator.class),
-                mock(RunTimeProperties.class),
                 mock(K8sJobTemplate.class),
-                instanceUri,
-                devPort,
-                datasetLoadBatchSize,
+                mock(TaskRunningEnvBuilder.class),
                 restartPolicy,
                 backoffLimit,
                 mock(StorageAccessService.class),
-                taskLogK8sCollector,
                 threadPoolTaskScheduler
         );
 
         var task = Task.builder().id(7L).build();
-        doThrow(new SwProcessException(SwProcessException.ErrorType.K8S)).when(taskLogK8sCollector).collect(task);
         scheduler.stop(List.of(task));
         // make sure the job is deleted even if exception occurs when collecting logs
         verify(client).deleteJob("7");

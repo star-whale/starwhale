@@ -71,7 +71,7 @@ public class SystemService {
     }
 
     public List<ResourcePool> listResourcePools() {
-        return systemSettingService.getResourcePools();
+        return systemSettingService.getResourcePoolsFromWeb();
     }
 
     public void updateResourcePools(List<ResourcePool> resourcePools) {

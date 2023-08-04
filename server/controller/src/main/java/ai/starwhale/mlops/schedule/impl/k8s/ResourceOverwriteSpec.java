@@ -42,7 +42,7 @@ public class ResourceOverwriteSpec {
 
     public static final String RESOURCE_MEMORY = "memory";
 
-    static final String RESOURCE_GPU = "nvidia.com/gpu";
+    public static final String RESOURCE_GPU = "nvidia.com/gpu";
 
     public static Set<String> K8S_BUILTIN_RESOURCES = Set.of(RESOURCE_CPU, RESOURCE_MEMORY);
 

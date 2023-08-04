@@ -32,12 +32,14 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.Collection;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
 public class PodEventHandler implements ResourceEventHandler<V1Pod> {
 
     final TaskLogSaver taskLogSaver;

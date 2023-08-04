@@ -16,24 +16,60 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
+import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.schedule.SwSchedulerAbstractFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.log.TaskLogCollector;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.TaskReporter;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 
 @Configuration
 @ConditionalOnProperty(value = "sw.scheduler", havingValue = "docker")
 public class SwSchedulerFactoryDocker implements SwSchedulerAbstractFactory {
 
-    @Override
-    public SwTaskScheduler buildSwTaskScheduler(){
-        return null;
+    final DockerClientFinder dockerClientFinder;
+
+    final ContainerTaskMapper containerTaskMapper;
+
+    final TaskReporter taskReporter;
+
+    final ThreadPoolTaskScheduler cmdExecThreadPool;
+
+    final TaskRunningEnvBuilder taskRunningEnvBuilder;
+
+    final String network;
+
+    public SwSchedulerFactoryDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
+            TaskReporter taskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
+            TaskRunningEnvBuilder taskRunningEnvBuilder, @Value("${sw.infra.docker.network}") String network) {
+        this.dockerClientFinder = dockerClientFinder;
+        this.containerTaskMapper = containerTaskMapper;
+        this.taskReporter = taskReporter;
+        this.cmdExecThreadPool = cmdExecThreadPool;
+        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
+        this.network = network;
     }
 
+    @Bean
     @Override
-    public TaskLogCollector buildTaskLogCollector() {
-        return null;
+    public SwTaskScheduler buildSwTaskScheduler(){
+        return new SwTaskSchedulerDocker(dockerClientFinder, containerTaskMapper, taskReporter, cmdExecThreadPool, taskRunningEnvBuilder, network);
     }
+
+    @Bean
+    @Override
+    public TaskLogCollectorFactory buildTaskLogCollectorFactory() {
+        return new TaskLogCollectorFactoryDocker(dockerClientFinder, containerTaskMapper);
+    }
+
+
+
+
 }

@@ -16,12 +16,11 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.schedule.SwSchedulerAbstractFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollector;
-import ai.starwhale.mlops.schedule.log.TaskLogCollector;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
@@ -42,100 +41,51 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
 
     final K8sClient k8sClient;
 
-    final RunTimeProperties runTimeProperties;
-
-    final TaskTokenValidator taskTokenValidator;
-
     final K8sJobTemplate k8sJobTemplate;
 
-    final String instanceUri;
-    final int devPort;
-    final int datasetLoadBatchSize;
+    final TaskRunningEnvBuilder taskRunningEnvBuilder;
+
     final String restartPolicy;
     final int backoffLimit;
     final StorageAccessService storageAccessService;
-    final ThreadPoolTaskScheduler taskScheduler;
+    final ThreadPoolTaskScheduler cmdExecThreadPool;
 
-    final String ns;
-
-    public SwSchedulerFactoryK8S(K8sClient k8sClient, RunTimeProperties runTimeProperties,
-            TaskTokenValidator taskTokenValidator, K8sJobTemplate k8sJobTemplate,
-            @Value("${sw.instance-uri}") String instanceUri,
-            @Value("${sw.task.dev-port}") int devPort,
-            @Value("${sw.dataset.load.batch-size}") int datasetLoadBatchSize,
+    public SwSchedulerFactoryK8S(
+            K8sClient k8sClient,
+            K8sJobTemplate k8sJobTemplate,
+            TaskRunningEnvBuilder taskRunningEnvBuilder,
             @Value("${sw.infra.k8s.job.restart-policy}") String restartPolicy,
             @Value("${sw.infra.k8s.job.backoff-limit}") Integer backoffLimit,
-            @Value("${sw.infra.k8s.name-space}") String ns,
             StorageAccessService storageAccessService,
-            ThreadPoolTaskScheduler taskScheduler) {
+            ThreadPoolTaskScheduler cmdExecThreadPool
+    ) {
         this.k8sClient = k8sClient;
-        this.runTimeProperties = runTimeProperties;
-        this.taskTokenValidator = taskTokenValidator;
         this.k8sJobTemplate = k8sJobTemplate;
-        this.instanceUri = instanceUri;
-        this.devPort = devPort;
-        this.datasetLoadBatchSize = datasetLoadBatchSize;
+        this.taskRunningEnvBuilder = taskRunningEnvBuilder;
         this.restartPolicy = restartPolicy;
         this.backoffLimit = backoffLimit;
-        this.ns = ns;
         this.storageAccessService = storageAccessService;
-        this.taskScheduler = taskScheduler;
+        this.cmdExecThreadPool = cmdExecThreadPool;
     }
 
     @Bean
     @Override
     public SwTaskScheduler buildSwTaskScheduler() {
-        return new K8SSwTaskScheduler(k8sClient, taskTokenValidator, runTimeProperties, k8sJobTemplate, instanceUri,
-                devPort, datasetLoadBatchSize, restartPolicy, backoffLimit, storageAccessService, taskScheduler);
-    }
-
-    @Bean
-    @Override
-    public TaskLogCollector buildTaskLogCollector() {
-        return new TaskLogK8sCollector(k8sClient, k8sJobTemplate);
-    }
-
-    @Bean
-    public K8sClient k8sClient(ApiClient client,
-            CoreV1Api coreV1Api,
-            BatchV1Api batchV1Api,
-            AppsV1Api appsV1Api,
-            @Value("${sw.infra.k8s.name-space}") String ns,
-            SharedInformerFactory informerFactory) {
-        return new K8sClient(
-                client,
-                coreV1Api,
-                batchV1Api,
-                appsV1Api,
-                ns,
-                informerFactory
+        return new K8SSwTaskScheduler(
+                k8sClient,
+                k8sJobTemplate,
+                taskRunningEnvBuilder,
+                restartPolicy,
+                backoffLimit,
+                storageAccessService,
+                cmdExecThreadPool
         );
     }
 
     @Bean
-    public ApiClient apiClient() throws IOException {
-        ApiClient apiClient = Config.defaultClient();
-        io.kubernetes.client.openapi.Configuration.setDefaultApiClient(apiClient);
-        return apiClient;
+    @Override
+    public TaskLogCollectorFactory buildTaskLogCollectorFactory() {
+        return new TaskLogK8SCollectorFactory(k8sClient, k8sJobTemplate);
     }
 
-    @Bean
-    public CoreV1Api coreV1Api(ApiClient apiClient) {
-        return new CoreV1Api();
-    }
-
-    @Bean
-    public BatchV1Api batchV1Api(ApiClient apiClient) {
-        return new BatchV1Api();
-    }
-
-    @Bean
-    public AppsV1Api appsV1Api(ApiClient apiClient) {
-        return new AppsV1Api();
-    }
-
-    @Bean
-    public SharedInformerFactory sharedInformerFactory(ApiClient apiClient) {
-        return new SharedInformerFactory(apiClient);
-    }
 }

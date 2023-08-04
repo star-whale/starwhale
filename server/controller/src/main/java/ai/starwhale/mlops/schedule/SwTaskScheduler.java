@@ -29,9 +29,9 @@ public interface SwTaskScheduler {
 
 
     /**
-     * scheduler should maintain the tasks to be scheduled
      *
-     * @param tasks       tasks to be scheduled
+     * @param tasks
+     * @param taskReportReceiver
      */
     void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver);
 
