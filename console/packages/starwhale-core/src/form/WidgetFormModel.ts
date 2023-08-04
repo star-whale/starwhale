@@ -19,13 +19,13 @@ const PersistProperty = {
     description: true,
 }
 
-const DefaultFields = ['tableName', 'chartType', 'chartTitle']
+const DefaultFields = ['chartType', 'tableName', 'chartTitle']
 
 const PanelUISchema: UiSchema = {
     'tableName': {
         'ui:widget': 'SelectWidget',
     },
-    'ui:order': ['*', 'chartTitle'],
+    'ui:order': ['chartType', '*', 'chartTitle'],
     'ui:submitButtonOptions': {
         norender: true,
     },

@@ -1,10 +1,16 @@
 import { useRef } from 'react'
 import useDatastoreMixedSchema from './useDatastoreMixedSchema'
-import { useQueryDatastore } from './useFetchDatastore'
-import { QueryTableRequest } from '../schemas/datastore'
+import { useQueryDatastore, useScanDatastore } from './useFetchDatastore'
+import { QueryTableRequest, ScanTableRequest } from '../schemas/datastore'
 
-export function useFetchDatastoreByTable(recordQuery: QueryTableRequest, enabled = true) {
-    const recordInfo = useQueryDatastore(recordQuery, enabled)
+export function useCombine(options: any, enabled: boolean) {
+    const use = options && options.tables ? useScanDatastore : useQueryDatastore
+    const info = use(options, enabled && !!options)
+    return info
+}
+
+export function useFetchDatastoreByTable(recordQuery: QueryTableRequest | ScanTableRequest, enabled = true) {
+    const recordInfo = useCombine(recordQuery, enabled)
     const { records, columnTypes } = useDatastoreMixedSchema(recordInfo?.data)
 
     // cache columnTypes, especially when query changed, record fetch again, columnTypes will be reset

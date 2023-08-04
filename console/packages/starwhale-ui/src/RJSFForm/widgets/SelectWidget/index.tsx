@@ -1,6 +1,8 @@
 import React from 'react'
 import { WidgetProps } from '@rjsf/utils'
 import Select, { SIZE } from '../../../Select'
+import IconFont from '@starwhale/ui/IconFont'
+import { EndEnhancer } from '../../../DynamicSelector/StyledComponent'
 
 const SELECT_STYLE = {
     width: '100%',
@@ -79,9 +81,10 @@ const SelectWidget = ({
                             Root: {
                                 style: {
                                     color: 'rgba(2, 16, 43)',
-                                    backgroundColor: 'rgba(2, 16, 43, 0)',
+                                    backgroundColor: 'rgb(238, 241, 246)',
                                 },
                             },
+                            ActionIcon: () => <IconFont type='close' size={12} kind='gray' />,
                         },
                     },
                 },
