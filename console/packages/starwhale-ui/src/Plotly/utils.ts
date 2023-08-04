@@ -118,6 +118,48 @@ export function getRocAucConfig(
     return rocAucData
 }
 
+export function getBarChartConfig(
+    title = '',
+    labels: { x: string; y: string },
+    data: {
+        x: any[]
+        y: any[]
+    }
+) {
+    const { x, y } = data
+    const layout = {
+        ...Layout.init,
+        title,
+        xaxis: {
+            ...Layout.init.xaxis,
+            autotick: true,
+            title: labels.x,
+        },
+        yaxis: {
+            ...Layout.init.yaxis,
+            autotick: true,
+            title: labels.y,
+        },
+    }
+
+    const rocAucData = {
+        data: [
+            {
+                x,
+                y,
+                name: `label ${0}`,
+                type: 'bar',
+            },
+        ],
+        layout: {
+            barmode: 'group',
+            ...layout,
+        },
+    }
+    // console.log(rocAucData.data[0])
+    return rocAucData
+}
+
 export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
     const nums = labels.length
     let layout = {

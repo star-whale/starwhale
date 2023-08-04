@@ -64,8 +64,6 @@ const SelectWidget = ({
               }))
             : stringify(value)
 
-    // console.log(multiple, 'select')
-
     return (
         <Select
             multi={multiple}
@@ -73,6 +71,18 @@ const SelectWidget = ({
                 ControlContainer: {
                     style: {
                         ...SELECT_STYLE,
+                    },
+                },
+                Tag: {
+                    props: {
+                        overrides: {
+                            Root: {
+                                style: {
+                                    color: 'rgba(2, 16, 43)',
+                                    backgroundColor: 'rgba(2, 16, 43, 0)',
+                                },
+                            },
+                        },
                     },
                 },
             }}

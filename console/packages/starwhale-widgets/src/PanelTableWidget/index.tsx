@@ -11,7 +11,11 @@ export const CONFIG: WidgetConfig = {
     optionConfig: {},
     fieldConfig: {
         uiSchema: {},
-        schema: {},
+        schema: {
+            tableName: {
+                type: 'array',
+            },
+        },
     },
 }
 

@@ -3,5 +3,13 @@ import SectionWidget from '@starwhale/widgets/SectionWidget'
 import PanelTableWidget from '@starwhale/widgets/PanelTableWidget'
 import PanelRocAucWidget from '@starwhale/widgets/PanelRocAucWidget'
 import PanelHeatmapWidget from '@starwhale/widgets/PanelConfusionMatrixWidget'
+import PanelBarChartWidget from '@starwhale/widgets/PanelBarChartWidget'
 
-export default [DNDListWidget, SectionWidget, PanelTableWidget, PanelRocAucWidget, PanelHeatmapWidget]
+export default [
+    DNDListWidget,
+    SectionWidget,
+    PanelTableWidget,
+    PanelRocAucWidget,
+    PanelHeatmapWidget,
+    PanelBarChartWidget,
+]

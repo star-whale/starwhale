@@ -52,14 +52,14 @@ export default function WidgetFormModal({
         pageSize: PAGE_TABLE_SIZE,
     })
 
-    const { recordInfo, columnTypes } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
+    const { recordInfo, columnTypes, records } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {
-            records: recordInfo.data.records,
+            records,
             columnTypes,
         }
-    }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
+    }, [recordInfo.isSuccess, records, columnTypes])
 
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
