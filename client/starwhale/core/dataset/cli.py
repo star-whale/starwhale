@@ -125,6 +125,13 @@ def dataset_cmd(ctx: click.Context) -> None:
     "--volume-size",
     help="swds-bin format dataset: volume size",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="dataset tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+)
 @optgroup.option("-r", "--runtime", help="runtime uri")  # type: ignore[no-untyped-call]
 @optgroup.group("\n  ** Handler Build Source Configurations")
 @optgroup.option("-w", "--workdir", default=".", help="work dir to search handler, the option only works for the handler build source.")  # type: ignore[no-untyped-call]
@@ -201,6 +208,7 @@ def _build(
     hf_split: str,
     hf_revision: str,
     hf_cache: bool,
+    tags: t.List[str],
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -225,6 +233,7 @@ def _build(
         swcli dataset build  # build dataset from dataset.yaml in the current work directory(pwd)
         swcli dataset build --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, all the involved files are related to the dataset.yaml file.
         swcli dataset build --overwrite --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, and overwrite the existed dataset.
+        swcli dataset build --tag tag1 --tag tag2
 
         \b
         - from handler
@@ -280,6 +289,7 @@ def _build(
             alignment_size=alignment_size,
             auto_label=auto_label,
             mode=mode_type,
+            tags=tags,
         )
     elif json_file:
         json_file = json_file.strip().rstrip("/")
@@ -291,6 +301,7 @@ def _build(
             alignment_size=alignment_size,
             field_selector=field_selector,
             mode=mode_type,
+            tags=tags,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()
@@ -304,9 +315,10 @@ def _build(
                 "volume_size": volume_size,
                 "alignment_size": alignment_size,
             },
+            tags=tags,
         )
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type)
+        view.build(_workdir, config, mode=mode_type, tags=tags)
     elif hf_repo:
         _candidate_name = (f"{hf_repo}/{hf_subset or ''}").strip("/").replace("/", "-")
         view.build_from_huggingface(
@@ -320,6 +332,7 @@ def _build(
             revision=hf_revision,
             mode=mode_type,
             cache=hf_cache,
+            tags=tags,
         )
     else:
         yaml_path = Path(dataset_yaml)
@@ -338,7 +351,7 @@ def _build(
         config.runtime_uri = runtime or config.runtime_uri
         config.project_uri = project or config.project_uri
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type)
+        view.build(_workdir, config, mode=mode_type, tags=tags)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")

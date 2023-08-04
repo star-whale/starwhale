@@ -22,7 +22,7 @@ from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
 from starwhale.utils.fs import empty_dir, ensure_file
-from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.utils.error import FormatError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
@@ -937,6 +937,7 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         Dataset.from_json(
             "translation",
             '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+            tags=["t0"],
         )
         myds = dataset("translation").with_loader_config(
             field_transformer={"en": "en-us"}
@@ -960,7 +961,11 @@ class TestDatasetSDK(_DatasetSDKTestBase):
 
         dataset_name = "image-test"
         Dataset.from_folder(
-            folder=image_folder, name=dataset_name, kind="image", mode="overwrite"
+            folder=image_folder,
+            name=dataset_name,
+            kind="image",
+            mode="overwrite",
+            tags=["t0", "t1"],
         )
         ds = dataset(dataset_name)
         assert len(ds) == 1
@@ -1437,6 +1442,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_commit_with_tags(self) -> None:
         ds = dataset("mnist")
         ds.append({"label": 1})
+
+        with self.assertRaisesRegex(FormatError, "tag:latest is builtin"):
+            ds.commit(tags=["latest"])
+
+        with self.assertRaisesRegex(FormatError, "tag:v0 is auto-incremental"):
+            ds.commit(tags=["v0"])
+
         ds.commit(tags=["test1", "test2"])
         ds.close()
 
@@ -2080,7 +2092,9 @@ class TestHuggingface(_DatasetSDKTestBase):
         )
 
         m_load_dataset.return_value = hf_simple_ds
-        Dataset.from_huggingface(name="simple", repo="simple", split="train")
+        Dataset.from_huggingface(
+            name="simple", repo="simple", split="train", tags=["hf-0", "hf-1"]
+        )
         simple_ds = dataset("simple")
         assert len(simple_ds) == 2
         assert simple_ds["train/0"].features.int == 1

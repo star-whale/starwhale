@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import re
 import typing as t
 from pathlib import Path
 
@@ -147,3 +150,22 @@ class StandaloneTag:
             return load_yaml(_mf) or {}
         else:
             return {}
+
+    @staticmethod
+    def check_tags_validation(
+        tags: t.List[str] | None, forbid_builtin_tags: bool = True
+    ) -> None:
+        auto_incr_tag_re = re.compile(r"^v\d+$")
+        tags = tags or []
+        for _t in tags:
+            _t = _t.strip()
+            _ok, _reason = validate_obj_name(_t)
+            if not _ok:
+                raise FormatError(f"{_t}, reason:{_reason}")
+
+            if forbid_builtin_tags:
+                if _t == LATEST_TAG:
+                    raise FormatError(f"tag:{_t} is builtin, can not be used")
+
+                if auto_incr_tag_re.match(_t):
+                    raise FormatError(f"tag:{_t} is auto-incremental, can not be used")

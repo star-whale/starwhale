@@ -26,6 +26,7 @@ def build(
     desc: str = "",
     remote_project_uri: t.Optional[str] = None,
     add_all: bool = False,
+    tags: t.List[str] | None = None,
 ) -> None:
     """Build Starwhale Model Package.
 
@@ -44,6 +45,7 @@ def build(
         remote_project_uri: (str, optional) The destination project uri(cloud://remote-instance/project/starwhale) of the Starwhale Model Package
         add_all: (bool, optional) Add all files in the workdir to the Starwhale Model Package. If the argument is False, the python cache files and virtualenv files will be ignored.
             the ".swignore" file in the workdir will always take effect.
+        tags: (list(str), optional) The tags for the model version. `latest` and `^v\d+$` tags are reserved tags.
 
     Examples:
     ```python
@@ -117,6 +119,7 @@ def build(
                 name=name, run={"modules": list(search_modules_str)}, desc=desc
             ),
             add_all=add_all,
+            tags=tags,
         )
 
     if remote_project_uri:

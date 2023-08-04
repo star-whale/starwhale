@@ -130,7 +130,11 @@ class StandaloneModelTestCase(TestCase):
             typ=ResourceType.model,
         )
         sm = StandaloneModel(model_uri)
-        sm.build(workdir=Path(self.workdir), model_config=model_config)
+        sm.build(
+            workdir=Path(self.workdir),
+            model_config=model_config,
+            tags=["test01", "test02"],
+        )
 
         build_version = sm.uri.version
 
@@ -244,7 +248,8 @@ class StandaloneModelTestCase(TestCase):
         assert str(m_copy_dir.call_args_list[0][1]["dst_dir"]).endswith("/src")
 
         assert bundle_path.exists()
-        assert "latest" in sm.tag.list()
+        tags = sm.tag.list()
+        assert set(tags) == {"latest", "v0", "test01", "test02"}
 
         model_uri = Resource(
             f"mnist/version/{build_version}",
@@ -390,6 +395,7 @@ class StandaloneModelTestCase(TestCase):
             runtime_uri="pytorch/version/1234",
             package_runtime=True,
             add_all=False,
+            tags=["packaged-01"],
         )
 
         assert m_extract.called
@@ -424,6 +430,7 @@ class StandaloneModelTestCase(TestCase):
             runtime_uri=pytorch_runtime_uri,
             package_runtime=False,
             add_all=False,
+            tags=["packaged-01"],
         )
 
         built_model_store = ModelStorage(no_packaged_uri)
@@ -458,6 +465,7 @@ class StandaloneModelTestCase(TestCase):
             runtime_uri=pytorch_runtime_uri,
             package_runtime=True,
             add_all=False,
+            tags=["packaged-01"],
         )
 
         built_model_store = ModelStorage(use_model_uri)

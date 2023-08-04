@@ -318,6 +318,7 @@ class StandaloneRuntimeTestCase(TestCase):
             cuda="11.4",
             cudnn="8",
             arch="amd64",
+            tags=["from-conda-v0"],
         )
 
         assert m_py_ver_bin.call_args[0][0] == os.path.join(conda_prefix, "bin/python3")
@@ -448,6 +449,7 @@ class StandaloneRuntimeTestCase(TestCase):
             runtime_name="test",
             conda_name=conda_name,
             cuda="11.4",
+            tags=["from-conda-v0"],
         )
 
         assert m_py_ver_bin.call_args[0][0] == os.path.join(conda_prefix, "bin/python3")
@@ -839,7 +841,9 @@ class StandaloneRuntimeTestCase(TestCase):
         uri = Resource(name, typ=ResourceType.runtime)
         sr = StandaloneRuntime(uri)
         sr.build_from_runtime_yaml(
-            workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
+            workdir=workdir,
+            yaml_path=os.path.join(workdir, runtime_yaml_name),
+            tags=["from-venv-v0"],
         )
         assert m_call.call_count == 4
 
@@ -870,7 +874,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(os.path.join(runtime_workdir, "files/prepare.sh"))
         assert os.path.exists(os.path.join(runtime_workdir, DefaultYAMLName.RUNTIME))
 
-        assert "latest" in sr.tag.list()
+        tags = sr.tag.list()
+        assert set(tags) == {"latest", "v0", "from-venv-v0"}
 
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
@@ -967,6 +972,7 @@ class StandaloneRuntimeTestCase(TestCase):
         tag_content = yaml.safe_load(tag_manifest_path.read_text())
         assert "t1" in tag_content["tags"]
         assert "t2" in tag_content["tags"]
+        assert "from-venv-v0" in tag_content["tags"]
         runtime_term_view(build_uri).tag(["t1"], remove=True)
         tag_content = yaml.safe_load(tag_manifest_path.read_text())
         assert "t1" not in tag_content["tags"]
@@ -1334,7 +1340,7 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_docker_image")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._copy_src")
     @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tar")
-    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_auto_tags")
+    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tags")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._load_runtime_config")
     @patch("starwhale.core.runtime.model.StandaloneRuntime.lock")
@@ -1405,7 +1411,11 @@ class StandaloneRuntimeTestCase(TestCase):
         docker_image = "user-defined-image:latest"
         uri = Resource(name, typ=ResourceType.runtime)
         sr = StandaloneRuntime(uri)
-        sr.build_from_docker_image(image=docker_image, runtime_name=name)
+        sr.build_from_docker_image(
+            image=docker_image,
+            runtime_name=name,
+            tags=["from-docker-0", "from-docker-1"],
+        )
 
         sw = SWCliConfigMixed()
         runtime_workdir = os.path.join(
@@ -1437,6 +1447,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["environment"]["lock"]["env_name"] == ""
         assert _manifest["environment"]["lock"]["env_prefix_path"] == ""
         assert not _manifest["environment"]["lock"]["env_use_shell"]
+        assert set(sr.tag.list()) == {"from-docker-0", "from-docker-1", "v0", "latest"}
 
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {

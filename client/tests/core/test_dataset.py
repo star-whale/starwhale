@@ -94,6 +94,9 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--yaml",
                 str(yaml_path),
+                "--tag",
+                "t0",
+                "--tag=t2",
             ],
             obj=mock_obj,
         )
@@ -102,6 +105,7 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
+        assert mock_obj.build.call_args[1]["tags"] == ("t0", "t2")
 
         new_workdir = "/tmp/workdir-new"
         ensure_dir(new_workdir)
@@ -113,13 +117,14 @@ class StandaloneDatasetTestCase(TestCase):
         m_import.reset_mock()
         result = runner.invoke(
             build_cli,
-            ["-f", os.path.join(new_workdir, "dataset-new.yaml")],
+            ["-f", os.path.join(new_workdir, "dataset-new.yaml"), "-t", "t3"],
             obj=mock_obj,
         )
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
+        assert mock_obj.build.call_args[1]["tags"] == ("t3",)
 
     @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
     def test_build_from_image_folder(self, m_dump: MagicMock) -> None:
@@ -140,6 +145,7 @@ class StandaloneDatasetTestCase(TestCase):
                 str(image_folder),
                 "--auto-label",
                 "--patch",
+                "--tag=t0",
             ],
             obj=mock_obj,
         )
@@ -334,7 +340,7 @@ class StandaloneDatasetTestCase(TestCase):
         config.handler = _MockBuildExecutor
         dataset_uri = Resource(name, typ=ResourceType.dataset)
         sd = StandaloneDataset(dataset_uri)
-        sd.build(workdir=Path(workdir), config=config)
+        sd.build(workdir=Path(workdir), config=config, tags=["t0", "t1"])
         build_version = sd.uri.version
 
         snapshot_workdir = (
@@ -361,6 +367,9 @@ class StandaloneDatasetTestCase(TestCase):
         assert _info["version"] == build_version
         assert _info["name"] == name
         assert _info["bundle_path"] == str(snapshot_workdir.resolve())
+
+        tags = sd.tag.list()
+        assert set(tags) == {"t0", "t1", "latest", "v0"}
 
         _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list) == 1

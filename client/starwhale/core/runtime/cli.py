@@ -275,6 +275,13 @@ def _quickstart(
     help="Include local wheel packages",
     hidden=True,
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="runtime tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+)
 def _build(
     name: str,
     project: str,
@@ -294,6 +301,7 @@ def _build(
     docker: str,
     emit_pip_options: bool,
     emit_condarc: bool,
+    tags: t.List[str],
 ) -> None:
     """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
     Runtime build only works in the Standalone instance.
@@ -316,6 +324,7 @@ def _build(
         swcli runtime build  # use the current directory as the workdir and use the default runtime.yaml file
         swcli runtime build -y example/pytorch/runtime.yaml # use example/pytorch/runtime.yaml as the runtime.yaml file
         swcli runtime build --yaml runtime.yaml # use runtime.yaml at the current directory as the runtime.yaml file
+        swcli runtime build --tag tag1 --tag tag2
 
         \b
         - from conda name:
@@ -362,6 +371,7 @@ def _build(
             include_local_wheel=include_local_wheel,
             emit_condarc=emit_condarc,
             emit_pip_options=emit_pip_options,
+            tags=tags,
         )
     else:
         RuntimeTermView.build_from_runtime_yaml(
@@ -376,6 +386,7 @@ def _build(
             disable_env_lock=disable_env_lock,
             emit_condarc=emit_condarc,
             emit_pip_options=emit_pip_options,
+            tags=tags,
         )
 
 

@@ -61,7 +61,14 @@ def model_cmd(ctx: click.Context) -> None:
     help="Python modules to be imported during the build process. The format is python module import path. The option supports set multiple times.",
 )
 @click.option("-n", "--name", default="", help="model name")
-@click.option("-d", "--desc", default="", help="Dataset description")
+@click.option("-d", "--desc", default="", help="model description")
+@click.option(
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="model tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+)
 @click.option(
     "--package-runtime/--no-package-runtime",
     is_flag=True,
@@ -84,6 +91,7 @@ def _build(
     model_yaml: str,
     runtime: str,
     modules: t.List[str],
+    tags: t.List[str],
     package_runtime: bool,
     name: str,
     desc: str,
@@ -105,6 +113,8 @@ def _build(
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1
         # forbid to package Starwhale Runtime into the model.
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1 --no-package-runtime
+        # build model package with tags.
+        swcli model build . --tag tag1 --tag tag2
     """
     if model_yaml is None:
         yaml_path = Path(workdir) / DefaultYAMLName.MODEL
@@ -128,6 +138,7 @@ def _build(
         runtime_uri=runtime,
         package_runtime=package_runtime,
         add_all=add_all,
+        tags=tags,
     )
 
 

@@ -784,7 +784,12 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     ) -> None:
         raise NotImplementedError
 
-    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+    def build_from_docker_image(
+        self,
+        image: str,
+        runtime_name: str,
+        tags: t.List[str] | None = None,
+    ) -> None:
         raise NotImplementedError
 
     def build_from_python_env(
@@ -802,6 +807,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         emit_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -819,6 +825,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         env_use_shell: bool = False,
         emit_pip_options: bool = False,
         emit_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -922,7 +929,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
         return _r
 
-    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+    def build_from_docker_image(
+        self,
+        image: str,
+        runtime_name: str,
+        tags: t.List[str] | None = None,
+    ) -> None:
         # TODO: validate image format
         workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
         try:
@@ -938,6 +950,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 workdir=workdir,
                 yaml_path=yaml_path,
                 disable_env_lock=True,
+                tags=tags,
             )
         finally:
             empty_dir(workdir)
@@ -957,6 +970,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         include_local_wheel: bool = False,
         emit_pip_options: bool = False,
         emit_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         if conda_name or conda_prefix:
             prefix_path = (
@@ -1013,6 +1027,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_use_shell=env_use_shell,
                 emit_pip_options=emit_pip_options,
                 emit_condarc=emit_condarc,
+                tags=tags,
             )
         finally:
             empty_dir(workdir)
@@ -1031,7 +1046,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_use_shell: bool = False,
         emit_pip_options: bool = False,
         emit_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
+        StandaloneTag.check_tags_validation(tags)
+
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
         swrt_config = self._load_runtime_config(yaml_path)
@@ -1146,7 +1164,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
-            (self._make_auto_tags, 5, "make auto tags"),
+            (self._make_tags, 5, "make tags", dict(tags=tags)),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 

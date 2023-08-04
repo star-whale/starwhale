@@ -173,6 +173,7 @@ class RuntimeTermView(BaseTermView):
         include_local_wheel: bool = False,
         emit_condarc: bool = False,
         emit_pip_options: bool = False,
+        tags: t.List[str] | None = None,
     ) -> Resource:
         set_args = list(filter(bool, (conda_name, conda_prefix, venv_prefix)))
         if len(set_args) >= 2:
@@ -216,6 +217,7 @@ class RuntimeTermView(BaseTermView):
             include_local_wheel=include_local_wheel,
             emit_condarc=emit_condarc,
             emit_pip_options=emit_pip_options,
+            tags=tags,
         )
         return runtime_uri
 
@@ -234,6 +236,7 @@ class RuntimeTermView(BaseTermView):
         disable_env_lock: bool = False,
         emit_pip_options: bool = False,
         emit_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> Resource:
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
@@ -266,6 +269,7 @@ class RuntimeTermView(BaseTermView):
             disable_env_lock=disable_env_lock,
             emit_condarc=emit_condarc,
             emit_pip_options=emit_pip_options,
+            tags=tags,
         )
         return _runtime_uri
 

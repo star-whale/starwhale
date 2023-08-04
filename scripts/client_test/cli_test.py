@@ -162,7 +162,7 @@ class TestCli:
 
     def build_dataset(self, name: str, _workdir: str, ds_expl: DatasetExpl) -> t.Any:
         self.select_local_instance()
-        ret_uri = Dataset.build(workdir=_workdir, name=ds_expl.name)
+        ret_uri = Dataset.build(workdir=_workdir, name=ds_expl.name, tags=[f"{name}-0"])
         if self.server_url:
             self.dataset_api.copy(
                 src_uri=ret_uri.full_uri,
@@ -177,7 +177,12 @@ class TestCli:
 
     def build_model(self, workdir: str, name: str, runtime: str) -> t.Any:
         self.select_local_instance()
-        _uri = Model.build(workdir=workdir, name=name, runtime=runtime)
+        _uri = Model.build(
+            workdir=workdir,
+            name=name,
+            runtime=runtime,
+            tags=[f"{name}-0", f"{name}-test-0"],
+        )
         if self.server_url:
             self.model_api.copy(
                 src_uri=_uri.full_uri,
@@ -195,7 +200,7 @@ class TestCli:
         runtime_yaml: str = "runtime.yaml",
     ) -> t.Any:
         self.select_local_instance()
-        _uri = Runtime.build(workdir=workdir, runtime_yaml=runtime_yaml)
+        _uri = Runtime.build(workdir=workdir, runtime_yaml=runtime_yaml, tags=[])
         if self.server_url:
             self.runtime_api.copy(
                 src_uri=_uri.full_uri,
