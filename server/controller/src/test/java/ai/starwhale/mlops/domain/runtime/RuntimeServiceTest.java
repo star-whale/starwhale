@@ -374,7 +374,7 @@ public class RuntimeServiceTest {
     public void testListRuntimeInfo() {
         given(runtimeMapper.findByName(same("r1"), same(1L), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
-        given(runtimeVersionMapper.list(same(1L), any(), any()))
+        given(runtimeVersionMapper.list(same(1L), any()))
                 .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listRuntimeInfo("1", "r1");
@@ -508,14 +508,13 @@ public class RuntimeServiceTest {
 
     @Test
     public void testListRuntimeVersionHistory() {
-        given(runtimeVersionMapper.list(anyLong(), anyString(), anyString()))
+        given(runtimeVersionMapper.list(anyLong(), anyString()))
                 .willReturn(List.of(RuntimeVersionEntity.builder().id(1L).build()));
         var res = service.listRuntimeVersionHistory(
                 RuntimeVersionQuery.builder()
                         .projectUrl("1")
                         .runtimeUrl("r1")
                         .versionName("v1")
-                        .versionTag("tag1")
                         .build(),
                 PageParams.builder().build()
         );

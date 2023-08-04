@@ -171,8 +171,8 @@ public class DatasetControllerTest {
                     DatasetVersionQuery query = invocation.getArgument(0);
                     List<DatasetVersionVo> list = List.of(
                             DatasetVersionVo.builder()
+                                    .tags(List.of("tag1"))
                                     .name(query.getVersionName())
-                                    .tag(query.getVersionTag())
                                     .build()
                     );
                     PageParams pageParams = invocation.getArgument(1);
@@ -181,7 +181,7 @@ public class DatasetControllerTest {
                     pageInfo.setPageSize(pageParams.getPageSize());
                     return pageInfo;
                 });
-        var resp = controller.listDatasetVersion("p1", "d1", "v1", "tag1", 2, 5);
+        var resp = controller.listDatasetVersion("p1", "d1", "v1", 2, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
@@ -189,7 +189,7 @@ public class DatasetControllerTest {
                 hasProperty("pageSize", is(5)),
                 hasProperty("list", hasItem(allOf(
                         hasProperty("name", is("v1")),
-                        hasProperty("tag", is("tag1"))
+                        hasProperty("tags", is(List.of("tag1")))
                 )))
         ));
     }
@@ -393,14 +393,15 @@ public class DatasetControllerTest {
 
     @Test
     public void testAddDatasetVersionTag() {
-        doNothing().when(datasetService).addDatasetVersionTag("1", "2", "3", "tag1");
+        doNothing().when(datasetService).addDatasetVersionTag("1", "2", "3", "tag1", true);
 
         var req = new DatasetTagRequest();
         req.setTag("tag1");
+        req.setForce(true);
         var resp = controller.addDatasetVersionTag("1", "2", "3", req);
 
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        verify(datasetService).addDatasetVersionTag("1", "2", "3", "tag1");
+        verify(datasetService).addDatasetVersionTag("1", "2", "3", "tag1", true);
     }
 
     @Test

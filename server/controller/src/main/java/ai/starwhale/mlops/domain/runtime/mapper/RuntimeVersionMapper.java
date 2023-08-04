@@ -44,7 +44,7 @@ public interface RuntimeVersionMapper {
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
-            @Param("namePrefix") String namePrefix, @Param("tag") String tag);
+            @Param("namePrefix") String namePrefix);
 
     @Select("select " + COLUMNS + " from runtime_version where shared = 1")
     List<RuntimeVersionEntity> listShared();
@@ -136,8 +136,7 @@ public interface RuntimeVersionMapper {
     class RuntimeVersionProvider {
 
         public String listSql(@Param("runtimeId") Long runtimeId,
-                @Param("namePrefix") String namePrefix,
-                @Param("tag") String tag) {
+                @Param("namePrefix") String namePrefix) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -145,9 +144,6 @@ public interface RuntimeVersionMapper {
                     WHERE("runtime_id = #{runtimeId}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
-                    }
-                    if (StrUtil.isNotEmpty(tag)) {
-                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
                     ORDER_BY("version_order desc");
                 }

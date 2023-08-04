@@ -17,10 +17,11 @@
 package ai.starwhale.mlops.domain.bundle.tag;
 
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import java.util.List;
 
 public interface HasTag extends BundleEntity {
 
-    void setTag(String tag);
+    void setTags(List<String> tags);
 
-    String getTag();
+    List<String> getTags();
 }

@@ -43,8 +43,7 @@ public interface ModelVersionMapper {
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
-            @Param("namePrefix") String namePrefix,
-            @Param("tag") String tag);
+            @Param("namePrefix") String namePrefix);
 
     @Select("select " + COLUMNS + " from model_version where id = #{id}")
     ModelVersionEntity find(@Param("id") Long id);
@@ -127,8 +126,7 @@ public interface ModelVersionMapper {
     class ModelVersionProvider {
 
         public String listSql(@Param("modelId") Long modelId,
-                @Param("namePrefix") String namePrefix,
-                @Param("tag") String tag) {
+                @Param("namePrefix") String namePrefix) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -136,9 +134,6 @@ public interface ModelVersionMapper {
                     WHERE("model_id = #{modelId}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
-                    }
-                    if (StrUtil.isNotEmpty(tag)) {
-                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
                     ORDER_BY("version_order desc");
                 }

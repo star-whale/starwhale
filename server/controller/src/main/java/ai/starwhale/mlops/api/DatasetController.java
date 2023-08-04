@@ -98,8 +98,10 @@ public class DatasetController implements DatasetApi {
     ) {
         Boolean res = datasetService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert dataset version failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Revert dataset version failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -112,8 +114,10 @@ public class DatasetController implements DatasetApi {
                         .datasetUrl(datasetUrl)
                         .build());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete dataset failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Delete dataset failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -122,8 +126,10 @@ public class DatasetController implements DatasetApi {
     public ResponseEntity<ResponseMessage<String>> recoverDataset(String projectUrl, String datasetUrl) {
         Boolean res = datasetService.recoverDataset(projectUrl, datasetUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover dataset failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Recover dataset failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -177,7 +183,6 @@ public class DatasetController implements DatasetApi {
             String projectUrl,
             String datasetUrl,
             String versionName,
-            String tag,
             Integer pageNum,
             Integer pageSize
     ) {
@@ -186,12 +191,12 @@ public class DatasetController implements DatasetApi {
                         .projectUrl(projectUrl)
                         .datasetUrl(datasetUrl)
                         .versionName(versionName)
-                        .versionTag(tag)
                         .build(),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
-                        .build());
+                        .build()
+        );
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -217,8 +222,10 @@ public class DatasetController implements DatasetApi {
                             .collect(Collectors.joining("\n"));
                 } catch (IOException e) {
                     log.error("read manifest file failed", e);
-                    throw new StarwhaleApiException(new SwProcessException(ErrorType.NETWORK),
-                            HttpStatus.INTERNAL_SERVER_ERROR);
+                    throw new StarwhaleApiException(
+                            new SwProcessException(ErrorType.NETWORK),
+                            HttpStatus.INTERNAL_SERVER_ERROR
+                    );
                 }
                 return ResponseEntity.ok(Code.success.asResponse(
                         new UploadResult(datasetUploader.create(text, dsFile.getOriginalFilename(), uploadRequest))));
@@ -235,7 +242,8 @@ public class DatasetController implements DatasetApi {
             default:
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.DATASET, "unknown phase " + uploadRequest.getPhase()),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.BAD_REQUEST
+                );
         }
     }
 
@@ -255,7 +263,8 @@ public class DatasetController implements DatasetApi {
         if (!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl)) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.DATASET, "please provide name and version for the DS "),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
         datasetUploader.pull(projectUrl, datasetUrl, versionUrl, blobHash, httpResponse);
     }
@@ -348,7 +357,13 @@ public class DatasetController implements DatasetApi {
             String versionUrl,
             DatasetTagRequest datasetTagRequest
     ) {
-        datasetService.addDatasetVersionTag(projectUrl, datasetUrl, versionUrl, datasetTagRequest.getTag());
+        datasetService.addDatasetVersionTag(
+                projectUrl,
+                datasetUrl,
+                versionUrl,
+                datasetTagRequest.getTag(),
+                datasetTagRequest.getForce()
+        );
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -371,6 +386,19 @@ public class DatasetController implements DatasetApi {
     ) {
         datasetService.deleteDatasetVersionTag(projectUrl, datasetUrl, versionUrl, tag);
         return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<Long>> getDatasetVersionTag(
+            String projectUrl,
+            String datasetUrl,
+            String tag
+    ) {
+        var entity = datasetService.getDatasetVersionTag(projectUrl, datasetUrl, tag);
+        if (entity == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Code.success.asResponse(entity.getVersionId()));
     }
 
     @Override
@@ -398,7 +426,8 @@ public class DatasetController implements DatasetApi {
                     PageParams.builder()
                             .pageNum(pageNum)
                             .pageSize(pageSize)
-                            .build());
+                            .build()
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
@@ -427,13 +456,13 @@ public class DatasetController implements DatasetApi {
             DatasetBuildRequest datasetBuildRequest
     ) {
         datasetService.build(CreateBuildRecordRequest.builder()
-                .datasetId(datasetBuildRequest.getDatasetId())
-                .datasetName(datasetName)
-                .shared(datasetBuildRequest.getShared())
-                .projectUrl(projectUrl)
-                .type(datasetBuildRequest.getType())
-                .storagePath(datasetBuildRequest.getStoragePath())
-                .build());
+                                     .datasetId(datasetBuildRequest.getDatasetId())
+                                     .datasetName(datasetName)
+                                     .shared(datasetBuildRequest.getShared())
+                                     .projectUrl(projectUrl)
+                                     .type(datasetBuildRequest.getType())
+                                     .storagePath(datasetBuildRequest.getStoragePath())
+                                     .build());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

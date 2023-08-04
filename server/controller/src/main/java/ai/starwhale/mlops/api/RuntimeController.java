@@ -57,8 +57,13 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(String projectUrl,
-            String name, String owner, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<RuntimeVo>>> listRuntime(
+            String projectUrl,
+            String name,
+            String owner,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<RuntimeVo> pageInfo = runtimeService.listRuntime(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
@@ -68,7 +73,8 @@ public class RuntimeController implements RuntimeApi {
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
-                        .build());
+                        .build()
+        );
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -79,19 +85,26 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(String projectUrl,
-            String runtimeUrl, RuntimeRevertRequest revertRequest) {
+    public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
+            String projectUrl,
+            String runtimeUrl,
+            RuntimeRevertRequest revertRequest
+    ) {
         Boolean res = runtimeService.revertVersionTo(projectUrl, runtimeUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert runtime version failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Revert runtime version failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteRuntime(String projectUrl,
-            String runtimeUrl) {
+    public ResponseEntity<ResponseMessage<String>> deleteRuntime(
+            String projectUrl,
+            String runtimeUrl
+    ) {
         Boolean res = runtimeService.deleteRuntime(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
@@ -99,27 +112,36 @@ public class RuntimeController implements RuntimeApi {
                         .build());
 
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete runtime failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Delete runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> recoverRuntime(String projectUrl,
-            String runtimeUrl) {
+    public ResponseEntity<ResponseMessage<String>> recoverRuntime(
+            String projectUrl,
+            String runtimeUrl
+    ) {
         Boolean res = runtimeService.recoverRuntime(projectUrl, runtimeUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover runtime failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Recover runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
 
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(String projectUrl,
-            String runtimeUrl, String versionUrl) {
+    public ResponseEntity<ResponseMessage<RuntimeInfoVo>> getRuntimeInfo(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl
+    ) {
         RuntimeInfoVo runtimeInfo = runtimeService.getRuntimeInfo(
                 RuntimeQuery.builder()
                         .projectUrl(projectUrl)
@@ -131,15 +153,26 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> modifyRuntime(String projectUrl,
-            String runtimeUrl, String runtimeVersionUrl, RuntimeTagRequest tagRequest) {
-        Boolean res = runtimeService.modifyRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl,
+    public ResponseEntity<ResponseMessage<String>> modifyRuntime(
+            String projectUrl,
+            String runtimeUrl,
+            String runtimeVersionUrl,
+            RuntimeTagRequest tagRequest
+    ) {
+        Boolean res = runtimeService.modifyRuntimeVersion(
+                projectUrl,
+                runtimeUrl,
+                runtimeVersionUrl,
                 RuntimeVersion.builder()
-                        .versionTag(tagRequest.getTag()).build());
+                        .versionTag(tagRequest.getTag())
+                        .build()
+        );
 
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Modify runtime failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Modify runtime failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -151,7 +184,13 @@ public class RuntimeController implements RuntimeApi {
             String versionUrl,
             RuntimeTagRequest runtimeTagRequest
     ) {
-        runtimeService.addRuntimeVersionTag(projectUrl, runtimeUrl, versionUrl, runtimeTagRequest.getTag());
+        runtimeService.addRuntimeVersionTag(
+                projectUrl,
+                runtimeUrl,
+                versionUrl,
+                runtimeTagRequest.getTag(),
+                runtimeTagRequest.getForce()
+        );
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -177,33 +216,59 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(String projectUrl, String runtimeUrl,
-            String runtimeVersionUrl, Boolean shared) {
+    public ResponseEntity<ResponseMessage<Long>> getRuntimeVersionTag(
+            String projectUrl,
+            String runtimeUrl,
+            String tag
+    ) {
+        var entity = runtimeService.getRuntimeVersionTag(projectUrl, runtimeUrl, tag);
+        if (entity == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Code.success.asResponse(entity.getVersionId()));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> shareRuntimeVersion(
+            String projectUrl,
+            String runtimeUrl,
+            String runtimeVersionUrl,
+            Boolean shared
+    ) {
         runtimeService.shareRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVo>>> listRuntimeVersion(
-            String projectUrl, String runtimeUrl, String versionName, String versionTag,
-            Integer pageNum, Integer pageSize) {
+            String projectUrl,
+            String runtimeUrl,
+            String versionName,
+            Integer pageNum,
+            Integer pageSize
+    ) {
         PageInfo<RuntimeVersionVo> pageInfo = runtimeService.listRuntimeVersionHistory(
                 RuntimeVersionQuery.builder()
                         .projectUrl(projectUrl)
                         .runtimeUrl(runtimeUrl)
                         .versionName(versionName)
-                        .versionTag(versionTag)
                         .build(),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
-                        .build());
+                        .build()
+        );
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> upload(String projectUrl, String runtimeUrl, String versionUrl,
-            MultipartFile file, ClientRuntimeRequest uploadRequest) {
+    public ResponseEntity<ResponseMessage<String>> upload(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            MultipartFile file,
+            ClientRuntimeRequest uploadRequest
+    ) {
         uploadRequest.setProject(projectUrl);
         uploadRequest.setRuntime(runtimeUrl + ":" + versionUrl);
         runtimeService.upload(file, uploadRequest);
@@ -211,13 +276,21 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public void pull(String projectUrl, String runtimeUrl, String versionUrl,
-            HttpServletResponse httpResponse) {
+    public void pull(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            HttpServletResponse httpResponse
+    ) {
         runtimeService.pull(projectUrl, runtimeUrl, versionUrl, httpResponse);
     }
 
     @Override
-    public ResponseEntity<?> headRuntime(String projectUrl, String runtimeUrl, String versionUrl) {
+    public ResponseEntity<?> headRuntime(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl
+    ) {
         try {
             runtimeService.query(projectUrl, runtimeUrl, versionUrl);
             return ResponseEntity.ok().build();
@@ -228,8 +301,12 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(String projectUrl, String runtimeUrl,
-            String versionUrl, RunConfig runConfig) {
+    public ResponseEntity<ResponseMessage<BuildImageResult>> buildRuntimeImage(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            RunConfig runConfig
+    ) {
         BuildImageResult res = runtimeService.buildImage(projectUrl, runtimeUrl, versionUrl, runConfig);
         return ResponseEntity.ok(Code.success.asResponse(res));
     }

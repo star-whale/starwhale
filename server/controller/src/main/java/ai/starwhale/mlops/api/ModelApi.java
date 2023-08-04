@@ -107,7 +107,6 @@ public interface ModelApi {
             @PathVariable String projectUrl,
             @PathVariable String modelUrl,
             @Valid @RequestParam(required = false) String name,
-            @RequestParam(required = false) String tag,
             @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize);
 
@@ -158,6 +157,14 @@ public interface ModelApi {
             @PathVariable String projectUrl,
             @PathVariable String modelUrl,
             @PathVariable String versionUrl,
+            @PathVariable String tag);
+
+    @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getModelVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String modelUrl,
             @PathVariable String tag);
 
     @PostMapping(value = "/blob", produces = MediaType.APPLICATION_JSON_VALUE)

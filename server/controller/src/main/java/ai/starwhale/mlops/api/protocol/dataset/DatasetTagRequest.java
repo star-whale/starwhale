@@ -28,4 +28,6 @@ public class DatasetTagRequest {
     @NotNull
     @JsonProperty("tag")
     private String tag;
+
+    private Boolean force;
 }

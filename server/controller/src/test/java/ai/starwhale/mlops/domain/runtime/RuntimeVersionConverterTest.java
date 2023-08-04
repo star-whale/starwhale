@@ -29,6 +29,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,20 +62,20 @@ public class RuntimeVersionConverterTest {
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
-                hasProperty("tag", nullValue()), // tag is not set
+                hasProperty("tags", nullValue()), // tag is not set
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
         assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
 
-        res = runtimeVersionConvertor.convert(entity, entity, "tag2");
+        res = runtimeVersionConvertor.convert(entity, entity, List.of("tag2"));
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(true)),
-                hasProperty("tag", is("tag2")), // use the tag from parameter
+                hasProperty("tags", is(List.of("tag2"))), // use the tag from parameter
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))

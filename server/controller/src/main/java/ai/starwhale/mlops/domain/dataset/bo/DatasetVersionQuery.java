@@ -28,6 +28,4 @@ public class DatasetVersionQuery {
     private String datasetUrl;
 
     private String versionName;
-
-    private String versionTag;
 }

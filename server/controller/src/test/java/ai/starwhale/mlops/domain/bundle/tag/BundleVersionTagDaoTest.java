@@ -116,8 +116,8 @@ class BundleVersionTagDaoTest {
                 .build();
 
         when(bundleVersionTagMapper.listByBundleIdVersions("MODEL", 1L, "2,3")).thenReturn(List.of(entity2, entity3));
-        var get = bundleVersionTagDao.getJoinedTagsByVersionIds(BundleAccessor.Type.MODEL, 1L, List.of(2L, 3L));
+        var get = bundleVersionTagDao.getTagsByVersionIds(BundleAccessor.Type.MODEL, 1L, List.of(2L, 3L));
         verify(bundleVersionTagMapper).listByBundleIdVersions("MODEL", 1L, "2,3");
-        assertEquals(Map.of(2L, "tag2", 3L, "tag3"), get);
+        assertEquals(Map.of(2L, List.of("tag2"), 3L, List.of("tag3")), get);
     }
 }

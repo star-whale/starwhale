@@ -29,6 +29,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -148,7 +149,7 @@ public class BundleManagerTest {
         doReturn(3L).when(spyBundleManager).getBundleVersionId(2L, "3");
 
         doNothing().when(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
-        spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", "tag1", 4L);
+        spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", "tag1", 4L, null);
         verify(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
 
         doNothing().when(bundleVersionTagDao).delete(eq(BundleAccessor.Type.JOB), eq(2L), eq(3L), eq("tag1"));
@@ -167,6 +168,40 @@ public class BundleManagerTest {
         var res = spyBundleManager.listBundleVersionTags(BundleAccessor.Type.JOB, "1", "2", "3");
         assertThat(res.size(), is(1));
         assertThat(res.get(0), is("tag1"));
+    }
+
+    @Test
+    public void testForceAdd() {
+        var spyBundleManager = spy(bundleManager);
+        doReturn(2L).when(spyBundleManager).getBundleId(BundleUrl.create("1", "2"));
+        doReturn(3L).when(spyBundleManager).getBundleVersionId(2L, "3");
+
+        doNothing().when(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
+        var bundle = BundleVersionTagEntity.builder().id(7L).build();
+        when(bundleVersionTagDao.findTag(BundleAccessor.Type.JOB, 2L, "tag1")).thenReturn(bundle);
+        doNothing().when(bundleVersionTagDao).delete(BundleAccessor.Type.JOB, 2L, 3L, "tag1");
+        spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", "tag1", 4L, true);
+        verify(bundleVersionTagDao).add(BundleAccessor.Type.JOB, 2L, 3L, "tag1", 4L);
+        verify(bundleVersionTagDao).findTag(BundleAccessor.Type.JOB, 2L, "tag1");
+        verify(bundleVersionTagDao).delete(BundleAccessor.Type.JOB, 2L, 3L, "tag1");
+    }
+
+    @Test
+    public void testBundleVersionTagValidation() {
+        var spyBundleManager = spy(bundleManager);
+        doReturn(2L).when(spyBundleManager).getBundleId(BundleUrl.create("1", "2"));
+        doReturn(3L).when(spyBundleManager).getBundleVersionId(2L, "3");
+
+        var invalidTags = List.of("/", "\\", ":", "*", "?", "\"", "<", ">", "|", "v1", "v1000", "latest", "123", "a,b");
+        for (var tag : invalidTags) {
+            assertThrows(StarwhaleException.class,
+                    () -> spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", tag, 4L, null));
+        }
+
+        var validTags = List.of("tag1", "tag-1", "tag_1", "tag.1", "tag1.1", "tag1-1", "tag1_1", "2023-08-2");
+        for (var tag : validTags) {
+            spyBundleManager.addBundleVersionTag(BundleAccessor.Type.JOB, "1", "2", "3", tag, 4L, null);
+        }
     }
 
     @Data

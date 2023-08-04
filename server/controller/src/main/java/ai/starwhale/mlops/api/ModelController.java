@@ -93,7 +93,8 @@ public class ModelController implements ModelApi {
                     PageParams.builder()
                             .pageNum(pageNum)
                             .pageSize(pageSize)
-                            .build());
+                            .build()
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
@@ -106,8 +107,10 @@ public class ModelController implements ModelApi {
     ) {
         Boolean res = modelService.revertVersionTo(projectUrl, modelUrl, revertRequest.getVersionUrl());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Revert model version failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Revert model version failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -115,12 +118,14 @@ public class ModelController implements ModelApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl, String modelUrl) {
         Boolean res = modelService.deleteModel(ModelQuery.builder()
-                .projectUrl(projectUrl)
-                .modelUrl(modelUrl)
-                .build());
+                                                       .projectUrl(projectUrl)
+                                                       .modelUrl(modelUrl)
+                                                       .build());
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Delete model failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Delete model failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -129,15 +134,18 @@ public class ModelController implements ModelApi {
     public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
         Boolean res = modelService.recoverModel(projectUrl, modelUrl);
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Recover model failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Recover model failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<ModelInfoVo>> getModelInfo(
-            String projectUrl, String modelUrl, String versionUrl) {
+            String projectUrl, String modelUrl, String versionUrl
+    ) {
         ModelInfoVo modelInfo = modelService.getModelInfo(
                 ModelQuery.builder()
                         .projectUrl(projectUrl)
@@ -149,7 +157,8 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<Map<String, List<FileNode>>>> getModelDiff(
-            String projectUrl, String modelUrl, String baseVersion, String compareVersion) {
+            String projectUrl, String modelUrl, String baseVersion, String compareVersion
+    ) {
 
         return ResponseEntity.ok(Code.success.asResponse(
                 modelService.getModelDiff(projectUrl, modelUrl, baseVersion, compareVersion)));
@@ -160,7 +169,6 @@ public class ModelController implements ModelApi {
             String projectUrl,
             String modelUrl,
             String name,
-            String tag,
             Integer pageNum,
             Integer pageSize
     ) {
@@ -169,18 +177,19 @@ public class ModelController implements ModelApi {
                         .projectUrl(projectUrl)
                         .modelUrl(modelUrl)
                         .versionName(name)
-                        .versionTag(tag)
                         .build(),
                 PageParams.builder()
                         .pageNum(pageNum)
                         .pageSize(pageSize)
-                        .build());
+                        .build()
+        );
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> shareModelVersion(
-            String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
+            String projectUrl, String modelUrl, String versionUrl, Boolean shared
+    ) {
         modelService.shareModelVersion(projectUrl, modelUrl, versionUrl, shared);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -192,15 +201,22 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyModel(
-            String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request) {
-        Boolean res = modelService.modifyModelVersion(projectUrl, modelUrl, versionUrl,
+            String projectUrl, String modelUrl, String versionUrl, ModelUpdateRequest request
+    ) {
+        Boolean res = modelService.modifyModelVersion(
+                projectUrl,
+                modelUrl,
+                versionUrl,
                 ModelVersion.builder()
                         .tag(request.getTag())
                         .builtInRuntime(request.getBuiltInRuntime())
-                        .build());
+                        .build()
+        );
         if (!res) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB, "Update model failed."),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.DB, "Update model failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -212,7 +228,13 @@ public class ModelController implements ModelApi {
             String versionUrl,
             ModelTagRequest modelTagRequest
     ) {
-        modelService.addModelVersionTag(projectUrl, modelUrl, versionUrl, modelTagRequest.getTag());
+        modelService.addModelVersionTag(
+                projectUrl,
+                modelUrl,
+                versionUrl,
+                modelTagRequest.getTag(),
+                modelTagRequest.getForce()
+        );
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -237,10 +259,20 @@ public class ModelController implements ModelApi {
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
+    @Override
+    public ResponseEntity<ResponseMessage<Long>> getModelVersionTag(String projectUrl, String modelUrl, String tag) {
+        var entity = modelService.getModelVersionTag(projectUrl, modelUrl, tag);
+        if (entity == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Code.success.asResponse(entity.getVersionId()));
+    }
+
 
     @Override
     public ResponseEntity<ResponseMessage<InitUploadBlobResult>> initUploadBlob(
-            InitUploadBlobRequest initUploadBlobRequest) {
+            InitUploadBlobRequest initUploadBlobRequest
+    ) {
         var result = this.modelService.initUploadBlob(initUploadBlobRequest);
         return ResponseEntity.ok(Code.success.asResponse(result));
     }
@@ -252,14 +284,17 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public void createModelVersion(String project, String model, String version,
-                                   CreateModelVersionRequest createModelVersionRequest) {
+    public void createModelVersion(
+            String project, String model, String version,
+            CreateModelVersionRequest createModelVersionRequest
+    ) {
         this.modelService.createModelVersion(project, model, version, createModelVersionRequest);
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> getModelMetaBlob(
-            String project, String model, String version, String blobId) {
+            String project, String model, String version, String blobId
+    ) {
         var root = this.modelService.getModelMetaBlob(project, model, version, blobId);
         try {
             return ResponseEntity.ok(Code.success.asResponse(JsonFormat.printer().print(root)));
@@ -270,7 +305,8 @@ public class ModelController implements ModelApi {
 
     @Override
     public ResponseEntity<ResponseMessage<ListFilesResult>> listFiles(
-            String project, String model, String version, String path) {
+            String project, String model, String version, String path
+    ) {
         var result = this.modelService.listFiles(project, model, version, path);
         return ResponseEntity.ok(Code.success.asResponse(result));
     }
