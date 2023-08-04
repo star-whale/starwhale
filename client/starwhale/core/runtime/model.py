@@ -732,6 +732,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         bc = BundleCopy(
             src_uri,
@@ -739,6 +740,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             ResourceType.runtime,
             force,
             dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
         )
         bc.do()
 

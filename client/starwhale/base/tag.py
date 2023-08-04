@@ -20,6 +20,8 @@ from starwhale.base.uri.resource import Resource
 
 
 class StandaloneTag:
+    AUTO_INCR_TAG_RE = re.compile(r"^v\d+$")
+
     def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self._do_validate()
@@ -154,11 +156,18 @@ class StandaloneTag:
         else:
             return {}
 
-    @staticmethod
+    @classmethod
+    def is_auto_incr_tag(cls, tag: str) -> bool:
+        return bool(cls.AUTO_INCR_TAG_RE.match(tag))
+
+    @classmethod
+    def is_builtin_tag(cls, tag: str) -> bool:
+        return tag == LATEST_TAG or cls.is_auto_incr_tag(tag)
+
+    @classmethod
     def check_tags_validation(
-        tags: t.List[str] | None, forbid_builtin_tags: bool = True
+        cls, tags: t.List[str] | None, forbid_builtin_tags: bool = True
     ) -> None:
-        auto_incr_tag_re = re.compile(r"^v\d+$")
         tags = tags or []
         for _t in tags:
             _t = _t.strip()
@@ -166,9 +175,5 @@ class StandaloneTag:
             if not _ok:
                 raise FormatError(f"{_t}, reason:{_reason}")
 
-            if forbid_builtin_tags:
-                if _t == LATEST_TAG:
-                    raise FormatError(f"tag:{_t} is builtin, can not be used")
-
-                if auto_incr_tag_re.match(_t):
-                    raise FormatError(f"tag:{_t} is auto-incremental, can not be used")
+            if forbid_builtin_tags and cls.is_builtin_tag(_t):
+                raise FormatError(f"tag:{_t} is builtin, can not be used")

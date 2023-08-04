@@ -312,6 +312,12 @@ class TestDatasetCopy(BaseTestCase):
 
         rm.request(
             HTTPMethod.GET,
+            f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}/version/{dataset_version}/tag",
+            json={"data": ["t1", "t2"]},
+        )
+
+        rm.request(
+            HTTPMethod.GET,
             f"{instance_uri}/api/v1/project/{cloud_project}/dataset/{dataset_name}?versionUrl={dataset_version}",
             json={
                 "data": {"versionMeta": yaml.safe_dump({"version": dataset_version})}

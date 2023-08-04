@@ -373,7 +373,7 @@ class CloudBundleModelMixin(CloudRequestMixed):
                 path=self._get_tag_path_by_rc(self.uri),  # type: ignore
                 method=HTTPMethod.POST,
                 instance=self.uri.instance,  # type: ignore
-                data={
+                json={
                     "force": force,
                     "tag": tag,
                 },

@@ -282,6 +282,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         dest_local_project_uri: str = "",
         force: bool = False,
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         Dataset.copy(
             src_uri=Resource(src_uri, typ=ResourceType.dataset),
@@ -289,6 +290,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             mode=mode,
             dest_local_project_uri=dest_local_project_uri,
             force=force,
+            ignore_tags=ignore_tags,
         )
         console.print(":clap: copy done")
 
