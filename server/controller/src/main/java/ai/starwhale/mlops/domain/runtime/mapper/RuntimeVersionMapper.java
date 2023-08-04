@@ -109,7 +109,7 @@ public interface RuntimeVersionMapper {
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by b.id desc, v.version_order desc")
@@ -121,7 +121,7 @@ public interface RuntimeVersionMapper {
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
