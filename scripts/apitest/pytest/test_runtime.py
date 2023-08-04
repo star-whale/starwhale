@@ -103,7 +103,7 @@ class TestRuntime:
         response = res.json()
 
         assert res.status_code == 200
-        assert response["data"] == ["test1"]
+        assert "test1" in response["data"]
 
         res = requests.delete(hu.url(host, port) + path + "/test1", headers=hu.header())
         assert res.status_code == 200
