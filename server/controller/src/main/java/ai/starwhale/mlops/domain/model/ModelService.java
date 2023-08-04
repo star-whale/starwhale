@@ -187,7 +187,7 @@ public class ModelService {
             ModelVo vo = modelVoConverter.convert(entity);
             var modelVersion = modelVersionMapper.findByLatest(entity.getId());
             if (modelVersion != null) {
-                var tags = bundleVersionTagDao.getJoinedTagsByBundleVersions(
+                var tags = bundleVersionTagDao.getTagsByBundleVersions(
                         BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
                 var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags.get(modelVersion.getId()));
                 versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
@@ -426,17 +426,20 @@ public class ModelService {
             return List.of();
         }
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
-        var tags = new HashMap<Long, String>();
+        var tags = new HashMap<Long, Map<Long, List<String>>>();
         versions.stream().collect(Collectors.groupingBy(ModelVersionEntity::getModelId))
-                .forEach((id, versionList) -> tags.putAll(
-                        bundleVersionTagDao.getJoinedTagsByBundleVersions(
-                                BundleAccessor.Type.RUNTIME, id, versionList)));
+                .forEach((id, versionList) -> tags.put(
+                        id,
+                        bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, id, versionList)
+                ));
         return versions.stream().map(version -> {
             ModelEntity model = modelMapper.find(version.getModelId());
             ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
             ModelVo vo = modelVoConverter.convert(model);
             vo.setOwner(userService.findUserById(model.getOwnerId()));
-            vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
+            var versionTags =
+                    tags.get(version.getModelId()) == null ? null : tags.get(version.getModelId()).get(version.getId());
+            vo.setVersion(versionConvertor.convert(version, latest, versionTags));
             return vo;
         }).collect(Collectors.toList());
     }
