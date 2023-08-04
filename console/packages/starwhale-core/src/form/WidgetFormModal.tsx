@@ -64,8 +64,9 @@ export default function WidgetFormModal({
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
     }
+
     form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(recordInfo.data?.columnTypes)
+    form.addDataTableColumnsField(columnTypes)
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})
