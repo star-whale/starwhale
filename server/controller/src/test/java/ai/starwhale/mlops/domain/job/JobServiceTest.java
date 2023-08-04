@@ -115,7 +115,7 @@ public class JobServiceTest {
         taskMapper = mock(TaskMapper.class);
         jobConverter = mock(JobConverter.class);
         jobBoConverter = mock(JobBoConverter.class);
-        given(jobConverter.convert(any(Job.class))).willReturn(JobVo.builder().id("1").build());
+        given(jobConverter.convert(any(JobEntity.class))).willReturn(JobVo.builder().id("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);
@@ -128,6 +128,8 @@ public class JobServiceTest {
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
                 .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).build());
+        given(jobDao.findJobEntity("1"))
+                .willReturn(JobEntity.builder().id(1L).type(JobType.EVALUATION).build());
         given(jobDao.getJobId("1"))
                 .willReturn(1L);
         given(jobDao.getJobId("2"))

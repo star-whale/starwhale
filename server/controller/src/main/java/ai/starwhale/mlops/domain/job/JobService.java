@@ -147,7 +147,7 @@ public class JobService {
     }
 
     public JobVo findJob(String projectUrl, String jobUrl) {
-        Job entity = jobDao.findJob(jobUrl);
+        var entity = jobDao.findJobEntity(jobUrl);
         if (entity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, String.format("Unable to find job %s", jobUrl)),

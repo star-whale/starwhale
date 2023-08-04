@@ -112,6 +112,10 @@ public class DatasetDao implements BundleAccessor, BundleVersionAccessor, TagAcc
         return versionIds.stream().map(this::getDatasetVersion).collect(Collectors.toList());
     }
 
+    public List<Long> listDatasetVersionIdsOfJob(Long jobId) {
+        return jobDatasetVersionMapper.listDatasetVersionIdsByJobId(jobId);
+    }
+
     @Override
     public BundleEntity findById(Long id) {
         return datasetMapper.find(id);

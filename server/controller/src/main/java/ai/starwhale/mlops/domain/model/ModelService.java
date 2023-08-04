@@ -90,6 +90,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -402,21 +403,23 @@ public class ModelService {
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
-
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
-
-        List<Long> ids = versions.stream()
-                .map(ModelVersionEntity::getModelId)
-                .collect(Collectors.toList());
-
-        List<ModelEntity> models = modelMapper.findByIds(Joiner.on(",").join(ids));
-
-        return models.stream()
-                .map(model -> {
-                    ModelVo vo = modelVoConverter.convert(model);
-                    vo.setOwner(userService.findUserById(model.getOwnerId()));
-                    return vo;
-                }).collect(Collectors.toList());
+        var tags = new HashMap<Long, String>();
+        versions.stream().collect(Collectors.groupingBy(ModelVersionEntity::getModelId))
+                .forEach((id, versionList) -> tags.putAll(
+                        bundleVersionTagDao.getJoinedTagsByBundleVersions(
+                                BundleAccessor.Type.RUNTIME, id, versionList)));
+        return versions.stream().map(version -> {
+            ModelEntity model = modelMapper.find(version.getModelId());
+            ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
+            ModelVo vo = modelVoConverter.convert(model);
+            vo.setOwner(userService.findUserById(model.getOwnerId()));
+            vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     private Long getOwner() {

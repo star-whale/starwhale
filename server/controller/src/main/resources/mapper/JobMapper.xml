@@ -50,6 +50,7 @@
     mv.created_time as mv_created_time,
     mv.modified_time as mv_modified_time,
     mv.version_order as mv_version_order,
+    mv.built_in_runtime as mv_built_in_runtime,
     m.model_name as model_name
     from job_info as j,
     user_info as u,
@@ -237,6 +238,7 @@
     <result column="model_id" property="modelId"/>
     <result column="model_name" property="modelName"/>
     <result column="mv_version_order" property="versionOrder"/>
+    <result column="mv_built_in_runtime" property="builtInRuntime"/>
     <result column="mv_version_name" property="versionName"/>
     <result column="mv_version_tag" property="versionTag"/>
     <result column="mv_jobs" property="jobs"/>

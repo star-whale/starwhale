@@ -81,6 +81,7 @@ public class JobMapperTest extends MySqlContainerHolder {
                 .ownerId(user.getId())
                 .jobs("jobs")
                 .versionOrder(1L)
+                .builtInRuntime("builtin-rt-v1")
                 .build();
         modelVersionMapper.insert(modelVersionEntity);
         jobPaused = JobEntity.builder().jobUuid(UUID.randomUUID().toString()).jobStatus(JobStatus.PAUSED)
@@ -247,6 +248,7 @@ public class JobMapperTest extends MySqlContainerHolder {
         Assertions.assertNotNull(target.getVersionOrder());
         Assertions.assertEquals("model", target.getModelName());
         Assertions.assertEquals(expected.getName(), target.getName());
+        Assertions.assertEquals(expected.getBuiltInRuntime(), target.getBuiltInRuntime());
     }
 
     private void validProject(ProjectEntity expected, UserEntity user, ProjectEntity target) {

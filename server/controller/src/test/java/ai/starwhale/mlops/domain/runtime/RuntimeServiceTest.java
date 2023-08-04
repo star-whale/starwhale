@@ -534,7 +534,7 @@ public class RuntimeServiceTest {
         given(runtimeMapper.find(same(1L)))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
 
-        var res = service.findRuntimeByVersionIds(List.of());
+        var res = service.findRuntimeByVersionIds(List.of(1L));
         assertThat(res, allOf(
                 iterableWithSize(1),
                 hasItem(hasProperty("id", is("1")))
