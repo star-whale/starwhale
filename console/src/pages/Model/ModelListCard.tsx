@@ -40,7 +40,10 @@ export default function ModelListCard() {
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
-                            <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}`}>
+                            <TextLink
+                                key={model.id}
+                                to={`/projects/${projectId}/models/${model.id}/versions/${model.version?.id}/overview`}
+                            >
                                 {model.name}
                             </TextLink>,
                             model.owner && <User user={model.owner} />,
