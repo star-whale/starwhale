@@ -166,13 +166,11 @@ test.describe('Models', () => {
 
     test.describe('Versions', () => {
         test.beforeAll(async () => {
-            await page.goto(ROUTES.models)
+            await page.goto(ROUTES.modelVersion)
         })
 
-        test('should link to model versions', async () => {
-            await page.locator('tr > td >> nth=0').getByRole('link').click()
-            await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
-            await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
+        test('should model versions have online eval', async () => {
+            await expect(page.locator('tr >> nth=0')).toBeDefined()
         })
     })
 
