@@ -474,6 +474,21 @@ const evaluation = {
     },
 }
 
+const report = {
+    'Reports': {
+        en: 'Reports',
+        zh: '报告',
+    },
+    'report.title': {
+        en: 'Title',
+        zh: '标题',
+    },
+    'report.search.by.title': {
+        en: 'Search by title',
+        zh: '按标题搜索',
+    },
+}
+
 const table = {
     'table.column.manage': {
         en: 'Manage Columns',
@@ -1652,6 +1667,7 @@ const locales0 = {
     ...trash,
     ...project,
     ...job,
+    ...report,
     ...table,
     ...evaluation,
     ...widget,

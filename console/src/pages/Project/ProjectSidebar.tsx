@@ -61,6 +61,12 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
                 icon: <IconFont type='runtime' size={16} />,
             },
+            {
+                title: t('Reports'),
+                path: `/projects/${projectId}/reports`,
+                activePathPattern: /\/(reports)\/?/,
+                icon: <IconFont type='a-onlineevaluation' size={16} />,
+            },
             isPrivileged
                 ? {
                       title: t('trash.title'),
