@@ -203,8 +203,8 @@ public class ModelService {
         return Model.fromEntity(entity);
     }
 
-    public ModelVersion findModelVersion(String versioUrl) {
-        ModelVersionEntity modelVersion = modelDao.getModelVersion(versioUrl);
+    public ModelVersion findModelVersion(String versionUrl) {
+        ModelVersionEntity modelVersion = modelDao.getModelVersion(versionUrl);
         return ModelVersion.fromEntity(modelVersion);
     }
 
@@ -307,15 +307,15 @@ public class ModelService {
     }
 
     private ModelInfoVo toModelInfoVo(ModelEntity model, ModelVersionEntity version) {
+        var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                BundleAccessor.Type.MODEL,
+                model.getId(),
+                List.of(version)
+        );
         return ModelInfoVo.builder()
                 .id(idConvertor.convert(model.getId()))
                 .name(model.getModelName())
-                .versionId(idConvertor.convert(version.getId()))
-                .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
-                .versionName(version.getVersionName())
-                .versionTag(version.getVersionTag())
-                .createdTime(version.getCreatedTime().getTime())
-                .shared(toInt(version.getShared()))
+                .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
                 .build();
     }
 

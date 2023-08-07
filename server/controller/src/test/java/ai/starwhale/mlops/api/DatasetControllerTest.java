@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -95,7 +96,8 @@ public class DatasetControllerTest {
         hashNamedDatasetObjectStoreFactory = mock(HashNamedDatasetObjectStoreFactory.class);
 
         controller = new DatasetController(datasetService, new IdConverter(), datasetUploader,
-                hashNamedDatasetObjectStoreFactory);
+                                           hashNamedDatasetObjectStoreFactory
+        );
     }
 
     @Test
@@ -107,8 +109,7 @@ public class DatasetControllerTest {
         var resp = controller.revertDatasetVersion("p1", "d1", request);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.revertDatasetVersion("p2", "d1", request));
+        assertThrows(StarwhaleApiException.class, () -> controller.revertDatasetVersion("p2", "d1", request));
     }
 
     @Test
@@ -120,8 +121,7 @@ public class DatasetControllerTest {
         var resp = controller.deleteDataset("p1", "d1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.deleteDataset("p2", "d1"));
+        assertThrows(StarwhaleApiException.class, () -> controller.deleteDataset("p2", "d1"));
     }
 
     @Test
@@ -131,9 +131,7 @@ public class DatasetControllerTest {
         var resp = controller.recoverDataset("p1", "d1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.recoverDataset("p2", "d1"));
-
+        assertThrows(StarwhaleApiException.class, () -> controller.recoverDataset("p2", "d1"));
     }
 
     @Test
@@ -144,7 +142,7 @@ public class DatasetControllerTest {
                     if (Objects.equals(query.getProjectUrl(), "p1")) {
                         return DatasetInfoVo.builder()
                                 .name(query.getDatasetUrl())
-                                .versionName(query.getDatasetVersionUrl())
+                                .versionInfo(DatasetVersionVo.builder().name("v1").build())
                                 .build();
                     } else {
                         return null;
@@ -153,11 +151,9 @@ public class DatasetControllerTest {
 
         var resp = controller.getDatasetInfo("p1", "d1", "v1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                hasProperty("name", is("d1")),
-                hasProperty("versionName", is("v1"))
-        ));
+        var info = Objects.requireNonNull(resp.getBody()).getData();
+        assertEquals("d1", info.getName());
+        assertEquals("v1", info.getVersionInfo().getName());
 
         resp = controller.getDatasetInfo("p2", "d2", "v2");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -203,33 +199,28 @@ public class DatasetControllerTest {
         uploadRequest.setUploadId(1L);
         uploadRequest.setPhase(UploadPhase.MANIFEST);
 
-        MultipartFile file = new MockMultipartFile("dsFile", "originalName", null,
-                "file_content".getBytes());
-        var resp = controller.uploadDs(
-                "p1", "d1", "v1", file, uploadRequest);
+        MultipartFile file = new MockMultipartFile("dsFile", "originalName", null, "file_content".getBytes());
+        var resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
-                notNullValue(),
-                hasProperty("uploadId", is(1L))
-        ));
+        assertThat(
+                Objects.requireNonNull(resp.getBody()).getData(),
+                allOf(notNullValue(), hasProperty("uploadId", is(1L)))
+        );
 
         uploadRequest.setPhase(UploadPhase.BLOB);
         resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is(1L)));
+        assertThat(Objects.requireNonNull(resp.getBody()).getData(), hasProperty("uploadId", is(1L)));
 
         uploadRequest.setPhase(UploadPhase.CANCEL);
         resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is(1L)));
+        assertThat(Objects.requireNonNull(resp.getBody()).getData(), hasProperty("uploadId", is(1L)));
 
         uploadRequest.setPhase(UploadPhase.END);
         resp = controller.uploadDs("p1", "d1", "v1", file, uploadRequest);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-        assertThat(Objects.requireNonNull(resp.getBody()).getData(),
-                hasProperty("uploadId", is(1L)));
+        assertThat(Objects.requireNonNull(resp.getBody()).getData(), hasProperty("uploadId", is(1L)));
     }
 
     @Test
@@ -243,11 +234,8 @@ public class DatasetControllerTest {
         controller.pullDs("p1", "d1", "v1", "part", null);
         assertThat(called.get(), is(true));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullDs("p1", "", "v1", "part", null));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.pullDs("p1", "d1", "", "part", null));
+        assertThrows(StarwhaleApiException.class, () -> controller.pullDs("p1", "", "v1", "part", null));
+        assertThrows(StarwhaleApiException.class, () -> controller.pullDs("p1", "d1", "", "part", null));
     }
 
     @Test
@@ -321,8 +309,10 @@ public class DatasetControllerTest {
         String uri = "uri";
         String signUrl = "sign-url";
         when(datasetService.signLinks(pj, "ds", Set.of(uri), 100L)).thenReturn(Map.of(uri, signUrl));
-        Assertions.assertEquals(Map.of(uri, signUrl),
-                controller.signLinks(pj, ds, Set.of(uri), 100L).getBody().getData());
+        Assertions.assertEquals(
+                Map.of(uri, signUrl),
+                controller.signLinks(pj, ds, Set.of(uri), 100L).getBody().getData()
+        );
     }
 
     @Test
@@ -334,8 +324,10 @@ public class DatasetControllerTest {
         when(hashNamedObjectStore.head("h3")).thenThrow(IOException.class);
         Assertions.assertTrue(controller.headHashedBlob("p", "d", "h1").getStatusCode().is2xxSuccessful());
         Assertions.assertTrue(controller.headHashedBlob("p", "d", "h2").getStatusCode().is4xxClientError());
-        Assertions.assertThrows(SwProcessException.class,
-                () -> controller.headHashedBlob("p", "d", "h3").getStatusCode().is4xxClientError());
+        Assertions.assertThrows(
+                SwProcessException.class,
+                () -> controller.headHashedBlob("p", "d", "h3").getStatusCode().is4xxClientError()
+        );
 
     }
 
@@ -366,8 +358,10 @@ public class DatasetControllerTest {
         when(hashNamedObjectStore.get("h2")).thenThrow(IOException.class);
         controller.getHashedBlob("p", "d", "h1", response);
         assertThat(new String(output.toByteArray()), is("hi content"));
-        Assertions.assertThrows(SwProcessException.class,
-                () -> controller.getHashedBlob("p", "d", "h2", mock(HttpServletResponse.class)));
+        Assertions.assertThrows(
+                SwProcessException.class,
+                () -> controller.getHashedBlob("p", "d", "h2", mock(HttpServletResponse.class))
+        );
 
     }
 

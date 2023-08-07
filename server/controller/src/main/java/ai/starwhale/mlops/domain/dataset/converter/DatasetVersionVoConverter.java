@@ -52,6 +52,7 @@ public class DatasetVersionVoConverter {
                 .meta(entity.getVersionMeta())
                 .shared(toInt(entity.getShared()))
                 .createdTime(entity.getCreatedTime().getTime())
+                .indexTable(entity.getIndexTable())
                 .build();
     }
 

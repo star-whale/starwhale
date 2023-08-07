@@ -302,17 +302,17 @@ public class DatasetService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                    BundleAccessor.Type.DATASET, ds.getId(), List.of(versionEntity));
             return DatasetInfoVo.builder()
                     .id(idConvertor.convert(ds.getId()))
                     .name(ds.getDatasetName())
-                    .versionId(idConvertor.convert(versionEntity.getId()))
-                    .versionName(versionEntity.getVersionName())
-                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
-                    .versionTag(versionEntity.getVersionTag())
                     .versionMeta(versionEntity.getVersionMeta())
-                    .createdTime(versionEntity.getCreatedTime().getTime())
-                    .indexTable(versionEntity.getIndexTable())
-                    .shared(toInt(versionEntity.getShared()))
+                    .versionInfo(versionConvertor.convert(
+                            versionEntity,
+                            versionEntity,
+                            tags.get(versionEntity.getId())
+                    ))
                     .files(collect)
                     .build();
 

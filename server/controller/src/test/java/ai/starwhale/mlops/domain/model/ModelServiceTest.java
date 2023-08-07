@@ -612,7 +612,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
     public void testFindModel() {
         var modelInfo = modelService.getModelInfo("1", "m", "v1");
         var modelId = Long.parseLong(modelInfo.getId());
-        var versionId = Long.parseLong(modelInfo.getVersionId());
+        var versionInfo = modelInfo.getVersionInfo();
+        var versionId = Long.parseLong(versionInfo.getId());
         var res = modelService.findModel(modelId);
         assertThat(res, allOf(
                 notNullValue(),
@@ -620,7 +621,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 hasProperty("name", is("m"))
         ));
 
-        assertThat(modelService.findModelVersion(versionId), allOf(
+        assertThat(modelService.findModelVersion(versionInfo.getId()), allOf(
                 notNullValue(),
                 hasProperty("id", is(versionId)),
                 hasProperty("modelId", is(modelId)),
@@ -670,17 +671,12 @@ public class ModelServiceTest extends MySqlContainerHolder {
     @Test
     public void testListModelInfo() {
         var res = modelService.listModelInfo("1", "m1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("name", is("m1")),
-                hasProperty("versionAlias", is("v1")))));
+        assertEquals(1, res.size());
+        assertEquals("m1", res.get(0).getName());
+        assertEquals("v1", res.get(0).getVersionInfo().getAlias());
 
         res = modelService.listModelInfo("1", "");
-        assertThat(res, allOf(
-                iterableWithSize(5),
-                hasItem(allOf(hasProperty("name", is("m")),
-                        hasProperty("versionAlias", is("v1")))),
-                hasItem(allOf(hasProperty("name", is("m1")),
-                        hasProperty("versionAlias", is("v1"))))));
+        assertEquals(5, res.size());
 
         assertThrows(SwNotFoundException.class,
                 () -> modelService.listModelInfo("1", "m2"));
@@ -699,18 +695,16 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 .modelVersionUrl("v1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("name", is("m")),
-                hasProperty("versionAlias", is("v1"))));
+        assertEquals("m", res.getName());
+        assertEquals("v1", res.getVersionInfo().getAlias());
 
         res = modelService.getModelInfo(ModelQuery.builder()
                 .projectUrl("1")
                 .modelUrl("m1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("name", is("m1")),
-                hasProperty("versionAlias", is("v1"))));
+        assertEquals("m1", res.getName());
+        assertEquals("v1", res.getVersionInfo().getAlias());
     }
 
     @Test

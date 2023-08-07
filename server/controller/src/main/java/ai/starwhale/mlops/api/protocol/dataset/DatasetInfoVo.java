@@ -38,34 +38,13 @@ public class DatasetInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("versionId")
-    private String versionId;
-
-    @JsonProperty("versionName")
-    private String versionName;
-
-    @JsonProperty("versionAlias")
-    private String versionAlias;
-
-    /**
-     * the table name for index in DataStore
-     */
-    String indexTable;
-
-    @JsonProperty("versionTag")
-    private String versionTag;
-
-    @JsonProperty("versionMeta")
-    private String versionMeta;
-
-    @JsonProperty("shared")
-    private Integer shared;
-
-    @JsonProperty("createdTime")
-    private Long createdTime;
-
     @JsonProperty("files")
     @Valid
     private List<FlattenFileVo> files;
 
+    // leave this field for backward compatibility, client uses this field
+    @JsonProperty("versionMeta")
+    private String versionMeta;
+
+    private DatasetVersionVo versionInfo;
 }

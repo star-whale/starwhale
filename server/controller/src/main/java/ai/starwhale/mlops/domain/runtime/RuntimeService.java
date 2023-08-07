@@ -309,7 +309,8 @@ public class RuntimeService {
         RuntimeVersionEntity versionEntity = null;
         if (!StrUtil.isEmpty(runtimeQuery.getRuntimeVersionUrl())) {
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                                                                      .create(runtimeQuery.getProjectUrl(),
+                                                                      .create(
+                                                                              runtimeQuery.getProjectUrl(),
                                                                               runtimeQuery.getRuntimeUrl(),
                                                                               runtimeQuery.getRuntimeVersionUrl()
                                                                       ));
@@ -332,17 +333,17 @@ public class RuntimeService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                    BundleAccessor.Type.RUNTIME, rt.getId(), List.of(versionEntity));
 
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))
                     .name(rt.getRuntimeName())
-                    .versionId(idConvertor.convert(versionEntity.getId()))
-                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
-                    .versionName(versionEntity.getVersionName())
-                    .versionTag(versionEntity.getVersionTag())
-                    .versionMeta(versionEntity.getVersionMeta())
-                    .shared(toInt(versionEntity.getShared()))
-                    .createdTime(versionEntity.getCreatedTime().getTime())
+                    .versionInfo(versionConvertor.convert(
+                            versionEntity,
+                            versionEntity,
+                            tags.get(versionEntity.getId())
+                    ))
                     .files(collect)
                     .build();
 
