@@ -18,6 +18,9 @@ package ai.starwhale.mlops.schedule.impl.docker.reporting;
 
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinder;
 import ai.starwhale.mlops.schedule.impl.docker.SwTaskSchedulerDocker;
@@ -26,15 +29,17 @@ import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
-public class TaskReporter {
+public class DockerTaskReporter {
 
-    TaskReportReceiver taskReportReceiver;
+    final TaskReportReceiver taskReportReceiver;
 
     final SystemSettingService systemSettingService;
 
@@ -42,43 +47,56 @@ public class TaskReporter {
 
     final ContainerTaskMapper containerTaskMapper;
 
-    public TaskReporter(SystemSettingService systemSettingService, DockerClientFinder dockerClientFinder,
-            ContainerTaskMapper containerTaskMapper) {
+    final ContainerStatusExplainer containerStatusExplainer;
+
+    final TaskStatusMachine taskStatusMachine;
+
+    public DockerTaskReporter(TaskReportReceiver taskReportReceiver, SystemSettingService systemSettingService,
+            DockerClientFinder dockerClientFinder,
+            ContainerTaskMapper containerTaskMapper, ContainerStatusExplainer containerStatusExplainer,
+            TaskStatusMachine taskStatusMachine) {
+        this.taskReportReceiver = taskReportReceiver;
         this.systemSettingService = systemSettingService;
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
+        this.containerStatusExplainer = containerStatusExplainer;
+        this.taskStatusMachine = taskStatusMachine;
     }
 
     @Scheduled(initialDelay = 10000, fixedDelay = 3000)
-    public void reportTasks(){
-        if(null == this.taskReportReceiver){
-            log.warn("taskReportReceiver hasn't been set yet");
-            return;
-        }
+    public void reportTasks() {
 
         List<ResourcePool> resourcePools = systemSettingService.getAllResourcePools();
-        if(CollectionUtils.isEmpty(resourcePools)){
+        if (CollectionUtils.isEmpty(resourcePools)) {
             resourcePools = List.of(null);
         }
         resourcePools.forEach(resourcePool -> {
             DockerClient dockerClient = dockerClientFinder.findProperDockerClient(resourcePool);
             List<Container> containers = dockerClient.listContainersCmd()
-                    .withLabelFilter(SwTaskSchedulerDocker.CONTAINER_LABELS).exec();
-            taskReportReceiver.receive(containers.stream().map(c->{
-                Long taskId = containerTaskMapper.taskIfOfContainer(c.getNames()[0]);
-                c.getState();
-                c.getStatus();
-                return new ReportedTask(taskId, null, 0, null, 0L, 0L, "");
-            }).collect(Collectors.toList()));
+                    .withLabelFilter(SwTaskSchedulerDocker.CONTAINER_LABELS).withShowAll(true).exec();
+            taskReportReceiver.receive(containers.stream().map(c -> containerToTaskReport(c)).filter(Objects::nonNull).collect(Collectors.toList()));
         });
 
     }
 
-    public void setTaskReportReceiverIfNotSet(TaskReportReceiver taskReportReceiver){
-        if(null != this.taskReportReceiver){
-            return;
+    public void reportTask(Container c){
+        taskReportReceiver.receive(List.of(containerToTaskReport(c)));
+    }
+
+    @Nullable
+    private ReportedTask containerToTaskReport(Container c) {
+        Long taskId;
+        try {
+            taskId = containerTaskMapper.taskIfOfContainer(c.getNames()[0]);
+        } catch (SwValidationException e) {
+            log.warn("malformat container name found {}", c.getNames()[0]);
+            return null;
         }
-        this.taskReportReceiver = taskReportReceiver;
+
+        TaskStatus status = containerStatusExplainer.statusOf(c, taskId);
+        Long stopMilli = taskStatusMachine.isFinal(status) ? System.currentTimeMillis() : null;
+        String failReason = TaskStatus.FAIL == status ? c.getStatus() : null;
+        return new ReportedTask(taskId, status, 0, null, null, stopMilli, failReason);
     }
 
 }

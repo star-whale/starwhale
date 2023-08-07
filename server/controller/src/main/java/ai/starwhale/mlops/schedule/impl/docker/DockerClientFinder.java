@@ -23,7 +23,7 @@ public interface DockerClientFinder {
 
     /**
      * given a specific resourcePool find a unique DockerClient
-     * The DockerClient must be consistent among different calls
+     * The DockerClient must be consistent among different calls given the same resourcePool
      * @param resourcePool
      * @return
      */

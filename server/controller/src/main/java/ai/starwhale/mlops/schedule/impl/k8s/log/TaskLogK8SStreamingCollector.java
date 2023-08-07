@@ -63,7 +63,7 @@ public class TaskLogK8SStreamingCollector implements TaskLogStreamingCollector {
     }
 
     @Override
-    public String readLine() throws IOException {
+    public String readLine(Long timeWaitSeconds) throws IOException {
         return bufferedReader.readLine();
     }
 

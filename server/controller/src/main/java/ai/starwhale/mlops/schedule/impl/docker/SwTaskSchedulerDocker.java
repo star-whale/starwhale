@@ -18,17 +18,23 @@ package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
-import ai.starwhale.mlops.schedule.impl.docker.reporting.TaskReporter;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectImageCmd;
-import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.ExecCreateCmd;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.KillContainerCmd;
+import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.Closeable;
@@ -36,20 +42,22 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.CollectionUtils;
 
+@Slf4j
 public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     final DockerClientFinder dockerClientFinder;
 
     final ContainerTaskMapper containerTaskMapper;
 
-    final TaskReporter taskReporter;
+    final DockerTaskReporter dockerTaskReporter;
 
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
@@ -57,22 +65,24 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     final String network;
 
+    final String nodeIp;
+
     public SwTaskSchedulerDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
-            TaskReporter taskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
-            TaskRunningEnvBuilder taskRunningEnvBuilder, String network) {
+            DockerTaskReporter dockerTaskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
+            TaskRunningEnvBuilder taskRunningEnvBuilder, String network, String nodeIp) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
-        this.taskReporter = taskReporter;
+        this.dockerTaskReporter = dockerTaskReporter;
         this.cmdExecThreadPool = cmdExecThreadPool;
         this.taskRunningEnvBuilder = taskRunningEnvBuilder;
         this.network = network;
+        this.nodeIp = nodeIp;
     }
 
-    public static Map<String,String> CONTAINER_LABELS = Map.of("owner","starwhale");
+    public static Map<String, String> CONTAINER_LABELS = Map.of("owner", "starwhale");
 
     @Override
     public void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver) {
-        taskReporter.setTaskReportReceiverIfNotSet(taskReportReceiver);
         if (CollectionUtils.isEmpty(tasks)) {
             return;
         }
@@ -83,7 +93,14 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
             dockerClient.pullImageCmd(image).exec(new ResultCallback<PullResponseItem>() {
                 @Override
                 public void onStart(Closeable closeable) {
-
+                    ReportedTask rt = ReportedTask.builder()
+                            .id(task.getId())
+                            .status(TaskStatus.PREPARING)
+                            .startTimeMillis(System.currentTimeMillis())
+                            .retryCount(0)
+                            .ip(nodeIp)
+                            .build();
+                    taskReportReceiver.receive(List.of(rt));
                 }
 
                 @Override
@@ -93,18 +110,35 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 @Override
                 public void onError(Throwable throwable) {
+                    ReportedTask rt = ReportedTask.builder()
+                            .id(task.getId())
+                            .status(TaskStatus.FAIL)
+                            .stopTimeMillis(System.currentTimeMillis())
+                            .retryCount(0)
+                            .failedReason(throwable.getMessage())
+                            .ip(nodeIp)
+                            .build();
+                    taskReportReceiver.receive(List.of(rt));
 
                 }
 
                 @Override
                 public void onComplete() {
-                    dockerClient.createContainerCmd(
-                                    image
-                            )
+                    CreateContainerResponse createContainerResponse = dockerClient.createContainerCmd(image)
                             .withEnv(buildEnvs(task))
+                            .withName(containerTaskMapper.containerNameOfTask(task))
                             .withHostConfig(buildHostConfig(task))
                             .withLabels(CONTAINER_LABELS)
                             .exec();
+                    dockerClient.startContainerCmd(createContainerResponse.getId()).exec();
+                    ReportedTask rt = ReportedTask.builder()
+                            .id(task.getId())
+                            .status(TaskStatus.RUNNING)
+                            .startTimeMillis(System.currentTimeMillis())
+                            .retryCount(0)
+                            .ip(nodeIp)
+                            .build();
+                    taskReportReceiver.receive(List.of(rt));
                 }
 
                 @Override
@@ -112,7 +146,6 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 }
             });
-            //TODO report to taskReportReceiver, taskUUid renamed to task exec identifier
         }
 
 
@@ -156,9 +189,53 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         tasks.forEach(t -> {
             DockerClient dockerClient = dockerClientFinder.findProperDockerClient(
                     t.getStep().getResourcePool());
-            KillContainerCmd cmd = dockerClient.killContainerCmd(
-                    containerTaskMapper.containerNameOfTask(t));
-            cmd.exec();
+            String containerId = containerTaskMapper.containerNameOfTask(t);
+            List<Container> containers = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).exec();
+            if(CollectionUtils.isEmpty(containers)){
+                return;
+            }
+            try{
+                dockerClient.killContainerCmd(containerId).exec();
+            }catch (DockerException e){
+                log.warn("try to kill container with error", e);
+            }
+            // CANCELLING tasks need to report to stats watchers once more than failed and success tasks
+            // so that it could transfer to CANCELLED
+            if(t.getStatus() == TaskStatus.CANCELLING){
+                cmdExecThreadPool.submit(()->{
+                    while (true){
+                        var lc = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).withShowAll(true).exec();
+                        if(CollectionUtils.isEmpty(lc)){
+                            break;
+                        }
+                        if(lc.get(0).getState().equalsIgnoreCase("running")){
+                            try {
+                                Thread.sleep(1000L);
+                            } catch (InterruptedException e) {
+                                log.error("waiting for next watch of CANCELLING task interrupted start next loop immediately",e);
+                            }
+                            continue;
+                        }
+                        dockerTaskReporter.reportTask(lc.get(0));
+                        try{
+                            dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
+                        }catch (DockerException e){
+                            log.warn("try to remove container with error", e);
+                        }
+                        break;
+                    }
+
+                });
+
+            }else {
+                try{
+                    dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
+                }catch (DockerException e){
+                    log.warn("try to remove container with error", e);
+                }
+            }
+
+
         });
 
     }
@@ -167,6 +244,37 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
     public Future<String[]> exec(Task task, String... command) {
 //        cmdExecThreadPool.submit()
 //        dockerClient.execCreateCmd()
+        DockerClient dockerClient = dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
+
+        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd(containerTaskMapper.containerNameOfTask(task));
+        ExecCreateCmdResponse exec = execCreateCmd.exec();
+        ExecStartCmd execStartCmd = dockerClient.execStartCmd(exec.getId());
+        execStartCmd.exec(new ResultCallback<Frame>() {
+            @Override
+            public void onStart(Closeable closeable) {
+
+            }
+
+            @Override
+            public void onNext(Frame object) {
+
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+
+            @Override
+            public void close() throws IOException {
+
+            }
+        });
         return null;
     }
 

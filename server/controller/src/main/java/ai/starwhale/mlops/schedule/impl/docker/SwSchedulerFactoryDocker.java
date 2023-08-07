@@ -16,12 +16,11 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
-import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.schedule.SwSchedulerAbstractFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
 import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
-import ai.starwhale.mlops.schedule.impl.docker.reporting.TaskReporter;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -38,29 +37,32 @@ public class SwSchedulerFactoryDocker implements SwSchedulerAbstractFactory {
 
     final ContainerTaskMapper containerTaskMapper;
 
-    final TaskReporter taskReporter;
+    final DockerTaskReporter dockerTaskReporter;
 
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
     final TaskRunningEnvBuilder taskRunningEnvBuilder;
 
     final String network;
+    final String nodeIp;
 
     public SwSchedulerFactoryDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
-            TaskReporter taskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
-            TaskRunningEnvBuilder taskRunningEnvBuilder, @Value("${sw.infra.docker.network}") String network) {
+            DockerTaskReporter dockerTaskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
+            TaskRunningEnvBuilder taskRunningEnvBuilder, @Value("${sw.infra.docker.network}") String network,  @Value("${sw.infra.docker.node-ip}") String nodeIp) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
-        this.taskReporter = taskReporter;
+        this.dockerTaskReporter = dockerTaskReporter;
         this.cmdExecThreadPool = cmdExecThreadPool;
         this.taskRunningEnvBuilder = taskRunningEnvBuilder;
         this.network = network;
+        this.nodeIp = nodeIp;
     }
 
     @Bean
     @Override
     public SwTaskScheduler buildSwTaskScheduler(){
-        return new SwTaskSchedulerDocker(dockerClientFinder, containerTaskMapper, taskReporter, cmdExecThreadPool, taskRunningEnvBuilder, network);
+        return new SwTaskSchedulerDocker(dockerClientFinder, containerTaskMapper, dockerTaskReporter, cmdExecThreadPool, taskRunningEnvBuilder, network,
+                nodeIp);
     }
 
     @Bean

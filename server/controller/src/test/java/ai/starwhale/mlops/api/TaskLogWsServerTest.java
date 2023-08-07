@@ -48,17 +48,18 @@ public class TaskLogWsServerTest {
 
     @Test
     public void testOpen() throws IOException, ApiException, InterruptedException {
-        var server = new TaskLogWsServer(mock(TaskLogCollectorFactory.class));
+        var server = new TaskLogWsServer();
         server.setIdConvertor(idConvertor);
+        server.setTaskLogCollectorFactory(mock(TaskLogCollectorFactory.class));
 
         final Long taskId = 1L;
         when(factory.make(taskId.toString())).thenReturn(logK8sCollector);
         when(session.getId()).thenReturn("1");
         when(idConvertor.revert(any())).thenReturn(taskId);
-        when(logK8sCollector.readLine()).thenReturn("foo");
+        when(logK8sCollector.readLine(any())).thenReturn("foo");
         server.onOpen(session, "1");
         verify(factory).make(taskId.toString());
         TimeUnit.MILLISECONDS.sleep(500);
-        verify(logK8sCollector).readLine();
+        verify(logK8sCollector).readLine(any());
     }
 }

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
@@ -44,7 +45,7 @@ public class TaskLogWsServer {
 
     private static IdConverter idConvertor;
 
-    final private TaskLogCollectorFactory taskLogCollectorFactory;
+    private static TaskLogCollectorFactory taskLogCollectorFactory;
 
     private Session session;
 
@@ -54,14 +55,15 @@ public class TaskLogWsServer {
 
     private TaskLogStreamingCollector logCollector;
 
-    public TaskLogWsServer(TaskLogCollectorFactory taskLogCollectorFactory) {
-        this.taskLogCollectorFactory = taskLogCollectorFactory;
-    }
-
 
     @Autowired
     public void setIdConvertor(IdConverter idConvertor) {
         TaskLogWsServer.idConvertor = idConvertor;
+    }
+
+    @Autowired
+    public void setTaskLogCollectorFactory(TaskLogCollectorFactory taskLogCollectorFactory) {
+        TaskLogWsServer.taskLogCollectorFactory = taskLogCollectorFactory;
     }
 
 
@@ -71,7 +73,7 @@ public class TaskLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
         try {
-            logCollector = taskLogCollectorFactory.streamingCollector(Task.builder().id(id).build());
+            logCollector = taskLogCollectorFactory.streamingCollector(Task.builder().id(id).step(new Step()).build());
         } catch (StarwhaleException e) {
             log.error("make k8s log collector failed", e);
         }
@@ -80,7 +82,7 @@ public class TaskLogWsServer {
             String line;
             while (true) {
                 try {
-                    if ((line = logCollector.readLine()) == null) {
+                    if ((line = logCollector.readLine(null)) == null) {
                         break;
                     }
                     sendMessage(line);

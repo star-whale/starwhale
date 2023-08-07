@@ -55,6 +55,7 @@ sw:
   infra:
     docker:
       network: ${SW_DOCKER_CONTAINER_NETWORK:host}
+      node-ip: ${SW_DOCKER_CONTAINER_NODE_IP:127.0.0.1}
     k8s:
       name-space: ${SW_K8S_NAME_SPACE:default}
       host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:}

@@ -20,7 +20,7 @@ import java.io.IOException;
 
 public interface TaskLogStreamingCollector {
 
-    String readLine() throws IOException;
+    String readLine(Long waitTimeSeconds) throws IOException;
 
     void cancel();
 }

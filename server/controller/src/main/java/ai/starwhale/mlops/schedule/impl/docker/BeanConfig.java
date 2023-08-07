@@ -16,8 +16,13 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.schedule.impl.docker.reporting.TaskReporter;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.ContainerStatusExplainer;
+import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,10 +42,27 @@ public class BeanConfig {
     }
 
     @Bean
-    public TaskReporter taskReporter(SystemSettingService systemSettingService, DockerClientFinder dockerClientFinder,
-            ContainerTaskMapper containerTaskMapper){
-        return new TaskReporter(systemSettingService, dockerClientFinder,
-                containerTaskMapper);
+    public DockerTaskReporter taskReporter(
+            TaskReportReceiver taskReportReceiver,
+            SystemSettingService systemSettingService,
+            DockerClientFinder dockerClientFinder,
+            ContainerStatusExplainer containerStatusExplainer,
+            TaskStatusMachine taskStatusMachine,
+            ContainerTaskMapper containerTaskMapper
+    ){
+        return new DockerTaskReporter(
+                taskReportReceiver,
+                systemSettingService,
+                dockerClientFinder,
+                containerTaskMapper,
+                containerStatusExplainer,
+                taskStatusMachine
+        );
+    }
+
+    @Bean
+    public ContainerStatusExplainer containerStatusExplainer(TaskMapper taskMapper){
+        return new ContainerStatusExplainer( taskMapper);
     }
 
 }

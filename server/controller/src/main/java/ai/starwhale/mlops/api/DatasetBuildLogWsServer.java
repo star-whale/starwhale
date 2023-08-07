@@ -79,7 +79,7 @@ public class DatasetBuildLogWsServer {
             String line;
             while (true) {
                 try {
-                    if ((line = logCollector.readLine()) == null) {
+                    if ((line = logCollector.readLine(10L)) == null) {
                         break;
                     }
                     sendMessage(line);

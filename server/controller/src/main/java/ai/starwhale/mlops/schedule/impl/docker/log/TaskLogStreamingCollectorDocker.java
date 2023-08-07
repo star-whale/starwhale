@@ -29,7 +29,10 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 
+
+@Slf4j
 public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollector {
 
     final DockerClient dockerClient;
@@ -42,12 +45,17 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
 
     Closeable closeable;
 
+    Boolean closed = Boolean.FALSE;
+
     public TaskLogStreamingCollectorDocker(Task task, DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper) {
         this.dockerClientFinder = dockerClientFinder;
         this.dockerClient = this.dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
         this.containerTaskMapper = containerTaskMapper;
         this.logLines = new LinkedBlockingQueue<>();
-        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task));
+        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task))
+                .withStdErr(true)
+                .withStdOut(true)
+                .withFollowStream(true);
         var that = this;
         logContainerCmd.exec(new ResultCallback<Frame>() {
             @Override
@@ -66,32 +74,56 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
 
             @Override
             public void onError(Throwable throwable) {
+                signalClose();
             }
 
             @Override
             public void onComplete() {
+                signalClose();
             }
 
             @Override
             public void close() throws IOException {
+                signalClose();
+            }
+
+            private void signalClose(){
+                closed = Boolean.TRUE;
+                try {
+                    logLines.put("");
+                } catch (InterruptedException e) {
+                    log.error("putting to logLines failed, readLine thread may starving");
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
 
     @Override
-    public String readLine() throws IOException {
+    public String readLine(Long waitTimeSeconds) throws IOException {
+        if(this.closed){
+            return null;
+        }
         try {
-            return this.logLines.poll(2, TimeUnit.SECONDS);
+            if(null == waitTimeSeconds){
+                return logLines.take();
+            }else {
+                return this.logLines.poll(waitTimeSeconds, TimeUnit.SECONDS);
+            }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            log.error("taking log line Interrupted", e);
+            return null;
         }
     }
 
     @Override
     public void cancel() {
         try {
-            this.closeable.close();
+            if(null != this.closeable){
+                this.closeable.close();
+            }
             this.logLines.clear();
+            this.closed = Boolean.TRUE;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

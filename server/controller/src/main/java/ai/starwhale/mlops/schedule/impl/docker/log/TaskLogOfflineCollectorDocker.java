@@ -49,7 +49,15 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
         this.dockerClientFinder = dockerClientFinder;
         this.dockerClient = this.dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
         this.containerTaskMapper = containerTaskMapper;
-        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task));
+    }
+
+    @Override
+    public Tuple2<String, String> collect() {
+        logBuffer = new StringBuffer();
+        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task))
+                .withStdErr(true)
+                .withStdOut(true)
+                .withFollowStream(false);
         logContainerCmd.exec(new ResultCallback<Frame>() {
             @Override
             public void onStart(Closeable closeable) {
@@ -83,10 +91,6 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
                 }
             }
         });
-    }
-
-    @Override
-    public Tuple2<String, String> collect() {
         synchronized (this.lock){
             try {
                 this.lock.wait();
