@@ -3,22 +3,7 @@ import { Editor, Range, Extension } from '@tiptap/core'
 import Suggestion from '@tiptap/suggestion'
 import { ReactRenderer } from '@tiptap/react'
 import tippy from 'tippy.js'
-import {
-    Heading1,
-    Heading2,
-    Heading3,
-    List,
-    ListOrdered,
-    MessageSquarePlus,
-    Text,
-    TextQuote,
-    Image as ImageIcon,
-    Code,
-    CheckSquare,
-} from 'lucide-react'
-import LoadingCircle from '../icons/loading-circle'
-import Magic from '../icons/magic'
-import { startImageUpload } from '../plugins/upload-images'
+import { Heading1, Heading2, Heading3, List, ListOrdered, Text, TextQuote, Code } from 'lucide-react'
 
 interface CommandItemProps {
     title: string
@@ -134,27 +119,27 @@ const getSuggestionItems = ({ query }: { query: string }) => {
             command: ({ editor, range }: CommandProps) =>
                 editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
         },
-        {
-            title: 'Image',
-            description: 'Upload an image from your computer.',
-            searchTerms: ['photo', 'picture', 'media'],
-            icon: <ImageIcon size={18} />,
-            command: ({ editor, range }: CommandProps) => {
-                editor.chain().focus().deleteRange(range).run()
-                // upload image
-                const input = document.createElement('input')
-                input.type = 'file'
-                input.accept = 'image/*'
-                input.onchange = async () => {
-                    if (input.files?.length) {
-                        const file = input.files[0]
-                        const pos = editor.view.state.selection.from
-                        startImageUpload(file, editor.view, pos)
-                    }
-                }
-                input.click()
-            },
-        },
+        // {
+        //     title: 'Image',
+        //     description: 'Upload an image from your computer.',
+        //     searchTerms: ['photo', 'picture', 'media'],
+        //     icon: <ImageIcon size={18} />,
+        //     command: ({ editor, range }: CommandProps) => {
+        //         editor.chain().focus().deleteRange(range).run()
+        //         // upload image
+        //         const input = document.createElement('input')
+        //         input.type = 'file'
+        //         input.accept = 'image/*'
+        //         input.onchange = async () => {
+        //             if (input.files?.length) {
+        //                 const file = input.files[0]
+        //                 const pos = editor.view.state.selection.from
+        //                 startImageUpload(file, editor.view, pos)
+        //             }
+        //         }
+        //         input.click()
+        //     },
+        // },
     ].filter((item) => {
         if (typeof query === 'string' && query.length > 0) {
             const search = query.toLowerCase()
@@ -258,14 +243,14 @@ const CommandList = ({
                 return (
                     <button
                         type='button'
-                        className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-stone-900 hover:bg-stone-100 ${
+                        className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-xs text-stone-900 hover:bg-stone-100 ${
                             index === selectedIndex ? 'bg-stone-100 text-stone-900' : ''
                         }`}
                         key={index}
                         onClick={() => selectItem(index)}
                     >
-                        <div className='flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 bg-white'>
-                            {item.title === 'Continue writing' && isLoading ? <LoadingCircle /> : item.icon}
+                        <div className='flex h-10 w-10 items-center justify-center rounded-sm border border-stone-200 bg-white'>
+                            {item.icon}
                         </div>
                         <div>
                             <p className='font-medium'>{item.title}</p>

@@ -14,6 +14,7 @@ export const TiptapEditorProps: EditorProps = {
                     return true
                 }
             }
+            return false
         },
     },
     // handlePaste: (view, event) => {

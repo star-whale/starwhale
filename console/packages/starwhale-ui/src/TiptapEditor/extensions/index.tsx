@@ -11,7 +11,7 @@ import { Markdown } from 'tiptap-markdown'
 import Highlight from '@tiptap/extension-highlight'
 import { InputRule } from '@tiptap/core'
 import SlashCommand from './slash-command'
-
+// import Document from '@tiptap/extension-document'
 // import UploadImagesPlugin from './plugins/upload-images'
 // import Paragraph from '@tiptap/extension-paragraph'
 // import TiptapImage from '@tiptap/extension-image'
@@ -21,8 +21,12 @@ import SlashCommand from './slash-command'
 //         return [UploadImagesPlugin()]
 //     },
 // })
+// const CustomDocument = Document.extend({
+//     content: 'heading block*',
+// })
 
 export const TiptapExtensions = [
+    // CustomDocument,
     StarterKit.configure({
         bulletList: {
             HTMLAttributes: {
@@ -73,7 +77,7 @@ export const TiptapExtensions = [
 
                         const { tr } = state
                         const start = range.from
-                        let end = range.to
+                        const end = range.to
 
                         tr.insert(start - 1, this.type.create(attributes)).delete(
                             tr.mapping.map(start),
@@ -107,7 +111,7 @@ export const TiptapExtensions = [
             if (node.type.name === 'heading') {
                 return `Heading ${node.attrs.level}`
             }
-            return "Press '/' for commands, or '++' for AI autocomplete..."
+            return "Press '/' for commands"
         },
         includeChildren: true,
     }),
