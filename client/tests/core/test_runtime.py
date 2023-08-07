@@ -450,6 +450,8 @@ class StandaloneRuntimeTestCase(TestCase):
             conda_name=conda_name,
             cuda="11.4",
             tags=["from-conda-v0"],
+            dump_condarc=True,
+            dump_pip_options=True,
         )
 
         assert m_py_ver_bin.call_args[0][0] == os.path.join(conda_prefix, "bin/python3")
@@ -2227,7 +2229,9 @@ class StandaloneRuntimeTestCase(TestCase):
         os.environ[ENV_VENV] = venv_dir
         content = load_yaml(yaml_path)
         assert RuntimeLockFileType.VENV not in content.get("dependencies", [])
-        StandaloneRuntime.lock(target_dir, yaml_path, env_use_shell=True)
+        StandaloneRuntime.lock(
+            target_dir, yaml_path, env_use_shell=True, dump_pip_options=True
+        )
 
         assert m_call.call_args_list[0][0][0] == [
             f"{venv_dir}/bin/pip",
@@ -2298,6 +2302,7 @@ class StandaloneRuntimeTestCase(TestCase):
             env_prefix_path=venv_dir,
             include_editable=True,
             include_local_wheel=True,
+            dump_pip_options=True,
         )
         assert m_call.call_args[0][0].startswith(
             " ".join(
@@ -2329,7 +2334,7 @@ class StandaloneRuntimeTestCase(TestCase):
             return MagicMock()
 
         m_venv.cli_run = _mock_cli_run
-        StandaloneRuntime.lock(target_dir, yaml_path)
+        StandaloneRuntime.lock(target_dir, yaml_path, dump_pip_options=True)
 
         assert m_call.call_count == 4
         assert m_output.call_count == 2

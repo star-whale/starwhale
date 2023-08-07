@@ -127,7 +127,7 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> None:
         Runtime.lock(
@@ -139,7 +139,7 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
             no_cache=no_cache,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_pip_options=emit_pip_options,
+            dump_pip_options=dump_pip_options,
             env_use_shell=env_use_shell,
         )
 
@@ -171,8 +171,8 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_condarc: bool = False,
-        emit_pip_options: bool = False,
+        dump_condarc: bool = False,
+        dump_pip_options: bool = False,
         tags: t.List[str] | None = None,
     ) -> Resource:
         set_args = list(filter(bool, (conda_name, conda_prefix, venv_prefix)))
@@ -215,8 +215,8 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
             download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
             tags=tags,
         )
         return runtime_uri
@@ -234,8 +234,8 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
         include_local_wheel: bool = False,
         no_cache: bool = False,
         disable_env_lock: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
         tags: t.List[str] | None = None,
     ) -> Resource:
         workdir = Path(workdir)
@@ -267,8 +267,8 @@ class RuntimeTermView(BaseTermView, TagViewMixin):
             include_local_wheel=include_local_wheel,
             no_cache=no_cache,
             disable_env_lock=disable_env_lock,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
             tags=tags,
         )
         return _runtime_uri

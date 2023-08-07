@@ -11,7 +11,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.type import RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
@@ -257,16 +256,18 @@ def _quickstart(
     hidden=True,
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "-epo",
-    "--emit-pip-options",
+    "-dpo",
+    "--dump-pip-options",
     is_flag=True,
-    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+    show_default=True,
+    help="Dump pip config options from the ~/.pip/pip.conf file.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "-ecc",
-    "--emit-condarc",
+    "-dcc",
+    "--dump-condarc",
     is_flag=True,
-    help="Emit to dump ~/.condarc from the local machine, default is False",
+    show_default=True,
+    help="Dump conda config from the ~/.condarc file",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-ilw",
@@ -299,8 +300,8 @@ def _build(
     shell: bool,
     yaml: str,
     docker: str,
-    emit_pip_options: bool,
-    emit_condarc: bool,
+    dump_pip_options: bool,
+    dump_condarc: bool,
     tags: t.List[str],
 ) -> None:
     """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
@@ -369,8 +370,8 @@ def _build(
             download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
             tags=tags,
         )
     else:
@@ -384,8 +385,8 @@ def _build(
             include_local_wheel=include_local_wheel,
             no_cache=no_cache,
             disable_env_lock=disable_env_lock,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
             tags=tags,
         )
 
@@ -717,10 +718,11 @@ def _activate(uri: str, force_restore: bool) -> None:
     help="Include local wheel packages",
 )
 @click.option(
-    "-epo",
-    "--emit-pip-options",
+    "-dpo",
+    "--dump-pip-options",
     is_flag=True,
-    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+    show_default=True,
+    help="Dump pip config options from the ~/.pip/pip.conf file.",
 )
 @click.option(
     "-nc",
@@ -738,7 +740,7 @@ def _lock(
     stdout: bool,
     include_editable: bool,
     include_local_wheel: bool,
-    emit_pip_options: bool,
+    dump_pip_options: bool,
     no_cache: bool,
 ) -> None:
     """
@@ -756,7 +758,7 @@ def _lock(
         stdout,
         include_editable,
         include_local_wheel,
-        emit_pip_options,
+        dump_pip_options,
         env_use_shell,
     )
 
