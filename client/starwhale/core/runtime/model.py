@@ -759,7 +759,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> t.Tuple[str, t.Optional[Path]]:
         return StandaloneRuntime.lock(
@@ -771,7 +771,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             stdout,
             include_editable,
             include_local_wheel,
-            emit_pip_options,
+            dump_pip_options,
             env_use_shell,
         )
 
@@ -807,8 +807,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
         tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
@@ -825,8 +825,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
         tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
@@ -972,8 +972,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
         tags: t.List[str] | None = None,
     ) -> None:
         if conda_name or conda_prefix:
@@ -1029,8 +1029,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=conda_name,
                 env_prefix_path=conda_prefix or venv_prefix,
                 env_use_shell=env_use_shell,
-                emit_pip_options=emit_pip_options,
-                emit_condarc=emit_condarc,
+                dump_pip_options=dump_pip_options,
+                dump_condarc=dump_condarc,
                 tags=tags,
             )
         finally:
@@ -1048,8 +1048,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
         tags: t.List[str] | None = None,
     ) -> None:
         StandaloneTag.check_tags_validation(tags)
@@ -1074,7 +1074,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
                 env_use_shell=env_use_shell,
-                emit_pip_options=emit_pip_options,
+                dump_pip_options=dump_pip_options,
             )
             _version_map = {}
             _setup_requires_libs = []
@@ -1118,7 +1118,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self._dump_configs,
                 5,
                 "dump configs",
-                dict(config=swrt_config, emit_condarc=emit_condarc),
+                dict(config=swrt_config, dump_condarc=dump_condarc),
             ),
             (
                 self._lock_environment,
@@ -1180,15 +1180,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 # CONDARC env only works in the current process and subprocess by the starwhale.utils.process.check_call function
                 os.environ["CONDARC"] = str(condarc_path)
 
-    def _dump_configs(self, config: RuntimeConfig, emit_condarc: bool = False) -> None:
+    def _dump_configs(self, config: RuntimeConfig, dump_condarc: bool = False) -> None:
         self._manifest["configs"] = config.configs.asdict()
 
         condarc_path = Path.home() / ".condarc"
-        if (
-            config.mode == PythonRunEnv.CONDA
-            and not emit_condarc
-            and condarc_path.exists()
-        ):
+        if config.mode == PythonRunEnv.CONDA and dump_condarc and condarc_path.exists():
             local_condarc = load_yaml(condarc_path)
             local_condarc.update(config.configs.conda.condarc)
             self._manifest["configs"]["conda"]["condarc"] = local_condarc
@@ -1680,7 +1676,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> t.Tuple[str, t.Optional[Path]]:
         """Install dependencies and save or print lock file
@@ -1694,7 +1690,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             stdout: just print the lock info into stdout without saving lock file
             include_editable: include the editable pkg (only for venv)
             include_local_wheel: include local wheel pkg (only for venv)
-            emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
+            dump_pip_options: use user's pip configuration when freeze pkgs (only for venv)
             env_use_shell: automatically detect env in current shell session
 
         Returns:
@@ -1764,7 +1760,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 py_bin=pybin,
                 lock_fpath=temp_lock_path,
                 include_editable=include_editable,
-                emit_options=emit_pip_options,
+                dump_options=dump_pip_options,
                 include_local_wheel=include_local_wheel,
             )
         else:
