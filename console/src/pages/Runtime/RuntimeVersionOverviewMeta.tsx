@@ -8,9 +8,9 @@ export default function RuntimeVersionOverviewMeta() {
     const { runtimeVersion } = useRuntimeVersion()
 
     const jsonData = useMemo(() => {
-        if (!runtimeVersion?.versionMeta) return {}
-        return yaml.load(runtimeVersion?.versionMeta)
-    }, [runtimeVersion?.versionMeta])
+        if (!runtimeVersion?.versionInfo.meta) return {}
+        return yaml.load(runtimeVersion?.versionInfo.meta)
+    }, [runtimeVersion?.versionInfo.meta])
 
     return (
         <Card

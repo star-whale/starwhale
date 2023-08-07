@@ -9,20 +9,12 @@ export interface IRuntimeVersionSchema extends IResourceSchema, IHasTagSchema {
     builtImage: string
     runtimeId: string
     shared?: number
+    meta: string
 }
 
 export interface IRuntimeTreeVersionSchema extends IRuntimeVersionSchema {
     versionName?: string
     createdTime?: number
-}
-
-export interface IRuntimeVersionListSchema extends IResourceSchema {
-    name: string
-    versionName: string
-    versionMeta: string
-    versionTag: string
-    versionAlias: string
-    manifest: string
 }
 
 export interface IRuntimeVersionDetailSchema extends IRuntimeVersionSchema {
@@ -31,10 +23,6 @@ export interface IRuntimeVersionDetailSchema extends IRuntimeVersionSchema {
 
 export interface IUpdateRuntimeVersionSchema {
     tag: string
-}
-
-export interface ICreateRuntimeVersionSchema {
-    file?: File
 }
 
 export interface IRuntimeVersionListQuerySchema extends IListQuerySchema {

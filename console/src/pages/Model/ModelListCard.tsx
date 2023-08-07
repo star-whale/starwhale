@@ -14,6 +14,9 @@ import { useFetchModels } from '@model/hooks/useFetchModels'
 import { TextLink } from '@/components/Link'
 import { Button } from '@starwhale/ui'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { MonoText } from '@starwhale/ui/Text'
+import Alias from '@/components/Alias'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -36,7 +39,14 @@ export default function ModelListCard() {
         <Card title={t('Models')}>
             <Table
                 isLoading={modelsInfo.isLoading}
-                columns={[t('sth name', [t('Model')]), t('Owner'), t('Created'), t('Action')]}
+                columns={[
+                    t('sth name', [t('Model')]),
+                    t('Model Version'),
+                    t('Alias'),
+                    t('Owner'),
+                    t('Created'),
+                    t('Action'),
+                ]}
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
@@ -46,6 +56,8 @@ export default function ModelListCard() {
                             >
                                 {model.name}
                             </TextLink>,
+                            <MonoText key='name'>{model.version?.name ?? '-'}</MonoText>,
+                            model.version && <Alias key='alias' alias={getAliasStr(model.version)} />,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             <div key='action' style={{ display: 'flex', gap: '5px' }}>
