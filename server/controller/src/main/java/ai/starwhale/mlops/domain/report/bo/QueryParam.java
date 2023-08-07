@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.report.bo;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import lombok.Builder;
+import lombok.Data;
 
-public interface BundleAccessor {
-
-    BundleEntity findById(Long id);
-
-    BundleEntity findByNameForUpdate(String name, Long projectId);
-
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT
-    }
+@Data
+@Builder
+public class QueryParam {
+    private String reportUrl;
+    private String projectUrl;
 }

@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.api.protocol.report;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import cn.hutool.core.util.StrUtil;
+import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
-public interface BundleAccessor {
+import javax.validation.constraints.NotNull;
 
-    BundleEntity findById(Long id);
+@Data
+public class UpdateReportRequest {
+    private Boolean shared;
+    private String content;
 
-    BundleEntity findByNameForUpdate(String name, Long projectId);
-
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT
+    public boolean validate() {
+        return StrUtil.isNotEmpty(content) || null != shared;
     }
 }

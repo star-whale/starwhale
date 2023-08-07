@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.domain.report;
 
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import java.util.Date;
+import lombok.Builder;
+import lombok.Data;
 
-public interface BundleAccessor {
 
-    BundleEntity findById(Long id);
-
-    BundleEntity findByNameForUpdate(String name, Long projectId);
-
-    Type getType();
-
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT
-    }
+@Data
+@Builder
+public class ReportEntity implements BundleEntity {
+    private Long id;
+    private String uuid;
+    private String name;
+    private String content;
+    private Boolean shared;
+    private Long projectId;
+    private Long creatorId;
+    private Date createdTime;
+    private Date modifiedTime;
 }

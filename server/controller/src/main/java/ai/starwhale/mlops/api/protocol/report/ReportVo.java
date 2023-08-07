@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle;
+package ai.starwhale.mlops.api.protocol.report;
 
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
+import lombok.Data;
 
-public interface BundleAccessor {
+@Data
+@Builder
+@Schema(description = "Report object", title = "Report")
+public class ReportVo {
+    private String uuid;
 
-    BundleEntity findById(Long id);
+    private String name;
 
-    BundleEntity findByNameForUpdate(String name, Long projectId);
+    private String content;
 
-    Type getType();
+    private Boolean shared;
 
-    enum Type {
-        MODEL, DATASET, RUNTIME, JOB, REPORT
+    private UserVo creator;
+
+    private Long createdTime;
+    private Long modifiedTime;
+
+    public static ReportVo empty() {
+        return new ReportVo("", "", "", false, null, null, null);
     }
 }
