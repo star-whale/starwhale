@@ -6474,7 +6474,7 @@
   dependencies:
     "@unocss/core" "0.54.1"
 
-"@unocss/preset-typography@0.54.1":
+"@unocss/preset-typography@0.54.1", "@unocss/preset-typography@^0.54.1":
   version "0.54.1"
   resolved "https://registry.yarnpkg.com/@unocss/preset-typography/-/preset-typography-0.54.1.tgz#679229606e5f06f119c5db40455f8826bb18698b"
   integrity sha512-wTPs+8XtIjnRy4m6X3n0C6Wem0vVxB1amamDG055SfGvqqvfVf5o6IOQ5mgsVXWAi4jsp0pLSMbtuVvaV4cVWQ==
@@ -6507,7 +6507,7 @@
     "@unocss/core" "0.54.1"
     "@unocss/preset-mini" "0.54.1"
 
-"@unocss/reset@0.54.1":
+"@unocss/reset@0.54.1", "@unocss/reset@^0.54.1":
   version "0.54.1"
   resolved "https://registry.yarnpkg.com/@unocss/reset/-/reset-0.54.1.tgz#636081ca1000af344f184dbe0048cf5c135958c3"
   integrity sha512-qZcmybayQTX4QP7ya7jteN9IySU/ViK8HcCpixHA1ttUrsQeSURgdy01E74p+TsWDH0SY7vYmOy+HbYfQNycqQ==

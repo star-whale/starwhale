@@ -95,6 +95,13 @@ const DEFAULT_EDITOR_CONTENT = {
                 },
             ],
         },
+        { type: 'horizontalRule' },
+        {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Learn more' }],
+        },
+
         // {
         //     type: 'image',
         //     attrs: {
@@ -103,95 +110,89 @@ const DEFAULT_EDITOR_CONTENT = {
         //         title: 'banner.png',
         //     },
         // },
-        { type: 'horizontalRule' },
-        {
-            type: 'heading',
-            attrs: { level: 3 },
-            content: [{ type: 'text', text: 'Learn more' }],
-        },
-        {
-            type: 'taskList',
-            content: [
-                {
-                    type: 'taskItem',
-                    attrs: { checked: false },
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [
-                                { type: 'text', text: 'Check out the ' },
-                                {
-                                    type: 'text',
-                                    marks: [
-                                        {
-                                            type: 'link',
-                                            attrs: {
-                                                href: 'https://twitter.com/steventey/status/1669762868416512000',
-                                                target: '_blank',
-                                                class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-                                            },
-                                        },
-                                    ],
-                                    text: 'launch video',
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    type: 'taskItem',
-                    attrs: { checked: false },
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [
-                                { type: 'text', text: 'Star us on ' },
-                                {
-                                    type: 'text',
-                                    marks: [
-                                        {
-                                            type: 'link',
-                                            attrs: {
-                                                href: 'https://github.com/steven-tey/novel',
-                                                target: '_blank',
-                                                class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-                                            },
-                                        },
-                                    ],
-                                    text: 'GitHub',
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    type: 'taskItem',
-                    attrs: { checked: false },
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [
-                                {
-                                    type: 'text',
-                                    marks: [
-                                        {
-                                            type: 'link',
-                                            attrs: {
-                                                href: 'https://vercel.com/templates/next.js/novel',
-                                                target: '_blank',
-                                                class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-                                            },
-                                        },
-                                    ],
-                                    text: 'Deploy your own',
-                                },
-                                { type: 'text', text: ' to Vercel' },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        },
+        // {
+        //     type: 'taskList',
+        //     content: [
+        //         {
+        //             type: 'taskItem',
+        //             attrs: { checked: false },
+        //             content: [
+        //                 {
+        //                     type: 'paragraph',
+        //                     content: [
+        //                         { type: 'text', text: 'Check out the ' },
+        //                         {
+        //                             type: 'text',
+        //                             marks: [
+        //                                 {
+        //                                     type: 'link',
+        //                                     attrs: {
+        //                                         href: 'https://twitter.com/steventey/status/1669762868416512000',
+        //                                         target: '_blank',
+        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
+        //                                     },
+        //                                 },
+        //                             ],
+        //                             text: 'launch video',
+        //                         },
+        //                     ],
+        //                 },
+        //             ],
+        //         },
+        //         {
+        //             type: 'taskItem',
+        //             attrs: { checked: false },
+        //             content: [
+        //                 {
+        //                     type: 'paragraph',
+        //                     content: [
+        //                         { type: 'text', text: 'Star us on ' },
+        //                         {
+        //                             type: 'text',
+        //                             marks: [
+        //                                 {
+        //                                     type: 'link',
+        //                                     attrs: {
+        //                                         href: 'https://github.com/steven-tey/novel',
+        //                                         target: '_blank',
+        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
+        //                                     },
+        //                                 },
+        //                             ],
+        //                             text: 'GitHub',
+        //                         },
+        //                     ],
+        //                 },
+        //             ],
+        //         },
+        //         {
+        //             type: 'taskItem',
+        //             attrs: { checked: false },
+        //             content: [
+        //                 {
+        //                     type: 'paragraph',
+        //                     content: [
+        //                         {
+        //                             type: 'text',
+        //                             marks: [
+        //                                 {
+        //                                     type: 'link',
+        //                                     attrs: {
+        //                                         href: 'https://vercel.com/templates/next.js/novel',
+        //                                         target: '_blank',
+        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
+        //                                     },
+        //                                 },
+        //                             ],
+        //                             text: 'Deploy your own',
+        //                         },
+        //                         { type: 'text', text: ' to Vercel' },
+        //                     ],
+        //                 },
+        //             ],
+        //         },
+        //     ],
+        // },
     ],
 }
 

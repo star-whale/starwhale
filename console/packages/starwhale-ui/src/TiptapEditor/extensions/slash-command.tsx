@@ -64,15 +64,15 @@ const getSuggestionItems = ({ query }: { query: string }) => {
                 editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run()
             },
         },
-        {
-            title: 'To-do List',
-            description: 'Track tasks with a to-do list.',
-            searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
-            icon: <CheckSquare size={18} />,
-            command: ({ editor, range }: CommandProps) => {
-                editor.chain().focus().deleteRange(range).toggleTaskList().run()
-            },
-        },
+        // {
+        //     title: 'To-do List',
+        //     description: 'Track tasks with a to-do list.',
+        //     searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
+        //     icon: <CheckSquare size={18} />,
+        //     command: ({ editor, range }: CommandProps) => {
+        //         editor.chain().focus().deleteRange(range).toggleTaskList().run()
+        //     },
+        // },
         {
             title: 'Heading 1',
             description: 'Big section heading.',
@@ -176,8 +176,10 @@ export const updateScrollView = (container: HTMLElement, item: HTMLElement) => {
     const bottom = top + itemHeight
 
     if (top < container.scrollTop) {
+        // eslint-disable-next-line no-param-reassign
         container.scrollTop -= container.scrollTop - top + 5
     } else if (bottom > containerHeight + container.scrollTop) {
+        // eslint-disable-next-line no-param-reassign
         container.scrollTop += bottom - containerHeight - container.scrollTop + 5
     }
 }
@@ -198,17 +200,11 @@ const CommandList = ({
     const selectItem = useCallback(
         (index: number) => {
             const item = items[index]
-            // va.track('Slash Command Used', {
-            //     command: item.title,
-            // })
             if (item) {
-                if (item.title === 'Continue writing') {
-                } else {
-                    command(item)
-                }
+                command(item)
             }
         },
-        [command, editor, items]
+        [command, items]
     )
 
     useEffect(() => {
@@ -230,6 +226,7 @@ const CommandList = ({
                 }
                 return false
             }
+            return false
         }
         document.addEventListener('keydown', onKeyDown)
         return () => {

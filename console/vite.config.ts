@@ -122,12 +122,11 @@ export default defineConfig(({ mode }) => ({
         alias,
     },
     plugins: [
-        // eslint(),
+        UnoCSS(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
         htmlPlugin(mode),
-        UnoCSS(),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },

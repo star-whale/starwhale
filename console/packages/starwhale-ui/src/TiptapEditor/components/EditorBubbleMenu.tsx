@@ -17,6 +17,10 @@ export interface BubbleMenuItem {
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>
 
 export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
+    const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false)
+    const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false)
+    const [isLinkSelectorOpen, setIsLinkSelectorOpen] = useState(false)
+
     const items: BubbleMenuItem[] = [
         {
             name: 'bold',
@@ -69,10 +73,6 @@ export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
         },
     }
 
-    const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false)
-    const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false)
-    const [isLinkSelectorOpen, setIsLinkSelectorOpen] = useState(false)
-
     return (
         <BubbleMenu
             {...bubbleMenuProps}
@@ -101,8 +101,8 @@ export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
                     <button
                         key={index}
                         onClick={item.command}
-                        role='button'
                         tabIndex={index}
+                        type='button'
                         className='p-2 text-stone-600 hover:bg-stone-100 active:bg-stone-200'
                     >
                         <item.icon
