@@ -16,18 +16,14 @@
 
 package ai.starwhale.mlops.schedule.impl.docker.reporting;
 
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import com.github.dockerjava.api.model.Container;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
 
 
 @Slf4j
@@ -35,7 +31,7 @@ public class ContainerStatusExplainer {
 
     final TaskMapper taskMapper;
 
-    static final Map<String, TaskStatus> STATUS_MAP = new HashMap<>(){{
+    static final Map<String, TaskStatus> STATUS_MAP = new HashMap<>() {{
         put("running", TaskStatus.RUNNING);
         put("created", TaskStatus.PREPARING);
         put("dead", TaskStatus.FAIL);
@@ -47,24 +43,30 @@ public class ContainerStatusExplainer {
         this.taskMapper = taskMapper;
     }
 
-    public TaskStatus statusOf(Container c, Long taskId){
-        for(var entry : STATUS_MAP.entrySet()){
-            if(entry.getKey().equalsIgnoreCase(c.getState())){
+    public TaskStatus statusOf(Container c, Long taskId) {
+        TaskEntity task = taskMapper.findTaskById(taskId);
+        String state = c.getState();
+        if (null != task && Set.of(TaskStatus.CANCELED, TaskStatus.CANCELLING).contains(task.getTaskStatus())) {
+            if ("exited".equalsIgnoreCase(state) || "dead".equalsIgnoreCase(state)) {
+                return TaskStatus.CANCELED;
+            } else if (STATUS_MAP.containsKey(state)) {
+                return TaskStatus.CANCELLING;
+            }
+            return TaskStatus.UNKNOWN;
+        }
+        for (var entry : STATUS_MAP.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(state)) {
                 return entry.getValue();
             }
         }
-        if("exited".equalsIgnoreCase(c.getState())){
-            TaskEntity task = taskMapper.findTaskById(taskId);
-            if(null != task && Set.of(TaskStatus.CANCELED, TaskStatus.CANCELLING).contains(task.getTaskStatus())){
-                return  TaskStatus.CANCELED;
-            }
-            if(c.getStatus().toUpperCase().contains("Exited (0)".toUpperCase())){
+        if ("exited".equalsIgnoreCase(state)) {
+            if (c.getStatus().toUpperCase().contains("Exited (0)".toUpperCase())) {
                 return TaskStatus.SUCCESS;
             }
             return TaskStatus.FAIL;
         }// exited/running/created
 
-        log.warn("unexpected docker state detected State:{} Status: {}", c.getState(), c.getStatus());
+        log.warn("unexpected docker state detected State:{} Status: {}", state, c.getStatus());
         return TaskStatus.UNKNOWN;
     }
 

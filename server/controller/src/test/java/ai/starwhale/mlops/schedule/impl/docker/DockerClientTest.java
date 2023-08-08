@@ -21,6 +21,9 @@ import static ai.starwhale.mlops.schedule.impl.docker.SwTaskSchedulerDocker.CONT
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.ExecCreateCmd;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
@@ -75,6 +78,44 @@ public class DockerClientTest {
         containers.forEach(c->{
            System.out.println(c.getNames()[0]);
         });
+    }
+
+    @Test
+    public void exec() throws InterruptedException {
+        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd("e2e-oss-1").withCmd("bash","-c","ls -a /")
+                .withTty(true)
+                .withAttachStderr(true)
+                .withAttachStdout(true)
+                ;
+        ExecCreateCmdResponse exec = execCreateCmd.exec();
+        ExecStartCmd execStartCmd = dockerClient.execStartCmd(exec.getId());
+        execStartCmd.exec(new ResultCallback<Frame>() {
+            @Override
+            public void onStart(Closeable closeable) {
+
+            }
+
+            @Override
+            public void onNext(Frame object) {
+                System.out.println(object.toString());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+
+            @Override
+            public void close() throws IOException {
+
+            }
+        });
+        Thread.sleep(1000);
     }
 
     @Test void info() throws InterruptedException {

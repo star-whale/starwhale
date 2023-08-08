@@ -40,5 +40,11 @@ public interface SwTaskScheduler {
      */
     void stop(Collection<Task> tasks);
 
+    /**
+     *
+     * @param task
+     * @param command command may be wrapped with "sh -c" by implementations
+     * @return stdout, stderr in String[]
+     */
     Future<String[]> exec(Task task, String ...command);
 }

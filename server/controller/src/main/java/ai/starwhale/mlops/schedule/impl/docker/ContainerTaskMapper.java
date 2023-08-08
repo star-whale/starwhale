@@ -24,19 +24,25 @@ import java.util.regex.Pattern;
 
 public class ContainerTaskMapper {
 
-    static final String CONTAINER_NAME_PREFIX="starwhale-task-";
-    static final Pattern CONTAINER_NAME_PATTERN=Pattern.compile("/"+CONTAINER_NAME_PREFIX + "([1-9][0-9]?)");
+    static final String CONTAINER_NAME_PREFIX = "starwhale-task-";
+    static final Pattern CONTAINER_NAME_PATTERN = Pattern.compile("/" + CONTAINER_NAME_PREFIX + "([1-9][0-9]?)");
+    static final Pattern CONTAINER_NAME_PATTERN_2 = Pattern.compile(CONTAINER_NAME_PREFIX + "([1-9][0-9]?)");
 
-    public String containerNameOfTask(Task task){
+    public String containerNameOfTask(Task task) {
         return String.format("%s%d", CONTAINER_NAME_PREFIX, task.getId());
     }
 
-    public Long taskIfOfContainer(String name){
+    public Long taskIfOfContainer(String name) {
         Matcher matcher = CONTAINER_NAME_PATTERN.matcher(name);
-        if(matcher.matches()){
+        if (matcher.matches()) {
             return Long.valueOf(matcher.group(1));
+        } else {
+            matcher = CONTAINER_NAME_PATTERN_2.matcher(name);
+            if (matcher.matches()) {
+                return Long.valueOf(matcher.group(1));
+            }
         }
-        throw new SwValidationException(ValidSubject.TASK,"container name can't be resolve to task id "+name);
+        throw new SwValidationException(ValidSubject.TASK, "container name can't be resolve to task id " + name);
     }
 
 }

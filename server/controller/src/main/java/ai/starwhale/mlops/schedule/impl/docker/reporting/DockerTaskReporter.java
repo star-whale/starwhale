@@ -30,6 +30,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
@@ -68,10 +69,12 @@ public class DockerTaskReporter {
 
         List<ResourcePool> resourcePools = systemSettingService.getAllResourcePools();
         if (CollectionUtils.isEmpty(resourcePools)) {
-            resourcePools = List.of(null);
+            resourcePools = List.of(new ResourcePool());
         }
-        resourcePools.forEach(resourcePool -> {
-            DockerClient dockerClient = dockerClientFinder.findProperDockerClient(resourcePool);
+        Set<DockerClient> distinctDockerClients = resourcePools.stream()
+                .map(resourcePool -> dockerClientFinder.findProperDockerClient(resourcePool))
+                .collect(Collectors.toSet());
+        distinctDockerClients.forEach(dockerClient -> {
             List<Container> containers = dockerClient.listContainersCmd()
                     .withLabelFilter(SwTaskSchedulerDocker.CONTAINER_LABELS).withShowAll(true).exec();
             taskReportReceiver.receive(containers.stream().map(c -> containerToTaskReport(c)).filter(Objects::nonNull).collect(Collectors.toList()));

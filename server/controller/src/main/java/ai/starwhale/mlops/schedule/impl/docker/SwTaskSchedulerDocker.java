@@ -20,6 +20,8 @@ import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.TaskCommandGetter;
+import ai.starwhale.mlops.schedule.TaskCommandGetter.TaskCommand;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
@@ -27,11 +29,11 @@ import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
-import com.github.dockerjava.api.command.KillContainerCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
@@ -43,11 +45,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
@@ -59,7 +61,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     final DockerTaskReporter dockerTaskReporter;
 
-    final ThreadPoolTaskScheduler cmdExecThreadPool;
+    final ExecutorService cmdExecThreadPool;
 
     final TaskRunningEnvBuilder taskRunningEnvBuilder;
 
@@ -67,9 +69,12 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     final String nodeIp;
 
+    final TaskCommandGetter taskCommandGetter;
+
     public SwTaskSchedulerDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
-            DockerTaskReporter dockerTaskReporter, ThreadPoolTaskScheduler cmdExecThreadPool,
-            TaskRunningEnvBuilder taskRunningEnvBuilder, String network, String nodeIp) {
+            DockerTaskReporter dockerTaskReporter, ExecutorService cmdExecThreadPool,
+            TaskRunningEnvBuilder taskRunningEnvBuilder, String network, String nodeIp,
+            TaskCommandGetter taskCommandGetter) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
         this.dockerTaskReporter = dockerTaskReporter;
@@ -77,6 +82,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         this.taskRunningEnvBuilder = taskRunningEnvBuilder;
         this.network = network;
         this.nodeIp = nodeIp;
+        this.taskCommandGetter = taskCommandGetter;
     }
 
     public static Map<String, String> CONTAINER_LABELS = Map.of("owner", "starwhale");
@@ -124,12 +130,19 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 @Override
                 public void onComplete() {
-                    CreateContainerResponse createContainerResponse = dockerClient.createContainerCmd(image)
+
+                    CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
                             .withEnv(buildEnvs(task))
                             .withName(containerTaskMapper.containerNameOfTask(task))
                             .withHostConfig(buildHostConfig(task))
-                            .withLabels(CONTAINER_LABELS)
-                            .exec();
+                            .withLabels(CONTAINER_LABELS);
+                    TaskCommand taskCommand = taskCommandGetter.getCmd(task);
+                    if(null != taskCommand.getEntrypoint()){
+                        createContainerCmd.withEntrypoint(taskCommand.getEntrypoint());
+                    }else if(null != taskCommand.getCmd()){
+                        createContainerCmd.withCmd(taskCommand.getCmd());
+                    }
+                    CreateContainerResponse createContainerResponse = createContainerCmd.exec();
                     dockerClient.startContainerCmd(createContainerResponse.getId()).exec();
                     ReportedTask rt = ReportedTask.builder()
                             .id(task.getId())
@@ -242,13 +255,18 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
     @Override
     public Future<String[]> exec(Task task, String... command) {
-//        cmdExecThreadPool.submit()
-//        dockerClient.execCreateCmd()
         DockerClient dockerClient = dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
+        var execCommand = List.of("sh", "-c", String.join(" ", command)).toArray(new String[0]);
 
-        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd(containerTaskMapper.containerNameOfTask(task));
+        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd(containerTaskMapper.containerNameOfTask(task))
+                .withCmd(execCommand)
+                .withAttachStdout(true)
+                .withAttachStderr(true)
+                .withTty(true);
         ExecCreateCmdResponse exec = execCreateCmd.exec();
         ExecStartCmd execStartCmd = dockerClient.execStartCmd(exec.getId());
+        Object lock = new Object();
+        StringBuilder stringBuilder = new StringBuilder();
         execStartCmd.exec(new ResultCallback<Frame>() {
             @Override
             public void onStart(Closeable closeable) {
@@ -257,25 +275,38 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
             @Override
             public void onNext(Frame object) {
-
+                stringBuilder.append(object.toString());
             }
 
             @Override
             public void onError(Throwable throwable) {
-
+                synchronized (lock){
+                    lock.notifyAll();
+                }
             }
 
             @Override
             public void onComplete() {
-
+                synchronized (lock){
+                    lock.notifyAll();
+                }
             }
 
             @Override
             public void close() throws IOException {
-
+                synchronized (lock){
+                    lock.notifyAll();
+                }
             }
         });
-        return null;
+
+        return cmdExecThreadPool.submit(()->{
+            synchronized (lock){
+                lock.wait();
+            }
+
+            return new String[]{stringBuilder.toString(),""};
+        });
     }
 
 }
