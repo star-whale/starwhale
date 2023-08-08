@@ -23,6 +23,7 @@ type HeaderCellPropsT = {
     isSelectedAll?: boolean
     isQueryInline?: boolean
     isSelectedIndeterminate?: boolean
+    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
     onSelectAll?: () => void
@@ -153,7 +154,11 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     flex: 1,
                 })}
             >
-                {props.title}
+                {props.title}{' '}
+                {props.selectedRowIds &&
+                    props.selectedRowIds.size > 0 &&
+                    props.index === 0 &&
+                    `(${props.selectedRowIds.size})`}
             </span>
             {props.compareable && ((props.isHovered && props.index !== 0) || props.isFocus) && (
                 <Button

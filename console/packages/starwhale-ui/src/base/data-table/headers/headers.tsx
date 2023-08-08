@@ -26,7 +26,7 @@ export default function Headers({ width }: { width: number }) {
     const { queryinline } = useStore(selector)
     const { onNoSelect, onCompareUpdate, onCurrentViewColumnsPin, onCurrentViewSort, compare } =
         useStoreApi().getState()
-    const { columns } = useGrid()
+    const { columns, selectedRowIds } = useGrid()
 
     const $columns = React.useMemo(
         () =>
@@ -90,6 +90,7 @@ export default function Headers({ width }: { width: number }) {
                             isSelectable={ctx.isSelectable}
                             isSelectedAll={ctx.isSelectedAll}
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
+                            selectedRowIds={selectedRowIds}
                             isQueryInline={queryinline}
                             querySlot={queryinline && renderConfigQueryInline({ width })}
                             onMouseEnter={ctx.onMouseEnter}

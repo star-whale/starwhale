@@ -27,10 +27,7 @@ export const chartTypeField = (): RJSFSchema | undefined => {
 }
 
 export const tableNameField = (tables: any, schema?: RJSFSchema): RJSFSchema | undefined => {
-    if (!tables || tables.length === 0) return undefined
     const { type } = schema?.tableName ?? {}
-
-    console.log(type, tables)
 
     if (type === 'array') {
         return {

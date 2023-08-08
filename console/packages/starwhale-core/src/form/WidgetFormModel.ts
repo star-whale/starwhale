@@ -73,8 +73,8 @@ class WidgetFormModel implements WidgetFieldConfig {
 
     addDataTableNamesField(tables?: any[]) {
         if (!tables) return this
-
-        this.addField(tableNameField(tables, this.widget?.config?.fieldConfig?.schema))
+        const field = tableNameField(tables, this.widget?.config?.fieldConfig?.schema)
+        this.addField(field)
         return this
     }
 

@@ -1,12 +1,25 @@
 import React from 'react'
-import { witEditorContext, initialState } from './Editor'
+import { witEditorContext } from './Editor'
 import { WidgetRenderTree } from '@starwhale/core/widget'
+import EvalSelectList from './EvalSelectList'
+
+const initialState = {
+    key: 'widgets',
+    tree: [
+        {
+            type: 'ui:section',
+        },
+    ],
+    widgets: {},
+    defaults: {},
+}
 
 const Editor = witEditorContext(WidgetRenderTree, initialState)
 
 function EvalSelectEditor() {
     return (
         <div>
+            <EvalSelectList />
             <Editor />
         </div>
     )

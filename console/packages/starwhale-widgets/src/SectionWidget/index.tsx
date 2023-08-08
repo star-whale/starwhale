@@ -22,6 +22,7 @@ import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
 import useTranslation from '@/hooks/useTranslation'
+import EvalSelectList from './EvalSelectList'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -76,7 +77,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 // eslint-disable-next-line
-type Option = typeof CONFIG['optionConfig']
+type Option = (typeof CONFIG)['optionConfig']
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {

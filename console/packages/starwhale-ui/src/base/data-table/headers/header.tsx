@@ -85,6 +85,7 @@ type HeaderProps = {
     isQueryInline?: boolean
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
+    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
@@ -196,6 +197,7 @@ function Header(props: HeaderProps) {
                 isSelectable={props.isSelectable && props.index === 0}
                 isSelectedAll={props.isSelectedAll}
                 isSelectedIndeterminate={props.isSelectedIndeterminate}
+                selectedRowIds={props.selectedRowIds}
                 onMouseEnter={() => {
                     if (!isResizing) {
                         props.onMouseEnter(props.index)

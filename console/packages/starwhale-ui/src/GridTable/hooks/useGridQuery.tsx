@@ -47,7 +47,7 @@ function useGridQuery() {
                         flex: 1,
                     }}
                 >
-                    {isSimpleQuery && hasFilter ? (
+                    {isSimpleQuery ? (
                         <ConfigSimpleQuery columns={originalColumns} value={queries} onChange={onChange} />
                     ) : (
                         <ConfigQuery value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />

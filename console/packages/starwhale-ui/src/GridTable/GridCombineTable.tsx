@@ -17,6 +17,7 @@ const useStyles = createUseStyles({
         flexDirection: 'column',
         flex: 1,
         minWidth: 0,
+        minHeight: '100%',
     },
     header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: {
@@ -48,6 +49,7 @@ function BaseGridCombineTable({
     viewable = false,
     previewable = false,
     paginationable = false,
+    compareable = true,
     rowHeight,
     // actions
     onSave,
@@ -92,7 +94,7 @@ function BaseGridCombineTable({
                         </MemoGridTable>
                     )
                 }}
-                isResizeable={rowSelectedIds.length > 0}
+                isResizeable={rowSelectedIds.length > 0 && compareable}
                 right={() => (
                     <GridCompareTable
                         rowSelectedIds={rowSelectedIds}
