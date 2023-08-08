@@ -1,6 +1,7 @@
 // import { toast } from 'sonner'
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view'
+import TiptapImage from '@tiptap/extension-image'
 
 const uploadKey = new PluginKey('upload-image')
 
@@ -41,9 +42,17 @@ const UploadImagesPlugin = () =>
         },
     })
 
-export default UploadImagesPlugin
+const UploadImages = TiptapImage.extend({
+    addProseMirrorPlugins() {
+        return [UploadImagesPlugin()]
+    },
+})
 
-function findPlaceholder(state: EditorState, id: {}) {
+export { UploadImagesPlugin }
+
+export default UploadImages
+
+export function findPlaceholder(state: EditorState, id: {}) {
     const decos = uploadKey.getState(state)
     const found = decos.find(null, null, (spec) => spec.id == id)
     return found.length ? found[0].from : null

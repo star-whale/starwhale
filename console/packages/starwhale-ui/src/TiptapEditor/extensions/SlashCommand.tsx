@@ -288,10 +288,9 @@ const renderItems = () => {
         onUpdate: (props: { editor: Editor; clientRect: DOMRect }) => {
             component?.updateProps(props)
 
-            popup &&
-                popup[0].setProps({
-                    getReferenceClientRect: props.clientRect,
-                })
+            popup?.[0]?.setProps({
+                getReferenceClientRect: props.clientRect,
+            })
         },
         onKeyDown: (props: { event: KeyboardEvent }) => {
             if (props.event.key === 'Escape') {
