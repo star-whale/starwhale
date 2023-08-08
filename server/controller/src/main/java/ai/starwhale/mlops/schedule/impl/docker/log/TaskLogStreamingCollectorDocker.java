@@ -47,12 +47,14 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
 
     Boolean closed = Boolean.FALSE;
 
-    public TaskLogStreamingCollectorDocker(Task task, DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper) {
+    public TaskLogStreamingCollectorDocker(Task task, DockerClientFinder dockerClientFinder,
+            ContainerTaskMapper containerTaskMapper) {
         this.dockerClientFinder = dockerClientFinder;
         this.dockerClient = this.dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
         this.containerTaskMapper = containerTaskMapper;
         this.logLines = new LinkedBlockingQueue<>();
-        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task))
+        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(
+                        this.containerTaskMapper.containerNameOfTask(task))
                 .withStdErr(true)
                 .withStdOut(true)
                 .withFollowStream(true);
@@ -87,7 +89,7 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
                 signalClose();
             }
 
-            private void signalClose(){
+            private void signalClose() {
                 closed = Boolean.TRUE;
                 try {
                     logLines.put("");
@@ -101,13 +103,13 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
 
     @Override
     public String readLine(Long waitTimeSeconds) throws IOException {
-        if(this.closed){
+        if (this.closed) {
             return null;
         }
         try {
-            if(null == waitTimeSeconds){
+            if (null == waitTimeSeconds) {
                 return logLines.take();
-            }else {
+            } else {
                 return this.logLines.poll(waitTimeSeconds, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
@@ -119,7 +121,7 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
     @Override
     public void cancel() {
         try {
-            if(null != this.closeable){
+            if (null != this.closeable) {
                 this.closeable.close();
             }
             this.logLines.clear();

@@ -48,32 +48,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class TaskLogStreamingCollectorDockerTest {
 
-    DockerClient dockerClient;
-
-    DockerClientFinder dockerClientFinder;
-
-    TaskLogStreamingCollectorDocker logStreamingCollector;
-
     static final String IMAGE_HELLO_WORLD = "hello-world:linux";
-
-    static String containerName = UUID.randomUUID().toString();
-
-    @BeforeEach
-    public void setup() {
-        DefaultDockerClientConfig clientConfig = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("unix:///var/run/docker.sock").build();
-        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
-                .dockerHost(clientConfig.getDockerHost())
-                .sslConfig(clientConfig.getSSLConfig())
-                .maxConnections(100)
-                .connectionTimeout(Duration.ofSeconds(30))
-                .responseTimeout(Duration.ofSeconds(45))
-                .build();
-        this.dockerClient = DockerClientImpl.getInstance(clientConfig, httpClient);
-        dockerClientFinder = mock(DockerClientFinder.class);
-        when(dockerClientFinder.findProperDockerClient(any())).thenReturn(this.dockerClient);
-    }
-
     static final String OUT_PUT_HELLO_WORLD = "STDOUT: \n"
             + "STDOUT: Hello from Docker!\n"
             + "STDOUT: This message shows that your installation appears to be working correctly.\n"
@@ -96,6 +71,26 @@ public class TaskLogStreamingCollectorDockerTest {
             + "STDOUT: For more examples and ideas, visit:\n"
             + "STDOUT: https://docs.docker.com/get-started/\n"
             + "STDOUT: \n";
+    static String containerName = UUID.randomUUID().toString();
+    DockerClient dockerClient;
+    DockerClientFinder dockerClientFinder;
+    TaskLogStreamingCollectorDocker logStreamingCollector;
+
+    @BeforeEach
+    public void setup() {
+        DefaultDockerClientConfig clientConfig = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost("unix:///var/run/docker.sock").build();
+        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
+                .dockerHost(clientConfig.getDockerHost())
+                .sslConfig(clientConfig.getSSLConfig())
+                .maxConnections(100)
+                .connectionTimeout(Duration.ofSeconds(30))
+                .responseTimeout(Duration.ofSeconds(45))
+                .build();
+        this.dockerClient = DockerClientImpl.getInstance(clientConfig, httpClient);
+        dockerClientFinder = mock(DockerClientFinder.class);
+        when(dockerClientFinder.findProperDockerClient(any())).thenReturn(this.dockerClient);
+    }
 
     @Test
     public void testReadLine() throws InterruptedException, IOException {
@@ -147,11 +142,6 @@ public class TaskLogStreamingCollectorDockerTest {
         }
         doCollectLog(containerName);
     }
-
-//    @Test
-//    public void testOnly() throws IOException {
-//        doCollectLog("b6bc58b5-7e93-4708-b101-86e97197f019");
-//    }
 
     private void doCollectLog(String containerName) throws IOException {
         ContainerTaskMapper containerTaskMapper = mock(ContainerTaskMapper.class);

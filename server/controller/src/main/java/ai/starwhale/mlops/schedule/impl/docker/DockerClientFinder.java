@@ -24,8 +24,9 @@ public interface DockerClientFinder {
     /**
      * given a specific resourcePool find a unique DockerClient
      * The DockerClient must be consistent among different calls given the same resourcePool
-     * @param resourcePool
-     * @return
+     *
+     * @param resourcePool the resource pool a task wants to be scheduled
+     * @return the corresponding docker client
      */
     DockerClient findProperDockerClient(ResourcePool resourcePool);
 

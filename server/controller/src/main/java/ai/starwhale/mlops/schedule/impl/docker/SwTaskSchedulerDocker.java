@@ -55,20 +55,14 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
+    public static Map<String, String> CONTAINER_LABELS = Map.of("owner", "starwhale");
     final DockerClientFinder dockerClientFinder;
-
     final ContainerTaskMapper containerTaskMapper;
-
     final DockerTaskReporter dockerTaskReporter;
-
     final ExecutorService cmdExecThreadPool;
-
     final TaskRunningEnvBuilder taskRunningEnvBuilder;
-
     final String network;
-
     final String nodeIp;
-
     final TaskCommandGetter taskCommandGetter;
 
     public SwTaskSchedulerDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
@@ -84,8 +78,6 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         this.nodeIp = nodeIp;
         this.taskCommandGetter = taskCommandGetter;
     }
-
-    public static Map<String, String> CONTAINER_LABELS = Map.of("owner", "starwhale");
 
     @Override
     public void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver) {
@@ -137,9 +129,9 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                             .withHostConfig(buildHostConfig(task))
                             .withLabels(CONTAINER_LABELS);
                     TaskCommand taskCommand = taskCommandGetter.getCmd(task);
-                    if(null != taskCommand.getEntrypoint()){
+                    if (null != taskCommand.getEntrypoint()) {
                         createContainerCmd.withEntrypoint(taskCommand.getEntrypoint());
-                    }else if(null != taskCommand.getCmd()){
+                    } else if (null != taskCommand.getCmd()) {
                         createContainerCmd.withCmd(taskCommand.getCmd());
                     }
                     CreateContainerResponse createContainerResponse = createContainerCmd.exec();
@@ -204,35 +196,38 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
                     t.getStep().getResourcePool());
             String containerId = containerTaskMapper.containerNameOfTask(t);
             List<Container> containers = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).exec();
-            if(CollectionUtils.isEmpty(containers)){
+            if (CollectionUtils.isEmpty(containers)) {
                 return;
             }
-            try{
+            try {
                 dockerClient.killContainerCmd(containerId).exec();
-            }catch (DockerException e){
+            } catch (DockerException e) {
                 log.warn("try to kill container with error", e);
             }
             // CANCELLING tasks need to report to stats watchers once more than failed and success tasks
             // so that it could transfer to CANCELLED
-            if(t.getStatus() == TaskStatus.CANCELLING){
-                cmdExecThreadPool.submit(()->{
-                    while (true){
-                        var lc = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).withShowAll(true).exec();
-                        if(CollectionUtils.isEmpty(lc)){
+            if (t.getStatus() == TaskStatus.CANCELLING) {
+                cmdExecThreadPool.submit(() -> {
+                    while (true) {
+                        var lc = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).withShowAll(true)
+                                .exec();
+                        if (CollectionUtils.isEmpty(lc)) {
                             break;
                         }
-                        if(lc.get(0).getState().equalsIgnoreCase("running")){
+                        if (lc.get(0).getState().equalsIgnoreCase("running")) {
                             try {
                                 Thread.sleep(1000L);
                             } catch (InterruptedException e) {
-                                log.error("waiting for next watch of CANCELLING task interrupted start next loop immediately",e);
+                                log.error(
+                                        "waiting for next watch of CANCELLING task interrupted",
+                                        e);
                             }
                             continue;
                         }
                         dockerTaskReporter.reportTask(lc.get(0));
-                        try{
+                        try {
                             dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
-                        }catch (DockerException e){
+                        } catch (DockerException e) {
                             log.warn("try to remove container with error", e);
                         }
                         break;
@@ -240,10 +235,10 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 });
 
-            }else {
-                try{
+            } else {
+                try {
                     dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
-                }catch (DockerException e){
+                } catch (DockerException e) {
                     log.warn("try to remove container with error", e);
                 }
             }
@@ -280,32 +275,32 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
             @Override
             public void onError(Throwable throwable) {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
 
             @Override
             public void onComplete() {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
 
             @Override
             public void close() throws IOException {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
         });
 
-        return cmdExecThreadPool.submit(()->{
-            synchronized (lock){
+        return cmdExecThreadPool.submit(() -> {
+            synchronized (lock) {
                 lock.wait();
             }
 
-            return new String[]{stringBuilder.toString(),""};
+            return new String[]{stringBuilder.toString(), ""};
         });
     }
 

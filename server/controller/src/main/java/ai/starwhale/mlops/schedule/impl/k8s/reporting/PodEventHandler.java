@@ -191,9 +191,11 @@ public class PodEventHandler implements ResourceEventHandler<V1Pod> {
     /**
      * In k8s implementation of taskScheduler there is task retry support
      * So, every time a pod finishes we collect the log for the pod.
-     * This is a compensation for the log collecting in task watcher which only collect log once just before task finishes
-     * @param pod
-     * @param type
+     * This is a compensation for the log collecting in task watcher which only collect log once just before task
+     * finishes
+     *
+     * @param pod pod
+     * @param type type
      */
     private void collectLog(V1Pod pod, String type) {
         log.debug("collect log for pod {} status {}", pod.getMetadata().getName(), pod.getStatus());

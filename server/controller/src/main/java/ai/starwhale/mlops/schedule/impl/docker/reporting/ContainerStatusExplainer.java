@@ -29,15 +29,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ContainerStatusExplainer {
 
+    static final Map<String, TaskStatus> STATUS_MAP = new HashMap<>() {
+        {
+            put("running", TaskStatus.RUNNING);
+            put("created", TaskStatus.PREPARING);
+            put("dead", TaskStatus.FAIL);
+            put("paused", TaskStatus.RUNNING);
+            put("restarting", TaskStatus.RUNNING);
+        }
+    };
     final TaskMapper taskMapper;
-
-    static final Map<String, TaskStatus> STATUS_MAP = new HashMap<>() {{
-        put("running", TaskStatus.RUNNING);
-        put("created", TaskStatus.PREPARING);
-        put("dead", TaskStatus.FAIL);
-        put("paused", TaskStatus.RUNNING);
-        put("restarting", TaskStatus.RUNNING);
-    }};
 
     public ContainerStatusExplainer(TaskMapper taskMapper) {
         this.taskMapper = taskMapper;
@@ -64,7 +65,7 @@ public class ContainerStatusExplainer {
                 return TaskStatus.SUCCESS;
             }
             return TaskStatus.FAIL;
-        }// exited/running/created
+        }
 
         log.warn("unexpected docker state detected State:{} Status: {}", state, c.getStatus());
         return TaskStatus.UNKNOWN;

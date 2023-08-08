@@ -33,36 +33,36 @@ public class ContainerStatusExplainerTest {
     TaskMapper taskMapper;
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
         taskMapper = mock(TaskMapper.class);
         containerStatusExplainer = new ContainerStatusExplainer(taskMapper);
     }
 
     @Test
-    public void testStatusFromCancelling(){
+    public void testStatusFromCancelling() {
         Container c = mock(Container.class);
         when(taskMapper.findTaskById(1L)).thenReturn(TaskEntity.builder().taskStatus(TaskStatus.CANCELLING).build());
         when(c.getState()).thenReturn("running");
-        Assertions.assertEquals(TaskStatus.CANCELLING,containerStatusExplainer.statusOf(c,1L));
+        Assertions.assertEquals(TaskStatus.CANCELLING, containerStatusExplainer.statusOf(c, 1L));
 
         when(c.getState()).thenReturn("exited");
-        Assertions.assertEquals(TaskStatus.CANCELED,containerStatusExplainer.statusOf(c,1L));
+        Assertions.assertEquals(TaskStatus.CANCELED, containerStatusExplainer.statusOf(c, 1L));
     }
 
     @Test
-    public void testStatusFromNotCancelling(){
+    public void testStatusFromNotCancelling() {
         Container c = mock(Container.class);
         when(taskMapper.findTaskById(1L)).thenReturn(TaskEntity.builder().taskStatus(TaskStatus.RUNNING).build());
         when(c.getState()).thenReturn("running");
-        Assertions.assertEquals(TaskStatus.RUNNING,containerStatusExplainer.statusOf(c,1L));
+        Assertions.assertEquals(TaskStatus.RUNNING, containerStatusExplainer.statusOf(c, 1L));
 
         when(c.getState()).thenReturn("exited");
         when(c.getStatus()).thenReturn("Exited (0) blab-la");
-        Assertions.assertEquals(TaskStatus.SUCCESS,containerStatusExplainer.statusOf(c,1L));
+        Assertions.assertEquals(TaskStatus.SUCCESS, containerStatusExplainer.statusOf(c, 1L));
 
         when(c.getState()).thenReturn("exited");
         when(c.getStatus()).thenReturn("Exited (1) blab-la");
-        Assertions.assertEquals(TaskStatus.FAIL,containerStatusExplainer.statusOf(c,1L));
+        Assertions.assertEquals(TaskStatus.FAIL, containerStatusExplainer.statusOf(c, 1L));
     }
 
 

@@ -30,18 +30,19 @@ public class TaskLogCollectorFactoryDocker implements TaskLogCollectorFactory {
 
     final ContainerTaskMapper containerTaskMapper;
 
-    public TaskLogCollectorFactoryDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper) {
+    public TaskLogCollectorFactoryDocker(DockerClientFinder dockerClientFinder,
+            ContainerTaskMapper containerTaskMapper) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
     }
 
     @Override
     public TaskLogOfflineCollector offlineCollector(Task task) throws StarwhaleException {
-        return new TaskLogOfflineCollectorDocker(task,dockerClientFinder, containerTaskMapper);
+        return new TaskLogOfflineCollectorDocker(task, dockerClientFinder, containerTaskMapper);
     }
 
     @Override
     public TaskLogStreamingCollector streamingCollector(Task task) throws StarwhaleException {
-        return new TaskLogStreamingCollectorDocker(task,dockerClientFinder, containerTaskMapper);
+        return new TaskLogStreamingCollectorDocker(task, dockerClientFinder, containerTaskMapper);
     }
 }

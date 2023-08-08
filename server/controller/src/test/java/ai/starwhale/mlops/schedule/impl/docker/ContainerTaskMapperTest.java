@@ -24,15 +24,13 @@ import org.junit.jupiter.api.Test;
 public class ContainerTaskMapperTest {
 
     @Test
-    public void testAll(){
+    public void testAll() {
         ContainerTaskMapper cm = new ContainerTaskMapper();
         Task task = Task.builder().id(1L).build();
         Assertions.assertEquals("starwhale-task-1", cm.containerNameOfTask(task));
         Assertions.assertEquals(1L, cm.taskIfOfContainer("/starwhale-task-1"));
         Assertions.assertEquals(1L, cm.taskIfOfContainer("starwhale-task-1"));
-        Assertions.assertThrows(SwValidationException.class,()->{
-            cm.taskIfOfContainer("blab-la");
-        });
+        Assertions.assertThrows(SwValidationException.class, () -> cm.taskIfOfContainer("blab-la"));
 
     }
 }

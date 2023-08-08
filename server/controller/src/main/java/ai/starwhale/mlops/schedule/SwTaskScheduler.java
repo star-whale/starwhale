@@ -23,15 +23,15 @@ import java.util.concurrent.Future;
 
 /**
  * schedule tasks of jobs
- * Spring framework has a class named TaskScheduler with a bean in the context. To avoid bean conflict the name here is SwTaskScheduler
+ * Spring framework has a class named TaskScheduler with a bean in the context. To avoid bean conflict the name here is
+ * SwTaskScheduler
  */
 public interface SwTaskScheduler {
 
 
     /**
-     *
-     * @param tasks
-     * @param taskReportReceiver
+     * @param tasks the tasks to be scheduled
+     * @param taskReportReceiver the report receiver that could process these tasks
      */
     void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver);
 
@@ -41,10 +41,9 @@ public interface SwTaskScheduler {
     void stop(Collection<Task> tasks);
 
     /**
-     *
-     * @param task
+     * @param task the tasks to exec on
      * @param command command may be wrapped with "sh -c" by implementations
      * @return stdout, stderr in String[]
      */
-    Future<String[]> exec(Task task, String ...command);
+    Future<String[]> exec(Task task, String... command);
 }

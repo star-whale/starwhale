@@ -26,18 +26,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskCommandGetter {
 
+    public TaskCommand getCmd(Task task) {
+        //TODO get the real command of tasks according to schema of task
+        return TaskCommand.builder().cmd(new String[]{"run"}).build();
+    }
+
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TaskCommand{
+    public static class TaskCommand {
+
         String[] cmd;
         String[] entrypoint;
-    }
-
-    public TaskCommand getCmd(Task task){
-        //TODO get the real command of tasks according to schema of task
-        return TaskCommand.builder().cmd(new String[]{"run"}).build();
     }
 
 }

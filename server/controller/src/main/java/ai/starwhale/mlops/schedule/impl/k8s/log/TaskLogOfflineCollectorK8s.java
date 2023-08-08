@@ -45,19 +45,19 @@ public class TaskLogOfflineCollectorK8s implements TaskLogOfflineCollector {
 
     public TaskLogOfflineCollectorK8s(K8sClient k8sClient, List<String> containers, Task task) {
         this.k8sClient = k8sClient;
-        this.containers =containers;
+        this.containers = containers;
         this.task = task;
     }
 
     @Override
-    public Tuple2<String,String> collect() throws StarwhaleException {
+    public Tuple2<String, String> collect() throws StarwhaleException {
         log.debug("logging for task {} begins...", task.getId());
         try {
             V1Pod v1Pod = k8sClient.podOfJob(K8sClient.toV1LabelSelector(Map.of(
                     K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())));
             if (null == v1Pod) {
                 log.error("pod not exists for task {}", task.getId());
-                throw new SwValidationException(ValidSubject.TASK,"no log for this task found");
+                throw new SwValidationException(ValidSubject.TASK, "no log for this task found");
             }
             String logName = v1Pod.getMetadata().getName();
             String taskLog = k8sClient.logOfPod(v1Pod, containers);

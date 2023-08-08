@@ -17,24 +17,23 @@
 package ai.starwhale.mlops.schedule.log;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.exception.StarwhaleException;
 
 public interface TaskLogCollectorFactory {
 
     /**
      * collect the whole log of a task with the name of the execution
-     * @param task
-     * @return name of the execution, log content
-     * @throws StarwhaleException
+     *
+     * @param task the target task
+     * @return a TaskLogOfflineCollector
      */
-    TaskLogOfflineCollector offlineCollector(Task task) throws StarwhaleException;
+    TaskLogOfflineCollector offlineCollector(Task task);
 
     /**
      * return a streaming task log reader which could be closed at anytime
-     * @param task
-     * @return
-     * @throws StarwhaleException
+     *
+     * @param task the target task
+     * @return a TaskLogStreamingCollector
      */
-    TaskLogStreamingCollector streamingCollector(Task task) throws StarwhaleException;
+    TaskLogStreamingCollector streamingCollector(Task task);
 
 }

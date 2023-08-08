@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
-import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
@@ -32,12 +31,12 @@ import org.springframework.context.annotation.Configuration;
 public class BeanConfig {
 
     @Bean
-    public DockerClientFinder dockerClientFinder(){
+    public DockerClientFinder dockerClientFinder() {
         return new DockerClientFinderSimpleImpl();
     }
 
     @Bean
-    public ContainerTaskMapper containerTaskMapper(){
+    public ContainerTaskMapper containerTaskMapper() {
         return new ContainerTaskMapper();
     }
 
@@ -49,7 +48,7 @@ public class BeanConfig {
             ContainerStatusExplainer containerStatusExplainer,
             TaskStatusMachine taskStatusMachine,
             ContainerTaskMapper containerTaskMapper
-    ){
+    ) {
         return new DockerTaskReporter(
                 taskReportReceiver,
                 systemSettingService,
@@ -61,8 +60,8 @@ public class BeanConfig {
     }
 
     @Bean
-    public ContainerStatusExplainer containerStatusExplainer(TaskMapper taskMapper){
-        return new ContainerStatusExplainer( taskMapper);
+    public ContainerStatusExplainer containerStatusExplainer(TaskMapper taskMapper) {
+        return new ContainerStatusExplainer(taskMapper);
     }
 
 }

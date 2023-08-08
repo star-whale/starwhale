@@ -26,14 +26,15 @@ import java.nio.charset.StandardCharsets;
 import okhttp3.Call;
 import okhttp3.Response;
 
-public class TaskLogK8SStreamingCollector implements TaskLogStreamingCollector {
+public class TaskLogK8sStreamingCollector implements TaskLogStreamingCollector {
+
     public static final String WORKER_CONTAINER = "worker";
     final K8sClient k8sClient;
     final Call call;
     final Response resp;
     final BufferedReader bufferedReader;
 
-    public TaskLogK8SStreamingCollector(K8sClient k8sClient, String jobName)
+    public TaskLogK8sStreamingCollector(K8sClient k8sClient, String jobName)
             throws IOException, ApiException {
         this.k8sClient = k8sClient;
         call = k8sClient.readLog(getPodName(jobName), WORKER_CONTAINER, true);

@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import ai.starwhale.mlops.schedule.impl.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +43,7 @@ public class DatasetBuildLogWsServer {
 
     private static IdConverter idConvertor;
 
-    private CancellableJobLogK8sCollectorFactory logCollectorFactory;
+    private static CancellableJobLogK8sCollectorFactory logCollectorFactory;
 
     private Session session;
 
@@ -61,7 +61,7 @@ public class DatasetBuildLogWsServer {
 
     @Autowired
     public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
-        this.logCollectorFactory = factory;
+        DatasetBuildLogWsServer.logCollectorFactory = factory;
     }
 
     @OnOpen

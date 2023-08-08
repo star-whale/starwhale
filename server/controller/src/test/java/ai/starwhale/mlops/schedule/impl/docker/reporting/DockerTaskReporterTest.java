@@ -95,13 +95,13 @@ public class DockerTaskReporterTest {
     }
 
     @Test
-    public void testReportTasks(){
+    public void testReportTasks() {
         when(systemSettingService.getAllResourcePools()).thenReturn(List.of(new ResourcePool(), new ResourcePool()));
         doTest();
     }
 
     @Test
-    public void testReportTasksWithNoResourcePool(){
+    public void testReportTasksWithNoResourcePool() {
         when(systemSettingService.getAllResourcePools()).thenReturn(null);
         doTest();
     }

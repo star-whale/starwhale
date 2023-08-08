@@ -48,7 +48,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
-public class K8SSwTaskScheduler implements SwTaskScheduler {
+public class K8sSwTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
@@ -60,7 +60,7 @@ public class K8SSwTaskScheduler implements SwTaskScheduler {
     final StorageAccessService storageAccessService;
     final ThreadPoolTaskScheduler cmdExecThreadPool;
 
-    public K8SSwTaskScheduler(
+    public K8sSwTaskScheduler(
             K8sClient k8sClient,
             K8sJobTemplate k8sJobTemplate,
             TaskRunningEnvBuilder taskRunningEnvBuilder,

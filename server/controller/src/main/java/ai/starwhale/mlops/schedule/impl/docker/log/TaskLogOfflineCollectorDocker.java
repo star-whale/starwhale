@@ -54,7 +54,8 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
     @Override
     public Tuple2<String, String> collect() {
         logBuffer = new StringBuffer();
-        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(this.containerTaskMapper.containerNameOfTask(task))
+        LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(
+                        this.containerTaskMapper.containerNameOfTask(task))
                 .withStdErr(true)
                 .withStdOut(true)
                 .withFollowStream(false);
@@ -72,29 +73,29 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
 
             @Override
             public void onError(Throwable throwable) {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
 
             @Override
             public void onComplete() {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
 
             @Override
             public void close() throws IOException {
-                synchronized (lock){
+                synchronized (lock) {
                     lock.notifyAll();
                 }
             }
         });
-        synchronized (this.lock){
+        synchronized (this.lock) {
             try {
                 this.lock.wait();
-                return new Tuple2<>(this.containerTaskMapper.containerNameOfTask(task),this.logBuffer.toString());
+                return new Tuple2<>(this.containerTaskMapper.containerNameOfTask(task), this.logBuffer.toString());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

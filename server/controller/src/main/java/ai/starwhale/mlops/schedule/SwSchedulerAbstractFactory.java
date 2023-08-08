@@ -29,5 +29,4 @@ public interface SwSchedulerAbstractFactory {
     TaskLogCollectorFactory buildTaskLogCollectorFactory();
 
 
-
 }

@@ -20,16 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.configuration.RunTimeProperties;
-import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
-import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
-import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -47,14 +42,8 @@ import ai.starwhale.mlops.domain.task.bo.ResultPath;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
 import ai.starwhale.mlops.exception.SwProcessException;
-import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.impl.k8s.K8SSwTaskScheduler;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.custom.Quantity;
@@ -65,12 +54,10 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -78,26 +65,24 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-public class K8SSwTaskSchedulerTest {
-
+public class K8sSwTaskSchedulerTest {
 
 
     @Test
     public void testScheduler() throws IOException, ApiException {
         K8sClient k8sClient = mock(K8sClient.class);
-        K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
-        scheduler.schedule(Set.of(mockTask(false)),mock(TaskReportReceiver.class));
+        K8sSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
+        scheduler.schedule(Set.of(mockTask(false)), mock(TaskReportReceiver.class));
         verify(k8sClient).deployJob(any());
     }
 
     @NotNull
-    private K8SSwTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
-
+    private K8sSwTaskScheduler buildK8sScheduler(K8sClient k8sClient) throws IOException {
 
         StorageAccessService storageAccessService = mock(StorageAccessService.class);
         when(storageAccessService.list(eq("path_rt"))).thenReturn(Stream.of("path_rt"));
         when(storageAccessService.signedUrl(eq("path_rt"), any())).thenReturn("s3://bucket/path_rt");
-        return new K8SSwTaskScheduler(k8sClient,
+        return new K8sSwTaskScheduler(k8sClient,
                 new K8sJobTemplateMock(""),
                 mock(TaskRunningEnvBuilder.class),
                 "rp",
@@ -111,9 +96,9 @@ public class K8SSwTaskSchedulerTest {
     public void testException() throws ApiException, IOException {
         K8sClient k8sClient = mock(K8sClient.class);
         when(k8sClient.deployJob(any())).thenThrow(new ApiException());
-        K8SSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
+        K8sSwTaskScheduler scheduler = buildK8sScheduler(k8sClient);
         Task task = mockTask(false);
-        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
         Assertions.assertEquals(TaskStatus.FAIL, task.getStatus());
     }
 
@@ -122,7 +107,7 @@ public class K8SSwTaskSchedulerTest {
         var client = mock(K8sClient.class);
 
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8SSwTaskScheduler(
+        var scheduler = new K8sSwTaskScheduler(
                 client,
                 k8sJobTemplate,
                 mock(TaskRunningEnvBuilder.class),
@@ -132,11 +117,11 @@ public class K8SSwTaskSchedulerTest {
                 mock(ThreadPoolTaskScheduler.class)
         );
         var task = mockTask(false);
-        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         task.getTaskRequest()
                 .setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
-        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
 
         verify(client, times(2)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
@@ -152,7 +137,7 @@ public class K8SSwTaskSchedulerTest {
         var client = mock(K8sClient.class);
 
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8SSwTaskScheduler(
+        var scheduler = new K8sSwTaskScheduler(
                 client,
                 k8sJobTemplate,
                 mock(TaskRunningEnvBuilder.class),
@@ -170,7 +155,7 @@ public class K8SSwTaskSchedulerTest {
         var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
         // set no resource spec in task
         task.getTaskRequest().setRuntimeResources(List.of());
-        scheduler.schedule(Set.of(task),mock(TaskReportReceiver.class));
+        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
 
         verify(client, times(1)).deployJob(jobArgumentCaptor.capture());
         var jobs = jobArgumentCaptor.getAllValues();
@@ -186,7 +171,7 @@ public class K8SSwTaskSchedulerTest {
         var client = mock(K8sClient.class);
 
         var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8SSwTaskScheduler(
+        var scheduler = new K8sSwTaskScheduler(
                 client,
                 k8sJobTemplate,
                 mock(TaskRunningEnvBuilder.class),
@@ -210,16 +195,16 @@ public class K8SSwTaskSchedulerTest {
                 .id(1L)
                 .model(Model.builder().name("swmpN").version("swmpV").projectId(101L).build())
                 .jobRuntime(JobRuntime.builder()
-                                .name("swrtN")
-                                .version("swrtV")
-                                .image("imageRT")
-                                .storagePath("path_rt")
-                                .projectId(102L)
-                                .manifest(new RuntimeService.RuntimeManifest(
-                                        "",
-                                        new RuntimeService.RuntimeManifest.Environment("3.10",
-                                                new RuntimeService.RuntimeManifest.Lock("0.5.1")), null))
-                                .build())
+                        .name("swrtN")
+                        .version("swrtV")
+                        .image("imageRT")
+                        .storagePath("path_rt")
+                        .projectId(102L)
+                        .manifest(new RuntimeService.RuntimeManifest(
+                                "",
+                                new RuntimeService.RuntimeManifest.Environment("3.10",
+                                        new RuntimeService.RuntimeManifest.Lock("0.5.1")), null))
+                        .build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)
                 .uuid("juuid")
@@ -285,7 +270,7 @@ public class K8SSwTaskSchedulerTest {
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
 
-        var scheduler = new K8SSwTaskScheduler(
+        var scheduler = new K8sSwTaskScheduler(
                 client,
                 mock(K8sJobTemplate.class),
                 mock(TaskRunningEnvBuilder.class),
@@ -309,7 +294,7 @@ public class K8SSwTaskSchedulerTest {
         podList.setItems(List.of(pod));
 
         when(client.getPodsByJobName("7")).thenReturn(podList);
-        when(client.execInPod("7", null, "ls")).thenReturn(new String[] {"stdout", "stderr"});
+        when(client.execInPod("7", null, "ls")).thenReturn(new String[]{"stdout", "stderr"});
         var resp = scheduler.exec(task, "ls").get();
         verify(client).execInPod("7", null, "ls");
         assertEquals("stdout", resp[0]);
@@ -325,7 +310,7 @@ public class K8SSwTaskSchedulerTest {
         var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.initialize();
 
-        var scheduler = new K8SSwTaskScheduler(
+        var scheduler = new K8sSwTaskScheduler(
                 client,
                 mock(K8sJobTemplate.class),
                 mock(TaskRunningEnvBuilder.class),

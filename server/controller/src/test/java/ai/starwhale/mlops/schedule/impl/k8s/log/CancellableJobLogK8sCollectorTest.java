@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -43,6 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CancellableJobLogK8sCollectorTest {
+
     K8sClient k8sClient;
 
     @BeforeEach
@@ -68,7 +68,7 @@ public class CancellableJobLogK8sCollectorTest {
         when(call.execute()).thenReturn(resp);
 
         when(k8sClient.readLog(eq("running-pod"), anyString(), anyBoolean())).thenReturn(call);
-        var ins = new TaskLogK8SStreamingCollector(k8sClient, "1");
+        var ins = new TaskLogK8sStreamingCollector(k8sClient, "1");
 
         assertThat(ins.readLine(any()), is(line));
         verify(k8sClient).getPodsByJobName("1");

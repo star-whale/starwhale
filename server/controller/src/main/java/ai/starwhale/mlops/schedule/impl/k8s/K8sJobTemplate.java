@@ -45,13 +45,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Component
-//@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s") TODO add this line when ds building/ model serving/ runtime building are decoupled from k8s
+// TODO add this line when ds building/ model serving/ runtime building are decoupled from k8s
+//@ConditionalOnProperty(value = "sw.scheduler", havingValue = "k8s")
 public class K8sJobTemplate {
 
     public static final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");

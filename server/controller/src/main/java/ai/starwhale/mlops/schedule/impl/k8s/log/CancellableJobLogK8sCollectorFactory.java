@@ -23,7 +23,9 @@ import java.io.IOException;
 import org.springframework.stereotype.Service;
 
 @Service
+//TODO remove this class when dataset build is a job
 public class CancellableJobLogK8sCollectorFactory {
+
     private final K8sClient k8sClient;
 
     public CancellableJobLogK8sCollectorFactory(K8sClient k8sClient) {
@@ -31,6 +33,6 @@ public class CancellableJobLogK8sCollectorFactory {
     }
 
     public TaskLogStreamingCollector make(String jobName) throws IOException, ApiException {
-        return new TaskLogK8SStreamingCollector(this.k8sClient, jobName);
+        return new TaskLogK8sStreamingCollector(this.k8sClient, jobName);
     }
 }

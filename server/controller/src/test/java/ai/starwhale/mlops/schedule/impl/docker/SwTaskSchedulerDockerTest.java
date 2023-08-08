@@ -54,6 +54,7 @@ import org.mockito.stubbing.Answer;
 
 public class SwTaskSchedulerDockerTest {
 
+    static final String IMAGE_BUSY_BOX = "busybox:latest";
     DockerClientFinder dockerClientFinder;
     ContainerTaskMapper containerTaskMapper;
     DockerTaskReporter dockerTaskReporter;
@@ -62,11 +63,7 @@ public class SwTaskSchedulerDockerTest {
     String network;
     String nodeIp;
     SwTaskSchedulerDocker swTaskSchedulerDocker;
-
     TaskCommandGetter taskCommandGetter;
-
-    static final String IMAGE_BUSY_BOX = "busybox:latest";
-
     DockerClient dockerClient;
 
     TaskReportReceiver taskReportReceiver;
@@ -98,7 +95,7 @@ public class SwTaskSchedulerDockerTest {
         try {
             dockerClient.removeContainerCmd("sw-ut-busybox").withForce(true).exec();
         } catch (Exception e) {
-
+            System.out.println("sw-ut-busybox may not exist");
         }
 
 

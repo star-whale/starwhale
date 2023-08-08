@@ -19,16 +19,9 @@ package ai.starwhale.mlops.schedule.impl.k8s;
 import ai.starwhale.mlops.schedule.SwSchedulerAbstractFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
-import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8SCollectorFactory;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sCollectorFactory;
 import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import io.kubernetes.client.informer.SharedInformerFactory;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.util.Config;
-import java.io.IOException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -71,7 +64,7 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
     @Bean
     @Override
     public SwTaskScheduler buildSwTaskScheduler() {
-        return new K8SSwTaskScheduler(
+        return new K8sSwTaskScheduler(
                 k8sClient,
                 k8sJobTemplate,
                 taskRunningEnvBuilder,
@@ -85,7 +78,7 @@ public class SwSchedulerFactoryK8S implements SwSchedulerAbstractFactory {
     @Bean
     @Override
     public TaskLogCollectorFactory buildTaskLogCollectorFactory() {
-        return new TaskLogK8SCollectorFactory(k8sClient, k8sJobTemplate);
+        return new TaskLogK8sCollectorFactory(k8sClient, k8sJobTemplate);
     }
 
 }

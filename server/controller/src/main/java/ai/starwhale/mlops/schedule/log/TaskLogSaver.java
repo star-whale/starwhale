@@ -44,7 +44,7 @@ public class TaskLogSaver {
     public void saveLog(Task task) throws StarwhaleException {
         log.debug("logging for task {} begins...", task.getId());
         try {
-            Tuple2<String,String> logInfo = taskLogCollectorFactory.offlineCollector(task).collect();
+            Tuple2<String, String> logInfo = taskLogCollectorFactory.offlineCollector(task).collect();
             String taskLog = logInfo._2();
             log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");

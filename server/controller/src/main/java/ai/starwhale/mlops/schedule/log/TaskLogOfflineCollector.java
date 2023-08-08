@@ -20,6 +20,6 @@ import io.vavr.Tuple2;
 
 public interface TaskLogOfflineCollector {
 
-    Tuple2<String,String> collect();
+    Tuple2<String, String> collect();
 
 }

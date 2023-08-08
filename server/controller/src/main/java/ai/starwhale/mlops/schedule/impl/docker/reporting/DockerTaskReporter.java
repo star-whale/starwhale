@@ -77,12 +77,13 @@ public class DockerTaskReporter {
         distinctDockerClients.forEach(dockerClient -> {
             List<Container> containers = dockerClient.listContainersCmd()
                     .withLabelFilter(SwTaskSchedulerDocker.CONTAINER_LABELS).withShowAll(true).exec();
-            taskReportReceiver.receive(containers.stream().map(c -> containerToTaskReport(c)).filter(Objects::nonNull).collect(Collectors.toList()));
+            taskReportReceiver.receive(containers.stream().map(c -> containerToTaskReport(c)).filter(Objects::nonNull)
+                    .collect(Collectors.toList()));
         });
 
     }
 
-    public void reportTask(Container c){
+    public void reportTask(Container c) {
         taskReportReceiver.receive(List.of(containerToTaskReport(c)));
     }
 
