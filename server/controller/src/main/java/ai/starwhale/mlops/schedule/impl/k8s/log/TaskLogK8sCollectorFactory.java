@@ -55,11 +55,11 @@ public class TaskLogK8sCollectorFactory implements TaskLogCollectorFactory {
             return new TaskLogK8sStreamingCollector(this.k8sClient, String.valueOf(task.getId()));
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.NETWORK,
-                    MessageFormat.format("read k8s api exception {}", e.getMessage()),
+                    MessageFormat.format("read k8s api exception {0}", e.getMessage()),
                     e);
         } catch (ApiException e) {
             throw new SwProcessException(ErrorType.INFRA,
-                    MessageFormat.format("k8s api exception {}", e.getResponseBody()),
+                    MessageFormat.format("k8s api exception {0}", e.getResponseBody()),
                     e);
         }
     }

@@ -18,7 +18,6 @@ package ai.starwhale.mlops.schedule.impl.k8s.log;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -70,7 +69,7 @@ public class CancellableJobLogK8sCollectorTest {
         when(k8sClient.readLog(eq("running-pod"), anyString(), anyBoolean())).thenReturn(call);
         var ins = new TaskLogK8sStreamingCollector(k8sClient, "1");
 
-        assertThat(ins.readLine(any()), is(line));
+        assertThat(ins.readLine(1L), is(line));
         verify(k8sClient).getPodsByJobName("1");
         verify(call).execute();
     }

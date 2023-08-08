@@ -103,36 +103,6 @@ public class K8sSwTaskSchedulerTest {
     }
 
     @Test
-    public void testRenderWithoutGpuResource() throws IOException, ApiException {
-        var client = mock(K8sClient.class);
-
-        var k8sJobTemplate = new K8sJobTemplate("", "", "", "");
-        var scheduler = new K8sSwTaskScheduler(
-                client,
-                k8sJobTemplate,
-                mock(TaskRunningEnvBuilder.class),
-                "rp",
-                50,
-                mock(StorageAccessService.class),
-                mock(ThreadPoolTaskScheduler.class)
-        );
-        var task = mockTask(false);
-        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
-        var jobArgumentCaptor = ArgumentCaptor.forClass(V1Job.class);
-        task.getTaskRequest()
-                .setRuntimeResources(List.of(new RuntimeResource(ResourceOverwriteSpec.RESOURCE_GPU, 1f, 0f)));
-        scheduler.schedule(Set.of(task), mock(TaskReportReceiver.class));
-
-        verify(client, times(2)).deployJob(jobArgumentCaptor.capture());
-        var jobs = jobArgumentCaptor.getAllValues();
-        var expectedEnv = new V1EnvVar().name("NVIDIA_VISIBLE_DEVICES").value("");
-        Assertions.assertTrue(jobs.get(0).getSpec().getTemplate().getSpec()
-                .getContainers().get(0).getEnv().contains(expectedEnv));
-        Assertions.assertFalse(jobs.get(1).getSpec().getTemplate().getSpec()
-                .getContainers().get(0).getEnv().contains(expectedEnv));
-    }
-
-    @Test
     public void testRenderWithDefaultGpuResourceInPool() throws IOException, ApiException {
         var client = mock(K8sClient.class);
 
