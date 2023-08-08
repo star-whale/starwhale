@@ -12,7 +12,7 @@ import Highlight from '@tiptap/extension-highlight'
 import { InputRule } from '@tiptap/core'
 import Focus from '@tiptap/extension-focus'
 import SlashCommand from './SlashCommand'
-import ProjectSummaryPanel from './ProjectSummaryPanel'
+import EvalSelectPanel from './EvalSelectPanel'
 
 // import Document from '@tiptap/extension-document'
 // import UploadImagesPlugin from './plugins/upload-images'
@@ -144,5 +144,5 @@ export const TiptapExtensions = [
         className: 'has-focus',
         mode: 'all',
     }),
-    ProjectSummaryPanel,
+    EvalSelectPanel,
 ]

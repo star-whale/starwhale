@@ -6,7 +6,7 @@ import { EventBusSrv } from '@starwhale/core/events'
 import { useFetchDatastoreAllTables, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
-import { withEditorRegister } from '.'
+import { withProject } from './Editor'
 
 function witEditorContext(EditorApp: React.FC) {
     return function EditorContexted(props: any) {
@@ -87,4 +87,7 @@ function witEditorContext(EditorApp: React.FC) {
     }
 }
 
-export const FullTablesEditor = withEditorRegister(witEditorContext(WidgetRenderTree))
+const FullTablesEditor = withProject(witEditorContext(WidgetRenderTree))
+
+export { FullTablesEditor }
+export default FullTablesEditor

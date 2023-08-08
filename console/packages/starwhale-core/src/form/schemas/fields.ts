@@ -30,6 +30,8 @@ export const tableNameField = (tables: any, schema?: RJSFSchema): RJSFSchema | u
     if (!tables || tables.length === 0) return undefined
     const { type } = schema?.tableName ?? {}
 
+    console.log(type, tables)
+
     if (type === 'array') {
         return {
             tableName: {

@@ -42,7 +42,7 @@ import RuntimeVersionOverviewMeta from '@/pages/Runtime/RuntimeVersionOverviewMe
 import RuntimeVersionOverview from '@/pages/Runtime/RuntimeVersionOverview'
 import RuntimeOverviewLayout from '@/pages/Runtime/RuntimeOverviewLayout'
 import SystemSettings from '@/pages/Admin/SystemSettings'
-import Panel from '@/components/Editor'
+import Panel from '@/components/Editor/Editor'
 import EvaluationWidgetResults from '@/pages/Evaluation/EvaluationWidgetResults'
 import ModelVersionOverviewFiles from '@/pages/Model/ModelVersionOverviewFiles'
 import ModelVersionOverview from '@/pages/Model/ModelVersionOverview'

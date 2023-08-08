@@ -7,6 +7,7 @@ import {
     ReactNodeViewRenderer,
 } from '@tiptap/react'
 import { cn } from '../lib/utils'
+import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 
 const Component = ({ node, selected }: NodeViewProps) => {
     // props.node.attrs / props.updateAttributes(
@@ -15,7 +16,7 @@ const Component = ({ node, selected }: NodeViewProps) => {
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>
             {node.type.spec.draggable ? (
                 <div draggable='true' data-drag-handle=''>
-                    Test
+                    <EvalSelectEditor />
                 </div>
             ) : null}
             <NodeViewContent />
@@ -35,7 +36,7 @@ declare module '@tiptap/core' {
 }
 
 export default Node.create({
-    name: 'project-summary-panel',
+    name: 'eval-select-panel',
     group: 'block',
     draggable: true,
     atom: true,
