@@ -14,7 +14,7 @@ export const LinkSelector: FC<LinkSelectorProps> = ({ editor, isOpen, setIsOpen 
 
     // Autofocus on input by default
     useEffect(() => {
-        inputRef.current && inputRef.current?.focus()
+        inputRef.current?.focus()
     })
 
     return (
@@ -55,6 +55,7 @@ export const LinkSelector: FC<LinkSelectorProps> = ({ editor, isOpen, setIsOpen 
                     {editor.getAttributes('link').href ? (
                         <button
                             className='flex items-center rounded-sm p-1 text-red-600 transition-all hover:bg-red-100 dark:hover:bg-red-800'
+                            type='button'
                             onClick={() => {
                                 editor.chain().focus().unsetLink().run()
                                 setIsOpen(false)
@@ -63,7 +64,10 @@ export const LinkSelector: FC<LinkSelectorProps> = ({ editor, isOpen, setIsOpen 
                             <Trash className='h-4 w-4' />
                         </button>
                     ) : (
-                        <button className='flex items-center rounded-sm p-1 text-stone-600 transition-all hover:bg-stone-100'>
+                        <button
+                            type='button'
+                            className='flex items-center rounded-sm p-1 text-stone-600 transition-all hover:bg-stone-100'
+                        >
                             <Check className='h-4 w-4' />
                         </button>
                     )}

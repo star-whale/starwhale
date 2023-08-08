@@ -41,6 +41,15 @@ const Command = Extension.create({
 const getSuggestionItems = ({ query }: { query: string }) => {
     return [
         {
+            title: 'Panel',
+            description: 'Add summary panel',
+            searchTerms: ['panel', 'paragraph'],
+            icon: <Text size={18} />,
+            command: ({ editor, range }: CommandProps) => {
+                editor.chain().focus().deleteRange(range).setPanel().run()
+            },
+        },
+        {
             title: 'Text',
             description: 'Just start typing with plain text.',
             searchTerms: ['p', 'paragraph'],

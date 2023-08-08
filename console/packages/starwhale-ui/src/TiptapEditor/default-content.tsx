@@ -7,6 +7,9 @@ const DEFAULT_EDITOR_CONTENT = {
             content: [{ type: 'text', text: 'Introducing' }],
         },
         {
+            type: 'project-summary-panel',
+        },
+        {
             type: 'paragraph',
             content: [
                 {

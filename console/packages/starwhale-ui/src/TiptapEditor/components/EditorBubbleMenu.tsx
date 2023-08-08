@@ -58,7 +58,7 @@ export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
         ...props,
         shouldShow: ({ editor }) => {
             // don't show if image is selected
-            if (editor.isActive('image')) {
+            if (editor.isActive('image') || editor.isActive('project-summary-panel')) {
                 return false
             }
             return editor.view.state.selection.content().size > 0

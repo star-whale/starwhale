@@ -10,7 +10,10 @@ import TaskList from '@tiptap/extension-task-list'
 import { Markdown } from 'tiptap-markdown'
 import Highlight from '@tiptap/extension-highlight'
 import { InputRule } from '@tiptap/core'
+import Focus from '@tiptap/extension-focus'
 import SlashCommand from './SlashCommand'
+import ProjectSummaryPanel from './ProjectSummaryPanel'
+
 // import Document from '@tiptap/extension-document'
 // import UploadImagesPlugin from './plugins/upload-images'
 // import Paragraph from '@tiptap/extension-paragraph'
@@ -137,4 +140,9 @@ export const TiptapExtensions = [
         html: false,
         transformCopiedText: true,
     }),
+    Focus.configure({
+        className: 'has-focus',
+        mode: 'all',
+    }),
+    ProjectSummaryPanel,
 ]

@@ -88,6 +88,7 @@ export const NodeSelector: FC<NodeSelectorProps> = ({ editor, isOpen, setIsOpen 
     return (
         <div className='relative h-full'>
             <button
+                type='button'
                 className='flex h-full items-center gap-1 whitespace-nowrap p-2 text-sm font-medium text-stone-600 hover:bg-stone-100 active:bg-stone-200'
                 onClick={() => setIsOpen(!isOpen)}
             >
@@ -99,6 +100,7 @@ export const NodeSelector: FC<NodeSelectorProps> = ({ editor, isOpen, setIsOpen 
                 <section className='fixed top-full z-[99999] mt-1 flex w-48 flex-col overflow-hidden rounded border border-stone-200 bg-white p-1 shadow-xl animate-in fade-in slide-in-from-top-1'>
                     {items.map((item, index) => (
                         <button
+                            type='button'
                             key={index}
                             onClick={() => {
                                 item.command()
