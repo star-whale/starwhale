@@ -55,4 +55,9 @@ public class DatasetVersionVo implements Serializable {
 
     @JsonProperty("shared")
     private Integer shared;
+
+    /**
+     * the table name for index in DataStore
+     */
+    String indexTable;
 }

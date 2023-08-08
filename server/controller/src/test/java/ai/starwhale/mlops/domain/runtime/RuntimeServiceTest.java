@@ -158,6 +158,7 @@ public class RuntimeServiceTest {
                     RuntimeVersionEntity entity = invocation.getArgument(0);
                     return RuntimeVersionVo.builder()
                             .id(String.valueOf(entity.getId()))
+                            .alias("v" + entity.getVersionOrder())
                             .name(entity.getName())
                             .build();
                 });
@@ -378,10 +379,9 @@ public class RuntimeServiceTest {
                 .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listRuntimeInfo("1", "r1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
@@ -389,10 +389,9 @@ public class RuntimeServiceTest {
                 .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
         res = service.listRuntimeInfo("1", "");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         assertThrows(SwNotFoundException.class,
                 () -> service.listRuntimeInfo("2", "r1"));
@@ -421,10 +420,8 @@ public class RuntimeServiceTest {
                 .runtimeVersionUrl("v1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         given(runtimeVersionMapper.findByLatest(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
@@ -434,10 +431,8 @@ public class RuntimeServiceTest {
                 .runtimeUrl("r1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         assertThrows(BundleException.class,
                 () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build()));

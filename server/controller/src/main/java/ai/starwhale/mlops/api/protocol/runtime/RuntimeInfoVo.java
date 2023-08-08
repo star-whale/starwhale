@@ -38,35 +38,9 @@ public class RuntimeInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("versionId")
-    private String versionId;
-
-    @JsonProperty("versionName")
-    private String versionName;
-
-    @JsonProperty("versionAlias")
-    private String versionAlias;
-
-    @JsonProperty("versionTag")
-    private String versionTag;
-
-    @JsonProperty("versionMeta")
-    private String versionMeta;
-
-    @JsonProperty("manifest")
-    private String manifest;
-
-    @JsonProperty("shared")
-    private Integer shared;
-
-    @JsonProperty("createdTime")
-    private Long createdTime;
+    private RuntimeVersionVo versionInfo;
 
     @JsonProperty("files")
     @Valid
     private List<FlattenFileVo> files;
-
-    public static RuntimeInfoVo empty() {
-        return new RuntimeInfoVo("", "", "", "", "", "", "", "", 0, 0L, List.of());
-    }
 }

@@ -156,6 +156,7 @@ public class DatasetServiceTest {
                     return DatasetVersionVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .name(entity.getName())
+                            .alias("v" + entity.getVersionOrder())
                             .build();
                 });
 
@@ -311,29 +312,26 @@ public class DatasetServiceTest {
         given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
-        var res = service.getDatasetInfo(DatasetQuery.builder()
-                                                 .projectUrl("1")
-                                                 .datasetUrl("d1")
-                                                 .datasetVersionUrl("v1")
-                                                 .build());
+        var res = service.getDatasetInfo(
+                DatasetQuery.builder()
+                        .projectUrl("1")
+                        .datasetUrl("d1")
+                        .datasetVersionUrl("v1")
+                        .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
-        res = service.getDatasetInfo(DatasetQuery.builder()
-                                             .projectUrl("1")
-                                             .datasetUrl("d1")
-                                             .build());
-
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        res = service.getDatasetInfo(
+                DatasetQuery.builder()
+                        .projectUrl("1")
+                        .datasetUrl("d1")
+                        .build());
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         assertThrows(
                 SwNotFoundException.class,
@@ -404,10 +402,9 @@ public class DatasetServiceTest {
                 .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listDs("1", "d1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         given(projectService.findProject(same("1")))
                 .willReturn(Project.builder().id(1L).build());
@@ -415,15 +412,11 @@ public class DatasetServiceTest {
                 .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
 
         res = service.listDs("1", "");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
-        assertThrows(
-                SwNotFoundException.class,
-                () -> service.listDs("2", "d1")
-        );
+        assertThrows(SwNotFoundException.class, () -> service.listDs("2", "d1"));
     }
 
     @Test
