@@ -264,7 +264,7 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--name",
                 "json-file-test",
-                "--json-file",
+                "--json",
                 str(json_file),
                 "--field-selector",
                 "sub.sub",
@@ -273,15 +273,15 @@ class StandaloneDatasetTestCase(TestCase):
             obj=mock_obj,
         )
         assert result.exit_code == 0
-        assert mock_obj.build_from_json_file.call_count == 1
-        call_args = mock_obj.build_from_json_file.call_args
+        assert mock_obj.build_from_json_files.call_count == 1
+        call_args = mock_obj.build_from_json_files.call_args
         assert call_args[1]["name"] == "json-file-test"
         assert call_args[1]["mode"] == DatasetChangeMode.OVERWRITE
         assert call_args[1]["field_selector"] == "sub.sub"
-        assert call_args[0][0] == str(json_file)
+        assert str(json_file) in call_args[0][0]
 
-        DatasetTermView.build_from_json_file(
-            json_file_path=json_file,
+        DatasetTermView.build_from_json_files(
+            paths=[json_file],
             name="json-file-test",
             project_uri="",
             alignment_size="128",
@@ -308,20 +308,20 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--name",
                 "json-file-test",
-                "--json-file",
+                "--json",
                 url,
             ],
             obj=mock_obj,
         )
         assert result.exit_code == 0
-        assert mock_obj.build_from_json_file.call_count == 1
-        call_args = mock_obj.build_from_json_file.call_args
+        assert mock_obj.build_from_json_files.call_count == 1
+        call_args = mock_obj.build_from_json_files.call_args
         assert call_args[1]["name"] == "json-file-test"
         assert call_args[1]["field_selector"] == ""
-        assert call_args[0][0] == url
+        assert url in call_args[0][0]
 
-        DatasetTermView.build_from_json_file(
-            json_file_path=url,
+        DatasetTermView.build_from_json_files(
+            paths=[url],
             name="json-file-test",
             project_uri="",
             alignment_size="128",
@@ -496,25 +496,6 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
-
-    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
-    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
-    def test_from_json(self, m_dump: MagicMock, *args: t.Any) -> None:
-        from starwhale.api._impl.dataset import Dataset as SDKDataset
-
-        myds = SDKDataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
-        )
-        assert myds[0].features.en == "hello"
-
-        myds = SDKDataset.from_json(
-            "translation",
-            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
-            "content.child_content",
-        )
-        assert myds[1].features["zh-cn"] == "最近怎么样"
-        assert m_dump.call_count == 2
 
 
 class TestJsonDict(TestCase):

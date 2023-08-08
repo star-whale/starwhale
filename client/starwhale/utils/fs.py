@@ -282,7 +282,7 @@ def iter_pathlike_io(
     encoding: str | None = None,
     newline: str | None = None,
     accepted_file_types: t.List[str] | None = None,
-) -> t.Iterator[io.IOBase]:
+) -> t.Iterator[t.Tuple[io.IOBase, str]]:
     def _chk_type(p: PathLike) -> bool:
         if not accepted_file_types:
             return True
@@ -307,7 +307,7 @@ def iter_pathlike_io(
             return r.text
 
         if _chk_type(path):
-            yield io.StringIO(_r(path), newline=newline)
+            yield io.StringIO(_r(path), newline=newline), Path(path).suffix
     else:
         path = Path(path)
 
@@ -319,4 +319,4 @@ def iter_pathlike_io(
         for p in paths:
             if _chk_type(p):
                 with p.open(encoding=encoding, newline=newline) as f:
-                    yield f
+                    yield f, p.suffix
