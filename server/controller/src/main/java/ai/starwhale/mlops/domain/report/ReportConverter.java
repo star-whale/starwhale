@@ -1,5 +1,4 @@
 /*
-
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +17,7 @@
 package ai.starwhale.mlops.domain.report;
 
 import ai.starwhale.mlops.api.protocol.report.ReportVo;
+import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +32,10 @@ public class ReportConverter {
     public ReportVo convert(ReportEntity entity) {
         return ReportVo.builder()
                 .uuid(entity.getUuid())
-                .name(entity.getName())
+                .name(entity.getTitle())
                 .content(entity.getContent())
                 .shared(entity.getShared())
-                .creator(userService.findUserById(entity.getCreatorId()))
+                .owner(userService.findUserById(entity.getOwnerId()))
                 .createdTime(entity.getCreatedTime().getTime())
                 .modifiedTime(entity.getModifiedTime().getTime())
                 .build();

@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.api.protocol.report;
 
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotNull;
 
 @Data
 @Validated

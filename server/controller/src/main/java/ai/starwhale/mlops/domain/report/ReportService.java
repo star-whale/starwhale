@@ -27,10 +27,13 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.report.bo.CreateParam;
 import ai.starwhale.mlops.domain.report.bo.QueryParam;
 import ai.starwhale.mlops.domain.report.bo.UpdateParam;
+import ai.starwhale.mlops.domain.report.mapper.ReportMapper;
+import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.trash.Trash;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SwNotFoundException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.UUID;
@@ -44,7 +47,6 @@ public class ReportService {
     private final ReportMapper reportMapper;
     private final ReportDao reportDao;
     private final ReportConverter reportConverter;
-    private final IdConverter idConvertor;
     private final ProjectService projectService;
     private final UserService userService;
     private final TrashService trashService;
@@ -62,7 +64,6 @@ public class ReportService {
         this.reportMapper = reportMapper;
         this.reportDao = reportDao;
         this.reportConverter = reportConverter;
-        this.idConvertor = idConvertor;
         this.projectService = projectService;
         this.userService = userService;
         this.trashService = trashService;
@@ -75,37 +76,40 @@ public class ReportService {
         var user = userService.currentUserDetail();
         var entity = ReportEntity.builder()
                 .uuid(String.valueOf(UUID.randomUUID()))
-                .name(createParam.getName())
+                .title(createParam.getTitle())
+                .description(createParam.getDescription())
                 .content(createParam.getContent())
                 .projectId(projectId)
-                .creatorId(user.getId())
+                .ownerId(user.getId())
                 .build();
         reportMapper.insert(entity);
         return entity.getId();
     }
 
     public Boolean update(UpdateParam updateParam) {
-        Long id = null;
-        String uuid = null;
-        if (idConvertor.isId(updateParam.getReportUrl())) {
-            id = idConvertor.revert(updateParam.getReportUrl());
-        } else {
-            uuid = updateParam.getReportUrl();
-        }
-        return reportMapper.update(id, uuid, updateParam.getContent(), updateParam.getShared()) > 0;
+        var updateEntity = ReportEntity.builder()
+                .id(updateParam.getReportId())
+                .title(updateParam.getTitle())
+                .description(updateParam.getDescription())
+                .content(updateParam.getContent()).shared(updateParam.getShared())
+                .build();
+        return reportMapper.update(updateEntity) > 0;
+    }
+
+    public Boolean shared(UpdateParam updateParam) {
+        return reportMapper.updateShared(updateParam.getReportId(), updateParam.getShared()) > 0;
     }
 
     @Transactional
     public Boolean delete(QueryParam query) {
-        BundleUrl bundleUrl = BundleUrl.create(query.getProjectUrl(), query.getReportUrl());
         Trash trash = Trash.builder()
-            .projectId(projectService.getProjectId(query.getProjectUrl()))
-            .objectId(bundleManager.getBundleId(bundleUrl))
-            .type(Trash.Type.DATASET)
-            .build();
+                .projectId(projectService.getProjectId(query.getProjectUrl()))
+                .objectId(query.getReportId())
+                .type(Trash.Type.REPORT)
+                .build();
         trashService.moveToRecycleBin(trash, userService.currentUserDetail());
         return RemoveManager.create(bundleManager, reportDao)
-                .removeBundle(BundleUrl.create(query.getProjectUrl(), query.getReportUrl()));
+                .removeBundle(BundleUrl.create(query.getProjectUrl(), String.valueOf(query.getReportId())));
     }
 
     public PageInfo<ReportVo> listReport(QueryParam query, PageParams pageParams) {
@@ -116,15 +120,23 @@ public class ReportService {
     }
 
     public ReportVo getReport(QueryParam query) {
-        ReportEntity entity;
-        if (idConvertor.isId(query.getReportUrl())) {
-            entity = reportMapper.selectById(idConvertor.revert(query.getReportUrl()));
-        } else {
-            entity = reportMapper.selectByUuid(query.getReportUrl());
-        }
+        ReportEntity entity = reportMapper.selectById(query.getReportId());
         if (entity == null) {
             throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE,
-                    String.format("Unable to find report %s", query.getReportUrl()));
+                    String.format("Unable to find report %s", query.getReportId()));
+        }
+        return reportConverter.convert(entity);
+    }
+
+    public ReportVo getReportByUuidForPreview(String uuid) {
+        ReportEntity entity = reportMapper.selectByUuid(uuid);
+        if (entity == null) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE,
+                    String.format("Unable to find report %s", uuid));
+        }
+        if (!entity.getShared()) {
+            throw new SwValidationException(SwValidationException.ValidSubject.REPORT,
+                    String.format("Report %s doesn't shared", uuid));
         }
         return reportConverter.convert(entity);
     }

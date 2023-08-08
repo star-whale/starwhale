@@ -26,6 +26,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
@@ -33,6 +34,7 @@ import io.jsonwebtoken.impl.DefaultClaims;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -41,6 +43,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;
 import org.springframework.http.HttpStatus;
 
@@ -64,6 +68,7 @@ public class JwtTokenFilterTest {
         JwtClaimValidator jwtClaimValidator = mock(JwtClaimValidator.class);
         doThrow(SwValidationException.class).when(jwtClaimValidator).validClaims(claims);
         jwtClaimValidators = List.of(jwtClaimValidator);
+        projectService = mock(ProjectService.class);
         jwtTokenFilter = new JwtTokenFilter(jwtTokenUtil, userService, projectService, jwtClaimValidators);
         httpUtilMockedStatic = mockStatic(HttpUtil.class);
     }
@@ -96,6 +101,22 @@ public class JwtTokenFilterTest {
         jwtTokenFilter.doFilterInternal(request, response, filterchain);
         httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
                 "JWT token is expired or invalid."), times(1));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"PUBLIC, 0", "PRIVATE, 1"})
+    public void testAnonymous(Project.Privacy privacy, int errorTimes) throws ServletException, IOException {
+        when(projectService.findProject("p-1"))
+                .thenReturn(Project.builder().privacy(privacy).build());
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn("");
+        when(request.getAttribute("PROJECT")).thenReturn(Set.of("p-1"));
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
+        FilterChain filterchain = mock(FilterChain.class);
+        jwtTokenFilter.doFilterInternal(request, response, filterchain);
+        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+                "Not logged in."), times(errorTimes));
     }
 
 }

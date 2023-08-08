@@ -22,8 +22,10 @@ import lombok.Data;
 @Data
 @Builder
 public class UpdateParam {
-    private String reportUrl;
+    private Long reportId;
     private String projectUrl;
+    private String title;
+    private String description;
     private String content;
     private Boolean shared;
 }

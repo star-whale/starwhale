@@ -14,24 +14,35 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.report;
+package ai.starwhale.mlops.domain.report.po;
 
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import java.util.Date;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReportEntity implements BundleEntity {
     private Long id;
     private String uuid;
-    private String name;
+    private String title;
+    private String description;
     private String content;
-    private Boolean shared;
+    @Builder.Default
+    private Boolean shared = false;
     private Long projectId;
-    private Long creatorId;
+    private Long ownerId;
     private Date createdTime;
     private Date modifiedTime;
+
+    @Override
+    public String getName() {
+        return uuid;
+    }
 }

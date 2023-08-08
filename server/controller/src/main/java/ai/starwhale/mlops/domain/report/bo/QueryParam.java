@@ -22,6 +22,6 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryParam {
-    private String reportUrl;
+    private Long reportId;
     private String projectUrl;
 }

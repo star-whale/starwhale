@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
-import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,53 +44,55 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Validated
 public interface ReportApi {
 
-    @PostMapping(value = "/project/{projectUrl}/report",
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/project/{projectUrl}/report", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createReport(
-        @PathVariable String projectUrl,
-        @Valid @RequestBody CreateReportRequest createReportRequest);
+            @PathVariable String projectUrl, @Valid @RequestBody CreateReportRequest createReportRequest);
 
-    @PostMapping(value = "/project/{projectUrl}/report/{reportUrl}/transfer",
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/project/{projectUrl}/report/{reportId}/transfer",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> transfer(
-        @PathVariable String projectUrl,
-        @PathVariable String reportUrl,
-        @Valid @RequestBody TransferReportRequest transferRequest);
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @Valid @RequestBody TransferReportRequest transferRequest);
 
-    @PutMapping(value = "/project/{projectUrl}/report/{reportUrl}",
-        produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyReport(
-        @PathVariable String projectUrl,
-        @PathVariable String reportUrl,
-        @Valid @RequestBody UpdateReportRequest updateReportRequest);
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @Valid @RequestBody UpdateReportRequest updateReportRequest);
 
+    @PutMapping(value = "/project/{projectUrl}/report/{reportId}/shared", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> sharedReport(
+            @PathVariable String projectUrl,
+            @PathVariable Long reportId,
+            @RequestParam Boolean shared);
 
-
-    @DeleteMapping(value = "/project/{projectUrl}/report/{reportUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> deleteReport(
-        @PathVariable String projectUrl,
-        @PathVariable String reportUrl);
+            @PathVariable String projectUrl, @PathVariable Long reportId);
 
-    @GetMapping(value = "/project/{projectUrl}/report/{reportUrl}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/project/{projectUrl}/report/{reportId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ReportVo>> getReport(
-        @PathVariable String projectUrl,
-        @PathVariable String reportUrl);
+            @PathVariable String projectUrl, @PathVariable Long reportId);
 
+    @GetMapping(value = "/report/{uuid}/preview", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ResponseMessage<ReportVo>> preview(@PathVariable String reportUuid);
 
     @Operation(summary = "Get the list of reports")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-        value = "/project/{projectUrl}/report",
-        produces = MediaType.APPLICATION_JSON_VALUE)
+            value = "/project/{projectUrl}/report",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(
-        @PathVariable String projectUrl,
-        @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
-        @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize
+            @PathVariable String projectUrl,
+            @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize
     );
 }

@@ -27,7 +27,6 @@ import ai.starwhale.mlops.domain.report.ReportService;
 import ai.starwhale.mlops.domain.report.bo.CreateParam;
 import ai.starwhale.mlops.domain.report.bo.QueryParam;
 import ai.starwhale.mlops.domain.report.bo.UpdateParam;
-import ai.starwhale.mlops.exception.SwValidationException;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -44,45 +43,58 @@ public class ReportController implements ReportApi {
     }
 
 
-    public ResponseEntity<ResponseMessage<String>> createReport(String projectUrl, CreateReportRequest createReportRequest) {
+    public ResponseEntity<ResponseMessage<String>> createReport(
+            String projectUrl, CreateReportRequest createReportRequest) {
         Long id = service.create(CreateParam.builder()
                 .projectUrl(projectUrl)
-                .name(createReportRequest.getName())
+                .title(createReportRequest.getTitle())
+                .description(createReportRequest.getDescription())
                 .content(createReportRequest.getContent())
                 .build());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(id)));
     }
 
-    public ResponseEntity<ResponseMessage<String>> transfer(String projectUrl, String reportUrl, TransferReportRequest transferRequest) {
+    public ResponseEntity<ResponseMessage<String>> transfer(
+            String projectUrl, Long reportId, TransferReportRequest transferRequest) {
         return null;
     }
 
     public ResponseEntity<ResponseMessage<String>> modifyReport(
-            String projectUrl, String reportUrl, UpdateReportRequest updateReportRequest) {
-        if (updateReportRequest.validate()) {
-            throw new SwValidationException(SwValidationException.ValidSubject.REPORT);
-        }
+            String projectUrl, Long reportId, UpdateReportRequest updateReportRequest) {
         service.update(UpdateParam.builder()
-                .reportUrl(reportUrl)
+                .reportId(reportId)
                 .projectUrl(projectUrl)
                 .content(updateReportRequest.getContent())
+                .description(updateReportRequest.getDescription())
+                .title(updateReportRequest.getTitle())
                 .shared(updateReportRequest.getShared())
                 .build());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    public ResponseEntity<ResponseMessage<String>> deleteReport(String projectUrl, String reportUrl) {
-        service.delete(QueryParam.builder()
-                .projectUrl(projectUrl).reportUrl(reportUrl).build());
+    @Override
+    public ResponseEntity<ResponseMessage<String>> sharedReport(String projectUrl, Long reportId, Boolean shared) {
+        service.shared(UpdateParam.builder().reportId(reportId).shared(shared).build());
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    public ResponseEntity<ResponseMessage<ReportVo>> getReport(String projectUrl, String reportUrl) {
+    public ResponseEntity<ResponseMessage<String>> deleteReport(String projectUrl, Long reportId) {
+        service.delete(QueryParam.builder()
+                .projectUrl(projectUrl).reportId(reportId).build());
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    public ResponseEntity<ResponseMessage<ReportVo>> getReport(String projectUrl, Long reportId) {
         return ResponseEntity.ok(Code.success.asResponse(
                 service.getReport(QueryParam.builder()
                         .projectUrl(projectUrl)
-                        .reportUrl(reportUrl)
+                        .reportId(reportId)
                         .build())));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ReportVo>> preview(String reportUuid) {
+        return ResponseEntity.ok(Code.success.asResponse(service.getReportByUuidForPreview(reportUuid)));
     }
 
     public ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(

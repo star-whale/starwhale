@@ -41,7 +41,7 @@ public class RecoverManager {
 
         // Check for duplicate names
         if (recoverAccessor.findByNameForUpdate(name, projectId) != null) {
-            throw new RecoverException(String.format("Recover error. Model %s already exists.", name));
+            throw new RecoverException(String.format("Recover error. Bundle %s already exists.", name));
         }
 
         Boolean res = recoverAccessor.recover(bundleId);

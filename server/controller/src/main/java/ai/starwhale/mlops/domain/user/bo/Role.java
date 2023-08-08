@@ -51,6 +51,10 @@ public class Role implements GrantedAuthority {
 
     public static final String CODE_GUEST = "GUEST";
 
+    public static final String NAME_ANONYMOUS = "Anonymous";
+
+    public static final String CODE_ANONYMOUS = "ANONYMOUS";
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

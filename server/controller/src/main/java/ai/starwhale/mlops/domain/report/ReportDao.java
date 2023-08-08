@@ -20,6 +20,7 @@ import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
+import ai.starwhale.mlops.domain.report.mapper.ReportMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,7 +38,7 @@ public class ReportDao implements BundleAccessor, RecoverAccessor, RemoveAccesso
 
     @Override
     public BundleEntity findByNameForUpdate(String name, Long projectId) {
-        return reportMapper.selectByName(name, projectId, true);
+        return reportMapper.selectByUuidForUpdate(name);
     }
 
     @Override

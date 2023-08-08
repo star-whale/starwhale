@@ -33,7 +33,7 @@ public class ReportVo {
 
     private Boolean shared;
 
-    private UserVo creator;
+    private UserVo owner;
 
     private Long createdTime;
     private Long modifiedTime;

@@ -16,18 +16,18 @@
 
 package ai.starwhale.mlops.api.protocol.report;
 
-import cn.hutool.core.util.StrUtil;
+import javax.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotNull;
 
 @Data
+@Validated
 public class UpdateReportRequest {
-    private Boolean shared;
+    @Size(max = 100, message = "Title length is too long")
+    private String title;
+    @Size(max = 100, message = "Description length is too long")
+    private String description;
     private String content;
-
-    public boolean validate() {
-        return StrUtil.isNotEmpty(content) || null != shared;
-    }
+    private Boolean shared;
 }

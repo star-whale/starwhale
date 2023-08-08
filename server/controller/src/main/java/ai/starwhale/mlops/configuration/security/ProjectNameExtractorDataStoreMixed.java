@@ -28,6 +28,8 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.report.ReportDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import cn.hutool.core.util.StrUtil;
@@ -69,6 +71,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     private final ModelDao modelDao;
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
+    private final ReportDao reportDao;
 
     static final String PATH_LIST_TABLES = "/datastore/listTables";
     static final String PATH_UPDATE_TABLE = "/datastore/updateTable";
@@ -76,7 +79,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
     private static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model)/([^/]+).*$");
+            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report)/([^/]+).*$");
 
     public ProjectNameExtractorDataStoreMixed(
             @Value("${sw.controller.api-prefix}") String apiPrefix,
@@ -86,8 +89,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             JobDao jobDao,
             ModelDao modelDao,
             DatasetDao datasetDao,
-            RuntimeDao runtimeDao
-    ) {
+            RuntimeDao runtimeDao,
+            ReportDao reportDao) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
         this.projectService = projectService;
@@ -96,6 +99,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         this.modelDao = modelDao;
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
+        this.reportDao = reportDao;
     }
 
     @Override
@@ -169,7 +173,7 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         return request.getRequestURI().startsWith(this.apiPrefix + "/datastore");
     }
 
-    public static String SYSTEM_PROJECT = "0";
+    public static String SYSTEM_PROJECT = String.valueOf(Project.system().getId());
 
     private Set<String> projectsOfNoneDataStore(HttpServletRequest request) {
         var projectUrl = HttpUtil.getResourceUrlFromPath(request.getRequestURI(), Resources.PROJECT);
@@ -202,7 +206,8 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
                 "runtime", runtimeDao,
                 "job", jobDao,
                 "dataset", datasetDao,
-                "model", modelDao
+                "model", modelDao,
+                "report", reportDao
         );
         if (!accessor.containsKey(resourceType)) {
             return;

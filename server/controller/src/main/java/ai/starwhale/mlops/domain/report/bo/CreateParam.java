@@ -22,7 +22,9 @@ import lombok.Data;
 @Data
 @Builder
 public class CreateParam {
-    private String name;
+    private String title;
+    private String description;
     private String projectUrl;
     private String content;
+    private Boolean shared;
 }

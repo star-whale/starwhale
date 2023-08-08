@@ -18,14 +18,14 @@
 create table if not exists report
 (
     id            bigint auto_increment primary key  not null,
-    uuid          varchar(255)                       not null,
-    name          varchar(255)                       not null,
+    uuid          varchar(255)          unique key   not null,
+    title         varchar(255)                       not null,
+    description   varchar(255),
     content       text                               not null,
     project_id    bigint                             not null,
-    creator_id    bigint                             not null,
+    owner_id      bigint                             not null,
     shared        tinyint  default 0                 not null,
     deleted_time  bigint   default 0                 not null,
     created_time  datetime default CURRENT_TIMESTAMP not null,
-    modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    UNIQUE INDEX `uq_report_in_project` (`project_id`, `name`, `deleted_time`) USING BTREE
+    modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP
 );
