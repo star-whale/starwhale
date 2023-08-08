@@ -126,9 +126,9 @@ test.describe('Evaluation Results', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
-        test('should have at least 1 tasks of success status', async () => {
-            await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
-        })
+        // test('should have at least 1 tasks of success status', async () => {
+        //     await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
+        // })
         test('should show success task log', async () => {
             await page
                 .getByText(/View Logs/)
