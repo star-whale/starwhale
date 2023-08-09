@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useListDatastoreTables } from './useFetchDatastore'
-import { getTableShortName, getTableShortNamePrefix } from '../utils'
+import { getTableShortName } from '../utils'
 
 export function useFetchDatastoreAllTables(
     prefix: string,
@@ -19,14 +19,7 @@ export function useFetchDatastoreAllTables(
         return undefined
     }, [prefix, prefixes])
 
-    const allTables = useListDatastoreTables(params)
-
-    useEffect(() => {
-        if (params) {
-            allTables.refetch()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params])
+    const allTables = useListDatastoreTables(params, !!params)
 
     const tables = React.useMemo(() => {
         return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)) ?? []

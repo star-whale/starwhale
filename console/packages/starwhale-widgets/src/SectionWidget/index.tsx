@@ -70,7 +70,7 @@ export const CONFIG: WidgetConfig = {
             padding: 20,
             columnsPerPage: 3,
             rowsPerPage: 3,
-            boxWidth: 430,
+            boxWidth: 330,
             boxHeight: 274,
         },
         layout: {

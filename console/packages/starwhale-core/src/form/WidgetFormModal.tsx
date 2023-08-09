@@ -44,7 +44,7 @@ export default function WidgetFormModal({
     const prefixes = React.useMemo(() => {
         const { evalSelectData } = config?.optionConfig || {}
         if (!evalSelectData) return undefined
-        const allPrefix: any[] = []
+        const allPrefix: any = []
         Object.values(evalSelectData).forEach((item: any) => {
             console.log(item)
             allPrefix.push({
