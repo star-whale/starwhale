@@ -10,6 +10,7 @@ import { fetchRuntimeVersion, updateRuntimeVersionShared } from '@/domain/runtim
 import { useParams } from 'react-router-dom'
 import { MonoText } from '@/components/Text'
 import { useProject } from '@project/hooks/useProject'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function RuntimeVersionOverview() {
     const { projectId, runtimeId, runtimeVersionId } = useParams<{
@@ -29,11 +30,11 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{runtimeVersion?.versionName ?? '-'} </MonoText>,
+            value: <MonoText>{runtimeVersion?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),
-            value: <Alias alias={runtimeVersion?.versionAlias} />,
+            value: runtimeVersion ? <Alias alias={getAliasStr(runtimeVersion.versionInfo)} /> : null,
         },
         {
             label: t('Shared'),
@@ -46,9 +47,9 @@ export default function RuntimeVersionOverview() {
                         gap: '4px',
                     }}
                 >
-                    <Shared shared={runtimeVersion?.shared} isTextShow />
+                    <Shared shared={runtimeVersion?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={runtimeVersion?.shared === 1}
+                        value={runtimeVersion?.versionInfo.shared === 1}
                         onChange={async (v) => {
                             try {
                                 await updateRuntimeVersionShared(projectId, runtimeId, runtimeVersionId, v)
@@ -65,7 +66,9 @@ export default function RuntimeVersionOverview() {
         },
         {
             label: t('Created At'),
-            value: runtimeVersion?.createdTime && formatTimestampDateTime(runtimeVersion.createdTime),
+            value:
+                runtimeVersion?.versionInfo.createdTime &&
+                formatTimestampDateTime(runtimeVersion.versionInfo.createdTime),
         },
     ].filter((item) => {
         return project?.privacy === 'PUBLIC' || item.label !== t('Shared')

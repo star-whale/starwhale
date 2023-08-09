@@ -21,6 +21,7 @@ export function Alias({ alias = '' }: { alias?: string }) {
                             border: '1px solid #CFD7E6 ',
                             padding: '2px 8px',
                             color: '#02102B',
+                            whiteSpace: 'nowrap',
                         }}
                     >
                         {item}
@@ -49,6 +50,7 @@ const tagOverrides = {
     Text: {
         style: {
             fontSize: '14px',
+            maxWidth: null,
         },
     },
 }

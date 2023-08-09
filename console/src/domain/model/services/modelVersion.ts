@@ -5,6 +5,7 @@ import {
     IModelVersionSchema,
     IUpdateModelVersionSchema,
     IModelVersionDetailSchema,
+    IModelVersionDiffSchema,
 } from '../schemas/modelVersion'
 import { IFileSchema } from '@/domain/base/schemas/file'
 
@@ -33,7 +34,11 @@ export async function listModelVersionFiles(
     return resp.data
 }
 
-export async function fetchModelVersion(projectId: string, modelId: string, modelVersionId: string): Promise<any> {
+export async function fetchModelVersion(
+    projectId: string,
+    modelId: string,
+    modelVersionId: string
+): Promise<IModelVersionDetailSchema> {
     const resp = await axios.get<IModelVersionDetailSchema>(
         `/api/v1/project/${projectId}/model/${modelId}?versionUrl=${modelVersionId}`
     )
@@ -45,8 +50,8 @@ export async function fetchModelVersionDiff(
     modelId: string,
     modelVersionId: string,
     compareVersion: string
-): Promise<any> {
-    const resp = await axios.get<IModelVersionDetailSchema>(
+): Promise<IModelVersionDiffSchema> {
+    const resp = await axios.get<IModelVersionDiffSchema>(
         `/api/v1/project/${projectId}/model/${modelId}/diff?baseVersion=${modelVersionId}&compareVersion=${compareVersion}`
     )
     return resp.data

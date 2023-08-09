@@ -160,7 +160,7 @@ export default function ModelVersionFiles() {
         if (!isText(sourceFile) || isTooBig(sourceFile)) return
         // console.log(sourceFile)
         if (sourceFile.flag !== 'added') {
-            loadFileData(sourceFile, modelVersion?.versionName)
+            loadFileData(sourceFile, modelVersion?.versionInfo.name)
                 .then((text: string) => {
                     setContent(text || ' ')
                 })
@@ -172,7 +172,7 @@ export default function ModelVersionFiles() {
         }
         if (!query.compare) return
         if (sourceFile.flag !== 'deleted') {
-            loadFileData(sourceFile, compareVersionInfo.data?.versionName)
+            loadFileData(sourceFile, compareVersionInfo.data?.versionInfo.name)
                 .then((text: string) => {
                     setTargetContent(text ?? ' ')
                 })
@@ -183,7 +183,13 @@ export default function ModelVersionFiles() {
             setTargetContent(' ')
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sourceFile, project?.name, modelVersion?.versionName, compareVersionInfo.data?.versionName, query.compare])
+    }, [
+        sourceFile,
+        project?.name,
+        modelVersion?.versionInfo.name,
+        compareVersionInfo.data?.versionInfo.name,
+        query.compare,
+    ])
 
     return (
         <div className={styles.wrapper}>

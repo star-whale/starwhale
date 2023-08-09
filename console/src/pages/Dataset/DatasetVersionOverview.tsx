@@ -10,6 +10,7 @@ import Shared from '@/components/Shared'
 import { Alias } from '@/components/Alias'
 import { MonoText } from '@/components/Text'
 import { useProject } from '@project/hooks/useProject'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function DatasetVersionOverview() {
     const { projectId, datasetId, datasetVersionId } = useParams<{
@@ -29,11 +30,11 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{dataset?.versionName ?? '-'} </MonoText>,
+            value: <MonoText>{dataset?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),
-            value: <Alias alias={dataset?.versionAlias} />,
+            value: dataset ? <Alias alias={getAliasStr(dataset.versionInfo)} /> : null,
         },
         {
             label: t('dataset.overview.shared'),
@@ -46,9 +47,9 @@ export default function DatasetVersionOverview() {
                         gap: '4px',
                     }}
                 >
-                    <Shared shared={dataset?.shared} isTextShow />
+                    <Shared shared={dataset?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={dataset?.shared === 1}
+                        value={dataset?.versionInfo.shared === 1}
                         onChange={async (v) => {
                             try {
                                 await updateDatasetVersionShared(projectId, datasetId, datasetVersionId, v)
@@ -65,7 +66,7 @@ export default function DatasetVersionOverview() {
         },
         {
             label: t('Created At'),
-            value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
+            value: dataset?.versionInfo.createdTime && formatTimestampDateTime(dataset.versionInfo.createdTime),
         },
     ].filter((item) => {
         // hide shared if project is private

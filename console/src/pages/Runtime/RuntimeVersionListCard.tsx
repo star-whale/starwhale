@@ -7,7 +7,6 @@ import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
 import Button from '@starwhale/ui/Button'
-import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
 import {
     addRuntimeVersionTag,
     buildImageForRuntimeVersion,
@@ -22,6 +21,7 @@ import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
+import { IRuntimeVersionSchema } from '@runtime/schemas/runtimeVersion'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
@@ -29,8 +29,8 @@ export default function RuntimeVersionListCard() {
     const runtimesInfo = useFetchRuntimeVersions(projectId, runtimeId, page)
     const [t] = useTranslation()
     const handleRevert = React.useCallback(
-        async (data: IRuntimeDetailSchema) => {
-            await revertRuntimeVersion(projectId, runtimeId, data.id as string)
+        async (data: IRuntimeVersionSchema) => {
+            await revertRuntimeVersion(projectId, runtimeId, data.id)
             toaster.positive(t('runtime version reverted'), { autoHideDuration: 2000 })
             await runtimesInfo.refetch()
         },
