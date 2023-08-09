@@ -82,7 +82,7 @@ public interface ReportApi {
             @PathVariable String projectUrl, @PathVariable Long reportId);
 
     @GetMapping(value = "/report/{uuid}/preview", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ROLE_ANONYMOUS')")
     ResponseEntity<ResponseMessage<ReportVo>> preview(@PathVariable(value = "uuid") String uuid);
 
     @Operation(summary = "Get the list of reports")
