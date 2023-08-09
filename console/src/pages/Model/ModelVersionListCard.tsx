@@ -17,7 +17,7 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
@@ -43,6 +43,7 @@ export default function ModelVersionListCard() {
     )
     const [t] = useTranslation()
     const { hasCliMate, doPull } = useCliMate()
+    const tagReadOnly = !useAccess('tag.edit')
 
     const handleAction = useCallback(
         async (modelVersionId) => {
@@ -85,6 +86,7 @@ export default function ModelVersionListCard() {
                             </TextLink>,
                             <EditableAlias
                                 key='alias'
+                                readOnly={tagReadOnly}
                                 resource={model}
                                 onAddTag={(tag) => handleTagAdd(model.id, tag)}
                                 onRemoveTag={(tag) => handelTagRemove(model.id, tag)}

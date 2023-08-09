@@ -16,6 +16,7 @@ export const Privileges = {
     'dataset.create.read': true,
     'evaluation.panel.save': true,
     'runtime.image.build': true,
+    'tag.edit': true,
     'task.execute': true,
     'job.pinOrUnpin': true,
     'job.cancel': true,
