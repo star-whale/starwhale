@@ -31,8 +31,10 @@ public class ReportConverter {
 
     public ReportVo convert(ReportEntity entity) {
         return ReportVo.builder()
+                .id(entity.getId())
                 .uuid(entity.getUuid())
-                .name(entity.getTitle())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
                 .content(entity.getContent())
                 .shared(entity.getShared())
                 .owner(userService.findUserById(entity.getOwnerId()))

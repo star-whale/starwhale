@@ -25,11 +25,16 @@ import lombok.Data;
 @Builder
 @Schema(description = "Report object", title = "Report")
 public class ReportVo {
+
+    private Long id;
+
     private String uuid;
 
-    private String name;
+    private String title;
 
     private String content;
+
+    private String description;
 
     private Boolean shared;
 
@@ -39,6 +44,6 @@ public class ReportVo {
     private Long modifiedTime;
 
     public static ReportVo empty() {
-        return new ReportVo("", "", "", false, null, null, null);
+        return new ReportVo(null, "", "", "", "", false, null, null, null);
     }
 }
