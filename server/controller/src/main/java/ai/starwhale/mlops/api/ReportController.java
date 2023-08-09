@@ -101,6 +101,6 @@ public class ReportController implements ReportApi {
             String projectUrl, Integer pageNum, Integer pageSize) {
         return ResponseEntity.ok(Code.success.asResponse(service.listReport(
                 QueryParam.builder().projectUrl(projectUrl).build(),
-                PageParams.builder().build())));
+                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build())));
     }
 }
