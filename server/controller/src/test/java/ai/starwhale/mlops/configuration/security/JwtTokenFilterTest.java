@@ -86,7 +86,7 @@ public class JwtTokenFilterTest {
         when(response.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
         FilterChain filterchain = mock(FilterChain.class);
         jwtTokenFilter.doFilterInternal(request, response, filterchain);
-        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized,
                 "JWT token is expired or invalid."), times(1));
     }
 
@@ -99,7 +99,7 @@ public class JwtTokenFilterTest {
         when(response.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
         FilterChain filterchain = mock(FilterChain.class);
         jwtTokenFilter.doFilterInternal(request, response, filterchain);
-        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized,
                 "JWT token is expired or invalid."), times(1));
     }
 

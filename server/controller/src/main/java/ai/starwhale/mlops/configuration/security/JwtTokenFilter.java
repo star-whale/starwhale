@@ -92,7 +92,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 claims = jwtTokenUtil.parseJwt(token);
                 jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
             } catch (SwValidationException e) {
-                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized,
                         "JWT token is expired or invalid.");
                 return;
             }
