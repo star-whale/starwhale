@@ -89,8 +89,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
     public void testDataStoreList() throws IOException {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v1/datastore/listTables");
-        when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(
-                new ByteArrayInputStream(objectMapper.writeValueAsBytes(new ListTablesRequest("project/x")))));
+        when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(new ByteArrayInputStream(
+                    objectMapper.writeValueAsBytes(new ListTablesRequest("project/x", Set.of())))));
         Set<String> strings = projectNameExtractorDataStoreMixed.extractProjectName(request);
         Assertions.assertIterableEquals(Set.of("x"), strings);
     }

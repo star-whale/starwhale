@@ -114,7 +114,10 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             byte[] bytes = inputStreamToBytes(wrappedInputStream);
             if (PATH_LIST_TABLES.equals(path)) {
                 ListTablesRequest req = objectMapper.readValue(bytes, ListTablesRequest.class);
-                return singleToSet(tableName2ProjectName(req.getPrefix()));
+                return req.getPrefixes().stream()
+                        .map(this::tableName2ProjectName)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
             } else if (PATH_UPDATE_TABLE.equals(path)) {
                 UpdateTableRequest req = objectMapper.readValue(bytes, UpdateTableRequest.class);
                 return singleToSet(tableName2ProjectName(req.getTableName()));

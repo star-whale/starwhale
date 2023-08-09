@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.datastore;
 
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,4 +28,16 @@ import lombok.NoArgsConstructor;
 public class ListTablesRequest {
 
     private String prefix = "";
+    private Set<String> prefixes = Set.of();
+
+    public Set<String> getPrefixes() {
+        Set<String> result = new HashSet<>();
+        if (prefix != null) {
+            result.add(prefix);
+        }
+        if (prefixes != null && !prefixes.isEmpty()) {
+            result.addAll(prefixes);
+        }
+        return result;
+    }
 }
