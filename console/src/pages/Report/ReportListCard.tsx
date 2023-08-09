@@ -8,23 +8,27 @@ import { IReportSchema } from '@/domain/report/schemas/report'
 import { TextLink } from '@/components/Link'
 import { Button, QueryInput, Toggle, useConfirmCtx } from '@starwhale/ui'
 import { toaster } from 'baseui/toast'
-import { updateReportShared } from '@/domain/report/services/report'
+import { removeReport, updateReportShared } from '@/domain/report/services/report'
 import Text from '@starwhale/ui/Text'
 import Copy from 'react-copy-to-clipboard'
+import { usePage } from '@/hooks/usePage'
+import { formatTimestampDateTime } from '@/utils/datetime'
 
 export default function ReportListCard() {
     const [t] = useTranslation()
+    const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const [filter, setFilter] = React.useState('')
-    const reports = useFetchReports(projectId, filter)
+    const reports = useFetchReports(projectId, { ...page, search: filter })
     const confirmCtx = useConfirmCtx()
 
     const handleDelete = async (id: number, title: string) => {
         const ok = await confirmCtx.show({ title: t('Confirm'), content: t('delete sth confirm', [title]) })
-        if (ok) {
-            // eslint-disable-next-line no-console
-            console.log('delete', id)
+        if (!ok) {
+            return
         }
+        await removeReport(projectId, id)
+        await reports.refetch()
     }
 
     const renderRow = (report: IReportSchema) => {
@@ -34,10 +38,11 @@ export default function ReportListCard() {
             </TextLink>,
             <Toggle
                 key='shared'
-                value={report.shared === 1}
+                value={report.shared}
                 onChange={async (share) => {
                     try {
                         await updateReportShared(projectId, report.id, share)
+                        await reports.refetch()
                         toaster.positive(t('dataset.overview.shared.success'))
                     } catch (e) {
                         toaster.negative(t('dataset.overview.shared.fail'))
@@ -45,9 +50,9 @@ export default function ReportListCard() {
                 }}
             />,
             <Text key='desc'>{report.description}</Text>,
-            report.owner,
-            report.createdTime,
-            report.updatedTime,
+            report.owner.name,
+            report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
+            report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
             <div key='action' style={{ display: 'flex', gap: '5px' }}>
                 {/* TODO: get link from the server */}
                 <Copy
@@ -85,6 +90,14 @@ export default function ReportListCard() {
                     t('Action'),
                 ]}
                 data={reports.data?.list.map(renderRow)}
+                paginationProps={{
+                    start: reports.data?.pageNum,
+                    count: reports.data?.pageSize,
+                    total: reports.data?.total,
+                    afterPageChange: async () => {
+                        await reports.refetch()
+                    },
+                }}
             />
         </Card>
     )
