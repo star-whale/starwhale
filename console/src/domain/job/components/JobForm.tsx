@@ -25,7 +25,7 @@ export interface IJobFormProps {
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
-    const EventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
+    const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
     const [resource, setResource] = React.useState<any>()
@@ -112,7 +112,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const handleValuesChange = useCallback(
         (_changes: Partial<ICreateJobFormSchema>, values_: ICreateJobFormSchema) => {
-            EventEmitter.emit({
+            eventEmitter.emit({
                 changes: _changes,
                 values: values_,
             })
@@ -120,10 +120,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 ...values_,
             })
         },
-        [EventEmitter]
+        [eventEmitter]
     )
 
-    const sharedFormProps = { form, FormItem, EventEmitter, forceUpdate }
+    const sharedFormProps = { form, FormItem, eventEmitter, forceUpdate }
     const getModelProps = () => ({ setModelTree, fullStepSource, stepSource })
     const getResourcePoolProps = () => ({ resource, setResource })
     const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
@@ -135,10 +135,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     useEffect(() => {
         // init by new model
         if (modelVersion) {
-            form.setFieldsValue({
-                runtimeVersionUrl: modelVersion?.builtInRuntime,
+            const toUpdate: Partial<ICreateJobFormSchema> = {
                 runtimeType: modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
-            })
+            }
+            if (modelVersion?.builtInRuntime) {
+                toUpdate.runtimeVersionUrl = modelVersion?.builtInRuntime
+            }
+            form.setFieldsValue(toUpdate)
         }
         if (modelVersion) {
             form.setFieldsValue({

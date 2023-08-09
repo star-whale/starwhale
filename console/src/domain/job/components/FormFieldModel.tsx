@@ -24,8 +24,7 @@ const useStyles = createUseStyles({
 function FormFieldModel({
     form,
     FormItem,
-    // eslint-disable-next-line
-    EventEmitter,
+    eventEmitter,
     stepSource,
     setModelTree,
     fullStepSource,
@@ -33,7 +32,7 @@ function FormFieldModel({
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
-    EventEmitter: EventEmitter<any>
+    eventEmitter: EventEmitter<any>
     stepSource?: StepSpec[]
     setModelTree: (obj: any) => void
     fullStepSource?: StepSpec[]
@@ -43,7 +42,7 @@ function FormFieldModel({
     const { projectId } = useParams<{ projectId: string }>()
     const styles = useStyles()
 
-    EventEmitter.useSubscription(({ changes: _changes, values: values_ }) => {
+    eventEmitter.useSubscription(({ changes: _changes, values: values_ }) => {
         if ('modelVersionUrl' in _changes) {
             form.setFieldsValue({
                 modelVersionHandler: '',
