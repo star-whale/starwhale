@@ -115,7 +115,7 @@ public class JwtTokenFilterTest {
         when(response.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
         FilterChain filterchain = mock(FilterChain.class);
         jwtTokenFilter.doFilterInternal(request, response, filterchain);
-        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+        httpUtilMockedStatic.verify(() -> HttpUtil.error(response, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized,
                 "Not logged in."), times(errorTimes));
     }
 

@@ -54,7 +54,7 @@ public class JwtLoginFailureHandler extends SimpleUrlAuthenticationFailureHandle
             msg = exception.getCause().getMessage();
         }
 
-        error(response, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied, msg);
+        error(response, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized, msg);
 
     }
 }

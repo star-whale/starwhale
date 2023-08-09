@@ -80,7 +80,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (!checkHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
         }
-        if (checkHeader(header)) {
+        if (!checkHeader(header)) {
+            if (!allowAnonymous(httpServletRequest)) {
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized, "Not logged in.");
+                return;
+            }
+        } else {
             String token = header.split(" ")[1].trim();
             Claims claims;
             try {
