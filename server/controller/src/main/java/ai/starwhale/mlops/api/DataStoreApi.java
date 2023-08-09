@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface DataStoreApi {
 
     @PostMapping(value = "/datastore/listTables")
-    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ROLE_ANONYMOUS')")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
     ResponseEntity<ResponseMessage<TableNameListVo>> listTables(
             @Valid @RequestBody ListTablesRequest request);
 
@@ -50,12 +50,12 @@ public interface DataStoreApi {
     ResponseEntity<ResponseMessage<String>> flush(FlushRequest request);
 
     @PostMapping(value = "/datastore/queryTable")
-    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ROLE_ANONYMOUS')")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
     ResponseEntity<ResponseMessage<RecordListVo>> queryTable(
             @Valid @RequestBody QueryTableRequest request);
 
     @PostMapping(value = "/datastore/scanTable")
-    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ROLE_ANONYMOUS')")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
     ResponseEntity<ResponseMessage<RecordListVo>> scanTable(
             @Valid @RequestBody ScanTableRequest request);
 
