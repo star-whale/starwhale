@@ -167,12 +167,13 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         project_uri: str,
         alignment_size: int | str,
         volume_size: int | str,
-        subset: str | None = None,
+        subsets: t.List[str] | None = None,
         split: str | None = None,
         revision: str = "main",
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
         tags: t.List[str] | None = None,
+        add_info: bool = True,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -183,7 +184,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
         ds = Dataset.get_dataset(dataset_uri)
         ds.build_from_huggingface(
             repo=repo,
-            subset=subset,
+            subsets=subsets,
             split=split,
             revision=revision,
             alignment_size=alignment_size,
@@ -191,6 +192,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             mode=mode,
             cache=cache,
             tags=tags,
+            add_info=add_info,
         )
 
     @classmethod

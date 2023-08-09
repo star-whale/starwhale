@@ -154,10 +154,12 @@ def dataset_cmd(ctx: click.Context) -> None:
 )
 @optgroup.group("\n  ** Huggingface Build Source Configurations")
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "hf_subset",
+    "hf_subsets",
     "--subset",
+    multiple=True,
     help=(
-        "Huggingface dataset subset name. If the huggingface dataset has multiple subsets, you must specify the subset name."
+        "Huggingface dataset subset name. If the subset name is not specified, the all subsets will be built."
+        "The option can be used multiple times."
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -177,12 +179,21 @@ def dataset_cmd(ctx: click.Context) -> None:
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_info",
+    "--add-hf-info/--no-add-hf-info",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Whether to add huggingface dataset info to the dataset rows, currently support to add subset and split into the dataset rows."
+    "subset uses _hf_subset field name, split uses _hf_split field name.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "hf_cache",
     "--cache/--no-cache",
     is_flag=True,
     default=True,
     show_default=True,
-    help=("Whether to use huggingface dataset cache(download + local hf dataset)."),
+    help="Whether to use huggingface dataset cache(download + local hf dataset).",
 )
 @click.pass_obj
 def _build(
@@ -204,10 +215,11 @@ def _build(
     field_selector: str,
     mode: str,
     hf_repo: str,
-    hf_subset: str,
+    hf_subsets: t.List[str],
     hf_split: str,
     hf_revision: str,
     hf_cache: bool,
+    hf_info: bool,
     tags: t.List[str],
 ) -> None:
     """Build Starwhale Dataset.
@@ -320,19 +332,20 @@ def _build(
         config.do_validate()
         view.build(_workdir, config, mode=mode_type, tags=tags)
     elif hf_repo:
-        _candidate_name = (f"{hf_repo}/{hf_subset or ''}").strip("/").replace("/", "-")
+        _candidate_name = (f"{hf_repo}").strip("/").replace("/", "-")
         view.build_from_huggingface(
             hf_repo,
             name=name or _candidate_name,
             project_uri=project,
             volume_size=volume_size,
             alignment_size=alignment_size,
-            subset=hf_subset,
+            subsets=hf_subsets,
             split=hf_split,
             revision=hf_revision,
             mode=mode_type,
             cache=hf_cache,
             tags=tags,
+            add_info=hf_info,
         )
     else:
         yaml_path = Path(dataset_yaml)

@@ -189,7 +189,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args
         assert call_args[0][0] == "mnist"
         assert call_args[1]["name"] == "huggingface-test"
-        assert call_args[1]["subset"] is None
+        assert len(call_args[1]["subsets"]) == 0
         assert not call_args[1]["cache"]
 
         DatasetTermView.build_from_huggingface(
@@ -198,7 +198,7 @@ class StandaloneDatasetTestCase(TestCase):
             project_uri="self",
             alignment_size="128",
             volume_size="128M",
-            subset="sub1",
+            subsets=["sub1"],
             split="train",
             revision="main",
         )

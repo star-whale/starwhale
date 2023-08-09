@@ -77,7 +77,9 @@ def _transform_to_starwhale(data: t.Any, feature: t.Any) -> t.Any:
         return data
 
 
-def _iter_dataset(ds: hf_datasets.Dataset) -> t.Iterator[t.Tuple[int, t.Dict]]:
+def _iter_dataset(
+    ds: hf_datasets.Dataset, subset: str, split: str | None, add_info: bool = True
+) -> t.Iterator[t.Tuple[int, t.Dict]]:
     for i in range(len(ds)):
         item = {}
         for k, v in ds[i].items():
@@ -86,41 +88,68 @@ def _iter_dataset(ds: hf_datasets.Dataset) -> t.Iterator[t.Tuple[int, t.Dict]]:
             # TODO: support inner ClassLabel
             if isinstance(feature, hf_datasets.ClassLabel):
                 item[f"{k}__classlabel__"] = feature.names[v]
+        if add_info:
+            if "_hf_subset" in item or "_hf_split" in item:
+                raise RuntimeError(
+                    f"Dataset {subset} has already contains _hf_subset or _hf_split field, {item.keys()}"
+                )
+            item["_hf_subset"] = subset
+            item["_hf_split"] = split
+
         yield i, item
 
 
 def iter_dataset(
     repo: str,
-    subset: str | None = None,
+    subsets: t.List[str] | None = None,
     split: str | None = None,
     revision: str = "main",
     cache: bool = True,
+    add_info: bool = True,
 ) -> t.Iterator[t.Tuple[str, t.Dict]]:
     download_mode = (
         hf_datasets.DownloadMode.REUSE_DATASET_IF_EXISTS
         if cache
         else hf_datasets.DownloadMode.FORCE_REDOWNLOAD
     )
-
-    ds = hf_datasets.load_dataset(
-        repo,
-        subset,
-        split=split,
-        revision=revision,
+    download_config = hf_datasets.DownloadConfig(
+        max_retries=10,
         num_proc=min(8, os.cpu_count() or 8),
-        download_mode=download_mode,
     )
 
-    if isinstance(ds, hf_datasets.DatasetDict):
-        for _split, _ds in ds.items():
-            for _key, _data in _iter_dataset(_ds):
-                yield f"{_split}/{_key}", _data
-    elif isinstance(ds, hf_datasets.Dataset):
-        for _key, _data in _iter_dataset(ds):
-            if split:
-                _s_key = f"{split}/{_key}"
-            else:
-                _s_key = str(_key)
-            yield _s_key, _data
-    else:
-        raise RuntimeError(f"Unknown dataset type: {type(ds)}")
+    if not subsets:
+        subsets = hf_datasets.get_dataset_config_names(
+            repo,
+            revision=revision,
+            download_mode=download_mode,
+            download_config=download_config,
+        )
+
+    if not subsets:
+        raise RuntimeError(f"Dataset {repo} has no any valid config names")
+
+    for subset in subsets:
+        ds = hf_datasets.load_dataset(
+            repo,
+            subset,
+            split=split,
+            revision=revision,
+            download_mode=download_mode,
+            download_config=download_config,
+        )
+
+        if isinstance(ds, hf_datasets.DatasetDict):
+            for _ds_split, _ds in ds.items():
+                for _key, _data in _iter_dataset(
+                    _ds, subset, _ds_split, add_info=add_info
+                ):
+                    yield f"{subset}/{_ds_split}/{_key}", _data
+        elif isinstance(ds, hf_datasets.Dataset):
+            for _key, _data in _iter_dataset(ds, subset, split, add_info=add_info):
+                if split:
+                    _s_key = f"{subset}/{split}/{_key}"
+                else:
+                    _s_key = f"{subset}/{_key}"
+                yield _s_key, _data
+        else:
+            raise RuntimeError(f"Unknown dataset type: {type(ds)}")

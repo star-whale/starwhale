@@ -2015,8 +2015,13 @@ class TestHuggingface(_DatasetSDKTestBase):
         assert transform_data["sequence_dict"]["int"] == 1
         assert transform_data["sequence_dict"]["list_int"] == [1, 1, 1]
 
+    @patch(
+        "starwhale.integrations.huggingface.dataset.hf_datasets.get_dataset_config_names"
+    )
     @patch("starwhale.integrations.huggingface.dataset.hf_datasets.load_dataset")
-    def test_build_dataset(self, m_load_dataset: MagicMock) -> None:
+    def test_build_dataset(
+        self, m_load_dataset: MagicMock, m_get_config_names: MagicMock
+    ) -> None:
         import datasets as hf_datasets
 
         complex_data = {
@@ -2091,46 +2096,70 @@ class TestHuggingface(_DatasetSDKTestBase):
             }
         )
 
+        m_get_config_names.return_value = ["simple"]
         m_load_dataset.return_value = hf_simple_ds
         Dataset.from_huggingface(
-            name="simple", repo="simple", split="train", tags=["hf-0", "hf-1"]
+            name="simple",
+            repo="simple",
+            split="train",
+            tags=["hf-0", "hf-1"],
+            add_info=True,
         )
         simple_ds = dataset("simple")
         assert len(simple_ds) == 2
-        assert simple_ds["train/0"].features.int == 1
-        assert simple_ds["train/0"].features.float == 1.0
-        assert simple_ds["train/0"].features.str == "test1"
-        assert simple_ds["train/0"].features.bin == b"test1"
-        large_str = simple_ds["train/0"].features["large_str"]
-        large_bin = simple_ds["train/0"].features["large_bin"]
+        assert simple_ds["simple/train/0"].features.int == 1
+        assert simple_ds["simple/train/0"].features.float == 1.0
+        assert simple_ds["simple/train/0"].features.str == "test1"
+        assert simple_ds["simple/train/0"].features.bin == b"test1"
+        assert simple_ds["simple/train/0"].features["_hf_subset"] == "simple"
+        assert simple_ds["simple/train/0"].features["_hf_split"] == "train"
+        large_str = simple_ds["simple/train/0"].features["large_str"]
+        large_bin = simple_ds["simple/train/0"].features["large_bin"]
         assert isinstance(large_str, str)
         assert isinstance(large_bin, bytes)
         assert large_str == "test1" * 20
         assert large_bin == b"test1" * 20
 
-        assert simple_ds["train/1"].features.int == 2
-        assert simple_ds["train/1"].features["large_bin"] == b"test2" * 20
+        assert simple_ds["simple/train/1"].features.int == 2
+        assert simple_ds["simple/train/1"].features["large_bin"] == b"test2" * 20
 
+        m_get_config_names.return_value = ["complex"]
         m_load_dataset.return_value = hf_complex_ds
-        complex_ds = Dataset.from_huggingface(name="complex", repo="complex")
+        complex_ds = Dataset.from_huggingface(
+            name="complex", repo="complex", add_info=False
+        )
 
         assert len(complex_ds) == 1
-        assert complex_ds["0"].features.list_int == [1, 2, 3]
-        assert complex_ds["0"].features.seq_img[0].shape == [1, 1, 3]
-        assert complex_ds["0"].features.seq_img[1].shape == [1, 1, 1]
-        assert complex_ds["0"].features.seq_dict["int"] == [1]
-        assert complex_ds["0"].features.seq_dict["str"] == ["test"]
-        assert complex_ds["0"].features.img.shape == [1, 1, 3]
-        assert complex_ds["0"].features.class_label == 1
-        _audio = complex_ds["0"].features.audio
+        assert complex_ds["complex/0"].features.list_int == [1, 2, 3]
+        assert complex_ds["complex/0"].features.seq_img[0].shape == [1, 1, 3]
+        assert complex_ds["complex/0"].features.seq_img[1].shape == [1, 1, 1]
+        assert complex_ds["complex/0"].features.seq_dict["int"] == [1]
+        assert complex_ds["complex/0"].features.seq_dict["str"] == ["test"]
+        assert complex_ds["complex/0"].features.img.shape == [1, 1, 3]
+        assert complex_ds["complex/0"].features.class_label == 1
+        assert "_hf_subset" not in complex_ds["complex/0"].features
+        assert "_hf_split" not in complex_ds["complex/0"].features
+        _audio = complex_ds["complex/0"].features.audio
         assert isinstance(_audio, Audio)
         assert _audio.display_name == "simple.wav"
         assert _audio.mime_type == MIMEType.WAV
 
+        m_get_config_names.return_value = ["mixed"]
         m_load_dataset.return_value = hf_mixed_ds
         mixed_ds = Dataset.from_huggingface(name="mixed", repo="mixed")
 
         assert len(mixed_ds) == 3
-        assert mixed_ds["complex/0"].features.list_int == [1, 2, 3]
-        assert mixed_ds["simple/0"].features.int == 1
-        assert mixed_ds["simple/1"].features.int == 2
+        assert mixed_ds["mixed/complex/0"].features.list_int == [1, 2, 3]
+        assert mixed_ds["mixed/simple/0"].features.int == 1
+        assert mixed_ds["mixed/simple/1"].features.int == 2
+
+        m_get_config_names.return_value = ["simple", "mixed"]
+        m_load_dataset.side_effect = [hf_simple_ds, hf_mixed_ds]
+        multi_subsets_ds = Dataset.from_huggingface(name="multi", repo="multi")
+        assert len(multi_subsets_ds) == 5
+        assert multi_subsets_ds["simple/0"].features["_hf_subset"] == "simple"
+        assert "_hf_split" not in multi_subsets_ds["simple/0"].features
+        assert multi_subsets_ds["mixed/simple/0"].features["_hf_subset"] == "mixed"
+        assert multi_subsets_ds["mixed/simple/0"].features["_hf_split"] == "simple"
+        assert multi_subsets_ds["mixed/complex/0"].features["_hf_subset"] == "mixed"
+        assert multi_subsets_ds["mixed/complex/0"].features["_hf_split"] == "complex"
