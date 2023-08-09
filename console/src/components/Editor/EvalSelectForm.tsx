@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle } from 'react'
+import React, { MutableRefObject, useEffect, useImperativeHandle } from 'react'
 import ProjectSelector from '@/domain/project/components/ProjectSelector'
 import { ColumnSchemaDesc, tableNameOfSummary, useFetchDatastoreByTable } from '@starwhale/core/datastore'
 import { ITableState, createCustomStore } from '@starwhale/ui/GridTable/store'
@@ -47,7 +47,7 @@ function EvalProjectList({
 }) {
     const summaryTableName = tableNameOfSummary(projectId)
 
-    const { currentView, onSelectNone, initStore } = useStore(selector, shallow)
+    const { currentView, initStore } = useStore(selector, shallow)
 
     const { page, setPage, params } = useDatastorePage({
         pageNum: 1,
@@ -64,7 +64,6 @@ function EvalProjectList({
     })
 
     const handelRowSelectedChange = useEventCallback((ids: any[]) => {
-        console.log(ids)
         const rows = ids.map((id) => records.find((r) => r.id?.value === id)).filter(Boolean)
         if (!projectId) return
         if (!rows.length) {
@@ -84,16 +83,9 @@ function EvalProjectList({
         })
     })
 
-    // reset current table selected ids when projectId changed
-    useEffect(() => {
-        onSelectNone()
-    }, [projectId, onSelectNone])
-
     // init store with initial state
     useEffect(() => {
-        if (initialSelectData[projectId]) {
-            initStore(initialSelectData[projectId])
-        }
+        initStore(initialSelectData[projectId])
     }, [projectId, initStore, initialSelectData])
 
     return (
@@ -113,55 +105,67 @@ function EvalProjectList({
     )
 }
 
-const EvalSelectForm = React.forwardRef(({ initialSelectData = {} }, ref: any) => {
-    const [projectId, setProjectId] = React.useState<string>('')
-    const [projectItem, setProjectItem] = React.useState<any>(null)
-    const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
+const EvalSelectForm = React.forwardRef(
+    (
+        { initialSelectData }: { initialSelectData: EvalSelectDataT },
+        ref: MutableRefObject<
+            | {
+                  getData: () => EvalSelectDataT
+              }
+            | undefined
+        >
+    ) => {
+        const [projectId, setProjectId] = React.useState<string>('')
+        const [projectItem, setProjectItem] = React.useState<any>(null)
+        const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
 
-    useImperativeHandle(
-        ref,
-        () => ({
-            getData() {
-                return selectData
-            },
-        }),
-        [selectData]
-    )
+        useImperativeHandle(
+            ref,
+            () => ({
+                getData() {
+                    return selectData
+                },
+            }),
+            [selectData]
+        )
 
-    console.log(selectData)
-
-    return (
-        <div className='flex flex-column gap-12px'>
-            <div className='w-280px'>
-                <ProjectSelector
-                    value={projectId}
-                    onChange={(id) => setProjectId(id)}
-                    onChangeItem={(item) => setProjectItem(item)}
-                />
+        return (
+            <div className='flex flex-column gap-12px'>
+                <div className='w-280px'>
+                    <ProjectSelector
+                        value={projectId}
+                        onChange={(id) => setProjectId(id)}
+                        onChangeItem={(item) => setProjectItem(item)}
+                    />
+                </div>
+                <div className='h-380px w-full'>
+                    <EvalProjectList
+                        initialSelectData={initialSelectData}
+                        projectId={projectId}
+                        project={projectItem}
+                        onSelectedDataRemove={(pid) => {
+                            // console.log('remove', pid)
+                            // @ts-ignore
+                            setSelectData((prev) => {
+                                return {
+                                    ...prev,
+                                    // do not delete, {} used to truncate final list data
+                                    [pid]: undefined,
+                                }
+                            })
+                        }}
+                        onSelectedDataChange={(r: any) =>
+                            setSelectData((prev: any) => ({
+                                ...prev,
+                                ...r,
+                            }))
+                        }
+                    />
+                </div>
             </div>
-            <div className='h-380px w-full'>
-                <EvalProjectList
-                    initialSelectData={initialSelectData}
-                    projectId={projectId}
-                    project={projectItem}
-                    onSelectedDataRemove={(pid) => {
-                        setSelectData((prev) => {
-                            const next = { ...prev }
-                            delete next[pid]
-                            return next
-                        })
-                    }}
-                    onSelectedDataChange={(r: any) =>
-                        setSelectData((prev: any) => ({
-                            ...prev,
-                            ...r,
-                        }))
-                    }
-                />
-            </div>
-        </div>
-    )
-})
+        )
+    }
+)
 
 export { EvalSelectForm }
 export default EvalSelectForm

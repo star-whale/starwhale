@@ -12,6 +12,12 @@ export interface IButtonProps extends ButtonProps {
     icon?: IconTypesT
 }
 
+export interface IExtendButtonProps extends IButtonProps {
+    noPadding?: boolean
+    negative?: boolean
+    transparent?: boolean
+}
+
 function Button(
     { isFull = false, size = 'compact', kind = 'primary', as, icon, children, ...props }: IButtonProps,
     ref: React.Ref<HTMLButtonElement>
@@ -130,5 +136,73 @@ function Button(
 
 const ForwardButton = React.forwardRef<HTMLButtonElement, IButtonProps>(Button)
 ForwardButton.displayName = 'Button'
+
+const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
+    const [, theme] = themedUseStyletron()
+    const STYLES = {
+        noPadding: {
+            BaseButton: {
+                style: {
+                    lineHeight: '1',
+                    paddingLeft: '0',
+                    paddingRight: '0',
+                    paddingBottom: '0',
+                    paddingTop: '0',
+                    marginBottom: '0',
+                    marginTop: '0',
+                    marginLeft: '0',
+                    marginRight: '0',
+                },
+            },
+        },
+        transparent: {
+            BaseButton: {
+                style: {
+                    'backgroundColor': 'transparent',
+                    'color': theme.colors.buttonPrimaryFill,
+                    ':hover': {
+                        backgroundColor: 'transparent',
+                    },
+                    ':active': {
+                        backgroundColor: 'transparent',
+                    },
+                    ':focus': {
+                        backgroundColor: 'transparent',
+                    },
+                },
+            },
+        },
+        negative: {
+            BaseButton: {
+                style: {
+                    'color': 'rgba(2,16,43,0.40)',
+                    'backgroundColor': 'transparent',
+                    ':hover': {
+                        color: ' #CC3D3D',
+                        backgroundColor: 'transparent',
+                    },
+                    ':active': {
+                        color: ' #CC3D3D',
+                        backgroundColor: 'transparent',
+                    },
+                    ':focus': {
+                        color: ' #CC3D3D',
+                        backgroundColor: 'transparent',
+                    },
+                },
+            },
+        },
+    }
+    const overrides = [
+        props.noPadding ? STYLES.noPadding : {},
+        props.transparent ? STYLES.transparent : {},
+        props.negative ? STYLES.negative : {},
+    ].reduce(mergeOverrides, {})
+
+    return <ForwardButton {...props} overrides={overrides} ref={ref} />
+})
+ExtendButton.displayName = 'ExtendButton'
+
+export { ExtendButton, Button }
 
 export default ForwardButton

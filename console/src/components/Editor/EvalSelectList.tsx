@@ -1,13 +1,13 @@
 import React from 'react'
-import Card from '@/components/Card'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'baseui/modal'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import EvalSelectForm, { EvalSelectDataT } from './EvalSelectForm'
-import { BusyPlaceholder, IconFont, Text } from '@starwhale/ui'
+import { IconFont, Text } from '@starwhale/ui'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
 import GridTable from '@starwhale/ui/GridTable/GridTable'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
+import _ from 'lodash'
 
 const RenderButton = ({ count, editing, toggle }) => {
     const [t] = useTranslation()
@@ -67,24 +67,26 @@ const RenderButton = ({ count, editing, toggle }) => {
 function EvalSelectList() {
     const [editing, setEditing] = React.useState(false)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
-    const [selectData, setSelectData] = React.useState<EvalSelectDataT>()
-    const ref = React.useRef({})
+    const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
+    const ref = React.useRef<{ getData: () => EvalSelectDataT }>()
     const [t] = useTranslation()
-
-    console.log(editing, selectData)
-
-    const count = selectData
-        ? Object.values(selectData).reduce((acc, cur) => acc + cur.rowSelectedIds?.length ?? 0, 0)
-        : 0
 
     const values = React.useMemo(() => {
         return Object.values(selectData ?? {})
     }, [selectData])
 
+    console.log('final', values)
+
+    const count = React.useMemo(() => {
+        return values.reduce((acc, cur) => {
+            return acc + (cur.rowSelectedIds?.length ?? 0)
+        }, 0)
+    }, [values])
+
     const uniconRecords = React.useMemo(
         () =>
             values.reduce((acc, cur) => {
-                return [...acc, ...cur.records]
+                return [...acc, ...(cur.records ?? [])]
             }, []),
         [values]
     )
@@ -92,7 +94,7 @@ function EvalSelectList() {
     const unionColumnTypes = React.useMemo(
         () =>
             values.reduce((acc, cur) => {
-                return [...acc, ...cur.columnTypes]
+                return [...acc, ...(cur.columnTypes ?? [])]
             }, []),
         [values]
     )
@@ -125,16 +127,37 @@ function EvalSelectList() {
                         border: '1px solid #e2e7f0',
                         borderRadius: '0 4px 4px 4px',
                         padding: '18px 20px 10px',
+                        position: 'relative',
                     }}
                 >
                     <GridTable
                         queryable={false}
                         columnable
+                        removable
                         compareable={false}
                         paginationable={false}
                         records={uniconRecords}
                         columnTypes={unionColumnTypes}
                         columns={$columns}
+                        onRemove={(id) => {
+                            setSelectData((prev) => {
+                                const n = { ...prev }
+                                Object.entries(n).forEach(([key, item]) => {
+                                    if (item.rowSelectedIds.includes(id)) {
+                                        item.rowSelectedIds.splice(item.rowSelectedIds.indexOf(id), 1)
+                                        const filter = item.records.filter((record) => record.id.value !== id) ?? []
+                                        if (filter.length === 0) {
+                                            // @ts-ignore
+                                            n[key] = undefined
+                                        } else {
+                                            // eslint-disable-next-line no-param-reassign
+                                            item.records = filter
+                                        }
+                                    }
+                                })
+                                return _.pickBy(n, _.identity)
+                            })
+                        }}
                     >
                         <div className='flex gap-20px justify-end'>
                             <ToolBar columnable viewable={false} queryable={false} />
@@ -168,14 +191,24 @@ function EvalSelectList() {
                                         setIsAddOpen(false)
                                     }}
                                 >
-                                    {t('Cancel')}
+                                    {t('Done')}
                                 </Button>
                                 &nbsp;&nbsp;
                                 <Button
                                     size='compact'
                                     onClick={() => {
-                                        console.log(ref.current.getData())
-                                        setSelectData(ref.current?.getData())
+                                        const next = ref.current?.getData()
+                                        setSelectData((prev) => {
+                                            console.log('confirm', prev, next)
+
+                                            return _.pickBy(
+                                                {
+                                                    ...prev,
+                                                    ...next,
+                                                },
+                                                _.identity
+                                            )
+                                        })
                                     }}
                                 >
                                     {t('Confirm')}

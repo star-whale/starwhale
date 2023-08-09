@@ -78,6 +78,8 @@ const defaultEmptyMessage: any = () => <BusyPlaceholder type='notfound' style={{
 const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,
     onRowHighlightChange: state.onRowHighlightChange,
+    onRemove: state.onRemove,
+    getId: state.getId,
     rowSelectedIds: state.rowSelectedIds,
 })
 
@@ -91,6 +93,7 @@ function GridTable({
     queryinline = false,
     previewable = false,
     paginationable = false,
+    removable = false,
     emptyMessage = defaultEmptyMessage,
     emptyColumnMessage,
     resizableColumnWidths = true,
@@ -105,7 +108,7 @@ function GridTable({
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
-    const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
+    const { onRemove, onIncludedRowsChange, onRowHighlightChange, getId } = useStore(selector)
     const store = useStoreApi()
     // @FIXME
     useDirectStoreUpdater(
@@ -157,6 +160,7 @@ function GridTable({
                     compareable={compareable}
                     queryinline={queryinline}
                     previewable={previewable}
+                    removable={removable}
                     rawColumns={$columns}
                     emptyMessage={emptyMessage}
                     loading={isLoading}
@@ -179,6 +183,8 @@ function GridTable({
                     sortIndex={sortIndex}
                     textQuery={textQuery}
                     onPreview={onPreview as any}
+                    onRemove={onRemove}
+                    getId={getId}
                     // controlRef={controlRef}
                     // filters={$filtersEnabled}
                 />

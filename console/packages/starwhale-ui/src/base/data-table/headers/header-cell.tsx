@@ -38,6 +38,7 @@ type HeaderCellPropsT = {
     sortDirection: SortDirectionsT
     title: string
     compareable?: boolean
+    removable?: boolean
     querySlot?: React.ReactNode
 }
 
@@ -130,6 +131,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             {props.isQueryInline && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
             )}
+            {props.removable && props.index === 0 && <p className='mx-8px w-16px' />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox

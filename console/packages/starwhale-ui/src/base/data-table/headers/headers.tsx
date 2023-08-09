@@ -107,6 +107,7 @@ export default function Headers({ width }: { width: number }) {
                             onSort={handleSort}
                             resizableColumnWidths={ctx.resizableColumnWidths}
                             compareable={ctx.compareable}
+                            removable={ctx.removable}
                             resizeIndex={resizeIndex}
                             resizeMinWidth={column.minWidth || 0}
                             resizeMaxWidth={column.maxWidth || Infinity}

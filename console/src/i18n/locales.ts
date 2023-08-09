@@ -1672,6 +1672,10 @@ const locales0 = {
         en: 'Copyright © 2023 Starwhale, Inc. All rights reserved. ',
         zh: '版权所有 © 2023 Starwhale, Inc. 保留所有权利。',
     },
+    'Done': {
+        en: 'Done',
+        zh: '完成',
+    },
     ...basic,
     ...dataset,
     ...model,

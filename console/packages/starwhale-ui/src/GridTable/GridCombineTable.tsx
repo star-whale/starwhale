@@ -85,6 +85,7 @@ function BaseGridCombineTable({
                             emptyColumnMessage={emptyColumnMessage}
                             headlineHeight={headlineHeight}
                             rowHeight={rowHeight}
+                            getId={getId}
                         >
                             {title && (
                                 <LabelSmall style={{ height: `${headlineHeight}px` }} className={styles.headerTitle}>
