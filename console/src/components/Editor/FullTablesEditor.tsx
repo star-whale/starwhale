@@ -11,7 +11,7 @@ import { withProject } from './Editor'
 function witEditorContext(EditorApp: React.FC) {
     return function EditorContexted(props: any) {
         const { prefix } = props.dynamicVars
-        const { isLoading, isSuccess, names } = useFetchDatastoreAllTables(prefix)
+        const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
             return tranformState({
@@ -77,7 +77,7 @@ function witEditorContext(EditorApp: React.FC) {
             <EditorContextProvider
                 value={{
                     ...value,
-                    tableApi: names,
+                    tables,
                     dynamicVars: props.dynamicVars,
                 }}
             >

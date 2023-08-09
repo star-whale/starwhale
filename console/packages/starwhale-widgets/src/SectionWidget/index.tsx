@@ -10,6 +10,7 @@ import {
     PanelPreviewEvent,
     PanelDownloadEvent,
     PanelReloadEvent,
+    SectionEvalSelectDataEvent,
 } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
@@ -23,6 +24,7 @@ import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
 import useTranslation from '@/hooks/useTranslation'
 import EvalSelectList from '@/components/Editor/EvalSelectList'
+import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -62,6 +64,8 @@ export const CONFIG: WidgetConfig = {
     optionConfig: {
         title: '',
         isExpaned: true,
+        isEvaluationList: false,
+        evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
         layoutConfig: {
             padding: 20,
             columnsPerPage: 3,
@@ -86,7 +90,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { isExpaned = false, layoutConfig, layout } = optionConfig as Option
+    const { isExpaned = false, layoutConfig, layout, isEvaluationList } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = children ? React.Children.count(children) : 0
@@ -117,6 +121,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     }
     const handleReloadPanel = (id: string) => {
         eventBus.publish(new PanelReloadEvent({ id }))
+    }
+    const handleSelectDataChange = (data: any) => {
+        props.onOptionChange?.({
+            evalSelectData: data,
+        })
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -175,6 +184,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                         new PanelAddEvent({
                             // @ts-ignore
                             path: props.path,
+                            id: props.id,
                         })
                     )
                 }}
@@ -284,9 +294,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                         )
                     })}
                 </div>
-                <div className='mx-20px'>
-                    <EvalSelectList />
-                </div>
+                {isEvaluationList && (
+                    <div className='mx-20px'>
+                        <EvalSelectList onSelectDataChange={handleSelectDataChange} />
+                    </div>
+                )}
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('panel.name')}</ModalHeader>

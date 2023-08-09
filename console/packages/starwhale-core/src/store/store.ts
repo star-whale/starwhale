@@ -42,7 +42,7 @@ export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
                             produce((state) => {
                                 const rawConfig = _.merge({}, _.get(get(), paths))
                                 _.set(state, paths, _.mergeWith(rawConfig, config, arrayOverride))
-                                // console.log('onConfigChange', state, paths, rawConfig, config)
+                                // console.log('onConfigChange', get(), paths, config)
                             })
                         ),
                     onWidgetChange: (id: string, widgets: WidgetConfig) =>

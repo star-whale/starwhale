@@ -10,7 +10,7 @@ import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
-import { useFetchDatastoreByTable } from '../datastore'
+import { tablesOfEvaluation, useFetchDatastoreByTable } from '../datastore'
 
 const PAGE_TABLE_SIZE = 200
 
@@ -21,6 +21,7 @@ export default function WidgetFormModal({
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
     form,
+    eventBus,
 }: {
     store: StoreType
     form: WidgetFormModel
@@ -28,6 +29,7 @@ export default function WidgetFormModal({
     setIsShow?: any
     handleFormSubmit: (args: any) => void
     id?: string
+    eventBus: any
 }) {
     const [t] = useTranslation()
     // @FIXME use event bus handle global state
@@ -37,6 +39,30 @@ export default function WidgetFormModal({
     const config = store(widgetIdSelector)
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
+
+    // @FIXME add chart with list id, only for ui:section widget
+    const prefixes = React.useMemo(() => {
+        const { evalSelectData } = config?.optionConfig || {}
+        if (!evalSelectData) return undefined
+        const allPrefix: any[] = []
+        Object.values(evalSelectData).forEach((item: any) => {
+            console.log(item)
+            allPrefix.push({
+                prefix: `${item?.project?.name}`,
+                name: item?.summaryTableName,
+            })
+            item?.rowSelectedIds.forEach((id) => {
+                allPrefix.push({
+                    prefix: `${item?.project?.name}`,
+                    name: tablesOfEvaluation(item.projectId, id),
+                })
+            })
+        })
+        // console.log(payload, allPrefix)
+        return allPrefix
+    }, [config])
+
+    console.log(prefixes)
 
     const handleFormChange = (data: any) => {
         setFormData((prev) => {
@@ -52,7 +78,7 @@ export default function WidgetFormModal({
         })
     }
     const { chartType: type, tableName } = formData
-    const { tables } = useFetchDatastoreAllTables(prefix)
+    const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
     const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,

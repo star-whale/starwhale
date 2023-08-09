@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'baseui/modal'
 import Button from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
@@ -66,7 +66,7 @@ const RenderButton = ({ count, editing, toggle }) => {
     )
 }
 
-function EvalSelectList() {
+function EvalSelectList({ onSelectDataChange }: { onSelectDataChange?: (data: EvalSelectDataT) => void }) {
     const [editing, setEditing] = React.useState(false)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
     const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
@@ -124,6 +124,11 @@ function EvalSelectList() {
             }),
         [$columns]
     )
+
+    useEffect(() => {
+        onSelectDataChange?.(selectData)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectData])
 
     return (
         <div>

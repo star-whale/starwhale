@@ -29,7 +29,15 @@ export function withProject(EditorApp: React.FC) {
 
 const empty = {}
 
-export function witEditorContext(EditorApp: React.FC, rawState: typeof initialState) {
+export function witEditorContext(
+    EditorApp: React.FC,
+    rawState: {
+        key: string
+        tree: Record<string, any>[]
+        widgets: Record<string, any>
+        defaults: Record<string, any>
+    }
+) {
     return function EditorContexted(props: any) {
         const state = useMemo(() => tranformState(rawState), [])
         const store = useRef<StoreType>()

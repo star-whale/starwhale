@@ -1,15 +1,32 @@
 import React, { useEffect } from 'react'
 import { useListDatastoreTables } from './useFetchDatastore'
+import { getTableShortName, getTableShortNamePrefix } from '../utils'
 
-export function useFetchDatastoreAllTables(prefix: string) {
-    const allTables = useListDatastoreTables({ prefix })
+export function useFetchDatastoreAllTables(
+    prefix: string,
+    prefixes: {
+        name: string
+        prefix?: string
+    }[]
+) {
+    const params = React.useMemo(() => {
+        if (prefixes) {
+            return {
+                prefixes: prefixes.map((item) => item.name),
+            }
+        }
+        if (prefix) return { prefix }
+        return undefined
+    }, [prefix, prefixes])
+
+    const allTables = useListDatastoreTables(params)
 
     useEffect(() => {
-        if (prefix) {
+        if (params) {
             allTables.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [prefix])
+    }, [params])
 
     const tables = React.useMemo(() => {
         return allTables.data?.tables?.sort((a, b) => (a > b ? 1 : -1)) ?? []
@@ -22,12 +39,14 @@ export function useFetchDatastoreAllTables(prefix: string) {
         tables: React.useMemo(
             () =>
                 tables.map((table: string) => {
+                    const shortPrefix = prefixes?.find((item) => table.startsWith(item.name))?.prefix ?? ''
+                    const shortName = prefix ? table.replace(`${prefix}`, '') : getTableShortName(table)
                     return {
-                        short: table.replace(`${prefix}`, ''),
+                        short: [shortName, shortPrefix].filter(Boolean).join('@'),
                         name: table,
                     }
                 }),
-            [tables, prefix]
+            [tables, prefix, prefixes]
         ),
     }
 }

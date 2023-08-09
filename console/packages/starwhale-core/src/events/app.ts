@@ -39,3 +39,19 @@ export class SectionAddEvent extends BusEventWithPayload<SectionAddPayload> {
 export class PanelSaveEvent extends BusEventBase {
     static type = 'save'
 }
+
+export type SectionEvalSelectDataPayload = Record<
+    string,
+    {
+        summaryTableName: string
+        projectId: string
+        records: any[]
+        columnTypes: any[]
+        currentView: any
+        rowSelectedIds: string[]
+        project: any
+    }
+>
+export class SectionEvalSelectDataEvent extends BusEventWithPayload<SectionEvalSelectDataPayload> {
+    static type = 'eval-section'
+}

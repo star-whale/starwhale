@@ -1,13 +1,15 @@
 import React from 'react'
 import { witEditorContext } from './Editor'
 import { WidgetRenderTree } from '@starwhale/core/widget'
-import EvalSelectList from './EvalSelectList'
 
 const initialState = {
     key: 'widgets',
     tree: [
         {
             type: 'ui:section',
+            optionConfig: {
+                isEvaluationList: true,
+            },
         },
     ],
     widgets: {},

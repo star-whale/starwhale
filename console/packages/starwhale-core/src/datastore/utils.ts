@@ -163,5 +163,8 @@ export function getTableShortNamePrefix(str: string) {
 }
 
 export function getTableShortName(str: string) {
-    return `${str.split('/').splice(5).join('/')}`
+    if (str.split('/').length === 6) {
+        return `${str.split('/').splice(5).join('/')}`
+    }
+    return `${str.split('/').splice(-2).join('/')}`
 }

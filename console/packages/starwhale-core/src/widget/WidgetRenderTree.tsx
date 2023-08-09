@@ -107,6 +107,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
             eventBus.getStream(PanelAddEvent).subscribe({
                 next: (evt) => {
                     setIsPanelModalOpen(true)
+                    console.log(evt)
                     setEditWidget(evt)
                 },
             })
@@ -164,6 +165,8 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         ))
     }, [tree])
 
+    console.log(editWidget, tree)
+
     return (
         <div>
             {Nodes}
@@ -178,6 +181,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
                     actions[editWidget?.type]?.(formData)
                     setIsPanelModalOpen(false)
                 }}
+                eventBus={eventBus}
             />
             <WidgetPreviewModal
                 id={viewWidget?.payload?.id}
