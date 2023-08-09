@@ -80,56 +80,43 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (!checkHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
         }
-        if (!checkHeader(header)) {
-            // check whether the uri allow anonymous in public project
-            if (allowAnonymous(httpServletRequest)) {
-                var anonymous = Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build();
-                // Build jwt token with user
-                JwtLoginToken jwtLoginToken = new JwtLoginToken(null, "", List.of(anonymous));
-                jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
-                SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
-                filterChain.doFilter(httpServletRequest, httpServletResponse);
+        if (checkHeader(header)) {
+            String token = header.split(" ")[1].trim();
+            Claims claims;
+            try {
+                claims = jwtTokenUtil.parseJwt(token);
+                jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
+            } catch (SwValidationException e) {
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+                        "JWT token is expired or invalid.");
                 return;
             }
-            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied, "Not logged in.");
-            return;
-        }
 
-        String token = header.split(" ")[1].trim();
-        Claims claims;
-        try {
-            claims = jwtTokenUtil.parseJwt(token);
-            jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
-        } catch (SwValidationException e) {
-            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
-                    "JWT token is expired or invalid.");
-            return;
+            User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
+            try {
+                user.defaultChecks();
+            } catch (AccountStatusException e) {
+                error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, e.getMessage());
+                return;
+            }
+            // Get the roles of System(whether it has owner role)
+            List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
+            Set<Role> roles = sysRoles.stream().filter(
+                    role -> role.getAuthority().equals(Role.CODE_OWNER)).collect(Collectors.toSet());
+            // Get project roles
+            try {
+                Set<Project> projects = getProjects(httpServletRequest);
+                Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user, projects);
+                roles.addAll(rolesOfUser);
+            } catch (StarwhaleException e) {
+                logger.error(e.getMessage());
+            }
+            user.setRoles(roles);
+            // Build jwt token with user
+            JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getRoles());
+            jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
+            SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         }
-
-        User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
-        try {
-            user.defaultChecks();
-        } catch (AccountStatusException e) {
-            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, e.getMessage());
-            return;
-        }
-        // Get the roles of System(whether it has owner role)
-        List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
-        Set<Role> roles = sysRoles.stream().filter(
-                role -> role.getAuthority().equals(Role.CODE_OWNER)).collect(Collectors.toSet());
-        // Get project roles
-        try {
-            Set<Project> projects = getProjects(httpServletRequest);
-            Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user, projects);
-            roles.addAll(rolesOfUser);
-        } catch (StarwhaleException e) {
-            logger.error(e.getMessage());
-        }
-        user.setRoles(roles);
-        // Build jwt token with user
-        JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getRoles());
-        jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
-        SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         filterChain.doFilter(httpServletRequest, httpServletResponse);
 
     }
