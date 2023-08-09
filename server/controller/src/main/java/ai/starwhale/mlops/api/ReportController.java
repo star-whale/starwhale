@@ -28,12 +28,12 @@ import ai.starwhale.mlops.domain.report.bo.CreateParam;
 import ai.starwhale.mlops.domain.report.bo.QueryParam;
 import ai.starwhale.mlops.domain.report.bo.UpdateParam;
 import com.github.pagehelper.PageInfo;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Report")
-@Validated
+@RestController
+@RequestMapping("${sw.controller.api-prefix}")
 public class ReportController implements ReportApi {
 
     private final ReportService service;
