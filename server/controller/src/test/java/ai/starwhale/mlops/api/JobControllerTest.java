@@ -55,7 +55,7 @@ import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.RuntimeSuggestionService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
 import com.github.pagehelper.Page;
 import java.util.List;
 import java.util.Objects;

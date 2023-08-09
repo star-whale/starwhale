@@ -28,7 +28,7 @@ import ai.starwhale.mlops.domain.upgrade.UpgradeAccess;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade;
 import ai.starwhale.mlops.domain.upgrade.bo.Upgrade.Status;
 import ai.starwhale.mlops.domain.upgrade.bo.Version;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.List;

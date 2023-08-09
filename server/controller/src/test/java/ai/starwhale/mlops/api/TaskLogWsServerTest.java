@@ -22,8 +22,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollector;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.schedule.impl.k8s.log.TaskLogK8sStreamingCollector;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -32,33 +34,33 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class TaskLogWsServerTest {
-    private CancellableJobLogK8sCollectorFactory factory;
-    private CancellableJobLogK8sCollector logK8sCollector;
+
+    private TaskLogK8sStreamingCollector logK8sCollector;
     private IdConverter idConvertor;
     private Session session;
 
     @BeforeEach
     public void setup() {
-        factory = mock(CancellableJobLogK8sCollectorFactory.class);
         idConvertor = mock(IdConverter.class);
         session = mock(Session.class);
-        logK8sCollector = mock(CancellableJobLogK8sCollector.class);
+        logK8sCollector = mock(TaskLogK8sStreamingCollector.class);
     }
 
     @Test
     public void testOpen() throws IOException, ApiException, InterruptedException {
         var server = new TaskLogWsServer();
         server.setIdConvertor(idConvertor);
-        server.setLogCollectorFactory(factory);
+        TaskLogCollectorFactory logCollectorFactory = mock(TaskLogCollectorFactory.class);
+        when(logCollectorFactory.streamingCollector(any())).thenReturn(logK8sCollector);
+        server.setTaskLogCollectorFactory(logCollectorFactory);
 
         final Long taskId = 1L;
-        when(factory.make(taskId.toString())).thenReturn(logK8sCollector);
         when(session.getId()).thenReturn("1");
         when(idConvertor.revert(any())).thenReturn(taskId);
-        when(logK8sCollector.readLine()).thenReturn("foo");
+        when(logK8sCollector.readLine(any())).thenReturn("foo");
         server.onOpen(session, "1");
-        verify(factory).make(taskId.toString());
+        verify(logCollectorFactory).streamingCollector(Task.builder().id(taskId).step(new Step()).build());
         TimeUnit.MILLISECONDS.sleep(500);
-        verify(logK8sCollector).readLine();
+        verify(logK8sCollector).readLine(any());
     }
 }

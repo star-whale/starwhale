@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,13 +52,16 @@ public class JobLoaderTest {
 
     SwTaskScheduler swTaskScheduler;
 
+    TaskReportReceiver taskReportReceiver;
+
     @BeforeEach
     public void setUp() {
         mockJob = new JobMockHolder().mockJob();
         jobHolder = mock(HotJobHolder.class);
         watchableTaskFactory = mock(WatchableTaskFactory.class);
         swTaskScheduler = mock(SwTaskScheduler.class);
-        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler);
+        taskReportReceiver = mock(TaskReportReceiver.class);
+        jobLoader = new JobLoader(jobHolder, watchableTaskFactory, swTaskScheduler, taskReportReceiver);
     }
 
 
@@ -71,7 +75,7 @@ public class JobLoaderTest {
         jobLoader.load(mockJob, false);
         verify(jobHolder, times(1)).adopt(mockJob);
         verify(watchableTaskFactory, times(mockJob.getSteps().size())).wrapTasks(anyCollection());
-        verify(swTaskScheduler).schedule(Set.of(readyTask));
+        verify(swTaskScheduler).schedule(Set.of(readyTask), taskReportReceiver);
         verify(failedTask, times(0)).updateStatus(TaskStatus.READY);
     }
 

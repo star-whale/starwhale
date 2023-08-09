@@ -107,7 +107,7 @@ public class TaskService {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new SwProcessException(ErrorType.DB,
-                    MessageFormat.format("read log path from db failed {}", taskId),
+                    MessageFormat.format("read log path from db failed {0}", taskId),
                     e);
         }
 
