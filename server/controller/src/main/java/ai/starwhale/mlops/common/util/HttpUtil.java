@@ -31,6 +31,7 @@ public class HttpUtil {
         response.resetBuffer();
         response.setStatus(httpStatus);
         response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        response.setCharacterEncoding("UTF-8");
         response.getOutputStream()
                 .print(JSONUtil.createObj()
                         .append("code", code.getType())
