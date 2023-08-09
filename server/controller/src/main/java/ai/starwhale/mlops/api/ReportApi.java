@@ -82,7 +82,7 @@ public interface ReportApi {
             @PathVariable String projectUrl, @PathVariable Long reportId);
 
     @GetMapping(value = "/report/{uuid}/preview", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ResponseMessage<ReportVo>> preview(@PathVariable String reportUuid);
+    ResponseEntity<ResponseMessage<ReportVo>> preview(@PathVariable(value = "uuid") String uuid);
 
     @Operation(summary = "Get the list of reports")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
