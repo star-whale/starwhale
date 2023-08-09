@@ -43,6 +43,11 @@ public class ReportEntity implements BundleEntity {
 
     @Override
     public String getName() {
+        return title;
+    }
+
+    @Override
+    public String getUniqueName() {
         return uuid;
     }
 }

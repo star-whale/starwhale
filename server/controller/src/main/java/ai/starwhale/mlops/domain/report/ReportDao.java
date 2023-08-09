@@ -58,6 +58,6 @@ public class ReportDao implements BundleAccessor, RecoverAccessor, RemoveAccesso
 
     @Override
     public Boolean remove(Long id) {
-        return reportMapper.recover(id) > 0;
+        return reportMapper.remove(id) > 0;
     }
 }

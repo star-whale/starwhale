@@ -40,7 +40,7 @@ public class RecoverManager {
         String name = entity.getName();
 
         // Check for duplicate names
-        if (recoverAccessor.findByNameForUpdate(name, projectId) != null) {
+        if (recoverAccessor.findByNameForUpdate(entity.getUniqueName(), projectId) != null) {
             throw new RecoverException(String.format("Recover error. Bundle %s already exists.", name));
         }
 
