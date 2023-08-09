@@ -29,6 +29,8 @@ export type EvalSelectDataT = Record<
         columnTypes: ColumnSchemaDesc[]
         rowSelectedIds: string[]
         currentView: ITableState['currentView']
+        projectId: string
+        project?: IProjectSchema
     }
 >
 

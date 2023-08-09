@@ -8,6 +8,8 @@ import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hoo
 import GridTable from '@starwhale/ui/GridTable/GridTable'
 import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import _ from 'lodash'
+import { TextLink } from '../Link'
+import { CustomColumn } from '@starwhale/ui/base/data-table'
 
 const RenderButton = ({ count, editing, toggle }) => {
     const [t] = useTranslation()
@@ -75,8 +77,6 @@ function EvalSelectList() {
         return Object.values(selectData ?? {})
     }, [selectData])
 
-    console.log('final', values)
-
     const count = React.useMemo(() => {
         return values.reduce((acc, cur) => {
             return acc + (cur.rowSelectedIds?.length ?? 0)
@@ -86,7 +86,8 @@ function EvalSelectList() {
     const uniconRecords = React.useMemo(
         () =>
             values.reduce((acc, cur) => {
-                return [...acc, ...(cur.records ?? [])]
+                // FIXME hacked add projectid to records
+                return [...acc, ...(cur.records ?? []).map((record) => ({ ...record, projectId: cur.projectId }))]
             }, []),
         [values]
     )
@@ -100,6 +101,29 @@ function EvalSelectList() {
     )
 
     const $columns = useDatastoreSummaryColumns(unionColumnTypes as any)
+
+    // overrider sys/id use inline projectId
+    const $override = React.useMemo(
+        () =>
+            $columns.map((column) => {
+                if (column.key === 'sys/id')
+                    return CustomColumn<any, any>({
+                        ...column,
+                        renderCell: ({ value }) => {
+                            const { value: id, record } = value
+                            if (!id) return <></>
+                            return (
+                                <TextLink to={`/projects/${record?.projectId}/evaluations/${id}/results`}>
+                                    {id}
+                                </TextLink>
+                            )
+                        },
+                    })
+
+                return column
+            }),
+        [$columns]
+    )
 
     return (
         <div>
@@ -128,6 +152,7 @@ function EvalSelectList() {
                         borderRadius: '0 4px 4px 4px',
                         padding: '18px 20px 10px',
                         position: 'relative',
+                        backgroundColor: '#FFF',
                     }}
                 >
                     <GridTable
@@ -136,10 +161,12 @@ function EvalSelectList() {
                         removable
                         compareable={false}
                         paginationable={false}
+                        // @ts-ignore
                         records={uniconRecords}
                         columnTypes={unionColumnTypes}
-                        columns={$columns}
+                        columns={$override}
                         onRemove={(id) => {
+                            // remove one record, if project record is empty, remove project from map
                             setSelectData((prev) => {
                                 const n = { ...prev }
                                 Object.entries(n).forEach(([key, item]) => {
@@ -199,8 +226,7 @@ function EvalSelectList() {
                                     onClick={() => {
                                         const next = ref.current?.getData()
                                         setSelectData((prev) => {
-                                            console.log('confirm', prev, next)
-
+                                            // join new data, remove project than removed (undefined)
                                             return _.pickBy(
                                                 {
                                                     ...prev,

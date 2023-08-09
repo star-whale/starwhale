@@ -17,12 +17,7 @@ const initialState = {
 const Editor = witEditorContext(WidgetRenderTree, initialState)
 
 function EvalSelectEditor() {
-    return (
-        <div>
-            <EvalSelectList />
-            <Editor />
-        </div>
-    )
+    return <Editor />
 }
 
 export { EvalSelectEditor }

@@ -22,7 +22,7 @@ import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
 import useTranslation from '@/hooks/useTranslation'
-import EvalSelectList from './EvalSelectList'
+import EvalSelectList from '@/components/Editor/EvalSelectList'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -283,6 +283,9 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                             </Resizable>
                         )
                     })}
+                </div>
+                <div className='mx-20px'>
+                    <EvalSelectList />
                 </div>
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
