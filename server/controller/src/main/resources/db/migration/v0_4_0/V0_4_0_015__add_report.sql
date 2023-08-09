@@ -28,6 +28,5 @@ create table if not exists report
     deleted_time  bigint   default 0                 not null,
     created_time  datetime default CURRENT_TIMESTAMP not null,
     modified_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
-    INDEX `idx_title` (`title`) USING BTREE,
     INDEX `idx_project_id` (`project_id`) USING BTREE
 );
