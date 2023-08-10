@@ -14,16 +14,15 @@ import { toaster } from 'baseui/toast'
 function FormFieldDevMode({
     form,
     FormItem,
-    // eslint-disable-next-line
-    EventEmitter,
+    eventEmitter,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
-    EventEmitter: EventEmitter<any>
+    eventEmitter: EventEmitter<any>
 }) {
     const [t] = useTranslation()
 
-    EventEmitter.useSubscription(({ changes: _changes }) => {
+    eventEmitter.useSubscription(({ changes: _changes }) => {
         if ('devMode' in _changes && _changes.devMode) {
             form.setFieldsValue({
                 devPassword: generatePassword(),

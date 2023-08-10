@@ -1,18 +1,21 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { FormSelect } from '@starwhale/ui/Select'
 import RuntimeTreeSelector from '@runtime/components/RuntimeTreeSelector'
 import useTranslation from '@/hooks/useTranslation'
 import { FormInstance, FormItemProps } from '@/components/Form/form'
 import { useParams } from 'react-router-dom'
 import { ICreateJobFormSchema, RuntimeType } from '../schemas/job'
+import { EventEmitter } from 'ahooks/lib/useEventEmitter'
 
 function FormFieldRuntime({
     form,
     FormItem,
+    eventEmitter,
     builtInRuntime,
 }: {
     form: FormInstance<ICreateJobFormSchema, keyof ICreateJobFormSchema>
     FormItem: (props_: FormItemProps<ICreateJobFormSchema>) => any
+    eventEmitter: EventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>
     builtInRuntime?: string
 }) {
     const [t] = useTranslation()
@@ -20,12 +23,11 @@ function FormFieldRuntime({
 
     const type = form.getFieldValue('runtimeType')
 
-    useEffect(() => {
-        if (type === RuntimeType.OTHER) {
+    eventEmitter.useSubscription(({ changes: _changes }) => {
+        if ('runtimeType' in _changes && _changes.runtimeType === RuntimeType.OTHER) {
             form.setFieldsValue({ runtimeVersionUrl: undefined })
         }
-    }, [form, type])
-
+    })
     return (
         <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
             {!!builtInRuntime && (
