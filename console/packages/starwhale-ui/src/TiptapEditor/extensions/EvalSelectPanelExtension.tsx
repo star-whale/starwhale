@@ -11,13 +11,14 @@ import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 import { useEventCallback } from '@starwhale/core'
 import React from 'react'
 
-const Component = (editor: NodeViewProps) => {
-    const { node, selected } = editor
+const Component = (props: NodeViewProps) => {
+    const { node, selected, editor } = props
 
     const onStateChange = useEventCallback((state: any) => {
-        editor.updateAttributes({
-            state,
-        })
+        if (editor.isActive('eval-select-panel'))
+            props.updateAttributes({
+                state,
+            })
     })
 
     const memoe = React.useMemo(() => {
@@ -25,6 +26,12 @@ const Component = (editor: NodeViewProps) => {
     }, [node.attrs.state, onStateChange])
 
     // console.log('node.attrs.state', node.attrs.state?.widgets)
+
+    // console.log(editor.storage['eval-select-panel'])
+
+    // console.log(node.type)
+
+    // console.log(editor)
 
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>
@@ -55,9 +62,29 @@ export default Node.create({
     draggable: true,
     atom: true,
 
-    addAttributes() {
+    addOptions() {
         return {
             state: {},
+        }
+    },
+
+    addStorage() {
+        return {
+            state: '2',
+        }
+    },
+
+    addAttributes() {
+        return {
+            state: {
+                default: null,
+                // renderHTML: (attributes) => {
+                //     return {
+                //         'data-state': JSON.stringify(attributes.state),
+                //     }
+                // },
+                // parseHTML: (element) => element.getAttribute('data-state'),
+            },
         }
     },
 

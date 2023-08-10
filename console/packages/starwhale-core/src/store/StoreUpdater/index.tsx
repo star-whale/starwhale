@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { StoreApi } from 'zustand'
-import { useStore, useStoreApi } from '../hooks/useStore'
-import shallow from 'zustand/shallow'
+import { useStoreApi } from '../hooks/useStore'
 import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
 
 type StoreUpdaterProps = {
@@ -34,19 +33,21 @@ export function useDirectStoreUpdater(
     }, [value])
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const selector = (s: WidgetStoreState) => ({
     // initState: s.initState,
 })
 
-const StoreUpdater = ({ state, onStateChange }: StoreUpdaterProps) => {
-    const { reset } = useStore(selector, shallow)
+const StoreUpdater = ({ onStateChange }: StoreUpdaterProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
 
-    useEffect(() => {
-        return () => {
-            // reset()
-        }
-    }, [reset])
+    // useEffect(() => {
+    //     return () => {
+    //         // reset()
+    //     }
+    // }, [reset])
 
     useDirectStoreUpdater('onStateChange', onStateChange, store.setState)
     // useStoreUpdater<WidgetStateT>(state, initState)

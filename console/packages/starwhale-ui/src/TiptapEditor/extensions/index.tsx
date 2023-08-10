@@ -12,7 +12,7 @@ import Highlight from '@tiptap/extension-highlight'
 import { InputRule } from '@tiptap/core'
 import Focus from '@tiptap/extension-focus'
 import SlashCommand from './SlashCommand'
-import EvalSelectPanel from './EvalSelectPanel'
+import EvalSelectPanel from './EvalSelectPanelExtension'
 
 // import Document from '@tiptap/extension-document'
 // import UploadImagesPlugin from './plugins/upload-images'
@@ -95,9 +95,6 @@ export const TiptapExtensions = [
             class: 'mt-4 mb-6 border-t border-stone-300',
         },
     }),
-    // Paragraph.extend({
-    //   draggable: true,
-    // }),
     TiptapLink.configure({
         HTMLAttributes: {
             class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',

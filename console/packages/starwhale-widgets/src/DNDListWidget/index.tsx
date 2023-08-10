@@ -157,6 +157,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                 animation={50}
                 onChoose={(args) => {
                     dragSelect(args.oldIndex as number)
+                    args.stopPropagation()
                 }}
                 onUnchoose={dragUnselect}
                 onStart={dragStart}
