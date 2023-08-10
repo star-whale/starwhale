@@ -109,7 +109,7 @@ public interface ReportMapper {
                     SELECT(COLUMNS_FOR_SELECT);
                     FROM("report");
                     if (StrUtil.isNotEmpty(title)) {
-                        WHERE("title like %#{title}%");
+                        WHERE("title like concat('%', #{title}, '%')");
                     }
                     WHERE("deleted_time = 0");
                     WHERE("project_id = #{projectId}");

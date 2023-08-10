@@ -29,7 +29,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 
 
-@MybatisTest
+@MybatisTest(properties = {
+    "logging.level.root=DEBUG",
+    "logging.level.ai.starwhale.mlops=DEBUG"
+})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ReportMapperTest extends MySqlContainerHolder {
     @Autowired
@@ -86,9 +89,9 @@ public class ReportMapperTest extends MySqlContainerHolder {
         assertEquals(1, list.size());
 
         // filter
-        list = mapper.selectByProject("title-1", 1L);
-        assertEquals(1, list.size());
         list = mapper.selectByProject("title", 1L);
+        assertEquals(1, list.size());
+        list = mapper.selectByProject("tle", 1L);
         assertEquals(1, list.size());
         list = mapper.selectByProject("title2", 1L);
         assertEquals(0, list.size());

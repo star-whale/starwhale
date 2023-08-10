@@ -19,7 +19,6 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.CreateReportRequest;
-import ai.starwhale.mlops.api.protocol.report.QueryReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportVo;
 import ai.starwhale.mlops.api.protocol.report.TransferReportRequest;
 import ai.starwhale.mlops.api.protocol.report.UpdateReportRequest;
@@ -99,9 +98,9 @@ public class ReportController implements ReportApi {
     }
 
     public ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(
-            String projectUrl, QueryReportRequest request, Integer pageNum, Integer pageSize) {
+            String projectUrl, String title, Integer pageNum, Integer pageSize) {
         return ResponseEntity.ok(Code.success.asResponse(service.listReport(
-                QueryParam.builder().title(request.getTitle()).projectUrl(projectUrl).build(),
+                QueryParam.builder().title(title).projectUrl(projectUrl).build(),
                 PageParams.builder().pageNum(pageNum).pageSize(pageSize).build())));
     }
 }
