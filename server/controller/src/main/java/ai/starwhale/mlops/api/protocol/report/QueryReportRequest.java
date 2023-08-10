@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.report.bo;
+package ai.starwhale.mlops.api.protocol.report;
 
-import lombok.Builder;
 import lombok.Data;
 
+
 @Data
-@Builder
-public class QueryParam {
+public class QueryReportRequest {
     private String title;
-    private Long reportId;
-    private String projectUrl;
 }

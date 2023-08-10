@@ -24,6 +24,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.UpdateProvider;
 import org.apache.ibatis.jdbc.SQL;
@@ -42,7 +43,8 @@ public interface ReportMapper {
     int insert(ReportEntity entity);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE deleted_time = 0 and project_id = #{projectId}")
-    List<ReportEntity> selectByProject(@Param("projectId") Long projectId);
+    @SelectProvider(value = SqlProvider.class, method = "listByProjectAndNameSql")
+    List<ReportEntity> selectByProject(@Param("title") String title, @Param("projectId") Long projectId);
 
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE id = #{id}")
     ReportEntity selectById(@Param("id") Long id);
@@ -98,6 +100,20 @@ public interface ReportMapper {
                         SET("shared = #{shared}");
                     }
                     WHERE("id = #{id}");
+                }
+            }.toString();
+        }
+
+        public String listByProjectAndNameSql(@Param("title") String title, @Param("projectId") Long projectId) {
+            return new SQL() {
+                {
+                    SELECT(COLUMNS_FOR_SELECT);
+                    FROM("report");
+                    if (StrUtil.isNotEmpty(title)) {
+                        WHERE("title like %#{title}%");
+                    }
+                    WHERE("deleted_time = 0");
+                    WHERE("project_id = #{projectId}");
                 }
             }.toString();
         }

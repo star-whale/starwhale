@@ -54,7 +54,7 @@ public class ReportMapperTest extends MySqlContainerHolder {
         selectRes = mapper.selectByUuid(entity.getUuid());
         assertEntity(entity, selectRes);
 
-        var list = mapper.selectByProject(1L);
+        var list = mapper.selectByProject("", 1L);
         assertEquals(1, list.size());
 
         // update
@@ -78,12 +78,20 @@ public class ReportMapperTest extends MySqlContainerHolder {
 
         // remove and recover
         mapper.remove(entity.getId());
-        list = mapper.selectByProject(1L);
+        list = mapper.selectByProject("", 1L);
         assertEquals(0, list.size());
 
         mapper.recover(entity.getId());
-        list = mapper.selectByProject(1L);
+        list = mapper.selectByProject("", 1L);
         assertEquals(1, list.size());
+
+        // filter
+        list = mapper.selectByProject("title-1", 1L);
+        assertEquals(1, list.size());
+        list = mapper.selectByProject("title", 1L);
+        assertEquals(1, list.size());
+        list = mapper.selectByProject("title2", 1L);
+        assertEquals(0, list.size());
     }
 
     private void assertEntity(ReportEntity source, ReportEntity target) {

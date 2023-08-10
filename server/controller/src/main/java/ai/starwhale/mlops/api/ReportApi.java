@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.CreateReportRequest;
+import ai.starwhale.mlops.api.protocol.report.QueryReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportVo;
 import ai.starwhale.mlops.api.protocol.report.TransferReportRequest;
 import ai.starwhale.mlops.api.protocol.report.UpdateReportRequest;
@@ -93,6 +94,7 @@ public interface ReportApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ReportVo>>> listReports(
             @PathVariable String projectUrl,
+            @RequestParam(required = false) QueryReportRequest request,
             @Valid @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @Valid @RequestParam(required = false, defaultValue = "10") Integer pageSize
     );

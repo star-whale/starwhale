@@ -115,7 +115,7 @@ public class ReportService {
     public PageInfo<ReportVo> listReport(QueryParam query, PageParams pageParams) {
         var projectId = projectService.getProjectId(query.getProjectUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        var reports = reportMapper.selectByProject(projectId);
+        var reports = reportMapper.selectByProject(query.getTitle(), projectId);
         return PageUtil.toPageInfo(reports, reportConverter::convert);
     }
 
