@@ -130,7 +130,7 @@ public class ReportService {
 
     public ReportVo getReportByUuidForPreview(String uuid) {
         ReportEntity entity = reportMapper.selectByUuid(uuid);
-        if (entity == null) {
+        if (entity == null || entity.getIsDeleted()) {
             throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE,
                     String.format("Unable to find report %s", uuid));
         }

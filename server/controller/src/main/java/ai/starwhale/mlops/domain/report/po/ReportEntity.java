@@ -40,6 +40,7 @@ public class ReportEntity implements BundleEntity {
     private Long ownerId;
     private Date createdTime;
     private Date modifiedTime;
+    private Boolean isDeleted;
 
     @Override
     public String getName() {

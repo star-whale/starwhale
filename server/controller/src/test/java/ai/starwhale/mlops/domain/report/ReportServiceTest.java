@@ -33,6 +33,7 @@ import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.trash.TrashService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,10 +84,14 @@ public class ReportServiceTest {
                 .uuid("uuid")
                 .content("content")
                 .shared(false)
+                .isDeleted(true)
                 .createdTime(new Date())
                 .modifiedTime(new Date())
                 .build();
         given(reportMapper.selectByUuid(anyString())).willReturn(entity);
+        assertThrows(SwNotFoundException.class, () -> reportService.getReportByUuidForPreview("uuid"));
+
+        entity.setIsDeleted(false);
         assertThrows(SwValidationException.class, () -> reportService.getReportByUuidForPreview("uuid"));
 
         entity.setShared(true);
