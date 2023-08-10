@@ -34,6 +34,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException {
-        error(response, HttpStatus.FORBIDDEN.value(), Code.accessDenied, authException.getMessage());
+        error(response, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized, Code.Unauthorized.getType());
     }
 }

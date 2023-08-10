@@ -36,6 +36,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AccountStatusException;
@@ -64,6 +65,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         this.jwtClaimValidators = jwtClaimValidators;
     }
 
+    boolean allowAnonymous(HttpServletRequest request) {
+        var projects = getProjects(request);
+        // only for public project
+        return projects.stream().allMatch(p -> p.getPrivacy() == Project.Privacy.PUBLIC);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
             @NonNull HttpServletResponse httpServletResponse,
@@ -72,53 +79,68 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         if (!checkHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
-            if (!checkHeader(header)) {
-                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
-                        "Not logged in.");
+        }
+        if (!checkHeader(header)) {
+            // check whether the uri allow anonymous in public project
+            if (allowAnonymous(httpServletRequest)) {
+                // Build jwt token with anonymous user
+                JwtLoginToken jwtLoginToken = new JwtLoginToken(null, "", List.of(
+                            Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build()));
+                jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
+                SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
+            } else {
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized, "Not logged in.");
                 return;
             }
-        }
+        } else {
+            String token = header.split(" ")[1].trim();
+            Claims claims;
+            try {
+                claims = jwtTokenUtil.parseJwt(token);
+                jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
+            } catch (SwValidationException e) {
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.Unauthorized,
+                        "JWT token is expired or invalid.");
+                return;
+            }
 
-        String token = header.split(" ")[1].trim();
-        Claims claims;
-        try {
-            claims = jwtTokenUtil.parseJwt(token);
-            jwtClaimValidators.forEach(cv -> cv.validClaims(claims));
-        } catch (SwValidationException e) {
-            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
-                    "JWT token is expired or invalid.");
-            return;
+            User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
+            try {
+                user.defaultChecks();
+            } catch (AccountStatusException e) {
+                error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, e.getMessage());
+                return;
+            }
+            // Get the roles of System(whether it has owner role)
+            List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
+            Set<Role> roles = sysRoles.stream().filter(
+                    role -> role.getAuthority().equals(Role.CODE_OWNER)).collect(Collectors.toSet());
+            // Get project roles
+            try {
+                Set<Project> projects = getProjects(httpServletRequest);
+                Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user, projects);
+                roles.addAll(rolesOfUser);
+            } catch (StarwhaleException e) {
+                logger.error(e.getMessage());
+            }
+            user.setRoles(roles);
+            // Build jwt token with user
+            JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getRoles());
+            jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
+            SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         }
-
-        User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
-        try {
-            user.defaultChecks();
-        } catch (AccountStatusException e) {
-            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, e.getMessage());
-            return;
-        }
-        // Get the roles of System
-        List<Role> sysRoles = userService.getProjectRolesOfUser(user, Project.system());
-        Set<Role> roles = sysRoles.stream().filter(
-                role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
-        // Get project roles
-
-        try {
-            Set<String> projects = (Set<String>) httpServletRequest.getAttribute(
-                    ProjectDetectionFilter.ATTRIBUTE_PROJECT);
-            Set<Role> rolesOfUser = userService.getProjectsRolesOfUser(user,
-                    projects.stream().map(projectService::findProject).collect(Collectors.toSet()));
-            roles.addAll(rolesOfUser);
-        } catch (StarwhaleException e) {
-            logger.error(e.getMessage());
-        }
-        user.setRoles(roles);
-        // Build jwt token with user
-        JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getRoles());
-        jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
-        SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         filterChain.doFilter(httpServletRequest, httpServletResponse);
+    }
 
+    @NotNull
+    private Set<Project> getProjects(HttpServletRequest httpServletRequest) {
+        @SuppressWarnings("unchecked")
+        Set<Project> projects = ((Set<String>) httpServletRequest
+                .getAttribute(ProjectDetectionFilter.ATTRIBUTE_PROJECT))
+                .stream()
+                .map(projectService::findProject)
+                .collect(Collectors.toSet());
+        return projects;
     }
 
     private boolean checkHeader(String header) {

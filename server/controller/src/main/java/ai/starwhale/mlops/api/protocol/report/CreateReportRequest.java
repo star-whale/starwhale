@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol;
+package ai.starwhale.mlops.api.protocol.report;
 
-public enum Code {
-    success("Success"),
-    validationException("ValidationException"),
-    internalServerError("InternalServerError"),
-    accessDenied("AccessDenied"),
-    Unauthorized("Unauthorized"),
-    unknownError("unknownError");
-    private final String type;
+import javax.validation.constraints.Size;
+import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
-    Code(String type) {
-        this.type = type;
-    }
 
-    public String getType() {
-        return type;
-    }
-
-    public <T> ResponseMessage<T> asResponse(T data) {
-        return new ResponseMessage<>(this.name(), this.type, data);
-    }
+@Data
+@Validated
+public class CreateReportRequest {
+    @Size(min = 1, max = 255, message = "Title length should between 1-255")
+    private String title;
+    @Size(max = 255, message = "Description length is too long")
+    private String description;
+    @Size(min = 1, message = "Content can't be null")
+    private String content;
 }

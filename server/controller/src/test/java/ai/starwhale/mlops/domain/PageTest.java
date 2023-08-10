@@ -42,6 +42,10 @@ import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.report.ReportService;
+import ai.starwhale.mlops.domain.report.bo.QueryParam;
+import ai.starwhale.mlops.domain.report.mapper.ReportMapper;
+import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.RuntimeTestConstants;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
@@ -59,6 +63,7 @@ import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
 import com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -118,6 +123,11 @@ public class PageTest extends MySqlContainerHolder {
     private DatasetMapper datasetMapper;
 
     @Autowired
+    private ReportService reportService;
+    @Autowired
+    private ReportMapper reportMapper;
+
+    @Autowired
     private ProjectMapper projectMapper;
     @Autowired
     private UserMapper userMapper;
@@ -142,6 +152,39 @@ public class PageTest extends MySqlContainerHolder {
                 .isDefault(1)
                 .build();
         projectMapper.insert(entity);
+    }
+
+    @Test
+    public void testReportList() {
+        var userId = userMapper.findByName(userName).getId();
+        var projectId = projectMapper.findByNameForUpdateAndOwner(projectName, userId).getId();
+        for (int i = 0; i < 19; i++) {
+            var res = reportMapper.insert(
+                    ReportEntity.builder()
+                        .uuid(UUID.randomUUID().toString())
+                        .title(String.format("report-%d", i))
+                        .content(String.format("content-%d", i))
+                        .projectId(projectId)
+                        .ownerId(userId)
+                        .build());
+            assertTrue(res > 0);
+        }
+
+        // no.1
+        var page = reportService.listReport(
+                QueryParam.builder().projectUrl(projectName).build(),
+                PageParams.builder().pageNum(1).pageSize(10).build()
+        );
+        assertEquals(10, page.getSize());
+        assertEquals(19, page.getTotal());
+
+        // no.2
+        page = reportService.listReport(
+                QueryParam.builder().projectUrl(projectName).build(),
+                PageParams.builder().pageNum(2).pageSize(10).build()
+        );
+        assertEquals(9, page.getSize());
+        assertEquals(19, page.getTotal());
     }
 
     @Test

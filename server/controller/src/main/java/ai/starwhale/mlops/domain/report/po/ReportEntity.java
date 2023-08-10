@@ -14,30 +14,41 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.datastore;
+package ai.starwhale.mlops.domain.report.po;
 
-import java.util.HashSet;
-import java.util.Set;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import java.util.Date;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class ListTablesRequest {
+@AllArgsConstructor
+public class ReportEntity implements BundleEntity {
+    private Long id;
+    private String uuid;
+    private String title;
+    private String description;
+    private String content;
+    @Builder.Default
+    private Boolean shared = false;
+    private Long projectId;
+    private Long ownerId;
+    private Date createdTime;
+    private Date modifiedTime;
+    private Boolean isDeleted;
 
-    private String prefix = null;
-    private Set<String> prefixes = Set.of();
+    @Override
+    public String getName() {
+        return title;
+    }
 
-    public Set<String> getPrefixes() {
-        Set<String> result = new HashSet<>();
-        if (prefix != null) {
-            result.add(prefix);
-        }
-        if (prefixes != null && !prefixes.isEmpty()) {
-            result.addAll(prefixes);
-        }
-        return result;
+    @Override
+    public String getUniqueName() {
+        return uuid;
     }
 }

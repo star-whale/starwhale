@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.report.ReportDao;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
 import ai.starwhale.mlops.domain.trash.bo.TrashQuery;
@@ -62,11 +63,12 @@ public class TrashService {
     private final DatasetDao datasetDao;
     private final RuntimeDao runtimeDao;
     private final JobDao jobDao;
+    private final ReportDao reportDao;
     private final IdConverter idConvertor;
 
     public TrashService(TrashMapper trashMapper, UserService userService, ProjectService projectService,
             ModelDao modelDao, DatasetDao datasetDao,
-            RuntimeDao runtimeDao, JobDao jobDao, IdConverter idConvertor) {
+            RuntimeDao runtimeDao, JobDao jobDao, ReportDao reportDao, IdConverter idConvertor) {
         this.trashMapper = trashMapper;
         this.userService = userService;
         this.projectService = projectService;
@@ -74,6 +76,7 @@ public class TrashService {
         this.datasetDao = datasetDao;
         this.runtimeDao = runtimeDao;
         this.jobDao = jobDao;
+        this.reportDao = reportDao;
         this.idConvertor = idConvertor;
     }
 
@@ -165,6 +168,8 @@ public class TrashService {
                 return runtimeDao;
             case EVALUATION:
                 return jobDao;
+            case REPORT:
+                return reportDao;
             default:
                 throw new SwValidationException(ValidSubject.TRASH, "Unknown trash type" + type);
         }

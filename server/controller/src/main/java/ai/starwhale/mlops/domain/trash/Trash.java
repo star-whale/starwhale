@@ -30,6 +30,6 @@ public class Trash {
     private Long projectId;
 
     public enum Type {
-        MODEL, DATASET, RUNTIME, EVALUATION, TRAIN, FINE_TUNE
+        MODEL, DATASET, RUNTIME, EVALUATION, TRAIN, FINE_TUNE, REPORT
     }
 }

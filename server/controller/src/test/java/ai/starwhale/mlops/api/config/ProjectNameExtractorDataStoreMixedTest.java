@@ -36,6 +36,8 @@ import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.report.ReportDao;
+import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.exception.SwNotFoundException;
@@ -59,6 +61,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
     ModelDao modelDao = mock(ModelDao.class);
     DatasetDao datasetDao = mock(DatasetDao.class);
     RuntimeDao runtimeDao = mock(RuntimeDao.class);
+    ReportDao reportDao = mock(ReportDao.class);
 
     @BeforeEach
     public void setup() {
@@ -70,8 +73,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 jobDao,
                 modelDao,
                 datasetDao,
-                runtimeDao
-        );
+                runtimeDao,
+                reportDao);
     }
 
     @Test
@@ -86,8 +89,8 @@ public class ProjectNameExtractorDataStoreMixedTest {
     public void testDataStoreList() throws IOException {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v1/datastore/listTables");
-        when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(
-                new ByteArrayInputStream(objectMapper.writeValueAsBytes(new ListTablesRequest("project/x")))));
+        when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(new ByteArrayInputStream(
+                    objectMapper.writeValueAsBytes(new ListTablesRequest("project/x", Set.of())))));
         Set<String> strings = projectNameExtractorDataStoreMixed.extractProjectName(request);
         Assertions.assertIterableEquals(Set.of("x"), strings);
     }
@@ -155,6 +158,7 @@ public class ProjectNameExtractorDataStoreMixedTest {
         when(datasetDao.findById(2L)).thenReturn(DatasetEntity.builder().projectId(1L).build());
         when(modelDao.findById(3L)).thenReturn(ModelEntity.builder().projectId(1L).build());
         when(jobDao.findById(4L)).thenReturn(JobEntity.builder().projectId(1L).build());
+        when(reportDao.findById(5L)).thenReturn(ReportEntity.builder().projectId(1L).build());
 
         when(jobDao.findByNameForUpdate("job1", 1L)).thenReturn(JobEntity.builder().projectId(1L).build());
 
@@ -169,7 +173,9 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/dataset/2",
                 "/api/v1/project/p1/model/3",
                 "/api/v1/project/p1/job/4",
-                "/api/v1/project/p1/job/job1"
+                "/api/v1/project/p1/job/job1",
+                "/api/v1/project/p1/report/5",
+                "/api/v1/project/p1/report/5/transfer"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             projectNameExtractorDataStoreMixed.checkResourceOwnerShip(request);
@@ -188,7 +194,9 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/dataset/8",
                 "/api/v1/project/p1/model/9",
                 "/api/v1/project/p1/job/10",
-                "/api/v1/project/p1/job/job2" // simulate job uuid
+                "/api/v1/project/p1/job/job2", // simulate job uuid
+                "/api/v1/project/p1/report/11",
+                "/api/v1/project/p1/report/11/transfer"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             Assertions.assertThrows(SwNotFoundException.class,
@@ -213,7 +221,9 @@ public class ProjectNameExtractorDataStoreMixedTest {
                 "/api/v1/project/p1/dataset/12",
                 "/api/v1/project/p1/model/13",
                 "/api/v1/project/p1/job/14",
-                "/api/v1/project/p1/job/job3" // simulate job uuid
+                "/api/v1/project/p1/job/job3", // simulate job uuid
+                "/api/v1/project/p1/report/15",
+                "/api/v1/project/p1/report/15/transfer"
         )) {
             when(request.getRequestURI()).thenReturn(uri);
             Assertions.assertThrows(SwNotFoundException.class,

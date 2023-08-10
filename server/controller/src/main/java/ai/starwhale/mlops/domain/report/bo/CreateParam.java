@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol;
+package ai.starwhale.mlops.domain.report.bo;
 
-public enum Code {
-    success("Success"),
-    validationException("ValidationException"),
-    internalServerError("InternalServerError"),
-    accessDenied("AccessDenied"),
-    Unauthorized("Unauthorized"),
-    unknownError("unknownError");
-    private final String type;
+import lombok.Builder;
+import lombok.Data;
 
-    Code(String type) {
-        this.type = type;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public <T> ResponseMessage<T> asResponse(T data) {
-        return new ResponseMessage<>(this.name(), this.type, data);
-    }
+@Data
+@Builder
+public class CreateParam {
+    private String title;
+    private String description;
+    private String projectUrl;
+    private String content;
+    private Boolean shared;
 }

@@ -14,30 +14,36 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.datastore;
+package ai.starwhale.mlops.api.protocol.report;
 
-import java.util.HashSet;
-import java.util.Set;
-import lombok.AllArgsConstructor;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ListTablesRequest {
+@Builder
+@Schema(description = "Report object", title = "Report")
+public class ReportVo {
 
-    private String prefix = null;
-    private Set<String> prefixes = Set.of();
+    private Long id;
 
-    public Set<String> getPrefixes() {
-        Set<String> result = new HashSet<>();
-        if (prefix != null) {
-            result.add(prefix);
-        }
-        if (prefixes != null && !prefixes.isEmpty()) {
-            result.addAll(prefixes);
-        }
-        return result;
+    private String uuid;
+
+    private String title;
+
+    private String content;
+
+    private String description;
+
+    private Boolean shared;
+
+    private UserVo owner;
+
+    private Long createdTime;
+    private Long modifiedTime;
+
+    public static ReportVo empty() {
+        return new ReportVo(null, "", "", "", "", false, null, null, null);
     }
 }
