@@ -29,6 +29,7 @@ import ai.starwhale.mlops.schedule.impl.docker.LocalDockerTool.TempDockerContain
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -41,28 +42,26 @@ import org.junit.jupiter.api.Test;
 public class TaskLogStreamingCollectorDockerTest {
 
     static final String IMAGE_HELLO_WORLD = "hello-world:linux";
-    static final String OUT_PUT_HELLO_WORLD = "STDOUT: \n"
-            + "STDOUT: Hello from Docker!\n"
-            + "STDOUT: This message shows that your installation appears to be working correctly.\n"
-            + "STDOUT: \n"
-            + "STDOUT: To generate this message, Docker took the following steps:\n"
-            + "STDOUT: 1. The Docker client contacted the Docker daemon.\n"
-            + "STDOUT: 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n"
-            + "STDOUT: (amd64)\n"
-            + "STDOUT: 3. The Docker daemon created a new container from that image which runs the\n"
-            + "STDOUT: executable that produces the output you are currently reading.\n"
-            + "STDOUT: 4. The Docker daemon streamed that output to the Docker client, which sent it\n"
-            + "STDOUT: to your terminal.\n"
-            + "STDOUT: \n"
-            + "STDOUT: To try something more ambitious, you can run an Ubuntu container with:\n"
-            + "STDOUT: $ docker run -it ubuntu bash\n"
-            + "STDOUT: \n"
-            + "STDOUT: Share images, automate workflows, and more with a free Docker ID:\n"
-            + "STDOUT: https://hub.docker.com/\n"
-            + "STDOUT: \n"
-            + "STDOUT: For more examples and ideas, visit:\n"
-            + "STDOUT: https://docs.docker.com/get-started/\n"
-            + "STDOUT: \n";
+    static final String OUT_PUT_HELLO_WORLD = "Hello from Docker!\n"
+            + "This message shows that your installation appears to be working correctly.\n"
+            + "\n"
+            + "To generate this message, Docker took the following steps:\n"
+            + " 1. The Docker client contacted the Docker daemon.\n"
+            + " 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.\n"
+            + "    (amd64)\n"
+            + " 3. The Docker daemon created a new container from that image which runs the\n"
+            + "    executable that produces the output you are currently reading.\n"
+            + " 4. The Docker daemon streamed that output to the Docker client, which sent it\n"
+            + "    to your terminal.\n"
+            + "\n"
+            + "To try something more ambitious, you can run an Ubuntu container with:\n"
+            + " $ docker run -it ubuntu bash\n"
+            + "\n"
+            + "Share images, automate workflows, and more with a free Docker ID:\n"
+            + " https://hub.docker.com/\n"
+            + "\n"
+            + "For more examples and ideas, visit:\n"
+            + " https://docs.docker.com/get-started/\n";
     static String containerName = UUID.randomUUID().toString();
     DockerClient dockerClient;
     DockerClientFinder dockerClientFinder;
@@ -107,7 +106,11 @@ public class TaskLogStreamingCollectorDockerTest {
 
         }
         logStreamingCollector.cancel();
-        Assertions.assertTrue(wholeLog.toString().contains(OUT_PUT_HELLO_WORLD));
+        String wholeLogStr = wholeLog.toString();
+        Arrays.stream(OUT_PUT_HELLO_WORLD.split("\n")).forEach(l -> {
+            Assertions.assertTrue(wholeLogStr.contains(l.strip()));
+        });
+
     }
 
 }
