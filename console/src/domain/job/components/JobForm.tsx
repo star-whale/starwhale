@@ -166,6 +166,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         forceUpdate()
     }, [form, query, modelTree, modelVersion])
 
+    console.log(job)
     useEffect(() => {
         // init by rerun job details
         if (!job) return

@@ -9,6 +9,7 @@ import EvalSelectForm from './EvalSelectForm'
 function EvalSelectList() {
     const [editing, setEditing] = React.useState(false)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const ref = React.useRef({})
     const [t] = useTranslation()
 
     const records = []
@@ -38,7 +39,7 @@ function EvalSelectList() {
             <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} closeable animate autoFocus size='80%'>
                 <ModalHeader>{t('Add Evaluations')}</ModalHeader>
                 <ModalBody>
-                    <EvalSelectForm />
+                    <EvalSelectForm ref={ref} />
                 </ModalBody>
                 <ModalFooter>
                     <div style={{ display: 'flex' }}>
@@ -51,7 +52,7 @@ function EvalSelectList() {
                                 setIsAddOpen(false)
                             }}
                         >
-                            Cancel
+                            {t('Cancel')}
                         </Button>
                         &nbsp;&nbsp;
                         <Button
@@ -59,9 +60,10 @@ function EvalSelectList() {
                             onClick={() => {
                                 // @ts-ignore
                                 // formRef.current?.submit()
+                                console.log(ref.current.getData())
                             }}
                         >
-                            Submit
+                            {t('Confirm')}
                         </Button>
                     </div>
                 </ModalFooter>
