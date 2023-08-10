@@ -42,7 +42,6 @@ public interface ReportMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(ReportEntity entity);
 
-    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE deleted_time = 0 and project_id = #{projectId}")
     @SelectProvider(value = SqlProvider.class, method = "listByProjectAndNameSql")
     List<ReportEntity> selectByProject(@Param("title") String title, @Param("projectId") Long projectId);
 
