@@ -23,6 +23,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                 // persist(
                 (set, get, store) => ({
                     ...(initState as any),
+                    isInit: false,
                     key: name,
                     time: 0,
                     onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
@@ -148,7 +149,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
         )
     )
     // eslint-disable-next-line
-    // useStore.subscribe(console.log)
+    useStore.subscribe(console.log)
     // @ts-ignore
     return useStore
 }

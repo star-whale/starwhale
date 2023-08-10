@@ -125,11 +125,6 @@ function EvalSelectList({ onSelectDataChange }: { onSelectDataChange?: (data: Ev
         [$columns]
     )
 
-    useEffect(() => {
-        onSelectDataChange?.(selectData)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectData])
-
     return (
         <div>
             {/* eval info button with minize/edit action */}
@@ -189,6 +184,7 @@ function EvalSelectList({ onSelectDataChange }: { onSelectDataChange?: (data: Ev
                                 })
                                 return _.pickBy(n, _.identity)
                             })
+                            onSelectDataChange?.(selectData)
                         }}
                     >
                         <div className='flex gap-20px justify-end'>
@@ -240,6 +236,7 @@ function EvalSelectList({ onSelectDataChange }: { onSelectDataChange?: (data: Ev
                                                 _.identity
                                             )
                                         })
+                                        onSelectDataChange?.(selectData)
                                     }}
                                 >
                                     {t('Confirm')}

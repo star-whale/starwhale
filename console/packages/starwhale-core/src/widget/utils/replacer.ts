@@ -32,7 +32,7 @@ export const replacer = (matches: Matcher[]) => {
             matches.forEach((m) => {
                 const { matcher, injectKey, property, isSave } = m
                 const rawValue = _.get(raw, property, '')
-                if (rawValue && rawValue.match(matcher)) {
+                if (rawValue && !_.isObject(rawValue) && rawValue.match(matcher)) {
                     const rawReplaced = rawValue.match(matcher)?.[0]
                     const replaced = rawValue.replace(matcher, `{{${injectKey}}}`)
                     data = produce(data, (temp: any) => {

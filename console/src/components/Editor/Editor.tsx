@@ -34,7 +34,8 @@ export function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppP
         const state = useMemo(() => tranformState(rawState), [])
         const store = useRef<StoreType>()
         const value = useMemo(() => {
-            if (!store.current) {
+            console.log('raw')
+            if (rawState) {
                 store.current = createCustomStore(state)
             }
             const eventBus = new EventBusSrv()

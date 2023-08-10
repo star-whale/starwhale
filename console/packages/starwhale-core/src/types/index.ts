@@ -16,7 +16,7 @@ export type WidgetTreeNode = {
 }
 
 export type WidgetStoreState = {
-    time: number
+    isInit?: boolean
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any

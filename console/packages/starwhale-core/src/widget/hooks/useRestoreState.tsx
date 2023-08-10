@@ -5,29 +5,13 @@ import { tranformState } from '../utils'
 import { StoreType } from '@starwhale/core/context'
 import React from 'react'
 import produce from 'immer'
-
-// const initialState = {
-//     key: 'widgets',
-//     tree: [
-//         {
-//             type: 'ui:dndList',
-//             children: [
-//                 {
-//                     type: 'ui:section',
-//                 },
-//             ],
-//         },
-//     ],
-//     widgets: {},
-//     defaults: {},
-// }
+import { useEffectOnce } from 'react-use'
 
 export default function useRestoreState<T>(store: StoreType, initialState: T, dynamicVars: Record<string, any>) {
     const toSave = React.useCallback(() => {
-        store.setState({
-            time: Date.now(),
-        })
         let data = store.getState()
+
+        console.log(data)
 
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
@@ -41,10 +25,15 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
     // use  api store
     useDeepEffect(() => {
         if (!initialState) return
+        console.log('store inited')
+
         const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
         if (novalidVars) {
             // eslint-disable-next-line no-console
-            console.error('missing vars', novalidVars)
+            // console.warn('missing vars', novalidVars)
+            // store.setState({
+            //     isInit: true,
+            // })
             return
         }
 
@@ -60,7 +49,12 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
                 _.set(data.widgets, id, origin)
             })
 
-            store.setState(data)
+            // setTimeout(() => {
+            //     data.isInit = true
+            //     store.setState(data)
+            // }, 0)
+
+            // store.setState(data)
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)

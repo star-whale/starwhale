@@ -8,15 +8,23 @@ import {
 } from '@tiptap/react'
 import { cn } from '../lib/utils'
 import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
+import { useEventCallback } from '@starwhale/core'
 
-const Component = ({ node, selected }: NodeViewProps) => {
+const Component = (editor: NodeViewProps) => {
+    const { node, selected } = editor
     // props.node.attrs / props.updateAttributes(
+
+    const onStateChange = useEventCallback((state: any) => {
+        editor.updateAttributes({
+            state,
+        })
+    })
 
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>
             {node.type.spec.draggable ? (
                 <div draggable='true' data-drag-handle=''>
-                    <EvalSelectEditor />
+                    <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange} />
                 </div>
             ) : null}
             <NodeViewContent />
@@ -43,9 +51,7 @@ export default Node.create({
 
     addAttributes() {
         return {
-            lines: {
-                default: [],
-            },
+            state: {},
         }
     },
 

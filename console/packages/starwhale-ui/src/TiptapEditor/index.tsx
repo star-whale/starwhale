@@ -8,7 +8,6 @@ import { EditorBubbleMenu } from './components'
 import { useDebounceFn } from 'ahooks'
 import './styles/globals.css'
 import './styles/prosemirror.css'
-import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 
 export default function TiptapEditor() {
     const [content, setContent] = useLocalStorage('content', DEFAULT_EDITOR_CONTENT)
@@ -33,6 +32,7 @@ export default function TiptapEditor() {
         extensions: TiptapExtensions,
         editorProps: TiptapEditorProps,
         onUpdate: (e) => {
+            console.log(e.editor.getJSON())
             setSaveStatus('Unsaved')
             debouncedUpdates(e)
         },

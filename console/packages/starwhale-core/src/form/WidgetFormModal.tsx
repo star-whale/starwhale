@@ -59,7 +59,7 @@ export default function WidgetFormModal({
         return allPrefix
     }, [config])
 
-    console.log(prefixes)
+    // console.log(prefixes)
 
     const handleFormChange = (data: any) => {
         setFormData((prev) => {
