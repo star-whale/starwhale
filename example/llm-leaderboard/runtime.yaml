@@ -1,0 +1,9 @@
+name: llm-leaderboard
+mode: venv
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+  python: "3.10"
+dependencies:
+  - requirements.txt
