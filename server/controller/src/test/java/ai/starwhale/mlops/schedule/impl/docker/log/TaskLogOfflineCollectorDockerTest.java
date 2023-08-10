@@ -24,21 +24,11 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinder;
+import ai.starwhale.mlops.schedule.impl.docker.LocalDockerTool;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.StartContainerCmd;
-import com.github.dockerjava.api.model.PullResponseItem;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
+import com.github.dockerjava.api.model.Container;
 import io.vavr.Tuple2;
-import java.io.Closeable;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -74,84 +64,34 @@ public class TaskLogOfflineCollectorDockerTest {
             + "STDOUT: \n";
     static String containerName = UUID.randomUUID().toString();
     DockerClient dockerClient;
+    LocalDockerTool localDockerTool = new LocalDockerTool();
     DockerClientFinder dockerClientFinder;
     TaskLogOfflineCollectorDocker logOfflineCollectorDocker;
 
     @BeforeEach
     public void setup() {
-        DefaultDockerClientConfig clientConfig = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("unix:///var/run/docker.sock").build();
-        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
-                .dockerHost(clientConfig.getDockerHost())
-                .sslConfig(clientConfig.getSSLConfig())
-                .maxConnections(100)
-                .connectionTimeout(Duration.ofSeconds(30))
-                .responseTimeout(Duration.ofSeconds(45))
-                .build();
-        this.dockerClient = DockerClientImpl.getInstance(clientConfig, httpClient);
+        this.dockerClient = localDockerTool.getDockerClient();
         dockerClientFinder = mock(DockerClientFinder.class);
         when(dockerClientFinder.findProperDockerClient(any())).thenReturn(this.dockerClient);
         ContainerTaskMapper containerTaskMapper = mock(ContainerTaskMapper.class);
         Task task = Task.builder().id(1L).step(new Step()).build();
 
-        when(containerTaskMapper.containerNameOfTask(task)).thenReturn(containerName);
-        when(containerTaskMapper.taskIfOfContainer(containerName)).thenReturn(1L);
+        Container container = mock(Container.class);
+        when(container.getId()).thenReturn(containerName);
+        when(container.getNames()).thenReturn(new String[]{containerName});
+        when(containerTaskMapper.containerOfTask(task)).thenReturn(container);
+        when(containerTaskMapper.taskIfOfContainer(container)).thenReturn(1L);
         logOfflineCollectorDocker = new TaskLogOfflineCollectorDocker(task, dockerClientFinder, containerTaskMapper);
     }
 
     @Test
     public void testOfflineLog() throws InterruptedException {
-        Object lock = new Object();
-        List<String> rl = new ArrayList<>();
-        dockerClient.pullImageCmd(IMAGE_HELLO_WORLD).exec(new ResultCallback<PullResponseItem>() {
-            @Override
-            public void onStart(Closeable closeable) {
-            }
-
-            @Override
-            public void onNext(PullResponseItem object) {
-
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-
-                synchronized (lock) {
-                    log.warn("pulling image {} failed", IMAGE_HELLO_WORLD);
-                    lock.notifyAll();
-                }
-
-            }
-
-            @Override
-            public void onComplete() {
-                CreateContainerResponse exec = dockerClient.createContainerCmd(
-                                IMAGE_HELLO_WORLD
-                        )
-                        .withName(containerName)
-                        .exec();
-                StartContainerCmd startContainerCmd = dockerClient.startContainerCmd(exec.getId());
-                startContainerCmd.exec();
-                synchronized (lock) {
-                    lock.notifyAll();
-                }
-            }
-
-            @Override
-            public void close() throws IOException {
-                synchronized (lock) {
-                    lock.notifyAll();
-                }
-            }
-        });
-
-        synchronized (lock) {
-            lock.wait();
+        try (var td = localDockerTool.startContainerBlocking(IMAGE_HELLO_WORLD,
+                containerName, Map.of(), null, null)) {
+            Tuple2<String, String> stringTuple2 = logOfflineCollectorDocker.collect();
+            Assertions.assertEquals(containerName, stringTuple2._1());
+            Assertions.assertEquals(OUT_PUT_HELLO_WORLD, stringTuple2._2());
         }
-        Tuple2<String, String> stringTuple2 = logOfflineCollectorDocker.collect();
-        Assertions.assertEquals(containerName, stringTuple2._1());
-        Assertions.assertEquals(OUT_PUT_HELLO_WORLD, stringTuple2._2());
-        dockerClient.removeContainerCmd(containerName).withForce(true).withRemoveVolumes(true).exec();
     }
 
 

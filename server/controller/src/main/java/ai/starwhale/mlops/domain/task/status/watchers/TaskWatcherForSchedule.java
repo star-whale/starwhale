@@ -76,7 +76,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled immediately",
                     task.getStatus(),
                     task.getId(), task.getStatus());
-        } else if (task.getStatus() == TaskStatus.SUCCESS || task.getStatus() == TaskStatus.FAIL) {
+        } else if (taskStatusMachine.isFinal(task.getStatus())) {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled in delayed queue",
                     task.getStatus(),
                     task.getId(), task.getStatus());

@@ -54,7 +54,7 @@ public class TaskLogStreamingCollectorDocker implements TaskLogStreamingCollecto
         this.containerTaskMapper = containerTaskMapper;
         this.logLines = new LinkedBlockingQueue<>();
         LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(
-                        this.containerTaskMapper.containerNameOfTask(task))
+                        this.containerTaskMapper.containerOfTask(task).getId())
                 .withStdErr(true)
                 .withStdOut(true)
                 .withFollowStream(true);

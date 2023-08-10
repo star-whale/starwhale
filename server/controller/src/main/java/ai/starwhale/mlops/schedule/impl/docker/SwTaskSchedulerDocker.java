@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
@@ -24,7 +23,6 @@ import ai.starwhale.mlops.schedule.TaskCommandGetter;
 import ai.starwhale.mlops.schedule.TaskCommandGetter.TaskCommand;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
-import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import com.github.dockerjava.api.DockerClient;
@@ -37,14 +35,13 @@ import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -65,10 +62,12 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
     final String nodeIp;
     final TaskCommandGetter taskCommandGetter;
 
+    final HostResourceConfigBuilder hostResourceConfigBuilder;
+
     public SwTaskSchedulerDocker(DockerClientFinder dockerClientFinder, ContainerTaskMapper containerTaskMapper,
             DockerTaskReporter dockerTaskReporter, ExecutorService cmdExecThreadPool,
             TaskRunningEnvBuilder taskRunningEnvBuilder, String network, String nodeIp,
-            TaskCommandGetter taskCommandGetter) {
+            TaskCommandGetter taskCommandGetter, HostResourceConfigBuilder hostResourceConfigBuilder) {
         this.dockerClientFinder = dockerClientFinder;
         this.containerTaskMapper = containerTaskMapper;
         this.dockerTaskReporter = dockerTaskReporter;
@@ -77,6 +76,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         this.network = network;
         this.nodeIp = nodeIp;
         this.taskCommandGetter = taskCommandGetter;
+        this.hostResourceConfigBuilder = hostResourceConfigBuilder;
     }
 
     @Override
@@ -108,6 +108,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 @Override
                 public void onError(Throwable throwable) {
+                    log.error("creating container error ", throwable);
                     ReportedTask rt = ReportedTask.builder()
                             .id(task.getId())
                             .status(TaskStatus.FAIL)
@@ -122,12 +123,16 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
 
                 @Override
                 public void onComplete() {
+                    Map labels = new HashMap();
+                    labels.put(ContainerTaskMapper.CONTAINER_LABEL_TASK_ID, task.getId().toString());
+                    labels.putAll(CONTAINER_LABELS);
 
                     CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image)
                             .withEnv(buildEnvs(task))
-                            .withName(containerTaskMapper.containerNameOfTask(task))
-                            .withHostConfig(buildHostConfig(task))
-                            .withLabels(CONTAINER_LABELS);
+                            .withName(containerTaskMapper.containerName(task))
+                            .withHostConfig(hostResourceConfigBuilder.build(
+                                    taskRunningEnvBuilder.deviceResourceRequirements(task)).withNetworkMode(network))
+                            .withLabels(labels);
                     TaskCommand taskCommand = taskCommandGetter.getCmd(task);
                     if (null != taskCommand.getEntrypoint()) {
                         createContainerCmd.withEntrypoint(taskCommand.getEntrypoint());
@@ -165,27 +170,6 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         return envs;
     }
 
-    private HostConfig buildHostConfig(Task task) {
-        HostConfig hostConfig = HostConfig.newHostConfig().withNetworkMode(network);
-        List<RuntimeResource> runtimeResources = taskRunningEnvBuilder.deviceResourceRequirements(task);
-        runtimeResources.forEach(runtimeResource -> {
-            if (ResourceOverwriteSpec.RESOURCE_CPU.equals(runtimeResource.getType())) {
-                hostConfig.withCpuPercent(runtimeResource.getRequest().longValue());
-                if (null != runtimeResource.getLimit()) {
-                    hostConfig.withCpuQuota(runtimeResource.getLimit().longValue());
-                }
-            }
-            if (ResourceOverwriteSpec.RESOURCE_MEMORY.equals(runtimeResource.getType())) {
-                hostConfig.withMemoryReservation(runtimeResource.getRequest().longValue());
-                if (null != runtimeResource.getLimit()) {
-                    hostConfig.withMemory(runtimeResource.getLimit().longValue());
-                    hostConfig.withOomKillDisable(true);
-                }
-            }
-        });
-        return hostConfig;
-    }
-
     @Override
     public void stop(Collection<Task> tasks) {
         if (CollectionUtils.isEmpty(tasks)) {
@@ -194,55 +178,23 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         tasks.forEach(t -> {
             DockerClient dockerClient = dockerClientFinder.findProperDockerClient(
                     t.getStep().getResourcePool());
-            String containerId = containerTaskMapper.containerNameOfTask(t);
-            List<Container> containers = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).exec();
-            if (CollectionUtils.isEmpty(containers)) {
+            Container container = containerTaskMapper.containerOfTask(t);
+            if (null == container) {
                 return;
             }
-            try {
-                dockerClient.killContainerCmd(containerId).exec();
-            } catch (DockerException e) {
-                log.warn("try to kill container with error", e);
-            }
-            // CANCELLING tasks need to report to stats watchers once more than failed and success tasks
-            // so that it could transfer to CANCELLED
-            if (t.getStatus() == TaskStatus.CANCELLING) {
-                cmdExecThreadPool.submit(() -> {
-                    while (true) {
-                        var lc = dockerClient.listContainersCmd().withNameFilter(Set.of(containerId)).withShowAll(true)
-                                .exec();
-                        if (CollectionUtils.isEmpty(lc)) {
-                            break;
-                        }
-                        if (lc.get(0).getState().equalsIgnoreCase("running")) {
-                            try {
-                                Thread.sleep(1000L);
-                            } catch (InterruptedException e) {
-                                log.error(
-                                        "waiting for next watch of CANCELLING task interrupted",
-                                        e);
-                            }
-                            continue;
-                        }
-                        dockerTaskReporter.reportTask(lc.get(0));
-                        try {
-                            dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
-                        } catch (DockerException e) {
-                            log.warn("try to remove container with error", e);
-                        }
-                        break;
-                    }
-
-                });
-
-            } else {
+            if ("exited".equalsIgnoreCase(container.getState())) {
                 try {
-                    dockerClient.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
+                    dockerClient.removeContainerCmd(container.getId()).withForce(true).withRemoveVolumes(true).exec();
                 } catch (DockerException e) {
                     log.warn("try to remove container with error", e);
                 }
+            } else {
+                try {
+                    dockerClient.killContainerCmd(container.getId()).exec();
+                } catch (DockerException e) {
+                    log.warn("try to kill container with error", e);
+                }
             }
-
 
         });
 
@@ -253,7 +205,7 @@ public class SwTaskSchedulerDocker implements SwTaskScheduler {
         DockerClient dockerClient = dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool());
         var execCommand = List.of("sh", "-c", String.join(" ", command)).toArray(new String[0]);
 
-        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd(containerTaskMapper.containerNameOfTask(task))
+        ExecCreateCmd execCreateCmd = dockerClient.execCreateCmd(containerTaskMapper.containerOfTask(task).getId())
                 .withCmd(execCommand)
                 .withAttachStdout(true)
                 .withAttachStderr(true)

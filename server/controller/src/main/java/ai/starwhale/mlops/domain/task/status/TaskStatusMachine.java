@@ -54,6 +54,17 @@ public class TaskStatusMachine {
         return transferMap.get(statusNow).contains(statusNew);
     }
 
+    public TaskStatus transfer(TaskStatus statusNow, TaskStatus statusNew) {
+        if (statusNow == CANCELLING) {
+            if (isFinal(statusNew)) {
+                return CANCELED;
+            } else {
+                return CANCELLING;
+            }
+        }
+        return statusNew;
+    }
+
     public boolean isFinal(TaskStatus status) {
         return transferMap.get(status).isEmpty();
     }

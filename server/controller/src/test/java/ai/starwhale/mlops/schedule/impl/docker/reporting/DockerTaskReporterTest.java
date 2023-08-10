@@ -46,7 +46,7 @@ public class DockerTaskReporterTest {
     SystemSettingService systemSettingService;
     DockerClientFinder dockerClientFinder;
     ContainerTaskMapper containerTaskMapper;
-    ContainerStatusExplainer containerStatusExplainer;
+    ContainerStatusExplainer containerStatusExplainerOnLabel;
     TaskStatusMachine taskStatusMachine;
     DockerTaskReporter dockerTaskReporter;
 
@@ -56,10 +56,10 @@ public class DockerTaskReporterTest {
         systemSettingService = mock(SystemSettingService.class);
         dockerClientFinder = mock(DockerClientFinder.class);
         containerTaskMapper = mock(ContainerTaskMapper.class);
-        containerStatusExplainer = mock(ContainerStatusExplainer.class);
+        containerStatusExplainerOnLabel = mock(ContainerStatusExplainer.class);
         taskStatusMachine = mock(TaskStatusMachine.class);
         dockerTaskReporter = new DockerTaskReporter(taskReportReceiver, systemSettingService, dockerClientFinder,
-                containerTaskMapper, containerStatusExplainer, taskStatusMachine);
+                containerTaskMapper, containerStatusExplainerOnLabel, taskStatusMachine);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class DockerTaskReporterTest {
         Container c = mock(Container.class);
         when(c.getNames()).thenReturn(new String[]{"a"});
         when(containerTaskMapper.taskIfOfContainer(any())).thenReturn(1L);
-        when(containerStatusExplainer.statusOf(c, 1L)).thenReturn(TaskStatus.CANCELED);
+        when(containerStatusExplainerOnLabel.statusOf(c)).thenReturn(TaskStatus.CANCELED);
         when(taskStatusMachine.isFinal(any())).thenReturn(true);
         dockerTaskReporter.reportTask(c);
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
@@ -81,7 +81,7 @@ public class DockerTaskReporterTest {
 
         String failReason = "Exit (1) blab-la";
         when(c.getStatus()).thenReturn(failReason);
-        when(containerStatusExplainer.statusOf(c, 1L)).thenReturn(TaskStatus.FAIL);
+        when(containerStatusExplainerOnLabel.statusOf(c)).thenReturn(TaskStatus.FAIL);
         when(taskStatusMachine.isFinal(any())).thenReturn(true);
         dockerTaskReporter.reportTask(c);
         verify(taskReportReceiver, times(2)).receive(captor.capture());
@@ -118,7 +118,7 @@ public class DockerTaskReporterTest {
         when(listContainersCmd.exec()).thenReturn(List.of(c));
         when(c.getNames()).thenReturn(new String[]{"a"});
         when(containerTaskMapper.taskIfOfContainer(any())).thenReturn(1L);
-        when(containerStatusExplainer.statusOf(c, 1L)).thenReturn(TaskStatus.CANCELED);
+        when(containerStatusExplainerOnLabel.statusOf(c)).thenReturn(TaskStatus.CANCELED);
         when(taskStatusMachine.isFinal(any())).thenReturn(true);
 
         dockerTaskReporter.reportTasks();

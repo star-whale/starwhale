@@ -34,6 +34,7 @@ import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
 import ai.starwhale.mlops.schedule.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
@@ -75,7 +76,12 @@ public class SwTaskSchedulerDockerTest {
         dockerClient = localDocker();
         when(dockerClientFinder.findProperDockerClient(any())).thenReturn(dockerClient);
         containerTaskMapper = mock(ContainerTaskMapper.class);
-        when(containerTaskMapper.containerNameOfTask(any())).thenReturn("sw-ut-busybox");
+        String containerName = "sw-ut-busybox";
+        Container container = mock(Container.class);
+        when(container.getId()).thenReturn(containerName);
+        when(container.getState()).thenReturn("exited");
+        when(containerTaskMapper.containerOfTask(any())).thenReturn(container);
+        when(containerTaskMapper.containerName(any())).thenReturn(containerName);
         dockerTaskReporter = mock(DockerTaskReporter.class);
         cmdExecThreadPool = Executors.newCachedThreadPool();
         ;
@@ -91,9 +97,9 @@ public class SwTaskSchedulerDockerTest {
                 taskRunningEnvBuilder,
                 network,
                 nodeIp,
-                taskCommandGetter);
+                taskCommandGetter, new HostResourceConfigBuilder());
         try {
-            dockerClient.removeContainerCmd("sw-ut-busybox").withForce(true).exec();
+            dockerClient.removeContainerCmd(containerName).withForce(true).exec();
         } catch (Exception e) {
             System.out.println("sw-ut-busybox may not exist");
         }
@@ -125,11 +131,12 @@ public class SwTaskSchedulerDockerTest {
             }
         }).when(taskReportReceiver).receive(anyList());
         synchronized (lock) {
-            lock.wait();
+            //a timeout is set in case there are errors in the test where there is no chance a container is started.
+            lock.wait(1000 * 60 * 5);
         }
         Future<String[]> future = swTaskSchedulerDocker.exec(task, "echo", "$ENV_NAME");
         String[] strings = future.get();
-        Assertions.assertEquals("STDOUT: env_value", strings[0]);
+        Assertions.assertEquals("env_value", strings[0].replace("STDOUT:", "").strip());
         testStop(task);
     }
 

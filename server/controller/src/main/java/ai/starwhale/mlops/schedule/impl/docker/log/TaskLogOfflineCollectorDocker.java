@@ -23,6 +23,7 @@ import ai.starwhale.mlops.schedule.log.TaskLogOfflineCollector;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 import io.vavr.Tuple2;
 import java.io.Closeable;
@@ -54,8 +55,12 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
     @Override
     public Tuple2<String, String> collect() {
         logBuffer = new StringBuffer();
+        Container container = this.containerTaskMapper.containerOfTask(task);
+        if (null == container) {
+            return null;
+        }
         LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(
-                        this.containerTaskMapper.containerNameOfTask(task))
+                        container.getId())
                 .withStdErr(true)
                 .withStdOut(true)
                 .withFollowStream(false);
@@ -95,7 +100,7 @@ public class TaskLogOfflineCollectorDocker implements TaskLogOfflineCollector {
         synchronized (this.lock) {
             try {
                 this.lock.wait();
-                return new Tuple2<>(this.containerTaskMapper.containerNameOfTask(task), this.logBuffer.toString());
+                return new Tuple2<>(container.getNames()[0], this.logBuffer.toString());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

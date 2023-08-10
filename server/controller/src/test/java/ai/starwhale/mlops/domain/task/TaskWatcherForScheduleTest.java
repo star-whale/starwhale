@@ -72,6 +72,7 @@ public class TaskWatcherForScheduleTest {
                 .id(1L)
                 .uuid(UUID.randomUUID().toString())
                 .status(TaskStatus.PAUSED)
+                .startTime(System.currentTimeMillis())
                 .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder()
                         .build()).build()).build())
                 .build();

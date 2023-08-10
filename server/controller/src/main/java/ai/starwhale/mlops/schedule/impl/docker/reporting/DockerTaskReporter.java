@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
 import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinder;
 import ai.starwhale.mlops.schedule.impl.docker.SwTaskSchedulerDocker;
@@ -89,18 +88,10 @@ public class DockerTaskReporter {
 
     @Nullable
     private ReportedTask containerToTaskReport(Container c) {
-        Long taskId;
-        try {
-            taskId = containerTaskMapper.taskIfOfContainer(c.getNames()[0]);
-        } catch (SwValidationException e) {
-            log.warn("malformat container name found {}", c.getNames()[0]);
-            return null;
-        }
-
-        TaskStatus status = containerStatusExplainer.statusOf(c, taskId);
+        TaskStatus status = containerStatusExplainer.statusOf(c);
         Long stopMilli = taskStatusMachine.isFinal(status) ? System.currentTimeMillis() : null;
         String failReason = TaskStatus.FAIL == status ? c.getStatus() : null;
-        return new ReportedTask(taskId, status, 0, null, null, stopMilli, failReason);
+        return new ReportedTask(containerTaskMapper.taskIfOfContainer(c), status, 0, null, null, stopMilli, failReason);
     }
 
 }

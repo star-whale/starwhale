@@ -16,13 +16,10 @@
 
 package ai.starwhale.mlops.schedule.impl.docker.reporting;
 
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import com.github.dockerjava.api.model.Container;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -38,23 +35,9 @@ public class ContainerStatusExplainer {
             put("restarting", TaskStatus.RUNNING);
         }
     };
-    final TaskMapper taskMapper;
 
-    public ContainerStatusExplainer(TaskMapper taskMapper) {
-        this.taskMapper = taskMapper;
-    }
-
-    public TaskStatus statusOf(Container c, Long taskId) {
-        TaskEntity task = taskMapper.findTaskById(taskId);
+    public TaskStatus statusOf(Container c) {
         String state = c.getState();
-        if (null != task && Set.of(TaskStatus.CANCELED, TaskStatus.CANCELLING).contains(task.getTaskStatus())) {
-            if ("exited".equalsIgnoreCase(state) || "dead".equalsIgnoreCase(state)) {
-                return TaskStatus.CANCELED;
-            } else if (STATUS_MAP.containsKey(state)) {
-                return TaskStatus.CANCELLING;
-            }
-            return TaskStatus.UNKNOWN;
-        }
         for (var entry : STATUS_MAP.entrySet()) {
             if (entry.getKey().equalsIgnoreCase(state)) {
                 return entry.getValue();

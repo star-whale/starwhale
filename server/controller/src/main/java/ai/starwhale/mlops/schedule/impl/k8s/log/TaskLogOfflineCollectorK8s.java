@@ -20,8 +20,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.log.TaskLogOfflineCollector;
@@ -57,7 +55,7 @@ public class TaskLogOfflineCollectorK8s implements TaskLogOfflineCollector {
                     K8sJobTemplate.JOB_IDENTITY_LABEL, task.getId().toString())));
             if (null == v1Pod) {
                 log.error("pod not exists for task {}", task.getId());
-                throw new SwValidationException(ValidSubject.TASK, "no log for this task found");
+                return null;
             }
             String logName = v1Pod.getMetadata().getName();
             String taskLog = k8sClient.logOfPod(v1Pod, containers);

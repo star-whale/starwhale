@@ -17,32 +17,47 @@
 package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import cn.hutool.core.util.StrUtil;
+import com.github.dockerjava.api.model.Container;
+import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
+@Slf4j
 public class ContainerTaskMapper {
 
-    static final String CONTAINER_NAME_PREFIX = "starwhale-task-";
-    static final Pattern CONTAINER_NAME_PATTERN = Pattern.compile("/" + CONTAINER_NAME_PREFIX + "([1-9][0-9]?)");
-    static final Pattern CONTAINER_NAME_PATTERN_2 = Pattern.compile(CONTAINER_NAME_PREFIX + "([1-9][0-9]?)");
+    static final String CONTAINER_LABEL_TASK_ID = "starwhale-task-id";
 
-    public String containerNameOfTask(Task task) {
-        return String.format("%s%d", CONTAINER_NAME_PREFIX, task.getId());
+    final DockerClientFinder dockerClientFinder;
+
+    public ContainerTaskMapper(DockerClientFinder dockerClientFinder) {
+        this.dockerClientFinder = dockerClientFinder;
     }
 
-    public Long taskIfOfContainer(String name) {
-        Matcher matcher = CONTAINER_NAME_PATTERN.matcher(name);
-        if (matcher.matches()) {
-            return Long.valueOf(matcher.group(1));
-        } else {
-            matcher = CONTAINER_NAME_PATTERN_2.matcher(name);
-            if (matcher.matches()) {
-                return Long.valueOf(matcher.group(1));
-            }
+    public String containerName(Task task) {
+        return String.format("starwhale-task-%d-%d", task.getId(), System.currentTimeMillis());
+    }
+
+    public Container containerOfTask(Task task) {
+        List<Container> containers = dockerClientFinder.findProperDockerClient(task.getStep().getResourcePool())
+                .listContainersCmd().withShowAll(true)
+                .withLabelFilter(Map.of(CONTAINER_LABEL_TASK_ID, task.getId().toString())).exec();
+        if (CollectionUtils.isEmpty(containers)) {
+            return null;
         }
-        throw new SwValidationException(ValidSubject.TASK, "container name can't be resolve to task id " + name);
+        if (containers.size() > 1) {
+            log.warn("multiple containers found for task {}", task.getId());
+        }
+        return containers.get(0);
+    }
+
+    public Long taskIfOfContainer(Container container) {
+        String taskId = container.getLabels().get(CONTAINER_LABEL_TASK_ID);
+        if (null != taskId && StrUtil.isNumeric(taskId)) {
+            return Long.valueOf(taskId);
+        }
+        return null;
     }
 
 }

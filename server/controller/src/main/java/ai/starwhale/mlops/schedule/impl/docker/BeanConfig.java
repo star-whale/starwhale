@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.schedule.impl.docker;
 
 import ai.starwhale.mlops.domain.system.SystemSettingService;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.ContainerStatusExplainer;
 import ai.starwhale.mlops.schedule.impl.docker.reporting.DockerTaskReporter;
@@ -36,8 +35,8 @@ public class BeanConfig {
     }
 
     @Bean
-    public ContainerTaskMapper containerTaskMapper() {
-        return new ContainerTaskMapper();
+    public ContainerTaskMapper containerTaskMapper(DockerClientFinder dockerClientFinder) {
+        return new ContainerTaskMapper(dockerClientFinder);
     }
 
     @Bean
@@ -60,8 +59,8 @@ public class BeanConfig {
     }
 
     @Bean
-    public ContainerStatusExplainer containerStatusExplainer(TaskMapper taskMapper) {
-        return new ContainerStatusExplainer(taskMapper);
+    public ContainerStatusExplainer containerStatusExplainer() {
+        return new ContainerStatusExplainer();
     }
 
 }

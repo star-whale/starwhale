@@ -45,6 +45,9 @@ public class TaskLogSaver {
         log.debug("logging for task {} begins...", task.getId());
         try {
             Tuple2<String, String> logInfo = taskLogCollectorFactory.offlineCollector(task).collect();
+            if (null == logInfo) {
+                return;
+            }
             String taskLog = logInfo._2();
             log.debug("logs for task {} collected {} ...", task.getId(),
                     StringUtils.hasText(taskLog) ? taskLog.substring(0, Math.min(taskLog.length() - 1, 100)) : "");

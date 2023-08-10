@@ -65,7 +65,7 @@ public class WatchableTask extends Task implements TaskWrapper {
                     oldStatus, status, originalTask.getId());
             return;
         }
-        originalTask.updateStatus(status);
+        originalTask.updateStatus(taskStatusMachine.transfer(oldStatus, status));
         log.debug("task status changed from {} to {}  of id {}", oldStatus, status, originalTask.getId());
         watchers.stream().filter(w -> {
                     if (TaskStatusChangeWatcher.SKIPPED_WATCHERS.get() == null) {

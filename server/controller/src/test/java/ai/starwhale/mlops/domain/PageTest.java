@@ -57,6 +57,9 @@ import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.schedule.TaskCommandGetter;
 import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
+import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
+import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
@@ -91,6 +94,9 @@ import org.springframework.context.annotation.Import;
 )
 @ImportAutoConfiguration(PageHelperAutoConfiguration.class)
 @Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, TaskRunningEnvBuilder.class,
+        TaskLogCollectorFactoryDocker.class,
+        DockerClientFinderSimpleImpl.class,
+        ContainerTaskMapper.class,
         TaskCommandGetter.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PageTest extends MySqlContainerHolder {

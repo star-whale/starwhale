@@ -65,7 +65,7 @@ public class SwSchedulerFactoryDocker implements SwSchedulerAbstractFactory {
     public SwTaskScheduler buildSwTaskScheduler() {
         return new SwTaskSchedulerDocker(dockerClientFinder, containerTaskMapper, dockerTaskReporter,
                 Executors.newCachedThreadPool(), taskRunningEnvBuilder, network,
-                nodeIp, taskCommandGetter);
+                nodeIp, taskCommandGetter, new HostResourceConfigBuilder());
     }
 
     @Bean

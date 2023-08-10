@@ -16,21 +16,55 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.exception.SwValidationException;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ContainerTaskMapperTest {
 
-    @Test
-    public void testAll() {
-        ContainerTaskMapper cm = new ContainerTaskMapper();
-        Task task = Task.builder().id(1L).build();
-        Assertions.assertEquals("starwhale-task-1", cm.containerNameOfTask(task));
-        Assertions.assertEquals(1L, cm.taskIfOfContainer("/starwhale-task-1"));
-        Assertions.assertEquals(1L, cm.taskIfOfContainer("starwhale-task-1"));
-        Assertions.assertThrows(SwValidationException.class, () -> cm.taskIfOfContainer("blab-la"));
+    DockerClientFinder dockerClientFinder;
+    DockerClient dockerClient;
 
+    LocalDockerTool localDockerTool = new LocalDockerTool();
+
+    @BeforeEach
+    public void setup() {
+        dockerClientFinder = mock(DockerClientFinder.class);
+        this.dockerClient = localDockerTool.getDockerClient();
+        when(dockerClientFinder.findProperDockerClient(any())).thenReturn(dockerClient);
+    }
+
+    static final String IMAGE_HELLO_WORLD = "hello-world:linux";
+
+    @Test
+    public void testContainerExistedOne() throws InterruptedException {
+        ContainerTaskMapper cm = new ContainerTaskMapper(dockerClientFinder);
+        String containerName = "sw-ut-container";
+        try (var tc = localDockerTool.startContainerBlocking(IMAGE_HELLO_WORLD, containerName,
+                Map.of("starwhale-task-id", "1"), null, null)) {
+            Task task = Task.builder().id(1L).step(new Step()).build();
+            Container container = cm.containerOfTask(task);
+            Assertions.assertEquals("/" + containerName, container.getNames()[0]);
+            Assertions.assertEquals(1L, cm.taskIfOfContainer(container));
+        }
+
+
+    }
+
+    @Test
+    public void testContainerNotExisted() throws InterruptedException {
+        ContainerTaskMapper cm = new ContainerTaskMapper(dockerClientFinder);
+        Task task = Task.builder().id(123344L).step(new Step()).build();
+        Container container = cm.containerOfTask(task);
+        Assertions.assertNull(container);
     }
 }
