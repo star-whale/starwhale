@@ -6,7 +6,7 @@ import produce from 'immer'
 import _ from 'lodash'
 import WidgetFactory from '../widget/WidgetFactory'
 import { getTreePath } from '../utils/path'
-import { WidgetConfig, WidgetStoreState, WidgetTreeNode } from '../types'
+import { WidgetConfig, WidgetStateT, WidgetStoreState, WidgetTreeNode } from '../types'
 
 function arrayOverride(objValue: any, srcValue: any) {
     if (_.isArray(objValue)) {
@@ -14,7 +14,7 @@ function arrayOverride(objValue: any, srcValue: any) {
     }
 }
 
-export function createCustomStore(initState: Partial<WidgetStoreState> = {}) {
+export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
     console.log('store init')
     const name = 'widgets'
     const useStore = create<WidgetStoreState>()(

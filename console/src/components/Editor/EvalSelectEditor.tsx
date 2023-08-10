@@ -1,8 +1,9 @@
 import React from 'react'
 import { witEditorContext } from './Editor'
-import { WidgetRenderTree } from '@starwhale/core/widget'
+import { WidgetRenderTree, WidgetRenderTreePropsT } from '@starwhale/core/widget'
+import { WidgetStateT, useEventCallback } from '@starwhale/core'
 
-const initialState = {
+const initialState: WidgetStateT = {
     key: 'widgets',
     tree: [
         {
@@ -16,10 +17,14 @@ const initialState = {
     defaults: {},
 }
 
-const Editor = witEditorContext(WidgetRenderTree, initialState)
+const Editor = witEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree, initialState)
 
 function EvalSelectEditor() {
-    return <Editor />
+    const onStateChange = useEventCallback((state) => {
+        console.log('onStateChange', state)
+    })
+
+    return <Editor initialState={''} onStateChange={onStateChange} />
 }
 
 export { EvalSelectEditor }

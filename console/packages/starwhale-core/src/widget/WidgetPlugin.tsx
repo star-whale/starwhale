@@ -1,8 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import { WidgetComponent, WidgetConfig, WidgetFieldConfig, WidgetMeta } from '../types'
 
-export type WidgetState = Record<string, unknown>
-
 class BaseWidget<T extends WidgetMeta = WidgetMeta> {
     meta?: T
 }

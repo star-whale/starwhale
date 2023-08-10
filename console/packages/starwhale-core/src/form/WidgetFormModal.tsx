@@ -21,7 +21,6 @@ export default function WidgetFormModal({
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
     form,
-    eventBus,
 }: {
     store: StoreType
     form: WidgetFormModel
@@ -29,7 +28,6 @@ export default function WidgetFormModal({
     setIsShow?: any
     handleFormSubmit: (args: any) => void
     id?: string
-    eventBus: any
 }) {
     const [t] = useTranslation()
     // @FIXME use event bus handle global state
@@ -46,7 +44,6 @@ export default function WidgetFormModal({
         if (!evalSelectData) return undefined
         const allPrefix: any = []
         Object.values(evalSelectData).forEach((item: any) => {
-            console.log(item)
             allPrefix.push({
                 prefix: `${item?.project?.name}`,
                 name: item?.summaryTableName,
@@ -66,6 +63,7 @@ export default function WidgetFormModal({
 
     const handleFormChange = (data: any) => {
         setFormData((prev) => {
+            // FIXME only when tableName changed from array to singe select, reset value
             if (data.chartType !== prev.chartType) {
                 return {
                     ...data,

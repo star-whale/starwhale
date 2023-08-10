@@ -5,7 +5,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
-import { WidgetProps, WidgetTreeNode } from '../types'
+import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
 import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
@@ -42,6 +42,11 @@ const selector = (s: any) => ({
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
 })
+
+export type WidgetRenderTreePropsT = {
+    initialState?: string
+    onStateChange?: (state: WidgetStateT) => void
+}
 
 export function WidgetRenderTree({ initialState, onStateChange }: any) {
     const { store, eventBus, dynamicVars } = useEditorContext()
@@ -178,7 +183,6 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
                     actions[editWidget?.type]?.(formData)
                     setIsPanelModalOpen(false)
                 }}
-                eventBus={eventBus}
             />
             <WidgetPreviewModal
                 id={viewWidget?.payload?.id}

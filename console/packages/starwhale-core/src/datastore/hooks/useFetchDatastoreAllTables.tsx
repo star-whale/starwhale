@@ -3,8 +3,8 @@ import { useListDatastoreTables } from './useFetchDatastore'
 import { getTableShortName } from '../utils'
 
 export function useFetchDatastoreAllTables(
-    prefix: string,
-    prefixes: {
+    prefix?: string,
+    prefixes?: {
         name: string
         prefix?: string
     }[]

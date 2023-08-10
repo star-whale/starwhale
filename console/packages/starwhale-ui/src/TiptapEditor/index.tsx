@@ -50,10 +50,10 @@ export default function TiptapEditor() {
 
     return (
         <>
-            <EvalSelectEditor />
+            {/* <EvalSelectEditor /> */}
             <div
                 onClick={() => {
-                    editor?.chain().focus().run()
+                    // editor?.chain().focus().run()
                 }}
                 role='button'
                 tabIndex={0}

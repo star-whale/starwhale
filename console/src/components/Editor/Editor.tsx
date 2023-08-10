@@ -4,7 +4,7 @@ import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { tablesOfEvaluation, WidgetStoreState } from '@starwhale/core'
+import { tablesOfEvaluation, WidgetStateT, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { useProject } from '@project/hooks/useProject'
@@ -29,21 +29,13 @@ export function withProject(EditorApp: React.FC) {
 
 const empty = {}
 
-export function witEditorContext(
-    EditorApp: React.FC,
-    rawState: {
-        key: string
-        tree: Record<string, any>[]
-        widgets: Record<string, any>
-        defaults: Record<string, any>
-    }
-) {
-    return function EditorContexted(props: any) {
+export function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
+    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any }) {
         const state = useMemo(() => tranformState(rawState), [])
         const store = useRef<StoreType>()
         const value = useMemo(() => {
             if (!store.current) {
-                store.current = createCustomStore(state as WidgetStoreState)
+                store.current = createCustomStore(state)
             }
             const eventBus = new EventBusSrv()
             return {

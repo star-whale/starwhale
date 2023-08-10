@@ -14,17 +14,21 @@ export type WidgetTreeNode = {
     fieldConfig?: Record<string, any>
     [key: string]: any
 }
+
 export type WidgetStoreState = {
-    key: string
     time: number
-    tree: WidgetTreeNode[]
-    widgets: Record<string, any>
-    defaults: Record<string, any>
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any
     onWidgetChange?: any
     onWidgetDelete?: any
+} & WidgetStateT
+
+export type WidgetStateT = {
+    key: string
+    tree: WidgetTreeNode[]
+    widgets: Record<string, any>
+    defaults: Record<string, any>
 }
 
 // -----------the config of options/field---------------
