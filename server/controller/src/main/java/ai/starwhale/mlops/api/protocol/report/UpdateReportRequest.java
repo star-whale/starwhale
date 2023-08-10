@@ -24,9 +24,9 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class UpdateReportRequest {
-    @Size(max = 100, message = "Title length is too long")
+    @Size(max = 255, message = "Title length is too long")
     private String title;
-    @Size(max = 100, message = "Description length is too long")
+    @Size(max = 255, message = "Description length is too long")
     private String description;
     private String content;
     private Boolean shared;

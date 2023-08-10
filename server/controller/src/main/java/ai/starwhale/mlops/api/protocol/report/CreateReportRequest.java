@@ -24,9 +24,9 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class CreateReportRequest {
-    @Size(min = 1, max = 100, message = "Title length should between 1-100")
+    @Size(min = 1, max = 255, message = "Title length should between 1-255")
     private String title;
-    @Size(max = 100, message = "Description length is too long")
+    @Size(max = 255, message = "Description length is too long")
     private String description;
     @Size(min = 1, message = "Content can't be null")
     private String content;
