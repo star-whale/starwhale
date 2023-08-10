@@ -55,6 +55,9 @@ import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 import DatasetBuildListCard from './pages/Dataset/DatasetBuildListCard'
 import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
+import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
+import ReportListCard from '@/pages/Report/ReportListCard'
+import ReportEdit from '@/pages/Report/ReportEdit'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -285,6 +288,19 @@ const Routes = () => {
                                         <Redirect to='/projects/:projectId/models/:modelId' />
                                     </Switch>
                                 </ModelOverviewLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/reports/:reportId?'>
+                                <ReportOverviewLayout>
+                                    <Switch>
+                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/reports/:reportId'
+                                            component={ReportEdit}
+                                        />
+                                        <Redirect to='/projects/:projectId/reports' />
+                                    </Switch>
+                                </ReportOverviewLayout>
                             </Route>
 
                             {/* trash */}

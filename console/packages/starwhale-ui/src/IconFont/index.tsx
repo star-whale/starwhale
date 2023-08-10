@@ -120,6 +120,7 @@ export type IconTypesT =
     | 'a-Versionhistory'
     | 'fold21'
     | 'unfold21'
+    | 'a-onlineevaluation'
 
 interface IIconFontProps {
     style?: React.CSSProperties
