@@ -65,7 +65,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 title: t('Reports'),
                 path: `/projects/${projectId}/reports`,
                 activePathPattern: /\/(reports)\/?/,
-                icon: <IconFont type='a-onlineevaluation' size={16} />,
+                icon: <IconFont type='report' size={16} />,
             },
             isPrivileged
                 ? {

@@ -15,7 +15,14 @@ export async function fetchReport(project: string, reportId: string): Promise<IR
     return data
 }
 
-export async function createReport(project: string, report: IReportDetailSchema): Promise<IReportDetailSchema> {
+export async function createReport(
+    project: string,
+    report: {
+        title: string
+        content?: string
+        description?: string
+    }
+): Promise<IReportDetailSchema> {
     const { data } = await axios.post<IReportDetailSchema>(`/api/v1/project/${project}/report`, report)
     return data
 }
@@ -29,5 +36,18 @@ export async function updateReportShared(projectId: string, reportId: number, sh
     const { data } = await axios.put<string>(`/api/v1/project/${projectId}/report/${reportId}/shared`, null, {
         params: { shared },
     })
+    return data
+}
+
+export async function updateReport(
+    projectId: string,
+    reportId: string,
+    query: {
+        title: string
+        content?: string
+        description?: string
+    }
+): Promise<string> {
+    const { data } = await axios.put<string>(`/api/v1/project/${projectId}/report/${reportId}`, query)
     return data
 }

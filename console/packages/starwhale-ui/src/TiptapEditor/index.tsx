@@ -16,10 +16,11 @@ export enum SaveStatus {
     UNSAVED = 'Unsaved',
 }
 
-export default function TiptapEditor({ editable, onSaveStatusChange }) {
+export default function TiptapEditor({ initialContent, editable, onSaveStatusChange, onContentChange }) {
     const [content, setContent] = useLocalStorage('content', DEFAULT_EDITOR_CONTENT)
-    const [saveStatus, setSaveStatus] = useState('Saved')
+    const [, setSaveStatus] = useState('Saved')
     const [hydrated, setHydrated] = useState(false)
+    const [serverHydrated, setServerHydrated] = useState(false)
     const [t] = useTranslation()
 
     const { run: debouncedUpdates } = useDebounceFn(
@@ -28,10 +29,11 @@ export default function TiptapEditor({ editable, onSaveStatusChange }) {
             setSaveStatus(t('report.save.saving'))
             onSaveStatusChange?.(SaveStatus.SAVING)
             setContent(json)
+            onContentChange?.(json)
             setTimeout(() => {
                 setSaveStatus(t('report.save.saved'))
                 onSaveStatusChange?.(SaveStatus.SAVED)
-            }, 500)
+            }, 100)
         },
         {
             wait: 750,
@@ -42,7 +44,6 @@ export default function TiptapEditor({ editable, onSaveStatusChange }) {
         extensions: TiptapExtensions,
         editorProps: TiptapEditorProps,
         onUpdate: (e) => {
-            console.log(e.editor.getJSON())
             setSaveStatus(t('report.save.unsaved'))
             onSaveStatusChange?.(SaveStatus.UNSAVED)
             debouncedUpdates(e)
@@ -58,6 +59,20 @@ export default function TiptapEditor({ editable, onSaveStatusChange }) {
             setHydrated(true)
         }
     }, [editor, content, hydrated])
+
+    // Hydrate the editor with the content from SERVER.
+    useEffect(() => {
+        if (editor && initialContent && !serverHydrated) {
+            try {
+                const tmp = typeof initialContent === 'string' ? JSON.parse(initialContent) : initialContent
+                editor.commands.setContent(tmp)
+                // TODO: should open this to limit only once editing content
+                setServerHydrated(true)
+            } catch (e) {
+                console.log(e)
+            }
+        }
+    }, [editor, initialContent, serverHydrated])
 
     useEffect(() => {
         if (!editor) {

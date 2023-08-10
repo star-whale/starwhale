@@ -6,8 +6,22 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "36867944",
+      "name": "report",
+      "font_class": "report",
+      "unicode": "e675",
+      "unicode_decimal": 58997
+    },
+    {
+      "icon_id": "36586916",
+      "name": "blog",
+      "font_class": "blog",
+      "unicode": "e67f",
+      "unicode_decimal": 59007
+    },
+    {
       "icon_id": "36454579",
-      "name": "Build Image",
+      "name": "a-BuildImage",
       "font_class": "a-BuildImage",
       "unicode": "e674",
       "unicode_decimal": 58996
@@ -16,8 +30,8 @@
       "icon_id": "36454580",
       "name": "Cancel",
       "font_class": "Cancel",
-      "unicode": "e675",
-      "unicode_decimal": 58997
+      "unicode": "ca",
+      "unicode_decimal": 202
     },
     {
       "icon_id": "36454581",
@@ -28,21 +42,21 @@
     },
     {
       "icon_id": "36454582",
-      "name": "Push local",
+      "name": "a-Pushlocal",
       "font_class": "a-Pushlocal",
       "unicode": "e677",
       "unicode_decimal": 58999
     },
     {
       "icon_id": "36454583",
-      "name": "Security Settings",
+      "name": "a-SecuritySettings",
       "font_class": "a-SecuritySettings",
       "unicode": "e678",
       "unicode_decimal": 59000
     },
     {
       "icon_id": "36454584",
-      "name": "online evaluation",
+      "name": "a-onlineevaluation",
       "font_class": "a-onlineevaluation",
       "unicode": "e679",
       "unicode_decimal": 59001
@@ -70,14 +84,14 @@
     },
     {
       "icon_id": "36454588",
-      "name": "View Tasks",
+      "name": "a-ViewTasks",
       "font_class": "a-ViewTasks",
       "unicode": "e67d",
       "unicode_decimal": 59005
     },
     {
       "icon_id": "36454589",
-      "name": "Image Built",
+      "name": "a-ImageBuilt",
       "font_class": "a-ImageBuilt",
       "unicode": "e67e",
       "unicode_decimal": 59006
@@ -91,21 +105,21 @@
     },
     {
       "icon_id": "36454592",
-      "name": "run model",
+      "name": "runmodel",
       "font_class": "a-runmodel",
       "unicode": "e681",
       "unicode_decimal": 59009
     },
     {
       "icon_id": "36453407",
-      "name": "微信",
+      "name": "weixin",
       "font_class": "weixin",
       "unicode": "e665",
       "unicode_decimal": 58981
     },
     {
       "icon_id": "36432264",
-      "name": "Version history",
+      "name": "a-Versionhistory",
       "font_class": "a-Versionhistory",
       "unicode": "e673",
       "unicode_decimal": 58995
@@ -119,14 +133,14 @@
     },
     {
       "icon_id": "36414623",
-      "name": "copy link",
+      "name": "a-copylink",
       "font_class": "a-copylink",
       "unicode": "e66f",
       "unicode_decimal": 58991
     },
     {
       "icon_id": "36414624",
-      "name": "View log",
+      "name": "a-Viewlog",
       "font_class": "a-Viewlog",
       "unicode": "e671",
       "unicode_decimal": 58993
@@ -301,14 +315,14 @@
     },
     {
       "icon_id": "32592454",
-      "name": "Add above",
+      "name": "a-Addabove",
       "font_class": "a-Addabove",
       "unicode": "e654",
       "unicode_decimal": 58964
     },
     {
       "icon_id": "32592455",
-      "name": "Add below",
+      "name": "a-Addbelow",
       "font_class": "a-Addbelow",
       "unicode": "e655",
       "unicode_decimal": 58965
@@ -483,7 +497,7 @@
     },
     {
       "icon_id": "31314784",
-      "name": "manage member",
+      "name": "a-managemember",
       "font_class": "a-managemember",
       "unicode": "e642",
       "unicode_decimal": 58946
@@ -511,14 +525,14 @@
     },
     {
       "icon_id": "30772933",
-      "name": "password resets",
+      "name": "a-passwordresets",
       "font_class": "a-passwordresets",
       "unicode": "e63c",
       "unicode_decimal": 58940
     },
     {
       "icon_id": "30772934",
-      "name": "manage user",
+      "name": "a-manageuser",
       "font_class": "a-manageuser",
       "unicode": "e63d",
       "unicode_decimal": 58941
@@ -546,7 +560,7 @@
     },
     {
       "icon_id": "30266518",
-      "name": "sort desc",
+      "name": "a-sortdesc",
       "font_class": "a-sortdesc",
       "unicode": "e62b",
       "unicode_decimal": 58923
@@ -574,7 +588,7 @@
     },
     {
       "icon_id": "30266522",
-      "name": "sort asc",
+      "name": "a-sortasc",
       "font_class": "a-sortasc",
       "unicode": "e62f",
       "unicode_decimal": 58927

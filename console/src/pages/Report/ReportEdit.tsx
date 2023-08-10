@@ -2,7 +2,7 @@ import { useFetchReport } from '@/domain/report/hooks/useReport'
 import User from '@/domain/user/components/User'
 import useTranslation from '@/hooks/useTranslation'
 import Input from '@starwhale/ui/Input'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useHistory, useParams } from 'react-router-dom'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { Button, IconFont } from '@starwhale/ui'
@@ -10,6 +10,9 @@ import TiptapEditor, { SaveStatus } from '@starwhale/ui/TiptapEditor'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { INavItem } from '@/components/BaseSidebar'
+import Avatar from '@/components/Avatar'
+import { createReport, updateReport } from '@/domain/report/services/report'
+import { toaster } from 'baseui/toast'
 
 export default function ReportEdit() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,9 +27,10 @@ export default function ReportEdit() {
     const { currentUser } = useCurrentUser()
     const [title, setTitle] = React.useState('')
     const [description, setDescription] = React.useState('')
+    const [content, setContent] = React.useState('')
     const [t] = useTranslation()
     const { data } = info
-
+    const history = useHistory()
     const [readonly, setReadonly] = React.useState(false)
     const [status, setStatus] = React.useState(SaveStatus.SAVED)
     const statusT = {
@@ -34,6 +38,48 @@ export default function ReportEdit() {
         [SaveStatus.SAVING]: t('report.save.saving'),
         [SaveStatus.UNSAVED]: t('report.save.unsaved'),
     }
+    const handleSave = React.useCallback(() => {
+        const contentString = JSON.stringify(content)
+        async function save() {
+            await createReport(projectId, {
+                title,
+                description,
+                content: contentString,
+            })
+        }
+
+        async function update() {
+            await updateReport(projectId, rid, {
+                title,
+                description,
+                content: contentString,
+            })
+        }
+        if (!title) {
+            toaster.negative(t('report.title.error.required'), { autoHideDuration: 2000 })
+            return
+        }
+
+        if (!rid)
+            save().then(() => {
+                // history.push(`/projects/${projectId}/reports`)
+                toaster.negative(t('report.publist.publised'), { autoHideDuration: 2000 })
+            })
+        else
+            update().then(() => {
+                toaster.negative(t('report.publist.publised'), { autoHideDuration: 2000 })
+            })
+    }, [projectId, t, rid, title, description, content])
+
+    useEffect(() => {
+        if (data) {
+            setTitle(data.title)
+            setDescription(data.description ?? '')
+            setContent(data.content)
+        }
+    }, [data])
+
+    // console.log(content)
 
     return (
         <div className='flex flex-column flex-1'>
@@ -45,13 +91,12 @@ export default function ReportEdit() {
                         <Button onClick={() => setReadonly(!readonly)}>
                             {readonly ? t('report.mode.edit') : t('report.mode.preview')}
                         </Button>
-                        <Button onClick={() => setReadonly(!readonly)} disabled={status !== SaveStatus.SAVED}>
+                        <Button onClick={handleSave} disabled={status !== SaveStatus.SAVED}>
                             {t('report.publish')}
                         </Button>
                     </div>
                 }
             />
-
             <h1 className='mb-20px '>
                 <Input
                     overrides={{
@@ -79,13 +124,16 @@ export default function ReportEdit() {
                 />
             </h1>
             <div className='flex gap-10px items-center font-14px'>
-                <User user={!rid ? currentUser : info.data?.owner} />|{' '}
+                <div className='flex gap-5px'>
+                    <Avatar name={currentUser?.name} size={28} />
+                    <User user={!rid ? currentUser : info.data?.owner} />|{' '}
+                </div>
                 <span style={{ color: 'rgba(2,16,43,0.60)' }}>
                     <IconFont type='time' style={{ marginRight: '4px' }} />
                     {formatTimestampDateTime(data?.createdTime || Date.now())}
                 </span>
             </div>
-            <p className='my-20px'>
+            <p className='mt-20px'>
                 <Input
                     overrides={{
                         Root: {
@@ -110,8 +158,13 @@ export default function ReportEdit() {
                     onChange={(e) => setDescription(e.currentTarget.value)}
                 />
             </p>
-            <div className='my-20px flex-1'>
-                <TiptapEditor editable={!readonly} onSaveStatusChange={(tmp: SaveStatus) => setStatus(tmp)} />
+            <div className='mb-20px flex-1'>
+                <TiptapEditor
+                    initialContent={data?.content}
+                    onContentChange={(tmp: string) => setContent(tmp)}
+                    editable={!readonly}
+                    onSaveStatusChange={(tmp: SaveStatus) => setStatus(tmp)}
+                />
             </div>
         </div>
     )

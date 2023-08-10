@@ -535,6 +535,14 @@ const report = {
         en: 'Edit Report',
         zh: '编辑报告',
     },
+    'report.title.error.required': {
+        en: 'Title is required',
+        zh: '标题不能为空',
+    },
+    'report.publist.publised': {
+        en: 'Published',
+        zh: '已发布',
+    },
 }
 
 const table = {

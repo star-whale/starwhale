@@ -9,5 +9,6 @@ export function useFetchReports(projectId: string, query: IListQuerySchema) {
 export function useFetchReport(projectId: string, reportId: string) {
     return useQuery(['useFetchReport', projectId, reportId], () => fetchReport(projectId, reportId), {
         enabled: !!reportId && !!projectId,
+        refetchOnWindowFocus: false,
     })
 }

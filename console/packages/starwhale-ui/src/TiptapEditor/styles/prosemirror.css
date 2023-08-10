@@ -117,6 +117,16 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     max-width: 400px !important;
 }
 
-.prose :where(h2:first-of-type, h1:first-of-type, h3:first-of-type):not(:where(.not-prose, .not-prose *)) {
-    margin-top: 0 !important;
+.ProseMirror.prose :where(h2:first-of-type, h1:first-of-type, h3:first-of-type):not(:where(.not-prose, .not-prose *)) {
+    margin-top: 14px !important;
+}
+
+.ProseMirror.prose :where(h1):not(:where(.not-prose, .not-prose *)) {
+    font-size: 1.85em;
+}
+.ProseMirror.prose :where(h2):not(:where(.not-prose, .not-prose *)) {
+    font-size: 1.57em;
+}
+.ProseMirror.prose :where(h3):not(:where(.not-prose, .not-prose *)) {
+    font-size: 1.42em;
 }
