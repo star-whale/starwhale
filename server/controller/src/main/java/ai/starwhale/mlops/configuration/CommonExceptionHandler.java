@@ -18,6 +18,7 @@ package ai.starwhale.mlops.configuration;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.exception.StarwhaleException;
 import ai.starwhale.mlops.exception.SwAuthException;
 import ai.starwhale.mlops.exception.SwNotFoundException;
@@ -34,6 +35,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -81,7 +83,14 @@ public class CommonExceptionHandler {
     public ResponseEntity<ResponseMessage<String>> handleAccessDeniedException(HttpServletRequest request,
             AccessDeniedException ex) {
         logger.error("handleAccessDeniedException {}\n", request.getRequestURI(), ex);
-
+        if (SecurityContextHolder.getContext().getAuthentication() instanceof JwtLoginToken) {
+            JwtLoginToken auth = (JwtLoginToken) SecurityContextHolder.getContext().getAuthentication();
+            if (auth.getPrincipal() == null) {
+                return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new ResponseMessage<>(Code.Unauthorized.name(), Code.Unauthorized.name()));
+            }
+        }
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(new ResponseMessage<>(Code.accessDenied.name(), ex.getMessage()));

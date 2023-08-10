@@ -83,9 +83,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (!checkHeader(header)) {
             // check whether the uri allow anonymous in public project
             if (allowAnonymous(httpServletRequest)) {
-                var anonymous = Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build();
                 // Build jwt token with anonymous user
-                JwtLoginToken jwtLoginToken = new JwtLoginToken(null, "", List.of(anonymous));
+                JwtLoginToken jwtLoginToken = new JwtLoginToken(null, "", List.of(
+                            Role.builder().roleCode(Role.CODE_ANONYMOUS).roleName(Role.NAME_ANONYMOUS).build()));
                 jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
                 SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
             } else {
@@ -130,7 +130,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
         }
         filterChain.doFilter(httpServletRequest, httpServletResponse);
-
     }
 
     @NotNull
