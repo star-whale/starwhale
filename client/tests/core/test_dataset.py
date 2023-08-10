@@ -168,6 +168,43 @@ class StandaloneDatasetTestCase(TestCase):
         )
         assert m_dump.call_count == 1
 
+    @patch("starwhale.api._impl.dataset.model.Dataset.from_csv")
+    def test_build_from_csv(self, m_csv: MagicMock) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                "--name",
+                "csv-test",
+                "--csv",
+                "test.csv",
+                "--csv",
+                "test2.csv",
+                "-c",
+                "/path/to/dir",
+                "--csv=http://example.com/test.csv",
+                "--dialect=excel-tab",
+                "--strict",
+                "--encoding=utf-8",
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_csv_files.call_count == 1
+        call_args = mock_obj.build_from_csv_files.call_args
+        assert call_args
+        assert len(call_args[0][0]) == 4
+        assert call_args[1]["name"] == "csv-test"
+        assert call_args[1]["dialect"] == "excel-tab"
+        assert call_args[1]["encoding"] == "utf-8"
+
+        DatasetTermView.build_from_csv_files(
+            paths=["test.csv"], name="csv-test-file", project_uri=""
+        )
+        assert m_csv.call_count == 1
+        assert m_csv.call_args[1]["path"] == ["test.csv"]
+
     @patch("starwhale.api._impl.dataset.model.Dataset.from_huggingface")
     def test_build_from_huggingface(self, m_hf: MagicMock) -> None:
         mock_obj = MagicMock()
@@ -201,6 +238,7 @@ class StandaloneDatasetTestCase(TestCase):
             subsets=["sub1"],
             split="train",
             revision="main",
+            cache=True,
         )
         assert m_hf.call_count == 1
         assert m_hf.call_args[1]["cache"]

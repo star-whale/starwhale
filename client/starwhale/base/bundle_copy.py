@@ -26,7 +26,6 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
@@ -148,7 +147,7 @@ class BundleCopy(CloudRequestMixed):
             / self.typ.value
             / uri.name
             / self.src_uri.version[:VERSION_PREFIX_CNT]
-            / f"{uri.version}{get_bundle_type_by_uri(uri.typ)}"
+            / f"{uri.version}{Resource.get_bundle_type_by_uri(uri.typ)}"
         )
 
     def _check_version_existed(self, uri: Resource) -> bool:

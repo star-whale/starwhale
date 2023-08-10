@@ -23,6 +23,7 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import move_dir, empty_dir
 from starwhale.base.type import (
+    PathLike,
     BundleType,
     InstanceType,
     DatasetChangeMode,
@@ -38,7 +39,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.copy import DatasetCopy
 from starwhale.api._impl.dataset.loader import DataRow
 
-from .type import DatasetConfig, DatasetSummary, D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
+from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
 
 if t.TYPE_CHECKING:
@@ -76,41 +77,17 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         raise NotImplementedError
 
     def build_from_folder(
-        self,
-        folder: Path,
-        kind: DatasetFolderSourceType,
-        auto_label: bool = True,
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
+        self, folder: Path, kind: DatasetFolderSourceType, **kwargs: t.Any
     ) -> None:
         raise NotImplementedError
 
-    def build_from_json_file(
-        self,
-        json_file_path: str,
-        field_selector: str = "",
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
-    ) -> None:
+    def build_from_json_file(self, json_file_path: str, **kwargs: t.Any) -> None:
         raise NotImplementedError
 
-    def build_from_huggingface(
-        self,
-        repo: str,
-        subsets: t.List[str] | None = None,
-        split: str | None = None,
-        revision: str = "main",
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        cache: bool = True,
-        tags: t.List[str] | None = None,
-        add_info: bool = True,
-    ) -> None:
+    def build_from_csv_files(self, paths: t.List[PathLike], **kwargs: t.Any) -> None:
+        raise NotImplementedError
+
+    def build_from_huggingface(self, repo: str, **kwargs: t.Any) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -269,48 +246,29 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         return rs, {}
 
-    def build_from_huggingface(
-        self,
-        repo: str,
-        subsets: t.List[str] | None = None,
-        split: str | None = None,
-        revision: str = "main",
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        cache: bool = True,
-        tags: t.List[str] | None = None,
-        add_info: bool = True,
-    ) -> None:
+    def build_from_csv_files(self, paths: t.List[PathLike], **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
-        ds = SDKDataset.from_huggingface(
+        ds = SDKDataset.from_csv(
+            path=paths,
             name=self.name,
-            repo=repo,
-            subsets=subsets,
-            split=split,
-            revision=revision,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            cache=cache,
-            tags=tags,
-            add_info=add_info,
+            **kwargs,
         )
+        console.print(
+            f":hibiscus: congratulation! dataset build from csv files({paths}) has been built. You can run "
+            f"[red bold blink] swcli dataset info {self.name}/version/{ds.committed_version[:SHORT_VERSION_CNT]}[/]"
+        )
+
+    def build_from_huggingface(self, repo: str, **kwargs: t.Any) -> None:
+        from starwhale.api._impl.dataset.model import Dataset as SDKDataset
+
+        ds = SDKDataset.from_huggingface(name=self.name, repo=repo, **kwargs)
         console.print(
             f":hibiscus: congratulation! dataset build from https://huggingface.co/datasets/{repo} has been built. You can run "
             f"[red bold blink] swcli dataset info {self.name}/version/{ds.committed_version[:SHORT_VERSION_CNT]}[/]"
         )
 
-    def build_from_json_file(
-        self,
-        json_file_path: str | Path,
-        field_selector: str = "",
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
-    ) -> None:
+    def build_from_json_file(self, json_file_path: str | Path, **kwargs: t.Any) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
         json_file_path = str(json_file_path)
@@ -326,15 +284,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         else:
             raise RuntimeError(f"json file path:{json_file_path} not exists")
 
-        ds = SDKDataset.from_json(
-            name=self.name,
-            json_text=json_text,
-            field_selector=field_selector,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            tags=tags,
-        )
+        ds = SDKDataset.from_json(name=self.name, json_text=json_text, **kwargs)
 
         console.print(
             f":hibiscus: congratulation! dataset build from {json_file_path} has been built. You can run "
@@ -342,27 +292,11 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
     def build_from_folder(
-        self,
-        folder: Path,
-        kind: DatasetFolderSourceType,
-        auto_label: bool = True,
-        alignment_size: int | str = D_ALIGNMENT_SIZE,
-        volume_size: int | str = D_FILE_VOLUME_SIZE,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        tags: t.List[str] | None = None,
+        self, folder: Path, kind: DatasetFolderSourceType, **kwargs: t.Any
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
-        ds = SDKDataset.from_folder(
-            folder=folder,
-            kind=kind,
-            name=self.uri,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            auto_label=auto_label,
-            mode=mode,
-            tags=tags,
-        )
+        ds = SDKDataset.from_folder(folder=folder, kind=kind, name=self.uri, **kwargs)
 
         console.print(
             ":hibiscus: congratulation! you can run "

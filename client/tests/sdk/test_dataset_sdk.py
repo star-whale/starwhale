@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import csv
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -21,7 +22,7 @@ from requests_mock import Mocker
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
-from starwhale.utils.fs import empty_dir, ensure_file
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import FormatError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
@@ -932,6 +933,76 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert "label" in item.features
             assert item.features["lbl"] == item.features["label"]
             assert "data" in item.features
+
+    def test_from_dict_items(self) -> None:
+        ds = Dataset.from_dict_items(records=[{"a": 1, "b": 2}], name="dict-items")
+        assert len(ds) == 1
+        assert ds[0].features.a == 1
+
+        ds = Dataset.from_dict_items(
+            records=iter([{"a": 10, "b": 20}]), name="dict-iter"
+        )
+        assert len(ds) == 1
+        assert ds[0].features.b == 20
+        assert ds[0].index == 0
+
+        def _iter_records() -> t.Iterable[t.Dict[str, t.Any]]:
+            for i in range(10):
+                yield {"a": i}
+
+        ds = Dataset.from_dict_items(records=_iter_records(), name="dict-iter-func")
+        assert len(ds) == 10
+        assert ds[9].features.a == 9
+        assert ds[9].index == 9
+
+        ds = Dataset.from_dict_items(records=[("index-1", {"a": 1})], name="dict-tuple")
+        assert len(ds) == 1
+        assert ds["index-1"].index == "index-1"
+        assert ds["index-1"].features.a == 1
+
+    @Mocker()
+    def test_from_csv(self, rm: Mocker) -> None:
+        csv_folder = Path(self.local_storage) / "csv"
+        ensure_dir(csv_folder)
+
+        with (csv_folder / "1.csv").open(newline="", mode="w") as f:
+            writer = csv.DictWriter(f, fieldnames=["a", "b"], dialect="excel")
+            writer.writeheader()
+            writer.writerow({"a": 1, "b": 2})
+            writer.writerow({"a": 11, "b": 22})
+
+        ensure_file(csv_folder / "sub" / "2.csv", "a,b\n1,2", parents=True)
+        ensure_file(csv_folder / "non.txt", "")
+
+        ds = Dataset.from_csv(path=csv_folder, name="csv-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": "1", "b": "2"}
+
+        ds = Dataset.from_csv(
+            path=csv_folder / "1.csv",
+            name="csv-file",
+            encoding="utf-8",
+            dialect="excel",
+        )
+        assert len(ds) == 2
+
+        ds = Dataset.from_csv(
+            path=[csv_folder / "1.csv", csv_folder / "sub" / "2.csv"], name="csv-multi"
+        )
+        assert len(ds) == 3
+
+        url = "http://example.com/1.csv"
+        rm.get(
+            url,
+            text="a,b\nh,d".encode("utf-8-sig").decode(),
+        )
+
+        with self.assertRaises(RuntimeError):
+            Dataset.from_csv(path=url, name="csv-http")
+
+        ds = Dataset.from_csv(path=url, name="csv-http", encoding="utf-8-sig")
+        assert len(ds) == 1
+        assert ds[0].features == {"a": "h", "b": "d"}
 
     def test_from_json(self) -> None:
         Dataset.from_json(

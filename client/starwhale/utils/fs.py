@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import io
 import os
 import errno
 import shutil
@@ -9,8 +12,12 @@ import tempfile
 from enum import IntEnum
 from pathlib import Path
 
+import requests
+
 from starwhale.utils import console, timestamp_to_datatimestr
+from starwhale.base.type import PathLike
 from starwhale.utils.error import FormatError, ExistedError, NotFoundError
+from starwhale.utils.retry import http_retry
 from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
@@ -268,3 +275,48 @@ def file_stat(path: t.Union[str, Path]) -> os.stat_result:
     path = str(path)
     abs_path = os.path.abspath(path)
     return Path(abs_path).stat()
+
+
+def iter_pathlike_io(
+    path: PathLike | t.List[PathLike],
+    encoding: str | None = None,
+    newline: str | None = None,
+    accepted_file_types: t.List[str] | None = None,
+) -> t.Iterator[io.IOBase]:
+    def _chk_type(p: PathLike) -> bool:
+        if not accepted_file_types:
+            return True
+
+        return Path(p).suffix in accepted_file_types
+
+    if isinstance(path, (list, tuple)):
+        for p in path:
+            yield from iter_pathlike_io(
+                p,
+                encoding=encoding,
+                newline=newline,
+                accepted_file_types=accepted_file_types,
+            )
+    elif isinstance(path, str) and path.startswith(("http://", "https://")):
+
+        @http_retry
+        def _r(url: str) -> str:
+            r = requests.get(url, verify=False, timeout=90)
+            if encoding:
+                r.encoding = encoding
+            return r.text
+
+        if _chk_type(path):
+            yield io.StringIO(_r(path), newline=newline)
+    else:
+        path = Path(path)
+
+        if path.is_file():
+            paths = [path]
+        else:
+            paths = [p for p in path.rglob("*") if p.is_file()]
+
+        for p in paths:
+            if _chk_type(p):
+                with p.open(encoding=encoding, newline=newline) as f:
+                    yield f

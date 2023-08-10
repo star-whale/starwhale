@@ -13,6 +13,8 @@ from requests import HTTPError
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import SW_API_VERSION
+from starwhale.base.type import BundleType
+from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import load_swcli_config
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
@@ -296,6 +298,17 @@ class Resource:
     def path_to_version(path: str) -> str:
         # foobarbaz.swrt -> foobarbaz
         return path.split(".")[0]
+
+    @staticmethod
+    def get_bundle_type_by_uri(uri_type: ResourceType) -> str:
+        if uri_type == ResourceType.dataset:
+            return BundleType.DATASET
+        elif uri_type == ResourceType.model:
+            return BundleType.MODEL
+        elif uri_type == ResourceType.runtime:
+            return BundleType.RUNTIME
+        else:
+            raise NoSupportError(uri_type)
 
     def info(self) -> Dict[str, Any]:
         # TODO: support local resource
