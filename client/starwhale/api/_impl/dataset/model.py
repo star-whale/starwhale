@@ -1188,7 +1188,7 @@ class Dataset:
         cls,
         name: str,
         repo: str,
-        subset: str | None = None,
+        subsets: t.List[str] | None = None,
         split: str | None = None,
         revision: str = "main",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
@@ -1196,13 +1196,14 @@ class Dataset:
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
         cache: bool = True,
         tags: t.List[str] | None = None,
+        add_info: bool = True,
     ) -> Dataset:
         """Create a new dataset from huggingface datasets.
 
         Arguments:
             name: (str, required) The dataset name you would like to use.
             repo: (str, required) The huggingface datasets repo name.
-            subset: (str, optional) The subset name. If the huggingface dataset has multiple subsets, you must specify the subset name.
+            subsets: (list(str), optional) The list of subset names. If the subset names are not specified, the all subsets dataset will be built.
             split: (str, optional) The split name. If the split name is not specified, the all splits dataset will be built.
             revision: (str, optional) The huggingface datasets revision. The default value is `main`. The option value accepts tag name, or branch name, or commit hash.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
@@ -1211,6 +1212,10 @@ class Dataset:
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
             cache: (bool, optional) Whether to use huggingface dataset cache(download + local hf dataset). The default value is True.
             tags: (list(str), optional) The tags for the dataset version.
+            add_info: (bool, optional) Whether to add huggingface dataset info to the dataset rows,
+              currently support to add subset and split into the dataset rows.
+              subset uses _hf_subset field name, split uses _hf_split field name.
+              The default value is True.
 
         Returns:
                 A Dataset Object
@@ -1224,21 +1229,21 @@ class Dataset:
 
         ```python
         from starwhale import Dataset
-        myds = Dataset.from_huggingface("mmlu", "cais/mmlu", subset="anatomy", split="auxiliary_train", revision="7456cfb")
+        myds = Dataset.from_huggingface("mmlu", "cais/mmlu", subsets=["anatomy"], split="auxiliary_train", revision="7456cfb")
         ```
         """
         from starwhale.integrations.huggingface import iter_dataset
 
         StandaloneTag.check_tags_validation(tags)
 
-        # TODO: support auto build all subset datasets
         # TODO: support huggingface dataset info
         data_items = iter_dataset(
             repo=repo,
-            subset=subset,
+            subsets=subsets,
             split=split,
             revision=revision,
             cache=cache,
+            add_info=add_info,
         )
 
         with cls.dataset(name) as ds:

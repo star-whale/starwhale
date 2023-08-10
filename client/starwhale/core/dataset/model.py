@@ -101,7 +101,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     def build_from_huggingface(
         self,
         repo: str,
-        subset: str | None = None,
+        subsets: t.List[str] | None = None,
         split: str | None = None,
         revision: str = "main",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
@@ -109,6 +109,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
         tags: t.List[str] | None = None,
+        add_info: bool = True,
     ) -> None:
         raise NotImplementedError
 
@@ -271,7 +272,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def build_from_huggingface(
         self,
         repo: str,
-        subset: str | None = None,
+        subsets: t.List[str] | None = None,
         split: str | None = None,
         revision: str = "main",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
@@ -279,13 +280,14 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         cache: bool = True,
         tags: t.List[str] | None = None,
+        add_info: bool = True,
     ) -> None:
         from starwhale.api._impl.dataset.model import Dataset as SDKDataset
 
         ds = SDKDataset.from_huggingface(
             name=self.name,
             repo=repo,
-            subset=subset,
+            subsets=subsets,
             split=split,
             revision=revision,
             alignment_size=alignment_size,
@@ -293,6 +295,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             mode=mode,
             cache=cache,
             tags=tags,
+            add_info=add_info,
         )
         console.print(
             f":hibiscus: congratulation! dataset build from https://huggingface.co/datasets/{repo} has been built. You can run "
