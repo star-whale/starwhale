@@ -7,17 +7,23 @@ import { ConfirmButton } from '@starwhale/ui/Modal'
 import useTranslation from '@/hooks/useTranslation'
 
 // @ts-ignore
-export default function SectionPopover({ onOptionSelect }) {
+export default function SectionPopover({
+    onOptionSelect,
+    actions,
+}: {
+    onOptionSelect: (item: any) => void
+    actions: any
+}) {
     const [t] = useTranslation()
 
     const $options = React.useMemo(() => {
         return [
-            { label: t('panel.rename'), type: 'rename' },
-            { label: t('panel.add.above'), type: 'addAbove' },
-            { label: t('panel.add.below'), type: 'addBelow' },
-            { label: t('panel.delete'), type: 'delete' },
-        ]
-    }, [t])
+            actions.rename && { label: t('panel.rename'), type: 'rename' },
+            actions.addAbove && { label: t('panel.add.above'), type: 'addAbove' },
+            actions.addBelow && { label: t('panel.add.below'), type: 'addBelow' },
+            actions.delete && { label: t('panel.delete'), type: 'delete' },
+        ].filter(Boolean)
+    }, [actions, t])
 
     return (
         <StatefulPopover

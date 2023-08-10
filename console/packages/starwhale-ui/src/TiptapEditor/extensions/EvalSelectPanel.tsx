@@ -9,6 +9,7 @@ import {
 import { cn } from '../lib/utils'
 import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 import { useEventCallback } from '@starwhale/core'
+import React from 'react'
 
 const Component = (editor: NodeViewProps) => {
     const { node, selected } = editor
@@ -19,13 +20,17 @@ const Component = (editor: NodeViewProps) => {
         })
     })
 
+    const memoe = React.useMemo(() => {
+        return <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange} />
+    }, [node.attrs.state, onStateChange])
+
     // console.log('node.attrs.state', node.attrs.state?.widgets)
 
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>
             {node.type.spec.draggable ? (
                 <div draggable='true' data-drag-handle=''>
-                    <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange} />
+                    {memoe}
                 </div>
             ) : null}
             <NodeViewContent />

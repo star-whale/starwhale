@@ -10,7 +10,6 @@ import {
     PanelPreviewEvent,
     PanelDownloadEvent,
     PanelReloadEvent,
-    SectionEvalSelectDataEvent,
 } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
@@ -170,6 +169,74 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     })
     const previeRef = React.useRef<HTMLDivElement>(null)
     const wrapperRef = React.useRef<HTMLDivElement>(null)
+    const memoChildren = React.useMemo(() => {
+        return React.Children.map(children as any, (child: React.ReactElement) => {
+            if (!child) return null
+
+            return (
+                <Resizable
+                    width={rect.width}
+                    height={rect.height}
+                    axis='both'
+                    onResizeStart={(e: any) => {
+                        const parent = e.target.parentNode
+                        const parentRect = parent.getBoundingClientRect()
+                        setResizeRect({
+                            start: true,
+                            clientX: e.clientX,
+                            clientY: e.clientY,
+                            width: parentRect.width,
+                            height: parentRect.height,
+                            top: e.target.parentNode.offsetTop,
+                            left: e.target.parentNode.offsetLeft,
+                            offsetClientX: 0,
+                            offsetClientY: 0,
+                        })
+                        previeRef.current?.focus()
+                        e.stopPropagation()
+                    }}
+                    onResize={(e: any) => {
+                        const wrapperWidth =
+                            // @ts-ignore
+                            wrapperRef.current?.getBoundingClientRect()?.width - padding * 2
+                        if (resizeRect.width + e.clientX - resizeRect.clientX < boxWidth) return
+                        if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
+                        if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
+
+                        setResizeRect({
+                            ...resizeRect,
+                            offsetClientX: e.clientX - resizeRect.clientX,
+                            offsetClientY: e.clientY - resizeRect.clientY,
+                        })
+                    }}
+                    onResizeStop={() => {
+                        const rectTmp = {
+                            width: resizeRect.width + resizeRect.offsetClientX,
+                            height: resizeRect.height + resizeRect.offsetClientY,
+                        }
+                        handleLayoutChange(rectTmp)
+                        setRect(rectTmp)
+                        setResizeRect({
+                            ...resizeRect,
+                            start: false,
+                        })
+                    }}
+                >
+                    <div className={styles.panelWrapper} id={child.props.id}>
+                        <div className={styles.contentWrapper}>{child}</div>
+                        <ChartConfigGroup
+                            onEdit={() => handleEditPanel(child.props.id)}
+                            onDelete={() => handleDeletePanel(child.props?.id)}
+                            onPreview={() => handlePreviewPanel(child.props?.id)}
+                            onDownload={() => handleDownloadPanel(child.props?.id)}
+                            onReload={() => handleReloadPanel(child.props?.id)}
+                        />
+                    </div>
+                </Resizable>
+            )
+        })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [children, rect, resizeRect, styles, boxHeight, boxWidth, padding])
 
     return (
         <div>
@@ -191,12 +258,20 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 onSectionRename={() => {
                     setIsModelOpen(true)
                 }}
-                onSectionAddAbove={() => {
-                    props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
-                }}
-                onSectionAddBelow={() => {
-                    props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
-                }}
+                onSectionAddAbove={
+                    isEvaluationList
+                        ? undefined
+                        : () => {
+                              props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
+                          }
+                }
+                onSectionAddBelow={
+                    isEvaluationList
+                        ? undefined
+                        : () => {
+                              props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
+                          }
+                }
                 onSectionDelete={() => {
                     props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
                 }}
@@ -229,70 +304,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                         padding: `${padding}px`,
                     }}
                 >
-                    {React.Children.map(children as any, (child: React.ReactElement) => {
-                        if (!child) return null
-
-                        return (
-                            <Resizable
-                                width={rect.width}
-                                height={rect.height}
-                                axis='both'
-                                onResizeStart={(e: any) => {
-                                    const parent = e.target.parentNode
-                                    const parentRect = parent.getBoundingClientRect()
-                                    setResizeRect({
-                                        start: true,
-                                        clientX: e.clientX,
-                                        clientY: e.clientY,
-                                        width: parentRect.width,
-                                        height: parentRect.height,
-                                        top: e.target.parentNode.offsetTop,
-                                        left: e.target.parentNode.offsetLeft,
-                                        offsetClientX: 0,
-                                        offsetClientY: 0,
-                                    })
-                                    previeRef.current?.focus()
-                                }}
-                                onResize={(e: any) => {
-                                    const wrapperWidth =
-                                        // @ts-ignore
-                                        wrapperRef.current?.getBoundingClientRect()?.width - padding * 2
-                                    if (resizeRect.width + e.clientX - resizeRect.clientX < boxWidth) return
-                                    if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
-                                    if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
-
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        offsetClientX: e.clientX - resizeRect.clientX,
-                                        offsetClientY: e.clientY - resizeRect.clientY,
-                                    })
-                                }}
-                                onResizeStop={() => {
-                                    const rectTmp = {
-                                        width: resizeRect.width + resizeRect.offsetClientX,
-                                        height: resizeRect.height + resizeRect.offsetClientY,
-                                    }
-                                    handleLayoutChange(rectTmp)
-                                    setRect(rectTmp)
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        start: false,
-                                    })
-                                }}
-                            >
-                                <div className={styles.panelWrapper} id={child.props.id}>
-                                    <div className={styles.contentWrapper}>{child}</div>
-                                    <ChartConfigGroup
-                                        onEdit={() => handleEditPanel(child.props.id)}
-                                        onDelete={() => handleDeletePanel(child.props?.id)}
-                                        onPreview={() => handlePreviewPanel(child.props?.id)}
-                                        onDownload={() => handleDownloadPanel(child.props?.id)}
-                                        onReload={() => handleReloadPanel(child.props?.id)}
-                                    />
-                                </div>
-                            </Resizable>
-                        )
-                    })}
+                    {memoChildren}
                 </div>
                 {isEvaluationList && (
                     <div className='mx-20px'>
