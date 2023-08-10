@@ -1,6 +1,6 @@
 import React from 'react'
 import { useFetchReports } from '@/domain/report/hooks/useReport'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import Card from '@/components/Card'
 import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
@@ -13,6 +13,7 @@ import Text from '@starwhale/ui/Text'
 import Copy from 'react-copy-to-clipboard'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
+import { WithCurrentAuth } from '@/api/WithAuth'
 
 export default function ReportListCard() {
     const [t] = useTranslation()
@@ -21,6 +22,7 @@ export default function ReportListCard() {
     const [filter, setFilter] = React.useState('')
     const reports = useFetchReports(projectId, { ...page, search: filter })
     const confirmCtx = useConfirmCtx()
+    const history = useHistory()
 
     const handleDelete = async (id: number, title: string) => {
         const ok = await confirmCtx.show({ title: t('Confirm'), content: t('delete sth confirm', [title]) })
@@ -69,7 +71,14 @@ export default function ReportListCard() {
     }
 
     return (
-        <Card title={t('Reports')}>
+        <Card
+            title={t('Reports')}
+            extra={
+                <WithCurrentAuth id='report.create'>
+                    <Button onClick={() => history.push('reports/new')}>{t('create')}</Button>
+                </WithCurrentAuth>
+            }
+        >
             <div style={{ maxWidth: '280px', paddingBottom: '10px' }}>
                 <QueryInput
                     placeholder={t('report.search.by.title')}

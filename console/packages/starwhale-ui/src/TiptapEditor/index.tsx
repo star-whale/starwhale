@@ -8,19 +8,29 @@ import { EditorBubbleMenu } from './components'
 import { useDebounceFn } from 'ahooks'
 import './styles/globals.css'
 import './styles/prosemirror.css'
+import useTranslation from '@/hooks/useTranslation'
 
-export default function TiptapEditor() {
+export enum SaveStatus {
+    SAVED = 'Saved',
+    SAVING = 'Saving',
+    UNSAVED = 'Unsaved',
+}
+
+export default function TiptapEditor({ editable, onSaveStatusChange }) {
     const [content, setContent] = useLocalStorage('content', DEFAULT_EDITOR_CONTENT)
     const [saveStatus, setSaveStatus] = useState('Saved')
     const [hydrated, setHydrated] = useState(false)
+    const [t] = useTranslation()
 
     const { run: debouncedUpdates } = useDebounceFn(
         async ({ editor }) => {
             const json = editor.getJSON()
-            setSaveStatus('Saving...')
+            setSaveStatus(t('report.save.saving'))
+            onSaveStatusChange?.(SaveStatus.SAVING)
             setContent(json)
             setTimeout(() => {
-                setSaveStatus('Saved')
+                setSaveStatus(t('report.save.saved'))
+                onSaveStatusChange?.(SaveStatus.SAVED)
             }, 500)
         },
         {
@@ -33,7 +43,8 @@ export default function TiptapEditor() {
         editorProps: TiptapEditorProps,
         onUpdate: (e) => {
             console.log(e.editor.getJSON())
-            setSaveStatus('Unsaved')
+            setSaveStatus(t('report.save.unsaved'))
+            onSaveStatusChange?.(SaveStatus.UNSAVED)
             debouncedUpdates(e)
         },
         autofocus: 'end',
@@ -48,23 +59,28 @@ export default function TiptapEditor() {
         }
     }, [editor, content, hydrated])
 
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        editor.setEditable(editable)
+    }, [editor, editable])
+
     return (
-        <>
-            {/* <EvalSelectEditor /> */}
-            <div
-                onClick={() => {
-                    // editor?.chain().focus().run()
-                }}
-                role='button'
-                tabIndex={0}
-                className='relative self-center min-h-[500px] w-full h-full max-w-screen-lg bg-white p-12 px-8 sm:mb-[calc(10px)] sm:rounded-lg sm:px-12 '
-            >
-                <div className='absolute right-5 top-5 mb-5 rounded-lg bg-stone-100 px-2 py-1 text-sm text-stone-400'>
-                    {saveStatus}
-                </div>
-                {editor && <EditorBubbleMenu editor={editor} />}
-                <EditorContent editor={editor} />
-            </div>
-        </>
+        <div
+            onClick={() => {
+                // editor?.chain().focus().run()
+            }}
+            role='button'
+            tabIndex={0}
+            className='relative self-center min-h-[500px] w-full h-full bg-white sm:mb-[calc(10px)] sm:rounded-lg'
+        >
+            {/* <div className='absolute right-5 top-5 mb-5 rounded-lg bg-stone-100 px-2 py-1 text-sm text-stone-400'>
+                {saveStatus}
+            </div> */}
+            {editor && <EditorBubbleMenu editor={editor} />}
+            <EditorContent editor={editor} />
+        </div>
     )
 }

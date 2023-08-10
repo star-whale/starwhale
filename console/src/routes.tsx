@@ -290,10 +290,9 @@ const Routes = () => {
                                     </Switch>
                                 </ModelOverviewLayout>
                             </Route>
-                            <Route exact path='/projects/:projectId/reports/:reportId?'>
+                            <Route exact path='/projects/:projectId/reports/:reportId'>
                                 <ReportOverviewLayout>
                                     <Switch>
-                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
                                         <Route
                                             exact
                                             path='/projects/:projectId/reports/:reportId'
@@ -328,6 +327,8 @@ const Routes = () => {
                             <Route exact path='/projects/:projectId/:path*'>
                                 <ProjectLayout>
                                     <Switch>
+                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
+                                        <Route exact path='/projects/:projectId/new_report' component={ReportEdit} />
                                         <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                         <Route exact path='/projects/:projectId/trashes' component={ProjectTrashes} />
                                         <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />

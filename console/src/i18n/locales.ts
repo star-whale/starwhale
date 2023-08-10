@@ -495,6 +495,46 @@ const report = {
         en: 'Search by title',
         zh: '按标题搜索',
     },
+    'report.description.placeholder': {
+        en: 'Add a description',
+        zh: '添加描述',
+    },
+    'report.title.placeholder': {
+        en: 'Title here',
+        zh: '标题',
+    },
+    'report.save.saved': {
+        en: 'Saved',
+        zh: '已保存',
+    },
+    'report.save.unsaved': {
+        en: 'Unsaved',
+        zh: '未保存',
+    },
+    'report.save.saving': {
+        en: 'Saving...',
+        zh: '保存中...',
+    },
+    'report.mode.preview': {
+        en: 'Preview',
+        zh: '预览',
+    },
+    'report.mode.edit': {
+        en: 'Edit',
+        zh: '编辑',
+    },
+    'report.publish': {
+        en: 'Publish to project',
+        zh: '发布到项目',
+    },
+    'report.create.title': {
+        en: 'Create Report',
+        zh: '创建报告',
+    },
+    'report.edit.title': {
+        en: 'Edit Report',
+        zh: '编辑报告',
+    },
 }
 
 const table = {
