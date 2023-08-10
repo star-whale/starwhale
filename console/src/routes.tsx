@@ -58,6 +58,7 @@ import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
 import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
+import TipTapEditor from '@starwhale/ui/TiptapEditor'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -364,6 +365,7 @@ const Routes = () => {
                                     <Switch>
                                         <Route path='/projects' component={ProjectListCard} />
                                         <Route path='/panels' component={Panel} />
+                                        <Route path='/reports' component={TipTapEditor} />
                                         <Redirect path='/' to='/projects' />
                                     </Switch>
                                 </CenterLayout>

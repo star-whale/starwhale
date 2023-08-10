@@ -10,6 +10,9 @@ export type WidgetTreeNode = {
     id?: string
     type: string
     children?: WidgetTreeNode[]
+    optionConfig?: Record<string, any>
+    fieldConfig?: Record<string, any>
+    [key: string]: any
 }
 export type WidgetStoreState = {
     key: string

@@ -8,6 +8,7 @@ export type EditorContextType = {
     store: StoreType
     eventBus: EventBus
     dynamicVars: Record<string, any>
+    tables: string[]
 }
 type EditorContextProviderProps = {
     value: any
@@ -17,6 +18,7 @@ type EditorContextProviderProps = {
 export const EditorContext: Context<EditorContextType> = createContext({} as EditorContextType)
 
 export const useEditorContext = () => useContext(EditorContext)
+export const useEditorTables = () => useContext(EditorContext).tables
 
 export default function EditorContextProvider({ children, value }: EditorContextProviderProps) {
     return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
+import UnoCSS from 'unocss/vite'
+
 // import inspect from 'vite-plugin-inspect'
 // import router from './vite-plugin-react-routes'
 // import eslint from 'vite-plugin-eslint'
@@ -125,6 +127,7 @@ export default defineConfig(({ mode }) => ({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
         htmlPlugin(mode),
+        UnoCSS(),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },

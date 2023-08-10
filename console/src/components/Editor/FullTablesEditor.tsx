@@ -22,7 +22,6 @@ function witEditorContext(EditorApp: React.FC) {
                         children: [
                             {
                                 type: 'ui:section',
-                                // @ts-ignore
                                 optionConfig: {
                                     layout: {
                                         width: 600,
@@ -78,6 +77,7 @@ function witEditorContext(EditorApp: React.FC) {
             <EditorContextProvider
                 value={{
                     ...value,
+                    tableApi: names,
                     dynamicVars: props.dynamicVars,
                 }}
             >

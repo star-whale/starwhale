@@ -50,8 +50,6 @@ export const CONFIG: WidgetConfig = {
 }
 
 function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
-    // console.log('PanelRocAucWidget', props)
-
     const { fieldConfig, data = {} } = props
     const { getTableRecordMap } = data
     const { data: formData } = fieldConfig ?? {}

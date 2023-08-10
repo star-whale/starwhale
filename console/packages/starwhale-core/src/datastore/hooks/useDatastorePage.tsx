@@ -1,4 +1,4 @@
-import { DatastorePageT, getTableShortName, getTableShortNamePrefix } from '@starwhale/core/datastore'
+import { DatastorePageT, getTableShortNamePrefix } from '@starwhale/core/datastore'
 import { getQuery, getScanQuery } from '@starwhale/core/datastore/hooks/useDatastoreQueryParams'
 import React from 'react'
 import _ from 'lodash'

@@ -8,6 +8,8 @@ import App from './App'
 import { registerExtensions } from './components/Extensions'
 import { registerRoutes } from './routesUtils'
 import { registerLocales } from './i18n/locales'
+import 'virtual:uno.css'
+
 // eslint-disable-next-line
 // @ts-ignore
 window.g = null
