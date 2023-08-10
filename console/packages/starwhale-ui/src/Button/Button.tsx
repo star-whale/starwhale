@@ -152,6 +152,7 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
                     marginTop: '0',
                     marginLeft: '0',
                     marginRight: '0',
+                    alignSelf: 'center',
                 },
             },
         },

@@ -5,14 +5,10 @@ import { tranformState } from '../utils'
 import { StoreType } from '@starwhale/core/context'
 import React from 'react'
 import produce from 'immer'
-import { useEffectOnce } from 'react-use'
 
 export default function useRestoreState<T>(store: StoreType, initialState: T, dynamicVars: Record<string, any>) {
     const toSave = React.useCallback(() => {
         let data = store.getState()
-
-        console.log(data)
-
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
@@ -25,17 +21,15 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
     // use  api store
     useDeepEffect(() => {
         if (!initialState) return
-        console.log('store inited')
+        // console.log('store inited')
 
-        const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
-        if (novalidVars) {
-            // eslint-disable-next-line no-console
-            // console.warn('missing vars', novalidVars)
-            // store.setState({
-            //     isInit: true,
-            // })
-            return
-        }
+        // const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
+        // if (novalidVars) {
+        //     // eslint-disable-next-line no-console
+        //     // console.warn('missing vars', novalidVars)
+        //     return
+        // }
+        // @FIXME move to store
 
         try {
             let data = typeof initialState === 'string' ? JSON.parse(initialState) : initialState
@@ -49,12 +43,7 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
                 _.set(data.widgets, id, origin)
             })
 
-            // setTimeout(() => {
-            //     data.isInit = true
-            //     store.setState(data)
-            // }, 0)
-
-            // store.setState(data)
+            store.setState(data)
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)

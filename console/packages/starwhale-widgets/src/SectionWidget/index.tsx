@@ -90,7 +90,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { isExpaned = false, layoutConfig, layout, isEvaluationList } = optionConfig as Option
+    const { isExpaned = false, layoutConfig, layout, isEvaluationList, evalSelectData } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = children ? React.Children.count(children) : 0
@@ -296,7 +296,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </div>
                 {isEvaluationList && (
                     <div className='mx-20px'>
-                        <EvalSelectList onSelectDataChange={handleSelectDataChange} />
+                        <EvalSelectList value={evalSelectData} onSelectDataChange={handleSelectDataChange} />
                     </div>
                 )}
             </SectionAccordionPanel>

@@ -171,21 +171,6 @@ export function WidgetRenderTree({ initialState, onSave, onStateChange }: Widget
         ))
     }, [tree])
 
-    //  onStateChange
-    useEffect(() => {
-        store.subscribe(
-            (state, previousSelectedState) => {
-                const s = toSave()
-                console.log('tosave', previousSelectedState)
-                if (previousSelectedState) onStateChange?.(s)
-            },
-            (state) => state
-        )
-        return () => {
-            // store.unsubscribe()
-        }
-    }, [])
-
     return (
         <div>
             {Nodes}

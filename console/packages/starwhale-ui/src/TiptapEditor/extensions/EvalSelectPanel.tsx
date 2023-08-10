@@ -12,13 +12,14 @@ import { useEventCallback } from '@starwhale/core'
 
 const Component = (editor: NodeViewProps) => {
     const { node, selected } = editor
-    // props.node.attrs / props.updateAttributes(
 
     const onStateChange = useEventCallback((state: any) => {
         editor.updateAttributes({
             state,
         })
     })
+
+    // console.log('node.attrs.state', node.attrs.state?.widgets)
 
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>

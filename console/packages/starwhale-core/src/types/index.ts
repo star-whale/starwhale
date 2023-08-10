@@ -22,13 +22,18 @@ export type WidgetStoreState = {
     onLayoutChildrenChange?: any
     onWidgetChange?: any
     onWidgetDelete?: any
-} & WidgetStateT
+} & WidgetStateT &
+    WideteExternalState
 
 export type WidgetStateT = {
     key: string
     tree: WidgetTreeNode[]
     widgets: Record<string, any>
     defaults: Record<string, any>
+}
+
+export type WideteExternalState = {
+    onStateChange?: any
 }
 
 // -----------the config of options/field---------------

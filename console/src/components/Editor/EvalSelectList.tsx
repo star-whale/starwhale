@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'baseui/modal'
-import Button from '@starwhale/ui/Button'
+import Button, { ExtendButton } from '@starwhale/ui/Button'
 import useTranslation from '@/hooks/useTranslation'
 import EvalSelectForm, { EvalSelectDataT } from './EvalSelectForm'
 import { IconFont, Text } from '@starwhale/ui'
@@ -57,19 +57,25 @@ const RenderButton = ({ count, editing, toggle }) => {
                     {count}
                 </span>
             </p>
-            <Button kind='tertiary' as='link' onClick={toggle}>
-                <Text tooltip={editing ? t('Minimize') : t('Edit')} size='small' style={{ marginRight: '10px' }}>
+            <ExtendButton noPadding kind='tertiary' as='link' onClick={toggle}>
+                <Text tooltip={editing ? t('Minimize') : t('Edit')} size='small'>
                     <IconFont type={editing ? 'unfold21' : 'fold21'} />
                 </Text>
-            </Button>
+            </ExtendButton>
         </div>
     )
 }
 
-function EvalSelectList({ onSelectDataChange }: { onSelectDataChange?: (data: EvalSelectDataT) => void }) {
+function EvalSelectList({
+    value,
+    onSelectDataChange,
+}: {
+    value?: EvalSelectDataT
+    onSelectDataChange?: (data: EvalSelectDataT) => void
+}) {
     const [editing, setEditing] = React.useState(false)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
-    const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
+    const [selectData, setSelectData] = React.useState<EvalSelectDataT>(value ?? {})
     const ref = React.useRef<{ getData: () => EvalSelectDataT }>()
     const [t] = useTranslation()
 
