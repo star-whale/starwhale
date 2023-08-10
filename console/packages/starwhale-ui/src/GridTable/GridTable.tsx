@@ -20,6 +20,7 @@ const useStyles = createUseStyles({
         'width': '100%',
         'height': '100%',
         'position': 'relative',
+        'flex': 1,
         '& .baseui-table-cell-content': {},
         '& .column-cell .string-cell': {
             overflow: 'hidden',
@@ -46,6 +47,8 @@ const useStyles = createUseStyles({
         '& .table-cell--last': {},
     },
     tablePinnable: {
+        'display': 'flex',
+        'flexDirection': 'column',
         '& .table-columns-pinned': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
@@ -140,7 +143,13 @@ function GridTable({
             {children}
             <div
                 data-type='table-wrapper'
-                style={{ width: '100%', height: `calc(100% - ${headlineHeight + paginationHeight}px)` }}
+                style={{
+                    width: '100%',
+                    height: `calc(100% - ${headlineHeight + paginationHeight}px)`,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
             >
                 <DataTable
                     columns={$columns}

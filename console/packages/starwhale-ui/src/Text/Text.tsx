@@ -63,5 +63,5 @@ function MonoText({ children, style, ...props }: ITextProps) {
     )
 }
 
-export { MonoText }
+export { MonoText, Text }
 export default Text

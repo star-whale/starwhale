@@ -16,6 +16,8 @@ function Tooltip({ children, ...props }: ITooltipProps) {
         },
         Inner: {
             style: {
+                maxHeight: '500px',
+                overflow: 'auto',
                 backgroundColor: '#000',
                 color: '#fff',
                 ...expandBorderRadius('2px'),

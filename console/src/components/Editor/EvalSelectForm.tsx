@@ -1,5 +1,4 @@
-import React, { useImperativeHandle } from 'react'
-import { GridTable } from '@starwhale/ui/GridTable'
+import React, { useEffect, useImperativeHandle } from 'react'
 import ProjectSelector from '@/domain/project/components/ProjectSelector'
 import { ColumnSchemaDesc, tableNameOfSummary, useFetchDatastoreByTable } from '@starwhale/core/datastore'
 import { ITableState, createCustomStore } from '@starwhale/ui/GridTable/store'
@@ -7,8 +6,8 @@ import shallow from 'zustand/shallow'
 import useDatastorePage from '@starwhale/core/datastore/hooks/useDatastorePage'
 import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hooks/useDatastoreSummaryColumns'
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
-import { useEvent } from 'react-use'
 import { useEventCallback } from '@starwhale/core'
+import { IProjectSchema } from '@/domain/project/schemas/project'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -16,29 +15,39 @@ const selector = (s: ITableState) => ({
     initStore: s.initStore,
     getRawConfigs: s.getRawConfigs,
     onCurrentViewIdChange: s.onCurrentViewIdChange,
+    onSelectNone: s.onSelectNone,
     getRawIfChangedConfigs: s.getRawIfChangedConfigs,
 })
 
 export const useStore = createCustomStore('add-evaluation', {}, false)
 
+export type EvalSelectDataT = Record<
+    string,
+    {
+        summaryTableName: string
+        records: Record<string, any>[]
+        columnTypes: ColumnSchemaDesc[]
+        rowSelectedIds: string[]
+        currentView: ITableState['currentView']
+    }
+>
+
 function EvalProjectList({
+    initialSelectData,
     projectId,
-    onRowSelectedChange,
+    project,
+    onSelectedDataChange,
+    onSelectedDataRemove,
 }: {
+    initialSelectData: EvalSelectDataT
     projectId: string
-    onRowSelectedChange: (
-        data: Record<
-            string,
-            {
-                records: Record<string, any>[]
-                columnTypes: ColumnSchemaDesc[]
-            }
-        >
-    ) => void
+    project?: IProjectSchema
+    onSelectedDataChange: (data: EvalSelectDataT) => void
+    onSelectedDataRemove: (projectId: string) => void
 }) {
     const summaryTableName = tableNameOfSummary(projectId)
 
-    const { currentView } = useStore(selector, shallow)
+    const { currentView, onSelectNone, initStore } = useStore(selector, shallow)
 
     const { page, setPage, params } = useDatastorePage({
         pageNum: 1,
@@ -55,15 +64,37 @@ function EvalProjectList({
     })
 
     const handelRowSelectedChange = useEventCallback((ids: any[]) => {
-        const rows = ids.map((id) => records.find((r) => r.id?.value === id)) as any
-
-        onRowSelectedChange({
-            [summaryTableName]: {
+        console.log(ids)
+        const rows = ids.map((id) => records.find((r) => r.id?.value === id)).filter(Boolean)
+        if (!projectId) return
+        if (!rows.length) {
+            onSelectedDataRemove(projectId)
+            return
+        }
+        onSelectedDataChange({
+            [projectId]: {
+                projectId,
+                project,
+                rowSelectedIds: ids,
+                currentView,
+                summaryTableName,
                 records: rows,
                 columnTypes,
-            },
+            } as any,
         })
     })
+
+    // reset current table selected ids when projectId changed
+    useEffect(() => {
+        onSelectNone()
+    }, [projectId, onSelectNone])
+
+    // init store with initial state
+    useEffect(() => {
+        if (initialSelectData[projectId]) {
+            initStore(initialSelectData[projectId])
+        }
+    }, [projectId, initStore, initialSelectData])
 
     return (
         <GridCombineTable
@@ -82,30 +113,22 @@ function EvalProjectList({
     )
 }
 
-const EvalSelectForm = React.forwardRef((props, ref: any) => {
+const EvalSelectForm = React.forwardRef(({ initialSelectData = {} }, ref: any) => {
     const [projectId, setProjectId] = React.useState<string>('')
     const [projectItem, setProjectItem] = React.useState<any>(null)
-    const [rows, setRows] = React.useState<
-        Record<
-            string,
-            {
-                records: Record<string, any>[]
-                columnTypes: ColumnSchemaDesc[]
-            }
-        >
-    >({})
+    const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
 
     useImperativeHandle(
         ref,
         () => ({
             getData() {
-                return { projectId, projectItem, tableMap: rows }
+                return selectData
             },
         }),
-        [projectId, projectItem, rows]
+        [selectData]
     )
 
-    console.log(rows)
+    console.log(selectData)
 
     return (
         <div className='flex flex-column gap-12px'>
@@ -118,9 +141,18 @@ const EvalSelectForm = React.forwardRef((props, ref: any) => {
             </div>
             <div className='h-380px w-full'>
                 <EvalProjectList
+                    initialSelectData={initialSelectData}
                     projectId={projectId}
-                    onRowSelectedChange={(r: any) =>
-                        setRows((prev: any) => ({
+                    project={projectItem}
+                    onSelectedDataRemove={(pid) => {
+                        setSelectData((prev) => {
+                            const next = { ...prev }
+                            delete next[pid]
+                            return next
+                        })
+                    }}
+                    onSelectedDataChange={(r: any) =>
+                        setSelectData((prev: any) => ({
                             ...prev,
                             ...r,
                         }))

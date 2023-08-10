@@ -472,6 +472,14 @@ const evaluation = {
         en: 'Result Details',
         zh: '结果详情',
     },
+    'evalution.panel.add': {
+        en: 'Add Evaluations',
+        zh: '添加评测',
+    },
+    'evalution.panel.list': {
+        en: 'Evaluation List',
+        zh: '评测列表',
+    },
 }
 
 const report = {
@@ -1447,6 +1455,10 @@ const locales0 = {
     'Edit': {
         en: 'Edit',
         zh: '编辑',
+    },
+    'Minimize': {
+        en: 'Minimize',
+        zh: '最小化',
     },
     'Other Login Methods': {
         en: 'Other Login Methods',

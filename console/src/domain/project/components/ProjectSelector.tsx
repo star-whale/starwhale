@@ -24,6 +24,7 @@ export default function ProjectSelector({
     React.useEffect(() => {
         if (autoSelected && first) {
             onChange?.(first.id)
+            onChangeItem?.(first)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [autoSelected, first])
