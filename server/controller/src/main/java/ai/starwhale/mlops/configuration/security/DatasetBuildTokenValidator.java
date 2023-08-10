@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SwValidationException;

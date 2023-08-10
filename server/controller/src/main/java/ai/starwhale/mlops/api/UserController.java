@@ -16,10 +16,11 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.User.RoleVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
@@ -27,7 +28,6 @@ import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
@@ -73,7 +73,7 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVo>>> listUser(String userName,
-            Integer pageNum, Integer pageSize) {
+                                                                      Integer pageNum, Integer pageSize) {
         PageInfo<UserVo> pageInfo = userService.listUsers(User.builder().name(userName).build(),
                 PageParams.builder()
                         .pageNum(pageNum)

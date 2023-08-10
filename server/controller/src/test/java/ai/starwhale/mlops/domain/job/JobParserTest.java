@@ -16,9 +16,10 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.job.spec.Env;
+import ai.starwhale.mlops.api.protobuf.Model.Env;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -65,17 +66,58 @@ public class JobParserTest {
                 + "    - name: EVAL_MODEL\n"
                 + "      value: 'resnet50'";
         JobSpecParser jobSpecParser = new JobSpecParser();
-        List<StepSpec> stepMetaDatas = jobSpecParser.parseAndFlattenStepFromYaml(yamlContent);
-        Assertions.assertEquals(stepMetaDatas.size(), 3);
-        Assertions.assertEquals(stepMetaDatas.get(0).getResources().size(), 0);
-        Assertions.assertNull(stepMetaDatas.get(0).getEnv());
-        Assertions.assertEquals(stepMetaDatas.get(1).getResources().size(), 3);
-        Assertions.assertNull(stepMetaDatas.get(1).getEnv());
-        Assertions.assertEquals(stepMetaDatas.get(2).getEnv().size(), 3);
-        Assertions.assertEquals(stepMetaDatas.get(2).getEnv(), List.of(
-                new Env("EVAL_MODE", "test"),
-                new Env("EVAL_DATASET", "imagenet"),
-                new Env("EVAL_MODEL", "resnet50")
-            ));
+        List<StepSpec> stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(yamlContent);
+        Assertions.assertEquals(stepSpecs.size(), 3);
+
+        for (StepSpec stepSpec : stepSpecs) {
+            Assertions.assertEquals(stepSpec.getReplicas(), 1);
+            Assertions.assertEquals(stepSpec.getConcurrency(), 1);
+            if (stepSpec.getJobName().equals("mnist.evaluator:MNISTInference.ppl")) {
+                // exactly match the spec
+                var expected = StepSpec.newBuilder()
+                        .setConcurrency(1)
+                        .addAllNeeds(List.of())
+                        .addAllResources(List.of())
+                        .setName("mnist.evaluator:MNISTInference.ppl")
+                        .setJobName("mnist.evaluator:MNISTInference.ppl")
+                        .setReplicas(1)
+                        .addAllEnv(List.of(
+                                Env.newBuilder().setName("EVAL_MODE").setValue("test").build(),
+                                Env.newBuilder().setName("EVAL_DATASET").setValue("imagenet").build(),
+                                Env.newBuilder().setName("EVAL_MODEL").setValue("resnet50").build()
+                        )).build();
+                Assertions.assertEquals(expected, stepSpec);
+            } else {
+                if (stepSpec.getName().equals("mnist.evaluator:MNISTInference.cmp")) {
+                    var expected = StepSpec.newBuilder()
+                            .setConcurrency(1)
+                            .addAllNeeds(List.of("mnist.evaluator:MNISTInference.ppl"))
+                            .addAllResources(List.of(
+                                    RuntimeResource.newBuilder().setType("cpu").setRequest(0.1f).setLimit(0.1f).build(),
+                                    RuntimeResource.newBuilder()
+                                            .setType("nvidia.com/gpu")
+                                            .setRequest(1)
+                                            .setLimit(1)
+                                            .build(),
+                                    RuntimeResource.newBuilder().setType("memory").setRequest(1).setLimit(1).build()
+                            ))
+                            .setName("mnist.evaluator:MNISTInference.cmp")
+                            .setJobName("mnist.evaluator:MNISTInference.cmp")
+                            .setReplicas(1)
+                            .build();
+                    Assertions.assertEquals(expected, stepSpec);
+                } else {
+                    var expected = StepSpec.newBuilder()
+                            .setConcurrency(1)
+                            .addAllNeeds(List.of())
+                            .addAllResources(List.of())
+                            .setName("mnist.evaluator:MNISTInference.ppl")
+                            .setJobName("mnist.evaluator:MNISTInference.cmp")
+                            .setReplicas(1)
+                            .build();
+                    Assertions.assertEquals(expected, stepSpec);
+                }
+            }
+        }
     }
 }

@@ -22,6 +22,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
@@ -32,8 +34,6 @@ import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
@@ -117,7 +117,7 @@ public class JobBoConverterTest {
 
         JobSpecParser jobSpecParser = mock(JobSpecParser.class);
         when(jobSpecParser.parseAndFlattenStepFromYaml(any()))
-                .thenReturn(List.of(new StepSpec()));
+                .thenReturn(List.of(StepSpec.newBuilder().build()));
         StepConverter stepConverter = mock(StepConverter.class);
         given(stepConverter.fromEntity(any()))
                 .willAnswer(invocation -> {
@@ -181,7 +181,7 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getModelVersion().getVersionName(), model.getVersion());
         Assertions.assertEquals(jobEntity.getModelVersion().getId(), model.getId());
         Assertions.assertEquals(modelEntity.getModelName(), model.getName());
-        Assertions.assertEquals(List.of(new StepSpec()), model.getStepSpecs());
+        Assertions.assertEquals(List.of(StepSpec.newBuilder().build()), model.getStepSpecs());
 
         List<DataSet> dataSets = job.getDataSets();
         Assertions.assertNotNull(dataSets);

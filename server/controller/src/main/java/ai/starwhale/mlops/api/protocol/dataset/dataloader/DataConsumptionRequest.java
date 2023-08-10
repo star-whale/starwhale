@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.dataset.dataloader;
 
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;

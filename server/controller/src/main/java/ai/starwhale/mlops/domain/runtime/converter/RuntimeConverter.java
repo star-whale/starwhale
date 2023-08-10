@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.converter;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -33,12 +33,12 @@ public class RuntimeConverter {
 
     public RuntimeVo convert(RuntimeEntity entity) throws ConvertException {
         if (entity == null) {
-            return RuntimeVo.empty();
+            return RuntimeVo.newBuilder().build();
         }
-        return RuntimeVo.builder()
-                .id(idConvertor.convert(entity.getId()))
-                .name(entity.getRuntimeName())
-                .createdTime(entity.getCreatedTime().getTime())
+        return RuntimeVo.newBuilder()
+                .setId(idConvertor.convert(entity.getId()))
+                .setName(entity.getRuntimeName())
+                .setCreatedTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

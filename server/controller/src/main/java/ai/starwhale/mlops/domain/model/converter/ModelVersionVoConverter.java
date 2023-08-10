@@ -16,9 +16,8 @@
 
 package ai.starwhale.mlops.domain.model.converter;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -28,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -51,18 +51,23 @@ public class ModelVersionVoConverter {
             List<String> tags
     ) throws ConvertException {
         try {
-            return ModelVersionVo.builder()
-                    .id(idConvertor.convert(entity.getId()))
-                    .name(entity.getVersionName())
-                    .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                    .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                    .tags(tags)
-                    .builtInRuntime(entity.getBuiltInRuntime())
-                    .createdTime(entity.getCreatedTime().getTime())
-                    .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                    .size(entity.getStorageSize())
-                    .shared(toInt(entity.getShared()))
-                    .build();
+            var builder = ModelVersionVo.newBuilder()
+                    .setId(idConvertor.convert(entity.getId()))
+                    .setName(entity.getVersionName())
+                    .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                    .setLatest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                    .addAllTags(tags == null ? List.of() : tags)
+                    .setCreatedTime(entity.getCreatedTime().getTime())
+                    .addAllStepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
+                    .setShared(entity.getShared());
+
+            if (StringUtils.hasText(entity.getBuiltInRuntime())) {
+                builder.setBuiltinRuntime(entity.getBuiltInRuntime());
+            }
+            if (entity.getStorageSize() != null) {
+                builder.setSize(entity.getStorageSize());
+            }
+            return builder.build();
         } catch (JsonProcessingException e) {
             log.error("convert ModelVersionVo error", e);
             throw new ConvertException(e.getMessage());

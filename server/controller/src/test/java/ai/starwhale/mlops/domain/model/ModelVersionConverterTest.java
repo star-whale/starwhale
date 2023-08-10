@@ -16,16 +16,13 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.model.converter.ModelVersionVoConverter;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import java.util.List;
@@ -41,7 +38,8 @@ public class ModelVersionConverterTest {
         modelVersionVoConverter = new ModelVersionVoConverter(
                 new IdConverter(),
                 new VersionAliasConverter(),
-                new JobSpecParser());
+                new JobSpecParser()
+        );
     }
 
     @Test
@@ -54,27 +52,27 @@ public class ModelVersionConverterTest {
                 .jobs("default:\n- concurrency: 2")
                 .shared(true)
                 .build();
-        var res = modelVersionVoConverter.convert(ModelVersionEntity.builder()
-                .id(1L)
-                .versionName("name1")
-                .versionOrder(2L)
-                .versionTag("tag1")
-                .jobs("default:\n- concurrency: 2")
-                .shared(true)
-                .build(),
+        var res = modelVersionVoConverter.convert(
+                ModelVersionEntity.builder()
+                        .id(1L)
+                        .versionName("name1")
+                        .versionOrder(2L)
+                        .versionTag("tag1")
+                        .jobs("default:\n- concurrency: 2")
+                        .shared(true)
+                        .build(),
                 latest,
                 List.of("tag2")
         );
-        assertThat(res, allOf(
-                notNullValue(),
-                hasProperty("name", is("name1")),
-                hasProperty("alias", is("v2")),
-                hasProperty("latest", is(false)),
-                hasProperty("shared", is(1)),
-                hasProperty("tags", is(List.of("tag2"))), // use the tag from the parameter
-                hasProperty("stepSpecs",
-                        is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
-        ));
+        assertEquals("name1", res.getName());
+        assertEquals("v2", res.getAlias());
+        assertFalse(res.getLatest());
+        assertTrue(res.getShared());
+        assertEquals(List.of("tag2"), res.getTagsList());
+        assertEquals(1, res.getStepSpecsCount());
+        assertEquals("default", res.getStepSpecs(0).getJobName());
+        assertEquals(2, res.getStepSpecs(0).getConcurrency());
+        assertEquals(1, res.getStepSpecs(0).getReplicas());
     }
 
 }

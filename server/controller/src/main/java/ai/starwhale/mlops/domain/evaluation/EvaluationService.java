@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.domain.evaluation;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
 import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -132,7 +132,7 @@ public class EvaluationService {
                 .projectName(job.getProject().getProjectName())
                 .modelName(jobVo.getModelName())
                 .modelVersion(jobVo.getModelVersion())
-                .datasets(StrUtil.join(",", jobVo.getDatasets()))
+                .datasets(StrUtil.join(",", jobVo.getDatasetsList()))
                 .runtime(jobVo.getRuntime().getName())
                 .device(jobVo.getDevice())
                 .deviceAmount(jobVo.getDeviceAmount())

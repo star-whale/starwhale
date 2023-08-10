@@ -20,7 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.schedule.impl.k8s.ContainerOverwriteSpec;
 import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
@@ -102,7 +102,11 @@ public class K8sJobTemplateTest {
 
     private Map<String, ContainerOverwriteSpec> buildContainerSpecMap() {
         ContainerOverwriteSpec containerOverwriteSpecWorker = ContainerOverwriteSpec.builder()
-                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 0.2f, 0.2f))))
+                .resourceOverwriteSpec(new ResourceOverwriteSpec(List.of(RuntimeResource.newBuilder()
+                        .setType("cpu")
+                        .setRequest(0.2f)
+                        .setLimit(0.2f)
+                        .build())))
                 .cmds(List.of("run"))
                 .name("worker")
                 .envs(List.of(new V1EnvVar().name("env1").value("env1value"),
@@ -148,11 +152,19 @@ public class K8sJobTemplateTest {
 
         var specs = new HashMap<String, ContainerOverwriteSpec>();
         var cpuSpec = new ContainerOverwriteSpec();
-        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(new RuntimeResource("cpu", 1f, 1f))));
+        cpuSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(List.of(RuntimeResource.newBuilder()
+                .setType("cpu")
+                .setRequest(1f)
+                .setLimit(1f)
+                .build())));
         specs.put("foo", cpuSpec);
         var gpuSpec = new ContainerOverwriteSpec();
         gpuSpec.setResourceOverwriteSpec(
-            new ResourceOverwriteSpec(List.of(new RuntimeResource("nvidia.com/gpu", 1f, 1f)))
+            new ResourceOverwriteSpec(List.of(RuntimeResource.newBuilder()
+                .setType("nvidia.com/gpu")
+                .setRequest(1f)
+                .setLimit(1f)
+                .build()))
         );
         specs.put("bar", gpuSpec);
         specs.put("baz", cpuSpec);
@@ -173,7 +185,7 @@ public class K8sJobTemplateTest {
     public void testRenderModelServingOrch() {
         var name = "stateful-set-name";
         var envs = Map.of("foo", "bar");
-        var rr = RuntimeResource.builder().type("CPU").request(7f).limit(8f).build();
+        var rr = RuntimeResource.newBuilder().setType("CPU").setRequest(7f).setLimit(8f).build();
         var resourceOverwriteSpec = new ResourceOverwriteSpec(List.of(rr));
         var ss = k8sJobTemplate.renderModelServingOrch(name, "img", envs, resourceOverwriteSpec, Map.of("foo", "bar"));
         assertThat(ss.getMetadata().getName(), is(name));

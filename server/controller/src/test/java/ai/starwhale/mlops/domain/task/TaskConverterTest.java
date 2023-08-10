@@ -22,13 +22,13 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedType;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
@@ -106,10 +106,10 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
 
-        var expectedExposedLink = ExposedLinkVo.builder()
-                .type(ExposedType.DEV_MODE)
-                .name("VS_CODE")
-                .link("/gateway/task/1/8000/")
+        var expectedExposedLink = ExposedLinkVo.newBuilder()
+                .setType(ExposedType.DEV_MODE)
+                .setName("VS_CODE")
+                .setLink("/gateway/task/1/8000/")
                 .build();
         assertThat(taskVo.getExposedLinks(), containsInAnyOrder(expectedExposedLink));
 
@@ -122,10 +122,10 @@ public class TaskConverterTest {
         when(webServerInTask.generateGatewayUrl(1L, "127.0.0.1", 8080)).thenReturn("/gateway/task/1/8080/");
 
         taskVo = taskConvertor.convert(taskEntity);
-        var theWebHandlerLink = ExposedLinkVo.builder()
-                .type(ExposedType.WEB_HANDLER)
-                .name("foo")
-                .link("/gateway/task/1/8080/")
+        var theWebHandlerLink = ExposedLinkVo.newBuilder()
+                .setType(ExposedType.WEB_HANDLER)
+                .setName("foo")
+                .setLink("/gateway/task/1/8080/")
                 .build();
 
         assertThat(taskVo.getExposedLinks(), containsInAnyOrder(expectedExposedLink, theWebHandlerLink));

@@ -53,6 +53,7 @@ public class DatasetVersionVoConverterTest {
                         .shared(true)
                         .versionName("name1")
                         .versionOrder(2L)
+                        .indexTable("table1")
                         .versionMeta("meta1")
                         .build(),
                 latest,
@@ -61,9 +62,9 @@ public class DatasetVersionVoConverterTest {
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("alias", is("v2")),
-                hasProperty("tags", is(List.of("the outer tag"))),
+                hasProperty("tagsList", is(List.of("the outer tag"))),
                 hasProperty("meta", is("meta1")),
                 hasProperty("latest", is(false))
         ));

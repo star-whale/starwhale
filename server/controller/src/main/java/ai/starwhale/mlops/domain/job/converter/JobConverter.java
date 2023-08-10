@@ -17,12 +17,14 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
-import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedType;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVo;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -31,14 +33,12 @@ import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
@@ -67,6 +67,7 @@ public class JobConverter {
     private final JobSpecParser jobSpecParser;
     private final int devPort;
     private final WebServerInTask webServerInTask;
+    private final UserVoConverter userVoConverter;
 
     public JobConverter(
             IdConverter idConvertor,
@@ -75,7 +76,8 @@ public class JobConverter {
             SystemSettingService systemSettingService, HotJobHolder hotJobHolder,
             JobSpecParser jobSpecParser,
             @Value("${sw.task.dev-port}") int devPort,
-            WebServerInTask webServerInTask
+            WebServerInTask webServerInTask,
+            UserVoConverter userVoConverter
     ) {
         this.idConvertor = idConvertor;
         this.runtimeService = runtimeService;
@@ -87,6 +89,7 @@ public class JobConverter {
         this.jobSpecParser = jobSpecParser;
         this.devPort = devPort;
         this.webServerInTask = webServerInTask;
+        this.userVoConverter = userVoConverter;
     }
 
     private ModelVo findModelByVersionIds(Long versionId) {
@@ -157,7 +160,7 @@ public class JobConverter {
                 return;
             }
             var link = webServerInTask.generateGatewayUrl(task.getId(), task.getIp(), port);
-            exposed.add(ExposedLinkVo.builder().type(type).name(name).link(link).build());
+            exposed.add(ExposedLinkVo.newBuilder().setType(type).setName(name).setLink(link).build());
         };
 
         // dev mode
@@ -171,10 +174,10 @@ public class JobConverter {
         // we add the web handler link to the exposed links anyway
         // so that user can click the link to open the web handler
         stepSpecs.forEach(stepSpec -> {
-            var exposedPort = stepSpec.getExpose();
-            if (exposedPort == null || exposedPort <= 0) {
+            if (!stepSpec.hasExpose() || stepSpec.getExpose() <= 0) {
                 return;
             }
+            var exposedPort = stepSpec.getExpose();
             var step = steps.stream().filter(s -> s.getName().equals(stepSpec.getName())).findAny().orElse(null);
             if (step == null) {
                 return;
@@ -183,7 +186,7 @@ public class JobConverter {
             if (CollectionUtils.isEmpty(tasks)) {
                 return;
             }
-            var name = stepSpec.getFriendlyName();
+            var name = StringUtils.hasText(stepSpec.getShowName()) ? stepSpec.getShowName() : stepSpec.getName();
             tasks.forEach(t -> addRunningTask.accept(t, exposedPort, ExposedType.WEB_HANDLER, name));
         });
 
@@ -196,28 +199,35 @@ public class JobConverter {
         var datasetVersions = datasetList.stream().map(ds -> ds.getVersion().getName()).collect(Collectors.toList());
         Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
-        return JobVo.builder()
-                .id(idConvertor.convert(jobEntity.getId()))
-                .uuid(jobEntity.getJobUuid())
-                .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
-                .modelName(jobEntity.getModelName())
-                .modelVersion(jobEntity.getModelVersion().getVersionName())
-                .model(findModelByVersionIds(jobEntity.getModelVersionId()))
-                .jobName(extractJobName(jobEntity.getStepSpec()))
-                .createdTime(jobEntity.getCreatedTime().getTime())
-                .runtime(runtime)
-                .builtinRuntime(runtime.getVersion().getName()
-                        .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
-                .datasets(datasetVersions)
-                .datasetList(datasetList)
-                .jobStatus(jobEntity.getJobStatus())
-                .stopTime(jobEntity.getFinishedTime().getTime())
-                .duration(jobEntity.getDurationMs())
-                .comment(jobEntity.getComment())
-                .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
-                .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
-                .pinnedTime(pinnedTime)
-                .build();
+        var builder = JobVo.newBuilder()
+                .setId(idConvertor.convert(jobEntity.getId()))
+                .setUuid(jobEntity.getJobUuid())
+                .setOwner(userVoConverter.convert(jobEntity.getOwner()))
+                .setModelName(jobEntity.getModelName())
+                .setModelVersion(jobEntity.getModelVersion().getVersionName())
+                .setModel(findModelByVersionIds(jobEntity.getModelVersionId()))
+                .setJobName(extractJobName(jobEntity.getStepSpec()))
+                .setCreatedTime(jobEntity.getCreatedTime().getTime())
+                .setRuntime(runtime)
+                .setBuiltinRuntime(runtime.getVersion().getName()
+                                           .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
+                .addAllDatasets(datasetVersions)
+                .addAllDatasetList(datasetList)
+                .setJobStatus(jobEntity.getJobStatus())
+                .setStopTime(jobEntity.getFinishedTime().getTime())
+                .setResourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
+                .addAllExposedLinks(generateJobExposedLinks(jobEntity.getId()));
+
+        if (StringUtils.hasText(jobEntity.getComment())) {
+            builder.setComment(jobEntity.getComment());
+        }
+        if (jobEntity.getDurationMs() != null) {
+            builder.setDuration(jobEntity.getDurationMs());
+        }
+        if (pinnedTime != null) {
+            builder.setPinnedTime(pinnedTime);
+        }
+        return builder.build();
     }
 
     private String extractJobName(String stepSpecStr) {

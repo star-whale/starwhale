@@ -39,10 +39,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.api.protocol.storage.FileNode.Type;
 import ai.starwhale.mlops.common.IdConverter;
@@ -320,8 +320,10 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
         private String putBlob(byte[] b, int offset, int length) throws IOException {
             var result = modelService.initUploadBlob(
-                    new InitUploadBlobRequest(DigestUtils.md5Hex(new ByteArrayInputStream(b, offset, length)),
-                            (long) b.length));
+                    new InitUploadBlobRequest(
+                            DigestUtils.md5Hex(new ByteArrayInputStream(b, offset, length)),
+                            (long) b.length
+                    ));
             if (result.getStatus() == Status.OK) {
                 storageAccessService.put(result.getSignedUrl(), new ByteArrayInputStream(b, offset, length));
                 return modelService.completeUploadBlob(result.getBlobId());
@@ -374,7 +376,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
             for (; ; ) {
                 try {
                     var compressed = lz4Compressor.compress(b, 0, b.length, this.dataBuf.array(),
-                            this.dataBuf.position() + 2);
+                                                            this.dataBuf.position() + 2
+                    );
                     if (compressed + 2 < b.length) {
                         file.setBlobOffset(this.dataBuf.position());
                         file.setBlobSize(compressed + 2);
@@ -516,11 +519,11 @@ public class ModelServiceTest extends MySqlContainerHolder {
         this.user = this.userService.loadUserByUsername("test");
         this.setUp();
         this.projectService.createProject(Project.builder()
-                .name("1")
-                .owner(User.builder().id(this.user.getId()).build())
-                .privacy(Privacy.PRIVATE)
-                .description("")
-                .build());
+                                                  .name("1")
+                                                  .owner(User.builder().id(this.user.getId()).build())
+                                                  .privacy(Privacy.PRIVATE)
+                                                  .description("")
+                                                  .build());
 
         var modelBuilder = new ModelBuilder();
         modelBuilder.add("src/.starwhale/jobs.yaml", "[]".getBytes(StandardCharsets.UTF_8));
@@ -530,7 +533,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
         this.file99 = modelBuilder.generate(
                 IntStream.range(0, 100).mapToObj(String::valueOf).collect(Collectors.joining("/")),
-                1000, false);
+                1000, false
+        );
 
         for (int i = 0; i < 5000; ++i) {
             modelBuilder.generate("t/f" + i, 1, 10000, true);
@@ -548,7 +552,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
                     for (int l = 0; l < 5; ++l) {
                         for (int m = 0; m < 5; ++m) {
                             modelBuilder.generate("v/" + i + "/" + j + "/" + k + "/" + l + "/" + m,
-                                    1, 10000, true);
+                                                  1, 10000, true
+                            );
                         }
                     }
                 }
@@ -771,7 +776,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
         );
 
         // public project
-        when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
+        when(projectService.getProjectVo("pub")).thenReturn(
+                ProjectVo.newBuilder().setId("1").setPrivacy("PUBLIC").build());
         when(modelDao.findById(1L)).thenReturn(ModelEntity.builder().id(1L).build());
         when(versionAliasConverter.isVersionAlias("v1")).thenReturn(true);
         when(modelDao.findVersionByAliasAndBundleId("v1", 1L)).thenReturn(ModelVersionEntity.builder().id(2L).build());
@@ -782,7 +788,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
 
         reset(modelVersionMapper);
         // private project can not share resources
-        when(projectService.getProjectVo("private")).thenReturn(ProjectVo.builder().id("2").privacy("PRIVATE").build());
+        when(projectService.getProjectVo("private")).thenReturn(
+                ProjectVo.newBuilder().setId("2").setPrivacy("PRIVATE").build());
         assertThrows(SwValidationException.class, () -> svc.shareModelVersion("private", "1", "v1", true));
         assertThrows(SwValidationException.class, () -> svc.shareModelVersion("private", "1", "v1", false));
         verify(modelVersionMapper, never()).updateShared(any(), any());
@@ -792,29 +799,44 @@ public class ModelServiceTest extends MySqlContainerHolder {
     public void testListModelVersionView() {
         var res = modelService.listModelVersionView("1");
         assertEquals(2, res.size());
-        assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
-                hasProperty("modelName", is("m"))));
+        assertThat(res.get(1), allOf(
+                hasProperty("projectName", is("starwhale")),
+                hasProperty("modelName", is("m"))
+        ));
 
-        assertThat(res.get(0), allOf(hasProperty("projectName", is("starwhale")),
+        assertThat(res.get(0), allOf(
+                hasProperty("projectName", is("starwhale")),
                 hasProperty("modelName", is("m1")),
-                hasProperty("versions", hasItems(
-                        allOf(hasProperty("versionName", is("v1")),
+                hasProperty("versionsList", hasItems(
+                        allOf(
+                                hasProperty("versionName", is("v1")),
                                 hasProperty("alias", is("v1")),
-                                hasProperty("latest", is(true)))))));
+                                hasProperty("latest", is(true))
+                        )))
+        ));
 
-        assertThat(res.get(1).getVersions(), hasItems(
-                                allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("v1")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v2")),
-                                        hasProperty("alias", is("v2")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v3")),
-                                        hasProperty("alias", is("v3")),
-                                        hasProperty("latest", is(false))),
-                                allOf(hasProperty("versionName", is("v4")),
-                                        hasProperty("alias", is("v4")),
-                                        hasProperty("latest", is(true)))));
+        assertThat(res.get(1).getVersionsList(), hasItems(
+                allOf(
+                        hasProperty("versionName", is("v1")),
+                        hasProperty("alias", is("v1")),
+                        hasProperty("latest", is(false))
+                ),
+                allOf(
+                        hasProperty("versionName", is("v2")),
+                        hasProperty("alias", is("v2")),
+                        hasProperty("latest", is(false))
+                ),
+                allOf(
+                        hasProperty("versionName", is("v3")),
+                        hasProperty("alias", is("v3")),
+                        hasProperty("latest", is(false))
+                ),
+                allOf(
+                        hasProperty("versionName", is("v4")),
+                        hasProperty("alias", is("v4")),
+                        hasProperty("latest", is(true))
+                )
+        ));
     }
 
     @Test
@@ -828,10 +850,14 @@ public class ModelServiceTest extends MySqlContainerHolder {
         assertThat(result2.getStatus(), is(Status.OK));
         assertThat(result2.getSignedUrl(), is("blob/" + result2.getBlobId()));
 
-        this.storageAccessService.put(result.getSignedUrl(),
-                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
-        this.storageAccessService.put(result2.getSignedUrl(),
-                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+        this.storageAccessService.put(
+                result.getSignedUrl(),
+                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))
+        );
+        this.storageAccessService.put(
+                result2.getSignedUrl(),
+                new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))
+        );
 
         assertThat(this.modelService.completeUploadBlob(result.getBlobId()), is(result.getBlobId()));
         assertThat(this.modelService.completeUploadBlob(result2.getBlobId()), is(result.getBlobId()));
@@ -863,7 +889,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
         for (var thread : threads) {
             thread.join();
         }
-        assertThat(idSetList.stream().flatMap(Collection::stream).distinct()
+        assertThat(
+                idSetList.stream().flatMap(Collection::stream).distinct()
                         .map(id -> {
                             try {
                                 return Ints.fromByteArray(
@@ -874,85 +901,156 @@ public class ModelServiceTest extends MySqlContainerHolder {
                             }
                         })
                         .collect(Collectors.toSet()),
-                is(IntStream.range(0, 10000).boxed().collect(Collectors.toSet())));
+                is(IntStream.range(0, 10000).boxed().collect(Collectors.toSet()))
+        );
     }
 
     @Test
     public void testListFiles() {
-        assertThat(this.modelService.listFiles("1", "m", "v1", "").getFiles(),
-                hasItems(allOf(hasProperty("name", is("src")),
-                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
-                        allOf(hasProperty("name", is("0")),
-                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
-                        allOf(hasProperty("name", is("t")),
-                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
-                        allOf(hasProperty("name", is("xx")),
-                                hasProperty("type", is(FileNode.Type.FILE))),
-                        allOf(hasProperty("name", is("yy")),
-                                hasProperty("type", is(FileNode.Type.FILE))),
-                        allOf(hasProperty("name", is("v")),
-                                hasProperty("type", is(FileNode.Type.DIRECTORY))),
-                        allOf(hasProperty("name", is("readme")),
+        assertThat(
+                this.modelService.listFiles("1", "m", "v1", "").getFiles(),
+                hasItems(
+                        allOf(
+                                hasProperty("name", is("src")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))
+                        ),
+                        allOf(
+                                hasProperty("name", is("0")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))
+                        ),
+                        allOf(
+                                hasProperty("name", is("t")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))
+                        ),
+                        allOf(
+                                hasProperty("name", is("xx")),
+                                hasProperty("type", is(FileNode.Type.FILE))
+                        ),
+                        allOf(
+                                hasProperty("name", is("yy")),
+                                hasProperty("type", is(FileNode.Type.FILE))
+                        ),
+                        allOf(
+                                hasProperty("name", is("v")),
+                                hasProperty("type", is(FileNode.Type.DIRECTORY))
+                        ),
+                        allOf(
+                                hasProperty("name", is("readme")),
                                 hasProperty("type", is(Type.FILE)),
                                 hasProperty("size", is(String.valueOf(this.readmeFile.length))),
-                                hasProperty("signature", is(DigestUtils.md5Hex(this.readmeFile)))),
-                        allOf(hasProperty("name", is("model")),
+                                hasProperty("signature", is(DigestUtils.md5Hex(this.readmeFile)))
+                        ),
+                        allOf(
+                                hasProperty("name", is("model")),
                                 hasProperty("type", is(Type.FILE)),
                                 hasProperty("size", is(String.valueOf(this.modelFile.length))),
-                                hasProperty("signature", is(DigestUtils.md5Hex(this.modelFile))))));
-        assertThat(this.modelService.listFiles("1", "m", "v1", "t").getFiles(),
-                allOf(iterableWithSize(10002),
-                        hasItem(allOf(hasProperty("name", is("d0")),
-                                hasProperty("type", is(Type.DIRECTORY)))),
-                        hasItem(allOf(hasProperty("name", is("d4999")),
-                                hasProperty("type", is(Type.DIRECTORY)))),
-                        hasItem(allOf(hasProperty("name", is("f0")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("f4999")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("z")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("empty")),
-                                hasProperty("type", is(Type.FILE))))));
-        assertThat(this.modelService.listFiles("1", "m", "v1",
-                        IntStream.range(0, 99).mapToObj(String::valueOf).collect(Collectors.joining("/"))).getFiles(),
-                hasItems(allOf(hasProperty("name", is("99")),
-                        hasProperty("type", is(Type.FILE)))));
-        assertThat(this.modelService.listFiles("1", "m", "v1", "v/1/2/3/4").getFiles(),
-                allOf(hasItem(allOf(hasProperty("name", is("0")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("1")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("2")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("3")),
-                                hasProperty("type", is(Type.FILE)))),
-                        hasItem(allOf(hasProperty("name", is("4")),
-                                hasProperty("type", is(Type.FILE))))));
+                                hasProperty("signature", is(DigestUtils.md5Hex(this.modelFile)))
+                        )
+                )
+        );
+        assertThat(
+                this.modelService.listFiles("1", "m", "v1", "t").getFiles(),
+                allOf(
+                        iterableWithSize(10002),
+                        hasItem(allOf(
+                                hasProperty("name", is("d0")),
+                                hasProperty("type", is(Type.DIRECTORY))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("d4999")),
+                                hasProperty("type", is(Type.DIRECTORY))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("f0")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("f4999")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("z")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("empty")),
+                                hasProperty("type", is(Type.FILE))
+                        ))
+                )
+        );
+        assertThat(
+                this.modelService.listFiles("1", "m", "v1",
+                                            IntStream.range(0, 99)
+                                                    .mapToObj(String::valueOf)
+                                                    .collect(Collectors.joining("/"))
+                ).getFiles(),
+                hasItems(allOf(
+                        hasProperty("name", is("99")),
+                        hasProperty("type", is(Type.FILE))
+                ))
+        );
+        assertThat(
+                this.modelService.listFiles("1", "m", "v1", "v/1/2/3/4").getFiles(),
+                allOf(
+                        hasItem(allOf(
+                                hasProperty("name", is("0")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("1")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("2")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("3")),
+                                hasProperty("type", is(Type.FILE))
+                        )),
+                        hasItem(allOf(
+                                hasProperty("name", is("4")),
+                                hasProperty("type", is(Type.FILE))
+                        ))
+                )
+        );
     }
 
     @Test
     public void testGetFileData() throws IOException {
-        assertThat(this.modelService.getFileData("1", "m", "v1", "readme").readAllBytes(),
-                is(this.readmeFile));
-        assertThat(this.modelService.getFileData("1", "m", "v1",
-                                IntStream.range(0, 100)
-                                        .mapToObj(String::valueOf)
-                                        .collect(Collectors.joining("/")))
+        assertThat(
+                this.modelService.getFileData("1", "m", "v1", "readme").readAllBytes(),
+                is(this.readmeFile)
+        );
+        assertThat(
+                this.modelService.getFileData("1", "m", "v1",
+                                              IntStream.range(0, 100)
+                                                      .mapToObj(String::valueOf)
+                                                      .collect(Collectors.joining("/"))
+                        )
                         .readAllBytes(),
-                is(this.file99));
-        assertThat(DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "t/z").readAllBytes()),
-                is(this.tzMd5));
-        assertThat(DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "model").readAllBytes()),
-                is(this.modelMd5));
+                is(this.file99)
+        );
+        assertThat(
+                DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "t/z").readAllBytes()),
+                is(this.tzMd5)
+        );
+        assertThat(
+                DigestUtils.md5Hex(this.modelService.getFileData("1", "m", "v1", "model").readAllBytes()),
+                is(this.modelMd5)
+        );
 
         assertThat(this.modelService.getFileData("1", "m", "v1", "t/empty").readAllBytes(), is(new byte[0]));
 
         assertThat(this.modelService.getFileData("1", "m1", "v1", "s").readAllBytes(), is(this.fileS));
-        assertThat(this.modelService.getFileData("1", "m", "v1", "xx").readAllBytes(),
-                is("hardlink:t1".getBytes(StandardCharsets.UTF_8)));
-        assertThat(this.modelService.getFileData("1", "m", "v1", "yy").readAllBytes(),
-                is("symlink:t2".getBytes(StandardCharsets.UTF_8)));
+        assertThat(
+                this.modelService.getFileData("1", "m", "v1", "xx").readAllBytes(),
+                is("hardlink:t1".getBytes(StandardCharsets.UTF_8))
+        );
+        assertThat(
+                this.modelService.getFileData("1", "m", "v1", "yy").readAllBytes(),
+                is("symlink:t2".getBytes(StandardCharsets.UTF_8))
+        );
     }
 
     @Test
@@ -1031,15 +1129,18 @@ public class ModelServiceTest extends MySqlContainerHolder {
         }
         for (var f : this.modelService.getModelDiff("1", "m", "v3", "v4").get("compareVersion")) {
             this.checkDiff(f, "",
-                    List.of("0/1/2/3/5", "0/1/2/3/5/6", "0/1/2/3/5/6/7"),
-                    List.of("test", "0/1/2/3/4"),
-                    List.of());
+                           List.of("0/1/2/3/5", "0/1/2/3/5/6", "0/1/2/3/5/6/7"),
+                           List.of("test", "0/1/2/3/4"),
+                           List.of()
+            );
         }
     }
 
     @Test
     public void testBlobUsage() {
-        assertThat(this.modelService.getModelMetaBlob("1", "m", "v2", ""),
-                is(this.modelService.getModelMetaBlob("1", "m", "v3", "")));
+        assertThat(
+                this.modelService.getModelMetaBlob("1", "m", "v2", ""),
+                is(this.modelService.getModelMetaBlob("1", "m", "v3", ""))
+        );
     }
 }

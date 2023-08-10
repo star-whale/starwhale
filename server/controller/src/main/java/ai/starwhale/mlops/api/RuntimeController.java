@@ -16,16 +16,16 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Runtime.BuildImageResult;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeInfoVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeViewVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.spec.RunConfig;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;

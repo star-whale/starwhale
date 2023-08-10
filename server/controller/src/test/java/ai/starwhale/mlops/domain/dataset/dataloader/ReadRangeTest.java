@@ -25,7 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreScanRequest;
 import ai.starwhale.mlops.datastore.RecordList;
@@ -254,7 +254,7 @@ public class ReadRangeTest {
 
         // case 2: get next data with exist session and consumer 1
         request.setProcessedData(List.of(
-                DataIndexDesc.builder().start("0000-000").end("0000-001").build()
+                DataIndexDesc.newBuilder().setStart("0000-000").setEnd("0000-001").build()
         ));
         var session = Session.builder()
                 .id(sid)

@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
@@ -29,7 +30,6 @@ import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;

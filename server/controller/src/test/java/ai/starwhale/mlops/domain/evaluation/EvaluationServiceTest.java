@@ -18,21 +18,21 @@ package ai.starwhale.mlops.domain.evaluation;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
@@ -41,7 +41,6 @@ import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -139,41 +138,35 @@ public class EvaluationServiceTest {
         given(jobConvertor.convert(any(JobEntity.class)))
                 .willAnswer(invocation -> {
                     JobEntity entity = invocation.getArgument(0);
-                    return JobVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .uuid("uuid" + entity.getId())
-                            .modelName("model" + entity.getId())
-                            .datasets(List.of("1", "2", "3"))
-                            .runtime(RuntimeVo.builder().name("runtime" + entity.getId()).build())
-                            .device("device" + entity.getId())
-                            .deviceAmount(3)
-                            .createdTime(10L)
-                            .stopTime(11L)
-                            .owner(UserVo.builder().name("owner" + entity.getId()).build())
-                            .jobStatus(JobStatus.SUCCESS)
+                    return JobVo.newBuilder()
+                            .setId(String.valueOf(entity.getId()))
+                            .setUuid("uuid" + entity.getId())
+                            .setModelName("model" + entity.getId())
+                            .addAllDatasets(List.of("1", "2", "3"))
+                            .setRuntime(RuntimeVo.newBuilder().setName("runtime" + entity.getId()).build())
+                            .setDevice("device" + entity.getId())
+                            .setDeviceAmount(3)
+                            .setCreatedTime(10L)
+                            .setStopTime(11L)
+                            .setDuration(1L)
+                            .setOwner(UserVo.newBuilder().setName("owner" + entity.getId()).build())
+                            .setJobStatus(JobStatus.SUCCESS)
                             .build();
                 });
-        var res = service.listEvaluationSummary(
-                "1", null, new PageParams(1, 5));
-        assertThat(res, allOf(
-                notNullValue(),
-                is(hasProperty("pageNum", is(1))),
-                is(hasProperty("total", is(2L))),
-                is(hasProperty("list", allOf(
-                        is(iterableWithSize(2)),
-                        is(hasItem(allOf(
-                                        hasProperty("id", is("1")),
-                                        hasProperty("uuid", is("uuid1")),
-                                        hasProperty("modelName", is("model1")),
-                                        hasProperty("runtime", is("runtime1")),
-                                        hasProperty("device", is("device1")),
-                                        hasProperty("datasets", is("1,2,3")),
-                                        hasProperty("duration", is(1L)),
-                                        hasProperty("owner", is("owner1")),
-                                        hasProperty("jobStatus", is(JobStatus.SUCCESS))
-                                ))
-                        )
-                )))
-        ));
+        var res = service.listEvaluationSummary("1", null, new PageParams(1, 5));
+        assertEquals(1, res.getPageNum());
+        assertEquals(2, res.getTotal());
+        var list = res.getList();
+        assertEquals(2, list.size());
+        var item = list.get(0);
+        assertEquals("1", item.getId());
+        assertEquals("uuid1", item.getUuid());
+        assertEquals("model1", item.getModelName());
+        assertEquals("runtime1", item.getRuntime());
+        assertEquals("device1", item.getDevice());
+        assertEquals("1,2,3", item.getDatasets());
+        assertEquals(1L, item.getDuration());
+        assertEquals("owner1", item.getOwner());
+        assertEquals(JobStatus.SUCCESS, item.getJobStatus());
     }
 }

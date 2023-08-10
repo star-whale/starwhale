@@ -16,10 +16,11 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
-import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -32,9 +33,7 @@ import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
@@ -229,7 +228,7 @@ public class JobService {
             steps = StringUtils.hasText(stepSpecOverWrites)
                     ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
                     : jobSpecParser.parseStepFromYaml(modelVersion.getJobs(), handler);
-            stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(steps);
+            stepSpecOverWrites = jobSpecParser.stepToYaml(steps);
         } catch (JsonProcessingException e) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.JOB, "failed to parse job step", e), HttpStatus.BAD_REQUEST);
@@ -243,7 +242,7 @@ public class JobService {
         var pool = systemSettingService.queryResourcePool(resourcePool);
         if (pool != null) {
             for (var step : steps) {
-                pool.validateResources(step.getResources());
+                pool.validateResources(step.getResourcesList());
             }
             if (!pool.allowUser(user.getId())) {
                 throw new StarwhaleApiException(

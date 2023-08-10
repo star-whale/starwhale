@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.po;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Data;

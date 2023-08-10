@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message FlattenFileVo {
+  string name = 1;
+  string size = 2;
+}

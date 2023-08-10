@@ -47,9 +47,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildType;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
@@ -67,8 +69,6 @@ import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
-import ai.starwhale.mlops.domain.dataset.build.BuildType;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
@@ -144,19 +144,19 @@ public class DatasetServiceTest {
         given(datasetConvertor.convert(any(DatasetEntity.class)))
                 .willAnswer(invocation -> {
                     DatasetEntity entity = invocation.getArgument(0);
-                    return DatasetVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .name(entity.getName())
+                    return DatasetVo.newBuilder()
+                            .setId(String.valueOf(entity.getId()))
+                            .setName(entity.getName())
                             .build();
                 });
         versionConvertor = mock(DatasetVersionVoConverter.class);
         given(versionConvertor.convert(any(DatasetVersionEntity.class), any(), any()))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
-                    return DatasetVersionVo.builder()
-                            .id(String.valueOf(entity.getId()))
-                            .name(entity.getName())
-                            .alias("v" + entity.getVersionOrder())
+                    return DatasetVersionVo.newBuilder()
+                            .setId(String.valueOf(entity.getId()))
+                            .setName(entity.getName())
+                            .setAlias("v" + entity.getVersionOrder())
                             .build();
                 });
 
@@ -262,8 +262,8 @@ public class DatasetServiceTest {
     public void testList() {
         given(datasetMapper.list(same(1L), anyString(), any(), any()))
                 .willReturn(List.of(
-                        DatasetEntity.builder().id(1L).build(),
-                        DatasetEntity.builder().id(2L).build()
+                        DatasetEntity.builder().id(1L).datasetName("d1").build(),
+                        DatasetEntity.builder().id(2L).datasetName("d2").build()
                 ));
         var res = service.listDataset(DatasetQuery.builder()
                                               .projectUrl("1")
@@ -296,10 +296,10 @@ public class DatasetServiceTest {
     @Test
     public void testGetDatasetInfo() {
         given(datasetMapper.find(same(1L)))
-                .willReturn(DatasetEntity.builder().id(1L).build());
+                .willReturn(DatasetEntity.builder().id(1L).datasetName("d1").build());
 
         given(datasetMapper.find(same(2L)))
-                .willReturn(DatasetEntity.builder().id(2L).build());
+                .willReturn(DatasetEntity.builder().id(2L).datasetName("d2").build());
 
         assertThrows(
                 SwNotFoundException.class,
@@ -307,10 +307,22 @@ public class DatasetServiceTest {
         );
 
         given(datasetVersionMapper.find(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
+                .willReturn(DatasetVersionEntity.builder()
+                                    .id(1L)
+                                    .versionName("v1")
+                                    .versionMeta("meta1")
+                                    .versionOrder(2L)
+                                    .shared(false)
+                                    .build());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
+                .willReturn(DatasetVersionEntity.builder()
+                                    .id(1L)
+                                    .versionName("v1")
+                                    .versionMeta("meta1")
+                                    .versionOrder(2L)
+                                    .shared(false)
+                                    .build());
 
         var res = service.getDatasetInfo(
                 DatasetQuery.builder()
@@ -323,7 +335,13 @@ public class DatasetServiceTest {
         assertEquals("v2", res.getVersionInfo().getAlias());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
+                .willReturn(DatasetVersionEntity.builder()
+                                    .id(1L)
+                                    .versionName("v1")
+                                    .versionMeta("meta")
+                                    .versionOrder(2L)
+                                    .shared(false)
+                                    .build());
 
         res = service.getDatasetInfo(
                 DatasetQuery.builder()
@@ -363,7 +381,7 @@ public class DatasetServiceTest {
     @Test
     public void testListDatasetVersionHistory() {
         given(datasetVersionMapper.list(anyLong(), anyString()))
-                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).build()));
+                .willReturn(List.of(DatasetVersionEntity.builder().id(1L).versionName("v1").build()));
         var res = service.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
                         .projectUrl("1")
@@ -381,11 +399,11 @@ public class DatasetServiceTest {
     public void testFindDatasetByVersionIds() {
         given(datasetVersionMapper.findByIds(anyString()))
                 .willReturn(List.of(
-                        DatasetVersionEntity.builder().datasetId(1L).build()
+                        DatasetVersionEntity.builder().datasetId(1L).versionName("v1").build()
                 ));
 
         given(datasetMapper.find(same(1L)))
-                .willReturn(DatasetEntity.builder().id(1L).build());
+                .willReturn(DatasetEntity.builder().id(1L).datasetName("d1").build());
 
         var res = service.findDatasetsByVersionIds(List.of(1L));
         assertThat(res, allOf(
@@ -397,9 +415,15 @@ public class DatasetServiceTest {
     @Test
     public void testListDatasetInfo() {
         given(datasetMapper.findByName(same("d1"), same(1L), any()))
-                .willReturn(DatasetEntity.builder().id(1L).build());
+                .willReturn(DatasetEntity.builder().id(1L).datasetName("d1").build());
         given(datasetVersionMapper.list(same(1L), any()))
-                .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).shared(false).build()));
+                .willReturn(List.of(DatasetVersionEntity.builder()
+                                            .id(2L)
+                                            .versionName("v2")
+                                            .versionOrder(2L)
+                                            .versionMeta("meta")
+                                            .shared(false)
+                                            .build()));
 
         var res = service.listDs("1", "d1");
         assertEquals(1, res.size());
@@ -409,7 +433,7 @@ public class DatasetServiceTest {
         given(projectService.findProject(same("1")))
                 .willReturn(Project.builder().id(1L).build());
         given(datasetMapper.list(same(1L), any(), any(), any()))
-                .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
+                .willReturn(List.of(DatasetEntity.builder().id(1L).datasetName("d1").build()));
 
         res = service.listDs("1", "");
         assertEquals(1, res.size());
@@ -498,7 +522,8 @@ public class DatasetServiceTest {
         );
 
         // public project
-        when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
+        when(projectService.getProjectVo("pub")).thenReturn(
+                ProjectVo.newBuilder().setId("1").setPrivacy("PUBLIC").build());
         when(datasetDao.findById(1L)).thenReturn(DatasetEntity.builder().id(1L).build());
         when(versionAliasConverter.isVersionAlias("v1")).thenReturn(true);
         var ds = DatasetVersionEntity.builder().id(2L).build();
@@ -510,7 +535,8 @@ public class DatasetServiceTest {
 
         reset(datasetVersionMapper);
         // private project can not share resources
-        when(projectService.getProjectVo("private")).thenReturn(ProjectVo.builder().id("2").privacy("PRIVATE").build());
+        when(projectService.getProjectVo("private")).thenReturn(
+                ProjectVo.newBuilder().setId("2").setPrivacy("PRIVATE").build());
         assertThrows(SwValidationException.class, () -> svc.shareDatasetVersion("private", "1", "v1", true));
         assertThrows(SwValidationException.class, () -> svc.shareDatasetVersion("private", "1", "v1", false));
         verify(datasetVersionMapper, never()).updateShared(any(), any());
@@ -519,36 +545,36 @@ public class DatasetServiceTest {
     @Test
     public void testListDatasetVersionView() {
         given(datasetVersionMapper.findByLatest(same(1L)))
-                .willReturn(DatasetVersionEntity.builder().id(5L).build());
+                .willReturn(DatasetVersionEntity.builder().id(5L).versionName("v5").build());
         given(datasetVersionMapper.findByLatest(same(3L)))
-                .willReturn(DatasetVersionEntity.builder().id(2L).build());
+                .willReturn(DatasetVersionEntity.builder().id(2L).versionName("v2").build());
         given(datasetVersionMapper.listDatasetVersionViewByProject(same(1L)))
                 .willReturn(List.of(
                         DatasetVersionViewEntity.builder().id(5L).datasetId(1L).versionOrder(4L).projectName("sw")
-                                .userName("sw").shared(false).datasetName("ds1").build(),
+                                .userName("sw").versionName("v5").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(4L).datasetId(1L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(false).datasetName("ds1").build(),
+                                .userName("sw").versionName("v4").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(3L).datasetId(1L).versionOrder(3L).projectName("sw")
-                                .userName("sw").shared(false).datasetName("ds1").build(),
+                                .userName("sw").versionName("v3").shared(false).datasetName("ds1").build(),
                         DatasetVersionViewEntity.builder().id(2L).datasetId(3L).versionOrder(2L).projectName("sw")
-                                .userName("sw").shared(false).datasetName("ds3").build(),
+                                .userName("sw").versionName("v2").shared(false).datasetName("ds3").build(),
                         DatasetVersionViewEntity.builder().id(1L).datasetId(3L).versionOrder(1L).projectName("sw")
-                                .userName("sw").shared(false).datasetName("ds3").build()
+                                .userName("sw").versionName("v1").shared(false).datasetName("ds3").build()
                 ));
 
         given(datasetVersionMapper.listDatasetVersionViewByShared(same(1L)))
                 .willReturn(List.of(
                         DatasetVersionViewEntity.builder().id(8L).datasetId(2L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(true).datasetName("ds2").build(),
+                                .userName("sw2").versionName("v8").shared(true).datasetName("ds2").build(),
                         DatasetVersionViewEntity.builder().id(7L).datasetId(2L).versionOrder(2L).projectName("sw2")
-                                .userName("sw2").shared(true).datasetName("ds2").build(),
+                                .userName("sw2").versionName("v7").shared(true).datasetName("ds2").build(),
                         DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
-                                .userName("sw2").shared(true).datasetName("ds4").build()
+                                .userName("sw2").versionName("v6").shared(true).datasetName("ds4").build()
                 ));
         given(datasetVersionMapper.findByLatest(same(2L)))
-                .willReturn(DatasetVersionEntity.builder().id(8L).build());
+                .willReturn(DatasetVersionEntity.builder().id(8L).versionName("v8").build());
         given(datasetVersionMapper.findByLatest(same(4L)))
-                .willReturn(DatasetVersionEntity.builder().id(6L).build());
+                .willReturn(DatasetVersionEntity.builder().id(6L).versionName("v6").build());
 
         var res = service.listDatasetVersionView("1");
         assertEquals(4, res.size());
@@ -556,16 +582,16 @@ public class DatasetServiceTest {
         assertEquals("ds3", res.get(1).getDatasetName());
         assertEquals("ds2", res.get(2).getDatasetName());
         assertEquals("ds4", res.get(3).getDatasetName());
-        assertEquals(3, res.get(0).getVersions().size());
-        assertEquals(2, res.get(1).getVersions().size());
-        assertEquals(2, res.get(2).getVersions().size());
-        assertEquals(1, res.get(3).getVersions().size());
-        assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
-        assertTrue(res.get(0).getVersions().get(0).getLatest());
-        assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
-        assertTrue(res.get(1).getVersions().get(0).getLatest());
-        assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
-        assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
+        assertEquals(3, res.get(0).getVersionsList().size());
+        assertEquals(2, res.get(1).getVersionsList().size());
+        assertEquals(2, res.get(2).getVersionsList().size());
+        assertEquals(1, res.get(3).getVersionsList().size());
+        assertEquals("v4", res.get(0).getVersionsList().get(0).getAlias());
+        assertTrue(res.get(0).getVersionsList().get(0).getLatest());
+        assertEquals("v2", res.get(1).getVersionsList().get(0).getAlias());
+        assertTrue(res.get(1).getVersionsList().get(0).getLatest());
+        assertEquals("v3", res.get(2).getVersionsList().get(0).getAlias());
+        assertEquals("v3", res.get(3).getVersionsList().get(0).getAlias());
     }
 
     @Test
@@ -712,7 +738,9 @@ public class DatasetServiceTest {
         Long project = 1L;
         given(projectService.findProject(String.valueOf(project))).willReturn(Project.builder().id(project).build());
         given(buildRecordMapper.selectByStatus(project, BuildStatus.SUCCESS))
-                .willReturn(List.of(BuildRecordEntity.builder().id(10L).datasetName("ds").build()));
+                .willReturn(List.of(
+                        BuildRecordEntity.builder()
+                                .id(10L).type(BuildType.AUDIO).status(BuildStatus.SUCCESS).datasetName("ds").build()));
 
         var page = service.listBuildRecords(
                 String.valueOf(project), BuildStatus.SUCCESS, PageParams.builder().pageNum(1).pageSize(10).build());

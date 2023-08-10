@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

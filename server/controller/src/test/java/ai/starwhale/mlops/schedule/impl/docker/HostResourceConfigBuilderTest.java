@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.HostConfig;
 import java.util.List;
@@ -34,8 +34,9 @@ public class HostResourceConfigBuilderTest {
         String containerName = "sw-ut-HostResourceConfigBuilderTest" + System.currentTimeMillis();
         HostResourceConfigBuilder builder = new HostResourceConfigBuilder();
         HostConfig hostConfig = builder.build(
-                List.of(RuntimeResource.builder().type("memory").limit(1024 * 1024 * 10f).build(),
-                        RuntimeResource.builder().type("cpu").limit(1f).build()));
+                List.of(
+                        RuntimeResource.newBuilder().setType("memory").setLimit(1024 * 1024 * 10f).build(),
+                        RuntimeResource.newBuilder().setType("cpu").setLimit(1f).build()));
         try (var tc = localDockerTool.startContainerBlocking(IMAGE_BUSY_BOX, containerName, Map.of(),
                 new String[]{"tail", "-f", "/dev/null"}, hostConfig)) {
             InspectContainerResponse response = tc.dockerClient.inspectContainerCmd(tc.name).exec();

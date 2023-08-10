@@ -16,13 +16,13 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
@@ -206,16 +206,16 @@ public interface JobApi {
             @PathVariable("jobUrl")
                     String jobUrl,
                     @Valid @RequestBody JobModifyRequest jobRequest);
-            
+
     @Operation(summary = "Pin Job")
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "ok") })
     @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/pin", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyJobPinStatus(
-            @Parameter(in = ParameterIn.PATH, description = "Project url", schema = @Schema()) 
+            @Parameter(in = ParameterIn.PATH, description = "Project url", schema = @Schema())
             @PathVariable("projectUrl") String projectUrl,
             @Parameter(in = ParameterIn.PATH, description = "Job id or uuid", required = true, schema = @Schema())
-            @PathVariable("jobUrl") String jobUrl, 
+            @PathVariable("jobUrl") String jobUrl,
             @Valid @RequestBody JobModifyPinRequest jobRequest);
 
     @Operation(summary = "DAG of Job")

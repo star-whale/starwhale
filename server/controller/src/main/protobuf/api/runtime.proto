@@ -1,0 +1,62 @@
+syntax = "proto3";
+import "storage.proto";
+import "user.proto";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message BuildImageResult {
+  bool success = 1;
+  string message = 2;
+}
+
+message RuntimeInfoVo {
+  string id = 1;
+  string name = 2;
+  RuntimeVersionVo version_info = 3;
+  repeated FlattenFileVo files = 4;
+
+  string version_id = 5;
+  string version_name = 6;
+}
+
+message RuntimeVersionVo {
+  string id = 1;
+  string runtime_id = 2;
+  string name = 3;
+  repeated string tags = 4;
+  string alias = 5;
+  bool latest = 6;
+  string meta = 7;
+  string image = 8;
+  optional string built_image = 9;
+  int64 created_time = 10;
+  UserVo owner = 11;
+  bool shared = 12;
+}
+
+message RuntimeVersionViewVo {
+  string id = 1;
+  string version_name = 2;
+  string alias = 3;
+  bool latest = 4;
+  bool shared = 5;
+  int64 created_time = 6;
+}
+
+message RuntimeViewVo {
+  string owner_name = 1;
+  string project_name = 2;
+  string runtime_id = 3;
+  string runtime_name = 4;
+  bool shared = 5;
+  repeated RuntimeVersionViewVo versions = 6;
+}
+
+message RuntimeVo {
+  string id = 1;
+  string name = 2;
+  int64 created_time = 3;
+  UserVo owner = 4;
+  RuntimeVersionVo version = 5;
+}

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.docker;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import com.github.dockerjava.api.model.HostConfig;
 import java.util.List;
@@ -31,14 +31,14 @@ public class HostResourceConfigBuilder {
         runtimeResources.forEach(runtimeResource -> {
             if (ResourceOverwriteSpec.RESOURCE_CPU.equals(runtimeResource.getType())) {
                 // docker has no cpu reservation for a container. So, request is not processed
-                if (null != runtimeResource.getLimit()) {
-                    hostConfig.withCpuCount(runtimeResource.getLimit().longValue());
+                if (runtimeResource.hasLimit()) {
+                    hostConfig.withCpuCount((long) runtimeResource.getLimit());
                 }
             }
             if (ResourceOverwriteSpec.RESOURCE_MEMORY.equals(runtimeResource.getType())) {
                 // docker has no memory reservation for a container. So, request is not processed
-                if (null != runtimeResource.getLimit()) {
-                    hostConfig.withMemory(runtimeResource.getLimit().longValue());
+                if (runtimeResource.hasLimit()) {
+                    hostConfig.withMemory((long) runtimeResource.getLimit());
                 }
             }
         });

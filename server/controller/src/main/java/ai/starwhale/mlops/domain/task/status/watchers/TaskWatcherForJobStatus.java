@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.task.status.watchers;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;

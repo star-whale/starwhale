@@ -25,9 +25,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.JobMockHolder;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;

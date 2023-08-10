@@ -16,10 +16,10 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;

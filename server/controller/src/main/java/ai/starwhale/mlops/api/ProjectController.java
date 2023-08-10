@@ -16,12 +16,12 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.member.MemberService;

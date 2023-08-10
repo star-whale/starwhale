@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.storage;
 
 
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
+import ai.starwhale.mlops.api.protobuf.Storage.FlattenFileVo;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
@@ -64,9 +64,9 @@ public class StorageService {
                 if (StrUtil.startWith(filePath, storagePath)) {
                     filePath = filePath.substring(storagePath.length() + 1);
                 }
-                return FlattenFileVo.builder()
-                        .name(filePath)
-                        .size(FileUtil.readableFileSize(length))
+                return FlattenFileVo.newBuilder()
+                        .setName(filePath)
+                        .setSize(FileUtil.readableFileSize(length))
                         .build();
             }).collect(Collectors.toList());
         } catch (IOException e) {

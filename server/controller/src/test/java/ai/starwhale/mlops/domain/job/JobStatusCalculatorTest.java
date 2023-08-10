@@ -26,7 +26,7 @@ import static ai.starwhale.mlops.domain.job.step.status.StepStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.TO_CANCEL;
 import static ai.starwhale.mlops.domain.job.step.status.StepStatus.UNKNOWN;
 
-import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;

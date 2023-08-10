@@ -16,17 +16,17 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.CANCELED;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.CANCELLING;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.CREATED;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.FAIL;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.PAUSED;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.READY;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.RUNNING;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.SUCCESS;
+import static ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus.UNKNOWN;
 
-import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELED;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELLING;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.CREATED;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.FAIL;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.PAUSED;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.READY;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.RUNNING;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.SUCCESS;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
-
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;

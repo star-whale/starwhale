@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.dataset.dataloader;
 
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
 import ai.starwhale.mlops.common.KeyLock;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
@@ -173,7 +173,11 @@ public class DataReadManager {
             // update processed data
             if (CollectionUtils.isNotEmpty(processedData)) {
                 for (DataIndexDesc indexDesc : processedData) {
-                    dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), indexDesc.getEnd());
+                    String end = null;
+                    if (indexDesc.hasEnd()) {
+                        end = indexDesc.getEnd();
+                    }
+                    dataReadLogDao.updateToProcessed(sid, consumerId, indexDesc.getStart(), end);
                 }
             }
             // Whether to process serially under the same consumer,

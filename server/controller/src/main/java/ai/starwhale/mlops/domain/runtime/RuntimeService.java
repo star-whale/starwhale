@@ -16,16 +16,16 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
-import ai.starwhale.mlops.api.protocol.runtime.BuildImageResult;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Runtime.BuildImageResult;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeInfoVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionViewVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeViewVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
+import ai.starwhale.mlops.api.protobuf.Storage;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionViewVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
@@ -47,7 +47,6 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.RunConfig;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.bo.Runtime;
@@ -209,17 +208,17 @@ public class RuntimeService {
         List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, rt -> {
-            RuntimeVo vo = runtimeConvertor.convert(rt);
+            var vo = runtimeConvertor.convert(rt).toBuilder();
             RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
             if (version != null) {
                 var tags = bundleVersionTagDao.getTagsByBundleVersions(
                         BundleAccessor.Type.RUNTIME, rt.getId(), List.of(version));
-                RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags.get(version.getId()));
+                var versionVo = versionConvertor.convert(version, version, tags.get(version.getId())).toBuilder();
                 versionVo.setOwner(userService.findUserById(version.getOwnerId()));
                 vo.setVersion(versionVo);
             }
             vo.setOwner(userService.findUserById(rt.getOwnerId()));
-            return vo;
+            return vo.build();
         });
     }
 
@@ -238,27 +237,28 @@ public class RuntimeService {
             if (!map.containsKey(entity.getRuntimeId())) {
                 map.put(
                         entity.getRuntimeId(),
-                        RuntimeViewVo.builder()
-                                .ownerName(entity.getUserName())
-                                .projectName(entity.getProjectName())
-                                .runtimeId(idConvertor.convert(entity.getRuntimeId()))
-                                .runtimeName(entity.getRuntimeName())
-                                .shared(toInt(shared))
-                                .versions(new ArrayList<>())
+                        RuntimeViewVo.newBuilder()
+                                .setOwnerName(entity.getUserName())
+                                .setProjectName(entity.getProjectName())
+                                .setRuntimeId(idConvertor.convert(entity.getRuntimeId()))
+                                .setRuntimeName(entity.getRuntimeName())
+                                .setShared(shared)
+                                .addAllVersions(new ArrayList<>())
                                 .build()
                 );
             }
             RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(entity.getRuntimeId());
-            map.get(entity.getRuntimeId())
-                    .getVersions()
-                    .add(RuntimeVersionViewVo.builder()
-                                 .id(idConvertor.convert(entity.getId()))
-                                 .versionName(entity.getVersionName())
-                                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                                 .createdTime(entity.getCreatedTime().getTime())
-                                 .shared(toInt(entity.getShared()))
-                                 .build());
+            var version = RuntimeVersionViewVo.newBuilder()
+                    .setId(idConvertor.convert(entity.getId()))
+                    .setVersionName(entity.getVersionName())
+                    .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                    .setLatest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                    .setCreatedTime(entity.getCreatedTime().getTime())
+                    .setShared(entity.getShared())
+                    .build();
+            var builder = map.get(entity.getRuntimeId()).toBuilder();
+            builder.addVersions(version);
+            map.put(entity.getRuntimeId(), builder.build());
         }
         return map.values();
     }
@@ -332,26 +332,21 @@ public class RuntimeService {
     private RuntimeInfoVo toRuntimeInfoVo(RuntimeEntity rt, RuntimeVersionEntity versionEntity) {
         try {
             String storagePath = versionEntity.getStoragePath();
-            List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
+            List<Storage.FlattenFileVo> collect = storageService.listStorageFile(storagePath);
             var tags = bundleVersionTagDao.getTagsByBundleVersions(
                     BundleAccessor.Type.RUNTIME, rt.getId(), List.of(versionEntity));
 
-            return RuntimeInfoVo.builder()
-                    .id(idConvertor.convert(rt.getId()))
-                    .name(rt.getRuntimeName())
-                    .versionId(idConvertor.convert(versionEntity.getId()))
-                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
-                    .versionName(versionEntity.getVersionName())
-                    .versionTag(versionEntity.getVersionTag())
-                    .versionMeta(versionEntity.getVersionMeta())
-                    .shared(toInt(versionEntity.getShared()))
-                    .createdTime(versionEntity.getCreatedTime().getTime())
-                    .versionInfo(versionConvertor.convert(
+            return RuntimeInfoVo.newBuilder()
+                    .setId(idConvertor.convert(rt.getId()))
+                    .setName(rt.getRuntimeName())
+                    .setVersionId(idConvertor.convert(versionEntity.getId()))
+                    .setVersionName(versionEntity.getVersionName())
+                    .setVersionInfo(versionConvertor.convert(
                         versionEntity,
                         versionEntity,
                         tags.get(versionEntity.getId())
                     ))
-                    .files(collect)
+                    .addAllFiles(collect)
                     .build();
 
         } catch (IOException e) {
@@ -403,9 +398,9 @@ public class RuntimeService {
         var latest = runtimeVersionMapper.findByLatest(runtimeId);
         var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, runtimeId, entities);
         return PageUtil.toPageInfo(entities, entity -> {
-            RuntimeVersionVo vo = versionConvertor.convert(entity, latest, tags.get(entity.getId()));
+            var vo = versionConvertor.convert(entity, latest, tags.get(entity.getId())).toBuilder();
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
-            return vo;
+            return vo.build();
         });
     }
 
@@ -425,10 +420,10 @@ public class RuntimeService {
         return versions.stream().map(version -> {
             RuntimeEntity rt = runtimeMapper.find(version.getRuntimeId());
             RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(version.getRuntimeId());
-            RuntimeVo vo = runtimeConvertor.convert(rt);
+            var vo = runtimeConvertor.convert(rt).toBuilder();
             vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
             vo.setOwner(userService.findUserById(version.getOwnerId()));
-            return vo;
+            return vo.build();
         }).collect(Collectors.toList());
     }
 
@@ -677,9 +672,9 @@ public class RuntimeService {
             log.debug("runtime:{}-{}'s image:{} has already existed.",
                       runtime.getName(), runtimeVersion.getName(), builtImage
             );
-            return BuildImageResult.builder()
-                    .success(false)
-                    .message(String.format("Runtime image [%s] has already existed", builtImage))
+            return BuildImageResult.newBuilder()
+                    .setSuccess(false)
+                    .setMessage(String.format("Runtime image [%s] has already existed", builtImage))
                     .build();
         }
 
@@ -769,18 +764,18 @@ public class RuntimeService {
 
             log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
             k8sClient.deployJob(job);
-            return BuildImageResult.builder()
-                    .success(true)
-                    .message("Image building has started.")
+            return BuildImageResult.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Image building has started.")
                     .build();
         } catch (ApiException k8sE) {
             if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
                 log.debug("runtime:{}-{}'s image is building, please wait a moment.",
                           runtime.getName(), runtimeVersion.getName()
                 );
-                return BuildImageResult.builder()
-                        .success(false)
-                        .message("Building image, please wait a moment.")
+                return BuildImageResult.newBuilder()
+                        .setSuccess(false)
+                        .setMessage("Building image, please wait a moment.")
                         .build();
             } else {
                 log.error("image build failed {}", k8sE.getResponseBody(), k8sE);

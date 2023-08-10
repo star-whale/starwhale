@@ -20,6 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Model.Env;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.RunTimeProperties.Pypi;
 import ai.starwhale.mlops.configuration.RunTimeProperties.RunConfig;
@@ -28,11 +30,9 @@ import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.ResultPath;
@@ -109,9 +109,10 @@ public class TaskRunningEnvBuilderTest {
         TaskTokenValidator taskTokenValidator = mock(TaskTokenValidator.class);
         when(taskTokenValidator.getTaskToken(any(), any())).thenReturn("tt");
         TaskRunningEnvBuilder builder = new TaskRunningEnvBuilder("http://instanceUri",
-                8000,
-                50,
-                runTimeProperties, taskTokenValidator);
+                                                                  8000,
+                                                                  50,
+                                                                  runTimeProperties, taskTokenValidator
+        );
         assertMapEquals(expectedEnvs, builder.buildCoreContainerEnvs(mockTask(true)));
     }
 
@@ -125,23 +126,26 @@ public class TaskRunningEnvBuilderTest {
                 .id(1L)
                 .model(Model.builder().name("swmpN").version("swmpV").projectId(101L).build())
                 .jobRuntime(JobRuntime.builder()
-                        .name("swrtN")
-                        .version("swrtV")
-                        .image("imageRT")
-                        .storagePath("path_rt")
-                        .projectId(102L)
-                        .manifest(new RuntimeService.RuntimeManifest(
-                                "",
-                                new RuntimeService.RuntimeManifest.Environment("3.10",
-                                        new RuntimeService.RuntimeManifest.Lock("0.5.1")), null))
-                        .build())
+                                    .name("swrtN")
+                                    .version("swrtV")
+                                    .image("imageRT")
+                                    .storagePath("path_rt")
+                                    .projectId(102L)
+                                    .manifest(new RuntimeService.RuntimeManifest(
+                                            "",
+                                            new RuntimeService.RuntimeManifest.Environment(
+                                                    "3.10",
+                                                    new RuntimeService.RuntimeManifest.Lock("0.5.1")
+                                            ), null
+                                    ))
+                                    .build())
                 .type(JobType.EVALUATION)
                 .devMode(devMode)
                 .uuid("juuid")
                 .dataSets(
                         List.of(DataSet.builder()
-                                .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
-                                .size(300L).projectId(103L).build()))
+                                        .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
+                                        .size(300L).projectId(103L).build()))
                 .stepSpec("")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").id(100L).build())
@@ -159,11 +163,15 @@ public class TaskRunningEnvBuilderTest {
                 .uuid("uuid")
                 .status(TaskStatus.READY)
                 .taskRequest(TaskRequest.builder()
-                        .index(1)
-                        .total(1)
-                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f)))
-                        .env(List.of(Env.builder().name("SW_ENV").value("test").build()))
-                        .build())
+                                     .index(1)
+                                     .total(1)
+                                     .runtimeResources(List.of(RuntimeResource.newBuilder()
+                                                                       .setType("cpu")
+                                                                       .setRequest(1f)
+                                                                       .setLimit(1f)
+                                                                       .build()))
+                                     .env(List.of(Env.newBuilder().setName("SW_ENV").setValue("test").build()))
+                                     .build())
                 .build();
     }
 

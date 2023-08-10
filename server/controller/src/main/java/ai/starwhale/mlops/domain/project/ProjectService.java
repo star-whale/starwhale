@@ -16,11 +16,9 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
-import ai.starwhale.mlops.api.protocol.project.StatisticsVo;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
+import ai.starwhale.mlops.api.protobuf.Project.StatisticsVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
@@ -29,6 +27,7 @@ import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
+import ai.starwhale.mlops.domain.project.converter.ProjectVoConverter;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ObjectCountEntity;
@@ -39,6 +38,8 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.domain.user.converter.RoleVoConverter;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwNotFoundException.ResourceType;
 import ai.starwhale.mlops.exception.SwValidationException;
@@ -83,6 +84,9 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     private final MemberService memberService;
 
     private final IdConverter idConvertor;
+    private final ProjectVoConverter projectVoConverter;
+    private final UserVoConverter userVoConverter;
+    private final RoleVoConverter roleVoConverter;
 
     private final UserService userService;
 
@@ -92,7 +96,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     private static final long storageInterval = 1000;
     private ApplicationContext applicationContext;
 
-    public ProjectService(ProjectMapper projectMapper,
+    public ProjectService(
+            ProjectMapper projectMapper,
             ProjectVisitedMapper projectVisitedMapper,
             ProjectDao projectDao,
             MemberService memberService,
@@ -100,7 +105,10 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             UserService userService,
             RuntimeVersionMapper runtimeVersionMapper,
             ModelVersionMapper modelVersionMapper,
-            DatasetVersionMapper datasetVersionMapper
+            DatasetVersionMapper datasetVersionMapper,
+            ProjectVoConverter projectVoConverter,
+            UserVoConverter userVoConverter,
+            RoleVoConverter roleVoConverter
     ) {
         this.projectMapper = projectMapper;
         this.projectVisitedMapper = projectVisitedMapper;
@@ -111,6 +119,9 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.datasetVersionMapper = datasetVersionMapper;
+        this.projectVoConverter = projectVoConverter;
+        this.userVoConverter = userVoConverter;
+        this.roleVoConverter = roleVoConverter;
     }
 
     @Override
@@ -142,7 +153,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     }
 
     public ProjectVo getProjectVo(Long projectId) {
-        return ProjectVo.fromBo(findProject(projectId), idConvertor);
+        return projectVoConverter.fromBo(findProject(projectId), idConvertor);
     }
 
     /**
@@ -152,7 +163,7 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
      * @return Optional of a ProjectVo object.
      */
     public ProjectVo getProjectVo(String projectUrl) {
-        return ProjectVo.fromBo(findProject(projectUrl), idConvertor);
+        return projectVoConverter.fromBo(findProject(projectUrl), idConvertor);
     }
 
     public PageInfo<ProjectVo> listProject(String projectName, OrderParams orderParams, User user) {
@@ -173,19 +184,22 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                 ids);
 
         return new PageInfo<>(entities.stream().map(entity -> {
-            ProjectVo vo = ProjectVo.fromEntity(entity, idConvertor,
-                    userService.findUserById(entity.getOwnerId()));
+            var vo = projectVoConverter.fromEntity(
+                    entity,
+                    idConvertor,
+                    userService.findUserById(entity.getOwnerId())
+            ).toBuilder();
             ProjectObjectCounts count = countMap.get(entity.getId());
             if (count != null) {
-                vo.setStatistics(StatisticsVo.builder()
-                        .modelCounts(count.getCountModel())
-                        .datasetCounts(count.getCountDataset())
-                        .runtimeCounts(count.getCountRuntime())
-                        .memberCounts(count.getCountMember())
-                        .evaluationCounts(count.getCountJob())
-                        .build());
+                vo.setStatistics(StatisticsVo.newBuilder()
+                                         .setModelCounts(count.getCountModel())
+                                         .setDatasetCounts(count.getCountDataset())
+                                         .setRuntimeCounts(count.getCountRuntime())
+                                         .setMemberCounts(count.getCountMember())
+                                         .setEvaluationCounts(count.getCountJob())
+                                         .build());
             }
-            return vo;
+            return vo.build();
         }).collect(Collectors.toList()));
     }
 
@@ -214,9 +228,12 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         if (existProject(project.getName(), project.getOwner().getId())) {
             //project exists and has not been deleted
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT,
-                            String.format("Project %s already exists", project.getName())),
-                    HttpStatus.BAD_REQUEST);
+                    new SwValidationException(
+                            ValidSubject.PROJECT,
+                            String.format("Project %s already exists", project.getName())
+                    ),
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
         ProjectEntity entity = ProjectEntity.builder()
@@ -247,7 +264,8 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         if (entity.getIsDefault() > 0) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.PROJECT, "Default project cannot be deleted."),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
         entity.setProjectName(entity.getProjectName() + DELETE_SUFFIX + "." + entity.getId());
         projectMapper.update(entity);
@@ -265,11 +283,15 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             id = idConvertor.revert(projectUrl);
             ProjectEntity entity = projectMapper.find(id);
             if (entity == null) {
-                throw new SwNotFoundException(ResourceType.PROJECT,
-                        "Recover project error. Project can not be found.");
+                throw new SwNotFoundException(
+                        ResourceType.PROJECT,
+                        "Recover project error. Project can not be found."
+                );
             }
-            projectName = entity.getProjectName().substring(0,
-                    entity.getProjectName().lastIndexOf(DELETE_SUFFIX));
+            projectName = entity.getProjectName().substring(
+                    0,
+                    entity.getProjectName().lastIndexOf(DELETE_SUFFIX)
+            );
             ownerId = entity.getOwnerId();
             entity.setProjectName(projectName);
         } else {
@@ -280,8 +302,10 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
                     ownerId = idConvertor.revert(arr[0]);
                 } else {
                     ownerId = Optional.of(userService.loadUserByUsername(arr[0]))
-                            .orElseThrow(() -> new SwNotFoundException(ResourceType.USER,
-                                    "Recover project error. User can not be found. "))
+                            .orElseThrow(() -> new SwNotFoundException(
+                                    ResourceType.USER,
+                                    "Recover project error. User can not be found. "
+                            ))
                             .getId();
                 }
             } else {
@@ -290,20 +314,32 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             }
 
             // To restore projects by name, need to check whether there are duplicate names
-            List<ProjectEntity> deletedProjects = projectMapper.listRemovedProjects(projectName + DELETE_SUFFIX,
-                    ownerId);
+            List<ProjectEntity> deletedProjects = projectMapper.listRemovedProjects(
+                    projectName + DELETE_SUFFIX,
+                    ownerId
+            );
             if (deletedProjects.size() > 1) {
                 throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.PROJECT,
-                                StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ",
-                                        projectName)),
-                        HttpStatus.BAD_REQUEST);
+                        new SwValidationException(
+                                ValidSubject.PROJECT,
+                                StrUtil.format(
+                                        "Recover project error. Duplicate names [%s] of deleted project. ",
+                                        projectName
+                                )
+                        ),
+                        HttpStatus.BAD_REQUEST
+                );
             } else if (deletedProjects.size() == 0) {
                 throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.PROJECT,
-                                StrUtil.format("Recover project error. Can not find deleted project [%s].",
-                                        projectName)),
-                        HttpStatus.BAD_REQUEST);
+                        new SwValidationException(
+                                ValidSubject.PROJECT,
+                                StrUtil.format(
+                                        "Recover project error. Can not find deleted project [%s].",
+                                        projectName
+                                )
+                        ),
+                        HttpStatus.BAD_REQUEST
+                );
             }
             id = deletedProjects.get(0).getId();
         }
@@ -311,22 +347,27 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         // Check for duplicate names
         if (existProject(projectName, ownerId)) {
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.PROJECT,
-                            String.format("Recover project error. Project %s already exists", projectName)),
-                    HttpStatus.BAD_REQUEST);
+                    new SwValidationException(
+                            ValidSubject.PROJECT,
+                            String.format("Recover project error. Project %s already exists", projectName)
+                    ),
+                    HttpStatus.BAD_REQUEST
+            );
         }
         projectMapper.update(ProjectEntity.builder()
-                .id(id)
-                .projectName(projectName)
-                .build());
+                                     .id(id)
+                                     .projectName(projectName)
+                                     .build());
         projectMapper.recover(id);
         log.info("Project has been recovered. Name={}", projectName);
         return id;
     }
 
     @Transactional
-    public Boolean updateProject(String projectUrl, String projectName, String description, Long ownerId,
-                                 String privacy) {
+    public Boolean updateProject(
+            String projectUrl, String projectName, String description, Long ownerId,
+            String privacy
+    ) {
         ProjectEntity project = projectDao.getProject(projectUrl);
         Long projectId = project.getId();
         if (StrUtil.isNotEmpty(projectName)) {
@@ -336,9 +377,12 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
             ProjectEntity existProject = projectMapper.findByNameForUpdateAndOwner(projectName, ownerId);
             if (existProject != null && !Objects.equals(existProject.getId(), projectId)) {
                 throw new StarwhaleApiException(
-                        new SwValidationException(ValidSubject.PROJECT,
-                                String.format("Project %s already exists", projectName)),
-                        HttpStatus.BAD_REQUEST);
+                        new SwValidationException(
+                                ValidSubject.PROJECT,
+                                String.format("Project %s already exists", projectName)
+                        ),
+                        HttpStatus.BAD_REQUEST
+                );
             }
         }
 
@@ -417,11 +461,11 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
     public List<ProjectMemberVo> listProjectMembersInProject(String projectUrl) {
         Project project = findProject(projectUrl);
         List<ProjectMember> members = memberService.listProjectMembersInProject(project.getId());
-        return members.stream().map(member -> ProjectMemberVo.builder()
-                .id(idConvertor.convert(member.getId()))
-                .project(ProjectVo.fromBo(project, idConvertor))
-                .user(UserVo.from(userService.loadUserById(member.getUserId()), idConvertor))
-                .role(RoleVo.fromBo(userService.findRole(member.getRoleId()), idConvertor))
+        return members.stream().map(member -> ProjectMemberVo.newBuilder()
+                .setId(idConvertor.convert(member.getId()))
+                .setProject(projectVoConverter.fromBo(project, idConvertor))
+                .setUser(userVoConverter.fromBo(userService.loadUserById(member.getUserId())))
+                .setRole(roleVoConverter.fromBo(userService.findRole(member.getRoleId())))
                 .build()).collect(Collectors.toList());
     }
 
@@ -435,11 +479,11 @@ public class ProjectService implements ProjectAccessor, ApplicationContextAware 
         } else {
             members = memberService.listProjectMembersOfUser(user.getId());
         }
-        return members.stream().map(member -> ProjectMemberVo.builder()
-                .id(idConvertor.convert(member.getId()))
-                .project(ProjectVo.builder().id(idConvertor.convert(member.getProjectId())).build())
-                .user(UserVo.from(user, idConvertor))
-                .role(RoleVo.fromBo(userService.findRole(member.getRoleId()), idConvertor))
+        return members.stream().map(member -> ProjectMemberVo.newBuilder()
+                .setId(idConvertor.convert(member.getId()))
+                .setProject(ProjectVo.newBuilder().setId(idConvertor.convert(member.getProjectId())).build())
+                .setUser(userVoConverter.fromBo(user))
+                .setRole(roleVoConverter.fromBo(userService.findRole(member.getRoleId())))
                 .build()).collect(Collectors.toList());
     }
 

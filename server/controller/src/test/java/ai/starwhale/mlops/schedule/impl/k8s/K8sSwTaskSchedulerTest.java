@@ -25,15 +25,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Model.Env;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Resource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -201,8 +201,10 @@ public class K8sSwTaskSchedulerTest {
                 .taskRequest(TaskRequest.builder()
                         .index(1)
                         .total(1)
-                        .runtimeResources(List.of(new RuntimeResource("cpu", 1f, 1f)))
-                        .env(List.of(Env.builder().name("SW_ENV").value("test").build()))
+                        .runtimeResources(List.of(RuntimeResource.newBuilder()
+                                        .setType(ResourceOverwriteSpec.RESOURCE_CPU)
+                                        .setRequest(1f).setLimit(1f).build()))
+                        .env(List.of(Env.newBuilder().setName("SW_ENV").setValue("test").build()))
                         .build())
                 .build();
     }

@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.schedule;
 
 
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.TaskTokenValidator;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import java.util.HashMap;

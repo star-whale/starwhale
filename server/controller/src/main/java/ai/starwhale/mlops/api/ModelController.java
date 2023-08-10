@@ -16,6 +16,10 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Model;
+import ai.starwhale.mlops.api.protobuf.Model.ModelInfoVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelViewVo;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.model.CompleteUploadBlobResult;
@@ -23,12 +27,8 @@ import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
 import ai.starwhale.mlops.api.protocol.model.ListFilesResult;
-import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
-import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
@@ -69,7 +69,7 @@ public class ModelController implements ModelApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ModelVo>>> listModel(
+    public ResponseEntity<ResponseMessage<PageInfo<Model.ModelVo>>> listModel(
             String projectUrl,
             String versionId,
             String name,
@@ -77,11 +77,11 @@ public class ModelController implements ModelApi {
             Integer pageNum,
             Integer pageSize
     ) {
-        PageInfo<ModelVo> pageInfo;
+        PageInfo<Model.ModelVo> pageInfo;
         if (StringUtils.hasText(versionId)) {
-            List<ModelVo> voList = modelService
-                    .findModelByVersionId(Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(
-                            Collectors.toList()));
+            var voList = modelService
+                    .findModelByVersionId(
+                            Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(Collectors.toList()));
             pageInfo = PageInfo.of(voList);
         } else {
             pageInfo = modelService.listModel(

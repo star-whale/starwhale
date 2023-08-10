@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.build.mapper;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
 import java.util.List;
 import java.util.Objects;

@@ -46,6 +46,7 @@ import static ai.starwhale.mlops.domain.job.JobSchema.STRING;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.tableSchemaDesc;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.DataStore;
@@ -57,7 +58,6 @@ import ai.starwhale.mlops.datastore.type.BaseValue;
 import ai.starwhale.mlops.datastore.type.Int64Value;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;

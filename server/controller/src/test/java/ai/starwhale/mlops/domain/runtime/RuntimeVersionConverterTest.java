@@ -21,7 +21,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
@@ -29,6 +28,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +54,7 @@ public class RuntimeVersionConverterTest {
                 .versionTag("tag1")
                 .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .image("image1")
+                .runtimeId(3L)
                 .shared(true)
                 .build();
         var res = runtimeVersionConvertor.convert(entity);
@@ -62,9 +63,9 @@ public class RuntimeVersionConverterTest {
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(false)),
-                hasProperty("tags", nullValue()), // tag is not set
+                hasProperty("tagsList", is(Collections.emptyList())), // tag is not set
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
         assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
@@ -75,9 +76,9 @@ public class RuntimeVersionConverterTest {
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
                 hasProperty("latest", is(true)),
-                hasProperty("tags", is(List.of("tag2"))), // use the tag from parameter
+                hasProperty("tagsList", is(List.of("tag2"))), // use the tag from parameter
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
-                hasProperty("shared", is(1)),
+                hasProperty("shared", is(true)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
     }

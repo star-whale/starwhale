@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.converter;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -33,10 +33,10 @@ public class DatasetVoConverter {
 
 
     public DatasetVo convert(DatasetEntity entity) throws ConvertException {
-        return DatasetVo.builder()
-                .id(idConvertor.convert(entity.getId()))
-                .name(entity.getDatasetName())
-                .createdTime(entity.getCreatedTime().getTime())
+        return DatasetVo.newBuilder()
+                .setId(idConvertor.convert(entity.getId()))
+                .setName(entity.getDatasetName())
+                .setCreatedTime(entity.getCreatedTime().getTime())
                 .build();
     }
 

@@ -16,18 +16,18 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.ModelInfoVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionViewVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelViewVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.CreateModelVersionRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobRequest;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult;
 import ai.starwhale.mlops.api.protocol.model.InitUploadBlobResult.Status;
 import ai.starwhale.mlops.api.protocol.model.ListFilesResult;
-import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionViewVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
-import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -44,7 +44,6 @@ import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.CompressionAlgorithm;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.File;
 import ai.starwhale.mlops.domain.model.ModelPackageStorage.FileType;
@@ -184,17 +183,18 @@ public class ModelService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
-            ModelVo vo = modelVoConverter.convert(entity);
+            var vo = modelVoConverter.convert(entity).toBuilder();
             var modelVersion = modelVersionMapper.findByLatest(entity.getId());
             if (modelVersion != null) {
                 var tags = bundleVersionTagDao.getTagsByBundleVersions(
                         BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
-                var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags.get(modelVersion.getId()));
+                var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags.get(modelVersion.getId()))
+                        .toBuilder();
                 versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
-                vo.setVersion(versionVo);
+                vo.setVersion(versionVo.build());
             }
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
-            return vo;
+            return vo.build();
         });
     }
 
@@ -312,16 +312,12 @@ public class ModelService {
                 model.getId(),
                 List.of(version)
         );
-        return ModelInfoVo.builder()
-                .id(idConvertor.convert(model.getId()))
-                .name(model.getModelName())
-                .versionId(idConvertor.convert(version.getId()))
-                .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
-                .versionName(version.getVersionName())
-                .versionTag(version.getVersionTag())
-                .createdTime(version.getCreatedTime().getTime())
-                .shared(toInt(version.getShared()))
-                .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
+        return ModelInfoVo.newBuilder()
+                .setId(idConvertor.convert(model.getId()))
+                .setName(model.getModelName())
+                .setVersionId(idConvertor.convert(version.getId()))
+                .setVersionName(version.getVersionName())
+                .setVersionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
                 .build();
     }
 
@@ -392,13 +388,13 @@ public class ModelService {
             if (!map.containsKey(entity.getModelId())) {
                 map.put(
                         entity.getModelId(),
-                        ModelViewVo.builder()
-                                .ownerName(entity.getUserName())
-                                .projectName(entity.getProjectName())
-                                .modelId(idConvertor.convert(entity.getModelId()))
-                                .modelName(entity.getModelName())
-                                .shared(toInt(shared))
-                                .versions(new ArrayList<>())
+                        ModelViewVo.newBuilder()
+                                .setOwnerName(entity.getUserName())
+                                .setProjectName(entity.getProjectName())
+                                .setModelId(idConvertor.convert(entity.getModelId()))
+                                .setModelName(entity.getModelName())
+                                .setShared(shared)
+                                .addAllVersions(new ArrayList<>())
                                 .build()
                 );
             }
@@ -406,19 +402,22 @@ public class ModelService {
             var versionTags =
                     tags.get(entity.getModelId()) == null ? null : tags.get(entity.getModelId()).get(entity.getId());
             try {
-                map.get(entity.getModelId())
-                        .getVersions()
-                        .add(ModelVersionViewVo.builder()
-                                     .id(idConvertor.convert(entity.getId()))
-                                     .versionName(entity.getVersionName())
-                                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                                     .tags(versionTags)
-                                     .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                                     .createdTime(entity.getCreatedTime().getTime())
-                                     .shared(toInt(entity.getShared()))
-                                     .builtInRuntime(entity.getBuiltInRuntime())
-                                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                                     .build());
+                var builder = ModelVersionViewVo.newBuilder()
+                        .setId(idConvertor.convert(entity.getId()))
+                        .setVersionName(entity.getVersionName())
+                        .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                        .addAllTags(versionTags == null ? List.of() : versionTags)
+                        .setLatest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                        .setCreatedTime(entity.getCreatedTime().getTime())
+                        .setShared(entity.getShared())
+                        .addAllStepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()));
+                if (StringUtils.hasText(entity.getBuiltInRuntime())) {
+                    builder.setBuiltInRuntime(entity.getBuiltInRuntime());
+                }
+
+                var modelBuilder = map.get(entity.getModelId()).toBuilder();
+                modelBuilder.addVersions(builder);
+                map.put(entity.getModelId(), modelBuilder.build());
             } catch (JsonProcessingException e) {
                 log.error("parse step spec error for model version:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
@@ -441,12 +440,12 @@ public class ModelService {
         return versions.stream().map(version -> {
             ModelEntity model = modelMapper.find(version.getModelId());
             ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
-            ModelVo vo = modelVoConverter.convert(model);
+            var vo = modelVoConverter.convert(model).toBuilder();
             vo.setOwner(userService.findUserById(model.getOwnerId()));
             var versionTags =
                     tags.get(version.getModelId()) == null ? null : tags.get(version.getModelId()).get(version.getId());
             vo.setVersion(versionConvertor.convert(version, latest, versionTags));
-            return vo;
+            return vo.build();
         }).collect(Collectors.toList());
     }
 

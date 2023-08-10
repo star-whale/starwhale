@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.evaluation;
 
-import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;

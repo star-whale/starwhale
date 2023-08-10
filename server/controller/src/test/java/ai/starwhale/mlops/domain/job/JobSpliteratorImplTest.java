@@ -24,12 +24,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.JobMockHolder;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.Env;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.spec.Env;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorImpl;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -54,20 +54,20 @@ public class JobSpliteratorImplTest {
         mockJob.setSteps(null);
         mockJob.setStatus(JobStatus.CREATED);
         var steps = List.of(
-                StepSpec.builder()
-                    .jobName("evaluate")
-                    .name("predict")
-                    .replicas(1)
-                    .resources(List.of())
-                    .env(List.of(Env.builder().name("SW_TEST").value("val-a").build()))
+                StepSpec.newBuilder()
+                    .setJobName("evaluate")
+                    .setName("predict")
+                    .setReplicas(1)
+                    .addAllResources(List.of())
+                    .addAllEnv(List.of(Env.newBuilder().setName("SW_TEST").setValue("val-a").build()))
                     .build(),
-                StepSpec.builder()
-                    .jobName("evaluate")
-                    .name("evaluate")
-                    .replicas(1)
-                    .resources(List.of())
-                    .env(List.of(Env.builder().name("SW_TEST").value("val-b").build()))
-                    .needs(List.of("predict"))
+                StepSpec.newBuilder()
+                    .setJobName("evaluate")
+                    .setName("evaluate")
+                    .setReplicas(1)
+                    .addAllResources(List.of())
+                    .addAllEnv(List.of(Env.newBuilder().setName("SW_TEST").setValue("val-b").build()))
+                    .addAllNeeds(List.of("predict"))
                     .build()
         );
         TaskMapper taskMapper = mock(TaskMapper.class);

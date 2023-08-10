@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement;
 import ai.starwhale.mlops.domain.job.step.status.StatusRequirement.RequireType;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;

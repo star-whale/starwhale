@@ -33,6 +33,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetVersionMapper;
@@ -41,6 +42,7 @@ import ai.starwhale.mlops.domain.member.bo.ProjectMember;
 import ai.starwhale.mlops.domain.model.mapper.ModelVersionMapper;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
+import ai.starwhale.mlops.domain.project.converter.ProjectVoConverter;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectVisitedMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -49,9 +51,12 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.domain.user.converter.RoleVoConverter;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +75,8 @@ public class ProjectServiceTest {
     private ProjectDao projectDao;
 
     private MemberService memberService;
+
+    private UserService userService;
 
     @BeforeEach
     public void setUp() {
@@ -111,29 +118,35 @@ public class ProjectServiceTest {
         given(projectDao.getProject(same("p1"))).willReturn(project1);
         given(projectDao.getProject(same("p2"))).willReturn(project2);
 
-        UserService userService = mock(UserService.class);
+        userService = mock(UserService.class);
         given(userService.currentUserDetail()).willReturn(User.builder()
-                .name("starwhale")
-                .id(1L)
-                .roles(Set.of(Role.builder().roleName("Owner").roleCode("OWNER").build()))
-                .build());
+                                                                  .name("starwhale")
+                                                                  .id(1L)
+                                                                  .roles(Set.of(Role.builder()
+                                                                                        .roleName("Owner")
+                                                                                        .roleCode("OWNER")
+                                                                                        .build()))
+                                                                  .createdTime(new Date())
+                                                                  .build());
         given(userService.getProjectRolesOfUser(any(), any()))
                 .willReturn(Collections.emptyList());
         given(userService.findRole(same(1L)))
                 .willReturn(Role.builder().id(1L)
-                        .roleName(Role.NAME_OWNER)
-                        .roleCode(Role.CODE_OWNER)
-                        .build());
+                                    .roleName(Role.NAME_OWNER)
+                                    .roleCode(Role.CODE_OWNER)
+                                    .build());
         given(userService.findRole(same(2L)))
                 .willReturn(Role.builder().id(2L)
-                        .roleName(Role.NAME_MAINTAINER)
-                        .roleCode(Role.CODE_MAINTAINER)
-                        .build());
+                                    .roleName(Role.NAME_MAINTAINER)
+                                    .roleCode(Role.CODE_MAINTAINER)
+                                    .build());
 
         memberService = mock(MemberService.class);
 
         IdConverter idConvertor = new IdConverter();
-        service = new ProjectService(projectMapper,
+        var userVoConverter = new UserVoConverter(idConvertor);
+        service = new ProjectService(
+                projectMapper,
                 projectVisitedMapper,
                 projectDao,
                 memberService,
@@ -141,7 +154,10 @@ public class ProjectServiceTest {
                 userService,
                 mock(RuntimeVersionMapper.class),
                 mock(ModelVersionMapper.class),
-                mock(DatasetVersionMapper.class)
+                mock(DatasetVersionMapper.class),
+                new ProjectVoConverter(userVoConverter),
+                userVoConverter,
+                new RoleVoConverter(idConvertor)
         );
     }
 
@@ -174,13 +190,17 @@ public class ProjectServiceTest {
                 .thenReturn(sort);
         Mockito.when(sort.list(anyString(), any(), anyBoolean()))
                 .thenReturn(List.of(
-                        ProjectEntity.builder().id(1L).build(),
-                        ProjectEntity.builder().id(2L).build()
+                        ProjectEntity.builder().id(1L).projectName("p1").build(),
+                        ProjectEntity.builder().id(2L).projectName("p2").build()
                 ));
+        Mockito.when(userService.findUserById(any()))
+                .thenReturn(UserVo.newBuilder().build());
 
-        var res = service.listProject("",
+        var res = service.listProject(
+                "",
                 OrderParams.builder().build(),
-                User.builder().build());
+                User.builder().build()
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("total", is(2L))
@@ -197,18 +217,20 @@ public class ProjectServiceTest {
                 });
 
         var res = service.createProject(Project.builder()
-                .name("test1")
-                .owner(User.builder().id(1L).build())
-                .privacy(Privacy.PRIVATE)
-                .build());
+                                                .name("test1")
+                                                .owner(User.builder().id(1L).build())
+                                                .privacy(Privacy.PRIVATE)
+                                                .build());
         assertThat(res, is(1L));
 
-        assertThrows(StarwhaleApiException.class,
+        assertThrows(
+                StarwhaleApiException.class,
                 () -> service.createProject(Project.builder()
-                        .name("exist_project")
-                        .owner(User.builder().id(1L).build())
-                        .privacy(Privacy.PRIVATE)
-                        .build()));
+                                                    .name("exist_project")
+                                                    .owner(User.builder().id(1L).build())
+                                                    .privacy(Privacy.PRIVATE)
+                                                    .build())
+        );
     }
 
     @Test
@@ -222,11 +244,15 @@ public class ProjectServiceTest {
         res = service.deleteProject("p2");
         assertThat(res, is(true));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.deleteProject("1"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.deleteProject("1")
+        );
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.deleteProject("not_exist"));
+        assertThrows(
+                SwNotFoundException.class,
+                () -> service.deleteProject("not_exist")
+        );
     }
 
     @Test
@@ -248,14 +274,20 @@ public class ProjectServiceTest {
         res = service.recoverProject("one");
         assertThat(res, is(1L));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.recoverProject("many"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.recoverProject("many")
+        );
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.recoverProject("p1"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.recoverProject("p1")
+        );
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.recoverProject("exist_project"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.recoverProject("exist_project")
+        );
     }
 
     @Test
@@ -279,8 +311,10 @@ public class ProjectServiceTest {
         res = service.updateProject("2", "p2", null, 1L, "PUBLIC");
         assertThat(res, is(false));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.updateProject("1", "p2", "", 1L, "PUBLIC"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.updateProject("1", "p2", "", 1L, "PUBLIC")
+        );
     }
 
     @Test

@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.User.RoleVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -29,6 +29,8 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.domain.user.converter.RoleVoConverter;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.domain.user.mapper.RoleMapper;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
@@ -75,15 +77,25 @@ public class UserService implements UserDetailsService {
     private final MemberService memberService;
     private final IdConverter idConvertor;
     private final SaltGenerator saltGenerator;
+    private final UserVoConverter userVoConverter;
+    private final RoleVoConverter roleVoConverter;
 
-    public UserService(UserMapper userMapper, RoleMapper roleMapper,
+    public UserService(
+            UserMapper userMapper,
+            RoleMapper roleMapper,
             MemberService memberService,
-            IdConverter idConvertor, SaltGenerator saltGenerator) {
+            IdConverter idConvertor,
+            SaltGenerator saltGenerator,
+            UserVoConverter userVoConverter,
+            RoleVoConverter roleVoConverter
+    ) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.memberService = memberService;
         this.idConvertor = idConvertor;
         this.saltGenerator = saltGenerator;
+        this.userVoConverter = userVoConverter;
+        this.roleVoConverter = roleVoConverter;
     }
 
 
@@ -149,24 +161,27 @@ public class UserService implements UserDetailsService {
         UserEntity userEntity = userMapper.findByName(user.getName());
         if (userEntity == null) {
             throw new StarwhaleApiException(
-                    new SwProcessException(ErrorType.DB,
-                            String.format("Unable to find user by name %s", user.getName())),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    new SwProcessException(
+                            ErrorType.DB,
+                            String.format("Unable to find user by name %s", user.getName())
+                    ),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
-        UserVo userVo = UserVo.fromEntity(userEntity, idConvertor);
+        var userVoBuilder = userVoConverter.convert(userEntity).toBuilder();
         List<ProjectMember> members = memberService.listProjectMembersOfUser(userEntity.getId());
         Map<String, String> roles = new HashMap<>();
         members.forEach(member -> {
             Role role = findRole(member.getRoleId());
             if (Objects.equals(member.getProjectId(), Project.system().getId())) {
-                userVo.setSystemRole(role.getRoleCode());
+                userVoBuilder.setSystemRole(role.getRoleCode());
                 return;
             }
             String key = idConvertor.convert(member.getProjectId());
             roles.put(key, role.getRoleCode());
         });
-        userVo.setProjectRoles(roles);
-        return userVo;
+        userVoBuilder.putAllProjectRoles(roles);
+        return userVoBuilder.build();
     }
 
     public User currentUserDetail() {
@@ -181,7 +196,7 @@ public class UserService implements UserDetailsService {
     }
 
     public UserVo findUserById(Long id) {
-        return UserVo.fromEntity(userMapper.find(id), idConvertor);
+        return userVoConverter.convert(userMapper.find(id));
     }
 
 
@@ -189,7 +204,7 @@ public class UserService implements UserDetailsService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<UserEntity> userEntities = userMapper.list(user.getName(), null);
 
-        return PageUtil.toPageInfo(userEntities, entity -> UserVo.fromEntity(entity, idConvertor));
+        return PageUtil.toPageInfo(userEntities, userVoConverter::convert);
     }
 
     @Transactional
@@ -198,7 +213,8 @@ public class UserService implements UserDetailsService {
         if (null != userByName) {
             throw new StarwhaleApiException(
                     new SwValidationException(ValidSubject.USER, "user already exists"),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST
+            );
         }
         String encodedPwd;
         if (StrUtil.isEmpty(salt)) {
@@ -228,15 +244,19 @@ public class UserService implements UserDetailsService {
     public Boolean changePassword(User user, String newPassword, String oldPassword) {
         String salt = saltGenerator.salt();
         log.info("User password has been changed. ID={}", user.getId());
-        return userMapper.updatePassword(user.getId(),
+        return userMapper.updatePassword(
+                user.getId(),
                 SwPasswordEncoder.getEncoder(salt).encode(newPassword),
-                salt) > 0;
+                salt
+        ) > 0;
     }
 
     public Boolean updateUserState(User user, Boolean isEnabled) {
         log.info("User has been {}.", isEnabled ? "enabled" : "disabled");
-        return userMapper.updateEnabled(user.getId(),
-                Optional.of(isEnabled).orElse(false) ? 1 : 0) > 0;
+        return userMapper.updateEnabled(
+                user.getId(),
+                Optional.of(isEnabled).orElse(false) ? 1 : 0
+        ) > 0;
     }
 
 
@@ -245,9 +265,12 @@ public class UserService implements UserDetailsService {
         UserEntity userEntity = userMapper.findByName(user.getName());
         if (userEntity == null) {
             throw new StarwhaleApiException(
-                    new SwProcessException(ErrorType.DB,
-                            String.format("Unable to find user by name %s", user.getName())),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    new SwProcessException(
+                            ErrorType.DB,
+                            String.format("Unable to find user by name %s", user.getName())
+                    ),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         PasswordEncoder passwordEncoder = SwPasswordEncoder.getEncoder(userEntity.getUserPwdSalt());
         return passwordEncoder.matches(password, userEntity.getUserPwd());
@@ -257,12 +280,12 @@ public class UserService implements UserDetailsService {
     public List<RoleVo> listRoles() {
         return roleMapper.list()
                 .stream()
-                .map(role -> RoleVo.fromEntity(role, idConvertor))
+                .map(roleVoConverter::convert)
                 .collect(Collectors.toList());
     }
 
     public RoleVo findRoleById(Long roleId) {
-        return RoleVo.fromEntity(roleMapper.find(roleId), idConvertor);
+        return roleVoConverter.convert(roleMapper.find(roleId));
     }
 
     public List<ProjectMemberVo> listCurrentUserRoles() {

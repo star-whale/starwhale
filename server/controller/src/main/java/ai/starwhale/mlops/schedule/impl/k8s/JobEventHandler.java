@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;

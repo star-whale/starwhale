@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message UserVo {
+  string id = 1;
+  string name = 2;
+  int64 created_time = 3;
+  bool is_enabled = 4;
+  string system_role = 5;
+  map<string, string> project_roles = 6;
+}
+
+message RoleVo {
+  string id = 1;
+  string name = 2;
+  string code = 3;
+  string description = 4;
+}

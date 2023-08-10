@@ -18,6 +18,8 @@ package ai.starwhale.mlops.domain.job;
 
 import static ai.starwhale.mlops.exception.SwValidationException.ValidSubject.ONLINE_EVAL;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.common.IdConverter;
@@ -27,13 +29,11 @@ import ai.starwhale.mlops.configuration.security.ModelServingTokenValidator;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
 import ai.starwhale.mlops.domain.job.spec.ModelServingSpec;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.mapper.ModelMapper;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -66,6 +66,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -308,7 +309,13 @@ public class ModelServingService {
         List<RuntimeResource> resources = null;
         // get the resources from user input
         if (modelServingSpec != null && modelServingSpec.getResources() != null) {
-            resources = modelServingSpec.getResources();
+            var tmp = modelServingSpec.getResources();
+            resources = tmp.stream().map(r -> RuntimeResource.newBuilder()
+                    .setType(r.getType())
+                    .setRequest(r.getRequest())
+                    .setLimit(r.getLimit())
+                    .build()).collect(Collectors.toList());
+
         }
         resources = resourcePool.validateAndPatchResource(resources);
         log.info("using resource pool {}, patched resources {}", resourcePool, resources);

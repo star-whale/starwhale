@@ -35,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.DataStoreQueryRequest;
 import ai.starwhale.mlops.datastore.RecordList;
@@ -42,7 +43,6 @@ import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.ProjectService;

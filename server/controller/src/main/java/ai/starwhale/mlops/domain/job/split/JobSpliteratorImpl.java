@@ -16,12 +16,12 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
@@ -113,7 +113,7 @@ public class JobSpliteratorImpl implements JobSpliterator {
         Map<String, Tuple2<StepEntity, StepSpec>> nameMapping = new HashMap<>();
 
         for (StepSpec stepSpec : stepSpecs) {
-            boolean firstStep = CollectionUtils.isEmpty(stepSpec.getNeeds());
+            boolean firstStep = CollectionUtils.isEmpty(stepSpec.getNeedsList());
 
             StepEntity stepEntity = StepEntity.builder()
                     .uuid(UUID.randomUUID().toString())
@@ -127,7 +127,8 @@ public class JobSpliteratorImpl implements JobSpliterator {
                     .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
-            allDependencies.put(stepSpec.getName(), stepSpec.getNeeds() == null ? List.of() : stepSpec.getNeeds());
+            allDependencies.put(stepSpec.getName(), stepSpec.getNeedsList().isEmpty()
+                    ? List.of() : stepSpec.getNeedsList());
             nameMapping.put(stepSpec.getName(), new Tuple2<>(stepEntity, stepSpec));
         }
 
@@ -150,10 +151,10 @@ public class JobSpliteratorImpl implements JobSpliterator {
                                 TaskRequest.builder()
                                         .total(stepEntity.getTaskNum())
                                         .index(i)
-                                        .env(nameMapping.get(stepEntity.getName())._2().getEnv())
+                                        .env(nameMapping.get(stepEntity.getName())._2().getEnvList())
                                         .jobName(nameMapping.get(stepEntity.getName())._2().getJobName())
                                         .runtimeResources(
-                                                nameMapping.get(stepEntity.getName())._2().getResources())
+                                                nameMapping.get(stepEntity.getName())._2().getResourcesList())
                                         .build()))
                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
                         .taskUuid(taskUuid)

@@ -33,13 +33,13 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeInfoVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeViewVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeViewVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
@@ -70,8 +70,8 @@ public class RuntimeControllerTest {
     public void testListRuntime() {
         given(runtimeService.listRuntime(any(RuntimeQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
-                        RuntimeVo.builder().id("1").build(),
-                        RuntimeVo.builder().id("2").build()
+                        RuntimeVo.newBuilder().setId("1").build(),
+                        RuntimeVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listRuntime("", "3", "", 1, 5);
@@ -115,7 +115,7 @@ public class RuntimeControllerTest {
         given(runtimeService.getRuntimeInfo(argThat(argument -> Objects.equals(argument.getProjectUrl(), "p1")
                 && Objects.equals(argument.getRuntimeUrl(), "r1")
                 && Objects.equals(argument.getRuntimeVersionUrl(), "v1")))
-        ).willReturn(RuntimeInfoVo.builder().id("1").build());
+        ).willReturn(RuntimeInfoVo.newBuilder().setId("1").build());
         var resp = controller.getRuntimeInfo("p1", "r1", "v1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
@@ -131,8 +131,8 @@ public class RuntimeControllerTest {
     public void testListRuntimeVersion() {
         given(runtimeService.listRuntimeVersionHistory(any(RuntimeVersionQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
-                        RuntimeVersionVo.builder().id("1").build(),
-                        RuntimeVersionVo.builder().id("2").build()
+                        RuntimeVersionVo.newBuilder().setId("1").build(),
+                        RuntimeVersionVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listRuntimeVersion("p1", "r1", "v1", 1, 5);
@@ -180,7 +180,7 @@ public class RuntimeControllerTest {
     @Test
     public void testListRuntimeTree() {
         given(runtimeService.listRuntimeVersionView(anyString()))
-                .willReturn(List.of(RuntimeViewVo.builder().build()));
+                .willReturn(List.of(RuntimeViewVo.newBuilder().build()));
 
         var resp = controller.listRuntimeTree("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

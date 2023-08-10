@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.model.converter;
 
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -35,12 +35,12 @@ public class ModelVoConverter {
     public ModelVo convert(ModelEntity entity)
             throws ConvertException {
         if (entity == null) {
-            return ModelVo.empty();
+            return ModelVo.newBuilder().build();
         }
-        return ModelVo.builder()
-                .id(idConverter.convert(entity.getId()))
-                .name(entity.getModelName())
-                .createdTime(entity.getCreatedTime().getTime())
+        return ModelVo.newBuilder()
+                .setId(idConverter.convert(entity.getId()))
+                .setName(entity.getModelName())
+                .setCreatedTime(entity.getCreatedTime().getTime())
                 .build();
     }
 }

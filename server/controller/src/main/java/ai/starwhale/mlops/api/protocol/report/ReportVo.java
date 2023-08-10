@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.report;
 
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;

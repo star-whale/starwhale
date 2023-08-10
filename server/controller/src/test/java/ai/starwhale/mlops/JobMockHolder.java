@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.dataset.bo.DataSet;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.model.Model;

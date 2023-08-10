@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.build.bo;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import ai.starwhale.mlops.api.protobuf.Dataset;
 import lombok.Builder;
 import lombok.Data;
 
@@ -27,7 +27,7 @@ public class CreateBuildRecordRequest {
     private String projectUrl;
     private String datasetName;
     private Boolean shared;
-    private BuildType type;
+    private Dataset.BuildType type;
     private String storagePath;
     private String format;
 }

@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.job.po.ModelServingEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.Date;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

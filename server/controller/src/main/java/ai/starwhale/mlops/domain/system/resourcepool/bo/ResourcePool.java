@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.common.Constants;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,7 +66,7 @@ public class ResourcePool {
 
     public void validateResource(RuntimeResource resource) {
         var type = resource.getType();
-        if (!StringUtils.hasText(type)) {
+        if (!resource.hasType() || !StringUtils.hasText(type)) {
             throw new IllegalArgumentException("resource type is empty");
         }
         if (!ResourceOverwriteSpec.SUPPORTED_DEVICES.contains(type)) {
@@ -104,24 +104,25 @@ public class ResourcePool {
         }
         var ret = new ArrayList<RuntimeResource>();
         for (var rc : resources) {
-            RuntimeResource rr = null;
+            RuntimeResource.Builder rr = null;
             if (runtimeResources != null) {
-                rr = runtimeResources.stream().filter(i -> i.getType().equals(rc.getName())).findFirst().orElse(null);
+                var find = runtimeResources.stream().filter(i -> i.getType().equals(rc.getName())).findFirst().orElse(
+                        null);
+                if (find != null) {
+                    rr = find.toBuilder();
+                }
             }
             if (rr == null) {
-                rr = new RuntimeResource();
+                rr = RuntimeResource.newBuilder();
                 rr.setType(rc.getName());
-            } else {
-                // clone
-                rr = rr.toBuilder().build();
             }
             rc.patch(rr);
             // no request update, ignore
-            if (rr.getRequest() == null) {
+            if (!rr.hasRequest()) {
                 log.warn("no request update for {}", rr.getType());
                 continue;
             }
-            ret.add(rr);
+            ret.add(rr.build());
         }
         return ret;
     }

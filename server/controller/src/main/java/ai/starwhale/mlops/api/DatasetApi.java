@@ -18,20 +18,20 @@ package ai.starwhale.mlops.api;
 
 import static ai.starwhale.mlops.domain.bundle.BundleManager.BUNDLE_NAME_REGEX;
 
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildRecordVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetViewVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
-import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
 import ai.starwhale.mlops.api.protocol.dataset.build.DatasetBuildRequest;
 import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataConsumptionRequest;
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.api.protocol.upload.UploadResult;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

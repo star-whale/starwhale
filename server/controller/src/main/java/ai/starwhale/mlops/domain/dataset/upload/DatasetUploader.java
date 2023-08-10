@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dataset.upload;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.IdConverter;
@@ -36,7 +37,6 @@ import ai.starwhale.mlops.domain.dataset.upload.bo.DatasetVersionWithMeta;
 import ai.starwhale.mlops.domain.dataset.upload.bo.Manifest;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.storage.HashNamedObjectStore;

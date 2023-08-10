@@ -16,9 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.converter;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
@@ -32,8 +31,10 @@ public class DatasetVersionVoConverter {
     private final IdConverter idConvertor;
     private final VersionAliasConverter versionAliasConvertor;
 
-    public DatasetVersionVoConverter(IdConverter idConvertor,
-            VersionAliasConverter versionAliasConvertor) {
+    public DatasetVersionVoConverter(
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor
+    ) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
     }
@@ -43,16 +44,16 @@ public class DatasetVersionVoConverter {
         if (entity == null) {
             return null;
         }
-        return DatasetVersionVo.builder()
-                .id(idConvertor.convert(entity.getId()))
-                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                .name(entity.getVersionName())
-                .tags(tags)
-                .meta(entity.getVersionMeta())
-                .shared(toInt(entity.getShared()))
-                .createdTime(entity.getCreatedTime().getTime())
-                .indexTable(entity.getIndexTable())
+        return DatasetVersionVo.newBuilder()
+                .setId(idConvertor.convert(entity.getId()))
+                .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                .setLatest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                .setName(entity.getVersionName())
+                .addAllTags(tags == null ? List.of() : tags)
+                .setMeta(entity.getVersionMeta())
+                .setShared(entity.getShared())
+                .setCreatedTime(entity.getCreatedTime().getTime())
+                .setIndexTable(entity.getIndexTable())
                 .build();
     }
 

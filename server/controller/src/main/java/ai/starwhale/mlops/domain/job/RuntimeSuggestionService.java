@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;

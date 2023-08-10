@@ -18,16 +18,17 @@ package ai.starwhale.mlops.domain.dataset;
 
 import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_CPU;
 import static ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec.RESOURCE_MEMORY;
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionViewVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
-import ai.starwhale.mlops.api.protocol.dataset.build.BuildRecordVo;
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
-import ai.starwhale.mlops.api.protocol.storage.FlattenFileVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildRecordVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionViewVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetViewVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Storage.FlattenFileVo;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -45,7 +46,6 @@ import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
 import ai.starwhale.mlops.domain.dataset.build.bo.CreateBuildRecordRequest;
 import ai.starwhale.mlops.domain.dataset.build.mapper.BuildRecordMapper;
 import ai.starwhale.mlops.domain.dataset.build.po.BuildRecordEntity;
@@ -60,7 +60,6 @@ import ai.starwhale.mlops.domain.dataset.po.DatasetVersionEntity;
 import ai.starwhale.mlops.domain.dataset.po.DatasetVersionViewEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.storage.UriAccessor;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
@@ -199,14 +198,14 @@ public class DatasetService {
         List<DatasetEntity> entities = datasetMapper.list(projectId, query.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, ds -> {
-            DatasetVo vo = datasetVoConverter.convert(ds);
+            var vo = datasetVoConverter.convert(ds).toBuilder();
             DatasetVersionEntity version = datasetVersionMapper.findByLatest(ds.getId());
             if (version != null) {
                 var tags = bundleVersionTagDao.getTagsByBundleVersions(
                         BundleAccessor.Type.DATASET, ds.getId(), List.of(version));
                 vo.setVersion(versionConvertor.convert(version, version, tags.get(version.getId())));
             }
-            return vo;
+            return vo.build();
         });
     }
 
@@ -225,27 +224,28 @@ public class DatasetService {
             if (!map.containsKey(entity.getDatasetId())) {
                 map.put(
                         entity.getDatasetId(),
-                        DatasetViewVo.builder()
-                                .ownerName(entity.getUserName())
-                                .projectName(entity.getProjectName())
-                                .datasetId(idConvertor.convert(entity.getDatasetId()))
-                                .datasetName(entity.getDatasetName())
-                                .shared(toInt(shared))
-                                .versions(new ArrayList<>())
+                        DatasetViewVo.newBuilder()
+                                .setOwnerName(entity.getUserName())
+                                .setProjectName(entity.getProjectName())
+                                .setDatasetId(idConvertor.convert(entity.getDatasetId()))
+                                .setDatasetName(entity.getDatasetName())
+                                .setShared(shared)
+                                .addAllVersions(new ArrayList<>())
                                 .build()
                 );
             }
             DatasetVersionEntity latest = datasetVersionMapper.findByLatest(entity.getDatasetId());
-            map.get(entity.getDatasetId())
-                    .getVersions()
-                    .add(DatasetVersionViewVo.builder()
-                                 .id(idConvertor.convert(entity.getId()))
-                                 .versionName(entity.getVersionName())
-                                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
-                                 .createdTime(entity.getCreatedTime().getTime())
-                                 .shared(toInt(entity.getShared()))
-                                 .build());
+            var version = DatasetVersionViewVo.newBuilder()
+                    .setId(idConvertor.convert(entity.getId()))
+                    .setVersionName(entity.getVersionName())
+                    .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                    .setLatest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                    .setCreatedTime(entity.getCreatedTime().getTime())
+                    .setShared(entity.getShared())
+                    .build();
+            var builder = map.get(entity.getDatasetId()).toBuilder();
+            builder.addVersions(version);
+            map.put(entity.getDatasetId(), builder.build());
         }
         return map.values();
     }
@@ -304,23 +304,18 @@ public class DatasetService {
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
             var tags = bundleVersionTagDao.getTagsByBundleVersions(
                     BundleAccessor.Type.DATASET, ds.getId(), List.of(versionEntity));
-            return DatasetInfoVo.builder()
-                    .id(idConvertor.convert(ds.getId()))
-                    .name(ds.getDatasetName())
-                    .versionId(idConvertor.convert(versionEntity.getId()))
-                    .versionName(versionEntity.getVersionName())
-                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
-                    .versionTag(versionEntity.getVersionTag())
-                    .versionMeta(versionEntity.getVersionMeta())
-                    .createdTime(versionEntity.getCreatedTime().getTime())
-                    .indexTable(versionEntity.getIndexTable())
-                    .shared(toInt(versionEntity.getShared()))
-                    .versionInfo(versionConvertor.convert(
+            return DatasetInfoVo.newBuilder()
+                    .setId(idConvertor.convert(ds.getId()))
+                    .setName(ds.getDatasetName())
+                    .setVersionId(idConvertor.convert(versionEntity.getId()))
+                    .setVersionName(versionEntity.getVersionName())
+                    .setVersionMeta(versionEntity.getVersionMeta())
+                    .setVersionInfo(versionConvertor.convert(
                             versionEntity,
                             versionEntity,
                             tags.get(versionEntity.getId())
                     ))
-                    .files(collect)
+                    .addAllFiles(collect)
                     .build();
 
         } catch (IOException e) {
@@ -370,9 +365,9 @@ public class DatasetService {
         return versions.stream().map(version -> {
             DatasetEntity ds = datasetMapper.find(version.getDatasetId());
             DatasetVersionEntity latest = datasetVersionMapper.findByLatest(version.getDatasetId());
-            DatasetVo vo = datasetVoConverter.convert(ds);
+            var vo = datasetVoConverter.convert(ds).toBuilder();
             vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
-            return vo;
+            return vo.build();
         }).collect(Collectors.toList());
     }
 
@@ -415,10 +410,14 @@ public class DatasetService {
 
     public DataIndexDesc nextData(DataReadRequest request) {
         var dataRange = dataLoader.next(request);
-        return Objects.isNull(dataRange) ? null : DataIndexDesc.builder()
-                .start(dataRange.getStart())
-                .end(dataRange.getEnd())
-                .build();
+        if (Objects.isNull(dataRange)) {
+            return null;
+        }
+        var builder = DataIndexDesc.newBuilder().setStart(dataRange.getStart());
+        if (dataRange.getEnd() != null) {
+            builder.setEnd(dataRange.getEnd());
+        }
+        return builder.build();
     }
 
     public byte[] dataOf(
@@ -546,8 +545,8 @@ public class DatasetService {
                 containerOverwriteSpec.setCmds(List.of("dataset_build"));
                 List<RuntimeResource> resources = Objects.isNull(pool) ? List.of()
                         : pool.validateAndPatchResource(List.of(
-                        RuntimeResource.builder().type(RESOURCE_CPU).build(),
-                        RuntimeResource.builder().type(RESOURCE_MEMORY).build()
+                        RuntimeResource.newBuilder().setType(RESOURCE_CPU).build(),
+                        RuntimeResource.newBuilder().setType(RESOURCE_MEMORY).build()
                 ));
                 log.info("using resource pool {}, patched resources {}", pool, resources);
                 containerOverwriteSpec.setResourceOverwriteSpec(new ResourceOverwriteSpec(resources));
@@ -596,13 +595,13 @@ public class DatasetService {
         var project = projectService.findProject(projectUrl);
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         var entities = buildRecordMapper.selectByStatus(project.getId(), status);
-        return PageUtil.toPageInfo(entities, entity -> BuildRecordVo.builder()
-                .id(String.valueOf(entity.getId()))
-                .datasetId(String.valueOf(entity.getDatasetId()))
-                .datasetName(entity.getDatasetName())
-                .type(entity.getType())
-                .status(entity.getStatus())
-                .createTime(entity.getCreatedTime().getTime())
+        return PageUtil.toPageInfo(entities, entity -> BuildRecordVo.newBuilder()
+                .setId(String.valueOf(entity.getId()))
+                .setDatasetId(String.valueOf(entity.getDatasetId()))
+                .setDatasetName(entity.getDatasetName())
+                .setType(entity.getType())
+                .setStatus(entity.getStatus())
+                .setCreateTime(entity.getCreatedTime().getTime())
                 .build()
         );
     }

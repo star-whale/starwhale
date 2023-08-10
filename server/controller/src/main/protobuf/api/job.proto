@@ -1,0 +1,59 @@
+syntax = "proto3";
+import "model.proto";
+import "dataset.proto";
+import "runtime.proto";
+import "user.proto";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+message ExecResponse {
+  string stdout = 1;
+  string stderr = 2;
+}
+
+message JobVo {
+  enum JobStatus {
+    CREATED = 0;
+    READY = 1;
+    PAUSED = 2;
+    RUNNING = 3;
+    CANCELLING = 4;
+    CANCELED = 5;
+    SUCCESS = 6;
+    FAIL = 7;
+    UNKNOWN = 8;
+  }
+  string id = 1;
+  string uuid = 2;
+  string model_name = 3;
+  string model_version = 4;
+  ModelVo model = 5;
+  string job_name = 6;
+  repeated string datasets = 7;
+  repeated DatasetVo dataset_list = 8;
+  RuntimeVo runtime = 9;
+  bool builtin_runtime = 10;
+  string device = 11;
+  int32 device_amount = 12;
+  UserVo owner = 13;
+  int64 created_time = 14;
+  int64 stop_time = 15;
+  JobStatus job_status = 16;
+  optional string comment = 17;
+  string resource_pool = 18;
+  optional int64 duration = 19;
+  repeated ExposedLinkVo exposed_links = 20;
+  optional int64 pinned_time = 21;
+}
+
+
+enum ExposedType {
+  DEV_MODE = 0;
+  WEB_HANDLER = 1;
+}
+
+message ExposedLinkVo {
+  ExposedType type = 1;
+  string name = 2;
+  string link = 3;
+}

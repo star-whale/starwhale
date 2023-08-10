@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
-import ai.starwhale.mlops.domain.job.spec.Env;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.Env;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;

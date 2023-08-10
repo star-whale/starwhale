@@ -16,9 +16,10 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.User.RoleVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
@@ -26,7 +27,6 @@ import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.dataset.build;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildStatus;
-import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildStatus;
+import ai.starwhale.mlops.api.protobuf.Dataset.BuildType;
 import lombok.Builder;
 import lombok.Data;
 

@@ -34,12 +34,12 @@ import static org.mockito.BDDMockito.same;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelInfoVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelViewVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
 import ai.starwhale.mlops.api.protocol.model.ModelUpdateRequest;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
-import ai.starwhale.mlops.api.protocol.model.ModelViewVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.model.RevertModelVersionRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -70,11 +70,11 @@ public class ModelControllerTest {
     @Test
     public void testListModel() {
         given(modelService.findModelByVersionId(anyList()))
-                .willReturn(List.of(ModelVo.builder().id("1").build()));
+                .willReturn(List.of(ModelVo.newBuilder().setId("1").build()));
         given(modelService.listModel(any(ModelQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
-                        ModelVo.builder().id("1").build(),
-                        ModelVo.builder().id("2").build()
+                        ModelVo.newBuilder().setId("1").build(),
+                        ModelVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listModel("", "3", "", "", 1, 5);
@@ -132,7 +132,7 @@ public class ModelControllerTest {
         given(modelService.getModelInfo(argThat(argument -> Objects.equals(argument.getProjectUrl(), "p1")
                 && Objects.equals(argument.getModelUrl(), "m1")
                 && Objects.equals(argument.getModelVersionUrl(), "v1")))
-        ).willReturn(ModelInfoVo.builder().id("1").build());
+        ).willReturn(ModelInfoVo.newBuilder().setId("1").build());
         var resp = controller.getModelInfo("p1", "m1", "v1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
@@ -148,8 +148,8 @@ public class ModelControllerTest {
     public void testListModelVersion() {
         given(modelService.listModelVersionHistory(any(ModelVersionQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
-                        ModelVersionVo.builder().id("1").build(),
-                        ModelVersionVo.builder().id("2").build()
+                        ModelVersionVo.newBuilder().setId("1").build(),
+                        ModelVersionVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listModelVersion("p1", "m1", "v1", 1, 5);
@@ -186,7 +186,7 @@ public class ModelControllerTest {
     @Test
     public void testListModelTree() {
         given(modelService.listModelVersionView(anyString()))
-                .willReturn(List.of(ModelViewVo.builder().build()));
+                .willReturn(List.of(ModelViewVo.newBuilder().build()));
 
         var resp = controller.listModelTree("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
+import ai.starwhale.mlops.api.protobuf.User.RoleVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -34,6 +36,6 @@ public class SystemRoleVo {
     private RoleVo role;
 
     public static SystemRoleVo empty() {
-        return new SystemRoleVo("", UserVo.empty(), RoleVo.empty());
+        return new SystemRoleVo("", UserVo.newBuilder().build(), RoleVo.newBuilder().build());
     }
 }

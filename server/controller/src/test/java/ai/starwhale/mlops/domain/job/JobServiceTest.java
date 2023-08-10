@@ -41,9 +41,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
@@ -56,7 +57,6 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.Model;
@@ -115,7 +115,7 @@ public class JobServiceTest {
         taskMapper = mock(TaskMapper.class);
         jobConverter = mock(JobConverter.class);
         jobBoConverter = mock(JobBoConverter.class);
-        given(jobConverter.convert(any(JobEntity.class))).willReturn(JobVo.builder().id("1").build());
+        given(jobConverter.convert(any(JobEntity.class))).willReturn(JobVo.newBuilder().setId("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
@@ -23,7 +24,6 @@ import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;

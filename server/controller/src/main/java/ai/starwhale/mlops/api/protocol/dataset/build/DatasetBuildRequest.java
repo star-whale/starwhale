@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.dataset.build;
 
-import ai.starwhale.mlops.domain.dataset.build.BuildType;
+import ai.starwhale.mlops.api.protobuf.Dataset;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,7 +33,7 @@ public class DatasetBuildRequest {
     private Long datasetId;
 
     @NotNull(message = "type can not be null")
-    private BuildType type;
+    private Dataset.BuildType type;
 
     private Boolean shared = false;
 

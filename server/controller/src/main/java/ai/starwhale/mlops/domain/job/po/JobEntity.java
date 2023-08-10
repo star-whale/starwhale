@@ -16,11 +16,11 @@
 
 package ai.starwhale.mlops.domain.job.po;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;

@@ -26,6 +26,11 @@
             <artifactId>spring-boot-admin-starter-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.hubspot.jackson</groupId>
+            <artifactId>jackson-datatype-protobuf</artifactId>
+            <version>0.9.14</version>
+        </dependency>
+        <dependency>
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-client</artifactId>
         </dependency>
@@ -324,7 +329,12 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
+                            <protocVersion>${protobuf-util.version}</protocVersion>
                             <optimizeCodegen>false</optimizeCodegen>
+                            <includeStdTypes>true</includeStdTypes>
+                            <inputDirectories>
+                                <include>src/main/protobuf</include>
+                            </inputDirectories>
                         </configuration>
                     </execution>
                 </executions>

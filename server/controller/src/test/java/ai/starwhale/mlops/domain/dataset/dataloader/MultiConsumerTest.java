@@ -25,7 +25,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.api.protocol.dataset.dataloader.DataIndexDesc;
+import ai.starwhale.mlops.api.protobuf.Dataset.DataIndexDesc;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataIndex;
 import ai.starwhale.mlops.domain.dataset.dataloader.bo.DataReadLog;
@@ -58,11 +58,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @MybatisTest(properties = {
-    "logging.level.root=error",
-    "logging.level.ai.starwhale.mlops=error",
-    "logging.level.ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager=debug",
-    "mybatis.configuration.map-underscore-to-camel-case=true",
-    "sw.dataset.processed.timeout.tolerance=100"
+        "logging.level.root=error",
+        "logging.level.ai.starwhale.mlops=error",
+        "logging.level.ai.starwhale.mlops.domain.dataset.dataloader.DataReadManager=debug",
+        "mybatis.configuration.map-underscore-to-camel-case=true",
+        "sw.dataset.processed.timeout.tolerance=100"
 })
 @Import({DataLoader.class, DataReadManager.class,
         SessionDao.class, SessionConverter.class,
@@ -86,18 +86,18 @@ public class MultiConsumerTest extends MySqlContainerHolder {
 
     public static Stream<Arguments> provideMultiParams() {
         return Stream.of(
-            Arguments.of(0, true, 1),
-            Arguments.of(2, true, 1),
-            Arguments.of(6, true, 1),
-            Arguments.of(10, true, 1),
-            Arguments.of(0, false, 2),
-            Arguments.of(2, false, 2),
-            Arguments.of(6, false, 2),
-            Arguments.of(10, false, 2),
-            Arguments.of(0, true, 3),
-            Arguments.of(2, true, 3),
-            Arguments.of(6, true, 3),
-            Arguments.of(10, true, 3)
+                Arguments.of(0, true, 1),
+                Arguments.of(2, true, 1),
+                Arguments.of(6, true, 1),
+                Arguments.of(10, true, 1),
+                Arguments.of(0, false, 2),
+                Arguments.of(2, false, 2),
+                Arguments.of(6, false, 2),
+                Arguments.of(10, false, 2),
+                Arguments.of(0, true, 3),
+                Arguments.of(2, true, 3),
+                Arguments.of(6, true, 3),
+                Arguments.of(10, true, 3)
         );
     }
 
@@ -135,20 +135,20 @@ public class MultiConsumerTest extends MySqlContainerHolder {
             @Override
             public void run() {
                 var request = DataReadRequest.builder()
-                            .sessionId(sessionId)
-                            .consumerId(consumerId)
-                            .isSerial(isSerial)
-                            .readMode(ReadMode.AT_LEAST_ONCE)
-                            .datasetName(datasetName)
-                            .datasetVersion(datasetVersion)
-                            .tableName("test-table-name")
-                            .processedData(List.of())
-                            .batchSize(batchSize)
-                            .start(null)
-                            .startInclusive(true)
-                            .end(null)
-                            .endInclusive(true)
-                            .build();
+                        .sessionId(sessionId)
+                        .consumerId(consumerId)
+                        .isSerial(isSerial)
+                        .readMode(ReadMode.AT_LEAST_ONCE)
+                        .datasetName(datasetName)
+                        .datasetVersion(datasetVersion)
+                        .tableName("test-table-name")
+                        .processedData(List.of())
+                        .batchSize(batchSize)
+                        .start(null)
+                        .startInclusive(true)
+                        .end(null)
+                        .endInclusive(true)
+                        .build();
                 for (int i = 0; i < datasetNum; i++) {
                     // mock multi datasets
                     request.setDatasetVersion(datasetVersion + i);
@@ -174,12 +174,11 @@ public class MultiConsumerTest extends MySqlContainerHolder {
                             indexCount.addAndGet(1);
                             count.addAndGet(dataRange.getSize());
                             // data processed
-                            request.setProcessedData(List.of(
-                                    DataIndexDesc.builder()
-                                        .start(dataRange.getStart())
-                                        .end(dataRange.getEnd())
-                                        .build()
-                            ));
+                            var builder = DataIndexDesc.newBuilder().setStart(dataRange.getStart());
+                            if (dataRange.getEnd() != null) {
+                                builder.setEnd(dataRange.getEnd());
+                            }
+                            request.setProcessedData(List.of(builder.build()));
                         }
 
                     }
@@ -200,7 +199,7 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < consumerNum; i++) {
             futures.add(executor.submit(
-                new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
+                    new ConsumerMock(String.valueOf(i), datasetName, datasetVersion, errorNumPerConsumer, datasetNum)));
         }
 
         for (Future<?> future : futures) {
@@ -239,10 +238,10 @@ public class MultiConsumerTest extends MySqlContainerHolder {
         }
         indices.add(
                 DataIndex.builder()
-                    .start(String.valueOf((totalRangesNum - 1) * batchSize))
-                    .end(null)
-                    .size(8)
-                    .build()
+                        .start(String.valueOf((totalRangesNum - 1) * batchSize))
+                        .end(null)
+                        .size(8)
+                        .build()
         );
         return indices;
     }

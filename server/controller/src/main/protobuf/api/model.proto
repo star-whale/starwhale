@@ -1,0 +1,84 @@
+syntax = "proto3";
+import "user.proto";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message RuntimeResource {
+  optional string type = 1;
+  optional float request = 2;
+  optional float limit = 3;
+}
+
+message Env {
+  string name = 1;
+  string value = 2;
+}
+
+message StepSpec {
+  string job_name = 1;
+  string name = 2;
+  optional string show_name = 3 [json_name = "show_name"]; //https://github.com/protocolbuffers/protobuf/issues/731
+  int32 concurrency = 4;
+  repeated string needs = 5;
+  repeated RuntimeResource resources = 6;
+  repeated Env env = 7;
+  optional int32 replicas = 8;
+  optional int32 expose = 9;
+  bool virtual = 10;
+  bool require_dataset = 11;
+}
+
+message ModelVersionVo {
+  string id = 1;
+  string name = 2;
+  string alias = 3;
+  bool latest = 4;
+  repeated string tags = 5;
+  int64 size = 6;
+  int64 created_time = 7;
+  bool shared = 8;
+  optional string builtin_runtime = 9;
+  repeated StepSpec step_specs = 10;
+  UserVo owner = 11;
+}
+
+message ModelVo {
+  string id = 1;
+  string name = 2;
+  int64 created_time = 3;
+  UserVo owner = 4;
+  ModelVersionVo version = 7;
+}
+
+message ModelInfoVo {
+  string id = 1;
+  string name = 2;
+
+  // for backward compatibility
+  string version_id = 5;
+  string version_name = 6;
+
+  ModelVersionVo version_info = 7;
+}
+
+message ModelViewVo {
+  string owner_name = 1;
+  string project_name = 2;
+  string model_id = 3;
+  string model_name = 4;
+  bool shared = 5;
+  repeated ModelVersionViewVo versions = 6;
+}
+
+message ModelVersionViewVo {
+  string id = 1;
+  string version_name = 2;
+  string alias = 3;
+  bool latest = 4;
+  repeated string tags = 5;
+  bool shared = 6;
+  repeated StepSpec step_specs = 7;
+  string built_in_runtime = 8;
+  int64 created_time = 9;
+}

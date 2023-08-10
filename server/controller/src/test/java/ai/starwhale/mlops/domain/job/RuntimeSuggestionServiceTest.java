@@ -20,7 +20,7 @@ package ai.starwhale.mlops.domain.job;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.ModelServingMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
@@ -54,7 +54,7 @@ public class RuntimeSuggestionServiceTest {
         // no online eval or eval jobs
         var runtime = RuntimeVersionEntity.builder().id(3L).runtimeId(4L).build();
         when(runtimeVersionMapper.findLatestByProjectId(1L, 1)).thenReturn(List.of(runtime));
-        var runtimeVo = RuntimeVersionVo.builder().id("2").build();
+        var runtimeVo = RuntimeVersionVo.newBuilder().setRuntimeId("2").build();
         when(runtimeVersionConverter.convert(runtime)).thenReturn(runtimeVo);
         var suggestions = runtimeSuggestionService.getSuggestions(projectId, null);
         Assertions.assertEquals(List.of(runtimeVo), suggestions);
@@ -70,7 +70,7 @@ public class RuntimeSuggestionServiceTest {
         var runtime2 = RuntimeVersionEntity.builder().id(evalRuntimeId2).runtimeId(1L).build();
         when(runtimeVersionMapper.find(evalRuntimeId1)).thenReturn(runtime1);
         when(runtimeVersionMapper.find(evalRuntimeId2)).thenReturn(runtime2);
-        var runtimeVo2 = RuntimeVersionVo.builder().id("8").image("image of 8").build();
+        var runtimeVo2 = RuntimeVersionVo.newBuilder().setId("8").setImage("image of 8").build();
         when(runtimeVersionConverter.convert(runtime2)).thenReturn(runtimeVo2);
 
         var jobs = List.of(
@@ -98,7 +98,7 @@ public class RuntimeSuggestionServiceTest {
         var modelServingEntity2 = ModelServingEntity.builder().id(11L).lastVisitTime(new Date(10)).build();
         var runtime9 = RuntimeVersionEntity.builder().id(9L).runtimeId(1L).build();
         when(runtimeVersionMapper.find(9L)).thenReturn(runtime9);
-        var runtimeVo9 = RuntimeVersionVo.builder().id("9").image("image of 9").build();
+        var runtimeVo9 = RuntimeVersionVo.newBuilder().setId("9").setImage("image of 9").build();
         when(runtimeVersionConverter.convert(runtime9)).thenReturn(runtimeVo9);
         // eval job and online eval job exists
         when(modelServingMapper.list(projectId, modelVersionId, null, null)).thenReturn(

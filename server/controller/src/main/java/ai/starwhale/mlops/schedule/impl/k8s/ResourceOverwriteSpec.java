@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import java.util.HashMap;
@@ -57,17 +57,17 @@ public class ResourceOverwriteSpec {
         Map<String, Quantity> resourceLimitMap = new HashMap<>();
 
         runtimeResources.forEach(resource -> {
-            var resourceType = resource.getType();
-            var request = resource.getRequest();
-            var limit = resource.getLimit();
-            if (request != null) {
-                resourceRequestMap.put(resourceType, convertToQuantity(resourceType, request));
+            String resourceType;
+            if (!resource.hasType()) {
+                return;
             }
-            if (limit != null) {
-                resourceLimitMap.put(resourceType, convertToQuantity(resourceType, limit));
-            } else if (request != null && !k8sResource(resourceType)) {
+            resourceType = resource.getType();
+            resourceRequestMap.put(resourceType, convertToQuantity(resourceType, resource.getRequest()));
+            if (resource.hasLimit()) {
+                resourceLimitMap.put(resource.getType(), convertToQuantity(resource.getType(), resource.getLimit()));
+            } else if (resource.hasRequest() && !k8sResource(resourceType)) {
                 // use request as limit for non-k8s resources if limit is not specified
-                resourceLimitMap.put(resourceType, convertToQuantity(resourceType, request));
+                resourceLimitMap.put(resourceType, convertToQuantity(resourceType, resource.getRequest()));
             }
         });
 
@@ -78,8 +78,8 @@ public class ResourceOverwriteSpec {
 
     private Quantity convertToQuantity(String type, Float num) {
         return new Quantity(
-            k8sResource(type) ? num.toString()
-                : normalizeNonK8sResources(num).toString());
+                k8sResource(type) ? num.toString()
+                        : normalizeNonK8sResources(num).toString());
     }
 
     boolean k8sResource(String resource) {

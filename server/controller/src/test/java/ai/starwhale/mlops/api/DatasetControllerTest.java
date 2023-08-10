@@ -38,11 +38,11 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetInfoVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetViewVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.DatasetTagRequest;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetViewVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.dataset.RevertDatasetRequest;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.api.protocol.upload.UploadPhase;
@@ -140,9 +140,9 @@ public class DatasetControllerTest {
                 .willAnswer((Answer<DatasetInfoVo>) invocation -> {
                     DatasetQuery query = invocation.getArgument(0);
                     if (Objects.equals(query.getProjectUrl(), "p1")) {
-                        return DatasetInfoVo.builder()
-                                .name(query.getDatasetUrl())
-                                .versionInfo(DatasetVersionVo.builder().name("v1").build())
+                        return DatasetInfoVo.newBuilder()
+                                .setName(query.getDatasetUrl())
+                                .setVersionInfo(DatasetVersionVo.newBuilder().setName("v1").build())
                                 .build();
                     } else {
                         return null;
@@ -166,9 +166,9 @@ public class DatasetControllerTest {
                 .willAnswer((Answer<PageInfo<DatasetVersionVo>>) invocation -> {
                     DatasetVersionQuery query = invocation.getArgument(0);
                     List<DatasetVersionVo> list = List.of(
-                            DatasetVersionVo.builder()
-                                    .tags(List.of("tag1"))
-                                    .name(query.getVersionName())
+                            DatasetVersionVo.newBuilder()
+                                    .addAllTags(List.of("tag1"))
+                                    .setName(query.getVersionName())
                                     .build()
                     );
                     PageParams pageParams = invocation.getArgument(1);
@@ -185,7 +185,7 @@ public class DatasetControllerTest {
                 hasProperty("pageSize", is(5)),
                 hasProperty("list", hasItem(allOf(
                         hasProperty("name", is("v1")),
-                        hasProperty("tags", is(List.of("tag1")))
+                        hasProperty("tagsList", is(List.of("tag1")))
                 )))
         ));
     }
@@ -268,11 +268,11 @@ public class DatasetControllerTest {
     @Test
     public void testListDataset() {
         given(datasetService.findDatasetsByVersionIds(anyList()))
-                .willReturn(List.of(DatasetVo.builder().id("1").build()));
+                .willReturn(List.of(DatasetVo.newBuilder().setId("1").build()));
         given(datasetService.listDataset(any(DatasetQuery.class), any(PageParams.class)))
                 .willReturn(PageInfo.of(List.of(
-                        DatasetVo.builder().id("1").build(),
-                        DatasetVo.builder().id("2").build()
+                        DatasetVo.newBuilder().setId("1").build(),
+                        DatasetVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listDataset("", "3", "", "", 1, 5);
@@ -368,7 +368,7 @@ public class DatasetControllerTest {
     @Test
     public void testListDatasetTree() {
         given(datasetService.listDatasetVersionView(anyString()))
-                .willReturn(List.of(DatasetViewVo.builder().build()));
+                .willReturn(List.of(DatasetViewVo.newBuilder().build()));
 
         var resp = controller.listDatasetTree("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

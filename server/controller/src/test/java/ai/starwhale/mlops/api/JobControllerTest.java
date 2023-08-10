@@ -33,17 +33,17 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.job.ExecRequest;
 import ai.starwhale.mlops.api.protocol.job.ExecResponse;
 import ai.starwhale.mlops.api.protocol.job.JobModifyPinRequest;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingRequest;
 import ai.starwhale.mlops.api.protocol.job.ModelServingStatusVo;
 import ai.starwhale.mlops.api.protocol.job.ModelServingVo;
 import ai.starwhale.mlops.api.protocol.job.RuntimeSuggestionVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
@@ -104,7 +104,7 @@ public class JobControllerTest {
                 .willAnswer(invocation -> {
                     PageParams pageParams = invocation.getArgument(2);
                     try (Page<JobVo> page = new Page<>(pageParams.getPageNum(), pageParams.getPageSize())) {
-                        page.add(JobVo.builder().build());
+                        page.add(JobVo.newBuilder().build());
                         return page.toPageInfo();
                     }
                 });
@@ -121,7 +121,7 @@ public class JobControllerTest {
     @Test
     public void testFindJob() {
         given(jobService.findJob(same("p1"), same("j1")))
-                .willReturn(JobVo.builder().id("j1").build());
+                .willReturn(JobVo.newBuilder().setId("j1").build());
         var resp = controller.findJob("p1", "j1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
@@ -276,7 +276,7 @@ public class JobControllerTest {
 
     @Test
     public void testRuntimeSuggestion() {
-        var rt = RuntimeVersionVo.builder().id("1").image("foo").build();
+        var rt = RuntimeVersionVo.newBuilder().setId("1").setImage("foo").build();
         var vo = RuntimeSuggestionVo.builder().runtimes(List.of(rt)).build();
         given(runtimeSuggestionService.getSuggestions(2L, null)).willReturn(List.of(rt));
         var resp = controller.getRuntimeSuggestion(2L, null);

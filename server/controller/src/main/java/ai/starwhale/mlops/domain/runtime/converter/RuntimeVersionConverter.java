@@ -16,9 +16,8 @@
 
 package ai.starwhale.mlops.domain.runtime.converter;
 
-import static cn.hutool.core.util.BooleanUtil.toInt;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
@@ -35,34 +34,38 @@ public class RuntimeVersionConverter {
 
     private final DockerSetting dockerSetting;
 
-    public RuntimeVersionConverter(IdConverter idConvertor,
-                                   VersionAliasConverter versionAliasConvertor,
-                                   DockerSetting dockerSetting) {
+    public RuntimeVersionConverter(
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor,
+            DockerSetting dockerSetting
+    ) {
         this.idConvertor = idConvertor;
         this.versionAliasConvertor = versionAliasConvertor;
         this.dockerSetting = dockerSetting;
     }
 
-    public RuntimeVersionVo convert(RuntimeVersionEntity entity)
-            throws ConvertException {
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity) throws ConvertException {
         return convert(entity, null, null);
     }
 
     public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest, List<String> tags)
             throws ConvertException {
-        return RuntimeVersionVo.builder()
-                .id(idConvertor.convert(entity.getId()))
-                .name(entity.getVersionName())
-                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
-                .latest(entity.getId() != null && latest != null && entity.getId().equals(latest.getId()))
-                .tags(tags)
-                .meta(entity.getVersionMeta())
-                .image(entity.getImage(dockerSetting.getRegistryForPull()))
-                .builtImage(entity.getBuiltImage())
-                .shared(toInt(entity.getShared()))
-                .createdTime(entity.getCreatedTime().getTime())
-                .runtimeId(idConvertor.convert(entity.getRuntimeId()))
-                .build();
+        var builder = RuntimeVersionVo.newBuilder()
+                .setId(idConvertor.convert(entity.getId()))
+                .setName(entity.getVersionName())
+                .setAlias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                .setLatest(entity.getId() != null && latest != null && entity.getId().equals(latest.getId()))
+                .addAllTags(tags == null ? List.of() : tags)
+                .setMeta(entity.getVersionMeta())
+                .setImage(entity.getImage(dockerSetting.getRegistryForPull()))
+                .setShared(entity.getShared())
+                .setCreatedTime(entity.getCreatedTime().getTime())
+                .setRuntimeId(idConvertor.convert(entity.getRuntimeId()));
+
+        if (entity.getBuiltImage() != null) {
+            builder.setBuiltImage(entity.getBuiltImage());
+        }
+        return builder.build();
     }
 
 }

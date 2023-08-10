@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.util.Date;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;

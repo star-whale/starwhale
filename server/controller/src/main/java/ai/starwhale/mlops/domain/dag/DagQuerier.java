@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.dag;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
@@ -23,7 +24,6 @@ import ai.starwhale.mlops.domain.dag.bo.GraphNode;
 import ai.starwhale.mlops.domain.job.JobDao;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;

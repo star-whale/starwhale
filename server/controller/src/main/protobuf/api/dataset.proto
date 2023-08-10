@@ -1,0 +1,85 @@
+syntax = "proto3";
+import "user.proto";
+import "storage.proto";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message DatasetVersionVo {
+  string id = 1;
+  string name = 2;
+  repeated string tags = 3;
+  string alias = 4;
+  bool latest = 5;
+  string meta = 6;
+  int64 created_time = 7;
+  UserVo owner = 8;
+  bool shared = 9;
+  string index_table = 10;
+}
+
+message DatasetVo {
+  string id = 1;
+  string name = 2;
+  int64 created_time = 3;
+  UserVo owner = 4;
+  DatasetVersionVo version = 5;
+}
+
+message DatasetVersionViewVo {
+  string id = 1;
+  string version_name = 2;
+  string alias = 3;
+  bool latest = 4;
+  bool shared = 5;
+  int64 created_time = 6;
+}
+
+message DatasetViewVo {
+  string owner_name = 1;
+  string project_name = 2;
+  string dataset_id = 3;
+  string dataset_name = 4;
+  bool shared = 5;
+  repeated DatasetVersionViewVo versions = 6;
+}
+
+message DatasetInfoVo {
+  string id = 1;
+  string name = 2;
+  repeated FlattenFileVo files = 3;
+  string version_meta = 4;
+
+  string version_id = 5;
+  string version_name = 6;
+
+  DatasetVersionVo version_info = 7;
+}
+
+message DataIndexDesc {
+  string start = 1;
+  optional string end = 2;
+}
+
+enum BuildStatus {
+  CREATED = 0;
+  BUILDING = 1;
+  SUCCESS = 2;
+  FAILED = 3;
+}
+
+enum BuildType {
+  IMAGE = 0;
+  VIDEO = 1;
+  AUDIO = 2;
+}
+
+message BuildRecordVo {
+  string id = 1;
+  string dataset_id = 2;
+  string project_id = 3;
+  string dataset_name = 4;
+  BuildStatus status = 5;
+  BuildType type = 6;
+  int64 create_time = 7;
+}

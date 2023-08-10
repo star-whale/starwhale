@@ -1,0 +1,30 @@
+syntax = "proto3";
+import "user.proto";
+
+option java_package = "ai.starwhale.mlops.api.protobuf";
+
+
+message ProjectVo {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string privacy = 4;
+    int64 created_time = 5;
+    UserVo owner = 6;
+    StatisticsVo statistics = 7;
+}
+
+message StatisticsVo {
+    int32 model_counts = 1;
+    int32 dataset_counts = 2;
+    int32 runtime_counts = 3;
+    int32 member_counts = 4;
+    int32 evaluation_counts = 5;
+}
+
+message ProjectMemberVo {
+    string id = 1;
+    UserVo user = 2;
+    ProjectVo project = 3;
+    RoleVo role = 4;
+}

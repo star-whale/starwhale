@@ -31,8 +31,9 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
-import ai.starwhale.mlops.api.protocol.user.RoleVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.User.RoleVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
@@ -40,7 +41,6 @@ import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.member.MemberService;
@@ -74,7 +74,7 @@ public class UserControllerTest {
         memberService = mock(MemberService.class);
         userService = mock(UserService.class);
         given(userService.currentUser())
-                .willReturn(UserVo.builder().id("1").name("current").build());
+                .willReturn(UserVo.newBuilder().setId("1").setName("current").build());
         given(userService.currentUserDetail())
                 .willReturn(User.builder().id(1L).name("current").build());
         given(userService.checkCurrentUserPassword("correct"))
@@ -88,8 +88,8 @@ public class UserControllerTest {
 
     @Test
     public void testListUser() {
-        UserVo u1 = UserVo.builder().id("1").name("u1").build();
-        UserVo u2 = UserVo.builder().id("2").name("u2").build();
+        UserVo u1 = UserVo.newBuilder().setId("1").setName("u1").build();
+        UserVo u2 = UserVo.newBuilder().setId("2").setName("u2").build();
         given(userService.listUsers(any(User.class), any()))
                 .willReturn(PageInfo.of(List.of(u1, u2)));
         given(userService.listUsers(argThat(user -> user.getName().equals("u1")), any()))
@@ -142,7 +142,7 @@ public class UserControllerTest {
     @Test
     public void testGetCurrentUserRoles() {
         given(projectService.listProjectMemberOfCurrentUser(same("1")))
-                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
+                .willReturn(List.of(ProjectMemberVo.newBuilder().setId("1").build()));
 
         var resp = controller.getCurrentUserRoles("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -155,7 +155,7 @@ public class UserControllerTest {
     @Test
     public void testGetUserById() {
         given(userService.findUserById(same(1L)))
-                .willReturn(UserVo.builder().id("1").build());
+                .willReturn(UserVo.newBuilder().setId("1").build());
 
         var resp = controller.getUserById("1");
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -250,7 +250,7 @@ public class UserControllerTest {
     @Test
     public void testListRoles() {
         given(userService.listRoles())
-                .willReturn(List.of(RoleVo.builder().id("1").build()));
+                .willReturn(List.of(RoleVo.newBuilder().setId("1").build()));
 
         var resp = controller.listRoles();
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
@@ -264,7 +264,7 @@ public class UserControllerTest {
     @Test
     public void testListSystemRoles() {
         given(projectService.listProjectMembersInProject(same("0")))
-                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
+                .willReturn(List.of(ProjectMemberVo.newBuilder().setId("1").build()));
 
         var resp = controller.listSystemRoles();
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));

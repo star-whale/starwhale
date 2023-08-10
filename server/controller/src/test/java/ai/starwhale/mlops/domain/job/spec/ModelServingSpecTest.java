@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.spec;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -41,7 +40,7 @@ public class ModelServingSpecTest {
     @Test
     public void testParseAndDumps() throws JsonProcessingException {
         var spec = ModelServingSpec.fromYamlString(ONE_RC_CONTENT);
-        var rc = RuntimeResource.builder()
+        var rc = ModelServingSpec.RuntimeResource.builder()
                 .type("a")
                 .request(7f)
                 .limit(8f)
@@ -50,7 +49,7 @@ public class ModelServingSpecTest {
         Assertions.assertEquals(spec.dumps(), ONE_RC_CONTENT);
 
         spec = ModelServingSpec.fromYamlString(MULTIPLE_RC_CONTENT);
-        var rc2 = RuntimeResource.builder()
+        var rc2 = ModelServingSpec.RuntimeResource.builder()
                 .type("b")
                 .request(9f)
                 .limit(10f)

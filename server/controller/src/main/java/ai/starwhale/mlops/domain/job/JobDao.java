@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -26,7 +27,6 @@ import ai.starwhale.mlops.domain.job.mapper.JobDatasetVersionMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.storage.JobRepo;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;

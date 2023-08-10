@@ -34,10 +34,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
 
+import ai.starwhale.mlops.api.protobuf.Project.ProjectMemberVo;
+import ai.starwhale.mlops.api.protobuf.Project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
-import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
-import ai.starwhale.mlops.api.protocol.user.ProjectMemberVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.member.MemberService;
@@ -79,17 +79,17 @@ public class ProjectControllerTest {
     public void testListProject() {
         given(projectService.listProject(anyString(), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
-                        ProjectVo.builder().name("test1").id("1").build(),
-                        ProjectVo.builder().name("test2").id("2").build(),
-                        ProjectVo.builder().name("test3").id("3").build()
+                        ProjectVo.newBuilder().setName("test1").setId("1").build(),
+                        ProjectVo.newBuilder().setName("test2").setId("2").build(),
+                        ProjectVo.newBuilder().setName("test3").setId("3").build()
                 )));
         given(projectService.listProject(same("test1"), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
-                        ProjectVo.builder().id("1").build()
+                        ProjectVo.newBuilder().setId("1").build()
                 )));
         given(projectService.listProject(same("test2"), any(OrderParams.class), any(User.class)))
                 .willReturn(new PageInfo<>(List.of(
-                        ProjectVo.builder().id("2").build()
+                        ProjectVo.newBuilder().setId("2").build()
                 )));
 
         var resp = controller.listProject(
@@ -185,7 +185,7 @@ public class ProjectControllerTest {
     public void testGetProject() {
         String name = "project1";
         given(projectService.getProjectVo(same(name)))
-                .willReturn(ProjectVo.builder().name(name).build());
+                .willReturn(ProjectVo.newBuilder().setName(name).build());
         given(projectService.getProjectVo(same("")))
                 .willThrow(StarwhaleApiException.class);
 
@@ -229,9 +229,9 @@ public class ProjectControllerTest {
     @Test
     public void testListProjectRole() {
         given(projectService.listProjectMembersInProject(same("p1")))
-                .willReturn(List.of(ProjectMemberVo.builder().id("1").build()));
+                .willReturn(List.of(ProjectMemberVo.newBuilder().setId("1").build()));
         given(projectService.listProjectMembersInProject(same("p2")))
-                .willReturn(List.of(ProjectMemberVo.builder().id("2").build()));
+                .willReturn(List.of(ProjectMemberVo.newBuilder().setId("2").build()));
         given(projectService.listProjectMembersInProject(isNull()))
                 .willThrow(StarwhaleApiException.class);
 

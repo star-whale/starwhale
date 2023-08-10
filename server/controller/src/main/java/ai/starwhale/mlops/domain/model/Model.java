@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.model;
 
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -46,10 +46,9 @@ public class Model {
     public static Model fromEntity(ModelEntity entity) {
         // TODO: version and stepSpecs need to be handled
         return Model.builder()
-                .id(entity.getId())
-                .projectId(entity.getProjectId())
-                .name(entity.getModelName())
-                .build();
+            .id(entity.getId())
+            .projectId(entity.getProjectId())
+            .name(entity.getModelName())
+            .build();
     }
-
 }

@@ -41,6 +41,8 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.domain.user.converter.RoleVoConverter;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.domain.user.mapper.RoleMapper;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.RoleEntity;
@@ -78,14 +80,14 @@ public class UserServiceTest {
         given(userMapper.find(same(1L))).willReturn(u1);
         given(userMapper.findByName(same("current")))
                 .willReturn(UserEntity.builder()
-                        .id(1L)
-                        .userName("current")
-                        .userEnabled(1)
-                        .userPwd(SwPasswordEncoder
-                                .getEncoder("current_salt")
-                                .encode("current_password"))
-                        .userPwdSalt("current_salt")
-                        .build());
+                                    .id(1L)
+                                    .userName("current")
+                                    .userEnabled(1)
+                                    .userPwd(SwPasswordEncoder
+                                                     .getEncoder("current_salt")
+                                                     .encode("current_password"))
+                                    .userPwdSalt("current_salt")
+                                    .build());
         roleMapper = mock(RoleMapper.class);
         RoleEntity owner = RoleEntity.builder()
                 .id(1L).roleName(Role.NAME_OWNER).roleCode(Role.CODE_OWNER).build();
@@ -98,11 +100,19 @@ public class UserServiceTest {
         given(roleMapper.find(same(3L))).willReturn(guest);
 
         memberService = mock(MemberService.class);
+        var idConverter = new IdConverter();
 
         SaltGenerator saltGenerator = mock(SaltGenerator.class);
         given(saltGenerator.salt()).willReturn("salt");
-        service = new UserService(userMapper, roleMapper, memberService,
-                new IdConverter(), saltGenerator);
+        service = new UserService(
+                userMapper,
+                roleMapper,
+                memberService,
+                idConverter,
+                saltGenerator,
+                new UserVoConverter(idConverter),
+                new RoleVoConverter(idConverter)
+        );
 
         User current = User.builder().id(1L).name("current").active(true).build();
         var token = new UsernamePasswordAuthenticationToken(current, null);
@@ -121,8 +131,10 @@ public class UserServiceTest {
                 hasProperty("name", is("current"))
         ));
         SecurityContextHolder.clearContext();
-        assertThrows(StarwhaleApiException.class,
-                () -> service.currentUserDetail());
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.currentUserDetail()
+        );
     }
 
     @Test
@@ -168,8 +180,10 @@ public class UserServiceTest {
                 is(hasProperty("active", is(true)))
         ));
 
-        assertThrows(UsernameNotFoundException.class,
-                () -> service.loadUserByUsername("wrong"));
+        assertThrows(
+                UsernameNotFoundException.class,
+                () -> service.loadUserByUsername("wrong")
+        );
     }
 
     @Test
@@ -193,8 +207,10 @@ public class UserServiceTest {
                 is(hasProperty("active", is(true)))
         ));
 
-        assertThrows(UsernameNotFoundException.class,
-                () -> service.loadUserById(2L));
+        assertThrows(
+                UsernameNotFoundException.class,
+                () -> service.loadUserById(2L)
+        );
     }
 
     @Test
@@ -204,8 +220,10 @@ public class UserServiceTest {
         given(memberService.getUserMemberInProject(same(2L), same(2L)))
                 .willReturn(ProjectMember.builder().roleId(2L).build());
 
-        var res = service.getProjectRolesOfUser(User.builder().id(1L).build(),
-                Project.builder().id(1L).privacy(Privacy.PUBLIC).build());
+        var res = service.getProjectRolesOfUser(
+                User.builder().id(1L).build(),
+                Project.builder().id(1L).privacy(Privacy.PUBLIC).build()
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(2)),
@@ -213,16 +231,20 @@ public class UserServiceTest {
                 is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectRolesOfUser(User.builder().id(2L).build(),
-                Project.builder().id(2L).privacy(Privacy.PRIVATE).build());
+        res = service.getProjectRolesOfUser(
+                User.builder().id(2L).build(),
+                Project.builder().id(2L).privacy(Privacy.PRIVATE).build()
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
                 is(hasItem(hasProperty("roleName", is(Role.NAME_MAINTAINER))))
         ));
 
-        res = service.getProjectRolesOfUser(User.builder().id(2L).build(),
-                Project.builder().id(3L).privacy(Privacy.PUBLIC).build());
+        res = service.getProjectRolesOfUser(
+                User.builder().id(2L).build(),
+                Project.builder().id(3L).privacy(Privacy.PUBLIC).build()
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
@@ -239,8 +261,10 @@ public class UserServiceTest {
         given(memberService.getUserMemberInProject(same(3L), same(1L)))
                 .willReturn(ProjectMember.builder().roleId(1L).build());
 
-        var res = service.getProjectsRolesOfUser(User.builder().id(1L).build(),
-                Set.of(Project.builder().id(1L).privacy(Privacy.PUBLIC).build()));
+        var res = service.getProjectsRolesOfUser(
+                User.builder().id(1L).build(),
+                Set.of(Project.builder().id(1L).privacy(Privacy.PUBLIC).build())
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(2)),
@@ -248,26 +272,38 @@ public class UserServiceTest {
                 is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(),
-                Set.of(Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
-                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()));
+        res = service.getProjectsRolesOfUser(
+                User.builder().id(2L).build(),
+                Set.of(
+                        Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
+                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()
+                )
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(0))
         ));
 
-        res = service.getProjectsRolesOfUser(User.builder().id(2L).build(),
-                Set.of(Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
-                        Project.builder().id(3L).privacy(Privacy.PUBLIC).build()));
+        res = service.getProjectsRolesOfUser(
+                User.builder().id(2L).build(),
+                Set.of(
+                        Project.builder().id(2L).privacy(Privacy.PUBLIC).build(),
+                        Project.builder().id(3L).privacy(Privacy.PUBLIC).build()
+                )
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
                 is(hasItem(hasProperty("roleCode", is(Role.CODE_GUEST))))
         ));
 
-        res = service.getProjectsRolesOfUser(User.builder().id(1L).build(),
-                Set.of(Project.builder().id(1L).privacy(Privacy.PRIVATE).build(),
-                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()));
+        res = service.getProjectsRolesOfUser(
+                User.builder().id(1L).build(),
+                Set.of(
+                        Project.builder().id(1L).privacy(Privacy.PRIVATE).build(),
+                        Project.builder().id(3L).privacy(Privacy.PRIVATE).build()
+                )
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 is(iterableWithSize(1)),
@@ -286,9 +322,9 @@ public class UserServiceTest {
 
     @Test
     public void testListUser() {
-        UserEntity u1 = UserEntity.builder().id(1L).build();
-        UserEntity u2 = UserEntity.builder().id(2L).build();
-        UserEntity u3 = UserEntity.builder().id(3L).build();
+        UserEntity u1 = UserEntity.builder().id(1L).userName("user1").build();
+        UserEntity u2 = UserEntity.builder().id(2L).userName("user2").build();
+        UserEntity u3 = UserEntity.builder().id(3L).userName("user3").build();
         given(userMapper.list(any(), any()))
                 .willReturn(List.of(u1, u2, u3));
         given(userMapper.list(same("u1"), any()))
@@ -323,8 +359,10 @@ public class UserServiceTest {
         var res = service.createUser(User.builder().name("test").build(), "password", "salt");
         assertThat(res, is(1L));
 
-        assertThrows(StarwhaleApiException.class,
-                () -> service.createUser(User.builder().name("user1").build(), "password", "salt"));
+        assertThrows(
+                StarwhaleApiException.class,
+                () -> service.createUser(User.builder().name("user1").build(), "password", "salt")
+        );
     }
 
     @Test
@@ -352,11 +390,13 @@ public class UserServiceTest {
     }
 
 
-
     @Test
     public void testListRoles() {
         given(roleMapper.list())
-                .willReturn(List.of(RoleEntity.builder().id(1L).build(), RoleEntity.builder().id(2L).build()));
+                .willReturn(List.of(
+                        RoleEntity.builder().id(1L).roleName("foo").roleCode("code1").build(),
+                        RoleEntity.builder().id(2L).roleName("bar").roleCode("code2").build()
+                ));
 
         var res = service.listRoles();
         assertThat(res, allOf(

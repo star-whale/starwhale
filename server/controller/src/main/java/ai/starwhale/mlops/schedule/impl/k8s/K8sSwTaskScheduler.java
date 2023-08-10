@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.schedule.impl.k8s;
 
+import ai.starwhale.mlops.api.protobuf.Model.RuntimeResource;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.Toleration;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;

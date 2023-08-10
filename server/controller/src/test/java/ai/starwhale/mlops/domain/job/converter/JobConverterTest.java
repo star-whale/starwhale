@@ -28,14 +28,17 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVersionVo;
-import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
-import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVersionVo;
-import ai.starwhale.mlops.api.protocol.model.ModelVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
-import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVersionVo;
+import ai.starwhale.mlops.api.protobuf.Dataset.DatasetVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedType;
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVersionVo;
+import ai.starwhale.mlops.api.protobuf.Model.ModelVo;
+import ai.starwhale.mlops.api.protobuf.Model.StepSpec;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVo;
+import ai.starwhale.mlops.api.protobuf.User.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
@@ -44,9 +47,6 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.spec.StepSpec;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.model.po.ModelVersionEntity;
@@ -55,6 +55,7 @@ import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.user.converter.UserVoConverter;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Date;
@@ -73,30 +74,30 @@ public class JobConverterTest {
     public void setUp() {
         RuntimeService runtimeService = mock(RuntimeService.class);
         given(runtimeService.findRuntimeByVersionIds(anyList())).willReturn(List.of(
-                RuntimeVo.builder()
-                    .id("1")
-                    .version(RuntimeVersionVo.builder()
-                        .name("rt-v1")
-                        .build())
-                    .build()
+                RuntimeVo.newBuilder()
+                        .setId("1")
+                        .setVersion(RuntimeVersionVo.newBuilder()
+                                            .setName("rt-v1")
+                                            .build())
+                        .build()
         ));
         ModelService modelService = mock(ModelService.class);
         given(modelService.findModelByVersionId(anyList())).willReturn(List.of(
-                ModelVo.builder()
-                    .id("1")
-                    .version(ModelVersionVo.builder()
-                        .name("model-v1")
-                        .build())
-                    .build()
+                ModelVo.newBuilder()
+                        .setId("1")
+                        .setVersion(ModelVersionVo.newBuilder()
+                                            .setName("model-v1")
+                                            .build())
+                        .build()
         ));
         DatasetService datasetService = mock(DatasetService.class);
         given(datasetService.findDatasetsByVersionIds(anyList())).willReturn(List.of(
-                DatasetVo.builder()
-                    .id("1")
-                    .version(DatasetVersionVo.builder()
-                        .name("ds-v1")
-                        .build())
-                    .build()
+                DatasetVo.newBuilder()
+                        .setId("1")
+                        .setVersion(DatasetVersionVo.newBuilder()
+                                            .setName("ds-v1")
+                                            .build())
+                        .build()
         ));
         DatasetDao datasetDao = mock(DatasetDao.class);
         IdConverter idConvertor = new IdConverter();
@@ -112,7 +113,8 @@ public class JobConverterTest {
                 hotJobHolder,
                 jobSpecParser,
                 1234,
-                webServerInTask
+                webServerInTask,
+                new UserVoConverter(idConvertor)
         );
     }
 
@@ -121,7 +123,7 @@ public class JobConverterTest {
         JobEntity entity = JobEntity.builder()
                 .id(1L)
                 .jobUuid("job-uuid")
-                .owner(UserEntity.builder().build())
+                .owner(UserEntity.builder().id(1L).userName("foo").build())
                 .modelName("model")
                 .modelVersion(ModelVersionEntity.builder().versionName("v1").builtInRuntime(null).build())
                 .modelVersionId(1L)
@@ -134,9 +136,9 @@ public class JobConverterTest {
                 .stepSpec("spec")
                 .pinnedTime(new Date(1002L))
                 .build();
-        var stepSpec = StepSpec.builder()
-                .name("step")
-                .jobName("src.evaluator:evaluate")
+        var stepSpec = StepSpec.newBuilder()
+                .setName("step")
+                .setJobName("src.evaluator:evaluate")
                 .build();
         when(jobSpecParser.parseAndFlattenStepFromYaml(anyString())).thenReturn(List.of(stepSpec));
 
@@ -153,8 +155,8 @@ public class JobConverterTest {
                 hasProperty("createdTime", is(1000L)),
                 hasProperty("runtime", isA(RuntimeVo.class)),
                 hasProperty("builtinRuntime", is(false)),
-                hasProperty("datasets", isA(List.class)),
-                hasProperty("datasetList", isA(List.class)),
+                hasProperty("datasetsList", isA(List.class)),
+                hasProperty("datasetListList", isA(List.class)),
                 hasProperty("jobStatus", is(JobStatus.SUCCESS)),
                 hasProperty("stopTime", is(1001L)),
                 hasProperty("comment", is("job-comment")),
@@ -168,7 +170,7 @@ public class JobConverterTest {
         JobEntity entity = JobEntity.builder()
                 .id(1L)
                 .jobUuid("job-uuid")
-                .owner(UserEntity.builder().build())
+                .owner(UserEntity.builder().id(1L).userName("foo").build())
                 .modelName("model")
                 .modelVersion(ModelVersionEntity.builder().versionName("v1").build())
                 .modelVersionId(1L)
@@ -195,30 +197,32 @@ public class JobConverterTest {
                 .build();
 
         when(hotJobHolder.ofIds(List.of(1L))).thenReturn(List.of(job));
-        var stepSpec = StepSpec.builder()
-                .name("step")
-                .expose(10)
+        var stepSpec = StepSpec.newBuilder()
+                .setName("step")
+                .setExpose(10)
                 .build();
         when(jobSpecParser.parseAndFlattenStepFromYaml(anyString())).thenReturn(List.of(stepSpec));
 
         // success job won't have exposed links
         var res = jobConvertor.convert(entity);
-        assertThat(res.getExposedLinks().size(), is(0));
+        assertThat(res.getExposedLinksList().size(), is(0));
 
         // running job will have exposed links with web handler
         when(webServerInTask.generateGatewayUrl(7L, "1.1.1.1", 10)).thenReturn("/foo/bar/");
         entity.setJobStatus(JobStatus.RUNNING);
         job.setStatus(JobStatus.RUNNING);
         res = jobConvertor.convert(entity);
-        var expectWeb = ExposedLinkVo.builder().type(ExposedType.WEB_HANDLER).link("/foo/bar/").name("step").build();
-        assertThat(res.getExposedLinks(), is(List.of(expectWeb)));
+        var expectWeb = ExposedLinkVo.newBuilder()
+                .setType(ExposedType.WEB_HANDLER).setLink("/foo/bar/").setName("step").build();
+        assertThat(res.getExposedLinksList(), is(List.of(expectWeb)));
 
         // get debug mode links when dev mode is on
         when(webServerInTask.generateGatewayUrl(7L, "1.1.1.1", 1234)).thenReturn("/baz/");
         entity.setDevMode(true);
         job.setDevMode(true);
         res = jobConvertor.convert(entity);
-        var expectDevMode = ExposedLinkVo.builder().type(ExposedType.DEV_MODE).link("/baz/").name("VS_CODE").build();
-        assertThat(res.getExposedLinks(), is(List.of(expectDevMode, expectWeb)));
+        var expectDevMode = ExposedLinkVo.newBuilder()
+                .setType(ExposedType.DEV_MODE).setLink("/baz/").setName("VS_CODE").build();
+        assertThat(res.getExposedLinksList(), is(List.of(expectDevMode, expectWeb)));
     }
 }

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVo;
+import ai.starwhale.mlops.api.protobuf.Runtime.RuntimeVersionVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;

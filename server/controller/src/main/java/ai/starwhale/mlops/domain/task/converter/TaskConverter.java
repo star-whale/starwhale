@@ -17,13 +17,13 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 
-import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedLinkVo;
+import ai.starwhale.mlops.api.protobuf.Job.ExposedType;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
-import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -83,18 +83,18 @@ public class TaskConverter {
         if (TaskStatus.RUNNING.equals(entity.getTaskStatus()) && StringUtils.hasText(ip)) {
             if (entity.getDevWay() != null) {
                 var devUrl = webServerInTask.generateGatewayUrl(entity.getId(), ip, devPort);
-                exposed.add(ExposedLinkVo.builder()
-                        .type(ExposedType.DEV_MODE)
-                        .name(DevWay.VS_CODE.name())
-                        .link(devUrl)
+                exposed.add(ExposedLinkVo.newBuilder()
+                        .setType(ExposedType.DEV_MODE)
+                        .setName(DevWay.VS_CODE.name())
+                        .setLink(devUrl)
                         .build());
             }
             var step = jobSpecParser.stepFromJsonQuietly(stepEntity.getOriginJson());
-            if (step != null && step.getExpose() != null && step.getExpose() > 0) {
-                exposed.add(ExposedLinkVo.builder()
-                        .type(ExposedType.WEB_HANDLER)
-                        .name(step.getFriendlyName())
-                        .link(webServerInTask.generateGatewayUrl(entity.getId(), ip, step.getExpose()))
+            if (step != null && step.hasExpose() && step.getExpose() > 0) {
+                exposed.add(ExposedLinkVo.newBuilder()
+                        .setType(ExposedType.WEB_HANDLER)
+                        .setName(step.hasShowName()  ? step.getShowName() : step.getName())
+                        .setLink(webServerInTask.generateGatewayUrl(entity.getId(), ip, step.getExpose()))
                         .build());
             }
         }

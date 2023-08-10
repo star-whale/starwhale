@@ -43,9 +43,9 @@ import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.RuntimeVersionIdColumn;
 import static ai.starwhale.mlops.domain.job.JobSchema.StepSpecColumn;
 
+import ai.starwhale.mlops.api.protobuf.Job.JobVo.JobStatus;
 import ai.starwhale.mlops.domain.job.DevWay;
 import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.model.bo.ModelVersion;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.user.bo.User;
