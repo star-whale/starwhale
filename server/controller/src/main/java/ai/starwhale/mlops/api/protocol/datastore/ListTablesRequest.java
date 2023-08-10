@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ListTablesRequest {
 
-    private String prefix = "";
+    private String prefix = null;
     private Set<String> prefixes = Set.of();
 
     public Set<String> getPrefixes() {
