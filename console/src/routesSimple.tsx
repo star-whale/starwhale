@@ -9,6 +9,7 @@ import ReportPreview from '@/pages/Report/ReportPreview'
 import CenterLayout from './pages/CenterLayout'
 import ApiHeader from './api/ApiHeader'
 import Header from './components/Header'
+import ApiHeaderSimple from './api/ApiHeaderSimple'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -61,7 +62,7 @@ const Routes = () => {
             <BrowserRouter>
                 <div className={styles.root}>
                     <Route>
-                        <ApiHeader />
+                        <ApiHeaderSimple />
                         <Header simple={true} />
                         {unauthedRoutes}
                         <RedirectComponent />
