@@ -35,5 +35,24 @@ public class ModelInfoVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
+    @JsonProperty("versionAlias")
+    private String versionAlias;
+
+    @JsonProperty("versionId")
+    private String versionId;
+
+    @JsonProperty("versionName")
+    private String versionName;
+
+    @JsonProperty("versionTag")
+    private String versionTag;
+
+    @JsonProperty("createdTime")
+    private Long createdTime;
+
+    @JsonProperty("shared")
+    private Integer shared;
+
     private ModelVersionVo versionInfo;
+
 }
