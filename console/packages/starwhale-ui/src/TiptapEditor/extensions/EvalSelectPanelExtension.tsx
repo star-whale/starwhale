@@ -33,7 +33,9 @@ const Component = (props: NodeViewProps) => {
                 <div draggable='true' data-drag-handle=''>
                     {memoe}
                 </div>
-            ) : null}
+            ) : (
+                memoe
+            )}
             <NodeViewContent />
         </NodeViewWrapper>
     )
@@ -53,19 +55,15 @@ declare module '@tiptap/core' {
 export default Node.create({
     name: 'eval-select-panel',
     group: 'block',
-    draggable: true,
+    draggable: false,
     atom: true,
 
     addOptions() {
-        return {
-            state: {},
-        }
+        return {}
     },
 
     addStorage() {
-        return {
-            state: '2',
-        }
+        return {}
     },
 
     addAttributes() {
@@ -99,10 +97,15 @@ export default Node.create({
             setPanel:
                 (options) =>
                 ({ commands }) => {
-                    return commands.insertContent({
-                        type: this.name,
-                        attrs: options,
-                    })
+                    return commands.insertContent([
+                        {
+                            type: this.name,
+                            attrs: options,
+                        },
+                        {
+                            type: 'paragraph',
+                        },
+                    ])
                 },
         }
     },
