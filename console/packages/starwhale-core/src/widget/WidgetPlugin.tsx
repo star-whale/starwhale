@@ -28,4 +28,5 @@ class WidgetPlugin<
     }
 }
 
+export { WidgetPlugin }
 export default WidgetPlugin

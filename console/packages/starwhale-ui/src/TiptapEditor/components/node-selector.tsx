@@ -12,7 +12,7 @@ import {
     CheckSquare,
 } from 'lucide-react'
 import { Dispatch, FC, SetStateAction } from 'react'
-
+// eslint-disable-next-line import/no-cycle
 import { BubbleMenuItem } from './EditorBubbleMenu'
 
 interface NodeSelectorProps {

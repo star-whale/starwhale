@@ -146,8 +146,15 @@ function Button(
     )
 }
 
-const ForwardButton = React.forwardRef<HTMLButtonElement, IButtonProps>(Button)
+const ForwardButton = React.forwardRef<HTMLButtonElement, IButtonProps>(Button as any)
 ForwardButton.displayName = 'Button'
+ForwardButton.defaultProps = {
+    kind: 'primary',
+    as: undefined,
+    isFull: false,
+    icon: undefined,
+    className: undefined,
+}
 
 const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((props, ref: any) => {
     const [, theme] = themedUseStyletron()
@@ -215,7 +222,17 @@ const ExtendButton = React.forwardRef<HTMLButtonElement, IExtendButtonProps>((pr
     return <ForwardButton {...props} overrides={overrides} ref={ref} />
 })
 ExtendButton.displayName = 'ExtendButton'
+ExtendButton.defaultProps = {
+    noPadding: false,
+    transparent: false,
+    negative: false,
+    kind: 'primary',
+    as: undefined,
+    isFull: false,
+    icon: undefined,
+    className: undefined,
+}
 
-export { ExtendButton, Button }
+export { ExtendButton }
 
 export default ForwardButton

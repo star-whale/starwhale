@@ -1,7 +1,6 @@
 import { Editor } from '@tiptap/core'
 import { Check, ChevronDown } from 'lucide-react'
 import { Dispatch, FC, SetStateAction } from 'react'
-import { type } from '../../base/select/index'
 
 export interface BubbleColorMenuItem {
     name: string
@@ -107,8 +106,8 @@ export const ColorSelector: FC<ColorSelectorProps> = ({ editor, isOpen, setIsOpe
                 <span
                     className='rounded-sm px-1'
                     style={{
-                        color: activeColorItem?.color,
-                        backgroundColor: activeHighlightItem?.color,
+                        color: activeColorItem?.color ?? '',
+                        backgroundColor: activeHighlightItem?.color ?? '',
                     }}
                 >
                     A
@@ -126,7 +125,12 @@ export const ColorSelector: FC<ColorSelectorProps> = ({ editor, isOpen, setIsOpe
                             key={index}
                             onClick={() => {
                                 editor.commands.unsetColor()
-                                name !== 'Default' && editor.chain().focus().setColor(color).run()
+                                if (name !== 'Default')
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .setColor(color as any)
+                                        .run()
                                 setIsOpen(false)
                             }}
                             className='flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100'
@@ -134,7 +138,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({ editor, isOpen, setIsOpe
                             <div className='flex items-center space-x-2'>
                                 <div
                                     className='rounded-sm border border-stone-200 px-1 py-px font-medium'
-                                    style={{ color }}
+                                    style={{ color: color ?? '' }}
                                 >
                                     A
                                 </div>
@@ -152,7 +156,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({ editor, isOpen, setIsOpe
                             key={index}
                             onClick={() => {
                                 editor.commands.unsetHighlight()
-                                name !== 'Default' && editor.commands.setHighlight({ color })
+                                if (name !== 'Default') editor.commands.setHighlight({ color } as any)
                                 setIsOpen(false)
                             }}
                             className='flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100'
@@ -160,7 +164,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({ editor, isOpen, setIsOpe
                             <div className='flex items-center space-x-2'>
                                 <div
                                     className='rounded-sm border border-stone-200 px-1 py-px font-medium'
-                                    style={{ backgroundColor: color }}
+                                    style={{ backgroundColor: color ?? '' }}
                                 >
                                     A
                                 </div>

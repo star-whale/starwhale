@@ -1,4 +1,3 @@
-import React from 'react'
 import { witEditorContext } from './Editor'
 import { WidgetRenderTree, WidgetRenderTreePropsT } from '@starwhale/core/widget'
 import { WidgetStateT } from '@starwhale/core'

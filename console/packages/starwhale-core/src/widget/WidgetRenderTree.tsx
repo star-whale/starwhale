@@ -14,7 +14,6 @@ import WidgetPreviewModal from '../form/WidgetPreviewModal'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
 import useTranslation from '@/hooks/useTranslation'
-import { useDeepEffect } from '../utils'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -47,10 +46,9 @@ const selector = (s: any) => ({
 export type WidgetRenderTreePropsT = {
     initialState?: any
     onSave?: (state: WidgetStateT) => void
-    onStateChange?: (state: WidgetStateT) => void
 }
 
-export function WidgetRenderTree({ initialState, onSave, onStateChange }: WidgetRenderTreePropsT) {
+export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreePropsT) {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)

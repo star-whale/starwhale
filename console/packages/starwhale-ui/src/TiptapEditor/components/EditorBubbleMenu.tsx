@@ -1,7 +1,7 @@
 import { BubbleMenu, BubbleMenuProps } from '@tiptap/react'
 import { FC, useState } from 'react'
 import { BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, CodeIcon } from 'lucide-react'
-
+//  eslint-disable-next-line import/no-cycle
 import { NodeSelector } from './node-selector'
 import { ColorSelector } from './color-selector'
 import { LinkSelector } from './link-selector'

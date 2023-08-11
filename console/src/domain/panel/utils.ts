@@ -151,7 +151,6 @@ export function tryParseSimplified(content: any): WidgetStoreState | undefined {
 
     return {
         key: 'widgets',
-        time: 0,
         tree: [root],
         widgets,
         defaults: {},

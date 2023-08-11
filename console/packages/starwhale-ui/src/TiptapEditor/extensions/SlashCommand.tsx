@@ -181,7 +181,9 @@ export const updateScrollView = (container: HTMLElement, item: HTMLElement) => {
 const CommandList = ({
     items,
     command,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     editor,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     range,
 }: {
     items: CommandItemProps[]

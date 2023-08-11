@@ -121,7 +121,7 @@ const EvalSelectForm = React.forwardRef(
         const [projectItem, setProjectItem] = React.useState<any>(null)
         const [selectData, setSelectData] = React.useState<EvalSelectDataT>({})
 
-        console.log('selectdata', selectData)
+        // console.log('selectdata', selectData)
 
         useImperativeHandle(
             ref,

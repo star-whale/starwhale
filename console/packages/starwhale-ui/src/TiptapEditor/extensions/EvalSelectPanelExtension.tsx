@@ -22,7 +22,7 @@ const Component = (props: NodeViewProps) => {
     })
 
     const memoe = React.useMemo(() => {
-        return <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange} />
+        return <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange as any} />
     }, [node.attrs.state, onStateChange])
 
     // console.log('node.attrs.state', node.attrs.state?.widgets)

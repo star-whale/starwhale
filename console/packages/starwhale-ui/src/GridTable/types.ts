@@ -46,7 +46,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowSelectedChange?: (rows: RowT[]) => void
     onRemove?: (id: string) => void
-    getId?: (record: any) => string | undefined
+    getId?: (record: any) => string | any
     // @FIXME type
     onInit?: (state: Partial<IGridState>) => void
     getColumns?: () => any[]

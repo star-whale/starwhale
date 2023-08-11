@@ -1,4 +1,5 @@
-// import { toast } from 'sonner'
+/* eslint-disable */
+// @ts-nocheck
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view'
 import TiptapImage from '@tiptap/extension-image'

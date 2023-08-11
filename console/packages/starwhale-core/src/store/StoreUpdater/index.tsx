@@ -4,7 +4,6 @@ import { useStoreApi } from '../hooks/useStore'
 import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
 
 type StoreUpdaterProps = {
-    state: WidgetStateT
     onStateChange: (param: WidgetStateT) => void
 }
 
