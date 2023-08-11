@@ -24,6 +24,7 @@ import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordListVo;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
+import ai.starwhale.mlops.api.protocol.datastore.TableDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableNameListVo;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryFilterDesc;
 import ai.starwhale.mlops.api.protocol.datastore.TableQueryOperandDesc;
@@ -145,39 +146,7 @@ public class DataStoreController implements DataStoreApi {
                 throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                         "tables should not be null or empty.");
             }
-            var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
-                    .tables(request.getTables().stream()
-                            .map(x -> {
-                                if (x == null) {
-                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                                            "table description should not be null");
-                                }
-                                if (x.getTableName() == null || x.getTableName().isEmpty()) {
-                                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
-                                            "table name should not be null or empty: " + x);
-                                }
-                                var ts = StringUtils.hasText(x.getRevision()) ? Long.parseLong(x.getRevision()) : 0;
-                                return DataStoreScanRequest.TableInfo.builder()
-                                        .tableName(x.getTableName())
-                                        .columnPrefix(x.getColumnPrefix())
-                                        .columns(DataStoreController.convertColumns(x.getColumns()))
-                                        .keepNone(x.isKeepNone())
-                                        .timestamp(ts)
-                                        .build();
-                            })
-                            .collect(Collectors.toList()))
-                    .start(request.getStart())
-                    .startType(request.getStartType())
-                    .startInclusive(request.isStartInclusive())
-                    .end(request.getEnd())
-                    .endType(request.getEndType())
-                    .endInclusive(request.isEndInclusive())
-                    .limit(request.getLimit())
-                    .keepNone(request.isKeepNone())
-                    .rawResult(request.isRawResult())
-                    .encodeWithType(request.isEncodeWithType())
-                    .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
-                    .build());
+            RecordList recordList = scanRecordList(request);
             var vo = RecordListVo.builder()
                     .records(recordList.getRecords())
                     .columnHints(recordList.getColumnHints())
@@ -200,6 +169,27 @@ public class DataStoreController implements DataStoreApi {
             byte[] bytes = recordsExporter.asBytes(recordList);
             httpResponse.addHeader("Content-Disposition",
                     "attachment; filename=\"" + request.getTableName() + ".csv\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
+            ServletOutputStream outputStream = httpResponse.getOutputStream();
+            outputStream.write(bytes);
+            outputStream.flush();
+        } catch (SwValidationException e) {
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE, "request=" + request, e);
+        } catch (IOException e) {
+            log.error("writing response failed", e);
+            throw new SwProcessException(ErrorType.SYSTEM, "export records failed ", e);
+        }
+    }
+
+    @Override
+    public void scanAndExport(ScanTableRequest request, HttpServletResponse httpResponse) {
+        try {
+            RecordList recordList = scanRecordList(request);
+            byte[] bytes = recordsExporter.asBytes(recordList);
+            httpResponse.addHeader("Content-Disposition",
+                    "attachment; filename=\"" + String.join("-",
+                            request.getTables().stream().map(TableDesc::getTableName).collect(
+                                    Collectors.toList())) + ".csv\"");
             httpResponse.addHeader("Content-Length", String.valueOf(bytes.length));
             ServletOutputStream outputStream = httpResponse.getOutputStream();
             outputStream.write(bytes);
@@ -376,5 +366,43 @@ public class DataStoreController implements DataStoreApi {
             }
         }
         return ret;
+    }
+
+
+    private RecordList scanRecordList(ScanTableRequest request) {
+        var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(request.getTables().stream()
+                        .map(x -> {
+                            if (x == null) {
+                                throw new SwValidationException(ValidSubject.DATASTORE,
+                                        "table description should not be null");
+                            }
+                            if (x.getTableName() == null || x.getTableName().isEmpty()) {
+                                throw new SwValidationException(ValidSubject.DATASTORE,
+                                        "table name should not be null or empty: " + x);
+                            }
+                            var ts = StringUtils.hasText(x.getRevision()) ? Long.parseLong(x.getRevision()) : 0;
+                            return DataStoreScanRequest.TableInfo.builder()
+                                    .tableName(x.getTableName())
+                                    .columnPrefix(x.getColumnPrefix())
+                                    .columns(DataStoreController.convertColumns(x.getColumns()))
+                                    .keepNone(x.isKeepNone())
+                                    .timestamp(ts)
+                                    .build();
+                        })
+                        .collect(Collectors.toList()))
+                .start(request.getStart())
+                .startType(request.getStartType())
+                .startInclusive(request.isStartInclusive())
+                .end(request.getEnd())
+                .endType(request.getEndType())
+                .endInclusive(request.isEndInclusive())
+                .limit(request.getLimit())
+                .keepNone(request.isKeepNone())
+                .rawResult(request.isRawResult())
+                .encodeWithType(request.isEncodeWithType())
+                .ignoreNonExistingTable(request.isIgnoreNonExistingTable())
+                .build());
+        return recordList;
     }
 }
