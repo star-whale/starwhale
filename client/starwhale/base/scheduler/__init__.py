@@ -22,7 +22,7 @@ class Scheduler:
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
-        ext_args: t.Dict[str, str] = {},
+        handlerargs: t.List[str] = [],
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.name: s for s in steps}
         self.dag: DAG = Step.generate_dag(steps)
@@ -30,7 +30,7 @@ class Scheduler:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.version = version
-        self.ext_args = ext_args
+        self.handlerargs = handlerargs
 
     def run(
         self,
@@ -70,7 +70,7 @@ class Scheduler:
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
                     version=self.version,
-                    ext_args = self.ext_args,
+                    handlerargs=self.handlerargs,
                 )
                 for v in vertices_to_run
             ]

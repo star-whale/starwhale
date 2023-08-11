@@ -348,7 +348,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
         force_generate_jobs_yaml: bool = False,
-        ext_args: t.Dict[str, str] = {},
+        handlerargs: t.List[str] = [],
     ) -> None:
         external_info = external_info or {}
         dataset_uris = dataset_uris or []
@@ -384,7 +384,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             workdir=snapshot_dir,
             dataset_uris=dataset_uris,
             steps=Step.get_steps_from_yaml(run_handler, job_yaml_path),
-            ext_args=ext_args,
+            handlerargs=handlerargs,
         )
         scheduler_status = RunStatus.START
         error_message = ""

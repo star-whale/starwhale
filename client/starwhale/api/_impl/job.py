@@ -5,6 +5,7 @@ import typing as t
 import inspect
 import numbers
 import threading
+from abc import ABC, abstractmethod
 from pathlib import Path
 from collections import defaultdict
 
@@ -202,7 +203,15 @@ class Handler(ASDictMixin):
             if not build_in:
                 sig = inspect.signature(func)
                 parameters_sig = [
-                    {"name": p[0], "required": p[1].default is inspect._empty}
+                    {
+                        "name": p[0],
+                        "required": p[1].default is inspect._empty
+                        or (
+                            isinstance(p[1].default, HanderInput)
+                            and p[1].default.required
+                        ),
+                        "multiple": isinstance(p[1].default, ListInput),
+                    }
                     for idx, p in enumerate(sig.parameters.items())
                     if idx != 0 or "self" != p[0]
                 ]
@@ -237,32 +246,50 @@ class Handler(ASDictMixin):
 
                 @functools.wraps(func)
                 def wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-                    import inspect
+                    if "handlerargs" in kwargs:
+                        import click
+                        from click.parser import OptionParser
 
-                    sig = inspect.signature(func)
-                    for idx, p in enumerate(sig.parameters.items()):
-                        name = p[0]
-                        if idx == 0 and "self" == name:
-                            continue
-                        # TODO: keyword args supported only. users must declare their handler parameters kyeword only
-                        kwargs.update(
-                            {name: fetch_real_args(p, kwargs.get(name, None))}
-                        )
+                        handlerargs: t.List[str] = kwargs.pop("handlerargs")
+
+                        parser = OptionParser()
+                        sig = inspect.signature(func)
+                        for idx, p in enumerate(sig.parameters.items()):
+                            if idx != 0 or "self" != p[0]:
+                                arg_name = p[0]
+                                required = p[1].default is inspect._empty or (
+                                    isinstance(p[1].default, HanderInput)
+                                    and p[1].default.required
+                                )
+                                click.Option(
+                                    [f"--{arg_name}", f"-{arg_name}"],
+                                    is_flag=False,
+                                    multiple=isinstance(p[1].default, ListInput),
+                                    required=required,
+                                ).add_to_parser(
+                                    parser, None  # type:ignore
+                                )
+                        hargs, _, _ = parser.parse_args(handlerargs)
+
+                        for idx, p in enumerate(sig.parameters.items()):
+                            name = p[0]
+                            if idx == 0 and "self" == name:
+                                continue
+                            parsed_args = {
+                                name: fetch_real_args(p, hargs.get(name, None))
+                            }
+                            kwargs.update(
+                                {k: v for k, v in parsed_args.items() if v is not None}
+                            )
                     func(*args, **kwargs)
 
                 def fetch_real_args(
-                    parameter: t.Tuple[str, inspect.Parameter], defaults_to: t.Any
+                    parameter: t.Tuple[str, inspect.Parameter], user_input: t.Any
                 ) -> t.Any:
-                    if isinstance(parameter[1].default, DatasetInput):
-                        from starwhale import dataset
-
-                        return dataset(defaults_to)
-                    elif isinstance(parameter[1].default, ContextInput):
-                        from starwhale import Context
-
-                        return Context.get_runtime_context()
+                    if isinstance(parameter[1].default, HanderInput):
+                        return parameter[1].default.parse(user_input)
                     else:
-                        return defaults_to
+                        return user_input
 
                 return wrapper
 
@@ -381,9 +408,55 @@ def generate_jobs_yaml(
     )
 
 
-class DatasetInput:
-    pass
+class HanderInput(ABC):
+    def __init__(self, required: bool = False) -> None:
+        self.required = required
+
+    @abstractmethod
+    def parse(self, user_input: t.Any) -> t.Any:
+        ...
 
 
-class ContextInput:
-    pass
+class ListInput(HanderInput):
+    def __init__(self, member_type: t.Any, required: bool = False) -> None:
+        super().__init__(required)
+        self.member_type = member_type
+
+    def parse(self, user_input: t.List) -> t.Any:
+        if not user_input:
+            return user_input
+        if isinstance(self.member_type, HanderInput):
+            return [self.member_type.parse(item) for item in user_input]
+        elif issubclass(self.member_type, HanderInput):
+            return [self.member_type().parse(item) for item in user_input]
+        else:
+            return user_input
+
+
+class DatasetInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        from starwhale import dataset
+
+        return dataset(user_input) if user_input else None
+
+
+class BoolInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return "false" != str(user_input).lower()
+
+
+class IntInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return int(user_input) if user_input else None
+
+
+class FloatInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return float(user_input) if user_input else None
+
+
+class ContextInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        from starwhale import Context
+
+        return Context.get_runtime_context()

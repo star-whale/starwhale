@@ -744,7 +744,13 @@ def handle(context): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
-                    "parameters_sig": [{"name": "context", "required": True}],
+                    "parameters_sig": [
+                        {
+                            "name": "context",
+                            "required": True,
+                            "multiple": False,
+                        }
+                    ],
                     "ext_cmd_args": "--context",
                 }
             ]
@@ -1171,24 +1177,48 @@ def predict_handler(): ...
 
     def test_handler_args(self) -> None:
         content = """
-from starwhale import DatasetInput, handler, ContextInput, Dataset, Context
+from starwhale import (
+    Context,
+    Dataset,
+    handler,
+    IntInput,
+    ListInput,
+    HanderInput,
+    ContextInput,
+    DatasetInput,
+)
+
+class MyInput(HanderInput):
+    def parse(self, user_input):
+
+        return f"MyInput {user_input}"
 
 class X:
     def __init__(self) -> None:
         self.a = 1
 
     @handler()
-    def f(self, *, x, ds=DatasetInput(), ctx=ContextInput()):
-        assert self.a+x is 3
+    def f(
+        self, x=ListInput(IntInput), y=2, mi=MyInput(), ds=DatasetInput(required=True), ctx=ContextInput()
+    ):
+        assert self.a + x[0] is 3
+        assert self.a + x[1] is 2
+        assert y is 2
+        assert mi == "MyInput blab-la"
         assert isinstance(ds, Dataset)
         assert isinstance(ctx, Context)
 
 
 @handler()
-def f(*, x, ds=DatasetInput(), ctx=ContextInput()):
-    assert x is 2
+def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True), ctx=ContextInput()):
+    assert x[0] is 2
+    assert x[1] is 1
+    assert y is 2
+    assert mi == "MyInput blab-la"
+
     assert isinstance(ds, Dataset)
     assert isinstance(ctx, Context)
+
 
 """
         self._ensure_py_script(content)
@@ -1216,18 +1246,31 @@ def f(*, x, ds=DatasetInput(), ctx=ContextInput()):
                 "parameters_sig": [
                     {
                         "name": "x",
-                        "required": True,
+                        "required": False,
+                        "multiple": True,
+                    },
+                    {
+                        "name": "y",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "mi",
+                        "required": False,
+                        "multiple": False,
                     },
                     {
                         "name": "ds",
-                        "required": False,
+                        "required": True,
+                        "multiple": False,
                     },
                     {
                         "name": "ctx",
                         "required": False,
+                        "multiple": False,
                     },
                 ],
-                "ext_cmd_args": "--x",
+                "ext_cmd_args": "--ds",
             },
         ]
         assert jobs_info["mock_user_module:f"] == [
@@ -1249,43 +1292,60 @@ def f(*, x, ds=DatasetInput(), ctx=ContextInput()):
                 "parameters_sig": [
                     {
                         "name": "x",
-                        "required": True,
+                        "required": False,
+                        "multiple": True,
+                    },
+                    {
+                        "name": "y",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "mi",
+                        "required": False,
+                        "multiple": False,
                     },
                     {
                         "name": "ds",
-                        "required": False,
+                        "required": True,
+                        "multiple": False,
                     },
                     {
                         "name": "ctx",
                         "required": False,
+                        "multiple": False,
                     },
                 ],
-                "ext_cmd_args": "--x",
+                "ext_cmd_args": "--ds",
             },
         ]
-        with patch(
-            "sys.argv",
-            "swcli model run -w . -m th --handler th:f -- --x 2 --ds dsabc".split(" "),
-        ):
-            steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
-            context = Context(
-                workdir=self.workdir,
-                project="test",
-                version="123",
-            )
-            task = TaskExecutor(
-                index=1, context=context, workdir=self.workdir, step=steps[0]
-            )
-            result = task.execute()
-            assert result.status == "success"
-            steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
-            context = Context(
-                workdir=self.workdir,
-                project="test",
-                version="123",
-            )
-            task = TaskExecutor(
-                index=1, context=context, workdir=self.workdir, step=steps[0]
-            )
-            result = task.execute()
-            assert result.status == "success"
+        steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
+        context = Context(
+            workdir=self.workdir,
+            project="test",
+            version="123",
+        )
+        task = TaskExecutor(
+            index=1,
+            context=context,
+            workdir=self.workdir,
+            step=steps[0],
+            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+        )
+        result = task.execute()
+        assert result.status == "success"
+        steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
+        context = Context(
+            workdir=self.workdir,
+            project="test",
+            version="123",
+        )
+        task = TaskExecutor(
+            index=1,
+            context=context,
+            workdir=self.workdir,
+            step=steps[0],
+            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+        )
+        result = task.execute()
+        assert result.status == "success"

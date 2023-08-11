@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import typing as t
 import asyncio
 from pathlib import Path
@@ -33,7 +32,7 @@ class TaskExecutor:
         context: Context,
         workdir: Path,
         step: Step,
-        ext_args: t.Dict[str, str] = {},
+        handlerargs: t.List[str] = [],
     ):
         self.index = index
         self.context = context
@@ -41,7 +40,7 @@ class TaskExecutor:
         self.exception: t.Optional[Exception] = None
         self.step = step
         self.__status = RunStatus.INIT
-        self.ext_args = ext_args
+        self.handlerargs = handlerargs
         self._validate()
 
     def _validate(self) -> None:
@@ -131,7 +130,7 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 elif getattr(func, DecoratorInjectAttr.Step, False):
-                    func(**self.ext_args)
+                    func(**{"handlerargs": self.handlerargs})
                 else:
                     raise NoSupportError(
                         f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
@@ -151,7 +150,7 @@ class TaskExecutor:
                     elif getattr(func, DecoratorInjectAttr.Predict, False):
                         self._run_in_pipeline_handler_cls(func, "predict")
                     else:
-                        func(**self.ext_args)
+                        func(**{"handlerargs": self.handlerargs})
             else:
                 func = getattr(cls_(), func_name)
                 if getattr(func, DecoratorInjectAttr.Evaluate, False):
@@ -159,7 +158,7 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 else:
-                    func(**self.ext_args)
+                    func(**{"handlerargs": self.handlerargs})
 
     def execute(self) -> TaskResult:
         console.info(f"start to execute task with context({self.context}) ...")
