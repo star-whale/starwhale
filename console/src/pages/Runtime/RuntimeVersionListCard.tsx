@@ -14,7 +14,7 @@ import {
     revertRuntimeVersion,
 } from '@/domain/runtime/services/runtimeVersion'
 import { toaster } from 'baseui/toast'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import { TextLink } from '@/components/Link'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { EditableAlias } from '@/components/Alias'
@@ -37,6 +37,7 @@ export default function RuntimeVersionListCard() {
         [runtimesInfo, projectId, runtimeId, t]
     )
     const { hasCliMate, doPull } = useCliMate()
+    const tagReadOnly = !useAccess('tag.edit')
 
     const handleTagAdd = useCallback(
         async (runtimeVersionId: string, tag: string) => {
@@ -69,6 +70,7 @@ export default function RuntimeVersionListCard() {
                         <EditableAlias
                             key='alias'
                             resource={runtime}
+                            readOnly={tagReadOnly}
                             onAddTag={(tag) => handleTagAdd(runtime.id, tag)}
                             onRemoveTag={(tag) => handelTagRemove(runtime.id, tag)}
                         />,

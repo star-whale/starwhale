@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { IHasTagSchema } from '@base/schemas/resource'
 import { Tag } from 'baseui/tag'
 import { Input, useConfirmCtx } from '@starwhale/ui'
@@ -59,9 +59,10 @@ export interface IEditableAliasProps {
     resource: IHasTagSchema
     onAddTag: (tag: string) => void
     onRemoveTag: (tag: string) => void
+    readOnly: boolean
 }
 
-export function EditableAlias({ resource, onAddTag, onRemoveTag }: IEditableAliasProps) {
+export function EditableAlias({ resource, onAddTag, onRemoveTag, readOnly }: IEditableAliasProps) {
     const tags = resource.tags ?? []
 
     const newTagOverrides = mergeOverrides(tagOverrides, {
@@ -84,12 +85,15 @@ export function EditableAlias({ resource, onAddTag, onRemoveTag }: IEditableAlia
         }
     }, [showInput])
 
-    const handleAddTag = (tag: string) => {
-        if (tag) {
-            onAddTag(tag)
-        }
-        setShowInput(false)
-    }
+    const handleAddTag = useCallback(
+        (tag: string) => {
+            if (tag) {
+                onAddTag(tag)
+            }
+            setShowInput(false)
+        },
+        [onAddTag]
+    )
 
     const constTag = (title: string) => {
         return title ? (
@@ -106,69 +110,75 @@ export function EditableAlias({ resource, onAddTag, onRemoveTag }: IEditableAlia
                 https://github.com/uber/baseweb/blob/b452864a5b2fcdf9867731b07192e3b1fab3501a/src/tag/tag.tsx#L26 */}
                 <div style={{ display: 'flex' }}>
                     <span style={{ marginRight: '2px', marginTop: '1.5px' }}>{title}</span>
-                    <Delete
-                        onClick={async () => {
-                            const ok = await confirmCtx.show({
-                                title: t('Confirm'),
-                                content: t('delete sth confirm', [title]),
-                            })
-                            if (ok) {
-                                onRemoveTag(title)
-                            }
-                        }}
-                        cursor='pointer'
-                    />
+                    {!readOnly && (
+                        <Delete
+                            onClick={async () => {
+                                const ok = await confirmCtx.show({
+                                    title: t('Confirm'),
+                                    content: t('delete sth confirm', [title]),
+                                })
+                                if (ok) {
+                                    onRemoveTag(title)
+                                }
+                            }}
+                            cursor='pointer'
+                        />
+                    )}
                 </div>
             </Tag>
         ) : null
     }
+
+    const newTag = useMemo(() => {
+        return showInput ? (
+            <div style={{ width: '100px' }}>
+                <Input
+                    size='mini'
+                    overrides={{
+                        Root: {
+                            style: {
+                                height: '20px',
+                                marginTop: '5px',
+                            },
+                        },
+                        Input: {
+                            style: {
+                                paddingLeft: '4px',
+                                paddingRight: '4px',
+                            },
+                        },
+                    }}
+                    inputRef={inputRef}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            handleAddTag(e.currentTarget.value)
+                        }
+                    }}
+                    onBlur={() => {
+                        setShowInput(false)
+                    }}
+                />
+            </div>
+        ) : (
+            <Tag
+                overrides={newTagOverrides}
+                closeable={false}
+                startEnhancer={() => <Plus size={16} />}
+                onClick={() => {
+                    setShowInput(true)
+                }}
+            >
+                New
+            </Tag>
+        )
+    }, [handleAddTag, newTagOverrides, showInput])
 
     return (
         <div style={{ display: 'flex', flexFlow: 'row wrap', alignItems: 'stretch' }}>
             {constTag(resource.alias)}
             {constTag(resource.latest ? 'latest' : '')}
             {tags.map(userTag)}
-            {showInput ? (
-                <div style={{ width: '100px' }}>
-                    <Input
-                        size='mini'
-                        overrides={{
-                            Root: {
-                                style: {
-                                    height: '20px',
-                                    marginTop: '5px',
-                                },
-                            },
-                            Input: {
-                                style: {
-                                    paddingLeft: '4px',
-                                    paddingRight: '4px',
-                                },
-                            },
-                        }}
-                        inputRef={inputRef}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                handleAddTag(e.currentTarget.value)
-                            }
-                        }}
-                        onBlur={() => {
-                            setShowInput(false)
-                        }}
-                    />
-                </div>
-            ) : (
-                <Tag
-                    overrides={newTagOverrides}
-                    closeable={false}
-                    startEnhancer={() => <Plus size={16} />}
-                    onClick={() => {
-                        setShowInput(true)
-                    }}
-                >
-                    New
-                </Tag>
-            )}
+            {readOnly ? <></> : newTag}
         </div>
     )
 }

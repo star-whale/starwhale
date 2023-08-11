@@ -62,3 +62,7 @@ export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; child
         </WithAuth>
     )
 }
+
+export function useAccess(id: keyof IPrivileges) {
+    return useAuthPrivileged({ role: useProjectRole().role, id }).isPrivileged
+}

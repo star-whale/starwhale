@@ -18,7 +18,7 @@ import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { toaster } from 'baseui/toast'
 import { TextLink } from '@/components/Link'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
 import { Shared } from '@/components/Shared'
@@ -51,6 +51,7 @@ export default function DatasetVersionListCard() {
     )
 
     const { hasCliMate, doPull } = useCliMate()
+    const tagReadOnly = !useAccess('tag.edit')
 
     const handleTagAdd = useCallback(
         async (datasetVersionId: string, tag: string) => {
@@ -86,6 +87,7 @@ export default function DatasetVersionListCard() {
                                 <EditableAlias
                                     key='alias'
                                     resource={datasetVersion}
+                                    readOnly={tagReadOnly}
                                     onAddTag={(tag) => handleTagAdd(datasetVersion.id, tag)}
                                     onRemoveTag={(tag) => handelTagRemove(datasetVersion.id, tag)}
                                 />,
