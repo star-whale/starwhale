@@ -808,6 +808,8 @@ def ft2(): ...
                     "resources": [],
                     "show_name": "fine_tune",
                     "virtual": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 },
                 {
                     "cls_name": "",
