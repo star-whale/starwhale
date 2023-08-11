@@ -21,6 +21,7 @@ export default function WidgetFormModal({
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
     form,
+    payload,
 }: {
     store: StoreType
     form: WidgetFormModel
@@ -28,6 +29,7 @@ export default function WidgetFormModal({
     setIsShow?: any
     handleFormSubmit: (args: any) => void
     id?: string
+    payload?: any
 }) {
     const [t] = useTranslation()
     // @FIXME use event bus handle global state
@@ -40,7 +42,10 @@ export default function WidgetFormModal({
 
     // @FIXME add chart with list id, only for ui:section widget
     const prefixes = React.useMemo(() => {
-        const { evalSelectData } = config?.optionConfig || {}
+        // @FIXME combine with single rule
+        // if widget is ui:section, then config?.optionConfig is defined
+        // if widget is ui:panel, then payload is defined
+        const { evalSelectData } = config?.optionConfig || payload || {}
         if (!evalSelectData) return undefined
         const allPrefix: any = []
         Object.values(evalSelectData).forEach((item: any) => {
@@ -57,7 +62,7 @@ export default function WidgetFormModal({
         })
         // console.log(payload, allPrefix)
         return allPrefix
-    }, [config])
+    }, [config, payload])
 
     // console.log(prefixes)
 

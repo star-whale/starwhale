@@ -6,7 +6,7 @@ export class PanelAddEvent extends BusEventWithPayload<PanelAddPayload> {
     static type = 'add-panel'
 }
 
-type PanelEditPayload = { id: string }
+type PanelEditPayload = { id: string; evalSelectData?: any }
 export class PanelEditEvent extends BusEventWithPayload<PanelEditPayload> {
     static type = 'edit-panel'
 }

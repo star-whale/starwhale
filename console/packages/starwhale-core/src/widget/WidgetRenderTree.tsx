@@ -177,6 +177,7 @@ export function WidgetRenderTree({ initialState, onSave, onStateChange }: Widget
             <WidgetFormModal
                 form={form.current}
                 id={editWidget?.payload?.id}
+                payload={editWidget?.payload}
                 isShow={isPanelModalOpen}
                 setIsShow={setIsPanelModalOpen}
                 store={store}

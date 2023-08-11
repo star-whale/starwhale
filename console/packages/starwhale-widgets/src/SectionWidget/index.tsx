@@ -106,8 +106,8 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
         setIsModelOpen(false)
     }
-    const handleEditPanel = (id: string) => {
-        eventBus.publish(new PanelEditEvent({ id }))
+    const handleEditPanel = (id: string, data?: any) => {
+        eventBus.publish(new PanelEditEvent({ id, evalSelectData: data }))
     }
     const handleDeletePanel = (id: string) => {
         eventBus.publish(new PanelDeleteEvent({ id }))
@@ -225,7 +225,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     <div className={styles.panelWrapper} id={child.props.id}>
                         <div className={styles.contentWrapper}>{child}</div>
                         <ChartConfigGroup
-                            onEdit={() => handleEditPanel(child.props.id)}
+                            onEdit={() => handleEditPanel(child.props.id, evalSelectData)}
                             onDelete={() => handleDeletePanel(child.props?.id)}
                             onPreview={() => handlePreviewPanel(child.props?.id)}
                             onDownload={() => handleDownloadPanel(child.props?.id)}
