@@ -25,7 +25,6 @@ function ApiHeader() {
     const { setRole } = useProjectRole()
 
     useFirstRender(() => {
-
         // @ts-ignore
         if (axios.interceptors.response.handlers.length > 1) return
 

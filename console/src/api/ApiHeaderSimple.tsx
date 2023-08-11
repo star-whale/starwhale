@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import axios from 'axios'
 import { toaster } from 'baseui/toast'
-import { getErrMsg, setToken } from '@/api'
+import { getErrMsg } from '@/api'
 import { useLocation } from 'react-router-dom'
 import useTranslation from '@/hooks/useTranslation'
 import { useFirstRender } from '@/hooks/useFirstRender'
