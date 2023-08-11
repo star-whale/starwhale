@@ -183,11 +183,11 @@ function Breadcrumb({ extra }: any) {
         const items = [
             {
                 title: t('Reports'),
-                path: `/projects/${projectId}/models`,
+                path: `/projects/${projectId}/reports`,
             },
             {
                 title: reportId === 'new' ? t('report.create.title') : t('report.edit.title'),
-                path: `/projects/${projectId}/models/${reportId}`,
+                path: `/projects/${projectId}/reports/${reportId}`,
             },
         ]
         return items

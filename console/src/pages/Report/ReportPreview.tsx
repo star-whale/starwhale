@@ -19,7 +19,7 @@ export default function ReportPreview() {
             <h1
                 className='mb-20px'
                 style={{
-                    fontSize: '34px',
+                    fontSize: '2.4em',
                     fontWeight: 600,
                     color: '#02102B',
                 }}
