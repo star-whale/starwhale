@@ -16,21 +16,16 @@ function ApiHeaderSimple() {
 
     useFirstRender(() => {
         // @ts-ignore
-        if (axios.interceptors.response.handlers.length > 0) return
+        if (axios.interceptors.response.handlers.length > 1) return
 
         axios.interceptors.response.use(
             (response) => {
-                if (response.headers?.authorization) setToken(response.headers.authorization)
-                return typeof response.data === 'object' && 'data' in response.data ? response.data : response
+                return response
             },
             (error) => {
                 const reqUrl = error.config.url
                 // ignore cli mate detection error
                 if (reqUrl?.includes(`${cliMateServer}/alive`)) return Promise.reject(error)
-
-                if (error.response?.status === 401) {
-                    setToken(undefined)
-                }
 
                 // for example: user/current as default token auth, it will be triggered multi times, so silent here
                 const withSilentRoute = error.response.config.params?.silent

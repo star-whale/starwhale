@@ -491,6 +491,10 @@ const report = {
         en: 'Title',
         zh: '标题',
     },
+    'report.title.default': {
+        en: 'Untitled',
+        zh: '未命名',
+    },
     'report.search.by.title': {
         en: 'Search by title',
         zh: '按标题搜索',

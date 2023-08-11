@@ -23,12 +23,12 @@ export default function ReportEdit() {
 
     const rid = reportId === 'new' ? '' : reportId
     const info = useFetchReport(projectId, rid)
+    const [t] = useTranslation()
     // eslint-disable-next-line
     const { currentUser } = useCurrentUser()
-    const [title, setTitle] = React.useState('')
+    const [title, setTitle] = React.useState(t('report.title.default'))
     const [description, setDescription] = React.useState('')
     const [content, setContent] = React.useState('')
-    const [t] = useTranslation()
     const { data } = info
     const [readonly, setReadonly] = React.useState(false)
     const [status, setStatus] = React.useState(SaveStatus.SAVED)
