@@ -81,6 +81,16 @@ public class StepSpecTest {
     }
 
     @Test
+    public void testMultipleArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "false", "multiple", "true")
+        ));
+        spec.setExtraCmdArgs("--a=1 -a=2 a=3");
+        spec.verifyStepSpecArgs();
+    }
+
+    @Test
     public void testOptionWithoutArgument() {
         StepSpec spec = new StepSpec();
         spec.setParametersSig(List.of(
