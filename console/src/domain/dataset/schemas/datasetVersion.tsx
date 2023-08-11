@@ -1,16 +1,15 @@
-import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IHasTagSchema, IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
 
 export interface IDatasetFileSchema {
     name: string
     size: string
 }
-export interface IDatasetVersionSchema extends IResourceSchema {
-    tag: string
+export interface IDatasetVersionSchema extends IResourceSchema, IHasTagSchema {
     meta: string
     owner?: IUserSchema
-    alias: string
     shared?: number
+    indexTable?: string
 }
 
 export interface IDatasetTreeVersionSchema extends IDatasetVersionSchema {
@@ -21,14 +20,8 @@ export interface IDatasetTreeVersionSchema extends IDatasetVersionSchema {
 export interface IDatasetVersionDetailSchema {
     id?: string
     name?: string
-    createdTime?: number
-    versionMeta?: string
-    versionName?: string
-    versionTag?: string
-    versionAlias?: string
     files?: Array<IDatasetFileSchema>
-    indexTable?: string
-    shared?: number
+    versionInfo: IDatasetVersionSchema
 }
 
 export interface IUpdateDatasetVersionSchema {

@@ -109,11 +109,15 @@ class Model(BaseArtifact):
         )
 
     @classmethod
-    def build(cls, workdir: str, name: str, runtime: str = "") -> Resource:
+    def build(
+        cls, workdir: str, name: str, runtime: str = "", tags: t.List[str] | None = None
+    ) -> Resource:
         version = gen_uniq_version()
         cmd = [CLI, "-vvv", "model", "build", workdir, "--name", name]
         if runtime:
             cmd.extend(["--runtime", runtime])
+        if tags:
+            cmd.extend([f"--tag={t}" for t in tags])
         check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{name}/version/{version}", typ=ResourceType.model)
 
@@ -133,6 +137,7 @@ class Dataset(BaseArtifact):
         workdir: str,
         name: str,
         dataset_yaml: str = "dataset.yaml",
+        tags: t.List[str] | None = None,
     ) -> Resource:
         if not name:
             name = os.path.basename(workdir)
@@ -147,6 +152,8 @@ class Dataset(BaseArtifact):
             "--dataset-yaml",
             os.path.join(workdir, dataset_yaml),
         ]
+        if tags:
+            cmd.extend([f"--tag={t}" for t in tags])
         version = gen_uniq_version()
         check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{name}/version/{version}", typ=ResourceType.dataset)
@@ -180,7 +187,12 @@ class Runtime(BaseArtifact):
         super().__init__("runtime")
 
     @classmethod
-    def build(cls, workdir: str, runtime_yaml: str) -> Resource:
+    def build(
+        cls,
+        workdir: str,
+        runtime_yaml: str,
+        tags: t.List[str] | None = None,
+    ) -> Resource:
         version = gen_uniq_version()
         yaml_path = os.path.join(workdir, runtime_yaml)
         config = RuntimeConfig.create_by_yaml(Path(yaml_path))
@@ -195,6 +207,8 @@ class Runtime(BaseArtifact):
             config.name,
             "--no-cache",
         ]
+        if tags:
+            cmd.extend([f"--tag={t}" for t in tags])
         check_invoke(cmd, external_env={_ENV_FIXED_VERSION: version}, log=True)
         return Resource(f"{config.name}/version/{version}", typ=ResourceType.runtime)
 

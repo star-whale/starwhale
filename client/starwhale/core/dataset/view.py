@@ -9,8 +9,8 @@ from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, SHORT_VERSION_CNT
-from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
-from starwhale.base.view import BaseTermView
+from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSourceType
+from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import Text, DatasetConfig
@@ -19,7 +19,7 @@ from starwhale.core.runtime.process import Process as RuntimeProcess
 from .model import Dataset
 
 
-class DatasetTermView(BaseTermView):
+class DatasetTermView(BaseTermView, TagViewMixin):
     def __init__(self, dataset_uri: str | Resource) -> None:
         super().__init__()
 
@@ -165,13 +165,7 @@ class DatasetTermView(BaseTermView):
         repo: str,
         name: str,
         project_uri: str,
-        alignment_size: int | str,
-        volume_size: int | str,
-        subset: str | None = None,
-        split: str | None = None,
-        revision: str = "main",
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
-        cache: bool = True,
+        **kwargs: t.Any,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -180,28 +174,12 @@ class DatasetTermView(BaseTermView):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_huggingface(
-            repo=repo,
-            subset=subset,
-            split=split,
-            revision=revision,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-            cache=cache,
-        )
+        ds.build_from_huggingface(repo=repo, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone
-    def build_from_json_file(
-        cls,
-        json_file_path: str,
-        name: str,
-        project_uri: str,
-        alignment_size: int | str,
-        volume_size: int | str,
-        field_selector: str = "",
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+    def build_from_csv_files(
+        cls, paths: t.List[PathLike], name: str, project_uri: str, **kwargs: t.Any
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -210,13 +188,25 @@ class DatasetTermView(BaseTermView):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_json_file(
-            json_file_path=json_file_path,
-            field_selector=field_selector,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
+        ds.build_from_csv_files(paths, **kwargs)
+
+    @classmethod
+    @BaseTermView._only_standalone
+    def build_from_json_files(
+        cls,
+        paths: t.List[PathLike],
+        name: str,
+        project_uri: str,
+        **kwargs: t.Any,
+    ) -> None:
+        dataset_uri = cls.prepare_build_bundle(
+            project=project_uri,
+            bundle_name=name,
+            typ=ResourceType.dataset,
+            auto_gen_version=False,
         )
+        ds = Dataset.get_dataset(dataset_uri)
+        ds.build_from_json_files(paths, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone
@@ -226,10 +216,7 @@ class DatasetTermView(BaseTermView):
         kind: DatasetFolderSourceType,
         name: str,
         project_uri: str,
-        auto_label: bool,
-        alignment_size: int | str,
-        volume_size: int | str,
-        mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        **kwargs: t.Any,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             project=project_uri,
@@ -238,14 +225,7 @@ class DatasetTermView(BaseTermView):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_folder(
-            folder=folder,
-            kind=kind,
-            auto_label=auto_label,
-            alignment_size=alignment_size,
-            volume_size=volume_size,
-            mode=mode,
-        )
+        ds.build_from_folder(folder=folder, kind=kind, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone
@@ -254,6 +234,7 @@ class DatasetTermView(BaseTermView):
         workdir: str | Path,
         config: DatasetConfig,
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> None:
         if config.runtime_uri:
             RuntimeProcess(uri=config.runtime_uri).run()
@@ -265,7 +246,7 @@ class DatasetTermView(BaseTermView):
                 auto_gen_version=False,
             )
             ds = Dataset.get_dataset(dataset_uri)
-            ds.build(workdir=Path(workdir), config=config, mode=mode)
+            ds.build(workdir=Path(workdir), config=config, mode=mode, tags=tags)
 
     @classmethod
     def copy(
@@ -275,6 +256,7 @@ class DatasetTermView(BaseTermView):
         mode: DatasetChangeMode = DatasetChangeMode.PATCH,
         dest_local_project_uri: str = "",
         force: bool = False,
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         Dataset.copy(
             src_uri=Resource(src_uri, typ=ResourceType.dataset),
@@ -282,19 +264,9 @@ class DatasetTermView(BaseTermView):
             mode=mode,
             dest_local_project_uri=dest_local_project_uri,
             force=force,
+            ignore_tags=ignore_tags,
         )
         console.print(":clap: copy done")
-
-    @BaseTermView._header
-    def tag(
-        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
-    ) -> None:
-        if remove:
-            console.print(f":golfer: remove tags {tags} @ {self.uri}...")
-            self.dataset.remove_tags(tags, ignore_errors)
-        else:
-            console.print(f":surfer: add tags {tags} @ {self.uri}...")
-            self.dataset.add_tags(tags, ignore_errors)
 
     @BaseTermView._header
     def head(

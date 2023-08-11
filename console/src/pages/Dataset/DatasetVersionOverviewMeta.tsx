@@ -8,9 +8,9 @@ export default function DatasetVersionMeta() {
     const { datasetVersion: dataset } = useDatasetVersion()
 
     const jsonData = useMemo(() => {
-        if (!dataset?.versionMeta) return {}
-        return yaml.load(dataset?.versionMeta)
-    }, [dataset?.versionMeta])
+        if (!dataset?.versionInfo.meta) return {}
+        return yaml.load(dataset?.versionInfo.meta)
+    }, [dataset?.versionInfo.meta])
 
     return (
         <Card

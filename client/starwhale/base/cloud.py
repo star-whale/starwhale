@@ -14,6 +14,7 @@ from requests_toolbelt.multipart.encoder import (  # type: ignore
     MultipartEncoderMonitor,
 )
 
+from starwhale.utils import console
 from starwhale.consts import (
     HTTPMethod,
     FMT_DATETIME,
@@ -24,7 +25,6 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
-from starwhale.utils.error import NoSupportError
 from starwhale.utils.retry import http_retry
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
@@ -357,10 +357,49 @@ class CloudBundleModelMixin(CloudRequestMixed):
         )
 
     def list_tags(self) -> t.List[str]:
-        raise NoSupportError("no support list tags for dataset in the cloud instance")
+        r = self.do_http_request(
+            path=self._get_tag_path_by_rc(self.uri),  # type: ignore
+            method=HTTPMethod.GET,
+            instance=self.uri.instance,  # type: ignore
+        )
+        wrap_sw_error_resp(r, "failed to get tags")
+        return r.json()["data"]  # type: ignore
 
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
-        raise NoSupportError("no support add tags for dataset in the cloud instance")
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = False
+    ) -> None:
+        for tag in tags:
+            ok, msg = self.do_http_request_simple_ret(
+                path=self._get_tag_path_by_rc(self.uri),  # type: ignore
+                method=HTTPMethod.POST,
+                instance=self.uri.instance,  # type: ignore
+                json={
+                    "force": force,
+                    "tag": tag,
+                },
+            )
+
+            if not ok:
+                msg = f"failed to add tag {tag}: {msg}"
+                if ignore_errors:
+                    console.warn(msg)
+                else:
+                    raise RuntimeError(msg)
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
-        raise NoSupportError("no support remove tags for dataset in the cloud instance")
+        for tag in tags:
+            ok, msg = self.do_http_request_simple_ret(
+                path=f"{self._get_tag_path_by_rc(self.uri)}/{tag}",  # type: ignore
+                method=HTTPMethod.DELETE,
+                instance=self.uri.instance,  # type: ignore
+            )
+
+            if not ok:
+                msg = f"failed to remove tag {tag}: {msg}"
+                if ignore_errors:
+                    console.warn(msg)
+                else:
+                    raise RuntimeError(msg)
+
+    def _get_tag_path_by_rc(self, rc: Resource) -> str:
+        return f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{rc.version}/tag"

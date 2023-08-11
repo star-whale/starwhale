@@ -75,4 +75,66 @@ class ModelVersionMapperTest extends MySqlContainerHolder {
         var mv2 = modelVersionMapper.find(modelVersion2.getId());
         assertEquals(true, mv2.getShared());
     }
+
+    @Test
+    public void testStorageSize() {
+        var model = ModelEntity.builder()
+                .projectId(1L)
+                .ownerId(1L)
+                .modelName("model1")
+                .build();
+        modelMapper.insert(model);
+        var modelVersion = ModelVersionEntity.builder()
+                .modelId(model.getId())
+                .versionName("v1")
+                .jobs("")
+                .ownerId(1L)
+                .storageSize(789L)
+                .build();
+        modelVersionMapper.insert(modelVersion);
+
+        var mv = modelVersionMapper.find(modelVersion.getId());
+        assertEquals(789L, mv.getStorageSize());
+
+        // update
+        modelVersion.setStorageSize(123L);
+        modelVersionMapper.update(modelVersion);
+        mv = modelVersionMapper.find(modelVersion.getId());
+        assertEquals(123L, mv.getStorageSize());
+    }
+
+    @Test
+    public void testUpdate() {
+        var model = ModelEntity.builder()
+                .projectId(1L)
+                .ownerId(1L)
+                .modelName("model1")
+                .build();
+        modelMapper.insert(model);
+        var modelVersion = ModelVersionEntity.builder()
+                .modelId(model.getId())
+                .versionName("v1")
+                .jobs("")
+                .ownerId(1L)
+                .build();
+        modelVersionMapper.insert(modelVersion);
+
+        var mv = modelVersionMapper.find(modelVersion.getId());
+        assertEquals("v1", mv.getVersionName());
+
+        // update
+        modelVersion.setVersionTag("tag2");
+        modelVersion.setBuiltInRuntime("runtime2");
+        modelVersion.setJobs("job2");
+        modelVersion.setMetaBlobId("blob2");
+        modelVersion.setStorageSize(123L);
+        modelVersionMapper.update(modelVersion);
+
+        mv = modelVersionMapper.find(modelVersion.getId());
+        assertEquals("tag2", mv.getVersionTag());
+        assertEquals("runtime2", mv.getBuiltInRuntime());
+        assertEquals("job2", mv.getJobs());
+        assertEquals("blob2", mv.getMetaBlobId());
+        assertEquals(123L, mv.getStorageSize());
+    }
 }

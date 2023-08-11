@@ -30,12 +30,14 @@ try:
         prepare_model_package,
         get_base_and_adapter_model_path,
     )
+    from .evaluation import copilot_predict
 except ImportError:
     from utils import (
         get_model_name,
         prepare_model_package,
         get_base_and_adapter_model_path,
     )
+    from evaluation import copilot_predict
 
 torch.backends.cuda.matmul.allow_tf32 = True
 default_compute_dtype = torch.float16  # only A100 supports bfloat16
@@ -69,7 +71,10 @@ def llama_fine_tuning():
     )
     model_name = get_model_name()
     prepare_model_package(model_name, skip_adapter=False)
-    starwhale_model.build(name=f"llama-{model_name}-qlora-ft")
+    starwhale_model.build(
+        name=f"llama-{model_name}-qlora-ft",
+        modules=[llama_fine_tuning, copilot_predict],
+    )
 
 
 def get_accelerate_model(
@@ -197,10 +202,8 @@ def train_llama(
     training_args = Seq2SeqTrainingArguments(
         output_dir=adapter_model_path,
         logging_steps=10,
-        save_strategy="steps",
-        save_steps=2,  # 200,
-        save_total_limit=40,
-        evaluation_strategy="steps",
+        save_strategy="no",  # no need to save checkpoint for fine-tuning
+        evaluation_strategy="epoch",
         weight_decay=0.0,
         learning_rate=0.0001,
         max_steps=max_train_steps,

@@ -139,10 +139,9 @@ class Handler(ASDictMixin):
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control concurrency and replicas of handler run.
 
-        Args:
-            resources: [Dict, optional] Resources for the handler run, such as memory, gpu etc. Current only supports
-              the cloud instance.
-            concurrency: [int, optional] The concurrency of the handler run. Default is 1.
+        Arguments:
+            resources: [Dict, optional] Resources for the handler run, such as memory, cpu, nvidia.com/gpu etc. Current only supports
+              the server instance.
             replicas: [int, optional] The number of the handler run. Default is 1.
             needs: [List[Callable], optional] The list of the functions that need to be executed before the handler function.
               The depends callable objects must be decorated by `@handler`, `@evaluation.predict`, `@evaluation.evaluate` and `@experiment.fine_tune` .
@@ -150,17 +149,15 @@ class Handler(ASDictMixin):
             expose: [int, optional] The expose port of the handler. Only used for the handler run as a service.
               Default is 0. If expose is 0, there is no expose port.
               Users must set the expose port when the handler run as a service on the server or cloud instance.
-            require_dataset: [bool] Whether you need datasets when execute the handler.
+            require_dataset: [bool, optional] Whether you need datasets when execute the handler.
               Default is False, It means that there is no need to select datasets when executing this handler on the server or cloud instance.
               If True, You must select datasets when executing on the server or cloud instance.
-
-
 
         Example:
         ```python
         from starwhale import handler
 
-        @handler(resources={"cpu": 1, "nvidia.com/gpu": 1}, concurrency=2, replicas=3)
+        @handler(resources={"cpu": 1, "nvidia.com/gpu": 1}, replicas=3)
         def my_handler():
             ...
 
@@ -168,7 +165,6 @@ class Handler(ASDictMixin):
         def my_another_handler():
             ...
         ```
-
         Returns:
             [Callable] The decorator function.
         """

@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.model.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import java.util.List;
@@ -25,6 +27,7 @@ import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.dao.DuplicateKeyException;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -101,14 +104,27 @@ public class ModelMapperTest extends MySqlContainerHolder {
                 .build();
         modelMapper.insert(model1);
 
+        ModelEntity duplicate = ModelEntity.builder()
+                .modelName("model1")
+                .ownerId(1L)
+                .projectId(1L)
+                .build();
+        assertThrows(DuplicateKeyException.class, () -> modelMapper.insert(duplicate));
+
         modelMapper.remove(model1.getId());
         Assertions.assertEquals(1, modelMapper.find(model1.getId()).getIsDeleted());
         Assertions.assertNull(modelMapper.findByName(model1.getModelName(), model1.getProjectId(), false));
         Assertions.assertEquals(model1.getModelName(), modelMapper.findDeleted(model1.getId()).getModelName());
 
+        modelMapper.insert(duplicate);
+        assertThrows(DuplicateKeyException.class, () -> modelMapper.recover(model1.getId()));
+        modelMapper.remove(duplicate.getId());
+
         modelMapper.recover(model1.getId());
         Assertions.assertEquals(0, modelMapper.find(model1.getId()).getIsDeleted());
         Assertions.assertEquals(model1, modelMapper.findByName(model1.getModelName(), model1.getProjectId(), false));
         Assertions.assertNull(modelMapper.findDeleted(model1.getId()));
+
+        assertThrows(DuplicateKeyException.class, () -> modelMapper.insert(duplicate));
     }
 }

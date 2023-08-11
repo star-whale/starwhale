@@ -175,6 +175,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         bc = BundleCopy(
             src_uri,
@@ -182,6 +183,7 @@ class Model(BaseBundle, metaclass=ABCMeta):
             ResourceType.model,
             force,
             dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
         )
         bc.do()
 
@@ -220,8 +222,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
 
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
-        self.tag.add(tags, ignore_errors)
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = False
+    ) -> None:
+        self.tag.add(tags, ignore_errors, force=force)
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
@@ -600,6 +604,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def buildImpl(self, workdir: Path, **kw: t.Any) -> None:  # type: ignore[override]
         model_config: ModelConfig = kw["model_config"]
+        tags: t.List[str] = kw.get("tags", [])
+        StandaloneTag.check_tags_validation(tags)
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -661,7 +667,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 5,
                 "render manifest",
             ),
-            (self._make_auto_tags, 5, "make auto tags"),
+            (self._make_tags, 5, "make tags", dict(tags=tags)),
         ]
 
         run_with_progress_bar("model bundle building...", operations)

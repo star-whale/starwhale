@@ -10,6 +10,7 @@ import { toaster } from 'baseui/toast'
 import { useParams } from 'react-router-dom'
 import { fetchModelVersion, updateModelVersionShared } from '@/domain/model/services/modelVersion'
 import { useProject } from '@project/hooks/useProject'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function ModelVersionOverview() {
     const { projectId, modelId, modelVersionId } = useParams<{
@@ -28,11 +29,11 @@ export default function ModelVersionOverview() {
         },
         {
             label: t('Version Name'),
-            value: <MonoText>{modelVersion?.versionName ?? '-'} </MonoText>,
+            value: <MonoText>{modelVersion?.versionInfo.name ?? '-'} </MonoText>,
         },
         {
             label: t('Aliases'),
-            value: <Alias alias={modelVersion?.versionAlias} />,
+            value: modelVersion ? <Alias alias={getAliasStr(modelVersion.versionInfo)} /> : null,
         },
         {
             label: t('Shared'),
@@ -45,9 +46,9 @@ export default function ModelVersionOverview() {
                         gap: '4px',
                     }}
                 >
-                    <Shared shared={modelVersion?.shared} isTextShow />
+                    <Shared shared={modelVersion?.versionInfo.shared} isTextShow />
                     <Toggle
-                        value={modelVersion?.shared === 1}
+                        value={modelVersion?.versionInfo.shared === 1}
                         onChange={async (v) => {
                             try {
                                 await updateModelVersionShared(projectId, modelId, modelVersionId, v)
@@ -64,7 +65,8 @@ export default function ModelVersionOverview() {
         },
         {
             label: t('Created At'),
-            value: modelVersion?.createdTime && formatTimestampDateTime(modelVersion.createdTime),
+            value:
+                modelVersion?.versionInfo.createdTime && formatTimestampDateTime(modelVersion?.versionInfo.createdTime),
         },
     ].filter((item) => {
         return project?.privacy === 'PUBLIC' || item.label !== t('Shared')

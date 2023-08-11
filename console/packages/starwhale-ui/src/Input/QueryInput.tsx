@@ -33,6 +33,7 @@ export function QueryInput(props: any) {
             onChange={(event) => setValue((event.target as HTMLInputElement).value)}
             value={value}
             clearable
+            placeholder={props.placeholder}
         />
     )
 }

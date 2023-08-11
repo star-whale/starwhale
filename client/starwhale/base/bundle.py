@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import abc
 import typing as t
@@ -56,7 +58,9 @@ class BaseBundle(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = True
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -189,7 +193,8 @@ class LocalStorageBundleMixin(LocalStorageBundleProtocol):
         self._manifest["version"] = self._version
         self._manifest[CREATED_AT_KEY] = now_str()
 
-    def _make_auto_tags(self) -> None:
+    def _make_tags(self, tags: t.List[str] | None = None) -> None:
+        self.tag.add(tags or [])
         self.tag.add_fast_tag()
 
     def _make_tar(self, ftype: str = "") -> None:

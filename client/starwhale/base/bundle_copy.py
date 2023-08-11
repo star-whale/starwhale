@@ -26,8 +26,8 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import get_bundle_type_by_uri
 from starwhale.base.cloud import CloudRequestMixed
+from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.utils.error import NotFoundError, NoSupportError, FieldTypeOrValueError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.blob.store import LocalFileStore
@@ -58,6 +58,7 @@ class BundleCopy(CloudRequestMixed):
         dest_uri: str | Resource | Project,
         typ: ResourceType,
         force: bool = False,
+        ignore_tags: t.List[str] | None = None,
         **kw: t.Any,
     ) -> None:
         self.src_uri: Resource = (
@@ -65,6 +66,7 @@ class BundleCopy(CloudRequestMixed):
             if isinstance(src_uri, str)
             else src_uri
         )
+        self.ignore_tags = ignore_tags or []
         if not self.src_uri.version:
             self.src_uri.version = "latest"
 
@@ -145,7 +147,7 @@ class BundleCopy(CloudRequestMixed):
             / self.typ.value
             / uri.name
             / self.src_uri.version[:VERSION_PREFIX_CNT]
-            / f"{uri.version}{get_bundle_type_by_uri(uri.typ)}"
+            / f"{uri.version}{Resource.get_bundle_type_by_uri(uri.typ)}"
         )
 
     def _check_version_existed(self, uri: Resource) -> bool:
@@ -234,6 +236,34 @@ class BundleCopy(CloudRequestMixed):
         )
 
     def do(self) -> None:
+        self.do_copy_bundle()
+        self.do_copy_tags()
+
+    def do_copy_tags(self) -> None:
+        candidate_tags = []
+        if self.src_uri.instance.is_local:
+            candidate_tags = StandaloneTag(self.src_uri).list()
+        else:
+            candidate_tags = self._do_fetch_tags_from_server(self.src_uri)
+
+        tags = []
+        for tag in candidate_tags:
+            if tag not in self.ignore_tags and not StandaloneTag.is_builtin_tag(tag):
+                tags.append(tag)
+
+        if not tags:
+            console.print(":tea: no tags to copy")
+            return
+
+        if self.dest_uri.instance.is_local:
+            # TODO: support standalone tags restrict validation
+            StandaloneTag(self.dest_uri).add(tags=tags)
+        else:
+            self._do_upload_tags_to_server(self.dest_uri, tags)
+
+        console.print(f":apple: tags copied: {','.join(tags)}")
+
+    def do_copy_bundle(self) -> None:
         remote_url = self._get_remote_bundle_console_url()
         if not self.force and self._check_version_existed(self.dest_uri):
             console.print(f":tea: {self.dest_uri} was already existed, skip copy")
@@ -279,6 +309,35 @@ class BundleCopy(CloudRequestMixed):
 
     def download_files(self, workdir: Path) -> t.Iterator[FileNode]:
         raise NotImplementedError
+
+    def _do_fetch_tags_from_server(self, rc: Resource) -> t.List[str]:
+        if not rc.instance.is_cloud:
+            raise RuntimeError("Only accept remote resource to fetch tags")
+
+        r = self.do_http_request(
+            path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{self.src_uri.version}/tag",
+            method=HTTPMethod.GET,
+            instance=rc.instance,
+        )
+        wrap_sw_error_resp(r, "failed to fetch tags")
+        return r.json()["data"]  # type: ignore[no-any-return]
+
+    def _do_upload_tags_to_server(self, rc: Resource, tags: t.List[str]) -> None:
+        if not rc.instance.is_cloud:
+            raise RuntimeError("Only accept remote resource to upload tags")
+
+        for tag in tags:
+            ok, msg = self.do_http_request_simple_ret(
+                path=f"/project/{rc.project.name}/{rc.typ.value}/{rc.name}/version/{self.src_uri.version}/tag",
+                method=HTTPMethod.POST,
+                instance=rc.instance,
+                json={
+                    "force": self.force,
+                    "tag": tag,
+                },
+            )
+            if not ok:
+                raise RuntimeError(f"failed to upload tag:{tag}, error: {msg}")
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         workdir = self._get_versioned_resource_path(self.dest_uri)

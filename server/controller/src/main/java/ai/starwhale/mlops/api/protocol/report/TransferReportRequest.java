@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.api.protocol.report;
 
-import cn.hutool.core.util.StrUtil;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.validation.annotation.Validated;
+
 
 @Data
-public class TagAction {
-
-    private Action action;
-
-    private String tags;
-
-    public enum Action {
-        ADD, REMOVE, SET
-    }
-
-    public static TagAction of(String action, String tags) throws IllegalArgumentException {
-        if (StrUtil.isEmpty(action)) {
-            throw new IllegalArgumentException("action is empty");
-        }
-        TagAction obj = new TagAction();
-        obj.setAction(Action.valueOf(action.toUpperCase()));
-        obj.setTags(tags);
-        return obj;
-    }
+@Validated
+public class TransferReportRequest {
+    @NotNull
+    private String targetProjectUrl;
 }

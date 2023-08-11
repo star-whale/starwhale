@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -39,8 +40,9 @@ public class CancellableJobLogK8sCollectorFactoryTest {
     @Test
     public void testMake() throws IOException, ApiException {
         var k8sClient = mock(K8sClient.class);
+        var pod = new V1Pod().metadata(new V1ObjectMeta().name("1-xx")).status(new V1PodStatus().phase("Running"));
         when(k8sClient.getPodsByJobName("1"))
-                .thenReturn(new V1PodList().items(List.of(new V1Pod().metadata(new V1ObjectMeta().name("1-xx")))));
+                .thenReturn(new V1PodList().items(List.of(pod)));
         var call = mock(Call.class);
         var resp = mock(Response.class);
         var respBody = mock(ResponseBody.class);

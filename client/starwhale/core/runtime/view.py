@@ -14,7 +14,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     STANDALONE_INSTANCE,
 )
-from starwhale.base.view import BaseTermView
+from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.utils.venv import get_venv_env, get_conda_env, get_python_run_env
 from starwhale.utils.error import NotFoundError, NoSupportError, ExclusiveArgsError
 from starwhale.utils.config import SWCliConfigMixed
@@ -24,7 +24,7 @@ from starwhale.base.uri.resource import Resource, ResourceType
 from .model import Runtime, RuntimeInfoFilter, StandaloneRuntime
 
 
-class RuntimeTermView(BaseTermView):
+class RuntimeTermView(BaseTermView, TagViewMixin):
     def __init__(self, runtime_uri: str | Resource) -> None:
         super().__init__()
 
@@ -127,7 +127,7 @@ class RuntimeTermView(BaseTermView):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> None:
         Runtime.lock(
@@ -139,7 +139,7 @@ class RuntimeTermView(BaseTermView):
             no_cache=no_cache,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_pip_options=emit_pip_options,
+            dump_pip_options=dump_pip_options,
             env_use_shell=env_use_shell,
         )
 
@@ -171,8 +171,9 @@ class RuntimeTermView(BaseTermView):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_condarc: bool = False,
-        emit_pip_options: bool = False,
+        dump_condarc: bool = False,
+        dump_pip_options: bool = False,
+        tags: t.List[str] | None = None,
     ) -> Resource:
         set_args = list(filter(bool, (conda_name, conda_prefix, venv_prefix)))
         if len(set_args) >= 2:
@@ -214,8 +215,9 @@ class RuntimeTermView(BaseTermView):
             download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
+            tags=tags,
         )
         return runtime_uri
 
@@ -232,8 +234,9 @@ class RuntimeTermView(BaseTermView):
         include_local_wheel: bool = False,
         no_cache: bool = False,
         disable_env_lock: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> Resource:
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
@@ -264,8 +267,9 @@ class RuntimeTermView(BaseTermView):
             include_local_wheel=include_local_wheel,
             no_cache=no_cache,
             disable_env_lock=disable_env_lock,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
+            tags=tags,
         )
         return _runtime_uri
 
@@ -366,22 +370,17 @@ class RuntimeTermView(BaseTermView):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         src = Resource(src_uri, typ=ResourceType.runtime)
-        Runtime.copy(src, dest_uri, force, dest_local_project_uri)
+        Runtime.copy(
+            src_uri=src,
+            dest_uri=dest_uri,
+            force=force,
+            dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
+        )
         console.print(":clap: copy done.")
-
-    @BaseTermView._header
-    def tag(
-        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
-    ) -> None:
-        # TODO: refactor model/runtime/dataset tag view-model
-        if remove:
-            console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.remove_tags(tags, ignore_errors)
-        else:
-            console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.add_tags(tags, ignore_errors)
 
 
 class RuntimeTermViewRich(RuntimeTermView):

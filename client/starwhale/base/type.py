@@ -1,7 +1,8 @@
-from enum import Enum, unique
+from __future__ import annotations
 
-from starwhale.utils.error import NoSupportError
-from starwhale.base.uri.resource import ResourceType
+import typing as t
+from enum import Enum, unique
+from pathlib import Path
 
 
 class InstanceType:
@@ -48,17 +49,6 @@ class RuntimeLockFileType:
     CONDA = "conda-sw-lock.yaml"
 
 
-def get_bundle_type_by_uri(uri_type: ResourceType) -> str:
-    if uri_type == ResourceType.dataset:
-        return BundleType.DATASET
-    elif uri_type == ResourceType.model:
-        return BundleType.MODEL
-    elif uri_type == ResourceType.runtime:
-        return BundleType.RUNTIME
-    else:
-        raise NoSupportError(uri_type)
-
-
 @unique
 class DependencyType(Enum):
     PIP_PKG = "pip_pkg"
@@ -87,3 +77,7 @@ class DatasetFolderSourceType(Enum):
     IMAGE = "image"
     VIDEO = "video"
     AUDIO = "audio"
+
+
+PathLike = t.Union[str, Path]
+OptionalPathLike = t.Optional[PathLike]

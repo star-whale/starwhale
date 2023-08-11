@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -38,6 +39,7 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -51,13 +53,17 @@ import ai.starwhale.mlops.api.protocol.project.ProjectVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.configuration.DockerSetting;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.DatasetBuildTokenValidator;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleException;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetQuery;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersionQuery;
@@ -99,6 +105,7 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -123,6 +130,7 @@ public class DatasetServiceTest {
     private K8sJobTemplate k8sJobTemplate;
     private DatasetBuildTokenValidator datasetBuildTokenValidator;
     private SystemSettingService systemSettingService;
+    private BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
@@ -142,12 +150,13 @@ public class DatasetServiceTest {
                             .build();
                 });
         versionConvertor = mock(DatasetVersionVoConverter.class);
-        given(versionConvertor.convert(any(DatasetVersionEntity.class), any()))
+        given(versionConvertor.convert(any(DatasetVersionEntity.class), any(), any()))
                 .willAnswer(invocation -> {
                     DatasetVersionEntity entity = invocation.getArgument(0);
                     return DatasetVersionVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .name(entity.getName())
+                            .alias("v" + entity.getVersionOrder())
                             .build();
                 });
 
@@ -175,12 +184,29 @@ public class DatasetServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         datasetBuildTokenValidator = mock(DatasetBuildTokenValidator.class);
-        systemSettingService = mock(SystemSettingService.class);
+        systemSettingService = new SystemSettingService(null, List.of(),
+                                                        new RunTimeProperties(
+                                                                "",
+                                                                new RunTimeProperties.RunConfig(),
+                                                                new RunTimeProperties.RunConfig(),
+                                                                new RunTimeProperties.Pypi(
+                                                                        "url1",
+                                                                        "url2",
+                                                                        "host1",
+                                                                        11,
+                                                                        91
+                                                                ),
+                                                                ""
+                                                        ),
+                                                        new DockerSetting("", "", "", "", false), userService
+        );
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         service = new DatasetService(
                 projectService,
                 datasetMapper,
                 datasetVersionMapper,
+                bundleVersionTagDao,
                 buildRecordMapper,
                 datasetConvertor,
                 versionConvertor,
@@ -196,7 +222,8 @@ public class DatasetServiceTest {
                 k8sClient,
                 k8sJobTemplate,
                 datasetBuildTokenValidator,
-                systemSettingService, "");
+                systemSettingService, ""
+        );
         bundleManager = mock(BundleManager.class);
         given(bundleManager.getBundleId(any(BundleUrl.class)))
                 .willAnswer(invocation -> {
@@ -239,9 +266,9 @@ public class DatasetServiceTest {
                         DatasetEntity.builder().id(2L).build()
                 ));
         var res = service.listDataset(DatasetQuery.builder()
-                .projectUrl("1")
-                .namePrefix("")
-                .build(), new PageParams(1, 5));
+                                              .projectUrl("1")
+                                              .namePrefix("")
+                                              .build(), new PageParams(1, 5));
         assertThat(res, allOf(
                 hasProperty("size", is(2)),
                 hasProperty("list", hasItem(hasProperty("id", is("1")))),
@@ -274,8 +301,10 @@ public class DatasetServiceTest {
         given(datasetMapper.find(same(2L)))
                 .willReturn(DatasetEntity.builder().id(2L).build());
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build()));
+        assertThrows(
+                SwNotFoundException.class,
+                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d3").build())
+        );
 
         given(datasetVersionMapper.find(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
@@ -283,32 +312,31 @@ public class DatasetServiceTest {
         given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
-        var res = service.getDatasetInfo(DatasetQuery.builder()
-                .projectUrl("1")
-                .datasetUrl("d1")
-                .datasetVersionUrl("v1")
-                .build());
+        var res = service.getDatasetInfo(
+                DatasetQuery.builder()
+                        .projectUrl("1")
+                        .datasetUrl("d1")
+                        .datasetVersionUrl("v1")
+                        .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         given(datasetVersionMapper.findByLatest(same(1L)))
                 .willReturn(DatasetVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
 
-        res = service.getDatasetInfo(DatasetQuery.builder()
-                .projectUrl("1")
-                .datasetUrl("d1")
-                .build());
+        res = service.getDatasetInfo(
+                DatasetQuery.builder()
+                        .projectUrl("1")
+                        .datasetUrl("d1")
+                        .build());
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
-
-        assertThrows(SwNotFoundException.class,
-                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d2").build()));
+        assertThrows(
+                SwNotFoundException.class,
+                () -> service.getDatasetInfo(DatasetQuery.builder().projectUrl("1").datasetUrl("d2").build())
+        );
     }
 
     @Test
@@ -334,14 +362,13 @@ public class DatasetServiceTest {
 
     @Test
     public void testListDatasetVersionHistory() {
-        given(datasetVersionMapper.list(anyLong(), anyString(), anyString()))
+        given(datasetVersionMapper.list(anyLong(), anyString()))
                 .willReturn(List.of(DatasetVersionEntity.builder().id(1L).build()));
         var res = service.listDatasetVersionHistory(
                 DatasetVersionQuery.builder()
                         .projectUrl("1")
                         .datasetUrl("d1")
                         .versionName("v1")
-                        .versionTag("tag1")
                         .build(),
                 PageParams.builder().build()
         );
@@ -360,7 +387,7 @@ public class DatasetServiceTest {
         given(datasetMapper.find(same(1L)))
                 .willReturn(DatasetEntity.builder().id(1L).build());
 
-        var res = service.findDatasetsByVersionIds(List.of());
+        var res = service.findDatasetsByVersionIds(List.of(1L));
         assertThat(res, allOf(
                 iterableWithSize(1),
                 hasItem(hasProperty("id", is("1")))
@@ -371,14 +398,13 @@ public class DatasetServiceTest {
     public void testListDatasetInfo() {
         given(datasetMapper.findByName(same("d1"), same(1L), any()))
                 .willReturn(DatasetEntity.builder().id(1L).build());
-        given(datasetVersionMapper.list(same(1L), any(), any()))
+        given(datasetVersionMapper.list(same(1L), any()))
                 .willReturn(List.of(DatasetVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listDs("1", "d1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         given(projectService.findProject(same("1")))
                 .willReturn(Project.builder().id(1L).build());
@@ -386,13 +412,11 @@ public class DatasetServiceTest {
                 .willReturn(List.of(DatasetEntity.builder().id(1L).build()));
 
         res = service.listDs("1", "");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
-        assertThrows(SwNotFoundException.class,
-                () -> service.listDs("2", "d1"));
+        assertThrows(SwNotFoundException.class, () -> service.listDs("2", "d1"));
     }
 
     @Test
@@ -437,8 +461,10 @@ public class DatasetServiceTest {
                 .willThrow(SwValidationException.class);
 
         when(projectService.findProject(anyString())).thenReturn(Project.builder().id(1L).build());
-        Assertions.assertEquals(Map.of("a", "link1", "b", "link2", "x", ""),
-                service.signLinks("", "", Set.of("a", "b", "x"), 1L));
+        Assertions.assertEquals(
+                Map.of("a", "link1", "b", "link2", "x", ""),
+                service.signLinks("", "", Set.of("a", "b", "x"), 1L)
+        );
     }
 
     @Test
@@ -452,6 +478,7 @@ public class DatasetServiceTest {
                 projectService,
                 mock(DatasetMapper.class),
                 datasetVersionMapper,
+                mock(BundleVersionTagDao.class),
                 mock(BuildRecordMapper.class),
                 mock(DatasetVoConverter.class),
                 mock(DatasetVersionVoConverter.class),
@@ -467,7 +494,8 @@ public class DatasetServiceTest {
                 mock(K8sClient.class),
                 mock(K8sJobTemplate.class),
                 mock(DatasetBuildTokenValidator.class),
-                mock(SystemSettingService.class), "");
+                mock(SystemSettingService.class), ""
+        );
 
         // public project
         when(projectService.getProjectVo("pub")).thenReturn(ProjectVo.builder().id("1").privacy("PUBLIC").build());
@@ -517,6 +545,10 @@ public class DatasetServiceTest {
                         DatasetVersionViewEntity.builder().id(6L).datasetId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).datasetName("ds4").build()
                 ));
+        given(datasetVersionMapper.findByLatest(same(2L)))
+                .willReturn(DatasetVersionEntity.builder().id(8L).build());
+        given(datasetVersionMapper.findByLatest(same(4L)))
+                .willReturn(DatasetVersionEntity.builder().id(6L).build());
 
         var res = service.listDatasetVersionView("1");
         assertEquals(4, res.size());
@@ -528,8 +560,10 @@ public class DatasetServiceTest {
         assertEquals(2, res.get(1).getVersions().size());
         assertEquals(2, res.get(2).getVersions().size());
         assertEquals(1, res.get(3).getVersions().size());
-        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
-        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
+        assertTrue(res.get(0).getVersions().get(0).getLatest());
+        assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
+        assertTrue(res.get(1).getVersions().get(0).getLatest());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }
@@ -544,35 +578,35 @@ public class DatasetServiceTest {
         // case1-1: patch and the dataset is not exist
         given(datasetMapper.find(1L)).willReturn(null);
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
-                .datasetName(datasetName)
-                .projectUrl(String.valueOf(projectId))
-                .build())
+                                                                              .datasetId(1L)
+                                                                              .datasetName(datasetName)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .build())
         );
         // case1-2: patch and the dataset name in param is not right
         given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("already-dataset").build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
-                .datasetName(datasetName)
-                .projectUrl(String.valueOf(projectId))
-                .build())
+                                                                              .datasetId(1L)
+                                                                              .datasetName(datasetName)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .build())
         );
         given(datasetMapper.find(1L)).willReturn(DatasetEntity.builder().datasetName("Test-build-ds").build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(1L)
-                .datasetName(datasetName)
-                .projectUrl(String.valueOf(projectId))
-                .build())
+                                                                              .datasetId(1L)
+                                                                              .datasetName(datasetName)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .build())
         );
 
         // case2: create and already exist the same name dataset
         given(datasetMapper.findByName(datasetName, projectId, true))
                 .willReturn(DatasetEntity.builder().build());
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                    .datasetId(null)
-                    .datasetName(datasetName)
-                    .projectUrl(String.valueOf(projectId))
-                    .build())
+                                                                              .datasetId(null)
+                                                                              .datasetName(datasetName)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .build())
         );
 
         // case3: create and not exist the same name, but already building a same name dataset
@@ -580,38 +614,51 @@ public class DatasetServiceTest {
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName))
                 .willReturn(List.of(BuildRecordEntity.builder().build()));
         assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                    .datasetId(null)
-                    .datasetName(datasetName)
-                    .projectUrl(String.valueOf(projectId))
-                    .build())
+                                                                              .datasetId(null)
+                                                                              .datasetName(datasetName)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .build())
         );
 
         // case4: insert to db failed
         given(buildRecordMapper.selectBuildingInOneProjectForUpdate(projectId, datasetName)).willReturn(List.of());
         given(buildRecordMapper.insert(any())).willReturn(0);
         assertThrows(SwProcessException.class, () -> service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
-                .datasetName(datasetName)
-                .projectUrl(String.valueOf(projectId))
-                .build())
+                                                                           .datasetId(null)
+                                                                           .datasetName(datasetName)
+                                                                           .projectUrl(String.valueOf(projectId))
+                                                                           .build())
         );
+
 
         // case5: normal build
         given(buildRecordMapper.insert(any())).willReturn(1);
         V1Job v1Job = new V1Job();
         v1Job.setMetadata(new V1ObjectMeta()
-                .name("dataset_build-1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_DATASET_BUILD)));
+                                  .name("dataset_build-1").labels(Map.of(JOB_TYPE_LABEL, WORKLOAD_TYPE_DATASET_BUILD)));
         v1Job.setSpec(new V1JobSpec().template(new V1PodTemplateSpec().metadata(new V1ObjectMeta())));
         given(k8sJobTemplate.loadJob(WORKLOAD_TYPE_DATASET_BUILD)).willReturn(v1Job);
 
+        // without configs
+        assertThrows(SwValidationException.class, () -> service.build(CreateBuildRecordRequest.builder()
+                                                                              .datasetId(null)
+                                                                              .datasetName(datasetName)
+                                                                              .shared(true)
+                                                                              .type(BuildType.IMAGE)
+                                                                              .projectUrl(String.valueOf(projectId))
+                                                                              .storagePath("storage-path")
+                                                                              .build()));
+        // set config
+        systemSettingService.getRunTimeProperties().setDatasetBuild(
+                new RunTimeProperties.RunConfig(null, "image", "0.5.6", "3.10"));
         service.build(CreateBuildRecordRequest.builder()
-                .datasetId(null)
-                .datasetName(datasetName)
-                .shared(true)
-                .type(BuildType.IMAGE)
-                .projectUrl(String.valueOf(projectId))
-                .storagePath("storage-path")
-                .build());
+                              .datasetId(null)
+                              .datasetName(datasetName)
+                              .shared(true)
+                              .type(BuildType.IMAGE)
+                              .projectUrl(String.valueOf(projectId))
+                              .storagePath("storage-path")
+                              .build());
         verify(k8sJobTemplate, times(1)).loadJob(WORKLOAD_TYPE_DATASET_BUILD);
         verify(k8sJobTemplate, times(2)).updateAnnotations(any(), any());
         verify(datasetBuildTokenValidator, times(1)).getToken(any(), any());
@@ -674,4 +721,42 @@ public class DatasetServiceTest {
         ));
     }
 
+    @Test
+    public void testAddDatasetVersionTag() {
+        when(userService.currentUserDetail()).thenReturn(User.builder().id(1L).build());
+        doNothing().when(bundleManager).addBundleVersionTag(
+                BundleAccessor.Type.DATASET,
+                "p1",
+                "d1",
+                "v1",
+                "tag1",
+                1L,
+                false
+        );
+        service.addDatasetVersionTag("p1", "d1", "v1", "tag1", false);
+        verify(bundleManager, times(1)).addBundleVersionTag(
+                BundleAccessor.Type.DATASET,
+                "p1",
+                "d1",
+                "v1",
+                "tag1",
+                1L,
+                false
+        );
+    }
+
+    @Test
+    public void testListDatasetVersionTags() {
+        when(bundleManager.listBundleVersionTags(BundleAccessor.Type.DATASET, "p1", "d1", "v1"))
+                .thenReturn(List.of("tag1", "tag2"));
+        var res = service.listDatasetVersionTags("p1", "d1", "v1");
+        AssertionsForInterfaceTypes.assertThat(res).containsExactly("tag1", "tag2");
+    }
+
+    @Test
+    public void testDeleteDatasetVersionTag() {
+        doNothing().when(bundleManager).deleteBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1");
+        service.deleteDatasetVersionTag("p1", "d1", "v1", "tag1");
+        verify(bundleManager, times(1)).deleteBundleVersionTag(BundleAccessor.Type.DATASET, "p1", "d1", "v1", "tag1");
+    }
 }

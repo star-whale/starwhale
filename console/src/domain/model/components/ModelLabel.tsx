@@ -5,6 +5,7 @@ import React from 'react'
 import { IModelTreeVersionSchema, IModelVersionSchema } from '../schemas/modelVersion'
 import { IModelTreeSchema } from '../schemas/model'
 import Shared from '@/components/Shared'
+import { getAliasStr } from '@base/utils/alias'
 
 export const ModelLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -46,7 +47,7 @@ export function ModelLabel({
     style?: React.CSSProperties
 }) {
     const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={version.alias} />
+    const alias = <Alias alias={getAliasStr(version)} />
     const p = model ? [model.ownerName, model.projectName, model.modelName].join('/') : ''
     const name = version?.versionName ?? version?.name
     const v = (name ?? '').substring(0, 8)

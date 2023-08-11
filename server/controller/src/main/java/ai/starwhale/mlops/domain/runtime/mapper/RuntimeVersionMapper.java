@@ -44,7 +44,7 @@ public interface RuntimeVersionMapper {
 
     @SelectProvider(value = RuntimeVersionProvider.class, method = "listSql")
     List<RuntimeVersionEntity> list(@Param("runtimeId") Long runtimeId,
-            @Param("namePrefix") String namePrefix, @Param("tag") String tag);
+            @Param("namePrefix") String namePrefix);
 
     @Select("select " + COLUMNS + " from runtime_version where shared = 1")
     List<RuntimeVersionEntity> listShared();
@@ -109,7 +109,7 @@ public interface RuntimeVersionMapper {
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by b.id desc, v.version_order desc")
@@ -121,7 +121,7 @@ public interface RuntimeVersionMapper {
             + " and b.project_id = p.id"
             + " and b.runtime_name != '" + Constants.SW_BUILT_IN_RUNTIME + "'"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
@@ -136,8 +136,7 @@ public interface RuntimeVersionMapper {
     class RuntimeVersionProvider {
 
         public String listSql(@Param("runtimeId") Long runtimeId,
-                @Param("namePrefix") String namePrefix,
-                @Param("tag") String tag) {
+                @Param("namePrefix") String namePrefix) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -145,9 +144,6 @@ public interface RuntimeVersionMapper {
                     WHERE("runtime_id = #{runtimeId}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
-                    }
-                    if (StrUtil.isNotEmpty(tag)) {
-                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
                     ORDER_BY("version_order desc");
                 }

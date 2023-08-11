@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
+from starwhale.utils import random_str
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
 from starwhale.utils.cli import AliasedGroup
@@ -70,12 +71,14 @@ def dataset_cmd(ctx: click.Context) -> None:
     help="Build dataset from dataset.yaml file. Default uses dataset.yaml in the work directory(pwd).",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "json_file",
+    "json_files",
     "-jf",
-    "--json-file",
+    "--json",
+    multiple=True,
     help=(
-        "Build dataset from json file, the json file option is a json file path or a http downloaded url."
-        "The json content structure should be a list[dict] or tuple[dict]."
+        "Build dataset from json or json line files, local path or http downloaded url is supported."
+        "For the json file: the json content structure should be a list[dict] or tuple[dict] from the original format or ingest format by field-selector."
+        "For the json line file: each line is a json dict."
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -85,6 +88,14 @@ def dataset_cmd(ctx: click.Context) -> None:
     help=(
         "Build dataset from huggingface dataset, the huggingface option is a huggingface repo name"
     ),
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_files",
+    "-c",
+    "--csv",
+    multiple=True,
+    help="Build dataset from csv files. The option is a csv file path, dir path or a http downloaded url."
+    "The option can be used multiple times.",
 )
 @optgroup.group(
     "\n  ** Build Mode Selectors",
@@ -125,6 +136,18 @@ def dataset_cmd(ctx: click.Context) -> None:
     "--volume-size",
     help="swds-bin format dataset: volume size",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="dataset tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "file_encoding",
+    "--encoding",
+    help="The csv/json/jsonl file encoding.",
+)
 @optgroup.option("-r", "--runtime", help="runtime uri")  # type: ignore[no-untyped-call]
 @optgroup.group("\n  ** Handler Build Source Configurations")
 @optgroup.option("-w", "--workdir", default=".", help="work dir to search handler, the option only works for the handler build source.")  # type: ignore[no-untyped-call]
@@ -136,8 +159,9 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=True,
     help="Whether to auto label by the sub-folder name. The default value is True",
 )
-@optgroup.group("\n  ** JsonFile Build Source Configurations")
+@optgroup.group("\n  ** Json Build Source Configurations")
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "json_field_selector",
     "--field-selector",
     default="",
     help=(
@@ -147,10 +171,12 @@ def dataset_cmd(ctx: click.Context) -> None:
 )
 @optgroup.group("\n  ** Huggingface Build Source Configurations")
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "hf_subset",
+    "hf_subsets",
     "--subset",
+    multiple=True,
     help=(
-        "Huggingface dataset subset name. If the huggingface dataset has multiple subsets, you must specify the subset name."
+        "Huggingface dataset subset name. If the subset name is not specified, the all subsets will be built."
+        "The option can be used multiple times."
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -170,12 +196,61 @@ def dataset_cmd(ctx: click.Context) -> None:
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "hf_info",
+    "--add-hf-info/--no-add-hf-info",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Whether to add huggingface dataset info to the dataset rows, currently support to add subset and split into the dataset rows."
+    "subset uses _hf_subset field name, split uses _hf_split field name.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
     "hf_cache",
     "--cache/--no-cache",
     is_flag=True,
     default=True,
     show_default=True,
-    help=("Whether to use huggingface dataset cache(download + local hf dataset)."),
+    help="Whether to use huggingface dataset cache(download + local hf dataset).",
+)
+@optgroup.group("\n  ** CSV Files Build Source Configurations")
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_dialect",
+    "--dialect",
+    type=click.Choice(["excel", "excel-tab", "unix"]),
+    default="excel",
+    show_default=True,
+    help="The csv file dialect, the default is excel.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_delimiter",
+    "--delimiter",
+    default=",",
+    show_default=True,
+    help="A one-character string used to separate fields for the csv file.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_quotechar",
+    "--quotechar",
+    default='"',
+    show_default=True,
+    help="A one-character string used to quote fields containing special characters,"
+    "such as the delimiter or quotechar, or which contain new-line characters.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_skipinitialspace",
+    "--skipinitialspace/--no-skipinitialspace",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Whether to skip spaces after delimiter for the csv file.",
+)
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "csv_strict",
+    "--strict/--no-strict",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="When True, raise exception Error if the csv is not well formed.",
 )
 @click.pass_obj
 def _build(
@@ -193,14 +268,23 @@ def _build(
     audio_folder: str,
     video_folder: str,
     auto_label: bool,
-    json_file: str,
-    field_selector: str,
+    json_files: t.List[str],
+    json_field_selector: str,
     mode: str,
     hf_repo: str,
-    hf_subset: str,
+    hf_subsets: t.List[str],
     hf_split: str,
     hf_revision: str,
     hf_cache: bool,
+    hf_info: bool,
+    tags: t.List[str],
+    csv_files: t.List[str],
+    csv_dialect: str,
+    csv_delimiter: str,
+    csv_quotechar: str,
+    csv_skipinitialspace: bool,
+    csv_strict: bool,
+    file_encoding: str,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -217,6 +301,7 @@ def _build(
         - video folder: The video-folder is a starwhale dataset builder designed to quickly build a video dataset with a folder of videos without any code.
         - json file: The json-file is a starwhale dataset builder designed to quickly build a dataset with a json file without any code.
         - huggingface dataset: The huggingface dataset is a starwhale dataset builder designed to quickly build a dataset from huggingface dataset without any code.
+        - csv files: The csv-file is a starwhale dataset builder designed to quickly build a dataset with csv files without any code.
 
     Examples:
 
@@ -225,6 +310,7 @@ def _build(
         swcli dataset build  # build dataset from dataset.yaml in the current work directory(pwd)
         swcli dataset build --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, all the involved files are related to the dataset.yaml file.
         swcli dataset build --overwrite --yaml /path/to/dataset.yaml  # build dataset from /path/to/dataset.yaml, and overwrite the existed dataset.
+        swcli dataset build --tag tag1 --tag tag2
 
         \b
         - from handler
@@ -245,17 +331,27 @@ def _build(
         swcli dataset build --video-folder /path/to/video/folder  # build dataset from /path/to/video/folder, search all video type files.
 
         \b
-        - from json file
-        swcli dataset build --json-file /path/to/example.json
-        swcli dataset build --json-file http://example.com/example.json
-        swcli dataset build --json-file /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
-        swcli dataset build --name qald9 --json-file https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
+        - from json or json line files
+        swcli dataset build --json /path/to/example.json
+        swcli dataset build --json http://example.com/example.json
+        swcli dataset build --json /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
+        swcli dataset build --name qald9 --json https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
+        swcli dataset build --json /path/to/test01.jsonl --json /path/to/test02.jsonl
+        swcli dataset build --json https://modelscope.cn/api/v1/datasets/damo/100PoisonMpts/repo\?Revision\=master\&FilePath\=train.jsonl
 
         \b
         - from huggingface dataset
         swcli dataset build --huggingface mnist
         swcli dataset build -hf mnist --no-cache
         swcli dataset build -hf cais/mmlu --subset anatomy --split auxiliary_train --revision 7456cfb
+
+        \b
+        - from csv files
+        swcli dataset build --csv /path/to/example.csv
+        swcli dataset build --csv /path/to/example.csv --csv-file /path/to/example2.csv
+        swcli dataset build --csv /path/to/csv-dir
+        swcli dataset build --csv http://example.com/example.csv
+        swcli dataset build --name product-desc-modelscope --csv https://modelscope.cn/api/v1/datasets/lcl193798/product_description_generation/repo\?Revision\=master\&FilePath\=test.csv --encoding=utf-8-sig
     """
     # TODO: add dry-run
     # TODO: add compress args
@@ -280,17 +376,35 @@ def _build(
             alignment_size=alignment_size,
             auto_label=auto_label,
             mode=mode_type,
+            tags=tags,
         )
-    elif json_file:
-        json_file = json_file.strip().rstrip("/")
-        view.build_from_json_file(
-            json_file,
-            name=name or json_file.split("/")[-1].split(".")[0],
+    elif json_files:
+        view.build_from_json_files(
+            json_files,
+            name=name or f"json-{random_str()}",
             project_uri=project,
             volume_size=volume_size,
             alignment_size=alignment_size,
-            field_selector=field_selector,
+            field_selector=json_field_selector,
             mode=mode_type,
+            tags=tags,
+            encoding=file_encoding,
+        )
+    elif csv_files:
+        view.build_from_csv_files(
+            csv_files,
+            name=name or f"csv-{random_str()}",
+            project_uri=project,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode_type,
+            tags=tags,
+            dialect=csv_dialect,
+            delimiter=csv_delimiter,
+            quotechar=csv_quotechar,
+            skipinitialspace=csv_skipinitialspace,
+            strict=csv_strict,
+            encoding=file_encoding,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()
@@ -304,22 +418,25 @@ def _build(
                 "volume_size": volume_size,
                 "alignment_size": alignment_size,
             },
+            tags=tags,
         )
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type)
+        view.build(_workdir, config, mode=mode_type, tags=tags)
     elif hf_repo:
-        _candidate_name = (f"{hf_repo}/{hf_subset or ''}").strip("/").replace("/", "-")
+        _candidate_name = (f"{hf_repo}").strip("/").replace("/", "-")
         view.build_from_huggingface(
             hf_repo,
             name=name or _candidate_name,
             project_uri=project,
             volume_size=volume_size,
             alignment_size=alignment_size,
-            subset=hf_subset,
+            subsets=hf_subsets,
             split=hf_split,
             revision=hf_revision,
             mode=mode_type,
             cache=hf_cache,
+            tags=tags,
+            add_info=hf_info,
         )
     else:
         yaml_path = Path(dataset_yaml)
@@ -338,7 +455,7 @@ def _build(
         config.runtime_uri = runtime or config.runtime_uri
         config.project_uri = project or config.project_uri
         config.do_validate()
-        view.build(_workdir, config, mode=mode_type)
+        view.build(_workdir, config, mode=mode_type, tags=tags)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")
@@ -480,6 +597,13 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="Ignore tags to copy. The option can be used multiple times.",
+)
 @optgroup.group(
     "\n **  Copy Mode Selectors",
     cls=MutuallyExclusiveOptionGroup,
@@ -500,13 +624,25 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     flag_value=DatasetChangeMode.OVERWRITE.value,
     help="Overwrite mode, update records and delete extraneous rows from the remote dataset.",
 )
-def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) -> None:
+def _copy(
+    src: str,
+    dest: str,
+    dest_local_project: str,
+    mode: str,
+    force: bool,
+    ignore_tags: t.List[str],
+) -> None:
     """
     Copy Dataset between Standalone Instance and Cloud Instance
 
     SRC: dataset uri with version
 
     DEST: project uri or dataset uri with name.
+
+    In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other dataset version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -546,6 +682,9 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
         - copy standalone instance(local) project(myproject)'s mnist-local dataset to cloud instance(pre-k8s) mnist project with standalone instance dataset name 'mnist-local'
             swcli dataset cp local/project/myproject/dataset/mnist-local/version/latest cloud://pre-k8s/project/mnist
 
+        \b
+        - copy without some tags
+           swcli dataset cp mnist cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
     DatasetTermView.copy(
         src_uri=src,
@@ -553,10 +692,11 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
         mode=DatasetChangeMode(mode),
         dest_local_project_uri=dest_local_project,
         force=force,
+        ignore_tags=ignore_tags,
     )
 
 
-@dataset_cmd.command("tag", help="Dataset tag management, add or remove")
+@dataset_cmd.command("tag")
 @click.argument("dataset")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -566,6 +706,12 @@ def _copy(src: str, dest: str, dest_local_project: str, mode: str, force: bool) 
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
 @click.pass_obj
 def _tag(
     view: t.Type[DatasetTermView],
@@ -573,8 +719,32 @@ def _tag(
     tags: t.List[str],
     remove: bool,
     quiet: bool,
+    force_add: bool,
 ) -> None:
-    view(dataset).tag(tags, remove, quiet)
+    """Dataset tag management: add, remove and list
+
+    DATASET: argument use the `Dataset URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the mnist dataset
+        swcli dataset tag mnist
+
+        \b
+        - add tags for the mnist dataset
+        swcli dataset tag mnist -t t1 -t t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist/version/latest -t t1 --force-add
+        swcli dataset tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the mnist dataset
+        swcli dataset tag mnist -r -t t1 -t t2
+        swcli dataset tag cloud://cloud.starwhale.cn/project/public:starwhale/dataset/mnist --remove -t t1
+    """
+    view(dataset).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @dataset_cmd.command("head")

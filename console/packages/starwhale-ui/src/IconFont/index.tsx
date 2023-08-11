@@ -120,6 +120,7 @@ export type IconTypesT =
     | 'a-Versionhistory'
     | 'fold21'
     | 'unfold21'
+    | 'a-onlineevaluation'
 
 interface IIconFontProps {
     style?: React.CSSProperties
@@ -140,7 +141,12 @@ const hijacked = {
     invalidFile,
 }
 
-export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
+export default function IconFont({
+    size = 14,
+    type = 'user',
+    kind = 'inherit',
+    style = {},
+}: IIconFontProps): React.ReactNode | any {
     const [, theme] = themedUseStyletron()
 
     const colors = {

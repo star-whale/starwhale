@@ -13,6 +13,8 @@ from requests import HTTPError
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import SW_API_VERSION
+from starwhale.base.type import BundleType
+from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import load_swcli_config
 from starwhale.base.uri.project import Project
 from starwhale.base.uri.instance import Instance
@@ -253,19 +255,6 @@ class Resource:
 
     def _refine_local_rc_info(self) -> None:
         root = Path(load_swcli_config()["storage"]["root"]) / self.project.name
-        ver = self.version
-        if ver == "":
-            ver = "latest"
-        if ver == "latest" or (ver.startswith("v") and ver[1:].isnumeric()):
-            if not self.name:
-                raise VerifyException("name is required for latest version")
-            # get version from manifest
-            manifest = root / self.typ.name / self.name / "_manifest.yaml"
-            if not manifest.exists():
-                raise VerifyException(f"manifest file not found: {manifest}")
-            content = load_yaml(manifest)
-            self.version = content.get("tags", {}).get(ver, "")
-            return
 
         if self.typ == ResourceType.job:
             p = f"{root.absolute()}/{self.typ.name}/*/{self.version}*"
@@ -275,20 +264,51 @@ class Resource:
                 self.version = self.path_to_version(version)
             else:
                 raise NoMatchException(self.version, list(m))
+            return
+
+        if not self.name:
+            raise VerifyException("name is required for local resource")
+
+        # get version from manifest
+        manifest = root / self.typ.name / self.name / "_manifest.yaml"
+        if manifest.exists():
+            content = load_yaml(manifest)
+            tags = content.get("tags", {})
         else:
-            # storage-root/project/type/name/prefix/full-version
-            p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
-            m = glob(p)
-            if len(m) == 1:
-                _, _, self.name, _, version = Path(m[0]).as_posix().rsplit("/", 4)
-                self.version = self.path_to_version(version)
-            else:
-                raise NoMatchException(self.version, list(m))
+            tags = {}
+
+        ver = self.version
+        if ver == "":
+            ver = "latest"
+
+        if ver in tags:
+            self.version = tags[ver]
+            return
+
+        # storage-root/project/type/name/prefix/full-version
+        p = f"{root.absolute()}/{self.typ.name}/{self.name}/*/{self.version}*"
+        m = glob(p)
+        if len(m) == 1:
+            _, _, self.name, _, version = Path(m[0]).as_posix().rsplit("/", 4)
+            self.version = self.path_to_version(version)
+        else:
+            raise NoMatchException(self.version, list(m))
 
     @staticmethod
     def path_to_version(path: str) -> str:
         # foobarbaz.swrt -> foobarbaz
         return path.split(".")[0]
+
+    @staticmethod
+    def get_bundle_type_by_uri(uri_type: ResourceType) -> str:
+        if uri_type == ResourceType.dataset:
+            return BundleType.DATASET
+        elif uri_type == ResourceType.model:
+            return BundleType.MODEL
+        elif uri_type == ResourceType.runtime:
+            return BundleType.RUNTIME
+        else:
+            raise NoSupportError(uri_type)
 
     def info(self) -> Dict[str, Any]:
         # TODO: support local resource

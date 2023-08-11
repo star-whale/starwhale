@@ -21,6 +21,7 @@ public enum Code {
     validationException("ValidationException"),
     internalServerError("InternalServerError"),
     accessDenied("AccessDenied"),
+    Unauthorized("Unauthorized"),
     unknownError("unknownError");
     private final String type;
 

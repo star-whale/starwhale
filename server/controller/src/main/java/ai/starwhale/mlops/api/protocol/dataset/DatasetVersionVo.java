@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
@@ -36,11 +37,12 @@ public class DatasetVersionVo implements Serializable {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("tag")
-    private String tag;
+    private List<String> tags;
 
     @JsonProperty("alias")
     private String alias;
+
+    private Boolean latest;
 
     @JsonProperty("meta")
     private Object meta;
@@ -53,4 +55,9 @@ public class DatasetVersionVo implements Serializable {
 
     @JsonProperty("shared")
     private Integer shared;
+
+    /**
+     * the table name for index in DataStore
+     */
+    String indexTable;
 }

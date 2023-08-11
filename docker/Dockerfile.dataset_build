@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=starwhaleai/base:latest
+FROM ${BASE_IMAGE}
+
+ARG PYTHON_VERSION
+ARG SW_VERSION
+
+ENV SW_RUNTIME_PYTHON_VERSION=${PYTHON_VERSION:-3.10}
+ENV SW_VERSION=${SW_VERSION:-0.5.8}
+RUN /opt/starwhale.bin/base-entrypoint set_environment || true
+
+ENV SW_USER_RUNTIME_RESTORED=1

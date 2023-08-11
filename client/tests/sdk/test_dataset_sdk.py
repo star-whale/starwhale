@@ -3,6 +3,8 @@ from __future__ import annotations
 import io
 import os
 import re
+import csv
+import json
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -21,8 +23,8 @@ from requests_mock import Mocker
 from starwhale import dataset, Dataset
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST
-from starwhale.utils.fs import empty_dir, ensure_file
-from starwhale.utils.error import NotFoundError, NoSupportError
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.error import FormatError, NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.dataset.type import (
@@ -933,18 +935,89 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             assert item.features["lbl"] == item.features["label"]
             assert "data" in item.features
 
-    def test_from_json(self) -> None:
+    def test_from_dict_items(self) -> None:
+        ds = Dataset.from_dict_items(records=[{"a": 1, "b": 2}], name="dict-items")
+        assert len(ds) == 1
+        assert ds[0].features.a == 1
+
+        ds = Dataset.from_dict_items(
+            records=iter([{"a": 10, "b": 20}]), name="dict-iter"
+        )
+        assert len(ds) == 1
+        assert ds[0].features.b == 20
+        assert ds[0].index == 0
+
+        def _iter_records() -> t.Iterable[t.Dict[str, t.Any]]:
+            for i in range(10):
+                yield {"a": i}
+
+        ds = Dataset.from_dict_items(records=_iter_records(), name="dict-iter-func")
+        assert len(ds) == 10
+        assert ds[9].features.a == 9
+        assert ds[9].index == 9
+
+        ds = Dataset.from_dict_items(records=[("index-1", {"a": 1})], name="dict-tuple")
+        assert len(ds) == 1
+        assert ds["index-1"].index == "index-1"
+        assert ds["index-1"].features.a == 1
+
+    @Mocker()
+    def test_from_csv(self, rm: Mocker) -> None:
+        csv_folder = Path(self.local_storage) / "csv"
+        ensure_dir(csv_folder)
+
+        with (csv_folder / "1.csv").open(newline="", mode="w") as f:
+            writer = csv.DictWriter(f, fieldnames=["a", "b"], dialect="excel")
+            writer.writeheader()
+            writer.writerow({"a": 1, "b": 2})
+            writer.writerow({"a": 11, "b": 22})
+
+        ensure_file(csv_folder / "sub" / "2.csv", "a,b\n1,2", parents=True)
+        ensure_file(csv_folder / "non.txt", "")
+
+        ds = Dataset.from_csv(path=csv_folder, name="csv-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": "1", "b": "2"}
+
+        ds = Dataset.from_csv(
+            path=csv_folder / "1.csv",
+            name="csv-file",
+            encoding="utf-8",
+            dialect="excel",
+        )
+        assert len(ds) == 2
+
+        ds = Dataset.from_csv(
+            path=[csv_folder / "1.csv", csv_folder / "sub" / "2.csv"], name="csv-multi"
+        )
+        assert len(ds) == 3
+
+        url = "http://example.com/1.csv"
+        rm.get(
+            url,
+            text="a,b\nh,d".encode("utf-8-sig").decode(),
+        )
+
+        with self.assertRaises(RuntimeError):
+            Dataset.from_csv(path=url, name="csv-http")
+
+        ds = Dataset.from_csv(path=url, name="csv-http", encoding="utf-8-sig")
+        assert len(ds) == 1
+        assert ds[0].features == {"a": "h", "b": "d"}
+
+    def test_from_json_text(self) -> None:
         Dataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+            name="translation",
+            text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+            tags=["t0"],
         )
         myds = dataset("translation").with_loader_config(
             field_transformer={"en": "en-us"}
         )
         assert myds[0].features["en-us"] == myds[0].features["en"]
         Dataset.from_json(
-            "translation2",
-            '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]',
+            name="translation2",
+            text='[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]',
         )
         myds = dataset("translation2").with_loader_config(
             field_transformer={"content.child_content[0].en": "en-us"}
@@ -954,13 +1027,96 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             == myds[0].features["content"]["child_content"][0]["en"]
         )
 
+    @Mocker()
+    def test_from_json_files(self, rm: Mocker) -> None:
+        json_dir = Path(self.local_storage) / "json"
+        ensure_file(
+            json_dir / "1.json",
+            json.dumps([{"a": 1, "b": 2}, {"a": 11, "b": 22}]),
+            parents=True,
+        )
+        ensure_file(
+            json_dir / "sub" / "2.json", json.dumps([{"a": 3, "b": 4}]), parents=True
+        )
+        ensure_file(json_dir / "non.txt", "")
+
+        ds = Dataset.from_json(path=json_dir, name="json-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(path=json_dir / "1.json", name="json-file")
+        assert len(ds) == 2
+
+        ds = Dataset.from_json(
+            path=[json_dir / "1.json", json_dir / "sub" / "2.json"], name="json-multi"
+        )
+        assert len(ds) == 3
+        assert ds[2].features == {"a": 3, "b": 4}
+
+        selector_text = json.dumps(
+            {"a": {"b": {"c": [{"a": 1, "b": 2}, {"a": 11, "b": 22}]}}}
+        )
+        ensure_file(json_dir / "selector.json", selector_text, parents=True)
+        ds = Dataset.from_json(
+            path=json_dir / "selector.json",
+            name="json-selector",
+            field_selector="a.b.c",
+        )
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        url = "http://example.com/1.json"
+        rm.get(url, text=selector_text)
+        ds = Dataset.from_json(path=url, name="json-http", field_selector="a.b.c")
+        assert len(ds) == 2
+
+    @Mocker()
+    def test_from_jsonl_files(self, rm: Mocker) -> None:
+        jsonl_dir = Path(self.local_storage) / "jsonl"
+        ensure_file(
+            jsonl_dir / "1.jsonl", '{"a": 1, "b": 2}\n{"a": 11, "b": 22}', parents=True
+        )
+        ensure_file(jsonl_dir / "sub" / "2.jsonl", '{"a": 3, "b": 4}', parents=True)
+
+        ds = Dataset.from_json(path=jsonl_dir, name="jsonl-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(path=jsonl_dir / "1.jsonl", name="jsonl-file")
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(
+            path=[jsonl_dir / "1.jsonl", jsonl_dir / "sub" / "2.jsonl"],
+            name="jsonl-multi",
+        )
+        assert len(ds) == 3
+        assert ds[2].features == {"a": 3, "b": 4}
+
+        selector_text = "\n".join(
+            [
+                json.dumps({"a": {"b": {"c": {"a": 1, "b": 2}}}}),
+                json.dumps({"a": {"b": {"c": {"a": 11, "b": 22}}}}),
+            ]
+        )
+        url = "http://example.com/1.jsonl"
+        rm.get(url, text=selector_text)
+        ds = Dataset.from_json(path=url, name="jsonl-http", field_selector="a.b.c")
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+        assert ds[1].features == {"a": 11, "b": 22}
+
     def test_from_image_folder_with_mode(self) -> None:
         image_folder = Path(self.local_storage) / "images"
         ensure_file(image_folder / "1.jpg", "1", parents=True)
 
         dataset_name = "image-test"
         Dataset.from_folder(
-            folder=image_folder, name=dataset_name, kind="image", mode="overwrite"
+            folder=image_folder,
+            name=dataset_name,
+            kind="image",
+            mode="overwrite",
+            tags=["t0", "t1"],
         )
         ds = dataset(dataset_name)
         assert len(ds) == 1
@@ -1437,6 +1593,13 @@ class TestDatasetSDK(_DatasetSDKTestBase):
     def test_commit_with_tags(self) -> None:
         ds = dataset("mnist")
         ds.append({"label": 1})
+
+        with self.assertRaisesRegex(FormatError, "tag:latest is builtin"):
+            ds.commit(tags=["latest"])
+
+        with self.assertRaisesRegex(FormatError, "tag:v0 is builtin"):
+            ds.commit(tags=["v0"])
+
         ds.commit(tags=["test1", "test2"])
         ds.close()
 
@@ -2003,8 +2166,13 @@ class TestHuggingface(_DatasetSDKTestBase):
         assert transform_data["sequence_dict"]["int"] == 1
         assert transform_data["sequence_dict"]["list_int"] == [1, 1, 1]
 
+    @patch(
+        "starwhale.integrations.huggingface.dataset.hf_datasets.get_dataset_config_names"
+    )
     @patch("starwhale.integrations.huggingface.dataset.hf_datasets.load_dataset")
-    def test_build_dataset(self, m_load_dataset: MagicMock) -> None:
+    def test_build_dataset(
+        self, m_load_dataset: MagicMock, m_get_config_names: MagicMock
+    ) -> None:
         import datasets as hf_datasets
 
         complex_data = {
@@ -2079,44 +2247,70 @@ class TestHuggingface(_DatasetSDKTestBase):
             }
         )
 
+        m_get_config_names.return_value = ["simple"]
         m_load_dataset.return_value = hf_simple_ds
-        Dataset.from_huggingface(name="simple", repo="simple", split="train")
+        Dataset.from_huggingface(
+            name="simple",
+            repo="simple",
+            split="train",
+            tags=["hf-0", "hf-1"],
+            add_info=True,
+        )
         simple_ds = dataset("simple")
         assert len(simple_ds) == 2
-        assert simple_ds["train/0"].features.int == 1
-        assert simple_ds["train/0"].features.float == 1.0
-        assert simple_ds["train/0"].features.str == "test1"
-        assert simple_ds["train/0"].features.bin == b"test1"
-        large_str = simple_ds["train/0"].features["large_str"]
-        large_bin = simple_ds["train/0"].features["large_bin"]
+        assert simple_ds["simple/train/0"].features.int == 1
+        assert simple_ds["simple/train/0"].features.float == 1.0
+        assert simple_ds["simple/train/0"].features.str == "test1"
+        assert simple_ds["simple/train/0"].features.bin == b"test1"
+        assert simple_ds["simple/train/0"].features["_hf_subset"] == "simple"
+        assert simple_ds["simple/train/0"].features["_hf_split"] == "train"
+        large_str = simple_ds["simple/train/0"].features["large_str"]
+        large_bin = simple_ds["simple/train/0"].features["large_bin"]
         assert isinstance(large_str, str)
         assert isinstance(large_bin, bytes)
         assert large_str == "test1" * 20
         assert large_bin == b"test1" * 20
 
-        assert simple_ds["train/1"].features.int == 2
-        assert simple_ds["train/1"].features["large_bin"] == b"test2" * 20
+        assert simple_ds["simple/train/1"].features.int == 2
+        assert simple_ds["simple/train/1"].features["large_bin"] == b"test2" * 20
 
+        m_get_config_names.return_value = ["complex"]
         m_load_dataset.return_value = hf_complex_ds
-        complex_ds = Dataset.from_huggingface(name="complex", repo="complex")
+        complex_ds = Dataset.from_huggingface(
+            name="complex", repo="complex", add_info=False
+        )
 
         assert len(complex_ds) == 1
-        assert complex_ds["0"].features.list_int == [1, 2, 3]
-        assert complex_ds["0"].features.seq_img[0].shape == [1, 1, 3]
-        assert complex_ds["0"].features.seq_img[1].shape == [1, 1, 1]
-        assert complex_ds["0"].features.seq_dict["int"] == [1]
-        assert complex_ds["0"].features.seq_dict["str"] == ["test"]
-        assert complex_ds["0"].features.img.shape == [1, 1, 3]
-        assert complex_ds["0"].features.class_label == 1
-        _audio = complex_ds["0"].features.audio
+        assert complex_ds["complex/0"].features.list_int == [1, 2, 3]
+        assert complex_ds["complex/0"].features.seq_img[0].shape == [1, 1, 3]
+        assert complex_ds["complex/0"].features.seq_img[1].shape == [1, 1, 1]
+        assert complex_ds["complex/0"].features.seq_dict["int"] == [1]
+        assert complex_ds["complex/0"].features.seq_dict["str"] == ["test"]
+        assert complex_ds["complex/0"].features.img.shape == [1, 1, 3]
+        assert complex_ds["complex/0"].features.class_label == 1
+        assert "_hf_subset" not in complex_ds["complex/0"].features
+        assert "_hf_split" not in complex_ds["complex/0"].features
+        _audio = complex_ds["complex/0"].features.audio
         assert isinstance(_audio, Audio)
         assert _audio.display_name == "simple.wav"
         assert _audio.mime_type == MIMEType.WAV
 
+        m_get_config_names.return_value = ["mixed"]
         m_load_dataset.return_value = hf_mixed_ds
         mixed_ds = Dataset.from_huggingface(name="mixed", repo="mixed")
 
         assert len(mixed_ds) == 3
-        assert mixed_ds["complex/0"].features.list_int == [1, 2, 3]
-        assert mixed_ds["simple/0"].features.int == 1
-        assert mixed_ds["simple/1"].features.int == 2
+        assert mixed_ds["mixed/complex/0"].features.list_int == [1, 2, 3]
+        assert mixed_ds["mixed/simple/0"].features.int == 1
+        assert mixed_ds["mixed/simple/1"].features.int == 2
+
+        m_get_config_names.return_value = ["simple", "mixed"]
+        m_load_dataset.side_effect = [hf_simple_ds, hf_mixed_ds]
+        multi_subsets_ds = Dataset.from_huggingface(name="multi", repo="multi")
+        assert len(multi_subsets_ds) == 5
+        assert multi_subsets_ds["simple/0"].features["_hf_subset"] == "simple"
+        assert "_hf_split" not in multi_subsets_ds["simple/0"].features
+        assert multi_subsets_ds["mixed/simple/0"].features["_hf_subset"] == "mixed"
+        assert multi_subsets_ds["mixed/simple/0"].features["_hf_split"] == "simple"
+        assert multi_subsets_ds["mixed/complex/0"].features["_hf_subset"] == "mixed"
+        assert multi_subsets_ds["mixed/complex/0"].features["_hf_split"] == "complex"

@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.converter.RuntimeVersionConverter;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +47,7 @@ public class RuntimeVersionConverterTest {
 
     @Test
     public void testConvert() {
-        var res = runtimeVersionConvertor.convert(RuntimeVersionEntity.builder()
+        var entity = RuntimeVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
                 .versionOrder(2L)
@@ -53,17 +55,31 @@ public class RuntimeVersionConverterTest {
                 .versionMeta(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)
                 .image("image1")
                 .shared(true)
-                .build());
+                .build();
+        var res = runtimeVersionConvertor.convert(entity);
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
-                hasProperty("tag", is("tag1")),
+                hasProperty("latest", is(false)),
+                hasProperty("tags", nullValue()), // tag is not set
                 hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
                 hasProperty("shared", is(1)),
                 hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
         ));
         assertThat("image", res.getImage(), is(RuntimeTestConstants.BUILTIN_IMAGE));
+
+        res = runtimeVersionConvertor.convert(entity, entity, List.of("tag2"));
+        assertThat(res, allOf(
+                notNullValue(),
+                hasProperty("name", is("name1")),
+                hasProperty("alias", is("v2")),
+                hasProperty("latest", is(true)),
+                hasProperty("tags", is(List.of("tag2"))), // use the tag from parameter
+                hasProperty("meta", is(RuntimeTestConstants.MANIFEST_WITH_BUILTIN_IMAGE)),
+                hasProperty("shared", is(1)),
+                hasProperty("image", is(RuntimeTestConstants.BUILTIN_IMAGE))
+        ));
     }
 
     @Test
@@ -79,8 +95,11 @@ public class RuntimeVersionConverterTest {
         assertThat("image", dockerImage.toString(), is("self.registry:5000/starwhale:0.4.7.builtin"));
 
         // case 2: use custom
-        runtime.setVersionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE);
-
+        runtime = RuntimeVersionEntity.builder()
+                .id(1L)
+                .versionName("123456")
+                .versionMeta(RuntimeTestConstants.MANIFEST_WITHOUT_BUILTIN_IMAGE)
+                .build();
         dockerImage = new DockerImage(runtime.getImage("self.registry:5000"));
         assertThat("registry", dockerImage.getRepo(), is(RuntimeTestConstants.CUSTOM_REPO));
         assertThat("image", dockerImage.toString(), is(RuntimeTestConstants.CUSTOM_IMAGE));

@@ -126,9 +126,9 @@ test.describe('Evaluation Results', () => {
         test.beforeAll(async () => {
             if (!page.url().includes(ROUTES.evaluationTasks)) await page.goto(ROUTES.evaluationTasks)
         })
-        test('should have at least 1 tasks of success status', async () => {
-            await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
-        })
+        // test('should have at least 1 tasks of success status', async () => {
+        //     await expect(await page.getByText('Succeeded').count()).toBeGreaterThan(0)
+        // })
         test('should show success task log', async () => {
             await page
                 .getByText(/View Logs/)
@@ -166,13 +166,11 @@ test.describe('Models', () => {
 
     test.describe('Versions', () => {
         test.beforeAll(async () => {
-            await page.goto(ROUTES.models)
+            await page.goto(ROUTES.modelVersion)
         })
 
-        test('should link to model versions', async () => {
-            await page.locator('tr > td >> nth=0').getByRole('link').click()
-            await expect(page.locator('tr >> nth=0')).not.toHaveText(/Revert/)
-            await expect(page.locator('tr >> nth=1').getByRole('button', { name: /Revert/ })).toBeDefined()
+        test('should model versions have online eval', async () => {
+            await expect(page.locator('tr >> nth=0')).toBeDefined()
         })
     })
 

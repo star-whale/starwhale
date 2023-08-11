@@ -5,6 +5,7 @@ import { themedStyled } from '@starwhale/ui/theme/styletron'
 import React from 'react'
 import { IRuntimeTreeSchema } from '../schemas/runtime'
 import { IRuntimeTreeVersionSchema } from '../schemas/runtimeVersion'
+import { getAliasStr } from '@base/utils/alias'
 
 export const RuntimeLabelContainer = themedStyled('div', () => ({
     display: 'inline-flex',
@@ -45,7 +46,7 @@ export function RuntimeLabel({
     style?: React.CSSProperties
 }) {
     const share = <Shared shared={version.shared} isTextShow={false} />
-    const alias = <Alias alias={version.alias} />
+    const alias = <Alias alias={getAliasStr(version)} />
     const p = runtime ? [runtime.ownerName, runtime.projectName, runtime.runtimeName].join('/') : ''
     const name = version?.versionName ?? version?.name
     const v = (name ?? '').substring(0, 8)

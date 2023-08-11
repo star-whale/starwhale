@@ -1,6 +1,11 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createDatasetVersion, revertDatasetVersion } from '@dataset/services/datasetVersion'
+import {
+    addDatasetVersionTag,
+    createDatasetVersion,
+    deleteDatasetVersionTag,
+    revertDatasetVersion,
+} from '@dataset/services/datasetVersion'
 import { usePage } from '@/hooks/usePage'
 import { ICreateDatasetVersionSchema } from '@dataset/schemas/datasetVersion'
 import DatasetVersionForm from '@dataset/components/DatasetVersionForm'
@@ -13,12 +18,12 @@ import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { toaster } from 'baseui/toast'
 import { TextLink } from '@/components/Link'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import Button from '@starwhale/ui/Button'
-import { Shared } from '../../components/Shared'
-import { Alias } from '@/components/Alias'
+import { Shared } from '@/components/Shared'
 import useCliMate from '@/hooks/useCliMate'
+import { EditableAlias } from '@/components/Alias'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -46,6 +51,23 @@ export default function DatasetVersionListCard() {
     )
 
     const { hasCliMate, doPull } = useCliMate()
+    const tagReadOnly = !useAccess('tag.edit')
+
+    const handleTagAdd = useCallback(
+        async (datasetVersionId: string, tag: string) => {
+            await addDatasetVersionTag(projectId, datasetId, datasetVersionId, tag)
+            await datasetVersionsInfo.refetch()
+        },
+        [datasetId, datasetVersionsInfo, projectId]
+    )
+
+    const handelTagRemove = useCallback(
+        async (datasetVersionId: string, tag: string) => {
+            await deleteDatasetVersionTag(projectId, datasetId, datasetVersionId, tag)
+            await datasetVersionsInfo.refetch()
+        },
+        [datasetId, datasetVersionsInfo, projectId]
+    )
 
     return (
         <>
@@ -62,7 +84,13 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
-                                <Alias key='alias' alias={datasetVersion.alias} />,
+                                <EditableAlias
+                                    key='alias'
+                                    resource={datasetVersion}
+                                    readOnly={tagReadOnly}
+                                    onAddTag={(tag) => handleTagAdd(datasetVersion.id, tag)}
+                                    onRemoveTag={(tag) => handelTagRemove(datasetVersion.id, tag)}
+                                />,
                                 <Shared key='shared' shared={datasetVersion.shared} isTextShow />,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,

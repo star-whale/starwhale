@@ -363,6 +363,29 @@ Starwhale is an MLOps/LLMOps platform. It provides **Instance**, **Project**, **
 
     Then you can visit http://controller.starwhale.svc in your local web browser.
 
+    If other users also want to access Starwhale Server Instance, the following commands maybe help you:
+
+    - in your machine(Linux, Starwhale Server Instance machine):
+
+        for temporary use with socat command:
+
+        ```bash
+        # install socat at first, ref: https://howtoinstall.co/en/socat
+        sudo socat TCP4-LISTEN:80,fork,reuseaddr,bind=0.0.0.0 TCP4:`minikube ip`:80
+        ```
+
+      When you kill the socat process, the share access will be blocked. `iptables` maybe a better choice for long-term use.
+
+    - in other users' machines:
+
+        ```bash
+        # for macOSX or Linux environment, run the command in the shell.
+        echo ${your_machine_ip} controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc " | sudo tee -a /etc/hosts
+
+        # for Windows environment, run the command in the PowerShell with administrator permission.
+        Add-Content -Path C:\Windows\System32\drivers\etc\hosts -Value "`n${your_machine_ip} controller.starwhale.svc minio.starwhale.svc  minio-admin.starwhale.svc"
+        ```
+
 - ☕ **STEP4**: Upload the artifacts to the cloud instance
 
     > **pre-prepared artifacts**

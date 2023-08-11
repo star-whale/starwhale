@@ -29,8 +29,15 @@ from starwhale.consts import (
     ENV_BUILD_BUNDLE_FIXED_VERSION_FOR_TEST,
 )
 from starwhale.version import STARWHALE_VERSION
-from starwhale.utils.fs import copy_file, empty_dir, ensure_dir, ensure_file
-from starwhale.base.type import DatasetChangeMode, DatasetFolderSourceType
+from starwhale.base.tag import StandaloneTag
+from starwhale.utils.fs import (
+    copy_file,
+    empty_dir,
+    ensure_dir,
+    ensure_file,
+    iter_pathlike_io,
+)
+from starwhale.base.type import PathLike, DatasetChangeMode, DatasetFolderSourceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
@@ -66,6 +73,7 @@ if t.TYPE_CHECKING:
 _DType = t.TypeVar("_DType", bound="Dataset")
 _ItemType = t.Union[str, int, slice]
 _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
+_IterFeatureDict = t.Iterable[t.Dict[str, t.Any]]
 
 _DEFAULT_LOADER_WORKERS = 2
 _DEFAULT_LOADER_CACHE_SIZE = 20
@@ -81,10 +89,15 @@ class _Tags:
     def __init__(self, core_dataset: CoreDataset) -> None:
         self.__core_dataset = core_dataset
 
-    def add(self, tags: t.Union[str, t.List[str]], ignore_errors: bool = False) -> None:
+    def add(
+        self,
+        tags: t.Union[str, t.List[str]],
+        ignore_errors: bool = False,
+        force: bool = False,
+    ) -> None:
         if isinstance(tags, str):
             tags = [tags]
-        self.__core_dataset.add_tags(tags, ignore_errors)
+        self.__core_dataset.add_tags(tags, ignore_errors=ignore_errors, force=force)
 
     def remove(
         self, tags: t.Union[str, t.List[str]], ignore_errors: bool = False
@@ -348,7 +361,6 @@ class Dataset:
         ds.commit()
         ds.close()
         ```
-
         Returns:
             A Dataset Object
         """
@@ -420,7 +432,25 @@ class Dataset:
     def batch_iter(
         self, batch_size: int = 1, drop_not_full: bool = False
     ) -> t.Iterator[t.List[DataRow]]:
-        """Batch data into lists of length n. The last batch may be shorter."""
+        """Batch data into lists of length n. The last batch may be shorter.
+
+        Arguments:
+            batch_size: (int, optional) The size of each batch. Default is 1.
+            drop_not_full: (bool, optional) Whether to drop the last batch if it is not full.
+
+        Returns:
+            A generator of lists of length n.
+
+        Examples:
+        ```python
+        from starwhale import dataset
+
+        ds = dataset("mnist")
+        for batch_rows in ds.batch_iter(batch_size=2):
+            assert len(batch_rows) == 2
+            print(batch_rows[0].features)
+        ```
+        """
         it = self.__iter__()
         while True:
             batch_data = list(islice(it, batch_size))
@@ -624,6 +654,53 @@ class Dataset:
         drop_index: bool = True,
         skip_default_transform: bool = False,
     ) -> TorchDataset:
+        """Convert Starwhale Dataset to PyTorch Dataset.
+
+        Arguments:
+            transform: (callable, optional) A transform function for input data.
+            drop_index: (bool, optional) Whether to drop the index column.
+            skip_default_transform: (bool, optional) If `transform` is not set,
+                by default the built-in Starwhale transform function will be used to transform the data.
+                This can be disabled with the `skip_default_transform` parameter.
+
+        Returns:
+            torch.utils.data.Dataset
+
+        Examples:
+        ```python
+        import torch.utils.data as tdata
+        from starwhale import dataset
+
+        ds = dataset("mnist")
+
+        torch_ds = ds.to_pytorch()
+        torch_loader = tdata.DataLoader(torch_ds, batch_size=2)
+        ```
+
+        ```python
+        import torch.utils.data as tdata
+        from starwhale import dataset
+
+        with dataset("mnist") as ds:
+            for i in range(0, 10):
+                ds.append({"txt": Text(f"data-{i}"), "label": i})
+
+            ds.commit()
+
+        def _custom_transform(data: t.Any) -> t.Any:
+            data = data.copy()
+            txt = data["txt"].to_str()
+            data["txt"] = f"custom-{txt}"
+            return data
+
+        torch_loader = tdata.DataLoader(
+            dataset(ds.uri).to_pytorch(transform=_custom_transform), batch_size=1
+        )
+        item = next(iter(torch_loader))
+        assert isinstance(item["label"], torch.Tensor)
+        assert item["txt"][0] in ("custom-data-0", "custom-data-1")
+        ```
+        """
         from starwhale.integrations.pytorch import TorchIterableDataset
 
         return TorchIterableDataset(
@@ -637,6 +714,25 @@ class Dataset:
         self,
         drop_index: bool = True,
     ) -> tf.data.Dataset:
+        """Convert Starwhale Dataset to Tensorflow Dataset.
+
+        Arguments:
+            drop_index: (bool, optional) Whether to drop the index column.
+
+        Returns:
+            tensorflow.data.Dataset object
+
+        Examples:
+
+        ```python
+        from starwhale import dataset
+        import tensorflow as tf
+
+        ds = dataset("mnist")
+        tf_ds = ds.to_tensorflow(drop_index=True)
+        assert isinstance(tf_ds, tf.data.Dataset)
+        ```
+        """
         from starwhale.integrations.tensorflow import to_tf_dataset
 
         return to_tf_dataset(dataset=self, drop_index=drop_index)
@@ -745,7 +841,7 @@ class Dataset:
     def pending_commit_version(self) -> str:
         """Next commit version.
         When you call the `commit` function, the pending_commit_version will be recorded in
-        the Standalone instance ,or Cloud instance.
+        the Standalone instance ,Server instance or Cloud instance.
 
         Returns:
             A str version
@@ -792,14 +888,22 @@ class Dataset:
         return self._updated_rows_by_commit != 0 or self._deleted_rows_by_commit != 0
 
     @_check_readonly
-    def commit(self, tags: t.Optional[t.List[str]] = None, message: str = "") -> str:
+    def commit(
+        self,
+        tags: t.Optional[t.List[str]] = None,
+        message: str = "",
+        force_add_tags: bool = False,
+        ignore_add_tags_errors: bool = False,
+    ) -> str:
         """Commit into dataset
         Commit will flush and generate a version of the dataset. At the same time, commit
         operation will also generate auto-increment tag, such as v0, v1, v2. Only one commit is allowed.
 
         Arguments:
-            tags: (list(str), optional) Specify the tags for the version. Default is None.
+            tags: (list(str), optional) Specify the tags for the version. Default is None. `latest` and `^v\d+$` tags are reserved tags.
             message: (str, optional) Commit message. Default is empty str.
+            force_add_tags: (bool, optional) Force to add tags. Default is False.
+            ignore_add_tags_errors: (bool, optional) Ignore add tags errors. Default is False.
 
         Example:
         ```python
@@ -814,9 +918,17 @@ class Dataset:
         """
         # TODO: forbid commit many times
         with self._commit_lock:
-            return self._commit(tags or [], message)
+            return self._commit(
+                tags or [], message, force_add_tags, ignore_add_tags_errors
+            )
 
-    def _commit(self, tags: t.List[str], message: str) -> str:
+    def _commit(
+        self,
+        tags: t.List[str],
+        message: str,
+        force_add_tags: bool,
+        ignore_add_tags_errors: bool,
+    ) -> str:
         def _save_info() -> str:
             revision = ""
             if self.__info is not None and self._info_ds_wrapper is not None:
@@ -916,6 +1028,8 @@ class Dataset:
         if self.__has_committed:
             raise RuntimeError("Dataset has already committed")
 
+        StandaloneTag.check_tags_validation(tags)
+
         dataset_revision = self.flush(artifacts_flush=True)
         info_revision = _save_info()
         manifest_path = _dump_manifest(dataset_revision, info_revision)
@@ -930,7 +1044,9 @@ class Dataset:
         os.unlink(manifest_path)
 
         if tags:
-            self.__pending_commit_core_dataset.add_tags(tags)
+            self.__pending_commit_core_dataset.add_tags(
+                tags, ignore_errors=ignore_add_tags_errors, force=force_add_tags
+            )
 
         self.__has_committed = True
         return self._pending_commit_version
@@ -950,18 +1066,32 @@ class Dataset:
         dest_local_project_uri: str = "",
         force: bool = False,
         mode: str = DatasetChangeMode.PATCH.value,
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         """Copy dataset to another instance.
 
-        Args:
+        Arguments:
             dest_uri: (str, required) destination dataset uri
             dest_local_project_uri: (str, optional) destination local project uri
             force: (bool, optional) force to copy
             mode: (str, optional) copy mode, default is 'patch'. Mode choices are: 'patch', 'overwrite'.
               `patch` mode: only update the changed rows and columns for the remote dataset;
               `overwrite` mode: update records and delete extraneous rows from the remote dataset
+            ignore_tags: (list(str), optional) ignore tags when copying.
+              In default, copy dataset with all user custom tags. `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+              When the tags are already used for the other dataset version in the dest instance, you should use `force` option or adjust the tags.
+
         Returns:
             None
+
+        Examples:
+
+        ```python
+        from starwhale import dataset
+        ds = dataset("mnist")
+        ds.copy("cloud://remote-instance/project/starwhale")
+        ds.copy("cloud://cloud.starwhale.cn/project/public:starwhale", ignore_tags=["t1"])
+        ```
         """
         CoreDataset.copy(
             self.uri,
@@ -969,6 +1099,7 @@ class Dataset:
             dest_local_project_uri=dest_local_project_uri,
             force=force,
             mode=DatasetChangeMode(mode),
+            ignore_tags=ignore_tags,
         )
 
     @classmethod
@@ -999,7 +1130,7 @@ class Dataset:
         the dataset will be created automatically.
 
         Arguments:
-            uri: (str, Resource, required) The dataset uri.
+            uri: (str, Resource, required) The dataset uri str or Resource object.
             create: (str, optional) The mode of dataset creating. The options are `auto`, `empty` and `forbid`.
                 `auto` mode: If the dataset already exists, creation is ignored. If it does not exist, the dataset is created automatically.
                 `empty` mode: If the dataset already exists, an Exception is raised; If it does not exist, an empty dataset is created. This mode ensures the creation of a new, empty dataset.
@@ -1064,26 +1195,36 @@ class Dataset:
         cls,
         name: str,
         repo: str,
-        subset: str | None = None,
+        subsets: t.List[str] | None = None,
         split: str | None = None,
         revision: str = "main",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
         cache: bool = True,
+        tags: t.List[str] | None = None,
+        add_info: bool = True,
     ) -> Dataset:
         """Create a new dataset from huggingface datasets.
+
+        The dataset created by the huggingface will use the f"{split}/index" or str(index) as the row index.
 
         Arguments:
             name: (str, required) The dataset name you would like to use.
             repo: (str, required) The huggingface datasets repo name.
-            subset: (str, optional) The subset name. If the huggingface dataset has multiple subsets, you must specify the subset name.
+            subsets: (list(str), optional) The list of subset names. If the subset names are not specified, the all subsets dataset will be built.
             split: (str, optional) The split name. If the split name is not specified, the all splits dataset will be built.
-            revision: (str, optional) The huggingface datasets revision. The default value is `main`. If the split name is not specified, the all splits dataset will be built.
+            revision: (str, optional) The huggingface datasets revision. The default value is `main`. The option value accepts tag name, or branch name, or commit hash.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
-            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            volume_size: (int|str, optional) The maximum size of a dataset blob file. A new blob file will be generated when the size exceeds this limit.
+              The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
             cache: (bool, optional) Whether to use huggingface dataset cache(download + local hf dataset). The default value is True.
+            tags: (list(str), optional) The tags for the dataset version.
+            add_info: (bool, optional) Whether to add huggingface dataset info to the dataset rows,
+              currently support to add subset and split into the dataset rows.
+              subset uses _hf_subset field name, split uses _hf_split field name.
+              The default value is True.
 
         Returns:
                 A Dataset Object
@@ -1097,7 +1238,7 @@ class Dataset:
 
         ```python
         from starwhale import Dataset
-        myds = Dataset.from_huggingface("mmlu", "cais/mmlu", subset="anatomy", split="auxiliary_train", revision="7456cfb")
+        myds = Dataset.from_huggingface("mmlu", "cais/mmlu", subsets=["anatomy"], split="auxiliary_train", revision="7456cfb")
         ```
         """
         from starwhale.integrations.huggingface import iter_dataset
@@ -1106,63 +1247,96 @@ class Dataset:
         # TODO: support huggingface dataset info
         data_items = iter_dataset(
             repo=repo,
-            subset=subset,
+            subsets=subsets,
             split=split,
             revision=revision,
             cache=cache,
+            add_info=add_info,
         )
 
-        with cls.dataset(name) as ds:
-            ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
-            )
-
-            if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
-                for row in ds:
-                    del ds[row.index]
-
-            total = 0
-            for key, item in data_items:
-                ds[key] = item
-                total += 1
-
-            console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
-
-        return ds
+        return cls.from_dict_items(
+            data_items,
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
 
     @classmethod
     def from_json(
         cls,
         name: str,
-        json_text: str,
+        path: PathLike | t.List[PathLike] | None = None,
+        text: str | None = None,
         field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
+        encoding: str | None = None,
     ) -> Dataset:
         """Create a new dataset from a json text.
 
+        The dataset created by the json text will use the auto increment index as the row index.
+
+        path and text arguments are mutually exclusive, one of them must be specified.
+
         Arguments:
             name: (str, required) The dataset name you would like to use.
-            json_text: (str, required) The json text from which you would like to create this dataset.
+            path: (str|Path|List[str]|List[Path], optional) Json or json line files.
+            text: (str, optional) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
-                The default value is "" which indicates that the dict is an array contains all the items.
+                The default value is "" which indicates that the json object is an array contains all the items.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            encoding: (str, optional) The encoding used to decode the input file. The default is None.
+                encoding does not support text parameter.
 
         Returns:
                 A Dataset Object
+
+        Json text format:
+
+        ```json
+        [
+            {"a": 1, "b": 2},
+            {"a": 10, "b": 20},
+        ]
+        ```
+        Using field_selector: p1.p2.p3 to extract dataset array items:
+        ```json
+        {
+            "p1": {
+                "p2":{
+                    "p3": [
+                        {"a": 1, "b": 2},
+                        {"a": 10, "b": 20},
+                    ]
+                }
+            }
+        }
+        ```
+
+        Json line text format:
+        ```jsonl
+        {"a": 1, "b": 2}
+        {"a": 10, "b": 20}
+        ```
+        Using field_selector: p1.p2.p3 to extract dataset array items:
+        ```jsonl
+        {"p1": {"p2": {"p3": {"a": 1, "b": 2}}}}
+        {"p1": {"p2": {"p3": {"a": 10, "b": 20}}}}
+        ```
 
         Examples:
         ```python
         from starwhale import Dataset
         myds = Dataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+            name="translation",
+            text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
         )
         print(myds[0].features.en)
         ```
@@ -1170,75 +1344,277 @@ class Dataset:
         ```python
         from starwhale import Dataset
         myds = Dataset.from_json(
-            "translation",
-            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
-            "content.child_content"
+            name="translation",
+            text='{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
+            field_selector="content.child_content"
         )
         print(myds[0].features["zh-cn"])
         ```
+
+        ```python
+        from starwhale import Dataset
+        # create a dataset from /path/to/data.json file.
+        Dataset.from_json(path="/path/to/data.json", name="myds"))
+
+        # create a dataset from /path/to/dir folder.
+        Dataset.from_json(path="/path/to/dir", name="myds")
+
+        # create a dataset from /path/to/data1.json, /path/to/data2.json
+        Dataset.from_json(path=["/path/to/data1.json", "/path/to/data2.json"], name="myds")
+
+        # create a dataset from http://example.com/data.json file.
+        Dataset.from_json(path="http://example.com/data.json", name="myds")
+        ```
+        """
+
+        def _selector(_data: t.Sequence | t.Dict) -> t.Sequence | t.Dict:
+            if field_selector:
+                fields = field_selector.split(".")
+                for field in fields:
+                    if not isinstance(_data, dict):
+                        raise NoSupportError(
+                            f"field_selector only supports dict type: {_data}"
+                        )
+                    if field in _data:
+                        _data = _data[field]
+                    else:
+                        raise ValueError(
+                            f"The field_selector {field_selector} isn't in json text: {_data}"
+                        )
+            return _data
+
+        def _decode() -> t.Iterable[t.Sequence | t.Dict]:
+            if path is not None and text is not None:
+                raise ValueError("paths and text arguments are mutually exclusive")
+            elif path:
+                for fp, suffix in iter_pathlike_io(
+                    path, encoding=encoding, accepted_file_types=[".json", ".jsonl"]
+                ):
+                    if suffix == ".json":
+                        yield _selector(json.load(fp))
+                    elif suffix == ".jsonl":
+                        for line in fp.readlines():
+                            _r = json.loads(line)
+                            _r = _selector(_r)
+                            if isinstance(_r, dict):
+                                _r = [_r]
+                            yield _r
+                    else:
+                        raise ValueError(f"unsupported file type: {suffix}")
+            elif text:
+                yield _selector(json.loads(text))
+            else:
+                raise ValueError("paths or text argument must be specified")
+
+        def _iter(_iter: t.Iterable[t.Sequence | t.Dict]) -> _IterFeatureDict:
+            for i in _iter:
+                if isinstance(i, (list, tuple)):
+                    for j in i:
+                        yield j
+                elif isinstance(i, dict):
+                    yield i
+                else:
+                    raise ValueError(f"json text:{i} must be dict, list or tuple type")
+
+        return cls.from_dict_items(
+            _iter(_decode()),
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
+
+    @classmethod
+    def from_csv(
+        cls,
+        path: PathLike | t.List[PathLike],
+        name: str,
+        dialect: str = "excel",
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
+        delimiter: str = ",",
+        quotechar: str = '"',
+        skipinitialspace: bool = False,
+        strict: bool = False,
+        encoding: str | None = None,
+    ) -> Dataset:
+        """Create a new dataset from one and more csv files.
+
+        The dataset created by the csv files will use the auto increment index as the row index.
+
+        All fields in the csv file will be treated as string type.
+
+        Arguments:
+            path: (str|Path|List[str]|List[Path], required) The csv file path or a list of csv file paths from which you would like to create this dataset.
+              - If the element filename ends with .csv, the function will create the specified csv file as a dataset.
+              - If the element is a local directory, the function will create a dataset from all csv files in the directory and its subdirectories.
+              - If the element is a http url and ends with .csv, the function will download the csv file and create a dataset from it.
+            name: (str, required) The dataset name.
+            dialect: (str, optional) The csv dialect name which following the design of python standard csv lib. The default value is `excel`.
+              The option accepts `excel`, `excel-tab` and `unix` dialects.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            delimiter: (str, optional) A one-character string used to separate fields. It defaults to ','.
+            quotechar: (str, optional) A one-character string used to quote fields containing special characters,
+              such as the delimiter or quotechar, or which contain new-line characters. It defaults to '"'.
+            skipinitialspace: (bool, optional) When True, whitespace immediately following the delimiter is ignored.
+              The default is False.
+            strict: (bool, optional) When True, raise exception Error if the csv is not well formed. The default is False.
+            encoding: (str, optional) The encoding used to decode the input file. The default is None.
+
+        Returns:
+            A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+
+        # create a dataset from /path/to/data.csv file.
+        ds = Dataset.from_csv(path="/path/to/data.csv", name="my-csv-dataset")
+
+        # create a dataset from /path/to/data.csv file with utf-8 encoding.
+        ds = Dataset.from_csv(path="/path/to/data.csv", name="my-csv-dataset", encoding="utf-8")
+
+        # create a dataset from /path/to/dir folder.
+        ds = Dataset.from_csv(path="/path/to/dir", name="my-csv-dataset")
+
+        # create a dataset from /path/to/data1.cvs, /path/to/data2.csv
+        ds = Dataset.from_csv(path=["/path/to/data1.csv", "/path/to/data2.csv"], name="my-csv-dataset")
+
+        # create a dataset from http://example.com/data.csv file.
+        ds = Dataset.from_csv(path="http://example.com/data.csv", name="my-csv-dataset")
+        ```
+        """
+
+        def _iter_records() -> _IterFeatureDict:
+            for fp, _ in iter_pathlike_io(
+                path=path, encoding=encoding, newline="", accepted_file_types=[".csv"]
+            ):
+                for record in csv.DictReader(
+                    fp,  # type: ignore
+                    dialect=dialect,
+                    delimiter=delimiter,
+                    quotechar=quotechar,
+                    skipinitialspace=skipinitialspace,
+                    strict=strict,
+                ):
+                    yield record
+
+        return cls.from_dict_items(
+            _iter_records(),
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )
+
+    @classmethod
+    def from_dict_items(
+        cls,
+        records: t.Iterable[
+            t.Dict[str, t.Any] | t.Tuple[str | int, t.Dict[str, t.Any]]
+        ],
+        name: str | Resource,
+        volume_size: int | str = D_FILE_VOLUME_SIZE,
+        alignment_size: int | str = D_ALIGNMENT_SIZE,
+        mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
+    ) -> Dataset:
+        """Create a new dataset from a dict iterator or a list[dict].
+
+        The dataset created by the dict items will use the auto increment index or user custom index parsed from record[0] as the row index.
+
+        Arguments:
+            records: (Iterable[dict]|Iterable[(str|int, dict)], required) The dict or (str|int, dict) iterator from which you would like to create this dataset. )
+            name: (str|Resource, required) The dataset name.
+            alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
+            volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
+            mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+
+        Returns:
+            A Dataset Object
+
+        Examples:
+        ```python
+        from starwhale import Dataset
+        # create a dataset from a list of dict
+        ds = Dataset.from_dict_items([{"a": 1, "b: 2, "c": 3}], name="my-dataset")
+
+        # create a dataset from a dict iterator
+        ds = Dataset.from_dict_items(iter([{"a": 1, "b: 2, "c": 3}]), name="my-dataset")
+
+        # create a dataset from a dict generator
+        def _iter_records():
+            for i in range(10):
+                yield {"a": i, "b": i * 2, "c": i * 3}
+        ds = Dataset.from_dict_items(_iter_records(), name="my-dataset")
+
+        # create a dataset from a dict iterator with key
+        ds = Dataset.from_dict_items(iter([(1, {"a": 1, "b: 2, "c": 3})]), name="my-dataset")
+        ```
         """
         mode = DatasetChangeMode(mode)
-        data_items = json.loads(json_text)
-
-        if field_selector:
-            # Split field selector by dots
-            fields = field_selector.split(".")
-            # Iterate over selected fields
-            for field in fields:
-                if field in data_items:
-                    data_items = data_items[field]
-                else:
-                    raise ValueError(
-                        f"The field_selector {field_selector} isn't in json_text: {json_text}"
-                    )
-        if not isinstance(data_items, list):
-            raise ValueError(
-                f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
-            )
+        StandaloneTag.check_tags_validation(tags)
 
         with cls.dataset(name) as ds:
+            console.print(f":ocean: creating dataset {ds.uri}...")
             ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
+                volume_size=volume_size, alignment_size=alignment_size
             )
 
             if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
                 for row in ds:
                     del ds[row.index]
 
             total = 0
-            for item in data_items:
-                ds.append(item)
+            for record in records:
+                if isinstance(record, (tuple, list)):
+                    key, record = record
+                    ds[key] = record
+                elif isinstance(record, dict):
+                    ds.append(record)
+                else:
+                    raise TypeError(
+                        f"record type {type(record)} is not expected, dict or tuple is ok"
+                    )
                 total += 1
 
             console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
+            ds.commit(tags=tags)
+
         return ds
 
     @classmethod
     def from_folder(
         cls,
-        folder: str | Path,
+        folder: PathLike,
         kind: str | DatasetFolderSourceType,
         name: str | Resource = "",
         auto_label: bool = True,
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
+        tags: t.List[str] | None = None,
     ) -> Dataset:
-        """Create a dataset from a folder of image files.
+        """Create a dataset from a folder of image/video/audio files.
 
-        The image folder building supports the following features:
+        The image/video/audio folder building supports the following features:
 
         - search the folder recursively.
         - support three kinds of folder type:
           - `image`: png/jpg/jpeg/webp/svg/apng types. The image file will be converted to Starwhale.Image type.
           - `video`: mp4/webm/avi types. The video file will be converted to Starwhale.Video type.
           - `audio`: mp3/wav types. The audio file will be converted to Starwhale.Audio type.
-        - auto labeling by the common prefix parent dir name.
+        - If `auto_label=True`, the name of the parent directory will be used as the label for that data item, corresponding to the `label` field. Files in the root directory will not be labeled.
         - auto fill caption with the txt file which is named the same as the image file, and located in the same folder.
-        - auto import metadata.csv or metadata.jsonl as the additional metadata information.
+        - auto import metadata.csv or metadata.jsonl (in the root dir) as the additional metadata information.
 
         When the auto_label is True, the function will try to ingest the label from the image folder(sub-folder) name.
         If the image file's folder is equal to the root folder, the label is empty.
@@ -1277,15 +1653,18 @@ class Dataset:
         folder/dog/1.png
         folder/dog/1.txt
         ```
+        The dataset created by the folder will use the relative path name as the row index.
 
         Arguments:
             folder: (str|Path, required) The folder path from which you would like to create this dataset.
             kind: (str|DatasetFolderSourceType, required) The dataset source type you would like to use, the choices are: image, video and audio.
+               Recursively searching for files of the specified `kind` in `folder`. Other file types will be ignored.
             name: (str|Resource, optional) The dataset name you would like to use. If not specified, the name is the folder name.
             auto_label: (bool, optional) Whether to auto label by the sub-folder name. The default value is True.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
+            tags: (list(str), optional) The tags for the dataset version. `latest` and `^v\d+$` tags are reserved tags.
 
         Returns:
             A Dataset Object.
@@ -1294,7 +1673,12 @@ class Dataset:
         ```python
         from starwhale import Dataset
 
-        ds = Dataset.from_folder("/path/to/image", "image", "my-image-dataset")  # create a my-image-dataset dataset from /path/to/image folder.
+        # create a my-image-dataset dataset from /path/to/image folder.
+        ds = Dataset.from_folder(
+            folder="/path/to/image",
+            kind="image",
+            name="my-image-dataset"
+        )
         ```
         """
         rootdir = Path(folder)
@@ -1316,7 +1700,7 @@ class Dataset:
 
             _meta = {}
             if _meta_csv_path.exists():
-                with _meta_csv_path.open() as f:
+                with _meta_csv_path.open(newline="") as f:
                     for record in csv.DictReader(f):
                         _meta[record["file_name"]] = record
             elif _meta_jsonl_path.exists():
@@ -1325,7 +1709,7 @@ class Dataset:
                         _meta[record["file_name"]] = record
             return _meta
 
-        def _iter_records() -> t.Iterator[t.Dict]:
+        def _iter_records() -> t.Iterator[t.Tuple[str, t.Dict]]:
             from starwhale.core.dataset.type import Audio, Image, Video
 
             _dfst = DatasetFolderSourceType
@@ -1368,26 +1752,13 @@ class Dataset:
                     display_name=p.name,
                     mime_type=MIMEType.create_by_file_suffix(p),
                 )
-                yield record
+                yield record["file_name"], record
 
-        with cls.dataset(name) as ds:
-            console.print(f":ocean: creating dataset {ds.uri} from folder {rootdir}...")
-            ds = ds.with_builder_blob_config(
-                volume_size=volume_size,
-                alignment_size=alignment_size,
-            )
-
-            if mode == DatasetChangeMode.OVERWRITE:
-                # TODO: use other high performance way to delete all records
-                for row in ds:
-                    del ds[row.index]
-
-            total = 0
-            for record in _iter_records():
-                ds[record["file_name"]] = record
-                total += 1
-
-            console.print(f":butterfly: update {total} records into dataset")
-            ds.commit()
-
-        return ds
+        return cls.from_dict_items(
+            _iter_records(),
+            name=name,
+            volume_size=volume_size,
+            alignment_size=alignment_size,
+            mode=mode,
+            tags=tags,
+        )

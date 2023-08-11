@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.bundle.tag;
+package ai.starwhale.mlops.domain.bundle.base;
 
-public interface TagAccessor {
+public interface HasProjectId {
 
-    HasTag findObjectWithTagById(Long id);
-
-    Boolean updateTag(HasTag entity);
+    Long getProjectId();
 }

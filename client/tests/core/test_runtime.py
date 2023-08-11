@@ -27,6 +27,7 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_SW_TASK_RUN_IMAGE,
+    FIXED_RELEASE_BASE_IMAGE_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import BundleType, DependencyType, RuntimeLockFileType
@@ -317,6 +318,7 @@ class StandaloneRuntimeTestCase(TestCase):
             cuda="11.4",
             cudnn="8",
             arch="amd64",
+            tags=["from-conda-v0"],
         )
 
         assert m_py_ver_bin.call_args[0][0] == os.path.join(conda_prefix, "bin/python3")
@@ -343,14 +345,14 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4-cudnn8",
-                "name": "starwhale",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/cuda:11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}",
+                "name": "cuda",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest-cuda11.4-cudnn8",
+                "tag": f"11.4-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}",
             },
             "custom_run_image": "",
         }
@@ -447,6 +449,9 @@ class StandaloneRuntimeTestCase(TestCase):
             runtime_name="test",
             conda_name=conda_name,
             cuda="11.4",
+            tags=["from-conda-v0"],
+            dump_condarc=True,
+            dump_pip_options=True,
         )
 
         assert m_py_ver_bin.call_args[0][0] == os.path.join(conda_prefix, "bin/python3")
@@ -479,8 +484,9 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.4-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
+
         assert _manifest["dependencies"] == {
             "conda_files": [],
             "conda_pkgs": [],
@@ -595,14 +601,14 @@ class StandaloneRuntimeTestCase(TestCase):
         }
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest"
+            == f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
-                "name": "starwhale",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}",
+                "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest",
+                "tag": FIXED_RELEASE_BASE_IMAGE_VERSION,
             },
             "custom_run_image": "",
         }
@@ -837,7 +843,9 @@ class StandaloneRuntimeTestCase(TestCase):
         uri = Resource(name, typ=ResourceType.runtime)
         sr = StandaloneRuntime(uri)
         sr.build_from_runtime_yaml(
-            workdir=workdir, yaml_path=os.path.join(workdir, runtime_yaml_name)
+            workdir=workdir,
+            yaml_path=os.path.join(workdir, runtime_yaml_name),
+            tags=["from-venv-v0"],
         )
         assert m_call.call_count == 4
 
@@ -868,7 +876,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(os.path.join(runtime_workdir, "files/prepare.sh"))
         assert os.path.exists(os.path.join(runtime_workdir, DefaultYAMLName.RUNTIME))
 
-        assert "latest" in sr.tag.list()
+        tags = sr.tag.list()
+        assert set(tags) == {"latest", "v0", "from-venv-v0"}
 
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
@@ -880,7 +889,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert (
             _manifest["base_image"]
-            == "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.5-cudnn8"
+            == f"docker-registry.starwhale.cn/star-whale/cuda:11.5-cudnn8-base{FIXED_RELEASE_BASE_IMAGE_VERSION}"
         )
 
         assert (
@@ -965,6 +974,7 @@ class StandaloneRuntimeTestCase(TestCase):
         tag_content = yaml.safe_load(tag_manifest_path.read_text())
         assert "t1" in tag_content["tags"]
         assert "t2" in tag_content["tags"]
+        assert "from-venv-v0" in tag_content["tags"]
         runtime_term_view(build_uri).tag(["t1"], remove=True)
         tag_content = yaml.safe_load(tag_manifest_path.read_text())
         assert "t1" not in tag_content["tags"]
@@ -1332,7 +1342,7 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.core.runtime.model.StandaloneRuntime._dump_docker_image")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._copy_src")
     @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tar")
-    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_auto_tags")
+    @patch("starwhale.base.bundle.LocalStorageBundleMixin._make_tags")
     @patch("starwhale.core.runtime.model.get_user_python_version")
     @patch("starwhale.core.runtime.model.StandaloneRuntime._load_runtime_config")
     @patch("starwhale.core.runtime.model.StandaloneRuntime.lock")
@@ -1403,7 +1413,11 @@ class StandaloneRuntimeTestCase(TestCase):
         docker_image = "user-defined-image:latest"
         uri = Resource(name, typ=ResourceType.runtime)
         sr = StandaloneRuntime(uri)
-        sr.build_from_docker_image(image=docker_image, runtime_name=name)
+        sr.build_from_docker_image(
+            image=docker_image,
+            runtime_name=name,
+            tags=["from-docker-0", "from-docker-1"],
+        )
 
         sw = SWCliConfigMixed()
         runtime_workdir = os.path.join(
@@ -1419,10 +1433,10 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["base_image"] == docker_image
         assert _manifest["docker"] == {
             "builtin_run_image": {
-                "fullname": "docker-registry.starwhale.cn/star-whale/starwhale:latest",
-                "name": "starwhale",
+                "fullname": f"docker-registry.starwhale.cn/star-whale/base:{FIXED_RELEASE_BASE_IMAGE_VERSION}",
+                "name": "base",
                 "repo": "docker-registry.starwhale.cn/star-whale",
-                "tag": "latest",
+                "tag": FIXED_RELEASE_BASE_IMAGE_VERSION,
             },
             "custom_run_image": "user-defined-image:latest",
         }
@@ -1435,6 +1449,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _manifest["environment"]["lock"]["env_name"] == ""
         assert _manifest["environment"]["lock"]["env_prefix_path"] == ""
         assert not _manifest["environment"]["lock"]["env_use_shell"]
+        assert set(sr.tag.list()) == {"from-docker-0", "from-docker-1", "v0", "latest"}
 
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {
@@ -1951,14 +1966,14 @@ class StandaloneRuntimeTestCase(TestCase):
                 "--quiet",
                 "--prefix",
                 conda_prefix_dir,
-                "-vvv",
+                "-vv",
                 "python=3.7",
             ],
             [
                 "conda",
                 "env",
                 "update",
-                "-vvv",
+                "-vv",
                 "--quiet",
                 "--file",
                 conda_env_fpath,
@@ -1969,7 +1984,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
-                "-vvv",
+                "-vv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -1987,7 +2002,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
-                "-vvv",
+                "-vv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -2004,7 +2019,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
-                "-vvv",
+                "-vv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -2021,7 +2036,7 @@ class StandaloneRuntimeTestCase(TestCase):
                 "conda",
                 "run",
                 "--live-stream",
-                "-vvv",
+                "-vv",
                 "--prefix",
                 conda_prefix_dir,
                 "python3",
@@ -2037,7 +2052,7 @@ class StandaloneRuntimeTestCase(TestCase):
             [
                 "conda",
                 "install",
-                "-vvv",
+                "-vv",
                 "--prefix",
                 conda_prefix_dir,
                 "--channel",
@@ -2214,7 +2229,9 @@ class StandaloneRuntimeTestCase(TestCase):
         os.environ[ENV_VENV] = venv_dir
         content = load_yaml(yaml_path)
         assert RuntimeLockFileType.VENV not in content.get("dependencies", [])
-        StandaloneRuntime.lock(target_dir, yaml_path, env_use_shell=True)
+        StandaloneRuntime.lock(
+            target_dir, yaml_path, env_use_shell=True, dump_pip_options=True
+        )
 
         assert m_call.call_args_list[0][0][0] == [
             f"{venv_dir}/bin/pip",
@@ -2285,6 +2302,7 @@ class StandaloneRuntimeTestCase(TestCase):
             env_prefix_path=venv_dir,
             include_editable=True,
             include_local_wheel=True,
+            dump_pip_options=True,
         )
         assert m_call.call_args[0][0].startswith(
             " ".join(
@@ -2316,7 +2334,7 @@ class StandaloneRuntimeTestCase(TestCase):
             return MagicMock()
 
         m_venv.cli_run = _mock_cli_run
-        StandaloneRuntime.lock(target_dir, yaml_path)
+        StandaloneRuntime.lock(target_dir, yaml_path, dump_pip_options=True)
 
         assert m_call.call_count == 4
         assert m_output.call_count == 2
@@ -2684,7 +2702,7 @@ class StandaloneRuntimeTestCase(TestCase):
         return {
             "name": "rttest",
             "version": "112233",
-            "base_image": "docker-registry.starwhale.cn/star-whale/starwhale:latest-cuda11.4",
+            "base_image": "docker-registry.starwhale.cn/star-whale/base:latest-cuda11.4",
             "dependencies": {
                 "conda_files": [],
                 "conda_pkgs": [],

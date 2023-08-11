@@ -45,7 +45,7 @@ def model_cmd(ctx: click.Context) -> None:
     "-f",
     "--model-yaml",
     default=None,
-    help="mode yaml path, default use ${workdir}/model.yaml file",
+    help="model yaml path, default use ${workdir}/model.yaml file",
 )
 @click.option(
     "-r",
@@ -61,13 +61,21 @@ def model_cmd(ctx: click.Context) -> None:
     help="Python modules to be imported during the build process. The format is python module import path. The option supports set multiple times.",
 )
 @click.option("-n", "--name", default="", help="model name")
-@click.option("-d", "--desc", default="", help="Dataset description")
+@click.option("-d", "--desc", default="", help="model description")
+@click.option(
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="model tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
+)
 @click.option(
     "--package-runtime/--no-package-runtime",
     is_flag=True,
     default=True,
     show_default=True,
-    help="Package Starwhale Runtime into the model.",
+    help="When using the `--runtime` parameter, by default, the corresponding Starwhale runtime will become the built-in runtime for the Starwhale model. "
+    "This feature can be disabled with the `--no-package-runtime` parameter.",
 )
 @click.option(
     "--add-all",
@@ -83,6 +91,7 @@ def _build(
     model_yaml: str,
     runtime: str,
     modules: t.List[str],
+    tags: t.List[str],
     package_runtime: bool,
     name: str,
     desc: str,
@@ -104,6 +113,8 @@ def _build(
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1
         # forbid to package Starwhale Runtime into the model.
         swcli model build . --module mnist.evaluate --runtime pytorch/version/v1 --no-package-runtime
+        # build model package with tags.
+        swcli model build . --tag tag1 --tag tag2
     """
     if model_yaml is None:
         yaml_path = Path(workdir) / DefaultYAMLName.MODEL
@@ -127,6 +138,7 @@ def _build(
         runtime_uri=runtime,
         package_runtime=package_runtime,
         add_all=add_all,
+        tags=tags,
     )
 
 
@@ -146,14 +158,14 @@ def _extract(model: str, target_dir: str, force: bool) -> None:
         \b
         - extract mnist model package to current directory
             swcli model extract mnist/version/xxxx .
-
+        \b
         - extract mnist model package to current directory and force to overwrite the files
             swcli model extract mnist/version/xxxx . -f
     """
     ModelTermView(model).extract(target=Path(target_dir), force=force)
 
 
-@model_cmd.command("tag", help="Model Tag Management, add or remove")
+@model_cmd.command("tag")
 @click.argument("model")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -163,8 +175,39 @@ def _extract(model: str, target_dir: str, force: bool) -> None:
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
-    ModelTermView(model).tag(tags, remove, quiet)
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
+def _tag(
+    model: str, tags: t.List[str], remove: bool, quiet: bool, force_add: bool
+) -> None:
+    """Model tag management: add, remove and list
+
+    MODEL: argument use the `Model URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the mnist model
+        swcli model tag mnist
+
+        \b
+        - add tags for the mnist model
+        swcli model tag mnist -t t1 -t t2
+        swcli model tag cloud://cloud.starwhale.cn/project/public:starwhale/model/mnist/version/latest -t t1 --force-add
+        swcli model tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the mnist model
+        swcli model tag mnist -r -t t1 -t t2
+        swcli model tag cloud://cloud.starwhale.cn/project/public:starwhale/model/mnist --remove -t t1
+    """
+    ModelTermView(model).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @model_cmd.command("copy", aliases=["cp"])
@@ -172,13 +215,27 @@ def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy model")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="ignore tags to copy. The option can be used multiple times.",
+)
+def _copy(
+    src: str, dest: str, force: bool, dest_local_project: str, ignore_tags: t.List[str]
+) -> None:
     """
     Copy Model between Standalone Instance and Cloud Instance
 
     SRC: model uri with version
 
     DEST: project uri or model uri with name.
+
+    In default, copy dataset with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other model version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -217,8 +274,12 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         \b
         - copy standalone instance(local) project(myproject)'s mnist-local model to cloud instance(pre-k8s) mnist project with standalone instance model name 'mnist-local'
             swcli model cp local/project/myproject/model/mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy without some tags
+           swcli model cp mnist cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
-    ModelTermView.copy(src, dest, force, dest_local_project)
+    ModelTermView.copy(src, dest, force, dest_local_project, ignore_tags)
 
 
 @model_cmd.command("info")
@@ -413,7 +474,9 @@ def _recover(model: str, force: bool) -> None:
     "-fs",
     "--forbid-snapshot",
     is_flag=True,
-    help="[ONLY STANDALONE]Forbid to use model run snapshot dir, use model src dir directly. When the `--workdir` option is set, this option will be ignored.",
+    help="In model URI mode, each model run uses a new snapshot directory."
+    "Setting this parameter will directly use the model's workdir as the run directory."
+    "In local dev mode, this parameter does not take effect, each run is in the `--workdir` specified directory.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--cleanup-snapshot/--no-cleanup-snapshot",
@@ -443,7 +506,7 @@ def _recover(model: str, force: bool) -> None:
     "-i",
     "--image",
     default="",
-    help="[ONLY Standalone]docker image, works only when --use-docker is set",
+    help="[ONLY Standalone]docker image, works only when --in-container  is set",
 )
 @click.option(
     "--version",
@@ -609,8 +672,10 @@ def _run(
     help="Model yaml path, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option("-r", "--runtime", default="", help="runtime uri")
-@click.option("--host", default="", help="The host to listen on")
-@click.option("--port", default=8080, help="The port of the server")
+@click.option(
+    "--host", default="127.0.0.1", show_default=True, help="The host to listen on"
+)
+@click.option("--port", default=8080, show_default=True, help="The port of the server")
 @click.option(
     "-fpr",
     "--forbid-packaged-runtime",

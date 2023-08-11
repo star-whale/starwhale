@@ -31,7 +31,6 @@ from starwhale.utils import (
 )
 from starwhale.consts import (
     SupportOS,
-    LATEST_TAG,
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
@@ -50,6 +49,7 @@ from starwhale.consts import (
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
+    FIXED_RELEASE_BASE_IMAGE_VERSION,
 )
 from starwhale.version import STARWHALE_VERSION
 from starwhale.base.tag import StandaloneTag
@@ -732,6 +732,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         bc = BundleCopy(
             src_uri,
@@ -739,6 +740,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             ResourceType.runtime,
             force,
             dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
         )
         bc.do()
 
@@ -757,7 +759,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> t.Tuple[str, t.Optional[Path]]:
         return StandaloneRuntime.lock(
@@ -769,7 +771,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             stdout,
             include_editable,
             include_local_wheel,
-            emit_pip_options,
+            dump_pip_options,
             env_use_shell,
         )
 
@@ -784,7 +786,12 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     ) -> None:
         raise NotImplementedError
 
-    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+    def build_from_docker_image(
+        self,
+        image: str,
+        runtime_name: str,
+        tags: t.List[str] | None = None,
+    ) -> None:
         raise NotImplementedError
 
     def build_from_python_env(
@@ -800,8 +807,9 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -817,8 +825,9 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -880,8 +889,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def list_tags(self) -> t.List[str]:
         return self.tag.list()
 
-    def add_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
-        self.tag.add(tags, ignore_errors)
+    def add_tags(
+        self, tags: t.List[str], ignore_errors: bool = False, force: bool = False
+    ) -> None:
+        self.tag.add(tags, ignore_errors, force=force)
 
     def remove_tags(self, tags: t.List[str], ignore_errors: bool = False) -> None:
         self.tag.remove(tags, ignore_errors)
@@ -922,7 +933,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             )
         return _r
 
-    def build_from_docker_image(self, image: str, runtime_name: str) -> None:
+    def build_from_docker_image(
+        self,
+        image: str,
+        runtime_name: str,
+        tags: t.List[str] | None = None,
+    ) -> None:
         # TODO: validate image format
         workdir = Path(tempfile.mkdtemp(suffix="starwhale-runtime-build-"))
         try:
@@ -938,6 +954,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 workdir=workdir,
                 yaml_path=yaml_path,
                 disable_env_lock=True,
+                tags=tags,
             )
         finally:
             empty_dir(workdir)
@@ -955,8 +972,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         download_all_deps: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         if conda_name or conda_prefix:
             prefix_path = (
@@ -1011,8 +1029,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=conda_name,
                 env_prefix_path=conda_prefix or venv_prefix,
                 env_use_shell=env_use_shell,
-                emit_pip_options=emit_pip_options,
-                emit_condarc=emit_condarc,
+                dump_pip_options=dump_pip_options,
+                dump_condarc=dump_condarc,
+                tags=tags,
             )
         finally:
             empty_dir(workdir)
@@ -1029,9 +1048,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         env_prefix_path: str = "",
         env_name: str = "",
         env_use_shell: bool = False,
-        emit_pip_options: bool = False,
-        emit_condarc: bool = False,
+        dump_pip_options: bool = False,
+        dump_condarc: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
+        StandaloneTag.check_tags_validation(tags)
+
         workdir = Path(workdir)
         yaml_path = Path(yaml_path)
         swrt_config = self._load_runtime_config(yaml_path)
@@ -1052,7 +1074,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=env_name,
                 env_prefix_path=env_prefix_path,
                 env_use_shell=env_use_shell,
-                emit_pip_options=emit_pip_options,
+                dump_pip_options=dump_pip_options,
             )
             _version_map = {}
             _setup_requires_libs = []
@@ -1096,7 +1118,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self._dump_configs,
                 5,
                 "dump configs",
-                dict(config=swrt_config, emit_condarc=emit_condarc),
+                dict(config=swrt_config, dump_condarc=dump_condarc),
             ),
             (
                 self._lock_environment,
@@ -1146,7 +1168,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "render manifest",
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
-            (self._make_auto_tags, 5, "make auto tags"),
+            (self._make_tags, 5, "make tags", dict(tags=tags)),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
@@ -1158,15 +1180,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 # CONDARC env only works in the current process and subprocess by the starwhale.utils.process.check_call function
                 os.environ["CONDARC"] = str(condarc_path)
 
-    def _dump_configs(self, config: RuntimeConfig, emit_condarc: bool = False) -> None:
+    def _dump_configs(self, config: RuntimeConfig, dump_condarc: bool = False) -> None:
         self._manifest["configs"] = config.configs.asdict()
 
         condarc_path = Path.home() / ".condarc"
-        if (
-            config.mode == PythonRunEnv.CONDA
-            and not emit_condarc
-            and condarc_path.exists()
-        ):
+        if config.mode == PythonRunEnv.CONDA and dump_condarc and condarc_path.exists():
             local_condarc = load_yaml(condarc_path)
             local_condarc.update(config.configs.conda.condarc)
             self._manifest["configs"]["conda"]["condarc"] = local_condarc
@@ -1275,22 +1293,25 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def _dump_docker_image(self, config: RuntimeConfig) -> None:
         custom_run_image = config.environment.docker.image
 
-        tag = config._starwhale_version or LATEST_TAG
+        image = DEFAULT_IMAGE_NAME
+        tag = os.environ.get(
+            "SW_CUSTOM_BASE_IMAGE_VERSION", FIXED_RELEASE_BASE_IMAGE_VERSION
+        )
         _cuda = config.environment.cuda
         _cudnn = config.environment.cudnn
         if _cuda:
-            _suffix = []
-            _suffix.append(f"-cuda{_cuda}")
+            # star-whale/cuda:11.5-cudnn8-base0.3.4
+            _tags = [_cuda]
 
             if _cudnn:
-                _suffix.append(f"-cudnn{_cudnn}")
+                _tags.append(f"-cudnn{_cudnn}")
+            _tags.append(f"-base{tag}")
 
-            tag += "".join(_suffix)
+            image = "cuda"
+            tag = "".join(_tags)
 
         repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        builtin_run_image = SW_IMAGE_FMT.format(
-            repo=repo, name=DEFAULT_IMAGE_NAME, tag=tag
-        )
+        builtin_run_image = SW_IMAGE_FMT.format(repo=repo, name=image, tag=tag)
 
         if custom_run_image:
             console.print(
@@ -1306,13 +1327,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self._manifest["docker"] = {
             "custom_run_image": custom_run_image,
             # builtin run image example:
-            # - fullname = docker-registry.starwhale.cn/star-whale/starwhale:0.4.5-cuda11.7
+            # - fullname = docker-registry.starwhale.cn/star-whale/cuda:11.7-base0.3.4
             # - repo = docker-registry.starwhale.cn/star-whale
-            # - name = starwhale
-            # - tag = 0.4.5-cuda11.7
+            # - name = cuda
+            # - tag = 11.7-base0.3.4
             "builtin_run_image": {
                 "repo": repo,
-                "name": DEFAULT_IMAGE_NAME,
+                "name": image,
                 "tag": tag,
                 "fullname": builtin_run_image,
             },
@@ -1655,7 +1676,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         stdout: bool = False,
         include_editable: bool = False,
         include_local_wheel: bool = False,
-        emit_pip_options: bool = False,
+        dump_pip_options: bool = False,
         env_use_shell: bool = False,
     ) -> t.Tuple[str, t.Optional[Path]]:
         """Install dependencies and save or print lock file
@@ -1669,7 +1690,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             stdout: just print the lock info into stdout without saving lock file
             include_editable: include the editable pkg (only for venv)
             include_local_wheel: include local wheel pkg (only for venv)
-            emit_pip_options: use user's pip configuration when freeze pkgs (only for venv)
+            dump_pip_options: use user's pip configuration when freeze pkgs (only for venv)
             env_use_shell: automatically detect env in current shell session
 
         Returns:
@@ -1739,7 +1760,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 py_bin=pybin,
                 lock_fpath=temp_lock_path,
                 include_editable=include_editable,
-                emit_options=emit_pip_options,
+                dump_options=dump_pip_options,
                 include_local_wheel=include_local_wheel,
             )
         else:
@@ -1846,10 +1867,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 base_image=get_docker_run_image_by_manifest(manifest=_manifest),
                 runtime_name=self.uri.name,
                 runtime_version=_manifest["version"],
-                pypi_index_url=_pip.get("index_url", ""),
-                pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
-                pypi_trusted_host=" ".join(_pip.get("trusted_host", [])),
+                pypi_index_url=os.environ.get("SW_PYPI_INDEX_URL")
+                or _pip.get("index_url", ""),
+                pypi_extra_index_url=os.environ.get("SW_PYPI_EXTRA_INDEX_URL")
+                or " ".join(_pip.get("extra_index_url", [])),
+                pypi_trusted_host=os.environ.get("SW_PYPI_TRUSTED_HOST")
+                or " ".join(_pip.get("trusted_host", [])),
                 python_version=_manifest["environment"]["python"],
+                starwhale_version=_manifest["environment"]["lock"]["starwhale_version"],
                 mode=_manifest["environment"]["mode"],
                 local_packaged_env=_manifest["dependencies"].get(
                     "local_packaged_env", False

@@ -29,7 +29,5 @@ public class RuntimeVersionQuery {
 
     private String versionName;
 
-    private String versionTag;
-
 }
 

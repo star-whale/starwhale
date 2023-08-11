@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import re
 import typing as t
 from pathlib import Path
 
@@ -17,6 +20,8 @@ from starwhale.base.uri.resource import Resource
 
 
 class StandaloneTag:
+    AUTO_INCR_TAG_RE = re.compile(r"^v\d+$")
+
     def __init__(self, uri: Resource) -> None:
         self.uri = uri
         self._do_validate()
@@ -76,9 +81,12 @@ class StandaloneTag:
         tags: t.List[str],
         ignore_errors: bool = False,
         manifest: t.Optional[t.Dict] = None,
+        force: bool = False,
     ) -> None:
         _manifest = manifest or self._get_manifest()
         _version = self.uri.version
+
+        # TODO: support to force add tag for the used by the other version, current skip the used validation for the Standalone instance.
 
         if not _version and not ignore_errors:
             raise MissingFieldError(f"uri version, {self.uri}")
@@ -147,3 +155,25 @@ class StandaloneTag:
             return load_yaml(_mf) or {}
         else:
             return {}
+
+    @classmethod
+    def is_auto_incr_tag(cls, tag: str) -> bool:
+        return bool(cls.AUTO_INCR_TAG_RE.match(tag))
+
+    @classmethod
+    def is_builtin_tag(cls, tag: str) -> bool:
+        return tag == LATEST_TAG or cls.is_auto_incr_tag(tag)
+
+    @classmethod
+    def check_tags_validation(
+        cls, tags: t.List[str] | None, forbid_builtin_tags: bool = True
+    ) -> None:
+        tags = tags or []
+        for _t in tags:
+            _t = _t.strip()
+            _ok, _reason = validate_obj_name(_t)
+            if not _ok:
+                raise FormatError(f"{_t}, reason:{_reason}")
+
+            if forbid_builtin_tags and cls.is_builtin_tag(_t):
+                raise FormatError(f"tag:{_t} is builtin, can not be used")

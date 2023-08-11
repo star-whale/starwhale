@@ -9,6 +9,9 @@ spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 10
   template:
+    metadata:
+      labels:
+        owner: starwhale
     spec:
       restartPolicy: OnFailure
       initContainers:
@@ -23,6 +26,7 @@ spec:
             - -c
             - >-
               set -x;
+              /opt/starwhale.bin/base-entrypoint set_environment;
               swcli instance login --token="$SW_TOKEN" --alias server $SW_INSTANCE_URI;
               swcli runtime copy cloud://server/project/$SW_PROJECT/runtime/$SW_RUNTIME_VERSION .;
               swcli runtime extract --target-dir /tmp/extract/ $SW_RUNTIME_VERSION;

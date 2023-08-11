@@ -20,8 +20,18 @@ import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.ScanTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
+import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.HttpUtil.Resources;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.dataset.DatasetDao;
+import ai.starwhale.mlops.domain.job.JobDao;
+import ai.starwhale.mlops.domain.model.ModelDao;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.report.ReportDao;
+import ai.starwhale.mlops.domain.runtime.RuntimeDao;
+import ai.starwhale.mlops.exception.SwNotFoundException;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -53,15 +64,42 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
 
     final ObjectMapper objectMapper;
 
+    private final ProjectService projectService;
+
+    private final IdConverter idConverter;
+    private final JobDao jobDao;
+    private final ModelDao modelDao;
+    private final DatasetDao datasetDao;
+    private final RuntimeDao runtimeDao;
+    private final ReportDao reportDao;
+
     static final String PATH_LIST_TABLES = "/datastore/listTables";
     static final String PATH_UPDATE_TABLE = "/datastore/updateTable";
     static final String PATH_QUERY_TABLE = "/datastore/queryTable";
     static final String PATH_SCAN_TABLE = "/datastore/scanTable";
 
-    public ProjectNameExtractorDataStoreMixed(@Value("${sw.controller.api-prefix}") String apiPrefix,
-            ObjectMapper objectMapper) {
+    private static final Pattern RESOURCE_PATTERN =
+            Pattern.compile("^/project/([^/]+)/(runtime|job|dataset|model|report)/([^/]+).*$");
+
+    public ProjectNameExtractorDataStoreMixed(
+            @Value("${sw.controller.api-prefix}") String apiPrefix,
+            ObjectMapper objectMapper,
+            ProjectService projectService,
+            IdConverter idConverter,
+            JobDao jobDao,
+            ModelDao modelDao,
+            DatasetDao datasetDao,
+            RuntimeDao runtimeDao,
+            ReportDao reportDao) {
         this.apiPrefix = StringUtils.trimTrailingCharacter(apiPrefix, '/');
         this.objectMapper = objectMapper;
+        this.projectService = projectService;
+        this.idConverter = idConverter;
+        this.jobDao = jobDao;
+        this.modelDao = modelDao;
+        this.datasetDao = datasetDao;
+        this.runtimeDao = runtimeDao;
+        this.reportDao = reportDao;
     }
 
     @Override
@@ -76,7 +114,10 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
             byte[] bytes = inputStreamToBytes(wrappedInputStream);
             if (PATH_LIST_TABLES.equals(path)) {
                 ListTablesRequest req = objectMapper.readValue(bytes, ListTablesRequest.class);
-                return singleToSet(tableName2ProjectName(req.getPrefix()));
+                return req.getPrefixes().stream()
+                        .map(this::tableName2ProjectName)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
             } else if (PATH_UPDATE_TABLE.equals(path)) {
                 UpdateTableRequest req = objectMapper.readValue(bytes, UpdateTableRequest.class);
                 return singleToSet(tableName2ProjectName(req.getTableName()));
@@ -135,13 +176,61 @@ public class ProjectNameExtractorDataStoreMixed implements ProjectNameExtractor 
         return request.getRequestURI().startsWith(this.apiPrefix + "/datastore");
     }
 
-    public static String SYSTEM_PROJECT = "0";
+    public static String SYSTEM_PROJECT = String.valueOf(Project.system().getId());
 
     private Set<String> projectsOfNoneDataStore(HttpServletRequest request) {
         var projectUrl = HttpUtil.getResourceUrlFromPath(request.getRequestURI(), Resources.PROJECT);
-        if (!StrUtil.isEmpty(projectUrl)) {
-            return Set.of(URLDecoder.decode(projectUrl, Charset.defaultCharset()));
+        if (StrUtil.isEmpty(projectUrl)) {
+            return Set.of(SYSTEM_PROJECT);
         }
-        return Set.of(SYSTEM_PROJECT);
+
+        checkResourceOwnerShip(request);
+        return Set.of(URLDecoder.decode(projectUrl, Charset.defaultCharset()));
+    }
+
+    public void checkResourceOwnerShip(HttpServletRequest request) {
+        if (isDataStore(request)) {
+            return;
+        }
+        String path = request.getRequestURI().replace(apiPrefix, "");
+        Matcher matcher = RESOURCE_PATTERN.matcher(path);
+        if (!matcher.matches()) {
+            return;
+        }
+        String project = matcher.group(1);
+        var projectEntity = projectService.findProject(project);
+        if (projectEntity == null) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.PROJECT, project);
+        }
+
+        String resourceType = matcher.group(2);
+        String resourceUrl = matcher.group(3);
+        var accessor = Map.of(
+                "runtime", runtimeDao,
+                "job", jobDao,
+                "dataset", datasetDao,
+                "model", modelDao,
+                "report", reportDao
+        );
+        if (!accessor.containsKey(resourceType)) {
+            return;
+        }
+
+        var dao = accessor.get(resourceType);
+
+        BundleEntity resource;
+        if (!idConverter.isId(resourceUrl)) {
+            // no need to validate resource with name, the biz will always touch the resource with project id
+            // BUT job has uuid, it is a special case
+            if (!resourceType.equals("job")) {
+                return;
+            }
+            resource = dao.findByNameForUpdate(resourceUrl, projectEntity.getId());
+        } else {
+            resource = dao.findById(idConverter.revert(resourceUrl));
+        }
+        if (resource == null || !resource.getProjectId().equals(projectEntity.getId())) {
+            throw new SwNotFoundException(SwNotFoundException.ResourceType.BUNDLE, resourceUrl);
+        }
     }
 }

@@ -193,10 +193,15 @@ LATEST_TAG = "latest"
 YAML_TYPES = (".yaml", ".yml")
 
 DEFAULT_IMAGE_REPO = "docker-registry.starwhale.cn/star-whale"
-DEFAULT_IMAGE_NAME = "starwhale"
+DEFAULT_IMAGE_NAME = "base"
+# When release a new base image version, remember to update the FIXED_RELEASE_BASE_IMAGE_VERSION.
+# refer to https://github.com/star-whale/starwhale/blob/main/docker/Makefile#L12
+FIXED_RELEASE_BASE_IMAGE_VERSION = "0.3.4"
 SW_IMAGE_FMT = "{repo}/{name}:{tag}"
 DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(
-    repo=DEFAULT_IMAGE_REPO, name=DEFAULT_IMAGE_NAME, tag=LATEST_TAG
+    repo=DEFAULT_IMAGE_REPO,
+    name=DEFAULT_IMAGE_NAME,
+    tag=FIXED_RELEASE_BASE_IMAGE_VERSION,
 )
 SW_IGNORE_FILE_NAME = ".swignore"
 

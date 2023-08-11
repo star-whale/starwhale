@@ -29,8 +29,8 @@ import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -112,14 +112,14 @@ public class EvaluationService {
 
     public PageInfo<SummaryVo> listEvaluationSummary(String projectUrl,
             SummaryFilter summaryFilter, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(projectUrl);
-        List<Job> jobs = jobDao.listJobs(projectId, null);
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        var jobs = jobDao.listJobs(projectId, null);
         return PageUtil.toPageInfo(jobs, this::toSummary);
     }
 
 
-    private SummaryVo toSummary(Job job) {
+    private SummaryVo toSummary(JobEntity job) {
         if (summaryCache.containsKey(job.getId())) {
             return summaryCache.get(job.getId());
         }
@@ -129,7 +129,7 @@ public class EvaluationService {
                 .id(jobVo.getId())
                 .uuid(jobVo.getUuid())
                 .projectId(idConvertor.convert(job.getProject().getId()))
-                .projectName(job.getProject().getName())
+                .projectName(job.getProject().getProjectName())
                 .modelName(jobVo.getModelName())
                 .modelVersion(jobVo.getModelVersion())
                 .datasets(StrUtil.join(",", jobVo.getDatasets()))
@@ -145,7 +145,7 @@ public class EvaluationService {
                 .build();
 
         // only cache the jobs which have the final status
-        if (jobStatusMachine.isFinal(job.getStatus())) {
+        if (jobStatusMachine.isFinal(job.getJobStatus())) {
             summaryCache.put(job.getId(), summaryVo);
         }
         return summaryVo;

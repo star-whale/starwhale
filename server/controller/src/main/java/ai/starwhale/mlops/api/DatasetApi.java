@@ -195,12 +195,6 @@ public interface DatasetApi {
                     schema = @Schema())
             @RequestParam(value = "name", required = false)
             String name,
-            @Parameter(
-                    in = ParameterIn.QUERY,
-                    description = "Dataset version tag",
-                    schema = @Schema())
-            @RequestParam(value = "tag", required = false)
-            String tag,
             @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
             @Valid
             @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -328,11 +322,13 @@ public interface DatasetApi {
             value = "/project/{projectName}/dataset/{datasetName}/uri/sign-links",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<Map>> signLinks(@PathVariable(name = "projectName") String projectName,
+    ResponseEntity<ResponseMessage<Map>> signLinks(
+            @PathVariable(name = "projectName") String projectName,
             @PathVariable(name = "datasetName") String datasetName,
             @RequestBody Set<String> uris,
             @Parameter(name = "expTimeMillis", description = "the link will be expired after expTimeMillis")
-            @RequestParam(name = "expTimeMillis", required = false) Long expTimeMillis);
+            @RequestParam(name = "expTimeMillis", required = false)
+            Long expTimeMillis);
 
 
     @Operation(summary = "Share or unshare the dataset version")
@@ -356,29 +352,39 @@ public interface DatasetApi {
             @RequestParam(value = "shared") Boolean shared
     );
 
-    @Operation(
-            summary = "Manage tag of the dataset version",
-            description = "add|remove|set tags"
-    )
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(
-            value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag",
+    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
-    ResponseEntity<ResponseMessage<String>> manageDatasetTag(
-            @Parameter(
-                    in = ParameterIn.PATH,
-                    description = "Project url",
-                    schema = @Schema())
-            @PathVariable("projectUrl")
-            String projectUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("datasetUrl")
-            String datasetUrl,
-            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-            @PathVariable("versionUrl")
-            String versionUrl,
+    ResponseEntity<ResponseMessage<String>> addDatasetVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String datasetUrl,
+            @PathVariable String versionUrl,
             @Valid @RequestBody DatasetTagRequest datasetTagRequest);
+
+    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<String>>> listDatasetVersionTags(
+            @PathVariable String projectUrl,
+            @PathVariable String datasetUrl,
+            @PathVariable String versionUrl);
+
+    @DeleteMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    ResponseEntity<ResponseMessage<String>> deleteDatasetVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String datasetUrl,
+            @PathVariable String versionUrl,
+            @PathVariable String tag);
+
+    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/tag/{tag}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<Long>> getDatasetVersionTag(
+            @PathVariable String projectUrl,
+            @PathVariable String datasetUrl,
+            @PathVariable String tag);
 
     @Operation(summary = "Get the list of the datasets")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

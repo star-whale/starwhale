@@ -1,6 +1,6 @@
 import '@patternfly/react-core/dist/styles/base.css'
 
-import React from 'react'
+import React, { useLayoutEffect, useRef } from 'react'
 import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer'
 import {
     Button,
@@ -22,28 +22,49 @@ import useWebSocket from '@/hooks/useWebSocket'
 import SWSelect from '@starwhale/ui/Select'
 import './LogView.scss'
 import useTranslation from '@/hooks/useTranslation'
-
-const empty: any[] = []
+import { useFullscreen, useInterval, useToggle } from 'react-use'
+import { useEvent } from '@starwhale/core'
 
 function useSourceData({ ws = '', data }: { ws?: string; data?: string }) {
     const [content, setContent] = React.useState<any[]>([])
+    const messageRef = React.useRef<any[]>([])
+    const [, startTransition] = React.useTransition()
 
+    // offline data
     React.useEffect(() => {
         if (data) {
-            setContent(data.split('\n'))
+            const tmp = data.split('\n')
+            setContent(tmp)
+            messageRef.current = tmp
         }
     }, [data])
+
+    // online ws changed
+    React.useEffect(() => {
+        if (ws) {
+            messageRef.current = []
+            setContent([])
+        }
+    }, [ws])
+
+    useInterval(() => {
+        if (content.length === messageRef.current.length) return
+        startTransition(() => {
+            setContent([...messageRef.current])
+        })
+    }, 200)
+
+    // useInterval(() => {
+    //     messageRef.current.push(Date.now())
+    // }, 10)
 
     useWebSocket({
         wsUrl: ws,
         onMessage: React.useCallback((d) => {
-            setContent((prev) => {
-                return [...prev, d]
-            })
+            messageRef.current.push(d)
         }, []),
-        onClose: React.useCallback(() => {
-            setContent(empty)
-        }, []),
+        // disable close truncate content, because it's async
+        onClose: React.useCallback(() => {}, []),
     })
 
     return {
@@ -62,7 +83,6 @@ const ComplexToolbarLogViewer = ({
     }[]
 }) => {
     const [isPaused, setIsPaused] = React.useState(false)
-    const [isFullScreen, setIsFullScreen] = React.useState(false)
     const [currentItemCount, setCurrentItemCount] = React.useState(0)
     const [renderData, setRenderData] = React.useState('')
     const [selectedDataSource, setSelectedDataSource] = React.useState(dataSources[0]?.id)
@@ -70,14 +90,13 @@ const ComplexToolbarLogViewer = ({
     const [linesBehind, setLinesBehind] = React.useState(0)
     const logViewerRef = React.useRef<any>()
     const [t] = useTranslation()
+    const [, startTransition] = React.useTransition()
 
     const selectedDataSourceObj = dataSources?.find((d) => d.id === selectedDataSource) || {}
     const { content: selectedData } = useSourceData(selectedDataSourceObj)
 
-    // console.log(dataSources)
-    // console.log(selectedData, selectedDataSourceObj)
-
     const reset = React.useCallback(() => {
+        setIsPaused(false)
         setLinesBehind(0)
         setBuffer([])
         setCurrentItemCount(0)
@@ -87,68 +106,39 @@ const ComplexToolbarLogViewer = ({
     }, [logViewerRef])
 
     React.useEffect(() => {
-        reset()
-        setSelectedDataSource(dataSources[0]?.id)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataSources])
-
-    React.useEffect(() => {
+        // console.log('current  length = ', currentItemCount, selectedData.length)
         if (currentItemCount !== selectedData.length) {
-            setCurrentItemCount(selectedData.length)
-            setBuffer(selectedData as any)
-            setRenderData(selectedData.join('\n'))
+            startTransition(() => {
+                setBuffer(selectedData.slice(currentItemCount) as any)
+            })
         }
     }, [selectedData, currentItemCount])
 
     React.useEffect(() => {
-        if (!isPaused && buffer.length > 0) {
-            setCurrentItemCount(buffer.length)
-            setRenderData(buffer.join('\n'))
-            if (logViewerRef && logViewerRef.current) {
-                logViewerRef.current?.scrollToBottom()
+        startTransition(() => {
+            // console.log('buffer length = ', buffer.length)
+            if (buffer.length === 0) {
+                setLinesBehind(0)
+                return
             }
-        } else if (buffer.length !== currentItemCount) {
-            setLinesBehind(buffer.length - currentItemCount)
-        } else {
-            setLinesBehind(0)
-        }
-    }, [isPaused, buffer, currentItemCount])
 
-    // @ts-ignore
-    const onExpandClick = () => {
-        const element = document.querySelector('#complex-toolbar-demo')
-        if (!isFullScreen) {
-            if (element?.requestFullscreen) {
-                element.requestFullscreen()
-                // @ts-ignore
-            } else if (element?.mozRequestFullScreen) {
-                // @ts-ignore
-                element?.mozRequestFullScreen()
-                // @ts-ignore
-            } else if (element?.webkitRequestFullScreen) {
-                // @ts-ignore
-                element?.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+            if (isPaused) {
+                setLinesBehind(buffer.length)
+            } else {
+                setCurrentItemCount(selectedData.length)
+                setRenderData(selectedData.join('\n'))
+                setBuffer([])
+                if (logViewerRef && logViewerRef.current) {
+                    logViewerRef.current?.scrollToBottom()
+                }
             }
-            setIsFullScreen(true)
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen()
-                // @ts-ignore
-            } else if (document.webkitExitFullscreen) {
-                /* Safari */
-                // @ts-ignore
-                document.webkitExitFullscreen()
-                // @ts-ignore
-            } else if (document.msExitFullscreen) {
-                /* IE11 */
-                // @ts-ignore
-                document.msExitFullscreen()
-            }
-            setIsFullScreen(false)
-        }
-    }
+        })
+    }, [isPaused, buffer, currentItemCount, selectedData])
 
-    const onDownloadClick = () => {
+    const ref = useRef<Element | null>(null)
+    const [show, toggle] = useToggle(false)
+
+    const onDownloadClick = useEvent(() => {
         const element = document.createElement('a')
         const dataToDownload = [selectedData.join('\n')]
         const file = new Blob(dataToDownload, { type: 'text/plain' })
@@ -157,109 +147,154 @@ const ComplexToolbarLogViewer = ({
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)
-    }
+    })
 
-    const onScrollTop = () => {
+    const scrollToBottom = useEvent(() => {
+        if (logViewerRef && logViewerRef.current) {
+            logViewerRef.current?.scrollToBottom()
+        }
+    })
+
+    const onScrollTop = useEvent(() => {
         if (logViewerRef && logViewerRef.current) {
             logViewerRef.current?.scrollToItem(0)
         }
-    }
+    })
+
+    const onExpand = useEvent(() => {
+        toggle()
+        setTimeout(() => {
+            scrollToBottom()
+        }, 1000)
+    })
 
     // @ts-ignore
-    const onScroll = ({ scrollOffsetToBottom, scrollUpdateWasRequested }) => {
+    const onScroll = useEvent(({ scrollOffsetToBottom, scrollUpdateWasRequested }) => {
         if (!scrollUpdateWasRequested) {
-            if (scrollOffsetToBottom > 0) {
+            // console.log('onscroll', scrollUpdateWasRequested, scrollOffsetToBottom, scrollOffset)
+            if (scrollOffsetToBottom > 3) {
                 setIsPaused(true)
-            } else {
-                setIsPaused(false)
             }
         }
-    }
+    })
 
-    const ControlButton = () => (
-        <Button
-            variant={isPaused ? 'plain' : 'link'}
-            onClick={() => {
-                setIsPaused(!isPaused)
-                if (!isPaused)
-                    if (logViewerRef && logViewerRef.current) {
-                        logViewerRef.current?.scrollToBottom()
+    useFullscreen(ref, show, {
+        onClose: () => {
+            toggle(false)
+            setTimeout(() => {
+                scrollToBottom()
+            }, 1000)
+        },
+    })
+
+    useLayoutEffect(() => {
+        if (!ref.current) ref.current = document.querySelector('#complex-toolbar-demo')
+    }, [])
+
+    React.useEffect(() => {
+        reset()
+        setSelectedDataSource(dataSources[0]?.id)
+        toggle(true)
+        setTimeout(() => {
+            scrollToBottom()
+        }, 1000)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dataSources])
+
+    const ControlButton = React.useMemo(
+        () => (
+            <Button
+                variant={isPaused ? 'plain' : 'link'}
+                onClick={() => {
+                    if (isPaused) {
+                        scrollToBottom()
                     }
-            }}
-        >
-            {isPaused ? <PlayIcon /> : <PauseIcon />}
-            {isPaused ? t('log.resume') : t('log.pause')}
-        </Button>
+                    setIsPaused(!isPaused)
+                }}
+            >
+                {isPaused ? <PlayIcon /> : <PauseIcon />}
+                {isPaused ? t('log.resume') : t('log.pause')}
+            </Button>
+        ),
+        [isPaused, scrollToBottom, t]
     )
 
-    const leftAlignedToolbarGroup = (
-        <>
-            <ToolbarToggleGroup toggleIcon={<EllipsisVIcon />} breakpoint='md'>
-                <ToolbarItem variant='search-filter' style={{ minWidth: '280px', maxWidth: '500px' }}>
-                    <SWSelect
-                        clearable={false}
-                        options={dataSources.map(({ id }) => ({ label: id, id }))}
-                        value={selectedDataSource ? [{ id: selectedDataSource }] : []}
-                        onChange={(params) => {
-                            if (!params.option) {
-                                return
-                            }
-                            reset()
-                            const selection = params.option.id
-                            setSelectedDataSource(selection as any)
-                        }}
-                    />
-                </ToolbarItem>
-                <ToolbarItem variant='search-filter'>
-                    <LogViewerSearch
-                        onChange={(e) => {
-                            if ((e.target as any).value?.length === 0) {
-                                setIsPaused(false)
-                            }
-                        }}
-                        onFocus={() => setIsPaused(true)}
-                        placeholder='Search'
-                        minSearchChars={1}
-                    />
-                </ToolbarItem>
-            </ToolbarToggleGroup>
-            <ToolbarItem>
-                <ControlButton />
-            </ToolbarItem>
-        </>
+    const leftAlignedToolbarGroup = React.useMemo(
+        () => (
+            <>
+                <ToolbarToggleGroup toggleIcon={<EllipsisVIcon />} breakpoint='md'>
+                    <ToolbarItem variant='search-filter' style={{ minWidth: '280px', maxWidth: '500px' }}>
+                        <SWSelect
+                            clearable={false}
+                            options={dataSources.map(({ id }) => ({ label: id, id }))}
+                            value={selectedDataSource ? [{ id: selectedDataSource }] : []}
+                            onChange={(params) => {
+                                if (!params.option) {
+                                    return
+                                }
+                                reset()
+                                const selection = params.option.id
+                                setSelectedDataSource(selection as any)
+                            }}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem variant='search-filter'>
+                        <LogViewerSearch
+                            onChange={(e) => {
+                                if ((e.target as any).value?.length === 0) {
+                                    setIsPaused(false)
+                                    scrollToBottom()
+                                }
+                            }}
+                            onFocus={() => setIsPaused(true)}
+                            placeholder='Search'
+                            minSearchChars={1}
+                        />
+                    </ToolbarItem>
+                </ToolbarToggleGroup>
+                <ToolbarItem>{ControlButton}</ToolbarItem>
+            </>
+        ),
+        [dataSources, selectedDataSource, reset, ControlButton, scrollToBottom]
     )
 
-    const rightAlignedToolbarGroup = (
-        <>
-            <ToolbarGroup variant='icon-button-group'>
-                <ToolbarItem>
-                    <Tooltip position='top' content={<div>Top</div>}>
-                        <Button onClick={onScrollTop} variant='plain' aria-label='Scroll to TOP'>
-                            <HistoryIcon />
-                        </Button>
-                    </Tooltip>
-                </ToolbarItem>
-                <ToolbarItem>
-                    <Tooltip position='top' content={<div>Download</div>}>
-                        <Button onClick={onDownloadClick} variant='plain' aria-label='Download current logs'>
-                            <DownloadIcon />
-                        </Button>
-                    </Tooltip>
-                </ToolbarItem>
-                <ToolbarItem>
-                    <Tooltip position='top' content={<div>Expand</div>}>
-                        <Button onClick={onExpandClick} variant='plain' aria-label='View log viewer in full screen'>
-                            <ExpandIcon />
-                        </Button>
-                    </Tooltip>
-                </ToolbarItem>
-            </ToolbarGroup>
-        </>
+    const rightAlignedToolbarGroup = React.useMemo(
+        () => (
+            <>
+                <ToolbarGroup variant='icon-button-group'>
+                    <ToolbarItem>
+                        <Tooltip position='top' content={<div>Top</div>}>
+                            <Button onClick={onScrollTop} variant='plain' aria-label='Scroll to TOP'>
+                                <HistoryIcon />
+                            </Button>
+                        </Tooltip>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <Tooltip position='top' content={<div>Download</div>}>
+                            <Button onClick={onDownloadClick} variant='plain' aria-label='Download current logs'>
+                                <DownloadIcon />
+                            </Button>
+                        </Tooltip>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <Tooltip position='top' content={<div>Expand</div>}>
+                            <Button onClick={onExpand} variant='plain' aria-label='View log viewer in full screen'>
+                                <ExpandIcon />
+                            </Button>
+                        </Tooltip>
+                    </ToolbarItem>
+                </ToolbarGroup>
+            </>
+        ),
+        [onDownloadClick, onScrollTop, onExpand]
     )
 
-    const FooterButton = () => {
+    const FooterButton = React.useMemo(() => {
         const handleClick = () => {
             setIsPaused(false)
+            if (logViewerRef && logViewerRef.current) {
+                logViewerRef.current?.scrollToBottom()
+            }
         }
         return (
             <Button
@@ -273,7 +308,8 @@ const ComplexToolbarLogViewer = ({
                 {t('log.resume')} {linesBehind === 0 ? null : t('log.behind.lines', [linesBehind])}
             </Button>
         )
-    }
+    }, [setIsPaused, linesBehind, isPaused, t])
+
     return (
         <LogViewer
             data={renderData}
@@ -301,7 +337,7 @@ const ComplexToolbarLogViewer = ({
                 </Toolbar>
             }
             overScanCount={10}
-            footer={isPaused && <FooterButton />}
+            footer={isPaused && FooterButton}
             onScroll={onScroll}
         />
     )

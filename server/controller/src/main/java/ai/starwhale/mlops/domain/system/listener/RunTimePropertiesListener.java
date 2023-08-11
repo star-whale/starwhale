@@ -33,6 +33,8 @@ public class RunTimePropertiesListener implements SystemSettingListener {
     @Override
     public void onUpdate(SystemSetting systemSetting) {
         this.runTimeProperties.setPypi(systemSetting.getPypiSetting());
+        this.runTimeProperties.setImageBuild(systemSetting.getImageBuild());
+        this.runTimeProperties.setDatasetBuild(systemSetting.getDatasetBuild());
         this.runTimeProperties.setCondarc(systemSetting.getCondaSetting());
     }
 }

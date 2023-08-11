@@ -30,20 +30,20 @@ import ai.starwhale.mlops.common.Constants;
 import ai.starwhale.mlops.common.DockerImage;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.RuntimeTokenValidator;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
-import ai.starwhale.mlops.domain.bundle.tag.TagException;
-import ai.starwhale.mlops.domain.bundle.tag.TagManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.RunConfig;
@@ -144,30 +144,35 @@ public class RuntimeService {
     private final DockerSetting dockerSetting;
     private final RunTimeProperties runTimeProperties;
     private final String instanceUri;
+    private final BundleVersionTagDao bundleVersionTagDao;
 
-    public RuntimeService(RuntimeMapper runtimeMapper,
-                          RuntimeVersionMapper runtimeVersionMapper,
-                          StorageService storageService,
-                          ProjectService projectService,
-                          RuntimeConverter runtimeConvertor,
-                          RuntimeVersionConverter versionConvertor,
-                          RuntimeDao runtimeDao,
-                          StoragePathCoordinator storagePathCoordinator,
-                          StorageAccessService storageAccessService,
-                          HotJobHolder jobHolder,
-                          UserService userService,
-                          IdConverter idConvertor,
-                          VersionAliasConverter versionAliasConvertor,
-                          TrashService trashService,
-                          K8sClient k8sClient,
-                          K8sJobTemplate k8sJobTemplate,
-                          RuntimeTokenValidator runtimeTokenValidator,
-                          SystemSettingService systemSettingService,
-                          DockerSetting dockerSetting,
-                          RunTimeProperties runTimeProperties,
-                          @Value("${sw.instance-uri}") String instanceUri) {
+    public RuntimeService(
+            RuntimeMapper runtimeMapper,
+            RuntimeVersionMapper runtimeVersionMapper,
+            BundleVersionTagDao bundleVersionTagDao,
+            StorageService storageService,
+            ProjectService projectService,
+            RuntimeConverter runtimeConvertor,
+            RuntimeVersionConverter versionConvertor,
+            RuntimeDao runtimeDao,
+            StoragePathCoordinator storagePathCoordinator,
+            StorageAccessService storageAccessService,
+            HotJobHolder jobHolder,
+            UserService userService,
+            IdConverter idConvertor,
+            VersionAliasConverter versionAliasConvertor,
+            TrashService trashService,
+            K8sClient k8sClient,
+            K8sJobTemplate k8sJobTemplate,
+            RuntimeTokenValidator runtimeTokenValidator,
+            SystemSettingService systemSettingService,
+            DockerSetting dockerSetting,
+            RunTimeProperties runTimeProperties,
+            @Value("${sw.instance-uri}") String instanceUri
+    ) {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
+        this.bundleVersionTagDao = bundleVersionTagDao;
         this.storageService = storageService;
         this.projectService = projectService;
         this.runtimeConvertor = runtimeConvertor;
@@ -192,21 +197,24 @@ public class RuntimeService {
                 versionAliasConvertor,
                 projectService,
                 runtimeDao,
-                runtimeDao
+                runtimeDao,
+                bundleVersionTagDao
         );
     }
 
     public PageInfo<RuntimeVo> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(runtimeQuery.getProjectUrl());
         Long userId = userService.getUserId(runtimeQuery.getOwner());
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeEntity> entities = runtimeMapper.list(projectId, runtimeQuery.getNamePrefix(), userId, null);
 
         return PageUtil.toPageInfo(entities, rt -> {
             RuntimeVo vo = runtimeConvertor.convert(rt);
             RuntimeVersionEntity version = runtimeVersionMapper.findByLatest(rt.getId());
             if (version != null) {
-                RuntimeVersionVo versionVo = versionConvertor.convert(version, version);
+                var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                        BundleAccessor.Type.RUNTIME, rt.getId(), List.of(version));
+                RuntimeVersionVo versionVo = versionConvertor.convert(version, version, tags.get(version.getId()));
                 versionVo.setOwner(userService.findUserById(version.getOwnerId()));
                 vo.setVersion(versionVo);
             }
@@ -228,7 +236,8 @@ public class RuntimeService {
         Map<Long, RuntimeViewVo> map = new LinkedHashMap<>();
         for (RuntimeVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getRuntimeId())) {
-                map.put(entity.getRuntimeId(),
+                map.put(
+                        entity.getRuntimeId(),
                         RuntimeViewVo.builder()
                                 .ownerName(entity.getUserName())
                                 .projectName(entity.getProjectName())
@@ -236,18 +245,20 @@ public class RuntimeService {
                                 .runtimeName(entity.getRuntimeName())
                                 .shared(toInt(shared))
                                 .versions(new ArrayList<>())
-                                .build());
+                                .build()
+                );
             }
             RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(entity.getRuntimeId());
             map.get(entity.getRuntimeId())
                     .getVersions()
                     .add(RuntimeVersionViewVo.builder()
-                            .id(idConvertor.convert(entity.getId()))
-                            .versionName(entity.getVersionName())
-                            .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                            .createdTime(entity.getCreatedTime().getTime())
-                            .shared(toInt(entity.getShared()))
-                            .build());
+                                 .id(idConvertor.convert(entity.getId()))
+                                 .versionName(entity.getVersionName())
+                                 .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                                 .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                                 .createdTime(entity.getCreatedTime().getTime())
+                                 .shared(toInt(entity.getShared()))
+                                 .build());
         }
         return map.values();
     }
@@ -289,23 +300,30 @@ public class RuntimeService {
         Long runtimeId = bundleManager.getBundleId(bundleUrl);
         RuntimeEntity rt = runtimeMapper.find(runtimeId);
         if (rt == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE,
-                    "Unable to find runtime " + runtimeQuery.getRuntimeUrl());
+            throw new SwNotFoundException(
+                    ResourceType.BUNDLE,
+                    "Unable to find runtime " + runtimeQuery.getRuntimeUrl()
+            );
         }
 
         RuntimeVersionEntity versionEntity = null;
         if (!StrUtil.isEmpty(runtimeQuery.getRuntimeVersionUrl())) {
             Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl(),
-                            runtimeQuery.getRuntimeVersionUrl()));
+                                                                      .create(
+                                                                              runtimeQuery.getProjectUrl(),
+                                                                              runtimeQuery.getRuntimeUrl(),
+                                                                              runtimeQuery.getRuntimeVersionUrl()
+                                                                      ));
             versionEntity = runtimeVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
             versionEntity = runtimeVersionMapper.findByLatest(rt.getId());
         }
         if (versionEntity == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    "Unable to find the version of runtime " + runtimeQuery.getRuntimeUrl());
+            throw new SwNotFoundException(
+                    ResourceType.BUNDLE_VERSION,
+                    "Unable to find the version of runtime " + runtimeQuery.getRuntimeUrl()
+            );
         }
 
         return toRuntimeInfoVo(rt, versionEntity);
@@ -315,30 +333,36 @@ public class RuntimeService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<FlattenFileVo> collect = storageService.listStorageFile(storagePath);
+            var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                    BundleAccessor.Type.RUNTIME, rt.getId(), List.of(versionEntity));
 
             return RuntimeInfoVo.builder()
                     .id(idConvertor.convert(rt.getId()))
                     .name(rt.getRuntimeName())
-                    .versionId(idConvertor.convert(versionEntity.getId()))
-                    .versionAlias(versionAliasConvertor.convert(versionEntity.getVersionOrder()))
-                    .versionName(versionEntity.getVersionName())
-                    .versionTag(versionEntity.getVersionTag())
-                    .versionMeta(versionEntity.getVersionMeta())
-                    .shared(toInt(versionEntity.getShared()))
-                    .createdTime(versionEntity.getCreatedTime().getTime())
+                    .versionInfo(versionConvertor.convert(
+                            versionEntity,
+                            versionEntity,
+                            tags.get(versionEntity.getId())
+                    ))
                     .files(collect)
                     .build();
 
         } catch (IOException e) {
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE, "list runtime storage", e),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.STORAGE, "list runtime storage", e),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 
-    public Boolean modifyRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl,
-            RuntimeVersion version) {
+    public Boolean modifyRuntimeVersion(
+            String projectUrl,
+            String runtimeUrl,
+            String runtimeVersionUrl,
+            RuntimeVersion version
+    ) {
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, runtimeUrl, runtimeVersionUrl));
+                                                                  .create(projectUrl, runtimeUrl, runtimeVersionUrl));
         String tag = version.getVersionTag();
         RuntimeVersionEntity entity = RuntimeVersionEntity.builder()
                 .id(versionId)
@@ -356,21 +380,8 @@ public class RuntimeService {
             throw new SwValidationException(ValidSubject.RUNTIME, "project is not public");
         }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, runtimeUrl, runtimeVersionUrl));
+                                                                  .create(projectUrl, runtimeUrl, runtimeVersionUrl));
         runtimeVersionMapper.updateShared(versionId, shared);
-    }
-
-    public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
-            TagAction tagAction) {
-        try {
-            return TagManager.create(bundleManager, runtimeDao)
-                    .updateTag(BundleVersionUrl.create(projectUrl, runtimeUrl, versionUrl), tagAction);
-        } catch (TagException e) {
-            throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME, "failed to creat tag manager", e),
-                    HttpStatus.BAD_REQUEST);
-        }
-
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
@@ -381,11 +392,11 @@ public class RuntimeService {
     public PageInfo<RuntimeVersionVo> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
         Long runtimeId = bundleManager.getBundleId(BundleUrl.create(query.getProjectUrl(), query.getRuntimeUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<RuntimeVersionEntity> entities = runtimeVersionMapper.list(
-                runtimeId, query.getVersionName(), query.getVersionTag());
-        RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(runtimeId);
+        var entities = runtimeVersionMapper.list(runtimeId, query.getVersionName());
+        var latest = runtimeVersionMapper.findByLatest(runtimeId);
+        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, runtimeId, entities);
         return PageUtil.toPageInfo(entities, entity -> {
-            RuntimeVersionVo vo = versionConvertor.convert(entity, latest);
+            RuntimeVersionVo vo = versionConvertor.convert(entity, latest, tags.get(entity.getId()));
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });
@@ -393,14 +404,22 @@ public class RuntimeService {
 
 
     public List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
-        List<RuntimeVersionEntity> versions = runtimeVersionMapper.findByIds(
-                Joiner.on(",").join(versionIds));
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
+        var versions = runtimeVersionMapper.findByIds(Joiner.on(",").join(versionIds));
+
+        var tags = new HashMap<Long, List<String>>();
+        versions.stream().collect(Collectors.groupingBy(RuntimeVersionEntity::getRuntimeId))
+                .forEach((id, versionList) -> tags.putAll(
+                        bundleVersionTagDao.getTagsByBundleVersions(
+                                BundleAccessor.Type.RUNTIME, id, versionList)));
 
         return versions.stream().map(version -> {
             RuntimeEntity rt = runtimeMapper.find(version.getRuntimeId());
             RuntimeVersionEntity latest = runtimeVersionMapper.findByLatest(version.getRuntimeId());
             RuntimeVo vo = runtimeConvertor.convert(rt);
-            vo.setVersion(versionConvertor.convert(version, latest));
+            vo.setVersion(versionConvertor.convert(version, latest, tags.get(version.getId())));
             vo.setOwner(userService.findUserById(version.getOwnerId()));
             return vo;
         }).collect(Collectors.toList());
@@ -429,8 +448,7 @@ public class RuntimeService {
     }
 
     private List<RuntimeInfoVo> runtimeInfoOfRuntime(RuntimeEntity rt) {
-        List<RuntimeVersionEntity> runtimeVersionEntities = runtimeVersionMapper
-                .list(rt.getId(), null, null);
+        List<RuntimeVersionEntity> runtimeVersionEntities = runtimeVersionMapper.list(rt.getId(), null);
 
         if (runtimeVersionEntities == null || runtimeVersionEntities.isEmpty()) {
             return List.of();
@@ -460,15 +478,20 @@ public class RuntimeService {
             runtimeMapper.insert(entity);
         }
         log.debug("Runtime checked time use {}", System.currentTimeMillis() - startTime);
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(uploadRequest.version(),
-                entity.getId());
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(
+                uploadRequest.version(),
+                entity.getId()
+        );
         boolean entityExists = (null != runtimeVersionEntity);
         if (entityExists && !uploadRequest.force()) {
             log.debug("Runtime version checked time use {}", System.currentTimeMillis() - startTime);
             throw new StarwhaleApiException(
-                    new SwValidationException(ValidSubject.RUNTIME,
-                            "Runtime version duplicate" + uploadRequest.version()),
-                    HttpStatus.CONFLICT);
+                    new SwValidationException(
+                            ValidSubject.RUNTIME,
+                            "Runtime version duplicate" + uploadRequest.version()
+                    ),
+                    HttpStatus.CONFLICT
+            );
         } else if (entityExists && uploadRequest.force()) {
             jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
                     .parallelStream().forEach(job -> {
@@ -476,10 +499,13 @@ public class RuntimeService {
                         if (runtime.getName().equals(uploadRequest.name()) && runtime.getVersion()
                                 .equals(uploadRequest.version())) {
                             throw new StarwhaleApiException(
-                                    new SwValidationException(ValidSubject.RUNTIME,
+                                    new SwValidationException(
+                                            ValidSubject.RUNTIME,
                                             "job's are running on runtime version " + uploadRequest.version()
-                                                    + " you can't force push now"),
-                                    HttpStatus.BAD_REQUEST);
+                                                    + " you can't force push now"
+                                    ),
+                                    HttpStatus.BAD_REQUEST
+                            );
                         }
                     });
         }
@@ -487,15 +513,19 @@ public class RuntimeService {
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
                 : storagePathCoordinator.allocateRuntimePath(project.getId(), uploadRequest.name(),
-                        uploadRequest.version());
+                                                             uploadRequest.version()
+        );
 
         try (final InputStream inputStream = dsFile.getInputStream()) {
             storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, runtimePath, dsFile.getOriginalFilename()),
-                    inputStream, dsFile.getSize());
+                                     inputStream, dsFile.getSize()
+            );
         } catch (IOException e) {
             log.error("upload runtime failed {}", uploadRequest.getRuntime(), e);
-            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(
+                    new SwProcessException(ErrorType.STORAGE),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
         /* create new entity */
         if (!entityExists) {
@@ -507,8 +537,10 @@ public class RuntimeService {
                                 TarFileUtil.getContentFromTarFile(inputStream, "", RUNTIME_MANIFEST)));
             } catch (IOException e) {
                 log.error("upload runtime failed {}", uploadRequest.getRuntime(), e);
-                throw new StarwhaleApiException(new SwProcessException(ErrorType.SYSTEM),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new StarwhaleApiException(
+                        new SwProcessException(ErrorType.SYSTEM),
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                );
             }
             RuntimeVersionEntity version = RuntimeVersionEntity.builder()
                     .ownerId(userService.currentUserDetail().getId())
@@ -524,14 +556,35 @@ public class RuntimeService {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class RuntimeManifest {
 
         @JsonProperty("base_image")
         String baseImage;
 
-        @JsonProperty("docker")
+        Environment environment;
+
         Docker docker;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Environment {
+            String python;
+            Lock lock;
+        }
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Lock {
+            @JsonProperty("starwhale_version")
+            String swVersion;
+        }
 
         @Data
         @NoArgsConstructor
@@ -615,7 +668,8 @@ public class RuntimeService {
         var builtImage = runtimeVersion.getBuiltImage();
         if (StringUtils.hasText(builtImage)) {
             log.debug("runtime:{}-{}'s image:{} has already existed.",
-                    runtime.getName(), runtimeVersion.getName(), builtImage);
+                      runtime.getName(), runtimeVersion.getName(), builtImage
+            );
             return BuildImageResult.builder()
                     .success(false)
                     .message(String.format("Runtime image [%s] has already existed", builtImage))
@@ -623,16 +677,20 @@ public class RuntimeService {
         }
 
         if (!validateDockerSetting(dockerSetting)) {
-            throw new SwValidationException(ValidSubject.RUNTIME,
-                    "can't found docker registry info, please set it in system setting.");
+            throw new SwValidationException(
+                    ValidSubject.RUNTIME,
+                    "can't found docker registry info, please set it in system setting."
+            );
         }
 
         try {
             log.debug("start to build image for runtime:{}-{} on k8s.", runtime.getName(), runtimeVersion.getName());
             var project = projectService.findProject(projectUrl);
             var user = userService.currentUserDetail();
-            var image = new DockerImage(dockerSetting.getRegistryForPull(),
-                    String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()));
+            var image = new DockerImage(
+                    dockerSetting.getRegistryForPull(),
+                    String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName())
+            );
             var job = k8sJobTemplate.loadJob(K8sJobTemplate.WORKLOAD_TYPE_IMAGE_BUILDER);
 
             // record image to annotations
@@ -657,8 +715,10 @@ public class RuntimeService {
                     new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(
                             runTimeProperties.getPypi().getTrustedHost()),
                     new V1EnvVar().name("SW_TOKEN").value(
-                            runtimeTokenValidator.getToken(user, runtimeVersion.getId())))
-            );
+                            runtimeTokenValidator.getToken(user, runtimeVersion.getId())),
+                    new V1EnvVar().name("SW_RUNTIME_PYTHON_VERSION").value(runtimeVersion.getPythonVersion()),
+                    new V1EnvVar().name("SW_VERSION").value(runtimeVersion.getSwVersion())
+            ));
             if (null != runConfig && null != runConfig.getEnvVars()) {
                 List<V1EnvVar> collect = runConfig.getEnvVars().entrySet().stream().map(K8sJobTemplate::toEnvVar)
                         .collect(Collectors.toList());
@@ -682,8 +742,10 @@ public class RuntimeService {
                         "--cache=true", // https://github.com/GoogleContainerTools/kaniko#caching
                         "--cache-repo=" + new DockerImage(registry, "cache"),
                         "--verbosity=debug",
-                        "--destination=" + new DockerImage(registry,
-                            String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName()))
+                        "--destination=" + new DockerImage(
+                                registry,
+                                String.format("%s:%s", runtime.getName(), runtimeVersion.getVersionName())
+                        )
                 ));
                 if (dockerSetting.isInsecure()) {
                     cmds.add("--insecure");
@@ -707,15 +769,18 @@ public class RuntimeService {
         } catch (ApiException k8sE) {
             if (k8sE.getCode() == HttpServletResponse.SC_CONFLICT) {
                 log.debug("runtime:{}-{}'s image is building, please wait a moment.",
-                        runtime.getName(), runtimeVersion.getName());
+                          runtime.getName(), runtimeVersion.getName()
+                );
                 return BuildImageResult.builder()
                         .success(false)
                         .message("Building image, please wait a moment.")
                         .build();
             } else {
                 log.error("image build failed {}", k8sE.getResponseBody(), k8sE);
-                throw new SwProcessException(ErrorType.INFRA,
-                        "deploying job for image build error:" + k8sE.getMessage());
+                throw new SwProcessException(
+                        ErrorType.INFRA,
+                        "deploying job for image build error:" + k8sE.getMessage()
+                );
             }
         }
     }
@@ -728,5 +793,36 @@ public class RuntimeService {
 
     public boolean updateBuiltImage(String version, String image) {
         return runtimeDao.updateVersionBuiltImage(version, image);
+    }
+
+    public void addRuntimeVersionTag(
+            String projectUrl,
+            String runtimeUrl,
+            String versionUrl,
+            String tag,
+            Boolean force
+    ) {
+        var userId = userService.currentUserDetail().getId();
+        bundleManager.addBundleVersionTag(
+                BundleAccessor.Type.RUNTIME,
+                projectUrl,
+                runtimeUrl,
+                versionUrl,
+                tag,
+                userId,
+                force
+        );
+    }
+
+    public List<String> listRuntimeVersionTags(String projectUrl, String runtimeUrl, String versionUrl) {
+        return bundleManager.listBundleVersionTags(BundleAccessor.Type.RUNTIME, projectUrl, runtimeUrl, versionUrl);
+    }
+
+    public void deleteRuntimeVersionTag(String projectUrl, String runtimeUrl, String versionUrl, String tag) {
+        bundleManager.deleteBundleVersionTag(BundleAccessor.Type.RUNTIME, projectUrl, runtimeUrl, versionUrl, tag);
+    }
+
+    public BundleVersionTagEntity getRuntimeVersionTag(String projectUrl, String runtimeUrl, String tag) {
+        return bundleManager.getBundleVersionTag(BundleAccessor.Type.RUNTIME, projectUrl, runtimeUrl, tag);
     }
 }

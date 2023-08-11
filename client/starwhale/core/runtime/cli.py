@@ -11,7 +11,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.type import RuntimeLockFileType
 from starwhale.utils.cli import AliasedGroup
 from starwhale.base.uri.resource import Resource, ResourceType
 from starwhale.core.runtime.model import _SUPPORT_CUDA, _SUPPORT_CUDNN
@@ -211,7 +210,7 @@ def _quickstart(
 )
 @optgroup.group(
     "\n  ** Conda/Venv/Shell Sources Configurations",
-    help="The configurations only work for `--from-conda-name`, `--from-conda-prefix-path`, `--from-venv-prefix-path` and `--from-shell` sources",
+    help="The configurations only work for `--conda`, `--conda-prefix`, `--venv` and `--shell` sources",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "--cuda",
@@ -234,6 +233,14 @@ def _quickstart(
     default=SupportArch.NOARCH,
     help="system architecture, works for shell, conda name, conda prefix path and venv prefix path sources",
 )
+@optgroup.group("\n  ** Global Configurations")
+@optgroup.option("-n", "--name", default="", help="runtime name")  # type: ignore[no-untyped-call]
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "-p",
+    "--project",
+    default="",
+    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
+)
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-dad",
     "--download-all-deps",
@@ -249,16 +256,18 @@ def _quickstart(
     hidden=True,
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "-epo",
-    "--emit-pip-options",
+    "-dpo",
+    "--dump-pip-options",
     is_flag=True,
-    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+    show_default=True,
+    help="Dump pip config options from the ~/.pip/pip.conf file.",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "-ecc",
-    "--emit-condarc",
+    "-dcc",
+    "--dump-condarc",
     is_flag=True,
-    help="Emit to dump ~/.condarc from the local machine, default is False",
+    show_default=True,
+    help="Dump conda config from the ~/.condarc file",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
     "-ilw",
@@ -267,13 +276,12 @@ def _quickstart(
     help="Include local wheel packages",
     hidden=True,
 )
-@optgroup.group("\n  ** Global Configurations")
-@optgroup.option("-n", "--name", default="", help="runtime name")  # type: ignore[no-untyped-call]
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "-p",
-    "--project",
-    default="",
-    help="Project URI, default is the current selected project. The runtime package will store in the specified project.",
+    "tags",
+    "-t",
+    "--tag",
+    multiple=True,
+    help="runtime tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
 )
 def _build(
     name: str,
@@ -292,8 +300,9 @@ def _build(
     shell: bool,
     yaml: str,
     docker: str,
-    emit_pip_options: bool,
-    emit_condarc: bool,
+    dump_pip_options: bool,
+    dump_condarc: bool,
+    tags: t.List[str],
 ) -> None:
     """Create and build a relocated, shareable, packaged runtime bundle(aka `swrt` file). Support python and native libs.
     Runtime build only works in the Standalone instance.
@@ -316,6 +325,7 @@ def _build(
         swcli runtime build  # use the current directory as the workdir and use the default runtime.yaml file
         swcli runtime build -y example/pytorch/runtime.yaml # use example/pytorch/runtime.yaml as the runtime.yaml file
         swcli runtime build --yaml runtime.yaml # use runtime.yaml at the current directory as the runtime.yaml file
+        swcli runtime build --tag tag1 --tag tag2
 
         \b
         - from conda name:
@@ -360,8 +370,9 @@ def _build(
             download_all_deps=download_all_deps,
             include_editable=include_editable,
             include_local_wheel=include_local_wheel,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
+            tags=tags,
         )
     else:
         RuntimeTermView.build_from_runtime_yaml(
@@ -374,8 +385,9 @@ def _build(
             include_local_wheel=include_local_wheel,
             no_cache=no_cache,
             disable_env_lock=disable_env_lock,
-            emit_condarc=emit_condarc,
-            emit_pip_options=emit_pip_options,
+            dump_condarc=dump_condarc,
+            dump_pip_options=dump_pip_options,
+            tags=tags,
         )
 
 
@@ -535,13 +547,27 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force to copy")
 @click.option("-dlp", "--dest-local-project", help="dest local project uri")
-def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
+@click.option(
+    "ignore_tags",
+    "-i",
+    "--ignore-tag",
+    multiple=True,
+    help="ignore tags to copy. The option can be used multiple times.",
+)
+def _copy(
+    src: str, dest: str, force: bool, dest_local_project: str, ignore_tags: t.List[str]
+) -> None:
     """
     Copy Runtime between Standalone Instance and Cloud Instance
 
     SRC: runtime uri with version
 
     DEST: project uri or runtime uri with name.
+
+    In default, copy runtime with all user custom tags. If you want to ignore some tags, you can use `--ignore-tag` option.
+    `latest` and `^v\d+$` are the system builtin tags, they are ignored automatically.
+
+    When the tags are already used for the other runtime version in the dest instance, you should use `--force` option or adjust the tags.
 
     Example:
 
@@ -580,11 +606,15 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
         \b
         - copy standalone instance(local) project(myproject)'s mnist-local runtime to cloud instance(pre-k8s) mnist project with standalone instance runtime name 'mnist-local'
             swcli runtime cp local/project/myproject/runtime/mnist-local/version/latest cloud://pre-k8s/project/mnist
+
+        \b
+        - copy without some tags
+            swcli runtime cp pytorch cloud://cloud.starwhale.cn/project/starwhale:public --ignore-tag t1
     """
-    RuntimeTermView.copy(src, dest, force, dest_local_project)
+    RuntimeTermView.copy(src, dest, force, dest_local_project, ignore_tags)
 
 
-@runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
+@runtime_cmd.command("tag")
 @click.argument("runtime")
 @click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="Remove tags")
@@ -594,8 +624,39 @@ def _copy(src: str, dest: str, force: bool, dest_local_project: str) -> None:
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
-    RuntimeTermView(runtime).tag(tags, remove, quiet)
+@click.option(
+    "-f",
+    "--force-add",
+    is_flag=True,
+    help="force to add tags, even the tag has been used for another version",
+)
+def _tag(
+    runtime: str, tags: t.List[str], remove: bool, quiet: bool, force_add: bool
+) -> None:
+    """Runtime tag management: add, remove and list
+
+    RUNTIME: argument use the `Runtime URI` format.
+
+    Examples:
+
+        \b
+        - list tags of the pytorch runtime
+        swcli runtime tag pytorch
+
+        \b
+        - add tags for the pytorch runtime
+        swcli runtime tag mnist -t t1 -t t2
+        swcli runtime tag cloud://cloud.starwhale.cn/project/public:starwhale/runtime/pytorch/version/latest -t t1 --force-add
+        swcli runtime tag mnist -t t1 --quiet
+
+        \b
+        - remove tags for the pytorch runtime
+        swcli runtime tag mnist -r -t t1 -t t2
+        swcli runtime tag cloud://cloud.starwhale.cn/project/public:starwhale/runtime/pytorch --remove -t t1
+    """
+    RuntimeTermView(runtime).tag(
+        tags=tags, remove=remove, ignore_errors=quiet, force_add=force_add
+    )
 
 
 @runtime_cmd.command(
@@ -657,10 +718,11 @@ def _activate(uri: str, force_restore: bool) -> None:
     help="Include local wheel packages",
 )
 @click.option(
-    "-epo",
-    "--emit-pip-options",
+    "-dpo",
+    "--dump-pip-options",
     is_flag=True,
-    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+    show_default=True,
+    help="Dump pip config options from the ~/.pip/pip.conf file.",
 )
 @click.option(
     "-nc",
@@ -678,7 +740,7 @@ def _lock(
     stdout: bool,
     include_editable: bool,
     include_local_wheel: bool,
-    emit_pip_options: bool,
+    dump_pip_options: bool,
     no_cache: bool,
 ) -> None:
     """
@@ -696,7 +758,7 @@ def _lock(
         stdout,
         include_editable,
         include_local_wheel,
-        emit_pip_options,
+        dump_pip_options,
         env_use_shell,
     )
 

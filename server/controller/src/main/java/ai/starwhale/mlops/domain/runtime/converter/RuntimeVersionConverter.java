@@ -24,6 +24,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.DockerSetting;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -44,16 +45,17 @@ public class RuntimeVersionConverter {
 
     public RuntimeVersionVo convert(RuntimeVersionEntity entity)
             throws ConvertException {
-        return convert(entity, null);
+        return convert(entity, null, null);
     }
 
-    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest)
+    public RuntimeVersionVo convert(RuntimeVersionEntity entity, RuntimeVersionEntity latest, List<String> tags)
             throws ConvertException {
         return RuntimeVersionVo.builder()
                 .id(idConvertor.convert(entity.getId()))
                 .name(entity.getVersionName())
-                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                .tag(entity.getVersionTag())
+                .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                .latest(entity.getId() != null && latest != null && entity.getId().equals(latest.getId()))
+                .tags(tags)
                 .meta(entity.getVersionMeta())
                 .image(entity.getImage(dockerSetting.getRegistryForPull()))
                 .builtImage(entity.getBuiltImage())

@@ -10,12 +10,14 @@ import { TextLink } from '@/components/Link'
 import { Button, IconFont } from '@starwhale/ui'
 import Alias from '@/components/Alias'
 import { MonoText } from '@/components/Text'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { WithCurrentAuth, useAuthPrivileged } from '@/api/WithAuth'
 import User from '@/domain/user/components/User'
 import { useQuery } from 'react-query'
 import { fetchDatasetBuildList } from '@/domain/dataset/services/dataset'
 import qs from 'qs'
 import Text from '@starwhale/ui/Text'
+import { useProjectRole } from '@/domain/project/hooks/useProjectRole'
+import { getAliasStr } from '@base/utils/alias'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -27,8 +29,14 @@ export default function DatasetListCard() {
 
     const query = { status: 'BUILDING', ...page }
 
-    const datasetBuildList = useQuery(`fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`, () =>
-        fetchDatasetBuildList(projectId, query as any)
+    const { isPrivileged } = useAuthPrivileged({ role: useProjectRole().role, id: 'dataset.create.read' })
+
+    const datasetBuildList = useQuery(
+        `fetchDatasetBuildList:${projectId}:${qs.stringify(query)}`,
+        () => fetchDatasetBuildList(projectId, query as any),
+        {
+            enabled: isPrivileged,
+        }
     )
 
     const buildCount = datasetBuildList.data?.list?.length ?? 0
@@ -72,7 +80,7 @@ export default function DatasetListCard() {
                                     {dataset.name}
                                 </TextLink>,
                                 <MonoText key='name'>{dataset.version?.name ?? '-'}</MonoText>,
-                                <Alias key='alias' alias={dataset.version?.alias} />,
+                                dataset.version ? <Alias key='alias' alias={getAliasStr(dataset.version)} /> : null,
                                 dataset.owner && <User user={dataset.owner} />,
                                 dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                                 <div key='version-history' style={{ display: 'flex', gap: '5px' }}>
@@ -106,37 +114,39 @@ export default function DatasetListCard() {
                     }}
                 />
             </Card>
-            <div
-                className='dataset-build-list flex'
-                style={{
-                    position: 'absolute',
-                    bottom: 60,
-                    right: '-20px',
-                    width: '100px',
-                    height: '58px',
-                    borderRadius: '100px 0 0 100px',
-                    boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
-                    backgroundColor: '#fff',
-                    zIndex: 2,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '20px',
-                }}
-            >
-                <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
-                    {buildCount > 0 && (
-                        <Text
-                            tooltip={t('dataset.create.build.desc', [buildCount])}
-                            style={{
-                                marginRight: '20px',
-                            }}
-                        >
-                            {buildCount}
-                        </Text>
-                    )}
-                    <IconFont type='unfold21' style={{ color: 'rgba(2,16,43,0.40)' }} />
-                </Button>
-            </div>
+            <WithCurrentAuth id='dataset.create.read'>
+                <div
+                    className='dataset-build-list flex'
+                    style={{
+                        position: 'absolute',
+                        bottom: 60,
+                        right: '-20px',
+                        width: '100px',
+                        height: '58px',
+                        borderRadius: '100px 0 0 100px',
+                        boxShadow: '0 4px 14px 0 rgba(0,0,0,0.30)',
+                        backgroundColor: '#fff',
+                        zIndex: 2,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '20px',
+                    }}
+                >
+                    <Button as='link' onClick={() => history.push(`/projects/${projectId}/datasets/builds`)}>
+                        {buildCount > 0 && (
+                            <Text
+                                tooltip={t('dataset.create.build.desc', [buildCount])}
+                                style={{
+                                    marginRight: '20px',
+                                }}
+                            >
+                                {buildCount}
+                            </Text>
+                        )}
+                        <IconFont type='unfold21' style={{ color: 'rgba(2,16,43,0.40)' }} />
+                    </Button>
+                </div>
+            </WithCurrentAuth>
         </>
     )
 }

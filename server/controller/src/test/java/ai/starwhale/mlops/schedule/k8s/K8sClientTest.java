@@ -63,7 +63,7 @@ public class K8sClientTest {
     String nameSpace = "nameSpace";
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws ApiException {
         client = mock(ApiClient.class);
         coreV1Api = mock(CoreV1Api.class);
         batchV1Api = mock(BatchV1Api.class);

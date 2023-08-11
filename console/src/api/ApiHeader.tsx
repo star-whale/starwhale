@@ -80,6 +80,24 @@ function ApiHeader() {
                 const withSilentRoute = error.response.config.params?.silent
                 if (withSilentRoute) return Promise.reject(error)
 
+                const toastProps = {
+                    autoHideDuration: (errMsgExpireTimeSeconds + 1) * 1000,
+                    overrides: {
+                        InnerContainer: {
+                            style: { wordBreak: 'break-word', width: '100%' },
+                        },
+                    },
+                    key: 'api-header',
+                }
+                // bad request
+                if (error.response?.status === 400) {
+                    const errMsg = getErrMsg(error)
+                    if (errMsg) {
+                        toaster.negative(errMsg, toastProps)
+                    }
+                    return Promise.reject(error)
+                }
+
                 const errMsg = getErrMsg(error)
                 if (Date.now() - (lastErrMsgRef.current[errMsg] || 0) > errMsgExpireTimeSeconds * 1000) {
                     toaster.negative(
@@ -93,15 +111,7 @@ function ApiHeader() {
                                 </details>
                             </>
                         ),
-                        {
-                            autoHideDuration: (errMsgExpireTimeSeconds + 1) * 1000,
-                            overrides: {
-                                InnerContainer: {
-                                    style: { wordBreak: 'break-word', width: '100%' },
-                                },
-                            },
-                            key: 'api-header',
-                        }
+                        toastProps
                     )
                     lastErrMsgRef.current[errMsg] = Date.now()
                 }

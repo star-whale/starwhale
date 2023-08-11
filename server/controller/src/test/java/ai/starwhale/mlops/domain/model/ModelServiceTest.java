@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -50,6 +51,7 @@ import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.configuration.security.JwtLoginToken;
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.blob.BlobService;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.ModelServingService;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
@@ -610,7 +612,8 @@ public class ModelServiceTest extends MySqlContainerHolder {
     public void testFindModel() {
         var modelInfo = modelService.getModelInfo("1", "m", "v1");
         var modelId = Long.parseLong(modelInfo.getId());
-        var versionId = Long.parseLong(modelInfo.getVersionId());
+        var versionInfo = modelInfo.getVersionInfo();
+        var versionId = Long.parseLong(versionInfo.getId());
         var res = modelService.findModel(modelId);
         assertThat(res, allOf(
                 notNullValue(),
@@ -618,7 +621,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 hasProperty("name", is("m"))
         ));
 
-        assertThat(modelService.findModelVersion(versionId), allOf(
+        assertThat(modelService.findModelVersion(versionInfo.getId()), allOf(
                 notNullValue(),
                 hasProperty("id", is(versionId)),
                 hasProperty("modelId", is(modelId)),
@@ -668,17 +671,12 @@ public class ModelServiceTest extends MySqlContainerHolder {
     @Test
     public void testListModelInfo() {
         var res = modelService.listModelInfo("1", "m1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("name", is("m1")),
-                hasProperty("versionAlias", is("v1")))));
+        assertEquals(1, res.size());
+        assertEquals("m1", res.get(0).getName());
+        assertEquals("v1", res.get(0).getVersionInfo().getAlias());
 
         res = modelService.listModelInfo("1", "");
-        assertThat(res, allOf(
-                iterableWithSize(5),
-                hasItem(allOf(hasProperty("name", is("m")),
-                        hasProperty("versionAlias", is("v1")))),
-                hasItem(allOf(hasProperty("name", is("m1")),
-                        hasProperty("versionAlias", is("v1"))))));
+        assertEquals(5, res.size());
 
         assertThrows(SwNotFoundException.class,
                 () -> modelService.listModelInfo("1", "m2"));
@@ -697,18 +695,16 @@ public class ModelServiceTest extends MySqlContainerHolder {
                 .modelVersionUrl("v1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("name", is("m")),
-                hasProperty("versionAlias", is("v1"))));
+        assertEquals("m", res.getName());
+        assertEquals("v1", res.getVersionInfo().getAlias());
 
         res = modelService.getModelInfo(ModelQuery.builder()
                 .projectUrl("1")
                 .modelUrl("m1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("name", is("m1")),
-                hasProperty("versionAlias", is("v1"))));
+        assertEquals("m1", res.getName());
+        assertEquals("v1", res.getVersionInfo().getAlias());
     }
 
     @Test
@@ -753,6 +749,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         var svc = new ModelService(
                 mock(ModelMapper.class),
                 modelVersionMapper,
+                mock(BundleVersionTagDao.class),
                 new IdConverter(),
                 versionAliasConverter,
                 mock(ModelVoConverter.class),
@@ -787,23 +784,30 @@ public class ModelServiceTest extends MySqlContainerHolder {
     @Test
     public void testListModelVersionView() {
         var res = modelService.listModelVersionView("1");
-        assertThat(res, hasItems(
-                allOf(hasProperty("projectName", is("starwhale")),
-                        hasProperty("modelName", is("m")),
-                        hasProperty("versions", hasItems(
+        assertEquals(2, res.size());
+        assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
+                        hasProperty("modelName", is("m"))));
+
+        assertThat(res.get(0), allOf(hasProperty("projectName", is("starwhale")),
+                hasProperty("modelName", is("m1")),
+                hasProperty("versions", hasItems(
+                        allOf(hasProperty("versionName", is("v1")),
+                                hasProperty("alias", is("v1")),
+                                hasProperty("latest", is(true)))))));
+
+        assertThat(res.get(1).getVersions(), hasItems(
                                 allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("v1"))),
+                                        hasProperty("alias", is("v1")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v2")),
-                                        hasProperty("alias", is("v2"))),
+                                        hasProperty("alias", is("v2")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v3")),
-                                        hasProperty("alias", is("v3"))),
+                                        hasProperty("alias", is("v3")),
+                                        hasProperty("latest", is(false))),
                                 allOf(hasProperty("versionName", is("v4")),
-                                        hasProperty("alias", is("latest")))))),
-                allOf(hasProperty("projectName", is("starwhale")),
-                        hasProperty("modelName", is("m1")),
-                        hasProperty("versions", hasItems(
-                                allOf(hasProperty("versionName", is("v1")),
-                                        hasProperty("alias", is("latest"))))))));
+                                        hasProperty("alias", is("v4")),
+                                        hasProperty("latest", is(true)))));
     }
 
     @Test
@@ -950,6 +954,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         var modelService = new ModelService(
                 mock(ModelMapper.class),
                 mock(ModelVersionMapper.class),
+                mock(BundleVersionTagDao.class),
                 mock(IdConverter.class),
                 mock(VersionAliasConverter.class),
                 mock(ModelVoConverter.class),

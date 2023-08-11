@@ -245,6 +245,10 @@ const model = {
         en: 'e.g. 1.5G',
         zh: '例如：1.5G',
     },
+    'model.run': {
+        en: 'Run Model',
+        zh: '运行模型',
+    },
 }
 const trash = {
     'trash.title': {
@@ -421,6 +425,10 @@ const job = {
         en: 'Open Expose Service',
         zh: '开启外部访问',
     },
+    'job.rerun': {
+        en: 'Rerun',
+        zh: '重新运行',
+    },
 }
 
 const evaluation = {
@@ -463,6 +471,21 @@ const evaluation = {
     'evalution.result.title': {
         en: 'Result Details',
         zh: '结果详情',
+    },
+}
+
+const report = {
+    'Reports': {
+        en: 'Reports',
+        zh: '报告',
+    },
+    'report.title': {
+        en: 'Title',
+        zh: '标题',
+    },
+    'report.search.by.title': {
+        en: 'Search by title',
+        zh: '按标题搜索',
     },
 }
 
@@ -639,6 +662,10 @@ const locales0 = {
     'delete sth': {
         en: 'Delete {{0}}',
         zh: '删除{{0}}',
+    },
+    'delete sth confirm': {
+        en: 'Are you sure to delete "{{0}}"?',
+        zh: '确定要删除 "{{0}}" 吗？',
     },
     'select sth': {
         en: 'Select {{0}}',
@@ -1640,6 +1667,7 @@ const locales0 = {
     ...trash,
     ...project,
     ...job,
+    ...report,
     ...table,
     ...evaluation,
     ...widget,

@@ -17,15 +17,21 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 
+import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
+import ai.starwhale.mlops.domain.job.DevWay;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -37,41 +43,60 @@ public class TaskConverter {
     private final StepMapper stepMapper;
     private final int devPort;
     private final WebServerInTask webServerInTask;
+    private final JobSpecParser jobSpecParser;
 
 
     public TaskConverter(
             IdConverter idConvertor, StepMapper stepMapper,
             @Value("${sw.task.dev-port}") int devPort,
-            WebServerInTask webServerInTask
+            WebServerInTask webServerInTask,
+            JobSpecParser jobSpecParser
     ) {
         this.idConvertor = idConvertor;
         this.stepMapper = stepMapper;
         this.devPort = devPort;
         this.webServerInTask = webServerInTask;
+        this.jobSpecParser = jobSpecParser;
     }
 
     public TaskVo convert(TaskEntity entity) {
         if (entity == null) {
             return null;
         }
-        StepEntity step = stepMapper.findById(entity.getStepId());
-        if (null == step) {
+        StepEntity stepEntity = stepMapper.findById(entity.getStepId());
+        if (null == stepEntity) {
             throw new SwProcessException(ErrorType.DB,
                     String.format("bad task data: no step for task %s", entity.getId()));
         }
         var pool = "";
-        if (StringUtils.hasText(step.getPoolInfo())) {
+        if (StringUtils.hasText(stepEntity.getPoolInfo())) {
             try {
-                pool = ResourcePool.fromJson(step.getPoolInfo()).getName();
+                pool = ResourcePool.fromJson(stepEntity.getPoolInfo()).getName();
             } catch (Exception e) {
                 throw new SwProcessException(ErrorType.DB,
                         String.format("bad task data: can not unmarshal pool %s", entity.getId()), e);
             }
         }
 
-        String devUrl = null;
-        if (entity.getDevWay() != null && StringUtils.hasText(entity.getIp())) {
-            devUrl = webServerInTask.generateGatewayUrl(entity.getId(), entity.getIp(), devPort);
+        var exposed = new ArrayList<ExposedLinkVo>();
+        var ip = entity.getIp();
+        if (TaskStatus.RUNNING.equals(entity.getTaskStatus()) && StringUtils.hasText(ip)) {
+            if (entity.getDevWay() != null) {
+                var devUrl = webServerInTask.generateGatewayUrl(entity.getId(), ip, devPort);
+                exposed.add(ExposedLinkVo.builder()
+                        .type(ExposedType.DEV_MODE)
+                        .name(DevWay.VS_CODE.name())
+                        .link(devUrl)
+                        .build());
+            }
+            var step = jobSpecParser.stepFromJsonQuietly(stepEntity.getOriginJson());
+            if (step != null && step.getExpose() != null && step.getExpose() > 0) {
+                exposed.add(ExposedLinkVo.builder()
+                        .type(ExposedType.WEB_HANDLER)
+                        .name(step.getFriendlyName())
+                        .link(webServerInTask.generateGatewayUrl(entity.getId(), ip, step.getExpose()))
+                        .build());
+            }
         }
 
         return TaskVo.builder()
@@ -80,8 +105,8 @@ public class TaskConverter {
                 .taskStatus(entity.getTaskStatus())
                 .retryNum(entity.getRetryNum())
                 .finishedTime(entity.getFinishedTime() == null ? null : entity.getFinishedTime().getTime())
-                .stepName(step.getName())
-                .devUrl(devUrl)
+                .stepName(stepEntity.getName())
+                .exposedLinks(exposed.isEmpty() ? null : exposed)
                 .startedTime(entity.getStartedTime() == null ? null : entity.getStartedTime().getTime())
                 .resourcePool(pool)
                 .failedReason(entity.getFailedReason())

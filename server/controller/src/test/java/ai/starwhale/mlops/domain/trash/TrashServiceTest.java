@@ -38,6 +38,8 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.model.ModelDao;
 import ai.starwhale.mlops.domain.model.po.ModelEntity;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.report.ReportDao;
+import ai.starwhale.mlops.domain.report.po.ReportEntity;
 import ai.starwhale.mlops.domain.runtime.RuntimeDao;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.trash.Trash.Type;
@@ -62,6 +64,7 @@ public class TrashServiceTest {
     private DatasetDao datasetDao;
     private RuntimeDao runtimeDao;
     private JobDao jobDao;
+    private ReportDao reportDao;
 
     @BeforeEach
     public void setUp() {
@@ -72,6 +75,7 @@ public class TrashServiceTest {
         datasetDao = mock(DatasetDao.class);
         runtimeDao = mock(RuntimeDao.class);
         jobDao = mock(JobDao.class);
+        reportDao = mock(ReportDao.class);
 
         service = new TrashService(trashMapper,
                 userService,
@@ -80,6 +84,7 @@ public class TrashServiceTest {
                 datasetDao,
                 runtimeDao,
                 jobDao,
+                reportDao,
                 new IdConverter());
     }
 
@@ -142,6 +147,8 @@ public class TrashServiceTest {
                 .willReturn(RuntimeEntity.builder().id(3L).runtimeName("runtime1").modifiedTime(new Date()).build());
         given(jobDao.findById(same(1L)))
                 .willReturn(JobEntity.builder().id(4L).jobUuid("job1").modifiedTime(new Date()).build());
+        given(reportDao.findById(same(1L)))
+                .willReturn(ReportEntity.builder().id(5L).uuid("report1").modifiedTime(new Date()).build());
         given(trashMapper.insert(any(TrashPo.class)))
                 .willAnswer(invocation -> {
                     TrashPo po = invocation.getArgument(0);
@@ -178,6 +185,13 @@ public class TrashServiceTest {
                         .projectId(1L)
                         .build(), user);
         assertThat(res, is(4L));
+        res = service.moveToRecycleBin(
+                Trash.builder()
+                        .type(Type.REPORT)
+                        .objectId(1L)
+                        .projectId(1L)
+                        .build(), user);
+        assertThat(res, is(5L));
     }
 
     @Test
@@ -234,6 +248,18 @@ public class TrashServiceTest {
                         .updatedTime(new Date())
                         .createdTime(new Date())
                         .build());
+        given(trashMapper.find(same(4L)))
+                .willReturn(TrashPo.builder()
+                        .id(1L)
+                        .projectId(1L)
+                        .operatorId(1L)
+                        .objectId(1L)
+                        .trashType("REPORT")
+                        .trashName("report1")
+                        .retention(new Date())
+                        .updatedTime(new Date())
+                        .createdTime(new Date())
+                        .build());
 
         given(modelDao.findDeletedBundleById(same(1L)))
                 .willReturn(ModelEntity.builder().id(1L).modelName("model1").modifiedTime(new Date()).build());
@@ -241,16 +267,21 @@ public class TrashServiceTest {
                 .willReturn(DatasetEntity.builder().id(1L).datasetName("dataset1").modifiedTime(new Date()).build());
         given(jobDao.findDeletedBundleById(same(1L)))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
+        given(reportDao.findDeletedBundleById(same(1L)))
+                .willReturn(ReportEntity.builder().id(1L).uuid("report1").modifiedTime(new Date()).build());
 
         given(runtimeDao.findByNameForUpdate(same("runtime1"), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).runtimeName("runtime1").modifiedTime(new Date()).build());
         given(jobDao.findByNameForUpdate(same("job1"), any()))
                 .willReturn(JobEntity.builder().id(1L).jobUuid("job1").modifiedTime(new Date()).build());
+        given(reportDao.findByNameForUpdate(same("report1"), any()))
+                .willReturn(ReportEntity.builder().id(1L).uuid("report1").modifiedTime(new Date()).build());
 
         given(modelDao.recover(any())).willReturn(true);
         given(datasetDao.recover(any())).willReturn(true);
         given(runtimeDao.recover(any())).willReturn(true);
         given(jobDao.recover(any())).willReturn(true);
+        given(reportDao.recover(any())).willReturn(true);
 
         var res = service.recover("1", 1L);
         assertThat(res, is(true));

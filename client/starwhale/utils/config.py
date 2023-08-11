@@ -220,10 +220,12 @@ class SWCliConfigMixed:
         if uri in _insts:
             _insts.pop(uri)
         else:
-            for k, v in _insts.items():
-                if v.get("uri") == uri:
+            uris = [(k, v.get("uri")) for k, v in _insts.items()]
+            for k, u in uris:
+                if u == uri:
                     _insts.pop(k)
-                    _alias = uri
+                    _alias = k
+                    break
 
         if _alias == self._config["current_instance"]:
             self._config["current_instance"] = DEFAULT_INSTANCE

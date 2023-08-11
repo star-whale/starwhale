@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import org.codehaus.jackson.map.ObjectMapper;
 
 public interface Constants {
     YAMLMapper yamlMapper = new YAMLMapper();

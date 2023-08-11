@@ -60,7 +60,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
 
     private final long partSize;
 
-    private final COSClient ossClient;
+    private final COSClient cosClient;
 
     public StorageAccessServiceQcloud(S3Config s3Config) {
         this.bucket = s3Config.getBucket();
@@ -94,7 +94,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
                 return super.buildGeneralApiEndpoint(bucketName);
             }
         });
-        this.ossClient = new COSClient(cred, cfg);
+        this.cosClient = new COSClient(cred, cfg);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
     @Override
     public StorageObjectInfo head(String path, boolean md5sum) throws IOException {
         try {
-            var resp = this.ossClient.getObjectMetadata(this.bucket, path);
+            var resp = this.cosClient.getObjectMetadata(this.bucket, path);
             return new StorageObjectInfo(
                     true,
                     resp.getContentLength(),
@@ -126,7 +126,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
     public void put(String path, InputStream inputStream, long size) throws IOException {
         var metadata = new ObjectMetadata();
         metadata.setContentLength(size);
-        this.ossClient.putObject(this.bucket, path, inputStream, metadata);
+        this.cosClient.putObject(this.bucket, path, inputStream, metadata);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
     @Override
     public void put(String path, InputStream inputStream) throws IOException {
         var initReq = new InitiateMultipartUploadRequest(this.bucket, path);
-        var uploadId = this.ossClient.initiateMultipartUpload(initReq).getUploadId();
+        var uploadId = this.cosClient.initiateMultipartUpload(initReq).getUploadId();
         var parts = new ArrayList<PartETag>();
         try {
             for (int i = 1; ; i++) {
@@ -153,7 +153,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
                         .withInputStream(new ByteArrayInputStream(data))
                         .withPartSize(data.length)
                         .withPartNumber(i);
-                var partResp = this.ossClient.uploadPart(partReq);
+                var partResp = this.cosClient.uploadPart(partReq);
                 parts.add(partResp.getPartETag());
                 if (data.length < this.partSize) {
                     break;
@@ -161,10 +161,10 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
             }
 
             var req = new CompleteMultipartUploadRequest(this.bucket, path, uploadId, parts);
-            this.ossClient.completeMultipartUpload(req);
+            this.cosClient.completeMultipartUpload(req);
         } catch (Throwable t) {
             var req = new AbortMultipartUploadRequest(this.bucket, path, uploadId);
-            this.ossClient.abortMultipartUpload(req);
+            this.cosClient.abortMultipartUpload(req);
             throw new IOException(t);
         }
     }
@@ -172,7 +172,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
     @Override
     public LengthAbleInputStream get(String path) throws IOException {
         try {
-            var resp = this.ossClient.getObject(this.bucket, path);
+            var resp = this.cosClient.getObject(this.bucket, path);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (CosServiceException e) {
             if (e.getStatusCode() == SC_NOT_FOUND) {
@@ -187,7 +187,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
     public LengthAbleInputStream get(String path, Long offset, Long size) throws IOException {
         try {
             var req = new GetObjectRequest(bucket, path).withRange(offset, offset + size - 1);
-            var resp = this.ossClient.getObject(req);
+            var resp = this.cosClient.getObject(req);
             return new LengthAbleInputStream(resp.getObjectContent(), resp.getObjectMetadata().getContentLength());
         } catch (CosServiceException e) {
             if (e.getStatusCode() == SC_NOT_FOUND) {
@@ -209,7 +209,7 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
 
             ObjectListing resp;
             do {
-                resp = this.ossClient.listObjects(req);
+                resp = this.cosClient.listObjects(req);
                 files = Streams.concat(files, resp.getObjectSummaries().stream().map(COSObjectSummary::getKey));
                 req.setMarker(resp.getNextMarker());
             } while (resp.isTruncated());
@@ -224,13 +224,13 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
 
     @Override
     public void delete(String path) throws IOException {
-        this.ossClient.deleteObject(this.bucket, path);
+        this.cosClient.deleteObject(this.bucket, path);
     }
 
     @Override
     public String signedUrl(String path, Long expTimeMillis) {
         var expiration = new Date(System.currentTimeMillis() + expTimeMillis);
-        return ossClient.generatePresignedUrl(this.bucket, path, expiration).toString();
+        return cosClient.generatePresignedUrl(this.bucket, path, expiration).toString();
     }
 
     @Override
@@ -238,6 +238,6 @@ public class StorageAccessServiceQcloud implements StorageAccessService {
         var request = new GeneratePresignedUrlRequest(this.bucket, path, HttpMethodName.PUT);
         request.setExpiration(new Date(System.currentTimeMillis() + expTimeMillis));
         request.setContentType(contentType);
-        return ossClient.generatePresignedUrl(request).toString();
+        return cosClient.generatePresignedUrl(request).toString();
     }
 }

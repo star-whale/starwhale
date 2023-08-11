@@ -4,6 +4,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.base.tag import StandaloneTag
+from starwhale.utils.error import FormatError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.base.uri.resource import Resource, ResourceType
 
@@ -114,3 +115,20 @@ class StandaloneTagTestCase(TestCase):
         assert st._get_manifest()["tags"]["v8"] == version
 
         assert st.list() == ["latest", "v0", "v1", "v2", "v3", "v4", "v5", "v8"]
+
+    def test_check_tags_validation(self) -> None:
+        _chk = StandaloneTag.check_tags_validation
+
+        _chk(["t0", " t1 ", "v0abc"])
+
+        invalid_obj_tags = [[""], ["1"], ["$#"], ["a" * 100]]
+
+        for tags in invalid_obj_tags:
+            with self.assertRaises(FormatError):
+                _chk(tags)
+
+        with self.assertRaisesRegex(FormatError, "tag:latest is builtin"):
+            _chk(["latest"])
+
+        with self.assertRaisesRegex(FormatError, "tag:v0 is builtin"):
+            _chk(["v0"])

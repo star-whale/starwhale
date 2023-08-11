@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.spec;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,39 @@ public class StepSpecTest {
         Assertions.assertThrows(SwValidationException.class, () -> {
             spec.verifyStepSpecArgs();
         });
+    }
+  
+    @Test
+    public void testFriendlyName() {
+        var stepSpec = StepSpec.builder()
+                .name("name")
+                .showName("the show name")
+                .build();
+
+        assertEquals("the show name", stepSpec.getFriendlyName());
+
+        stepSpec.setShowName(null);
+        assertEquals("name", stepSpec.getFriendlyName());
+
+        stepSpec.setName("serving");
+        assertEquals("serving", stepSpec.getFriendlyName());
+    }
+
+    @Test
+    public void testToJson() {
+        var stepSpec = StepSpec.builder()
+                .name("name")
+                .showName("the show name")
+                .build();
+
+        var jobSpecParser = new JobSpecParser();
+        var jsonStr = jobSpecParser.stepToJsonQuietly(stepSpec);
+        assertEquals("{\"name\":\"name\",\"show_name\":\"the show name\"}", jsonStr);
+
+        var stepSpec2 = jobSpecParser.stepFromJsonQuietly(jsonStr);
+        stepSpec2.setConcurrency(null);
+        stepSpec2.setReplicas(null);
+        assertEquals(stepSpec, stepSpec2);
     }
 
 }

@@ -36,6 +36,7 @@ from starwhale.api.dataset import (
     COCOObjectAnnotation,
 )
 from starwhale.utils.debug import init_logger
+from starwhale.api.instance import login, logout
 from starwhale.base.context import Context, pass_context
 from starwhale.api.evaluation import PipelineHandler
 from starwhale.api.experiment import fine_tune
@@ -85,4 +86,6 @@ __all__ = [
     "COCOObjectAnnotation",
     "track",
     "init_logger",
+    "login",
+    "logout",
 ]

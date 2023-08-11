@@ -238,7 +238,7 @@ function EvaluationWidgetResults() {
     }
 
     const tables = React.useMemo(() => {
-        const names = []
+        const names: string[] = []
         if (projectId) names.push(tableNameOfSummary(projectId))
 
         return [...names]
@@ -284,7 +284,7 @@ function EvaluationWidgetResults() {
                     gridGap: '16px',
                 }}
             >
-                {tables.map((name) => {
+                {tables.map((name: string) => {
                     let filter
                     if (name.includes('/summary') && jobId)
                         filter = {

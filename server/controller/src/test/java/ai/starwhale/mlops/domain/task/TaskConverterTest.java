@@ -16,14 +16,19 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
 import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.DevWay;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
+import ai.starwhale.mlops.domain.job.step.ExposedType;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.task.converter.TaskConverter;
@@ -40,17 +45,19 @@ public class TaskConverterTest {
     private StepMapper stepMapper;
     private TaskConverter taskConvertor;
     private WebServerInTask webServerInTask;
+    private JobSpecParser jobSpecParser;
 
     @BeforeEach
     public void setup() {
         stepMapper = mock(StepMapper.class);
+        jobSpecParser = new JobSpecParser();
         when(stepMapper.findById(anyLong())).thenReturn(new StepEntity() {
             {
                 setName("ppl");
             }
         });
         webServerInTask = mock(WebServerInTask.class);
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, webServerInTask);
+        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, webServerInTask, jobSpecParser);
     }
 
 
@@ -82,9 +89,10 @@ public class TaskConverterTest {
                 .id(1L)
                 .stepId(1L)
                 .startedTime(new Date(12345678L))
+                // this can not happen in real world (with the status RUNNING) but for test
                 .finishedTime(new Date(12345679L))
                 .taskUuid("uuid")
-                .taskStatus(TaskStatus.SUCCESS)
+                .taskStatus(TaskStatus.RUNNING)
                 .retryNum(1)
                 .devWay(DevWay.VS_CODE)
                 .ip("127.0.0.1")
@@ -97,11 +105,41 @@ public class TaskConverterTest {
         Assertions.assertEquals(taskVo.getStartedTime(), taskEntity.getStartedTime().getTime());
         Assertions.assertEquals(taskVo.getStepName(), "ppl");
         Assertions.assertEquals(taskVo.getRetryNum(), taskEntity.getRetryNum());
-        Assertions.assertEquals(taskVo.getDevUrl(), "/gateway/task/1/8000/");
 
+        var expectedExposedLink = ExposedLinkVo.builder()
+                .type(ExposedType.DEV_MODE)
+                .name("VS_CODE")
+                .link("/gateway/task/1/8000/")
+                .build();
+        assertThat(taskVo.getExposedLinks(), containsInAnyOrder(expectedExposedLink));
+
+        when(stepMapper.findById(anyLong())).thenReturn(new StepEntity() {
+            {
+                setName("ppl");
+                setOriginJson("{\"expose\": 8080, \"name\": \"foo\"}");
+            }
+        });
+        when(webServerInTask.generateGatewayUrl(1L, "127.0.0.1", 8080)).thenReturn("/gateway/task/1/8080/");
+
+        taskVo = taskConvertor.convert(taskEntity);
+        var theWebHandlerLink = ExposedLinkVo.builder()
+                .type(ExposedType.WEB_HANDLER)
+                .name("foo")
+                .link("/gateway/task/1/8080/")
+                .build();
+
+        assertThat(taskVo.getExposedLinks(), containsInAnyOrder(expectedExposedLink, theWebHandlerLink));
+
+        // test not running
+        taskEntity.setTaskStatus(TaskStatus.SUCCESS);
+        taskVo = taskConvertor.convert(taskEntity);
+        Assertions.assertNull(taskVo.getExposedLinks());
+
+        // test no ip (should restore the status to running)
+        taskEntity.setTaskStatus(TaskStatus.RUNNING);
         taskEntity.setIp("");
         taskVo = taskConvertor.convert(taskEntity);
-        Assertions.assertNull(taskVo.getDevUrl());
+        Assertions.assertNull(taskVo.getExposedLinks());
     }
 
 }

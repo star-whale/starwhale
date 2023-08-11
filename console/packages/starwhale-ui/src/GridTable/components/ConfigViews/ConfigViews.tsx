@@ -254,10 +254,10 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
     }
 
     const children = React.Children.toArray(props.children)
-
     let items = null
     // @ts-ignore
     if (!children[0] || !children[0].props.item) {
+        // @ts-ignore
         items = (
             <StyledEmptyState
                 $style={{

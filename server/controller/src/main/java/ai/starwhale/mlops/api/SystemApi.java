@@ -46,6 +46,7 @@ public interface SystemApi {
     @GetMapping(
             value = "/system/resourcePool",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<List<ResourcePool>>> listResourcePools();
 
     @Operation(summary = "Update resource pool")
@@ -81,6 +82,7 @@ public interface SystemApi {
     @GetMapping(
             value = "/system/version",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<SystemVersionVo>> getCurrentVersion();
 
     @Operation(summary = "Get latest version of the system")
@@ -88,6 +90,7 @@ public interface SystemApi {
     @GetMapping(
             value = "/system/version/latest",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<LatestVersionVo>> getLatestVersion();
 
     @Operation(
@@ -126,5 +129,6 @@ public interface SystemApi {
     @Operation(summary = "Get system features", description = "Get system features list")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/system/features", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<FeaturesVo>> queryFeatures();
 }

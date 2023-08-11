@@ -46,6 +46,14 @@ public class ModelVersionConverterTest {
 
     @Test
     public void testConvert() {
+        var latest = ModelVersionEntity.builder()
+                .id(2L)
+                .versionName("name1")
+                .versionOrder(2L)
+                .versionTag("tag1")
+                .jobs("default:\n- concurrency: 2")
+                .shared(true)
+                .build();
         var res = modelVersionVoConverter.convert(ModelVersionEntity.builder()
                 .id(1L)
                 .versionName("name1")
@@ -53,13 +61,17 @@ public class ModelVersionConverterTest {
                 .versionTag("tag1")
                 .jobs("default:\n- concurrency: 2")
                 .shared(true)
-                .build());
+                .build(),
+                latest,
+                List.of("tag2")
+        );
         assertThat(res, allOf(
                 notNullValue(),
                 hasProperty("name", is("name1")),
                 hasProperty("alias", is("v2")),
+                hasProperty("latest", is(false)),
                 hasProperty("shared", is(1)),
-                hasProperty("tag", is("tag1")),
+                hasProperty("tags", is(List.of("tag2"))), // use the tag from the parameter
                 hasProperty("stepSpecs",
                         is(List.of(StepSpec.builder().jobName("default").concurrency(2).replicas(1).build())))
         ));

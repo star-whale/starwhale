@@ -19,10 +19,9 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.utils.fs import empty_dir
-from starwhale.base.type import get_bundle_type_by_uri
 from starwhale.utils.venv import get_conda_bin
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uri.resource import ResourceType
+from starwhale.base.uri.resource import Resource, ResourceType
 
 
 def gc(dry_run: bool = False, yes: bool = False) -> None:
@@ -51,7 +50,7 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
             ResourceType.job,
         ):
             _bundle_type = (
-                get_bundle_type_by_uri(typ) if typ != ResourceType.job else ""
+                Resource.get_bundle_type_by_uri(typ) if typ != ResourceType.job else ""
             )
             _recover_dir = project_dir / typ.value / RECOVER_DIRNAME
 

@@ -29,6 +29,5 @@ public class ModelTagRequest {
     @JsonProperty("tag")
     private String tag;
 
-    @JsonProperty("action")
-    private String action;
+    private Boolean force;
 }

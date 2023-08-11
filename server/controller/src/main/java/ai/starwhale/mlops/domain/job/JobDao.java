@@ -70,7 +70,7 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         if (jobEntity == null) {
             throw new StarwhaleApiException(
                     new SwValidationException(SwValidationException.ValidSubject.JOB,
-                        String.format("Unable to find job %s", jobUrl)),
+                            String.format("Unable to find job %s", jobUrl)),
                     HttpStatus.BAD_REQUEST);
         }
         return jobEntity.getId();
@@ -116,11 +116,8 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     }
 
 
-    public List<Job> listJobs(Long projectId, Long modelId) {
-        return jobMapper.listJobs(projectId, modelId)
-                .stream()
-                .map(jobBoConverter::fromEntity)
-                .collect(Collectors.toList());
+    public List<JobEntity> listJobs(Long projectId, Long modelId) {
+        return jobMapper.listJobs(projectId, modelId);
     }
 
     public List<Job> findJobByStatusIn(List<JobStatus> jobStatuses) {
@@ -177,6 +174,14 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
         }
     }
 
+    public JobEntity findJobEntity(String jobUrl) {
+        if (idConvertor.isId(jobUrl)) {
+            return jobMapper.findJobById(idConvertor.revert(jobUrl));
+        } else {
+            return jobMapper.findJobByUuid(jobUrl);
+        }
+    }
+
     public boolean updateJobPinStatus(String jobUrl, boolean pinned) {
         Date pinnedTime = pinned ? Date.from(Instant.now()) : null;
 
@@ -206,5 +211,10 @@ public class JobDao implements BundleAccessor, RecoverAccessor {
     @Override
     public Boolean recover(Long id) {
         return jobMapper.recoverJob(id) > 0 && jobRepo.recoverJob(id) > 0;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.JOB;
     }
 }

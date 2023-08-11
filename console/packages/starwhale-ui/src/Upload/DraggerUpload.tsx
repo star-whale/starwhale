@@ -138,7 +138,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const beforeUpload = (file: UploadFile) => {
         // console.log('beforeUpload', file, !!isExist(file))
         if (isMax) {
-            setFileFailedList((prev) => [
+            setFileFailedList((prev: any) => [
                 ...prev,
                 {
                     ...file,
@@ -148,7 +148,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             return false
         }
         if (isExist(file)) {
-            setFileFailedList((prev) => [
+            setFileFailedList((prev: any) => [
                 ...prev,
                 {
                     ...file,
@@ -164,7 +164,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
     const { uploadQueue, cancel: cancelQueue } = useUploadingControl<UploadControlT>({
         onUpload: useEvent((file) => {
             const uninterceptedAxiosInstance = axios.create()
-            setFileUploadingList((prev) => {
+            setFileUploadingList((prev: any) => {
                 return [
                     ...prev,
                     {
@@ -192,7 +192,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
                             ...prev[index],
                             percent: 100 * (p.loaded / p.total),
                         }
-                        prev.splice(index, 1, newFile)
+                        prev.splice(index, 1, newFile as any)
                         return [...prev]
                     })
                     return 100 * (p.loaded / p.total)
@@ -203,7 +203,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
             })
         }),
         onDone: (file: UploadFile) => {
-            setFileSuccessList((prev) => [
+            setFileSuccessList((prev: any) => [
                 ...prev,
                 {
                     ...pickAttr(file),
@@ -214,7 +214,7 @@ function DraggerUpload({ onChange }: IDraggerUploadProps) {
         },
         onError: (file: UploadFile) => {
             // console.log('onError', res)
-            setFileFailedList((prev) => [
+            setFileFailedList((prev: any) => [
                 ...prev,
                 {
                     ...pickAttr(file),

@@ -31,6 +31,8 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.same;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.model.ModelInfoVo;
 import ai.starwhale.mlops.api.protocol.model.ModelTagRequest;
@@ -49,6 +51,7 @@ import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -149,7 +152,7 @@ public class ModelControllerTest {
                         ModelVersionVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listModelVersion("p1", "m1", "v1", "", 1, 5);
+        var resp = controller.listModelVersion("p1", "m1", "v1", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
@@ -166,38 +169,6 @@ public class ModelControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThrows(StarwhaleApiException.class,
                 () -> controller.modifyModel("p2", "m1", "v1", new ModelUpdateRequest()));
-    }
-
-    @Test
-    public void testManageModelTag() {
-        given(modelService.manageVersionTag(same("p1"), same("m1"), same("v1"), argThat(
-                argument -> Objects.equals(argument.getTags(), "tag1")))).willReturn(true);
-
-        ModelTagRequest reqeust = new ModelTagRequest();
-        reqeust.setTag("tag1");
-        reqeust.setAction("add");
-        var resp = controller.manageModelTag("p1", "m1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("remove");
-        resp = controller.manageModelTag("p1", "m1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("set");
-        resp = controller.manageModelTag("p1", "m1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageModelTag("p2", "m1", "v1", reqeust));
-
-        reqeust.setAction("unknown");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageModelTag("p1", "m1", "v1", reqeust));
-
-        reqeust.setAction("add");
-        reqeust.setTag("no-tag");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageModelTag("p1", "m1", "v1", reqeust));
     }
 
     @Test
@@ -230,5 +201,40 @@ public class ModelControllerTest {
     public void testShareModelVersion() {
         var resp = controller.shareModelVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testAddModelVersionTag() {
+        doNothing().when(modelService).addModelVersionTag("1", "2", "3", "tag1", null);
+
+        var req = new ModelTagRequest();
+        req.setTag("tag1");
+        req.setForce(null);
+        var resp = controller.addModelVersionTag("1", "2", "3", req);
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(modelService).addModelVersionTag("1", "2", "3", "tag1", null);
+    }
+
+    @Test
+    public void testListModelVersionTags() {
+        given(modelService.listModelVersionTags("1", "2", "3"))
+                .willReturn(List.of("tag1", "tag2"));
+
+        var resp = controller.listModelVersionTags("1", "2", "3");
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        AssertionsForInterfaceTypes.assertThat(resp.getBody().getData()).containsExactlyInAnyOrder("tag1", "tag2");
+    }
+
+    @Test
+    public void testDeleteModelVersionTag() {
+        doNothing().when(modelService).deleteModelVersionTag("1", "2", "3", "tag1");
+
+        var resp = controller.deleteModelVersionTag("1", "2", "3", "tag1");
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(modelService).deleteModelVersionTag("1", "2", "3", "tag1");
     }
 }

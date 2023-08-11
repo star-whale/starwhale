@@ -43,7 +43,7 @@ export default function WithAuth({
 }: {
     role: Role
     id: keyof IPrivileges
-    children: React.ReactNode
+    children: React.ReactNode | ((isPrivileged: boolean, isCommunity: boolean) => any)
 }) {
     const { isPrivileged } = useAuthPrivileged({ role, id })
 
@@ -53,7 +53,7 @@ export default function WithAuth({
     return <ErrorBoundary>{children ?? <Empty />}</ErrorBoundary>
 }
 
-export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; children: React.ReactNode }) {
+export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; children: React.ReactNode | any }) {
     const { role } = useProjectRole()
 
     return (
@@ -61,4 +61,8 @@ export function WithCurrentAuth({ id, children }: { id: keyof IPrivileges; child
             {children}
         </WithAuth>
     )
+}
+
+export function useAccess(id: keyof IPrivileges) {
+    return useAuthPrivileged({ role: useProjectRole().role, id }).isPrivileged
 }

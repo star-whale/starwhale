@@ -20,9 +20,9 @@ import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +36,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Data
 @Builder
@@ -44,7 +45,7 @@ import org.springframework.util.CollectionUtils;
 @EqualsAndHashCode
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StepSpec {
 
     /**
@@ -104,6 +105,9 @@ public class StepSpec {
             throw new SwValidationException(ValidSubject.JOB, ie.getMessage(), ie);
         }
     }
+
+    @JsonIgnore
+    public String getFriendlyName() {
+        return StringUtils.hasText(showName) ? showName : name;
+    }
 }
-
-

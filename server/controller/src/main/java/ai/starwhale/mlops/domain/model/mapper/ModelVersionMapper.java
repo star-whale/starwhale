@@ -43,8 +43,7 @@ public interface ModelVersionMapper {
 
     @SelectProvider(value = ModelVersionProvider.class, method = "listSql")
     List<ModelVersionEntity> list(@Param("modelId") Long modelId,
-            @Param("namePrefix") String namePrefix,
-            @Param("tag") String tag);
+            @Param("namePrefix") String namePrefix);
 
     @Select("select " + COLUMNS + " from model_version where id = #{id}")
     ModelVersionEntity find(@Param("id") Long id);
@@ -66,7 +65,7 @@ public interface ModelVersionMapper {
             + " where v.model_id = m.id"
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
-            + " and m.is_deleted = 0"
+            + " and m.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by m.id desc, v.version_order desc")
@@ -78,7 +77,7 @@ public interface ModelVersionMapper {
             + " and m.project_id = p.id"
             + " and p.owner_id = u.id"
             + " and p.is_deleted = 0"
-            + " and m.is_deleted = 0"
+            + " and m.deleted_time = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
             + " and p.id != #{excludeProjectId}"
@@ -99,9 +98,10 @@ public interface ModelVersionMapper {
     int updateVersionOrder(@Param("id") Long id, @Param("versionOrder") Long versionOrder);
 
     @Insert("insert into model_version "
-            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared)"
+            + "(model_id, owner_id, version_name, version_tag, jobs, built_in_runtime, meta_blob_id, shared, "
+            + "storage_size)"
             + " values (#{modelId}, #{ownerId}, #{versionName}, #{versionTag}, #{jobs}, "
-            + "#{builtInRuntime}, #{metaBlobId}, #{shared})")
+            + "#{builtInRuntime}, #{metaBlobId}, #{shared}, #{storageSize})")
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     int insert(ModelVersionEntity version);
 
@@ -126,8 +126,7 @@ public interface ModelVersionMapper {
     class ModelVersionProvider {
 
         public String listSql(@Param("modelId") Long modelId,
-                @Param("namePrefix") String namePrefix,
-                @Param("tag") String tag) {
+                @Param("namePrefix") String namePrefix) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -135,9 +134,6 @@ public interface ModelVersionMapper {
                     WHERE("model_id = #{modelId}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
-                    }
-                    if (StrUtil.isNotEmpty(tag)) {
-                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
                     ORDER_BY("version_order desc");
                 }
@@ -170,6 +166,12 @@ public interface ModelVersionMapper {
                     }
                     if (StrUtil.isNotEmpty(version.getJobs())) {
                         SET("jobs=#{jobs}");
+                    }
+                    if (StrUtil.isNotEmpty(version.getMetaBlobId())) {
+                        SET("meta_blob_id=#{metaBlobId}");
+                    }
+                    if (Objects.nonNull(version.getStorageSize())) {
+                        SET("storage_size=#{storageSize}");
                     }
                     WHERE("id = #{id}");
                 }

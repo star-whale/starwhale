@@ -17,22 +17,24 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 
+import ai.starwhale.mlops.api.protocol.dataset.DatasetVo;
 import ai.starwhale.mlops.api.protocol.job.ExposedLinkVo;
 import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.api.protocol.user.UserVo;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.dataset.DatasetDao;
-import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
+import ai.starwhale.mlops.domain.dataset.DatasetService;
 import ai.starwhale.mlops.domain.job.DevWay;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.spec.StepSpec;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.ExposedType;
+import ai.starwhale.mlops.domain.model.ModelService;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.system.SystemSettingService;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -44,17 +46,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import reactor.function.Consumer4;
 
+@Slf4j
 @Component
 public class JobConverter {
 
     private final IdConverter idConvertor;
     private final RuntimeService runtimeService;
+    private final DatasetService datasetService;
+    private final ModelService modelService;
     private final DatasetDao datasetDao;
     private final SystemSettingService systemSettingService;
     private final HotJobHolder hotJobHolder;
@@ -64,7 +70,8 @@ public class JobConverter {
 
     public JobConverter(
             IdConverter idConvertor,
-            RuntimeService runtimeService, DatasetDao datasetDao,
+            RuntimeService runtimeService, DatasetService datasetService, ModelService modelService,
+            DatasetDao datasetDao,
             SystemSettingService systemSettingService, HotJobHolder hotJobHolder,
             JobSpecParser jobSpecParser,
             @Value("${sw.task.dev-port}") int devPort,
@@ -72,6 +79,8 @@ public class JobConverter {
     ) {
         this.idConvertor = idConvertor;
         this.runtimeService = runtimeService;
+        this.datasetService = datasetService;
+        this.modelService = modelService;
         this.datasetDao = datasetDao;
         this.systemSettingService = systemSettingService;
         this.hotJobHolder = hotJobHolder;
@@ -80,19 +89,25 @@ public class JobConverter {
         this.webServerInTask = webServerInTask;
     }
 
-    private List<RuntimeVo> findRuntimeByVersionIds(List<Long> versionIds) {
-        List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(versionIds);
+    private ModelVo findModelByVersionIds(Long versionId) {
+        List<ModelVo> modelVos = modelService.findModelByVersionId(List.of(versionId));
+        if (CollectionUtils.isEmpty(modelVos) || modelVos.size() > 1) {
+            throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and model");
+        }
+        return modelVos.get(0);
+    }
+
+    private RuntimeVo findRuntimeByVersionIds(Long versionId) {
+        List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(List.of(versionId));
         if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
             throw new SwProcessException(ErrorType.SYSTEM, "data not consistent between job and runtime");
         }
-        return runtimeByVersionIds;
+        return runtimeByVersionIds.get(0);
     }
 
-    private List<String> findDatasetVersionNamesByJobId(Long jobId) {
-        List<DatasetVersion> datasetVersions = datasetDao.listDatasetVersionsOfJob(jobId);
-        return datasetVersions.stream()
-                .map(DatasetVersion::getVersionName)
-                .collect(Collectors.toList());
+    private List<DatasetVo> findDatasetVersionsByJobId(Long jobId) {
+        var ids = datasetDao.listDatasetVersionIdsOfJob(jobId);
+        return datasetService.findDatasetsByVersionIds(ids);
     }
 
     /**
@@ -168,45 +183,17 @@ public class JobConverter {
             if (CollectionUtils.isEmpty(tasks)) {
                 return;
             }
-            String name;
-            // https://github.com/star-whale/starwhale/blob/c924313166d065ab941a99fa1dec04b7bfbe5fa7/client/starwhale/core/model/model.py#L246-L252
-            if (Boolean.TRUE.equals(stepSpec.getVirtual()) && stepSpec.getName().equals("serving")) {
-                name = "online evaluation";
-            } else {
-                name = stepSpec.getName();
-            }
+            var name = stepSpec.getFriendlyName();
             tasks.forEach(t -> addRunningTask.accept(t, exposedPort, ExposedType.WEB_HANDLER, name));
         });
 
         return exposed;
     }
 
-    public JobVo convert(Job job) throws ConvertException {
-        var runtimes = findRuntimeByVersionIds(List.of(job.getJobRuntime().getId()));
-        var datasets = findDatasetVersionNamesByJobId(job.getId());
-
-        return JobVo.builder()
-                .id(idConvertor.convert(job.getId()))
-                .uuid(job.getUuid())
-                .owner(UserVo.from(job.getOwner(), idConvertor))
-                .modelName(job.getModel().getName())
-                .modelVersion(job.getModel().getVersion())
-                .createdTime(job.getCreatedTime().getTime())
-                .runtime(runtimes.get(0))
-                .datasets(datasets)
-                .jobStatus(job.getStatus())
-                .stopTime(job.getFinishedTime().getTime())
-                .duration(job.getDurationMs())
-                .comment(job.getComment())
-                .resourcePool(job.getResourcePool().getName())
-                .pinnedTime(job.getPinnedTime() == null ? null : job.getPinnedTime().getTime())
-                .exposedLinks(generateJobExposedLinks(job.getId()))
-                .build();
-    }
-
     public JobVo convert(JobEntity jobEntity) throws ConvertException {
-        var runtimes = findRuntimeByVersionIds(List.of(jobEntity.getRuntimeVersionId()));
-        var datasets = findDatasetVersionNamesByJobId(jobEntity.getId());
+        var runtime = findRuntimeByVersionIds(jobEntity.getRuntimeVersionId());
+        var datasetList = findDatasetVersionsByJobId(jobEntity.getId());
+        var datasetVersions = datasetList.stream().map(ds -> ds.getVersion().getName()).collect(Collectors.toList());
         Long pinnedTime = jobEntity.getPinnedTime() != null ? jobEntity.getPinnedTime().getTime() : null;
 
         return JobVo.builder()
@@ -215,9 +202,14 @@ public class JobConverter {
                 .owner(UserVo.fromEntity(jobEntity.getOwner(), idConvertor))
                 .modelName(jobEntity.getModelName())
                 .modelVersion(jobEntity.getModelVersion().getVersionName())
+                .model(findModelByVersionIds(jobEntity.getModelVersionId()))
+                .jobName(extractJobName(jobEntity.getStepSpec()))
                 .createdTime(jobEntity.getCreatedTime().getTime())
-                .runtime(runtimes.get(0))
-                .datasets(datasets)
+                .runtime(runtime)
+                .builtinRuntime(runtime.getVersion().getName()
+                        .equals(jobEntity.getModelVersion().getBuiltInRuntime()))
+                .datasets(datasetVersions)
+                .datasetList(datasetList)
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
                 .duration(jobEntity.getDurationMs())
@@ -226,6 +218,22 @@ public class JobConverter {
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
                 .pinnedTime(pinnedTime)
                 .build();
+    }
+
+    private String extractJobName(String stepSpecStr) {
+        if (StringUtils.hasText(stepSpecStr)) {
+            List<StepSpec> stepSpecs;
+            try {
+                stepSpecs = jobSpecParser.parseAndFlattenStepFromYaml(stepSpecStr);
+                var spec = stepSpecs.stream().findFirst();
+                if (spec.isPresent()) {
+                    return spec.get().getJobName();
+                }
+            } catch (JsonProcessingException e) {
+                log.error("parse step spec error: {}", e.getMessage(), e);
+            }
+        }
+        return "";
     }
 
 }

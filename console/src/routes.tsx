@@ -54,8 +54,10 @@ import OnlineEval from '@/pages/Project/OnlineEval'
 import { getAuthedRoutes, getUnauthedRoutes } from './routesUtils'
 import EvaluationListResult from './pages/Evaluation/EvaluationListResult'
 import DatasetBuildListCard from './pages/Dataset/DatasetBuildListCard'
-
-// const JobDAG = React.lazy(() => import('@/pages/Job/JobDAG'))
+import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
+import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
+import ReportListCard from '@/pages/Report/ReportListCard'
+import ReportEdit from '@/pages/Report/ReportEdit'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -275,12 +277,30 @@ const Routes = () => {
                                         />
                                         <Route
                                             exact
+                                            path='/projects/:projectId/models/:modelId/versions/:modelVersionId/readme'
+                                            component={ModelReadmeOverview}
+                                        />
+                                        <Route
+                                            exact
                                             path='/projects/:projectId/models/:modelId/versions/:modelVersionId/files'
                                             component={ModelVersionOverviewFiles}
                                         />
                                         <Redirect to='/projects/:projectId/models/:modelId' />
                                     </Switch>
                                 </ModelOverviewLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/reports/:reportId?'>
+                                <ReportOverviewLayout>
+                                    <Switch>
+                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/reports/:reportId'
+                                            component={ReportEdit}
+                                        />
+                                        <Redirect to='/projects/:projectId/reports' />
+                                    </Switch>
+                                </ReportOverviewLayout>
                             </Route>
 
                             {/* trash */}

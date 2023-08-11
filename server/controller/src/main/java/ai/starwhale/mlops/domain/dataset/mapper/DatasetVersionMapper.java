@@ -46,8 +46,7 @@ public interface DatasetVersionMapper {
 
     @SelectProvider(value = DatasetVersionProvider.class, method = "listSql")
     List<DatasetVersionEntity> list(@Param("datasetId") Long datasetId,
-            @Param("namePrefix") String namePrefix,
-            @Param("tag") String tag);
+            @Param("namePrefix") String namePrefix);
 
     @Select("select " + COLUMNS + " from dataset_version where id = #{id}")
     DatasetVersionEntity find(@Param("id") Long id);
@@ -116,7 +115,7 @@ public interface DatasetVersionMapper {
             + " and v.status = " + STATUS_AVAILABLE
             + " and b.project_id = p.id"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.id = #{projectId}"
             + " order by b.id desc, v.version_order desc")
@@ -128,7 +127,7 @@ public interface DatasetVersionMapper {
             + " and v.status = " + STATUS_AVAILABLE
             + " and b.project_id = p.id"
             + " and p.owner_id = u.id"
-            + " and b.is_deleted = 0"
+            + " and b.deleted_time = 0"
             + " and p.is_deleted = 0"
             + " and p.privacy = 1"
             + " and v.shared = 1"
@@ -143,8 +142,7 @@ public interface DatasetVersionMapper {
     class DatasetVersionProvider {
 
         public String listSql(@Param("datasetId") Long datasetId,
-                @Param("namePrefix") String namePrefix,
-                @Param("tag") String tag) {
+                @Param("namePrefix") String namePrefix) {
             return new SQL() {
                 {
                     SELECT(COLUMNS);
@@ -152,9 +150,6 @@ public interface DatasetVersionMapper {
                     WHERE("dataset_id = #{datasetId}");
                     if (StrUtil.isNotEmpty(namePrefix)) {
                         WHERE("version_name like concat(#{namePrefix}, '%')");
-                    }
-                    if (StrUtil.isNotEmpty(tag)) {
-                        WHERE("FIND_IN_SET(#{tag}, version_tag)");
                     }
                     WHERE("status = " + STATUS_AVAILABLE);
                     ORDER_BY("version_order desc");

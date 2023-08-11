@@ -1,11 +1,9 @@
 import { IFileSchema } from '@/domain/base/schemas/file'
-import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IHasTagSchema, IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
 
-export interface IModelVersionSchema extends IResourceSchema {
+export interface IModelVersionSchema extends IResourceSchema, IHasTagSchema {
     name: string
-    tag: string
-    alias: string
     size: string
     owner?: IUserSchema
     stepSpecs: StepSpec[]
@@ -18,19 +16,14 @@ export interface IModelTreeVersionSchema extends IModelVersionSchema {
     createdTime?: number
 }
 
-export interface IModelVersionListSchema extends IResourceSchema, IFileSchema {
-    name: string
-    versionName: string
-    versionMeta: string
-    versionTag: string
-    versionAlias: string
-    manifest: string
-    createdTime?: number
-    shared?: number
+export interface IModelVersionDetailSchema extends IResourceSchema {
+    versionInfo: IModelVersionSchema
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface IModelVersionDetailSchema extends IModelVersionListSchema {}
+export interface IModelVersionDiffSchema {
+    baseVersion: IFileSchema
+    compareVersion: IFileSchema
+}
 
 export interface IUpdateModelVersionSchema {
     tag: string

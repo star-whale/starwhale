@@ -19,11 +19,6 @@ else
   trap rm_lock EXIT
 fi
 
-if [[ -z ${GH_TOKEN} ]]; then
-  echo "GH_TOKEN not set"
-  exit 1
-fi
-
 export source_registry=${source_registry:="ghcr.io"}
 export source_repo_name=${source_repo_name:="star-whale"}
 export target_registry=${target_registry:="homepage-bj.intra.starwhale.ai:5000"}
@@ -37,49 +32,22 @@ if ! test -f "$regctl_file"; then
     $regctl_file registry set --tls=disabled $target_registry
 fi
 
-declare -i page=1
-declare -a starwhale_image_suffix=("" "-cuda11.3" "-cuda11.3-cudnn8" "-cuda11.4" "-cuda11.4-cudnn8" "-cuda11.5" "-cuda11.5-cudnn8" "-cuda11.6" "-cuda11.6-cudnn8" "-cuda11.7")
-
-while true
-do
-  release=$(curl \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              "https://api.github.com/repos/star-whale/starwhale/releases?per_page=1&page=$page")
-  if [ $(echo "$release" | jq -r  '.[0].draft')  == "true" ] ;
-    then echo "draft release $(echo "$release" | jq -r  '.[0].name')";
-    page+=1
-  else
-    export release_version=$(echo "$release" | jq -r '.[0].tag_name')
-    #trip v
-    release_version=${release_version:1}
-    echo "real release found $release_version";
-    break
-  fi
-done
-last_version_file="$work_dir/last_version"
-
 function copy_image() {
   $regctl_file image copy "$source_registry/$1" "$target_registry/$2"
 }
 
-if last_version=$(cat "$last_version_file") ; then echo "last_version is $last_version"; fi
-if [ "$last_version"  == "$release_version" ] ; then
-  echo "release already synced"
-else
-  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:$release_version"
-  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:$release_version"
-  copy_image "$source_repo_name/server:$release_version" "$target_repo_name1/server:latest"
-  copy_image "$source_repo_name/server:$release_version" "$target_repo_name2/server:latest"
+function get_tags() {
+  local source_image=$1
+  $regctl_file tag -v error ls "$source_registry/$source_repo_name/$source_image"
+}
 
-  for suf in "${starwhale_image_suffix[@]}"
-    do
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:$release_version$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:$release_version$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name1/starwhale:latest$suf"
-      copy_image "$source_repo_name/starwhale:$release_version$suf" "$target_repo_name2/starwhale:latest$suf"
-    done
-
-  echo "$release_version" > "$last_version_file"
-
-fi
+# start to sync images
+declare -a starwhale_images=("server" "base" "cuda")
+for image in "${starwhale_images[@]}"; do
+    tags=$(get_tags "$image")
+    # if the image has already synced, regctl would skip it.
+    for tag in $tags; do
+      copy_image "$source_repo_name/$image:$tag" "$target_repo_name1/$image:$tag"
+      copy_image "$source_repo_name/$image:$tag" "$target_repo_name2/$image:$tag"
+  done
+done

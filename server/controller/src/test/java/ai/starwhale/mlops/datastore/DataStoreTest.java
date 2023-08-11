@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -118,7 +119,7 @@ public class DataStoreTest {
 
     @Test
     public void testList() {
-        assertThat("empty", this.dataStore.list(""), empty());
+        assertThat("empty", this.dataStore.list(Set.of("")), empty());
         this.dataStore.update("t1",
                 new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                 List.of());
@@ -128,9 +129,11 @@ public class DataStoreTest {
         this.dataStore.update("test",
                 new TableSchemaDesc("k", List.of(ColumnSchemaDesc.builder().name("k").type("STRING").build())),
                 List.of());
-        assertThat("all", this.dataStore.list("t"), containsInAnyOrder("t1", "t2", "test"));
-        assertThat("partial", this.dataStore.list("te"), containsInAnyOrder("test"));
-        assertThat("none", this.dataStore.list("t3"), empty());
+        assertThat("all", this.dataStore.list(Set.of("")), containsInAnyOrder("t1", "t2", "test"));
+        assertThat("all", this.dataStore.list(Set.of("t")), containsInAnyOrder("t1", "t2", "test"));
+        assertThat("partial", this.dataStore.list(Set.of("te")), containsInAnyOrder("test"));
+        assertThat("partial", this.dataStore.list(Set.of("te", "t2")), containsInAnyOrder("t2", "test"));
+        assertThat("none", this.dataStore.list(Set.of("t3")), empty());
     }
 
     @Test
@@ -851,7 +854,7 @@ public class DataStoreTest {
                 .walMaxFileSize(65536)
                 .build());
         assertThat(this.dataStore.hasDirtyTables(), is(true));
-        assertThat(this.dataStore.list("t"),
+        assertThat(this.dataStore.list(Set.of("t")),
                 is(IntStream.range(0, 10).mapToObj(k -> "t" + k).collect(Collectors.toList())));
         for (int i = 0; i < 5; ++i) {
             assertThat(

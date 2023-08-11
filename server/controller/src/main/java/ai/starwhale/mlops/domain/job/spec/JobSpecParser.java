@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -65,5 +66,28 @@ public class JobSpecParser {
             throw new SwValidationException(ValidSubject.MODEL);
         }
         return specList;
+    }
+
+    public String stepToJsonQuietly(StepSpec stepSpec)  {
+        try {
+            return Constants.objectMapper.writeValueAsString(stepSpec);
+        } catch (Exception e) {
+            log.error("failed to convert step spec to json string {}", stepSpec, e);
+        }
+        return null;
+    }
+
+    public StepSpec stepFromJsonQuietly(@Nullable String json) {
+        // for backward compatibility
+        if (json == null) {
+            return null;
+        }
+
+        try {
+            return Constants.objectMapper.readValue(json, StepSpec.class);
+        } catch (Exception e) {
+            log.error("failed to convert json string to step spec {}", json, e);
+        }
+        return null;
     }
 }

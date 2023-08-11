@@ -31,17 +31,17 @@ import ai.starwhale.mlops.api.protocol.model.ModelVo;
 import ai.starwhale.mlops.api.protocol.storage.FileNode;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.VersionAliasConverter;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.blob.BlobService;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleUrl;
 import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
-import ai.starwhale.mlops.domain.bundle.tag.TagException;
-import ai.starwhale.mlops.domain.bundle.tag.TagManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
+import ai.starwhale.mlops.domain.bundle.tag.po.BundleVersionTagEntity;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -91,12 +91,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -134,12 +134,14 @@ public class ModelService {
     private final TrashService trashService;
     private final JobSpecParser jobSpecParser;
     private final BlobService blobService;
+    private final BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
     public ModelService(
             ModelMapper modelMapper,
             ModelVersionMapper modelVersionMapper,
+            BundleVersionTagDao bundleVersionTagDao,
             IdConverter idConvertor,
             VersionAliasConverter versionAliasConvertor,
             ModelVoConverter modelVoConverter,
@@ -150,7 +152,8 @@ public class ModelService {
             HotJobHolder jobHolder,
             TrashService trashService,
             JobSpecParser jobSpecParser,
-            BlobService blobService) {
+            BlobService blobService
+    ) {
         this.modelMapper = modelMapper;
         this.modelVersionMapper = modelVersionMapper;
         this.idConvertor = idConvertor;
@@ -168,18 +171,28 @@ public class ModelService {
                 versionAliasConvertor,
                 projectService,
                 modelDao,
-                modelDao
+                modelDao,
+                bundleVersionTagDao
         );
         this.blobService = blobService;
+        this.bundleVersionTagDao = bundleVersionTagDao;
     }
 
     public PageInfo<ModelVo> listModel(ModelQuery query, PageParams pageParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectService.getProjectId(query.getProjectUrl());
         Long userId = userService.getUserId(query.getOwner());
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ModelEntity> entities = modelMapper.list(projectId, query.getNamePrefix(), userId, null);
         return PageUtil.toPageInfo(entities, entity -> {
             ModelVo vo = modelVoConverter.convert(entity);
+            var modelVersion = modelVersionMapper.findByLatest(entity.getId());
+            if (modelVersion != null) {
+                var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                        BundleAccessor.Type.MODEL, entity.getId(), List.of(modelVersion));
+                var versionVo = versionConvertor.convert(modelVersion, modelVersion, tags.get(modelVersion.getId()));
+                versionVo.setOwner(userService.findUserById(modelVersion.getOwnerId()));
+                vo.setVersion(versionVo);
+            }
             vo.setOwner(userService.findUserById(entity.getOwnerId()));
             return vo;
         });
@@ -190,8 +203,8 @@ public class ModelService {
         return Model.fromEntity(entity);
     }
 
-    public ModelVersion findModelVersion(String versioUrl) {
-        ModelVersionEntity modelVersion = modelDao.getModelVersion(versioUrl);
+    public ModelVersion findModelVersion(String versionUrl) {
+        ModelVersionEntity modelVersion = modelDao.getModelVersion(versionUrl);
         return ModelVersion.fromEntity(modelVersion);
     }
 
@@ -239,8 +252,7 @@ public class ModelService {
     }
 
     public List<ModelInfoVo> listModelInfoOfModel(ModelEntity model) {
-        List<ModelVersionEntity> versions = modelVersionMapper.list(
-                model.getId(), null, null);
+        List<ModelVersionEntity> versions = modelVersionMapper.list(model.getId(), null);
         if (versions == null || versions.isEmpty()) {
             return List.of();
         }
@@ -253,7 +265,8 @@ public class ModelService {
             String projectUrl,
             String modelUrl,
             String baseVersion,
-            String compareVersion) {
+            String compareVersion
+    ) {
         var baseFiles = this.listModelFiles(projectUrl, modelUrl, baseVersion);
         var compareFiles = this.listModelFiles(projectUrl, modelUrl, compareVersion);
         FileNode.compare(baseFiles, compareFiles);
@@ -275,8 +288,8 @@ public class ModelService {
         ModelVersionEntity versionEntity = null;
         if (!StrUtil.isEmpty(versionUrl)) {
             // find version by versionId
-            Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                    .create(projectUrl, modelUrl, versionUrl));
+            Long versionId = bundleManager.getBundleVersionId(
+                    BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
             versionEntity = modelVersionMapper.find(versionId);
         }
         if (versionEntity == null) {
@@ -284,23 +297,25 @@ public class ModelService {
             versionEntity = modelVersionMapper.findByLatest(model.getId());
         }
         if (versionEntity == null) {
-            throw new SwNotFoundException(ResourceType.BUNDLE_VERSION,
-                    "Unable to find the version of model " + modelUrl);
+            throw new SwNotFoundException(
+                    ResourceType.BUNDLE_VERSION,
+                    "Unable to find the version of model " + modelUrl
+            );
         }
 
         return toModelInfoVo(model, versionEntity);
     }
 
     private ModelInfoVo toModelInfoVo(ModelEntity model, ModelVersionEntity version) {
+        var tags = bundleVersionTagDao.getTagsByBundleVersions(
+                BundleAccessor.Type.MODEL,
+                model.getId(),
+                List.of(version)
+        );
         return ModelInfoVo.builder()
                 .id(idConvertor.convert(model.getId()))
                 .name(model.getModelName())
-                .versionId(idConvertor.convert(version.getId()))
-                .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
-                .versionName(version.getVersionName())
-                .versionTag(version.getVersionTag())
-                .createdTime(version.getCreatedTime().getTime())
-                .shared(toInt(version.getShared()))
+                .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
                 .build();
     }
 
@@ -309,7 +324,7 @@ public class ModelService {
             throw new SwValidationException(ValidSubject.MODEL, "no attributes set for model version");
         }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, modelUrl, versionUrl));
+                                                                  .create(projectUrl, modelUrl, versionUrl));
         ModelVersionEntity entity = ModelVersionEntity.builder()
                 .id(versionId)
                 .versionTag(version.getTag())
@@ -320,19 +335,6 @@ public class ModelService {
         return update > 0;
     }
 
-
-    public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
-            TagAction tagAction) {
-        try {
-            return TagManager.create(bundleManager, modelDao)
-                    .updateTag(
-                            BundleVersionUrl.create(projectUrl, modelUrl, versionUrl),
-                            tagAction);
-        } catch (TagException e) {
-            throw new SwValidationException(ValidSubject.MODEL, "failed to create tag manager", e);
-        }
-    }
-
     public Boolean revertVersionTo(String projectUrl, String modelUrl, String versionUrl) {
         return RevertManager.create(bundleManager, modelDao)
                 .revertVersionTo(BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
@@ -340,18 +342,12 @@ public class ModelService {
 
     public PageInfo<ModelVersionVo> listModelVersionHistory(ModelVersionQuery query, PageParams pageParams) {
         Long modelId = bundleManager.getBundleId(BundleUrl
-                .create(query.getProjectUrl(), query.getModelUrl()));
+                                                         .create(query.getProjectUrl(), query.getModelUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ModelVersionEntity> entities = modelVersionMapper.list(
-                modelId, query.getVersionName(), query.getVersionTag());
-        ModelVersionEntity latest = modelVersionMapper.findByLatest(modelId);
-        return PageUtil.toPageInfo(entities, entity -> {
-            ModelVersionVo vo = versionConvertor.convert(entity);
-            if (latest != null && Objects.equals(entity.getId(), latest.getId())) {
-                vo.setAlias(VersionAliasConverter.LATEST);
-            }
-            return vo;
-        });
+        var entities = modelVersionMapper.list(modelId, query.getVersionName());
+        var latest = modelVersionMapper.findByLatest(modelId);
+        var tags = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
+        return PageUtil.toPageInfo(entities, i -> versionConvertor.convert(i, latest, tags.get(i.getId())));
     }
 
     public void shareModelVersion(String projectUrl, String modelUrl, String versionUrl, Boolean shared) {
@@ -361,7 +357,7 @@ public class ModelService {
             throw new SwValidationException(ValidSubject.MODEL, "project is not public");
         }
         Long versionId = bundleManager.getBundleVersionId(BundleVersionUrl
-                .create(projectUrl, modelUrl, versionUrl));
+                                                                  .create(projectUrl, modelUrl, versionUrl));
         modelVersionMapper.updateShared(versionId, shared);
     }
 
@@ -376,9 +372,20 @@ public class ModelService {
 
     private Collection<ModelViewVo> viewEntityToVo(List<ModelVersionViewEntity> list, Boolean shared) {
         Map<Long, ModelViewVo> map = new LinkedHashMap<>();
+        var tags = new HashMap<Long, Map<Long, List<String>>>();
+        // group by modelId
+        var modelGroups = list.stream().collect(Collectors.groupingBy(ModelVersionViewEntity::getModelId));
+        for (var entry : modelGroups.entrySet()) {
+            var modelId = entry.getKey();
+            var entities = entry.getValue();
+            var tagsMap = bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.MODEL, modelId, entities);
+            tags.put(modelId, tagsMap);
+        }
+
         for (ModelVersionViewEntity entity : list) {
             if (!map.containsKey(entity.getModelId())) {
-                map.put(entity.getModelId(),
+                map.put(
+                        entity.getModelId(),
                         ModelViewVo.builder()
                                 .ownerName(entity.getUserName())
                                 .projectName(entity.getProjectName())
@@ -386,21 +393,26 @@ public class ModelService {
                                 .modelName(entity.getModelName())
                                 .shared(toInt(shared))
                                 .versions(new ArrayList<>())
-                                .build());
+                                .build()
+                );
             }
             ModelVersionEntity latest = modelVersionMapper.findByLatest(entity.getModelId());
+            var versionTags =
+                    tags.get(entity.getModelId()) == null ? null : tags.get(entity.getModelId()).get(entity.getId());
             try {
                 map.get(entity.getModelId())
                         .getVersions()
                         .add(ModelVersionViewVo.builder()
-                                .id(idConvertor.convert(entity.getId()))
-                                .versionName(entity.getVersionName())
-                                .alias(versionAliasConvertor.convert(entity.getVersionOrder(), latest, entity))
-                                .createdTime(entity.getCreatedTime().getTime())
-                                .shared(toInt(entity.getShared()))
-                                .builtInRuntime(entity.getBuiltInRuntime())
-                                .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
-                                .build());
+                                     .id(idConvertor.convert(entity.getId()))
+                                     .versionName(entity.getVersionName())
+                                     .alias(versionAliasConvertor.convert(entity.getVersionOrder()))
+                                     .tags(versionTags)
+                                     .latest(entity.getId() != null && entity.getId().equals(latest.getId()))
+                                     .createdTime(entity.getCreatedTime().getTime())
+                                     .shared(toInt(entity.getShared()))
+                                     .builtInRuntime(entity.getBuiltInRuntime())
+                                     .stepSpecs(jobSpecParser.parseAndFlattenStepFromYaml(entity.getJobs()))
+                                     .build());
             } catch (JsonProcessingException e) {
                 log.error("parse step spec error for model version:{}", entity.getId(), e);
                 throw new SwValidationException(ValidSubject.MODEL, e.getMessage());
@@ -410,21 +422,26 @@ public class ModelService {
     }
 
     public List<ModelVo> findModelByVersionId(List<Long> versionIds) {
-
+        if (versionIds.isEmpty()) {
+            return List.of();
+        }
         List<ModelVersionEntity> versions = modelVersionMapper.findByIds(Joiner.on(",").join(versionIds));
-
-        List<Long> ids = versions.stream()
-                .map(ModelVersionEntity::getModelId)
-                .collect(Collectors.toList());
-
-        List<ModelEntity> models = modelMapper.findByIds(Joiner.on(",").join(ids));
-
-        return models.stream()
-                .map(model -> {
-                    ModelVo vo = modelVoConverter.convert(model);
-                    vo.setOwner(userService.findUserById(model.getOwnerId()));
-                    return vo;
-                }).collect(Collectors.toList());
+        var tags = new HashMap<Long, Map<Long, List<String>>>();
+        versions.stream().collect(Collectors.groupingBy(ModelVersionEntity::getModelId))
+                .forEach((id, versionList) -> tags.put(
+                        id,
+                        bundleVersionTagDao.getTagsByBundleVersions(BundleAccessor.Type.RUNTIME, id, versionList)
+                ));
+        return versions.stream().map(version -> {
+            ModelEntity model = modelMapper.find(version.getModelId());
+            ModelVersionEntity latest = modelVersionMapper.findByLatest(version.getModelId());
+            ModelVo vo = modelVoConverter.convert(model);
+            vo.setOwner(userService.findUserById(model.getOwnerId()));
+            var versionTags =
+                    tags.get(version.getModelId()) == null ? null : tags.get(version.getModelId()).get(version.getId());
+            vo.setVersion(versionConvertor.convert(version, latest, versionTags));
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     private Long getOwner() {
@@ -438,8 +455,10 @@ public class ModelService {
     public InitUploadBlobResult initUploadBlob(InitUploadBlobRequest initUploadBlobRequest) {
         try {
             try {
-                var blobId = this.blobService.readBlobRef(initUploadBlobRequest.getContentMd5(),
-                        initUploadBlobRequest.getContentLength());
+                var blobId = this.blobService.readBlobRef(
+                        initUploadBlobRequest.getContentMd5(),
+                        initUploadBlobRequest.getContentLength()
+                );
                 return InitUploadBlobResult.builder()
                         .status(Status.EXISTED)
                         .blobId(blobId)
@@ -465,7 +484,8 @@ public class ModelService {
 
     @Transactional
     public void createModelVersion(
-            String project, String model, String version, CreateModelVersionRequest createModelVersionRequest) {
+            String project, String model, String version, CreateModelVersionRequest createModelVersionRequest
+    ) {
         var projectEntity = this.projectService.findProject(project);
         if (projectEntity == null) {
             throw new SwNotFoundException(ResourceType.PROJECT, "project not found");
@@ -489,16 +509,21 @@ public class ModelService {
                             Model jobModel = job.getModel();
                             if (jobModel.getName().equals(model)
                                     && jobModel.getVersion().equals(version)) {
-                                throw new StarwhaleApiException(new SwValidationException(ValidSubject.MODEL,
-                                        "job's are running on model version " + version
-                                                + " you can't force push now"),
-                                        HttpStatus.BAD_REQUEST);
+                                throw new StarwhaleApiException(
+                                        new SwValidationException(
+                                                ValidSubject.MODEL,
+                                                "job's are running on model version " + version
+                                                        + " you can't force push now"
+                                        ),
+                                        HttpStatus.BAD_REQUEST
+                                );
                             }
                         });
             } else {
                 throw new StarwhaleApiException(
                         new SwValidationException(ValidSubject.MODEL, "model version duplicate" + version),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.BAD_REQUEST
+                );
             }
         }
         var metaBlobId = createModelVersionRequest.getMetaBlobId();
@@ -572,8 +597,8 @@ public class ModelService {
     public ListFilesResult listFiles(String project, String model, String version, String path) {
         return ListFilesResult.builder()
                 .files(this.getFile(this.getModelMetaBlob(project, model, version, ""), path).stream()
-                        .map(this::convert)
-                        .collect(Collectors.toList()))
+                               .map(this::convert)
+                               .collect(Collectors.toList()))
                 .build();
     }
 
@@ -583,8 +608,10 @@ public class ModelService {
         if (ret.getType() == FileNode.Type.DIRECTORY) {
             for (int i = f.getFromFileIndex(); i < f.getToFileIndex(); ++i) {
                 if (i < index) {
-                    throw new SwProcessException(ErrorType.SYSTEM,
-                            "invalid file index. current:" + index + " node:" + f);
+                    throw new SwProcessException(
+                            ErrorType.SYSTEM,
+                            "invalid file index. current:" + index + " node:" + f
+                    );
                 }
                 ret.getFiles().add(this.convertRecursively(fileList, i));
             }
@@ -649,8 +676,10 @@ public class ModelService {
                 }
                 var file = files.getFirst();
                 if (index >= file.getBlobIdsCount()) {
-                    throw new SwProcessException(ErrorType.SYSTEM,
-                            "invalid index. max:" + file.getBlobIdsCount() + " current:" + index);
+                    throw new SwProcessException(
+                            ErrorType.SYSTEM,
+                            "invalid index. max:" + file.getBlobIdsCount() + " current:" + index
+                    );
                 }
                 var blobId = file.getBlobIds(index);
                 ++index;
@@ -681,7 +710,8 @@ public class ModelService {
 
     private InputStream readFileData(
             InputStream in,
-            ModelPackageStorage.CompressionAlgorithm compressionAlgorithm) {
+            ModelPackageStorage.CompressionAlgorithm compressionAlgorithm
+    ) {
         if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_NO_COMPRESSION) {
             return in;
         }
@@ -710,14 +740,23 @@ public class ModelService {
                     for (int i = 0; i < size; ) {
                         int n = in.read(this.readBuf, i, size - i);
                         if (n < 0) {
-                            throw new SwProcessException(ErrorType.SYSTEM,
-                                    "not enough data. expected:" + size + " actual:" + i);
+                            throw new SwProcessException(
+                                    ErrorType.SYSTEM,
+                                    "not enough data. expected:" + size + " actual:" + i
+                            );
                         }
                         i += n;
                     }
                     if (compressionAlgorithm == CompressionAlgorithm.COMPRESSION_ALGORITHM_LZ4) {
                         this.current = new ByteArrayInputStream(this.decompressBuf, 0,
-                                lz4SafeDecompressor.decompress(this.readBuf, 0, size, this.decompressBuf, 0));
+                                                                lz4SafeDecompressor.decompress(
+                                                                        this.readBuf,
+                                                                        0,
+                                                                        size,
+                                                                        this.decompressBuf,
+                                                                        0
+                                                                )
+                        );
                     } else {
                         throw new SwProcessException(ErrorType.SYSTEM, "invalid compression:" + compressionAlgorithm);
                     }
@@ -821,10 +860,12 @@ public class ModelService {
         return ret;
     }
 
-    private void iterateDir(AtomicReference<ModelPackageStorage.MetaBlob> metaBlob,
+    private void iterateDir(
+            AtomicReference<ModelPackageStorage.MetaBlob> metaBlob,
             LinkedList<ModelPackageStorage.MetaBlobIndex> indexes,
             ModelPackageStorage.File dir,
-            Function<File, Boolean> processor) {
+            Function<File, Boolean> processor
+    ) {
         var from = dir.getFromFileIndex();
         var to = dir.getToFileIndex();
         for (int i = from; i < to; ++i) {
@@ -858,10 +899,34 @@ public class ModelService {
         return modelVersionEntity.getName();
     }
 
-    private ModelVersionEntity getModelVersion(
-            String projectUrl, String modelUrl, String versionUrl) {
+    private ModelVersionEntity getModelVersion(String projectUrl, String modelUrl, String versionUrl) {
         Long versionId = bundleManager.getBundleVersionId(
                 BundleVersionUrl.create(projectUrl, modelUrl, versionUrl));
         return modelVersionMapper.find(versionId);
+    }
+
+    public void addModelVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag, Boolean force) {
+        var userId = userService.currentUserDetail().getId();
+        bundleManager.addBundleVersionTag(
+                BundleAccessor.Type.MODEL,
+                projectUrl,
+                modelUrl,
+                versionUrl,
+                tag,
+                userId,
+                force
+        );
+    }
+
+    public List<String> listModelVersionTags(String projectUrl, String modelUrl, String versionUrl) {
+        return bundleManager.listBundleVersionTags(BundleAccessor.Type.MODEL, projectUrl, modelUrl, versionUrl);
+    }
+
+    public void deleteModelVersionTag(String projectUrl, String modelUrl, String versionUrl, String tag) {
+        bundleManager.deleteBundleVersionTag(BundleAccessor.Type.MODEL, projectUrl, modelUrl, versionUrl, tag);
+    }
+
+    public BundleVersionTagEntity getModelVersionTag(String projectUrl, String modelUrl, String tag) {
+        return bundleManager.getBundleVersionTag(BundleAccessor.Type.MODEL, projectUrl, modelUrl, tag);
     }
 }

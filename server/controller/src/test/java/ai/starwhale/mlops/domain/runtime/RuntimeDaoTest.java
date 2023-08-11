@@ -31,7 +31,6 @@ import static org.mockito.BDDMockito.same;
 
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
-import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -69,35 +68,6 @@ public class RuntimeDaoTest {
 
         res = manager.findById(2L);
         assertThat(res, hasProperty("id", is(2L)));
-    }
-
-    @Test
-    public void testFindObjectWithTagById() {
-        given(versionMapper.find(anyLong()))
-                .willAnswer(invocation -> {
-                    Long id = invocation.getArgument(0);
-                    return RuntimeVersionEntity.builder().id(id).versionTag("tag").build();
-                });
-
-        var res = manager.findObjectWithTagById(1L);
-        assertThat(res, allOf(
-                hasProperty("id", is(1L)),
-                hasProperty("tag", is("tag"))
-        ));
-
-        res = manager.findObjectWithTagById(2L);
-        assertThat(res, allOf(
-                hasProperty("id", is(2L)),
-                hasProperty("tag", is("tag"))
-        ));
-    }
-
-    @Test
-    public void testUpdateTag() {
-        given(versionMapper.updateTag(same(1L), same("tag")))
-                .willReturn(1);
-        var res = manager.updateTag(HasTagWrapper.builder().id(1L).tag("tag").build());
-        assertThat(res, is(true));
     }
 
     @Test

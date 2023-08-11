@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.dataset.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.dataset.po.DatasetEntity;
 import java.util.List;
@@ -25,6 +27,7 @@ import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.dao.DuplicateKeyException;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -101,16 +104,29 @@ public class DatasetMapperTest extends MySqlContainerHolder {
                 .build();
         datasetMapper.insert(dataset1);
 
+        DatasetEntity duplicate = DatasetEntity.builder()
+                .datasetName("dataset1")
+                .ownerId(1L)
+                .projectId(1L)
+                .build();
+        assertThrows(DuplicateKeyException.class, () -> datasetMapper.insert(duplicate));
+
         datasetMapper.remove(dataset1.getId());
         Assertions.assertEquals(1, datasetMapper.find(dataset1.getId()).getIsDeleted());
         Assertions.assertNull(datasetMapper.findByName(dataset1.getDatasetName(), dataset1.getProjectId(), false));
         Assertions.assertEquals(dataset1.getDatasetName(),
                 datasetMapper.findDeleted(dataset1.getId()).getDatasetName());
 
+        datasetMapper.insert(duplicate);
+        assertThrows(DuplicateKeyException.class, () -> datasetMapper.recover(dataset1.getId()));
+        datasetMapper.remove(duplicate.getId());
+
         datasetMapper.recover(dataset1.getId());
         Assertions.assertEquals(0, datasetMapper.find(dataset1.getId()).getIsDeleted());
         Assertions.assertEquals(dataset1,
                 datasetMapper.findByName(dataset1.getDatasetName(), dataset1.getProjectId(), false));
         Assertions.assertNull(datasetMapper.findDeleted(dataset1.getId()));
+
+        assertThrows(DuplicateKeyException.class, () -> datasetMapper.insert(duplicate));
     }
 }

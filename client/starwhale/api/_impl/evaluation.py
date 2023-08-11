@@ -38,7 +38,6 @@ class PipelineHandler(metaclass=ABCMeta):
         self,
         predict_batch_size: int = 1,
         ignore_error: bool = False,
-        flush_result: bool = False,
         predict_auto_log: bool = True,
         predict_log_mode: str = PredictLogMode.PICKLE.value,
         predict_log_dataset_features: t.Optional[t.List[str]] = None,
@@ -53,7 +52,6 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self.predict_log_dataset_features = predict_log_dataset_features
         self.ignore_error = ignore_error
-        self.flush_result = flush_result
         self.predict_auto_log = predict_auto_log
         self.predict_log_mode = PredictLogMode(predict_log_mode)
         self.kwargs = kwargs
@@ -288,7 +286,7 @@ class PipelineHandler(metaclass=ABCMeta):
                         duration_seconds=_duration,
                     )
 
-        if self.flush_result and self.predict_auto_log:
+        if self.predict_auto_log:
             self.evaluation_store.flush_result()
 
         console.info(
@@ -515,10 +513,8 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
     the different predict workers.
 
     Arguments:
-        datasets: [Union[List[str], None], optional] Use the datasets rows as the input data for the predict function.
-        resources: [Dict, optional] Resources for the predict task, such as memory, gpu etc. Current only supports
-            the cloud instance.
-        concurrency: [int, optional] The concurrency of the predict tasks. Default is 1.
+        resources: [Dict, optional] Resources for the predict task, such as cpu, memory, nvidia.com/gpu etc. Current only supports
+            the Server instance.
         replicas: [int, optional] The number of the predict tasks. Default is 1.
         batch_size: [int, optional] Number of samples per batch. Default is 1.
         fail_on_error: [bool, optional] Fast fail on the exceptions in the predict function. Default is True.
@@ -530,7 +526,6 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
 
     Examples:
     ```python
-
     from starwhale import evaluation
 
     @evaluation.predict
@@ -541,8 +536,26 @@ def predict(*args: t.Any, **kw: t.Any) -> t.Any:
         dataset="mnist/version/latest",
         batch_size=32,
         replicas=4,
+        needs=[predict_image],
     )
     def predict_batch_images(batch_data)
+        ...
+
+    @evaluation.predict(
+        resources={"nvidia.com/gpu": 1,
+                "cpu": {"request": 1, "limit": 2},
+                "mem": 200 * 1024},  # 200MB
+        log_mode="plain",
+    )
+    def predict_with_resources(data):
+        ...
+
+    @evaluation.predict(
+        replicas=1,
+        log_mode="plain",
+        log_dataset_features=["txt", "img", "label"],
+    )
+    def predict_with_selected_features(data):
         ...
     ```
 
@@ -608,8 +621,8 @@ def evaluate(*args: t.Any, **kw: t.Any) -> t.Any:
         needs: [List[Callable], required] The list of the functions that need to be executed before the evaluate function.
         use_predict_auto_log: [bool, optional] Passing the iterator of the predict auto-log results into the evaluate function.
             Default is True.
-        resources: [Dict, optional] Resources for the predict task, such as memory, gpu etc. Current only supports
-            the cloud instance.
+        resources: [Dict, optional] Resources for the predict task, such as memory, cpu, nvidia.com/gpu etc. Current only supports
+            the Server instance.
 
     Examples:
     ```python

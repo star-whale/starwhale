@@ -69,7 +69,7 @@ class DatasetCopy(BundleCopy):
             )
             return (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
 
-    def do(self) -> None:
+    def do_copy_bundle(self) -> None:
         if (
             not self.force
             and self.dest_uri.version

@@ -32,7 +32,9 @@ import org.apache.ibatis.jdbc.SQL;
 @Mapper
 public interface ModelMapper {
 
-    String COLUMNS = "id, model_name, project_id, owner_id, is_deleted, created_time, modified_time";
+    String COLUMNS = "id, model_name, project_id, owner_id, created_time, modified_time, "
+                + "IF(deleted_time > 0, 1, 0) as is_deleted, "
+                + "IF(deleted_time > 0, deleted_time, null) as deleted_time";
 
     @SelectProvider(value = ModelProvider.class, method = "listSql")
     List<ModelEntity> list(@Param("projectId") Long projectId,
@@ -45,10 +47,10 @@ public interface ModelMapper {
     @Options(useGeneratedKeys = true, keyColumn = "id", keyProperty = "id")
     long insert(ModelEntity entity);
 
-    @Update("update model_info set is_deleted = 1 where id = #{id}")
+    @Update("update model_info set deleted_time = UNIX_TIMESTAMP(NOW(3)) * 1000 where id = #{id}")
     int remove(@Param("id") Long id);
 
-    @Update("update model_info set is_deleted = 0 where id = #{id}")
+    @Update("update model_info set deleted_time = 0 where id = #{id}")
     int recover(@Param("id") Long id);
 
     @Select("select " + COLUMNS + " from model_info where id = #{id}")
@@ -62,7 +64,7 @@ public interface ModelMapper {
             @Param("projectId") Long projectId,
             @Param("forUpdate") Boolean forUpdate);
 
-    @Select("select " + COLUMNS + " from model_info where id = #{id} and is_deleted = 1")
+    @Select("select " + COLUMNS + " from model_info where id = #{id} and deleted_time > 0")
     ModelEntity findDeleted(@Param("id") Long id);
 
 
@@ -76,7 +78,7 @@ public interface ModelMapper {
                 {
                     SELECT(COLUMNS);
                     FROM("model_info");
-                    WHERE("is_deleted = 0");
+                    WHERE("deleted_time = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }
@@ -103,7 +105,7 @@ public interface ModelMapper {
                     SELECT(COLUMNS);
                     FROM("model_info");
                     WHERE("model_name = #{name}");
-                    WHERE("is_deleted = 0");
+                    WHERE("deleted_time = 0");
                     if (Objects.nonNull(projectId)) {
                         WHERE("project_id = #{projectId}");
                     }

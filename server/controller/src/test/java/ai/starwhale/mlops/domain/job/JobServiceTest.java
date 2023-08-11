@@ -52,6 +52,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.po.JobFlattenEntity;
 import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
@@ -114,7 +115,7 @@ public class JobServiceTest {
         taskMapper = mock(TaskMapper.class);
         jobConverter = mock(JobConverter.class);
         jobBoConverter = mock(JobBoConverter.class);
-        given(jobConverter.convert(any(Job.class))).willReturn(JobVo.builder().id("1").build());
+        given(jobConverter.convert(any(JobEntity.class))).willReturn(JobVo.builder().id("1").build());
         jobSpliterator = mock(JobSpliterator.class);
         hotJobHolder = mock(HotJobHolder.class);
         jobLoader = mock(JobLoader.class);
@@ -127,6 +128,8 @@ public class JobServiceTest {
         jobDao = mock(JobDao.class);
         given(jobDao.findJob("1"))
                 .willReturn(Job.builder().id(1L).type(JobType.EVALUATION).build());
+        given(jobDao.findJobEntity("1"))
+                .willReturn(JobEntity.builder().id(1L).type(JobType.EVALUATION).build());
         given(jobDao.getJobId("1"))
                 .willReturn(1L);
         given(jobDao.getJobId("2"))
@@ -149,7 +152,7 @@ public class JobServiceTest {
     @Test
     public void testListJobs() {
         given(jobDao.listJobs(same(1L), same(1L)))
-                .willReturn(List.of(Job.builder().build(), Job.builder().build()));
+                .willReturn(List.of(JobEntity.builder().build(), JobEntity.builder().build()));
         var res = service.listJobs("1", 1L, new PageParams(1, 10));
         assertThat(res, allOf(
                 notNullValue(),

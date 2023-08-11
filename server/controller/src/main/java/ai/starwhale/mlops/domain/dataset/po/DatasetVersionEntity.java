@@ -39,6 +39,7 @@ public class DatasetVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private Long ownerId;
     private String versionName;
+    @Deprecated
     private String versionTag;
     private String versionMeta;
     private String filesUploaded;

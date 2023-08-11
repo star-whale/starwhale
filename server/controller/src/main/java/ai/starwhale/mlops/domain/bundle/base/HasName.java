@@ -19,4 +19,8 @@ package ai.starwhale.mlops.domain.bundle.base;
 public interface HasName {
 
     String getName();
+
+    default String getUniqueName() {
+        return getName();
+    }
 }

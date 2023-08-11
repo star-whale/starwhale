@@ -94,6 +94,9 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--yaml",
                 str(yaml_path),
+                "--tag",
+                "t0",
+                "--tag=t2",
             ],
             obj=mock_obj,
         )
@@ -102,6 +105,7 @@ class StandaloneDatasetTestCase(TestCase):
         call_args = mock_obj.build.call_args[0]
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
+        assert mock_obj.build.call_args[1]["tags"] == ("t0", "t2")
 
         new_workdir = "/tmp/workdir-new"
         ensure_dir(new_workdir)
@@ -113,13 +117,14 @@ class StandaloneDatasetTestCase(TestCase):
         m_import.reset_mock()
         result = runner.invoke(
             build_cli,
-            ["-f", os.path.join(new_workdir, "dataset-new.yaml")],
+            ["-f", os.path.join(new_workdir, "dataset-new.yaml"), "-t", "t3"],
             obj=mock_obj,
         )
         assert result.exit_code == 0
         assert mock_obj.build.call_count == 1
         assert call_args[1].name == "mnist"
         assert m_import.call_args[0][1] == "dataset:build"
+        assert mock_obj.build.call_args[1]["tags"] == ("t3",)
 
     @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
     def test_build_from_image_folder(self, m_dump: MagicMock) -> None:
@@ -140,6 +145,7 @@ class StandaloneDatasetTestCase(TestCase):
                 str(image_folder),
                 "--auto-label",
                 "--patch",
+                "--tag=t0",
             ],
             obj=mock_obj,
         )
@@ -162,6 +168,43 @@ class StandaloneDatasetTestCase(TestCase):
         )
         assert m_dump.call_count == 1
 
+    @patch("starwhale.api._impl.dataset.model.Dataset.from_csv")
+    def test_build_from_csv(self, m_csv: MagicMock) -> None:
+        mock_obj = MagicMock()
+        runner = CliRunner()
+        result = runner.invoke(
+            build_cli,
+            [
+                "--name",
+                "csv-test",
+                "--csv",
+                "test.csv",
+                "--csv",
+                "test2.csv",
+                "-c",
+                "/path/to/dir",
+                "--csv=http://example.com/test.csv",
+                "--dialect=excel-tab",
+                "--strict",
+                "--encoding=utf-8",
+            ],
+            obj=mock_obj,
+        )
+        assert result.exit_code == 0
+        assert mock_obj.build_from_csv_files.call_count == 1
+        call_args = mock_obj.build_from_csv_files.call_args
+        assert call_args
+        assert len(call_args[0][0]) == 4
+        assert call_args[1]["name"] == "csv-test"
+        assert call_args[1]["dialect"] == "excel-tab"
+        assert call_args[1]["encoding"] == "utf-8"
+
+        DatasetTermView.build_from_csv_files(
+            paths=["test.csv"], name="csv-test-file", project_uri=""
+        )
+        assert m_csv.call_count == 1
+        assert m_csv.call_args[1]["path"] == ["test.csv"]
+
     @patch("starwhale.api._impl.dataset.model.Dataset.from_huggingface")
     def test_build_from_huggingface(self, m_hf: MagicMock) -> None:
         mock_obj = MagicMock()
@@ -183,7 +226,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert call_args
         assert call_args[0][0] == "mnist"
         assert call_args[1]["name"] == "huggingface-test"
-        assert call_args[1]["subset"] is None
+        assert len(call_args[1]["subsets"]) == 0
         assert not call_args[1]["cache"]
 
         DatasetTermView.build_from_huggingface(
@@ -192,9 +235,10 @@ class StandaloneDatasetTestCase(TestCase):
             project_uri="self",
             alignment_size="128",
             volume_size="128M",
-            subset="sub1",
+            subsets=["sub1"],
             split="train",
             revision="main",
+            cache=True,
         )
         assert m_hf.call_count == 1
         assert m_hf.call_args[1]["cache"]
@@ -220,7 +264,7 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--name",
                 "json-file-test",
-                "--json-file",
+                "--json",
                 str(json_file),
                 "--field-selector",
                 "sub.sub",
@@ -229,15 +273,15 @@ class StandaloneDatasetTestCase(TestCase):
             obj=mock_obj,
         )
         assert result.exit_code == 0
-        assert mock_obj.build_from_json_file.call_count == 1
-        call_args = mock_obj.build_from_json_file.call_args
+        assert mock_obj.build_from_json_files.call_count == 1
+        call_args = mock_obj.build_from_json_files.call_args
         assert call_args[1]["name"] == "json-file-test"
         assert call_args[1]["mode"] == DatasetChangeMode.OVERWRITE
         assert call_args[1]["field_selector"] == "sub.sub"
-        assert call_args[0][0] == str(json_file)
+        assert str(json_file) in call_args[0][0]
 
-        DatasetTermView.build_from_json_file(
-            json_file_path=json_file,
+        DatasetTermView.build_from_json_files(
+            paths=[json_file],
             name="json-file-test",
             project_uri="",
             alignment_size="128",
@@ -264,20 +308,20 @@ class StandaloneDatasetTestCase(TestCase):
             [
                 "--name",
                 "json-file-test",
-                "--json-file",
+                "--json",
                 url,
             ],
             obj=mock_obj,
         )
         assert result.exit_code == 0
-        assert mock_obj.build_from_json_file.call_count == 1
-        call_args = mock_obj.build_from_json_file.call_args
+        assert mock_obj.build_from_json_files.call_count == 1
+        call_args = mock_obj.build_from_json_files.call_args
         assert call_args[1]["name"] == "json-file-test"
         assert call_args[1]["field_selector"] == ""
-        assert call_args[0][0] == url
+        assert url in call_args[0][0]
 
-        DatasetTermView.build_from_json_file(
-            json_file_path=url,
+        DatasetTermView.build_from_json_files(
+            paths=[url],
             name="json-file-test",
             project_uri="",
             alignment_size="128",
@@ -334,7 +378,7 @@ class StandaloneDatasetTestCase(TestCase):
         config.handler = _MockBuildExecutor
         dataset_uri = Resource(name, typ=ResourceType.dataset)
         sd = StandaloneDataset(dataset_uri)
-        sd.build(workdir=Path(workdir), config=config)
+        sd.build(workdir=Path(workdir), config=config, tags=["t0", "t1"])
         build_version = sd.uri.version
 
         snapshot_workdir = (
@@ -361,6 +405,9 @@ class StandaloneDatasetTestCase(TestCase):
         assert _info["version"] == build_version
         assert _info["name"] == name
         assert _info["bundle_path"] == str(snapshot_workdir.resolve())
+
+        tags = sd.tag.list()
+        assert set(tags) == {"t0", "t1", "latest", "v0"}
 
         _list, _ = StandaloneDataset.list(Project(""))
         assert len(_list) == 1
@@ -449,25 +496,6 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(dataset_uri).head(2, show_raw_data=True, show_types=True)
         DatasetTermViewJson(dataset_uri).head(1, show_raw_data=False)
         DatasetTermViewJson(dataset_uri).head(2, show_raw_data=True)
-
-    @patch("starwhale.base.uri.resource.Resource._refine_local_rc_info")
-    @patch("starwhale.api._impl.data_store.LocalDataStore.dump")
-    def test_from_json(self, m_dump: MagicMock, *args: t.Any) -> None:
-        from starwhale.api._impl.dataset import Dataset as SDKDataset
-
-        myds = SDKDataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
-        )
-        assert myds[0].features.en == "hello"
-
-        myds = SDKDataset.from_json(
-            "translation",
-            '{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
-            "content.child_content",
-        )
-        assert myds[1].features["zh-cn"] == "最近怎么样"
-        assert m_dump.call_count == 2
 
 
 class TestJsonDict(TestCase):

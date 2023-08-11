@@ -16,7 +16,7 @@ export default function SettingAgentListCard() {
     const [t] = useTranslation()
 
     const handleAction = useCallback(
-        async (serialNumber) => {
+        async (serialNumber: string) => {
             await deleteAgent(serialNumber)
             toaster.positive(t('agent delete done'), { autoHideDuration: 2000 })
             await agentsInfo.refetch()

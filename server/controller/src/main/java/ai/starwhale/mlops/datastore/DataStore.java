@@ -118,26 +118,30 @@ public class DataStore {
         this.walManager.terminate();
     }
 
-    public List<String> list(String prefix) {
-        try {
-            return Stream.concat(
-                            this.storageAccessService.list(this.snapshotRootPath + prefix)
-                                    .map(path -> {
-                                        path = path.substring(this.snapshotRootPath.length());
-                                        var index = path.indexOf(PATH_SEPARATOR);
-                                        if (index < 0) {
-                                            return path;
-                                        } else {
-                                            return path.substring(0, index);
-                                        }
-                                    }),
-                            tables.keySet().stream().filter(name -> name.startsWith(prefix)))
-                    .sorted()
-                    .distinct()
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new SwProcessException(ErrorType.DATASTORE, "failed to list", e);
-        }
+    public List<String> list(Set<String> prefixes) {
+        return prefixes.stream()
+                .flatMap(prefix -> {
+                    try {
+                        return Stream.concat(
+                                    this.storageAccessService.list(this.snapshotRootPath + prefix)
+                                            .map(path -> {
+                                                path = path.substring(this.snapshotRootPath.length());
+                                                var index = path.indexOf(PATH_SEPARATOR);
+                                                if (index < 0) {
+                                                    return path;
+                                                } else {
+                                                    return path.substring(0, index);
+                                                }
+                                            }),
+                                    tables.keySet().stream().filter(name -> name.startsWith(prefix))
+                        );
+                    } catch (IOException e) {
+                        throw new SwProcessException(ErrorType.DATASTORE, "failed to list", e);
+                    }
+                })
+                .sorted()
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public String update(String tableName,

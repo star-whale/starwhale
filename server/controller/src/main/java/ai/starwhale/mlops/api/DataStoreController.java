@@ -75,7 +75,7 @@ public class DataStoreController implements DataStoreApi {
 
     public ResponseEntity<ResponseMessage<TableNameListVo>> listTables(ListTablesRequest request) {
         return ResponseEntity.ok(
-                Code.success.asResponse(new TableNameListVo(this.dataStore.list(request.getPrefix()))));
+                Code.success.asResponse(new TableNameListVo(this.dataStore.list(request.getPrefixes()))));
     }
 
     @Override

@@ -33,14 +33,14 @@ export default function RuntimeOverviewLayout({ children }: IRuntimeLayoutProps)
     useEffect(() => {
         setRuntimeLoading(runtimeInfo.isLoading)
         if (runtimeInfo.isSuccess) {
-            if (runtimeInfo.data.versionMeta !== runtime?.versionMeta) {
+            if (runtimeInfo.data.versionInfo.meta !== runtime?.versionInfo.meta) {
                 setRuntime(runtimeInfo.data)
             }
         } else if (runtimeInfo.isLoading) {
             setRuntime(undefined)
         }
     }, [
-        runtime?.versionMeta,
+        runtime?.versionInfo.meta,
         runtimeInfo.data,
         runtimeInfo.isLoading,
         runtimeInfo.isSuccess,

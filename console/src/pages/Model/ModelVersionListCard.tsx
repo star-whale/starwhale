@@ -1,6 +1,11 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createModelVersion, revertModelVersion } from '@model/services/modelVersion'
+import {
+    addModelVersionTag,
+    createModelVersion,
+    deleteModelVersionTag,
+    revertModelVersion,
+} from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
 import { ICreateModelVersionSchema } from '@model/schemas/modelVersion'
 import ModelVersionForm from '@model/components/ModelVersionForm'
@@ -12,13 +17,13 @@ import { useHistory, useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
-import { WithCurrentAuth } from '@/api/WithAuth'
+import { useAccess, WithCurrentAuth } from '@/api/WithAuth'
 import CopyToClipboard from '@/components/CopyToClipboard/CopyToClipboard'
 import { TextLink } from '@/components/Link'
 import { MonoText } from '@/components/Text'
 import useCliMate from '@/hooks/useCliMate'
 import { getReadableStorageQuantityStr } from '@starwhale/ui/utils'
-import Alias from '@/components/Alias'
+import { EditableAlias } from '@/components/Alias'
 import Shared from '@/components/Shared'
 
 export default function ModelVersionListCard() {
@@ -38,6 +43,7 @@ export default function ModelVersionListCard() {
     )
     const [t] = useTranslation()
     const { hasCliMate, doPull } = useCliMate()
+    const tagReadOnly = !useAccess('tag.edit')
 
     const handleAction = useCallback(
         async (modelVersionId) => {
@@ -46,6 +52,22 @@ export default function ModelVersionListCard() {
             await modelsInfo.refetch()
         },
         [modelsInfo, projectId, modelId, t]
+    )
+
+    const handleTagAdd = useCallback(
+        async (modelVersionId: string, tag: string) => {
+            await addModelVersionTag(projectId, modelId, modelVersionId, tag)
+            await modelsInfo.refetch()
+        },
+        [modelId, modelsInfo, projectId]
+    )
+
+    const handelTagRemove = useCallback(
+        async (modelVersionId: string, tag: string) => {
+            await deleteModelVersionTag(projectId, modelId, modelVersionId, tag)
+            await modelsInfo.refetch()
+        },
+        [modelId, modelsInfo, projectId]
     )
 
     return (
@@ -62,7 +84,13 @@ export default function ModelVersionListCard() {
                             >
                                 <MonoText>{model.name}</MonoText>
                             </TextLink>,
-                            <Alias key='alias' alias={model.alias} />,
+                            <EditableAlias
+                                key='alias'
+                                readOnly={tagReadOnly}
+                                resource={model}
+                                onAddTag={(tag) => handleTagAdd(model.id, tag)}
+                                onRemoveTag={(tag) => handelTagRemove(model.id, tag)}
+                            />,
                             <Shared key='shared' shared={model.shared} isTextShow />,
                             model.size && getReadableStorageQuantityStr(Number(model.size)),
                             model.createdTime && formatTimestampDateTime(model.createdTime),

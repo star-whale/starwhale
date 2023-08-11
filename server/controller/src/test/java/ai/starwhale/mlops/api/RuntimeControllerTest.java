@@ -29,7 +29,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVo;
@@ -46,6 +48,7 @@ import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Objects;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -132,7 +135,7 @@ public class RuntimeControllerTest {
                         RuntimeVersionVo.builder().id("2").build()
                 )));
 
-        var resp = controller.listRuntimeVersion("p1", "r1", "v1", "", 1, 5);
+        var resp = controller.listRuntimeVersion("p1", "r1", "v1", 1, 5);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThat(Objects.requireNonNull(resp.getBody()).getData(), allOf(
                 notNullValue(),
@@ -149,38 +152,6 @@ public class RuntimeControllerTest {
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
         assertThrows(StarwhaleApiException.class,
                 () -> controller.modifyRuntime("p2", "r1", "v1", new RuntimeTagRequest()));
-    }
-
-    @Test
-    public void testManageRuntimeTag() {
-        given(runtimeService.manageVersionTag(same("p1"), same("r1"), same("v1"), argThat(
-                argument -> Objects.equals(argument.getTags(), "tag1")))).willReturn(true);
-
-        RuntimeTagRequest reqeust = new RuntimeTagRequest();
-        reqeust.setTag("tag1");
-        reqeust.setAction("add");
-        var resp = controller.manageRuntimeTag("p1", "r1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("remove");
-        resp = controller.manageRuntimeTag("p1", "r1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        reqeust.setAction("set");
-        resp = controller.manageRuntimeTag("p1", "r1", "v1", reqeust);
-        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
-
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageRuntimeTag("p2", "r1", "v1", reqeust));
-
-        reqeust.setAction("unknown");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageRuntimeTag("p1", "r1", "v1", reqeust));
-
-        reqeust.setAction("add");
-        reqeust.setTag("no-tag");
-        assertThrows(StarwhaleApiException.class,
-                () -> controller.manageRuntimeTag("p1", "r1", "v1", reqeust));
     }
 
     @Test
@@ -224,5 +195,40 @@ public class RuntimeControllerTest {
     public void testShareRuntimeVersion() {
         var resp = controller.shareRuntimeVersion("1", "1", "1", true);
         assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testAddModelVersionTag() {
+        doNothing().when(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1", false);
+
+        var req = new RuntimeTagRequest();
+        req.setTag("tag1");
+        req.setForce(false);
+        var resp = controller.addRuntimeVersionTag("1", "2", "3", req);
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(runtimeService).addRuntimeVersionTag("1", "2", "3", "tag1", false);
+    }
+
+    @Test
+    public void testListModelVersionTags() {
+        given(runtimeService.listRuntimeVersionTags("1", "2", "3"))
+                .willReturn(List.of("tag1", "tag2"));
+
+        var resp = controller.listRuntimeVersionTags("1", "2", "3");
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        assertThat(resp.getBody(), notNullValue());
+        AssertionsForInterfaceTypes.assertThat(resp.getBody().getData()).containsExactlyInAnyOrder("tag1", "tag2");
+    }
+
+    @Test
+    public void testDeleteModelVersionTag() {
+        doNothing().when(runtimeService).deleteRuntimeVersionTag("1", "2", "3", "tag1");
+
+        var resp = controller.deleteRuntimeVersionTag("1", "2", "3", "tag1");
+
+        assertThat(resp.getStatusCode(), is(HttpStatus.OK));
+        verify(runtimeService).deleteRuntimeVersionTag("1", "2", "3", "tag1");
     }
 }

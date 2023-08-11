@@ -1,13 +1,12 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
-import inspect from 'vite-plugin-inspect'
-import router from './vite-plugin-react-routes'
-import { readFileSync } from 'fs'
-
+// import inspect from 'vite-plugin-inspect'
+// import router from './vite-plugin-react-routes'
 // import eslint from 'vite-plugin-eslint'
 // import mpa from '../../vite-plugin-mpa'
 // import { visualizer } from 'rollup-plugin-visualizer'
+
 const { execSync } = require('child_process')
 const commitNumber = execSync('git rev-parse HEAD').toString().trim()
 
@@ -27,6 +26,7 @@ export const alias = {
     'js-yaml': path.resolve(__dirname, './node_modules/js-yaml'),
     'qs': path.resolve(__dirname, './node_modules/qs'),
     'axios': path.resolve(__dirname, './node_modules/axios'),
+    'ahooks': path.resolve(__dirname, './node_modules/ahooks'),
     '@monaco-editor/react': path.resolve(__dirname, './node_modules/@monaco-editor/react'),
     '@': path.resolve(__dirname, './src'),
     '@user': path.resolve(__dirname, './src/domain/user'),
@@ -39,7 +39,10 @@ export const alias = {
     '@starwhale/ui': path.resolve(__dirname, './packages/starwhale-ui/src'),
     '@starwhale/core': path.resolve(__dirname, './packages/starwhale-core/src'),
     '@starwhale/widgets': path.resolve(__dirname, './packages/starwhale-widgets/src'),
+    '.*': path.resolve(__dirname, './src'),
+    '*': path.resolve(__dirname, './node_modules'),
 }
+const projectRootDir = path.resolve(__dirname)
 
 let extendProxies = {}
 // if (process.env.VITE_EXTENDS === 'true')
@@ -56,8 +59,30 @@ let extendProxies = {}
 //         },
 //     }
 
+const htmlPlugin = (mode) => {
+    return {
+        name: 'html-transform',
+        transformIndexHtml(html) {
+            return html.replace(
+                /<!--__INJECT__-->/,
+                mode === 'extend'
+                    ? `<script>
+          var _hmt = _hmt || []
+          ;(function () {
+              var hm = document.createElement('script')
+              hm.src = 'https://hm.baidu.com/hm.js?82145850946f2ffce3c1366524ebe861'
+              var s = document.getElementsByTagName('script')[0]
+              s.parentNode.insertBefore(hm, s)
+          })()
+      </script>`
+                    : ''
+            )
+        },
+    }
+}
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     define: {
         'process.env': {
             GIT_COMMIT_HASH: JSON.stringify(commitNumber),
@@ -91,14 +116,17 @@ export default defineConfig({
         // minify: false,
         // sourcemap: true,
     },
-    resolve: { alias },
+    resolve: {
+        alias,
+    },
     plugins: [
         // eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
+        htmlPlugin(mode),
     ],
     esbuild: {
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
     },
-})
+}))

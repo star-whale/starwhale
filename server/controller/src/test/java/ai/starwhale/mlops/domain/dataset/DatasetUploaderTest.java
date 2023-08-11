@@ -30,6 +30,7 @@ import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.api.protocol.dataset.upload.DatasetUploadRequest;
 import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.VersionAliasConverter;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.dataset.bo.DatasetVersion;
 import ai.starwhale.mlops.domain.dataset.index.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.dataset.mapper.DatasetMapper;
@@ -99,10 +100,21 @@ public class DatasetUploaderTest {
         IdConverter idConvertor = new IdConverter();
         VersionAliasConverter versionAliasConvertor = new VersionAliasConverter();
 
-        DatasetUploader datasetUploader = new DatasetUploader(hotDatasetHolder, datasetMapper, datasetVersionMapper,
-                storagePathCoordinator, storageAccessService, userService,
-                hotJobHolder, projectService, dataStoreTableNameHelper, datasetDao, idConvertor,
-                versionAliasConvertor);
+        DatasetUploader datasetUploader = new DatasetUploader(
+                hotDatasetHolder,
+                datasetMapper,
+                datasetVersionMapper,
+                mock(BundleVersionTagDao.class),
+                storagePathCoordinator,
+                storageAccessService,
+                userService,
+                hotJobHolder,
+                projectService,
+                dataStoreTableNameHelper,
+                datasetDao,
+                idConvertor,
+                versionAliasConvertor
+        );
 
         DatasetUploadRequest uploadRequest = new DatasetUploadRequest();
         String dsName = "testds3";

@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import java.util.List;
@@ -25,6 +27,7 @@ import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.dao.DuplicateKeyException;
 
 @MybatisTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -100,6 +103,12 @@ public class RuntimeMapperTest extends MySqlContainerHolder {
                 .isDeleted(0)
                 .build();
         runtimeMapper.insert(runtime1);
+        RuntimeEntity duplicate = RuntimeEntity.builder()
+                .runtimeName("runtime1")
+                .ownerId(1L)
+                .projectId(1L)
+                .build();
+        assertThrows(DuplicateKeyException.class, () -> runtimeMapper.insert(duplicate));
 
         runtimeMapper.remove(runtime1.getId());
         Assertions.assertEquals(1, runtimeMapper.find(runtime1.getId()).getIsDeleted());
@@ -107,10 +116,16 @@ public class RuntimeMapperTest extends MySqlContainerHolder {
         Assertions.assertEquals(runtime1.getRuntimeName(),
                 runtimeMapper.findDeleted(runtime1.getId()).getRuntimeName());
 
+        runtimeMapper.insert(duplicate);
+        assertThrows(DuplicateKeyException.class, () -> runtimeMapper.recover(runtime1.getId()));
+        runtimeMapper.remove(duplicate.getId());
+
         runtimeMapper.recover(runtime1.getId());
         Assertions.assertEquals(0, runtimeMapper.find(runtime1.getId()).getIsDeleted());
         Assertions.assertEquals(runtime1,
                 runtimeMapper.findByName(runtime1.getRuntimeName(), runtime1.getProjectId(), false));
         Assertions.assertNull(runtimeMapper.findDeleted(runtime1.getId()));
+
+        assertThrows(DuplicateKeyException.class, () -> runtimeMapper.insert(duplicate));
     }
 }

@@ -39,12 +39,12 @@ import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.converter.JobConverter;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
 import java.util.Date;
@@ -125,20 +125,20 @@ public class EvaluationServiceTest {
     public void testListEvaluationSummary() {
         given(jobDao.listJobs(same(1L), any()))
                 .willReturn(List.of(
-                        Job.builder()
+                        JobEntity.builder()
                                 .id(1L)
-                                .project(Project.builder().id(1L).name("p1").build())
-                                .status(JobStatus.PAUSED)
+                                .project(ProjectEntity.builder().id(1L).projectName("p1").build())
+                                .jobStatus(JobStatus.PAUSED)
                                 .build(),
-                        Job.builder()
+                        JobEntity.builder()
                                 .id(2L)
-                                .project(Project.builder().id(1L).name("p1").build())
-                                .status(JobStatus.SUCCESS)
+                                .project(ProjectEntity.builder().id(1L).projectName("p1").build())
+                                .jobStatus(JobStatus.SUCCESS)
                                 .build()
                 ));
-        given(jobConvertor.convert(any(Job.class)))
+        given(jobConvertor.convert(any(JobEntity.class)))
                 .willAnswer(invocation -> {
-                    Job entity = invocation.getArgument(0);
+                    JobEntity entity = invocation.getArgument(0);
                     return JobVo.builder()
                             .id(String.valueOf(entity.getId()))
                             .uuid("uuid" + entity.getId())

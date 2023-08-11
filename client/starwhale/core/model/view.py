@@ -21,7 +21,7 @@ from starwhale.consts import (
     SHORT_VERSION_CNT,
 )
 from starwhale.utils.fs import cmp_file_content
-from starwhale.base.view import BaseTermView
+from starwhale.base.view import BaseTermView, TagViewMixin
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.base.uri.project import Project
@@ -33,7 +33,7 @@ from starwhale.core.runtime.process import Process as RuntimeProcess
 from .model import Model, CloudModel, ModelConfig, ModelInfoFilter, StandaloneModel
 
 
-class ModelTermView(BaseTermView):
+class ModelTermView(BaseTermView, TagViewMixin):
     def __init__(self, model_uri: str | Resource) -> None:
         super().__init__()
 
@@ -331,6 +331,7 @@ class ModelTermView(BaseTermView):
         add_all: bool,
         runtime_uri: str = "",
         package_runtime: bool = False,
+        tags: t.List[str] | None = None,
     ) -> None:
         if runtime_uri:
             RuntimeProcess(uri=Resource(runtime_uri, typ=ResourceType.runtime)).run()
@@ -354,6 +355,7 @@ class ModelTermView(BaseTermView):
                 model_config=model_config,
                 packaging_runtime_uri=packaging_runtime_uri,
                 add_all=add_all,
+                tags=tags,
             )
 
     @classmethod
@@ -363,21 +365,17 @@ class ModelTermView(BaseTermView):
         dest_uri: str,
         force: bool = False,
         dest_local_project_uri: str = "",
+        ignore_tags: t.List[str] | None = None,
     ) -> None:
         src = Resource(src_uri, typ=ResourceType.model)
-        Model.copy(src, dest_uri, force, dest_local_project_uri)
+        Model.copy(
+            src_uri=src,
+            dest_uri=dest_uri,
+            force=force,
+            dest_local_project_uri=dest_local_project_uri,
+            ignore_tags=ignore_tags,
+        )
         console.print(":clap: copy done.")
-
-    @BaseTermView._header
-    def tag(
-        self, tags: t.List[str], remove: bool = False, ignore_errors: bool = False
-    ) -> None:
-        if remove:
-            console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.model.remove_tags(tags, ignore_errors)
-        else:
-            console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.model.add_tags(tags, ignore_errors)
 
     @classmethod
     @BaseTermView._only_standalone

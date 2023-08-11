@@ -25,9 +25,6 @@ import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
-import ai.starwhale.mlops.domain.bundle.tag.HasTag;
-import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -39,7 +36,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAccessor,
+public class RuntimeDao implements BundleAccessor, BundleVersionAccessor,
         RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     private final RuntimeMapper runtimeMapper;
@@ -130,24 +127,6 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
     }
 
     @Override
-    public HasTag findObjectWithTagById(Long id) {
-        RuntimeVersionEntity entity = runtimeVersionMapper.find(id);
-        return HasTagWrapper.builder()
-                .id(entity.getId())
-                .tag(entity.getVersionTag())
-                .build();
-    }
-
-    @Override
-    public Boolean updateTag(HasTag entity) {
-        int r = runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
-        if (r > 0) {
-            log.info("Runtime Version Tag has been modified. ID={}", entity.getId());
-        }
-        return r > 0;
-    }
-
-    @Override
     public Long selectVersionOrderForUpdate(Long bundleId, Long bundleVersionId) {
         return runtimeVersionMapper.selectVersionOrderForUpdate(bundleVersionId);
     }
@@ -179,5 +158,10 @@ public class RuntimeDao implements BundleAccessor, BundleVersionAccessor, TagAcc
             log.info("SWRT has been removed. ID={}", id);
         }
         return r > 0;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.RUNTIME;
     }
 }

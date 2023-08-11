@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -61,6 +62,7 @@ import ai.starwhale.mlops.domain.bundle.BundleVersionUrl;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.BundleVersionTagDao;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
@@ -132,6 +134,7 @@ public class RuntimeServiceTest {
     private K8sClient k8sClient;
     private K8sJobTemplate k8sJobTemplate;
     private RuntimeTokenValidator runtimeTokenValidator;
+    private BundleVersionTagDao bundleVersionTagDao;
     @Setter
     private BundleManager bundleManager;
 
@@ -150,11 +153,12 @@ public class RuntimeServiceTest {
                             .build();
                 });
         versionConvertor = mock(RuntimeVersionConverter.class);
-        given(versionConvertor.convert(any(RuntimeVersionEntity.class), any()))
+        given(versionConvertor.convert(any(RuntimeVersionEntity.class), any(), any()))
                 .willAnswer(invocation -> {
                     RuntimeVersionEntity entity = invocation.getArgument(0);
                     return RuntimeVersionVo.builder()
                             .id(String.valueOf(entity.getId()))
+                            .alias("v" + entity.getVersionOrder())
                             .name(entity.getName())
                             .build();
                 });
@@ -182,10 +186,12 @@ public class RuntimeServiceTest {
         k8sClient = mock(K8sClient.class);
         k8sJobTemplate = mock(K8sJobTemplate.class);
         runtimeTokenValidator = mock(RuntimeTokenValidator.class);
+        bundleVersionTagDao = mock(BundleVersionTagDao.class);
 
         service = new RuntimeService(
                 runtimeMapper,
                 runtimeVersionMapper,
+                bundleVersionTagDao,
                 storageService,
                 projectService,
                 runtimeConvertor,
@@ -203,8 +209,9 @@ public class RuntimeServiceTest {
                 runtimeTokenValidator,
                 systemSettingService,
                 new DockerSetting("localhost:8083", "localhost:8083", "admin", "admin123", false),
-                new RunTimeProperties(
-                        "", new RunTimeProperties.RunConfig("rc", ""), new RunTimeProperties.RunConfig("rc", ""),
+                new RunTimeProperties("",
+                        new RunTimeProperties.RunConfig("rc", "", "", ""),
+                        new RunTimeProperties.RunConfig("rc", "", "", ""),
                         new RunTimeProperties.Pypi("https://pypi.io/simple", "https://edu.io/simple", "pypi.io", 1, 2), ""),
                 "http://mock-controller");
         bundleManager = mock(BundleManager.class);
@@ -368,14 +375,13 @@ public class RuntimeServiceTest {
     public void testListRuntimeInfo() {
         given(runtimeMapper.findByName(same("r1"), same(1L), any()))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
-        given(runtimeVersionMapper.list(same(1L), any(), any()))
+        given(runtimeVersionMapper.list(same(1L), any()))
                 .willReturn(List.of(RuntimeVersionEntity.builder().versionOrder(2L).shared(false).build()));
 
         var res = service.listRuntimeInfo("1", "r1");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         given(projectService.getProjectId(same("1")))
                 .willReturn(1L);
@@ -383,10 +389,9 @@ public class RuntimeServiceTest {
                 .willReturn(List.of(RuntimeEntity.builder().id(1L).build()));
 
         res = service.listRuntimeInfo("1", "");
-        assertThat(res, hasItem(allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        )));
+        assertEquals(1, res.size());
+        assertEquals("1", res.get(0).getId());
+        assertEquals("v2", res.get(0).getVersionInfo().getAlias());
 
         assertThrows(SwNotFoundException.class,
                 () -> service.listRuntimeInfo("2", "r1"));
@@ -415,10 +420,8 @@ public class RuntimeServiceTest {
                 .runtimeVersionUrl("v1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         given(runtimeVersionMapper.findByLatest(same(1L)))
                 .willReturn(RuntimeVersionEntity.builder().id(1L).versionOrder(2L).shared(false).build());
@@ -428,10 +431,8 @@ public class RuntimeServiceTest {
                 .runtimeUrl("r1")
                 .build());
 
-        assertThat(res, allOf(
-                hasProperty("id", is("1")),
-                hasProperty("versionAlias", is("v2"))
-        ));
+        assertEquals("1", res.getId());
+        assertEquals("v2", res.getVersionInfo().getAlias());
 
         assertThrows(BundleException.class,
                 () -> service.getRuntimeInfo(RuntimeQuery.builder().projectUrl("1").runtimeUrl("2").build()));
@@ -459,6 +460,7 @@ public class RuntimeServiceTest {
         var svc = new RuntimeService(
                 mock(RuntimeMapper.class),
                 runtimeVersionMapper,
+                mock(BundleVersionTagDao.class),
                 mock(StorageService.class),
                 projectService,
                 mock(RuntimeConverter.class),
@@ -501,14 +503,13 @@ public class RuntimeServiceTest {
 
     @Test
     public void testListRuntimeVersionHistory() {
-        given(runtimeVersionMapper.list(anyLong(), anyString(), anyString()))
+        given(runtimeVersionMapper.list(anyLong(), anyString()))
                 .willReturn(List.of(RuntimeVersionEntity.builder().id(1L).build()));
         var res = service.listRuntimeVersionHistory(
                 RuntimeVersionQuery.builder()
                         .projectUrl("1")
                         .runtimeUrl("r1")
                         .versionName("v1")
-                        .versionTag("tag1")
                         .build(),
                 PageParams.builder().build()
         );
@@ -527,7 +528,7 @@ public class RuntimeServiceTest {
         given(runtimeMapper.find(same(1L)))
                 .willReturn(RuntimeEntity.builder().id(1L).build());
 
-        var res = service.findRuntimeByVersionIds(List.of());
+        var res = service.findRuntimeByVersionIds(List.of(1L));
         assertThat(res, allOf(
                 iterableWithSize(1),
                 hasItem(hasProperty("id", is("1")))
@@ -650,8 +651,8 @@ public class RuntimeServiceTest {
                 argThat(containerOverwriteSpecMap -> {
                     var prepareBuilder = containerOverwriteSpecMap.get("prepare-runtime");
                     var imageBuilder = containerOverwriteSpecMap.get("image-builder");
-                    return prepareBuilder.getEnvs().size() == 10
-                        && imageBuilder.getEnvs().size() == 10
+                    return prepareBuilder.getEnvs().size() == 12
+                        && imageBuilder.getEnvs().size() == 12
                         && imageBuilder.getCmds().size() == 6;
                 }),
                 any(), any(), isNull());
@@ -696,6 +697,10 @@ public class RuntimeServiceTest {
                         RuntimeVersionViewEntity.builder().id(6L).runtimeId(4L).versionOrder(3L).projectName("sw2")
                                 .userName("sw2").shared(true).runtimeName("rt4").build()
                 ));
+        given(runtimeVersionMapper.findByLatest(same(2L)))
+                .willReturn(RuntimeVersionEntity.builder().id(8L).build());
+        given(runtimeVersionMapper.findByLatest(same(4L)))
+                .willReturn(RuntimeVersionEntity.builder().id(6L).build());
 
         var res = service.listRuntimeVersionView("1");
         assertEquals(4, res.size());
@@ -707,8 +712,10 @@ public class RuntimeServiceTest {
         assertEquals(2, res.get(1).getVersions().size());
         assertEquals(2, res.get(2).getVersions().size());
         assertEquals(1, res.get(3).getVersions().size());
-        assertEquals("latest", res.get(0).getVersions().get(0).getAlias());
-        assertEquals("latest", res.get(1).getVersions().get(0).getAlias());
+        assertEquals("v4", res.get(0).getVersions().get(0).getAlias());
+        assertTrue(res.get(0).getVersions().get(0).getLatest());
+        assertEquals("v2", res.get(1).getVersions().get(0).getAlias());
+        assertTrue(res.get(1).getVersions().get(0).getLatest());
         assertEquals("v3", res.get(2).getVersions().get(0).getAlias());
         assertEquals("v3", res.get(3).getVersions().get(0).getAlias());
     }

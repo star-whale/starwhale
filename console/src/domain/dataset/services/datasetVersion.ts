@@ -100,3 +100,30 @@ export async function updateDatasetVersionShared(
     )
     return resp.data
 }
+
+export async function addDatasetVersionTag(
+    projectId: string,
+    datasetId: string,
+    datasetVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.post<void>(
+        `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersionId}/tag`,
+        {
+            tag,
+        }
+    )
+    return resp.data
+}
+
+export async function deleteDatasetVersionTag(
+    projectId: string,
+    datasetId: string,
+    datasetVersionId: string,
+    tag: string
+): Promise<void> {
+    const resp = await axios.delete<void>(
+        `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersionId}/tag/${tag}`
+    )
+    return resp.data
+}

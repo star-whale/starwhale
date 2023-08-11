@@ -1,107 +1,57 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { useHistory, useParams } from 'react-router-dom'
+import React, { useCallback, useEffect, useReducer, useState } from 'react'
+import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { isModified } from '@/utils'
 import Divider from '@/components/Divider'
-import _ from 'lodash'
-import ResourcePoolSelector from '@/domain/setting/components/ResourcePoolSelector'
 import { IModelVersionSchema, StepSpec } from '@/domain/model/schemas/modelVersion'
-import Editor from '@monaco-editor/react'
 import yaml from 'js-yaml'
-import { createUseStyles } from 'react-jss'
 import { toaster } from 'baseui/toast'
 import Button from '@starwhale/ui/Button'
-import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
-import { FormSelect, Toggle } from '@starwhale/ui/Select'
-import DatasetTreeSelector from '@/domain/dataset/components/DatasetTreeSelector'
-import RuntimeTreeSelector from '@runtime/components/RuntimeTreeSelector'
-import ModelTreeSelector from '@/domain/model/components/ModelTreeSelector'
+import { ICreateJobFormSchema, ICreateJobSchema, IJobSchema, RuntimeType } from '../schemas/job'
 import { IModelTreeSchema } from '@/domain/model/schemas/model'
-import Input, { NumberInput } from '@starwhale/ui/Input'
-import generatePassword from '@/utils/passwordGenerator'
-import CopyToClipboard from 'react-copy-to-clipboard'
-import { IconFont } from '@starwhale/ui'
-import { WithCurrentAuth } from '@/api/WithAuth'
 import { useQueryArgs } from '@starwhale/core/utils'
+import FormFieldRuntime from './FormFieldRuntime'
+import { useEventEmitter } from 'ahooks'
+import FormFieldModel from './FormFieldModel'
+import FormFieldDataset from './FormFieldDataset'
+import FormFieldDevMode from './FormFieldDevMode'
+import { FormFieldAutoReleaseExtend, FormFieldPriExtend, FormFieldResourceExtend } from '@/components/Extensions'
 
-const { Form, FormItem, useForm, FormItemLabel } = createForm<ICreateJobFormSchema>()
-
-const useStyles = createUseStyles({
-    row3: {
-        display: 'grid',
-        gap: 40,
-        gridTemplateColumns: '280px 300px 280px',
-        gridTemplateRows: 'minmax(0px, max-content)',
-    },
-    row4: {
-        display: 'grid',
-        columnGap: 40,
-        gridTemplateColumns: '120px 120px 480px 100px',
-    },
-    rowModel: {
-        display: 'grid',
-        columnGap: 40,
-        gridTemplateColumns: '660px 280px 280px',
-        gridTemplateRows: 'minmax(0px, max-content)',
-    },
-    resource: {
-        gridColumnStart: 3,
-        display: 'grid',
-        columnGap: 40,
-        gridTemplateColumns: '260px 120px 40px',
-    },
-})
+const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
 export interface IJobFormProps {
-    job?: IJobFormSchema
+    job?: IJobSchema
     onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
-    const styles = useStyles()
+    const eventEmitter = useEventEmitter<{ changes: Partial<ICreateJobFormSchema>; values: ICreateJobFormSchema }>()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
-    const { projectId } = useParams<{ projectId: string }>()
     const [modelTree, setModelTree] = useState<IModelTreeSchema[]>([])
-    const [modelId, setModelId] = useState('')
-    const [modelVersionId, setModelVersionId] = useState('')
-    const [modelVersionHandler, setModelVersionHandler] = useState('')
-    const [rawType, setRawType] = React.useState(false)
-    const [stepSpecOverWrites, setStepSpecOverWrites] = React.useState('')
-    const [t] = useTranslation()
-    // const [resourcePool, setResourcePool] = React.useState<ISystemResourcePool | undefined>()
-
-    const RuntimeType = {
-        BUILTIN: t('runtime.image.builtin'),
-        OTHER: t('runtime.image.other'),
-    }
-
-    const [form] = useForm()
-    const history = useHistory()
-
+    const [resource, setResource] = React.useState<any>()
+    const [, forceUpdate] = useReducer((x) => x + 1, 0)
     const [loading, setLoading] = useState(false)
+    const { query } = useQueryArgs()
+    const [t] = useTranslation()
+    const history = useHistory()
+    const [form] = useForm()
 
-    const [builtInRuntime, setBuiltInRuntime] = useState<string>('')
-    const [type, setType] = useState(builtInRuntime ? RuntimeType.BUILTIN : '')
+    const modelVersionHandler = form.getFieldValue('modelVersionHandler')
+    const stepSpecOverWrites = form.getFieldValue('stepSpecOverWrites') as string
+    const _modelVersionId = form.getFieldValue('modelVersionUrl')
 
     const modelVersion: IModelVersionSchema | undefined = React.useMemo(() => {
-        if (!modelTree || !modelVersionId) return undefined
+        if (!modelTree || !_modelVersionId) return undefined
         let version: IModelVersionSchema | undefined
         modelTree?.forEach((v) =>
             v.versions.forEach((versionTmp) => {
-                if (versionTmp.id === modelVersionId) {
+                if (versionTmp.id === _modelVersionId) {
                     version = versionTmp
                 }
             })
         )
         return version
-    }, [modelTree, modelVersionId])
-
-    useEffect(() => {
-        if (!modelVersion) return
-        setBuiltInRuntime(modelVersion?.builtInRuntime ?? '')
-        setType(modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER)
-    }, [modelVersion, RuntimeType.BUILTIN, RuntimeType.OTHER])
+    }, [modelTree, _modelVersionId])
 
     const fullStepSource: StepSpec[] | undefined = React.useMemo(() => {
         if (!modelVersion) return undefined
@@ -120,10 +70,6 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         return fullStepSource.filter((v: StepSpec) => v?.job_name === modelVersionHandler)
     }, [fullStepSource, modelVersionHandler, stepSpecOverWrites])
 
-    const isModifiedDataset = React.useMemo(() => {
-        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset)
-    }, [stepSource])
-
     const checkStepSource = useCallback(
         (value) => {
             try {
@@ -140,335 +86,121 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const handleFinish = useCallback(
         async (values_: ICreateJobFormSchema) => {
             setLoading(true)
-            if (values_.rawType && !checkStepSource(stepSpecOverWrites)) return
+            const tmp = {
+                datasetVersionUrls: values_.datasetVersionUrls?.join(','),
+                resourcePool: resource?.resourceId ?? resource?.name,
+                stepSpecOverWrites: values_.stepSpecOverWrites,
+                runtimeVersionUrl: values_.runtimeType === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
+                modelVersionUrl: values_.modelVersionUrl,
+                devMode: values_.devMode,
+                devPassword: values_.devPassword,
+                timeToLiveInSec: values_.timeToLiveInSec,
+            }
+            if (values_.rawType && !checkStepSource(values_.stepSpecOverWrites)) {
+                setLoading(false)
+                return
+            }
             try {
-                await onSubmit({
-                    ..._.omit(values_, [
-                        'modelId',
-                        'datasetId',
-                        'datasetVersionId',
-                        'datasetVersionIdsArr',
-                        'runtimeId',
-                        'runtimeVersionUrl',
-                        'rawType',
-                        'stepSpecOverWrites',
-                        'modelVersionHandler',
-                        'modelVersionUrl',
-                        'isTimeToLiveInSec',
-                    ]),
-                    runtimeVersionUrl: type === RuntimeType.BUILTIN ? '' : values_.runtimeVersionUrl,
-                    modelVersionUrl: values_.modelVersionUrl,
-                    datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
-                    stepSpecOverWrites: values_.rawType ? stepSpecOverWrites : yaml.dump(stepSource),
-                })
+                await onSubmit(tmp)
                 history.goBack()
             } finally {
                 setLoading(false)
             }
         },
-        [onSubmit, history, stepSpecOverWrites, stepSource, checkStepSource, type, RuntimeType.BUILTIN]
-    )
-
-    const handleEditorChange = React.useCallback(
-        (value: string) => {
-            setStepSpecOverWrites(value)
-        },
-        [setStepSpecOverWrites]
-    )
-
-    const handleModelHandlerChange = useCallback(
-        (value: any) => {
-            setModelVersionHandler(value)
-        },
-        [setModelVersionHandler]
+        [onSubmit, history, checkStepSource, resource]
     )
 
     const handleValuesChange = useCallback(
         (_changes: Partial<ICreateJobFormSchema>, values_: ICreateJobFormSchema) => {
-            if ('modelVersionUrl' in _changes) {
-                setModelVersionHandler('')
-            }
-            if (values_.modelVersionUrl) {
-                setModelVersionId(values_.modelVersionUrl)
-            }
-            if ('devMode' in _changes && _changes.devMode) {
-                form.setFieldsValue({
-                    devPassword: generatePassword(),
-                })
-            }
-            if (values_.modelVersionHandler) {
-                setModelVersionHandler(values_.modelVersionHandler)
-            }
-            let rawTypeTmp = values_.rawType
-            if ('rawType' in _changes && !_changes.rawType) {
-                try {
-                    yaml.load(stepSpecOverWrites)
-                    rawTypeTmp = false
-                } catch (e) {
-                    toaster.negative(t('wrong yaml syntax'), { autoHideDuration: 1000 })
-                    form.setFieldsValue({
-                        rawType: true,
-                    })
-                    rawTypeTmp = true
-                }
-            }
-            setRawType(rawTypeTmp)
+            eventEmitter.emit({
+                changes: _changes,
+                values: values_,
+            })
             setValues({
                 ...values_,
-                rawType: rawTypeTmp,
             })
         },
-        [stepSpecOverWrites, form, t]
+        [eventEmitter]
     )
 
-    useEffect(() => {
-        if (!modelVersionHandler) {
-            setModelVersionHandler(fullStepSource?.find((v) => v)?.job_name ?? '')
-        }
-        if (modelVersionHandler) {
-            setStepSpecOverWrites(
-                yaml.dump(fullStepSource?.filter((v: StepSpec) => v?.job_name === modelVersionHandler))
-            )
-        }
-    }, [fullStepSource, modelVersionHandler])
+    const sharedFormProps = { form, FormItem, eventEmitter, forceUpdate }
+    const getModelProps = () => ({ setModelTree, fullStepSource, stepSource })
+    const getResourcePoolProps = () => ({ resource, setResource })
+    const getRuntimeProps = () => ({ builtInRuntime: modelVersion?.builtInRuntime })
 
-    // auto select by modelid & handler , load from query args: used by online-eval
-    const { query } = useQueryArgs()
+    const isModifiedDataset = React.useMemo(() => {
+        return stepSource?.some((v) => v.require_dataset === null || v.require_dataset)
+    }, [stepSource])
+
     useEffect(() => {
-        if (query.modelId && modelTree) {
-            setModelId(query.modelId)
-            let vid = null
+        // init by new model
+        if (modelVersion) {
+            const toUpdate: Partial<ICreateJobFormSchema> = {
+                runtimeType: modelVersion?.builtInRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+            }
+            if (modelVersion?.builtInRuntime) {
+                toUpdate.runtimeVersionUrl = modelVersion?.builtInRuntime
+            }
+            form.setFieldsValue(toUpdate)
+        }
+        if (modelVersion) {
+            form.setFieldsValue({
+                modelVersionHandler: modelVersion.stepSpecs?.find((v) => v)?.job_name ?? '',
+            })
+        }
+        // init by online eval args, auto select the first version
+        if (modelTree && query.modelId) {
             modelTree?.forEach((v) => {
-                if (v.modelId === modelId) {
-                    vid = v.versions?.[0]?.id
+                if (v.modelId === query.modelId) {
+                    form.setFieldsValue({
+                        modelVersionUrl: v.versions?.[0]?.id,
+                    })
                 }
             })
-            if (!vid) return
-            setModelVersionId(vid)
+        }
+        if (query.modelVersionHandler) {
             form.setFieldsValue({
-                modelVersionUrl: vid,
+                modelVersionHandler: query.modelVersionHandler,
             })
         }
-        if (query.handler) {
-            setModelVersionHandler(query.handler)
-        }
-    }, [query.modelId, query.handler, modelTree, modelId, form])
+        forceUpdate()
+    }, [form, query, modelTree, modelVersion])
+
+    useEffect(() => {
+        // init by rerun job details
+        if (!job) return
+        form.setFieldsValue({
+            runtimeType: job.isBuiltinRuntime ? RuntimeType.BUILTIN : RuntimeType.OTHER,
+            runtimeVersionUrl: job.runtime?.version?.id,
+            resourcePool: job.resourcePool,
+            datasetVersionUrls: job.datasetList?.map((v) => v.version?.id) as string[],
+            modelVersionUrl: job.model?.version?.id,
+            modelVersionHandler: job.jobName,
+        })
+        forceUpdate()
+    }, [form, job])
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
+            {/* env config */}
             <Divider orientation='top'>{t('Environment')}</Divider>
-            <div className={styles.row3}>
-                <FormItem label={t('Resource Pool')} name='resourcePool' required>
-                    <ResourcePoolSelector autoSelected />
-                </FormItem>
-            </div>
+            <FormFieldResourceExtend {...sharedFormProps} {...getResourcePoolProps()} />
+            {/* model config */}
             <Divider orientation='top'>{t('Model Information')}</Divider>
-            <div className={styles.rowModel}>
-                <FormItem label={t('Model Version')} required name='modelVersionUrl'>
-                    <ModelTreeSelector projectId={projectId} onDataChange={setModelTree} />
-                </FormItem>
-                {modelVersionId && (
-                    <FormItemLabel label={t('model.handler')}>
-                        <div style={{ marginTop: '8px' }} />
-                        <FormSelect
-                            clearable={false}
-                            value={modelVersionHandler}
-                            onChange={handleModelHandlerChange}
-                            options={
-                                Array.from(new Set(fullStepSource?.map((tmp) => tmp.job_name))).map((tmp) => {
-                                    return {
-                                        label: tmp,
-                                        id: tmp,
-                                    }
-                                }) ?? []
-                            }
-                        />
-                    </FormItemLabel>
-                )}
-                <FormItem label={t('Raw Type')} name='rawType'>
-                    <Toggle />
-                </FormItem>
-            </div>
-            <div style={{ paddingBottom: '0px' }}>
-                {stepSource &&
-                    stepSource?.length > 0 &&
-                    !rawType &&
-                    stepSource?.map((spec, i) => {
-                        return (
-                            <div key={[spec?.name, i].join('')}>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        minWidth: '280px',
-                                        lineHeight: '1',
-                                        alignItems: 'stretch',
-                                        gap: '20px',
-                                        marginBottom: '10px',
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            padding: '5px 20px',
-                                            minWidth: '280px',
-                                            background: '#EEF1F6',
-                                            borderRadius: '4px',
-                                        }}
-                                    >
-                                        <span style={{ color: 'rgba(2,16,43,0.60)' }}>{t('Step')}:&nbsp;</span>
-                                        <span>{spec?.name}</span>
-                                        <div style={{ marginTop: '3px' }} />
-                                        <span style={{ color: 'rgba(2,16,43,0.60)' }}>{t('Task Amount')}:&nbsp;</span>
-                                        <span>{spec?.replicas}</span>
-                                    </div>
-                                    {spec.resources &&
-                                        spec.resources?.length > 0 &&
-                                        spec.resources?.map((resource, j) => (
-                                            <div
-                                                key={j}
-                                                style={{
-                                                    padding: '5px 20px',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid #E2E7F0',
-                                                    // display: 'flex',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <span style={{ color: 'rgba(2,16,43,0.60)' }}>
-                                                    {t('Resource')}:&nbsp;
-                                                </span>
-                                                <span> {resource?.type}</span>
-                                                <div style={{ marginTop: '3px' }} />
-                                                <span style={{ color: 'rgba(2,16,43,0.60)' }}>
-                                                    {t('Resource Amount')}:&nbsp;
-                                                </span>
-                                                <span>{resource?.request}</span>
-                                                <br />
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        )
-                    })}
-                <div
-                    style={{
-                        display: rawType ? 'block' : 'none',
-                    }}
-                >
-                    <Editor
-                        height='500px'
-                        width='960px'
-                        defaultLanguage='yaml'
-                        value={stepSpecOverWrites}
-                        theme='vs-dark'
-                        // @ts-ignore
-                        onChange={handleEditorChange}
-                    />
-                </div>
-            </div>
+            <FormFieldModel {...sharedFormProps} {...getModelProps()} />
             {/* dataset config */}
-            {isModifiedDataset && (
-                <>
-                    <Divider orientation='top'>{t('Datasets')}</Divider>
-                    <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-                        <FormItem label={t('Dataset Version')} name='datasetVersionIdsArr' required>
-                            <DatasetTreeSelector projectId={projectId} multiple />
-                        </FormItem>
-                    </div>
-                </>
-            )}
+            {isModifiedDataset && <Divider orientation='top'>{t('Datasets')}</Divider>}
+            {isModifiedDataset && <FormFieldDataset {...sharedFormProps} />}
             {/* runtime config */}
             <Divider orientation='top'>{t('Runtime')}</Divider>
-            <div className='bfc' style={{ width: '660px', marginBottom: '36px' }}>
-                {!!builtInRuntime && (
-                    <FormItemLabel label={t('Runtime Type')}>
-                        <div style={{ marginTop: '8px' }} />
-                        <FormSelect
-                            clearable={false}
-                            value={type}
-                            onChange={(value: string) => {
-                                setType(value)
-                            }}
-                            options={[
-                                {
-                                    label: RuntimeType.BUILTIN,
-                                    id: RuntimeType.BUILTIN,
-                                },
-                                {
-                                    label: RuntimeType.OTHER,
-                                    id: RuntimeType.OTHER,
-                                },
-                            ]}
-                        />
-                    </FormItemLabel>
-                )}
-                {type === RuntimeType.BUILTIN && (
-                    <>
-                        <label
-                            htmlFor='l-built-in'
-                            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 0px' }}
-                        >
-                            * {t('Runtime Version')}
-                        </label>
-                        <p
-                            id='l-built-in'
-                            style={{
-                                padding: '5px 20px',
-                                borderRadius: '4px',
-                                border: '1px solid #E2E7F0',
-                            }}
-                        >
-                            {builtInRuntime}
-                        </p>
-                    </>
-                )}
-                {(type === RuntimeType.OTHER || !builtInRuntime) && (
-                    <FormItem label={t('Runtime Version')} name='runtimeVersionUrl' required>
-                        <RuntimeTreeSelector projectId={projectId} />
-                    </FormItem>
-                )}
-            </div>
+            <FormFieldRuntime {...sharedFormProps} {...getRuntimeProps()} />
+            {/* advanced config */}
             <Divider orientation='top'>{t('job.advanced')}</Divider>
             {/* debug config */}
-            <WithCurrentAuth id='job-dev'>
-                {form.getFieldValue('devMode') && <p style={{ marginBottom: '10px' }}>{t('job.debug.notice')}</p>}
-                <div style={{ width: '660px', marginBottom: '20px', display: 'flex', gap: '40px' }}>
-                    <FormItem label={t('job.debug.mode')} name='devMode'>
-                        <Toggle />
-                    </FormItem>
-                    {form.getFieldValue('devMode') && (
-                        <FormItem label={t('job.debug.password')} name='devPassword' required>
-                            <Input
-                                endEnhancer={
-                                    <CopyToClipboard
-                                        text={form.getFieldValue('devPassword') as string}
-                                        onCopy={() => {
-                                            toaster.positive(t('Copied'), { autoHideDuration: 1000 })
-                                        }}
-                                    >
-                                        <span style={{ cursor: 'pointer' }}>
-                                            <IconFont type='overview' />
-                                        </span>
-                                    </CopyToClipboard>
-                                }
-                            />
-                        </FormItem>
-                    )}
-                </div>
-            </WithCurrentAuth>
+            <FormFieldDevMode {...sharedFormProps} />
             {/* auto release time config */}
-            {form.getFieldValue('isTimeToLiveInSec') && (
-                <p style={{ marginBottom: '10px' }}>{t('job.autorelease.notice')}</p>
-            )}
-            <div style={{ width: '660px', marginBottom: '36px', display: 'flex', gap: '40px' }}>
-                <FormItem label={t('job.autorelease.toggle')} name='isTimeToLiveInSec'>
-                    <Toggle />
-                </FormItem>
-                {form.getFieldValue('isTimeToLiveInSec') && (
-                    <FormItem label={t('job.autorelease.time')} name='timeToLiveInSec' initialValue={60 * 60}>
-                        <NumberInput endEnhancer={() => t('resource.price.unit.second')} />
-                    </FormItem>
-                )}
-            </div>
+            <FormFieldAutoReleaseExtend {...sharedFormProps} />
+            <FormFieldPriExtend {...sharedFormProps} {...getResourcePoolProps()} />
             <FormItem>
                 <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <Button
@@ -480,9 +212,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         {t('Cancel')}
                     </Button>
-                    <Button isLoading={loading} disabled={!isModified(job, values)}>
-                        {t('submit')}
-                    </Button>
+                    <Button isLoading={loading}>{t('submit')}</Button>
                 </div>
             </FormItem>
         </Form>

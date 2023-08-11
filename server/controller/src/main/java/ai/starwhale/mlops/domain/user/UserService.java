@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -135,6 +137,7 @@ public class UserService implements UserDetailsService {
         if (projects.isEmpty()) {
             return Set.of();
         }
+        // TODO find for all of these projects?
         Project anyProject = projects.stream().findAny().get();
         Set<Role> projectRolesOfUser = new HashSet<>(this.getProjectRolesOfUser(user, anyProject));
         projects.forEach(pj -> projectRolesOfUser.retainAll(this.getProjectRolesOfUser(user, pj)));
@@ -155,7 +158,7 @@ public class UserService implements UserDetailsService {
         Map<String, String> roles = new HashMap<>();
         members.forEach(member -> {
             Role role = findRole(member.getRoleId());
-            if (member.getProjectId() == 0) {
+            if (Objects.equals(member.getProjectId(), Project.system().getId())) {
                 userVo.setSystemRole(role.getRoleCode());
                 return;
             }
@@ -189,7 +192,7 @@ public class UserService implements UserDetailsService {
         return PageUtil.toPageInfo(userEntities, entity -> UserVo.fromEntity(entity, idConvertor));
     }
 
-
+    @Transactional
     public Long createUser(User user, String password, String salt) {
         UserEntity userByName = userMapper.findByName(user.getName()); // todo lock this row
         if (null != userByName) {
@@ -211,7 +214,7 @@ public class UserService implements UserDetailsService {
                 .userEnabled(1)
                 .build();
         userMapper.insert(userEntity);
-        memberService.addProjectMember(0L, userEntity.getId(), Role.NAME_MAINTAINER);
+        memberService.addProjectMember(Project.system().getId(), userEntity.getId(), Role.NAME_MAINTAINER);
 
         log.info("User has been created. ID={}, NAME={}", userEntity.getId(), userEntity.getUserName());
 

@@ -28,7 +28,8 @@ import ai.starwhale.mlops.common.IdConverter;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.proxy.WebServerInTask;
 import ai.starwhale.mlops.domain.job.JobDao;
-import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.spec.JobSpecParser;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
@@ -62,7 +63,13 @@ public class TaskServiceTest {
                 setName("ppl");
             }
         });
-        taskConvertor = new TaskConverter(new IdConverter(), stepMapper, 8000, mock(WebServerInTask.class));
+        taskConvertor = new TaskConverter(
+                new IdConverter(),
+                stepMapper,
+                8000,
+                mock(WebServerInTask.class),
+                mock(JobSpecParser.class)
+        );
         taskMapper = mock(TaskMapper.class);
         storageAccessService = mock(StorageAccessService.class);
         jobDao = mock(JobDao.class);
@@ -71,8 +78,8 @@ public class TaskServiceTest {
 
     @Test
     public void testListTaskWithJobResourcePool() {
-        when(jobDao.findJob(any())).thenReturn(
-                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("a").build()).build());
+        when(jobDao.findJobEntity(any())).thenReturn(
+                JobEntity.builder().id(1L).resourcePool("a").build());
         var startedTime = new Date();
         var finishedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(
@@ -100,8 +107,8 @@ public class TaskServiceTest {
 
     @Test
     public void testListTaskWithStepResourcePool() throws IOException {
-        when(jobDao.findJob(any())).thenReturn(
-                Job.builder().id(1L).resourcePool(ResourcePool.builder().name("pool from job").build()).build());
+        when(jobDao.findJobEntity(any())).thenReturn(
+                JobEntity.builder().id(1L).resourcePool("pool from job").build());
         var startedTime = new Date();
         var finishedTime = new Date();
         when(taskMapper.listTasks(1L)).thenReturn(

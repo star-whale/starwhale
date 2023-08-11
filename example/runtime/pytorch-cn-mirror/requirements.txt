@@ -15,9 +15,10 @@ numpy==1.23.2; python_version>='3.8'
 scikit-learn==1.1.1; python_version>='3.8'
 scipy==1.8.1; python_version>='3.8'
 importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'
-torch==1.12.1
-torchaudio==0.12.1
-torchdata==0.4.1
-torchtext==0.13.1
-torchvision==0.13.1
+torch==2.0.1; python_version>='3.8'
+torch==1.13.1; python_version=='3.7'
+torchaudio
+torchdata
+torchtext
+torchvision
 gradio

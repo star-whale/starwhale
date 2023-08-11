@@ -58,4 +58,7 @@ public class StepEntity extends BaseEntity {
 
     @Builder.Default
     Date finishedTime = defaultDate;
+
+    // the original step yaml to json
+    String originJson;
 }
