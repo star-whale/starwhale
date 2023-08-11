@@ -108,7 +108,7 @@ public class JobServiceTest {
     private TrashService trashService;
     private SystemSettingService systemSettingService;
     private JobSpecParser jobSpecParser;
-    private SwTaskScheduler taskScheduler;
+    private SwTaskScheduler swTaskScheduler;
 
     @BeforeEach
     public void setUp() {
@@ -140,13 +140,13 @@ public class JobServiceTest {
         trashService = mock(TrashService.class);
         systemSettingService = mock(SystemSettingService.class);
         jobSpecParser = new JobSpecParser();
-        taskScheduler = mock(SwTaskScheduler.class);
+        swTaskScheduler = mock(SwTaskScheduler.class);
 
         service = new JobService(
                 taskMapper, jobConverter, jobBoConverter, runtimeService, jobSpliterator,
                 hotJobHolder, projectService, jobDao, jobLoader, modelService,
                 resultQuerier, datasetService, storagePathCoordinator, userService, mock(JobUpdateHelper.class),
-                trashService, systemSettingService, jobSpecParser, taskScheduler);
+                trashService, systemSettingService, jobSpecParser, swTaskScheduler);
     }
 
     @Test
@@ -458,7 +458,7 @@ public class JobServiceTest {
         when(hotJobHolder.ofIds(eq(List.of(task.getId())))).thenReturn(List.of(job));
 
         var expected = ExecResponse.builder().stdout("stdout").stderr("stderr").build();
-        when(taskScheduler.exec(eq(task), any())).thenReturn(new Future<>() {
+        when(swTaskScheduler.exec(eq(task), any())).thenReturn(new Future<>() {
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
                 return false;

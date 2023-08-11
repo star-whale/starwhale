@@ -78,9 +78,13 @@ import ai.starwhale.mlops.exception.SwNotFoundException;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
+import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
+import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.schedule.log.TaskLogSaver;
 import ai.starwhale.mlops.storage.LengthAbleInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.memory.StorageAccessServiceMemory;
@@ -136,11 +140,14 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
         "ai.starwhale.mlops.common",
         "ai.starwhale.mlops.domain",
         "ai.starwhale.mlops.datastore",
-        "ai.starwhale.mlops.reporting",
+        "ai.starwhale.mlops.schedule.reporting",
         "ai.starwhale.mlops.resulting",
         "ai.starwhale.mlops.configuration.security"},
         excludeFilters = {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)})
-@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class})
+@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, TaskLogSaver.class,
+        DockerClientFinderSimpleImpl.class,
+        ContainerTaskMapper.class,
+        TaskLogCollectorFactoryDocker.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModelServiceTest extends MySqlContainerHolder {
 
@@ -786,7 +793,7 @@ public class ModelServiceTest extends MySqlContainerHolder {
         var res = modelService.listModelVersionView("1");
         assertEquals(2, res.size());
         assertThat(res.get(1), allOf(hasProperty("projectName", is("starwhale")),
-                        hasProperty("modelName", is("m"))));
+                hasProperty("modelName", is("m"))));
 
         assertThat(res.get(0), allOf(hasProperty("projectName", is("starwhale")),
                 hasProperty("modelName", is("m1")),

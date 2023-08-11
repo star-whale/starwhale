@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogCollector;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.impl.k8s.log.CancellableJobLogK8sCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -51,7 +51,7 @@ public class DatasetBuildLogWsServer {
 
     private Long id;
 
-    private CancellableJobLogCollector logCollector;
+    private TaskLogStreamingCollector logCollector;
 
 
     @Autowired
@@ -79,7 +79,7 @@ public class DatasetBuildLogWsServer {
             String line;
             while (true) {
                 try {
-                    if ((line = logCollector.readLine()) == null) {
+                    if ((line = logCollector.readLine(10L)) == null) {
                         break;
                     }
                     sendMessage(line);

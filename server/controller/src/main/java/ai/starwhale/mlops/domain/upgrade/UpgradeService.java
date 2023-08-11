@@ -29,7 +29,7 @@ import ai.starwhale.mlops.exception.SwProcessException;
 import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import io.kubernetes.client.openapi.ApiException;

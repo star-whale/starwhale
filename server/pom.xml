@@ -49,6 +49,8 @@
         <spring-boot.version>2.7.7</spring-boot.version>
         <spring-boot-admin.version>2.7.7</spring-boot-admin.version>
         <micrometer.version>1.11.2</micrometer.version>
+        <commons-csv.version>1.9.0</commons-csv.version>
+        <docker-java.version>3.3.2</docker-java.version>
     </properties>
 
     <dependencyManagement>
@@ -265,8 +267,22 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
-                <version>1.9.0</version>
+                <version>${commons-csv.version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java -->
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java</artifactId>
+                <version>${docker-java.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport-httpclient5</artifactId>
+                <version>${docker-java.version}</version>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
 

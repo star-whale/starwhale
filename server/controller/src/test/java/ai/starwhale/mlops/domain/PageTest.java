@@ -59,8 +59,14 @@ import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
-import ai.starwhale.mlops.schedule.k8s.K8sJobTemplate;
-import ai.starwhale.mlops.schedule.k8s.ResourceEventHolder;
+import ai.starwhale.mlops.schedule.TaskCommandGetter;
+import ai.starwhale.mlops.schedule.TaskRunningEnvBuilder;
+import ai.starwhale.mlops.schedule.impl.docker.ContainerTaskMapper;
+import ai.starwhale.mlops.schedule.impl.docker.DockerClientFinderSimpleImpl;
+import ai.starwhale.mlops.schedule.impl.docker.log.TaskLogCollectorFactoryDocker;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sJobTemplate;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceEventHolder;
 import com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.UUID;
@@ -78,20 +84,28 @@ import org.springframework.context.annotation.Import;
 @MybatisTest
 @ComponentScan(
         basePackages = {
-            "ai.starwhale.mlops.common",
-            "ai.starwhale.mlops.domain",
-            "ai.starwhale.mlops.datastore",
-            "ai.starwhale.mlops.reporting",
-            "ai.starwhale.mlops.resulting",
-            "ai.starwhale.mlops.configuration.security"},
+                "ai.starwhale.mlops.common",
+                "ai.starwhale.mlops.domain",
+                "ai.starwhale.mlops.datastore",
+                "ai.starwhale.mlops.schedule.reporting",
+                "ai.starwhale.mlops.schedule.log",
+                "ai.starwhale.mlops.schedule.impl.docker",
+                "ai.starwhale.mlops.resulting",
+                "ai.starwhale.mlops.configuration.security"},
         excludeFilters = {
-            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = ModelServingService.class)
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = {ModelServingService.class,
+                        K8sClient.class})
         }
 )
 @ImportAutoConfiguration(PageHelperAutoConfiguration.class)
-@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class})
+@Import({K8sJobTemplate.class, ResourceEventHolder.class, SimpleMeterRegistry.class, TaskRunningEnvBuilder.class,
+        TaskLogCollectorFactoryDocker.class,
+        DockerClientFinderSimpleImpl.class,
+        ContainerTaskMapper.class,
+        TaskCommandGetter.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PageTest extends MySqlContainerHolder {
+
     @Autowired
     private JobService jobService;
     @Autowired
@@ -194,10 +208,10 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = modelMapper.insert(
                     ModelEntity.builder()
-                        .modelName(String.format("model-%d", i))
-                        .projectId(projectId)
-                        .ownerId(userId)
-                        .build());
+                            .modelName(String.format("model-%d", i))
+                            .projectId(projectId)
+                            .ownerId(userId)
+                            .build());
             assertTrue(res > 0);
         }
 
@@ -225,10 +239,10 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = runtimeMapper.insert(
                     RuntimeEntity.builder()
-                        .runtimeName(String.format("rt-%d", i))
-                        .projectId(projectId)
-                        .ownerId(userId)
-                        .build());
+                            .runtimeName(String.format("rt-%d", i))
+                            .projectId(projectId)
+                            .ownerId(userId)
+                            .build());
             assertTrue(res > 0);
         }
 
@@ -256,10 +270,10 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = datasetMapper.insert(
                     DatasetEntity.builder()
-                        .datasetName(String.format("ds-%d", i))
-                        .projectId(projectId)
-                        .ownerId(userId)
-                        .build());
+                            .datasetName(String.format("ds-%d", i))
+                            .projectId(projectId)
+                            .ownerId(userId)
+                            .build());
             assertTrue(res > 0);
         }
 
@@ -297,28 +311,28 @@ public class PageTest extends MySqlContainerHolder {
                 .versionName("model-version-1")
                 .ownerId(userId)
                 .jobs("mnist.evaluator:MNISTInference.cmp:\n"
-                    + "- cls_name: ''\n"
-                    + "  concurrency: 1\n"
-                    + "  needs: []\n"
-                    + "  resources: []\n"
-                    + "  name: mnist.evaluator:MNISTInference.ppl\n"
-                    + "  replicas: 1\n"
-                    + "- cls_name: ''\n"
-                    + "  concurrency: 1\n"
-                    + "  needs:\n"
-                    + "  - mnist.evaluator:MNISTInference.ppl\n"
-                    + "  resources:\n"
-                    + "  - type: cpu \n"
-                    + "    request: 0.1\n"
-                    + "    limit: 0.1\n"
-                    + "  - type: nvidia.com/gpu \n"
-                    + "    request: 1\n"
-                    + "    limit: 1\n"
-                    + "  - type: memory \n"
-                    + "    request: 1\n"
-                    + "    limit: 1\n"
-                    + "  name: mnist.evaluator:MNISTInference.cmp\n"
-                    + "  replicas: 1\n")
+                        + "- cls_name: ''\n"
+                        + "  concurrency: 1\n"
+                        + "  needs: []\n"
+                        + "  resources: []\n"
+                        + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                        + "  replicas: 1\n"
+                        + "- cls_name: ''\n"
+                        + "  concurrency: 1\n"
+                        + "  needs:\n"
+                        + "  - mnist.evaluator:MNISTInference.ppl\n"
+                        + "  resources:\n"
+                        + "  - type: cpu \n"
+                        + "    request: 0.1\n"
+                        + "    limit: 0.1\n"
+                        + "  - type: nvidia.com/gpu \n"
+                        + "    request: 1\n"
+                        + "    limit: 1\n"
+                        + "  - type: memory \n"
+                        + "    request: 1\n"
+                        + "    limit: 1\n"
+                        + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                        + "  replicas: 1\n")
                 .build();
         assertTrue(modelVersionMapper.insert(modelVersion) > 0);
 
@@ -341,17 +355,17 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = jobMapper.addJob(
                     JobEntity.builder()
-                        .name(String.format("job-%d", i))
-                        .jobUuid(String.format("uuid-%d", i))
-                        .modelVersionId(modelVersion.getId())
-                        .runtimeVersionId(runtimeVersion.getId())
-                        .type(JobType.EVALUATION)
-                        .jobStatus(JobStatus.CREATED)
-                        .resultOutputPath("path")
-                        .projectId(projectId)
-                        .ownerId(userId)
-                        .isDeleted(0)
-                        .build());
+                            .name(String.format("job-%d", i))
+                            .jobUuid(String.format("uuid-%d", i))
+                            .modelVersionId(modelVersion.getId())
+                            .runtimeVersionId(runtimeVersion.getId())
+                            .type(JobType.EVALUATION)
+                            .jobStatus(JobStatus.CREATED)
+                            .resultOutputPath("path")
+                            .projectId(projectId)
+                            .ownerId(userId)
+                            .isDeleted(0)
+                            .build());
             assertTrue(res > 0);
         }
 
@@ -385,28 +399,28 @@ public class PageTest extends MySqlContainerHolder {
                 .versionName("model-version-1")
                 .ownerId(userId)
                 .jobs("mnist.evaluator:MNISTInference.cmp:\n"
-                    + "- cls_name: ''\n"
-                    + "  concurrency: 1\n"
-                    + "  needs: []\n"
-                    + "  resources: []\n"
-                    + "  name: mnist.evaluator:MNISTInference.ppl\n"
-                    + "  replicas: 1\n"
-                    + "- cls_name: ''\n"
-                    + "  concurrency: 1\n"
-                    + "  needs:\n"
-                    + "  - mnist.evaluator:MNISTInference.ppl\n"
-                    + "  resources:\n"
-                    + "  - type: cpu \n"
-                    + "    request: 0.1\n"
-                    + "    limit: 0.1\n"
-                    + "  - type: nvidia.com/gpu \n"
-                    + "    request: 1\n"
-                    + "    limit: 1\n"
-                    + "  - type: memory \n"
-                    + "    request: 1\n"
-                    + "    limit: 1\n"
-                    + "  name: mnist.evaluator:MNISTInference.cmp\n"
-                    + "  replicas: 1\n")
+                        + "- cls_name: ''\n"
+                        + "  concurrency: 1\n"
+                        + "  needs: []\n"
+                        + "  resources: []\n"
+                        + "  name: mnist.evaluator:MNISTInference.ppl\n"
+                        + "  replicas: 1\n"
+                        + "- cls_name: ''\n"
+                        + "  concurrency: 1\n"
+                        + "  needs:\n"
+                        + "  - mnist.evaluator:MNISTInference.ppl\n"
+                        + "  resources:\n"
+                        + "  - type: cpu \n"
+                        + "    request: 0.1\n"
+                        + "    limit: 0.1\n"
+                        + "  - type: nvidia.com/gpu \n"
+                        + "    request: 1\n"
+                        + "    limit: 1\n"
+                        + "  - type: memory \n"
+                        + "    request: 1\n"
+                        + "    limit: 1\n"
+                        + "  name: mnist.evaluator:MNISTInference.cmp\n"
+                        + "  replicas: 1\n")
                 .build();
         assertTrue(modelVersionMapper.insert(modelVersion) > 0);
         var job = JobEntity.builder()
@@ -437,11 +451,11 @@ public class PageTest extends MySqlContainerHolder {
         for (int i = 0; i < 19; i++) {
             var res = taskMapper.addTask(
                     TaskEntity.builder()
-                        .stepId(step.getId())
-                        .taskUuid(String.format("uuid-%d", i))
-                        .taskStatus(TaskStatus.CREATED)
-                        .taskRequest("request")
-                        .build());
+                            .stepId(step.getId())
+                            .taskUuid(String.format("uuid-%d", i))
+                            .taskStatus(TaskStatus.CREATED)
+                            .taskRequest("request")
+                            .build());
             assertTrue(res > 0);
         }
 

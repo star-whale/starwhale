@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Bean;
 public class ScheduleConfig {
 
     /**
-     * when system receive kill signal when there are scheduled tasks running, system should wait for running tasks to
+     * when system receive kill signal and there are scheduled tasks running, system should wait for running tasks to
      * be done to exit
      *
      */

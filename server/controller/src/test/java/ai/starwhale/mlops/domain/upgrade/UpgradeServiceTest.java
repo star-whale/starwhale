@@ -29,7 +29,7 @@ import ai.starwhale.mlops.domain.upgrade.bo.UpgradeLog;
 import ai.starwhale.mlops.domain.upgrade.bo.Version;
 import ai.starwhale.mlops.domain.upgrade.step.UpgradeStepManager;
 import ai.starwhale.mlops.exception.SwValidationException;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
+import ai.starwhale.mlops.schedule.impl.k8s.K8sClient;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;

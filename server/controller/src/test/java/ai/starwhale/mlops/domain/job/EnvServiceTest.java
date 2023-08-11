@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
 
-import ai.starwhale.mlops.schedule.k8s.ResourceOverwriteSpec;
+import ai.starwhale.mlops.schedule.impl.k8s.ResourceOverwriteSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

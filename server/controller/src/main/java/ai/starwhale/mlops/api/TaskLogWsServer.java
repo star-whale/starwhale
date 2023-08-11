@@ -17,9 +17,11 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.common.IdConverter;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogCollector;
-import ai.starwhale.mlops.schedule.k8s.log.CancellableJobLogK8sCollectorFactory;
-import io.kubernetes.client.openapi.ApiException;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.exception.StarwhaleException;
+import ai.starwhale.mlops.schedule.log.TaskLogCollectorFactory;
+import ai.starwhale.mlops.schedule.log.TaskLogStreamingCollector;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +45,7 @@ public class TaskLogWsServer {
 
     private static IdConverter idConvertor;
 
-    private static CancellableJobLogK8sCollectorFactory logCollectorFactory;
+    private static TaskLogCollectorFactory taskLogCollectorFactory;
 
     private Session session;
 
@@ -51,7 +53,7 @@ public class TaskLogWsServer {
 
     private Long id;
 
-    private CancellableJobLogCollector logCollector;
+    private TaskLogStreamingCollector logCollector;
 
 
     @Autowired
@@ -60,9 +62,10 @@ public class TaskLogWsServer {
     }
 
     @Autowired
-    public void setLogCollectorFactory(CancellableJobLogK8sCollectorFactory factory) {
-        TaskLogWsServer.logCollectorFactory = factory;
+    public void setTaskLogCollectorFactory(TaskLogCollectorFactory taskLogCollectorFactory) {
+        TaskLogWsServer.taskLogCollectorFactory = taskLogCollectorFactory;
     }
+
 
     @OnOpen
     public void onOpen(Session session, @PathParam("taskId") String taskId) {
@@ -70,8 +73,8 @@ public class TaskLogWsServer {
         this.readerId = session.getId();
         this.id = idConvertor.revert(taskId);
         try {
-            logCollector = logCollectorFactory.make(taskId);
-        } catch (IOException | ApiException e) {
+            logCollector = taskLogCollectorFactory.streamingCollector(Task.builder().id(id).step(new Step()).build());
+        } catch (StarwhaleException e) {
             log.error("make k8s log collector failed", e);
         }
         log.info("Task log ws opened. reader={}, task={}", readerId, id);
@@ -79,7 +82,7 @@ public class TaskLogWsServer {
             String line;
             while (true) {
                 try {
-                    if ((line = logCollector.readLine()) == null) {
+                    if ((line = logCollector.readLine(null)) == null) {
                         break;
                     }
                     sendMessage(line);

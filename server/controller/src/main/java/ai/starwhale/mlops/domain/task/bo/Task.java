@@ -98,6 +98,9 @@ public class Task extends TimeConcern {
             return false;
         }
         Task tsk = (Task) obj;
+        if (null != id) {
+            return this.id.equals(tsk.id);
+        }
         return this.uuid.equals(tsk.uuid);
     }
 

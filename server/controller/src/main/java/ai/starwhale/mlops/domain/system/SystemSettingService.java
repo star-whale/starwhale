@@ -111,11 +111,15 @@ public class SystemSettingService implements CommandLineRunner {
                         .orElse(ResourcePool.defaults());
     }
 
-    public List<ResourcePool> getResourcePools() {
+    public List<ResourcePool> getResourcePoolsFromWeb() {
         User user = userService.currentUserDetail();
-        var pools = CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting())
-                ? List.of(ResourcePool.defaults()) : this.systemSetting.getResourcePoolSetting();
+        var pools = getAllResourcePools();
         return pools.stream().filter(rp -> rp.allowUser(user.getId())).collect(Collectors.toList());
+    }
+
+    public List<ResourcePool> getAllResourcePools() {
+        return CollectionUtils.isEmpty(this.systemSetting.getResourcePoolSetting())
+                ? List.of(ResourcePool.defaults()) : this.systemSetting.getResourcePoolSetting();
     }
 
     public void updateResourcePools(List<ResourcePool> resourcePools) {

@@ -21,6 +21,8 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SwTaskScheduler;
+import ai.starwhale.mlops.schedule.log.TaskLogSaver;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
@@ -38,7 +40,7 @@ import org.springframework.stereotype.Component;
 @Order(6)
 public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
-    final SwTaskScheduler taskScheduler;
+    final SwTaskScheduler swTaskScheduler;
 
     final TaskStatusMachine taskStatusMachine;
 
@@ -46,14 +48,20 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
     final DelayQueue<TaskToDelete> taskToDeletes;
 
+    private final TaskLogSaver taskLogSaver;
+
+    final TaskReportReceiver taskReportReceiver;
+
     public TaskWatcherForSchedule(
-            SwTaskScheduler taskScheduler,
+            SwTaskScheduler swTaskScheduler,
             TaskStatusMachine taskStatusMachine,
-            @Value("${sw.task.deletion-delay-minutes}") Long deletionDelayMinutes
-    ) {
-        this.taskScheduler = taskScheduler;
+            @Value("${sw.task.deletion-delay-minutes}") Long deletionDelayMinutes,
+            TaskLogSaver taskLogSaver, TaskReportReceiver taskReportReceiver) {
+        this.swTaskScheduler = swTaskScheduler;
         this.taskStatusMachine = taskStatusMachine;
         this.deletionDelayMilliseconds = TimeUnit.MILLISECONDS.convert(deletionDelayMinutes, TimeUnit.MINUTES);
+        this.taskLogSaver = taskLogSaver;
+        this.taskReportReceiver = taskReportReceiver;
         this.taskToDeletes = new DelayQueue<>();
     }
 
@@ -61,18 +69,20 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         if (task.getStatus() == TaskStatus.READY) {
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
-            taskScheduler.schedule(List.of(task));
+            swTaskScheduler.schedule(List.of(task), taskReportReceiver);
         } else if (task.getStatus() == TaskStatus.CANCELLING || task.getStatus() == TaskStatus.PAUSED) {
-            taskScheduler.stop(List.of(task));
+            taskLogSaver.saveLog(task);
+            swTaskScheduler.stop(List.of(task));
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled immediately",
                     task.getStatus(),
                     task.getId(), task.getStatus());
-        } else if (task.getStatus() == TaskStatus.SUCCESS || task.getStatus() == TaskStatus.FAIL) {
+        } else if (taskStatusMachine.isFinal(task.getStatus())) {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled in delayed queue",
                     task.getStatus(),
                     task.getId(), task.getStatus());
+            taskLogSaver.saveLog(task);
             if (deletionDelayMilliseconds <= 0) {
-                taskScheduler.stop(List.of(task));
+                swTaskScheduler.stop(List.of(task));
             } else {
                 addToDeleteQueue(task);
             }
@@ -97,7 +107,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             log.debug("delete task {}", toDelete.getTask().getId());
             toDelete = taskToDeletes.poll();
         }
-        taskScheduler.stop(tasks);
+        swTaskScheduler.stop(tasks);
     }
 
     static class TaskToDelete implements Delayed {

@@ -17,26 +17,33 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.schedule.reporting.TaskReportReceiver;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
 /**
  * schedule tasks of jobs
+ * Spring framework has a class named TaskScheduler with a bean in the context. To avoid bean conflict the name here is
+ * SwTaskScheduler
  */
 public interface SwTaskScheduler {
 
 
     /**
-     * scheduler should maintain the tasks to be scheduled
-     *
-     * @param tasks       tasks to be scheduled
+     * @param tasks the tasks to be scheduled
+     * @param taskReportReceiver the report receiver that could process these tasks
      */
-    void schedule(Collection<Task> tasks);
+    void schedule(Collection<Task> tasks, TaskReportReceiver taskReportReceiver);
 
     /**
-     * @param tasks tasks to be stop scheduled
+     * @param tasks tasks to be stopped
      */
     void stop(Collection<Task> tasks);
 
-    Future<String[]> exec(Task task, String ...command);
+    /**
+     * @param task the tasks to exec on
+     * @param command command may be wrapped with "sh -c" by implementations
+     * @return stdout, stderr in String[]
+     */
+    Future<String[]> exec(Task task, String... command);
 }
