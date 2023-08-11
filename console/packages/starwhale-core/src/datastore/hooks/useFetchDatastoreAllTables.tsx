@@ -10,7 +10,7 @@ export function useFetchDatastoreAllTables(
     }[]
 ) {
     const params = React.useMemo(() => {
-        if (prefixes) {
+        if (prefixes && prefixes.length !== 0) {
             return {
                 prefixes: prefixes.map((item) => item.name),
             }
