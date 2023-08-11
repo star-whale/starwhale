@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job.spec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import ai.starwhale.mlops.exception.SwValidationException;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +91,7 @@ public class StepSpecTest {
             spec.verifyStepSpecArgs();
         });
     }
-  
+
     @Test
     public void testFriendlyName() {
         var stepSpec = StepSpec.builder()
