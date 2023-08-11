@@ -5,6 +5,7 @@ import typing as t
 import inspect
 import numbers
 import threading
+from abc import ABC, abstractmethod
 from pathlib import Path
 from collections import defaultdict
 
@@ -40,6 +41,8 @@ class Handler(ASDictMixin):
         expose: int = 0,
         virtual: bool = False,
         require_dataset: bool = False,
+        parameters_sig: t.List[t.Dict[str, object]] = [],
+        ext_cmd_args: str = "",
         **kw: t.Any,
     ) -> None:
         self.name = name
@@ -57,6 +60,8 @@ class Handler(ASDictMixin):
         # virtual marks that the handler is not a real user handler and can not find in the user's code
         self.virtual = virtual
         self.require_dataset = require_dataset
+        self.parameters_sig = parameters_sig
+        self.ext_cmd_args = ext_cmd_args
 
     def __str__(self) -> str:
         return f"Handler[{self.name}]: name-{self.show_name}"
@@ -129,6 +134,7 @@ class Handler(ASDictMixin):
         name: str = "",
         expose: int = 0,
         require_dataset: bool = False,
+        build_in: bool = False,
     ) -> t.Callable:
         """Register a function as a handler. Enable the function execute by needs handler, run with gpu/cpu/mem resources in server side,
         and control concurrency and replicas of handler run.
@@ -187,6 +193,27 @@ class Handler(ASDictMixin):
 
                 key_name_needs.append(f"{n.__module__}:{n.__qualname__}")
 
+            ext_cmd_args = ""
+            parameters_sig = []
+            #  user defined handlers i.e. not predict/evaluate/fine_tune
+            if not build_in:
+                sig = inspect.signature(func)
+                parameters_sig = [
+                    {
+                        "name": p[0],
+                        "required": p[1].default is inspect._empty
+                        or (
+                            isinstance(p[1].default, HanderInput)
+                            and p[1].default.required
+                        ),
+                        "multiple": isinstance(p[1].default, ListInput),
+                    }
+                    for idx, p in enumerate(sig.parameters.items())
+                    if idx != 0 or "self" != p[0]
+                ]
+                ext_cmd_args = " ".join(
+                    [f'--{p.get("name")}' for p in parameters_sig if p.get("required")]
+                )
             _handler = cls(
                 name=key_name,
                 show_name=name or func_name,
@@ -201,11 +228,66 @@ class Handler(ASDictMixin):
                 extra_kwargs=extra_kwargs,
                 expose=expose,
                 require_dataset=require_dataset,
+                parameters_sig=parameters_sig,
+                ext_cmd_args=ext_cmd_args,
             )
 
             cls._register(_handler, func)
             setattr(func, DecoratorInjectAttr.Step, True)
-            return func
+            import functools
+
+            if build_in:
+                return func
+            else:
+
+                @functools.wraps(func)
+                def wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+                    if "handlerargs" in kwargs:
+                        import click
+                        from click.parser import OptionParser
+
+                        handlerargs: t.List[str] = kwargs.pop("handlerargs")
+
+                        parser = OptionParser()
+                        sig = inspect.signature(func)
+                        for idx, p in enumerate(sig.parameters.items()):
+                            if idx != 0 or "self" != p[0]:
+                                arg_name = p[0]
+                                required = p[1].default is inspect._empty or (
+                                    isinstance(p[1].default, HanderInput)
+                                    and p[1].default.required
+                                )
+                                click.Option(
+                                    [f"--{arg_name}", f"-{arg_name}"],
+                                    is_flag=False,
+                                    multiple=isinstance(p[1].default, ListInput),
+                                    required=required,
+                                ).add_to_parser(
+                                    parser, None  # type:ignore
+                                )
+                        hargs, _, _ = parser.parse_args(handlerargs)
+
+                        for idx, p in enumerate(sig.parameters.items()):
+                            name = p[0]
+                            if idx == 0 and "self" == name:
+                                continue
+                            parsed_args = {
+                                name: fetch_real_args(p, hargs.get(name, None))
+                            }
+                            kwargs.update(
+                                {k: v for k, v in parsed_args.items() if v is not None}
+                            )
+                    func(*args, **kwargs)
+
+                def fetch_real_args(
+                    parameter: t.Tuple[str, inspect.Parameter], user_input: t.Any
+                ) -> t.Any:
+                    if isinstance(parameter[1].default, HanderInput):
+                        return parameter[1].default.parse(user_input)
+                    else:
+                        return user_input
+
+                return wrapper
 
         return decorator
 
@@ -278,13 +360,14 @@ class Handler(ASDictMixin):
                     # compatible with old version: ppl and cmp function are renamed to predict and evaluate
                     predict_func = getattr(v, "predict", None) or getattr(v, "ppl")
                     evaluate_func = getattr(v, "evaluate", None) or getattr(v, "cmp")
-                    Handler.register(replicas=1, name="predict", require_dataset=True)(
-                        predict_func
-                    )
+                    Handler.register(
+                        replicas=1, name="predict", require_dataset=True, build_in=True
+                    )(predict_func)
                     Handler.register(
                         replicas=1,
                         needs=[predict_func],
                         name="evaluate",
+                        build_in=True,
                     )(evaluate_func)
 
     @classmethod
@@ -319,3 +402,57 @@ def generate_jobs_yaml(
         ),
         parents=True,
     )
+
+
+class HanderInput(ABC):
+    def __init__(self, required: bool = False) -> None:
+        self.required = required
+
+    @abstractmethod
+    def parse(self, user_input: t.Any) -> t.Any:
+        ...
+
+
+class ListInput(HanderInput):
+    def __init__(self, member_type: t.Any, required: bool = False) -> None:
+        super().__init__(required)
+        self.member_type = member_type
+
+    def parse(self, user_input: t.List) -> t.Any:
+        if not user_input:
+            return user_input
+        if isinstance(self.member_type, HanderInput):
+            return [self.member_type.parse(item) for item in user_input]
+        elif issubclass(self.member_type, HanderInput):
+            return [self.member_type().parse(item) for item in user_input]
+        else:
+            return user_input
+
+
+class DatasetInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        from starwhale import dataset
+
+        return dataset(user_input) if user_input else None
+
+
+class BoolInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return "false" != str(user_input).lower()
+
+
+class IntInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return int(user_input) if user_input else None
+
+
+class FloatInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        return float(user_input) if user_input else None
+
+
+class ContextInput(HanderInput):
+    def parse(self, user_input: t.Any) -> t.Any:
+        from starwhale import Context
+
+        return Context.get_runtime_context()

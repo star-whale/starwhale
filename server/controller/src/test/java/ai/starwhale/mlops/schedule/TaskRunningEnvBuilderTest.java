@@ -86,6 +86,7 @@ public class TaskRunningEnvBuilderTest {
             put("SW_RUN_HANDLER", null);
             put("SW_DEV_TOKEN", null);
             put("SW_DEV_PORT", "8000");
+            put("SW_TASK_EXTRA_CMD_ARGS", "--a 11");
             put("SW_CONDA_CONFIG", "channels:\n"
                     + "  - defaults\n"
                     + "show_channel_urls: true\n"
@@ -142,7 +143,25 @@ public class TaskRunningEnvBuilderTest {
                         List.of(DataSet.builder()
                                 .indexTable("it").path("swds_path").name("swdsN").version("swdsV")
                                 .size(300L).projectId(103L).build()))
-                .stepSpec("")
+                .stepSpec("- concurrency: 1\n"
+                        + "  needs: []\n"
+                        + "  resources: []\n"
+                        + "  env: null\n"
+                        + "  replicas: 1\n"
+                        + "  expose: 0\n"
+                        + "  virtual: false\n"
+                        + "  job_name: th:f\n"
+                        + "  name: cmp\n"
+                        + "  show_name: cmp\n"
+                        + "  require_dataset: false\n"
+                        + "  parameters_sig:\n"
+                        + "    - name: a\n"
+                        + "      required: 'true'\n"
+                        + "    - name: b\n"
+                        + "      required: 'false'\n"
+                        + "    - name: c\n"
+                        + "      required: 'false'\n"
+                        + "  ext_cmd_args: '--a 11'")
                 .resourcePool(ResourcePool.builder().name("bj01").build())
                 .project(Project.builder().name("project").id(100L).build())
                 .build();

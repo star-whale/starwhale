@@ -222,6 +222,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "",
@@ -238,6 +240,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
 
@@ -264,6 +268,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "",
@@ -280,6 +286,8 @@ def video_evaluate_handler(*args, **kwargs): ...
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
 
@@ -330,6 +338,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 },
                 {
                     "cls_name": "",
@@ -346,6 +356,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 },
             ],
             "mock_user_module:predict_handler": [
@@ -371,6 +383,8 @@ def evaluate_handler(*args, **kwargs): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 }
             ],
         }
@@ -483,6 +497,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "MockHandler",
@@ -499,6 +515,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
         assert jobs_info["mock_user_module:MockHandler.predict"] == [
@@ -517,6 +535,8 @@ class MockHandler(PipelineHandler):
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             }
         ]
         steps = Step.get_steps_from_yaml(
@@ -586,6 +606,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             }
         ]
 
@@ -612,6 +634,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": True,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "MockHandler",
@@ -628,6 +652,8 @@ class MockHandler:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
 
@@ -682,16 +708,17 @@ def run(): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 }
             ]
         }
 
     def test_handler_with_other_decorator(self) -> None:
         content = """
-from starwhale import handler, pass_context
+from starwhale import handler
 
 @handler(replicas=2)
-@pass_context
 def handle(context): ...
         """
 
@@ -717,6 +744,14 @@ def handle(context): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": False,
+                    "parameters_sig": [
+                        {
+                            "name": "context",
+                            "required": True,
+                            "multiple": False,
+                        }
+                    ],
+                    "ext_cmd_args": "--context",
                 }
             ]
         }
@@ -753,6 +788,8 @@ def ft2(): ...
                     "expose": 0,
                     "virtual": False,
                     "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 }
             ],
             "mock_user_module:ft2": [
@@ -771,6 +808,8 @@ def ft2(): ...
                     "resources": [],
                     "show_name": "fine_tune",
                     "virtual": False,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 },
                 {
                     "cls_name": "",
@@ -787,6 +826,9 @@ def ft2(): ...
                     "resources": [{"limit": 1, "request": 1, "type": "nvidia.com/gpu"}],
                     "show_name": "fine_tune",
                     "virtual": False,
+                    "require_dataset": True,
+                    "parameters_sig": [],
+                    "ext_cmd_args": "",
                 },
             ],
         }
@@ -833,6 +875,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": "",
         } in report_handler
 
         assert {
@@ -850,6 +894,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": "",
         } in report_handler
 
         assert {
@@ -870,6 +916,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": "",
         } in report_handler
 
         assert {
@@ -887,6 +935,8 @@ class MockReport:
             "expose": 0,
             "virtual": False,
             "require_dataset": False,
+            "parameters_sig": [],
+            "ext_cmd_args": "",
         } in report_handler
 
         assert jobs_info["mock_user_module:evaluate_handler"] == [
@@ -905,6 +955,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "",
@@ -921,6 +973,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
         assert jobs_info["mock_user_module:predict_handler"] == [
@@ -939,6 +993,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
             {
                 "cls_name": "",
@@ -955,6 +1011,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             },
         ]
         assert jobs_info["mock_user_module:prepare_handler"] == [
@@ -973,6 +1031,8 @@ class MockReport:
                 "expose": 0,
                 "virtual": False,
                 "require_dataset": False,
+                "parameters_sig": [],
+                "ext_cmd_args": "",
             }
         ]
 
@@ -1133,3 +1193,178 @@ def predict_handler(): ...
         yaml_path = self.workdir / "job.yaml"
         with self.assertRaisesRegex(RuntimeError, "dependency not found"):
             generate_jobs_yaml([self.module_name], self.workdir, yaml_path)
+
+    def test_handler_args(self) -> None:
+        content = """
+from starwhale import (
+    Context,
+    Dataset,
+    handler,
+    IntInput,
+    ListInput,
+    HanderInput,
+    ContextInput,
+    DatasetInput,
+)
+
+class MyInput(HanderInput):
+    def parse(self, user_input):
+
+        return f"MyInput {user_input}"
+
+class X:
+    def __init__(self) -> None:
+        self.a = 1
+
+    @handler()
+    def f(
+        self, x=ListInput(IntInput), y=2, mi=MyInput(), ds=DatasetInput(required=True), ctx=ContextInput()
+    ):
+        assert self.a + x[0] is 3
+        assert self.a + x[1] is 2
+        assert y is 2
+        assert mi == "MyInput blab-la"
+        assert isinstance(ds, Dataset)
+        assert isinstance(ctx, Context)
+
+
+@handler()
+def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True), ctx=ContextInput()):
+    assert x[0] is 2
+    assert x[1] is 1
+    assert y is 2
+    assert mi == "MyInput blab-la"
+
+    assert isinstance(ds, Dataset)
+    assert isinstance(ctx, Context)
+
+
+"""
+        self._ensure_py_script(content)
+        yaml_path = self.workdir / "job.yaml"
+        generate_jobs_yaml(
+            [f"{self.module_name}:X", self.module_name], self.workdir, yaml_path
+        )
+        jobs_info = load_yaml(yaml_path)
+        assert jobs_info["mock_user_module:X.f"] == [
+            {
+                "cls_name": "X",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "f",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:X.f",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "f",
+                "expose": 0,
+                "virtual": False,
+                "require_dataset": False,
+                "parameters_sig": [
+                    {
+                        "name": "x",
+                        "required": False,
+                        "multiple": True,
+                    },
+                    {
+                        "name": "y",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "mi",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "ds",
+                        "required": True,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "ctx",
+                        "required": False,
+                        "multiple": False,
+                    },
+                ],
+                "ext_cmd_args": "--ds",
+            },
+        ]
+        assert jobs_info["mock_user_module:f"] == [
+            {
+                "cls_name": "",
+                "concurrency": 1,
+                "extra_args": [],
+                "extra_kwargs": {},
+                "func_name": "f",
+                "module_name": "mock_user_module",
+                "name": "mock_user_module:f",
+                "needs": [],
+                "replicas": 1,
+                "resources": [],
+                "show_name": "f",
+                "expose": 0,
+                "virtual": False,
+                "require_dataset": False,
+                "parameters_sig": [
+                    {
+                        "name": "x",
+                        "required": False,
+                        "multiple": True,
+                    },
+                    {
+                        "name": "y",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "mi",
+                        "required": False,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "ds",
+                        "required": True,
+                        "multiple": False,
+                    },
+                    {
+                        "name": "ctx",
+                        "required": False,
+                        "multiple": False,
+                    },
+                ],
+                "ext_cmd_args": "--ds",
+            },
+        ]
+        steps = Step.get_steps_from_yaml("mock_user_module:X.f", yaml_path)
+        context = Context(
+            workdir=self.workdir,
+            project="test",
+            version="123",
+        )
+        task = TaskExecutor(
+            index=1,
+            context=context,
+            workdir=self.workdir,
+            step=steps[0],
+            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+        )
+        result = task.execute()
+        assert result.status == "success"
+        steps = Step.get_steps_from_yaml("mock_user_module:f", yaml_path)
+        context = Context(
+            workdir=self.workdir,
+            project="test",
+            version="123",
+        )
+        task = TaskExecutor(
+            index=1,
+            context=context,
+            workdir=self.workdir,
+            step=steps[0],
+            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+        )
+        result = task.execute()
+        assert result.status == "success"

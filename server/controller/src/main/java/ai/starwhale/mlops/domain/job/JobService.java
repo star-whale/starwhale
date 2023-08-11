@@ -229,6 +229,9 @@ public class JobService {
             steps = StringUtils.hasText(stepSpecOverWrites)
                     ? jobSpecParser.parseAndFlattenStepFromYaml(stepSpecOverWrites)
                     : jobSpecParser.parseStepFromYaml(modelVersion.getJobs(), handler);
+            for (var s : steps) {
+                s.verifyStepSpecArgs();
+            }
             stepSpecOverWrites = Constants.yamlMapper.writeValueAsString(steps);
         } catch (JsonProcessingException e) {
             throw new StarwhaleApiException(
