@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter, Redirect, Route, useHistory, useLocation } from 'react-router-dom'
+import { BrowserRouter, Redirect, Route, useHistory } from 'react-router-dom'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@starwhale/ui/theme'
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
@@ -7,9 +7,8 @@ import Pending from '@/pages/Home/Pending'
 import { getUnauthedRoutes } from './routesUtils'
 import ReportPreview from '@/pages/Report/ReportPreview'
 import CenterLayout from './pages/CenterLayout'
-import ApiHeader from './api/ApiHeader'
-import Header from './components/Header'
 import ApiHeaderSimple from './api/ApiHeaderSimple'
+import HeaderSimple from './components/Header/HeaderSimple'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -63,7 +62,7 @@ const Routes = () => {
                 <div className={styles.root}>
                     <Route>
                         <ApiHeaderSimple />
-                        <Header simple={true} />
+                        <HeaderSimple />
                         {unauthedRoutes}
                         <RedirectComponent />
                     </Route>

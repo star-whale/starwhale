@@ -61,12 +61,12 @@ export default function ReportListCard() {
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
             <div key='action' style={{ display: 'flex', gap: '10px' }}>
                 <Tooltip content={t('Preview')} showArrow placement='top'>
-                    <Link target='_blank' to={`/simple/report/preview/?pid=${projectId}&rid=${report.id}`}>
+                    <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
                         <IconFont type='link' />
                     </Link>
                 </Tooltip>
                 <Copy
-                    text={`${window.location.origin}/simple/report/preview/?pid=${projectId}&rid=${report.id}`}
+                    text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
                     onCopy={() => {
                         toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                     }}

@@ -15,6 +15,11 @@ export async function fetchReport(project: string, reportId: string): Promise<IR
     return data
 }
 
+export async function fetchReportPreview(reportId: string): Promise<IReportDetailSchema> {
+    const { data } = await axios.get<IReportDetailSchema>(`/api/v1/report/${reportId}/preview`)
+    return data
+}
+
 export async function createReport(
     project: string,
     report: {

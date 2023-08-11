@@ -1,4 +1,4 @@
-import { useFetchReport } from '@/domain/report/hooks/useReport'
+import { useFetchReportPreview } from '@/domain/report/hooks/useReport'
 import User from '@/domain/user/components/User'
 import React from 'react'
 import { formatTimestampDateTime } from '@/utils/datetime'
@@ -10,8 +10,8 @@ import { useQueryArgs } from '@/hooks/useQueryArgs'
 export default function ReportPreview() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { query } = useQueryArgs()
-    const { pid, rid } = query || {}
-    const info = useFetchReport(pid, rid)
+    const { rid } = query || {}
+    const info = useFetchReportPreview(rid)
     const { data } = info
 
     return (
