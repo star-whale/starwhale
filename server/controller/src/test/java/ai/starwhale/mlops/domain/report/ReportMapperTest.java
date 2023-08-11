@@ -17,6 +17,8 @@
 package ai.starwhale.mlops.domain.report;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.starwhale.mlops.domain.MySqlContainerHolder;
@@ -83,10 +85,12 @@ public class ReportMapperTest extends MySqlContainerHolder {
         mapper.remove(entity.getId());
         list = mapper.selectByProject("", 1L);
         assertEquals(0, list.size());
+        assertNull(mapper.selectByUuidForUpdate(entity.getUuid()));
 
         mapper.recover(entity.getId());
         list = mapper.selectByProject("", 1L);
         assertEquals(1, list.size());
+        assertNotNull(mapper.selectByUuidForUpdate(entity.getUuid()));
 
         // filter
         list = mapper.selectByProject("title", 1L);
