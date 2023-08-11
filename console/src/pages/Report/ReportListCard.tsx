@@ -59,22 +59,27 @@ export default function ReportListCard() {
             report.owner.name,
             report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
-            <div key='action' style={{ display: 'flex', gap: '10px' }}>
+            <div key='action' style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Tooltip content={t('Preview')} showArrow placement='top'>
-                    <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
-                        <IconFont type='link' />
-                    </Link>
+                    <div>
+                        <Link target='_blank' to={`/simple/report/preview/?rid=${report.uuid}`}>
+                            <IconFont type='link' />
+                        </Link>
+                    </div>
                 </Tooltip>
-                <Copy
-                    text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
-                    onCopy={() => {
-                        toaster.positive(t('Copied'), { autoHideDuration: 1000 })
-                    }}
-                >
-                    <Tooltip content={t('Copy Link')} showArrow placement='top'>
-                        <Button as='link' icon='a-copylink' onClick={() => {}} />
-                    </Tooltip>
-                </Copy>
+                <Tooltip content={t('Copy Link')} showArrow placement='top'>
+                    <div>
+                        <Copy
+                            text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
+                            onCopy={() => {
+                                toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                            }}
+                        >
+                            <Button as='link' icon='a-copylink' onClick={() => {}} />
+                        </Copy>
+                    </div>
+                </Tooltip>
+
                 <Tooltip content={t('Delete')} showArrow placement='top'>
                     <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
                 </Tooltip>
