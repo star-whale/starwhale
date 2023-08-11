@@ -51,7 +51,7 @@ public interface ReportMapper {
     @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE uuid = #{uuid}")
     ReportEntity selectByUuid(@Param("uuid") String uuid);
 
-    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE uuid = #{uuid} FOR UPDATE")
+    @Select("SELECT " + COLUMNS_FOR_SELECT + " FROM report WHERE deleted_time = 0 and uuid = #{uuid} FOR UPDATE")
     ReportEntity selectByUuidForUpdate(@Param("uuid") String uuid);
 
     @Update("UPDATE report SET shared = #{shared} where id = #{id}")
