@@ -16,7 +16,7 @@ export enum SaveStatus {
     UNSAVED = 'Unsaved',
 }
 
-export default function TiptapEditor({ id = '', initialContent, editable, onSaveStatusChange, onContentChange }) {
+export default function TiptapEditor({ id = '', initialContent, editable, onSaveStatusChange, onContentChange }: any) {
     const [content, setContent] = useLocalStorage('content', DEFAULT_EDITOR_CONTENT)
     const [contentId, setContentId] = useLocalStorage('content-id', '')
     const [, setSaveStatus] = useState('Saved')

@@ -35,22 +35,7 @@ function Button(
         paddingRight: '9px',
     }
 
-    let overrides = mergeOverrides(
-        {
-            BaseButton: {
-                style: {
-                    ...defaultStyles,
-                    width: isFull ? '100%' : 'auto',
-                },
-            },
-            StartEnhancer: {
-                style: {
-                    marginRight: !children ? '0' : '5px',
-                },
-            },
-        },
-        props.overrides
-    )
+    let overrides: any = null
 
     if (icon && !props.startEnhancer) {
         // eslint-disable-next-line no-param-reassign
@@ -125,7 +110,34 @@ function Button(
             },
             props.overrides
         )
+    } else {
+        overrides = mergeOverrides(
+            {
+                BaseButton: {
+                    style: {
+                        ...defaultStyles,
+                    },
+                },
+            },
+            props.overrides
+        )
     }
+
+    overrides = mergeOverrides(
+        {
+            BaseButton: {
+                style: {
+                    width: isFull ? '100%' : 'auto',
+                },
+            },
+            StartEnhancer: {
+                style: {
+                    marginRight: !children ? '0' : '5px',
+                },
+            },
+        },
+        overrides
+    )
 
     return (
         <BaseButton size={size} kind={kind} {...props} overrides={overrides} ref={ref}>

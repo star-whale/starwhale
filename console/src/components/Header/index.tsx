@@ -264,7 +264,7 @@ const useStyles = createUseStyles({
     },
 })
 
-export default function Header() {
+export default function Header({ simple = false }) {
     const [css, theme] = themedUseStyletron()
     const styles = useStyles({ theme })
     const headerStyles = useHeaderStyles({ theme })
@@ -337,7 +337,7 @@ export default function Header() {
                 </a>
             </div>
 
-            {currentUser && (
+            {currentUser && !simple && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
                         <Avatar name={currentUser.name} size={28} />

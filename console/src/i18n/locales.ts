@@ -963,6 +963,10 @@ const locales0 = {
         en: 'Copy Link',
         zh: '复制链接',
     },
+    'Preview': {
+        en: 'Preview',
+        zh: '预览',
+    },
     'User List': {
         en: 'User List',
         zh: '用户列表',

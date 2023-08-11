@@ -30,7 +30,6 @@ export default function ReportEdit() {
     const [content, setContent] = React.useState('')
     const [t] = useTranslation()
     const { data } = info
-    const history = useHistory()
     const [readonly, setReadonly] = React.useState(false)
     const [status, setStatus] = React.useState(SaveStatus.SAVED)
     const statusT = {

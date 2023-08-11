@@ -12,7 +12,8 @@ const useLinkStyles = createUseStyles({
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         maxWidth: '300px',
-        display: 'block',
+        display: 'inline-block',
+        verticalAlign: 'middle',
     },
     text: {
         'display': 'initial',

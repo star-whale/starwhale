@@ -12,7 +12,7 @@ import { useEventCallback } from '@starwhale/core'
 import React from 'react'
 
 const Component = (props: NodeViewProps) => {
-    const { node, selected, editor } = props
+    const { node, selected } = props
 
     const onStateChange = useEventCallback((state: any) => {
         // console.log('onStateChange', state)

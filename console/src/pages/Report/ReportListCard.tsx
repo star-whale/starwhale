@@ -6,7 +6,7 @@ import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
 import { IReportSchema } from '@/domain/report/schemas/report'
 import { TextLink } from '@/components/Link'
-import { Button, QueryInput, Toggle, useConfirmCtx } from '@starwhale/ui'
+import { Button, IconFont, QueryInput, Toggle, useConfirmCtx } from '@starwhale/ui'
 import { toaster } from 'baseui/toast'
 import { removeReport, updateReportShared } from '@/domain/report/services/report'
 import Text from '@starwhale/ui/Text'
@@ -14,6 +14,8 @@ import Copy from 'react-copy-to-clipboard'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import { WithCurrentAuth } from '@/api/WithAuth'
+import { Tooltip } from '@starwhale/ui/Tooltip'
+import Link from '@/components/Link/Link'
 
 export default function ReportListCard() {
     const [t] = useTranslation()
@@ -57,17 +59,25 @@ export default function ReportListCard() {
             report.owner.name,
             report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',
-            <div key='action' style={{ display: 'flex', gap: '5px' }}>
-                {/* TODO: get link from the server */}
+            <div key='action' style={{ display: 'flex', gap: '10px' }}>
+                <Tooltip content={t('Preview')} showArrow placement='top'>
+                    <Link target='_blank' to={`/simple/report/preview/?pid=${projectId}&rid=${report.id}`}>
+                        <IconFont type='link' />
+                    </Link>
+                </Tooltip>
                 <Copy
-                    text={`${window.location.origin}/projects/${projectId}/reports/${report.id}`}
+                    text={`${window.location.origin}/simple/report/preview/?pid=${projectId}&rid=${report.id}`}
                     onCopy={() => {
                         toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                     }}
                 >
-                    <Button as='link' icon='a-copylink' onClick={() => {}} />
+                    <Tooltip content={t('Copy Link')} showArrow placement='top'>
+                        <Button as='link' icon='a-copylink' onClick={() => {}} />
+                    </Tooltip>
                 </Copy>
-                <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
+                <Tooltip content={t('Delete')} showArrow placement='top'>
+                    <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
+                </Tooltip>
             </div>,
         ]
     }

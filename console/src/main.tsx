@@ -35,23 +35,26 @@ async function initExtensions() {
 async function init() {
     // @ts-ignore
     const { authed, unauthed, components, locales } = await initExtensions()
-
+    // init extension routes
     registerRoutes(authed, unauthed)
+    // init extension componnets
     registerExtensions(components)
+    // init extension locales
     registerLocales(locales)
-    // should after locale register
+    // init i18n: should after locale register
     initI18n()
-
     if (window.location.search.includes('lang=en')) {
         i18n.changeLanguage('en')
     }
     if (window.location.search.includes('lang=zh')) {
         i18n.changeLanguage('zh')
     }
+    // init check simple route
+    const simple = window.location.pathname.startsWith('/simple')
 
     const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
-    root.render(<App />)
+    root.render(<App simple={simple} />)
 }
 
 init()
