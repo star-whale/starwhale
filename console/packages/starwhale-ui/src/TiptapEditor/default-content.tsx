@@ -1,4 +1,4 @@
-const DEFAULT_EDITOR_CONTENT = {
+const DEFAULT_EDITOR_TEST_CONTENT = {
     type: 'doc',
     content: [
         {
@@ -104,99 +104,57 @@ const DEFAULT_EDITOR_CONTENT = {
             attrs: { level: 3 },
             content: [{ type: 'text', text: 'Learn more' }],
         },
-
-        // {
-        //     type: 'image',
-        //     attrs: {
-        //         src: 'https://public.blob.vercel-storage.com/pJrjXbdONOnAeZAZ/banner-2wQk82qTwyVgvlhTW21GIkWgqPGD2C.png',
-        //         alt: 'banner.png',
-        //         title: 'banner.png',
-        //     },
-        // },
-        // {
-        //     type: 'taskList',
-        //     content: [
-        //         {
-        //             type: 'taskItem',
-        //             attrs: { checked: false },
-        //             content: [
-        //                 {
-        //                     type: 'paragraph',
-        //                     content: [
-        //                         { type: 'text', text: 'Check out the ' },
-        //                         {
-        //                             type: 'text',
-        //                             marks: [
-        //                                 {
-        //                                     type: 'link',
-        //                                     attrs: {
-        //                                         href: 'https://twitter.com/steventey/status/1669762868416512000',
-        //                                         target: '_blank',
-        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-        //                                     },
-        //                                 },
-        //                             ],
-        //                             text: 'launch video',
-        //                         },
-        //                     ],
-        //                 },
-        //             ],
-        //         },
-        //         {
-        //             type: 'taskItem',
-        //             attrs: { checked: false },
-        //             content: [
-        //                 {
-        //                     type: 'paragraph',
-        //                     content: [
-        //                         { type: 'text', text: 'Star us on ' },
-        //                         {
-        //                             type: 'text',
-        //                             marks: [
-        //                                 {
-        //                                     type: 'link',
-        //                                     attrs: {
-        //                                         href: 'https://github.com',
-        //                                         target: '_blank',
-        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-        //                                     },
-        //                                 },
-        //                             ],
-        //                             text: 'GitHub',
-        //                         },
-        //                     ],
-        //                 },
-        //             ],
-        //         },
-        //         {
-        //             type: 'taskItem',
-        //             attrs: { checked: false },
-        //             content: [
-        //                 {
-        //                     type: 'paragraph',
-        //                     content: [
-        //                         {
-        //                             type: 'text',
-        //                             marks: [
-        //                                 {
-        //                                     type: 'link',
-        //                                     attrs: {
-        //                                         href: 'https://vercel.com/',
-        //                                         target: '_blank',
-        //                                         class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
-        //                                     },
-        //                                 },
-        //                             ],
-        //                             text: 'Deploy your own',
-        //                         },
-        //                         { type: 'text', text: ' to Vercel' },
-        //                     ],
-        //                 },
-        //             ],
-        //         },
-        //     ],
-        // },
+        {
+            type: 'image',
+            attrs: {
+                src: 'https://public.blob.vercel-storage.com/pJrjXbdONOnAeZAZ/banner-2wQk82qTwyVgvlhTW21GIkWgqPGD2C.png',
+                alt: 'banner.png',
+                title: 'banner.png',
+            },
+        },
+        {
+            type: 'taskList',
+            content: [
+                {
+                    type: 'taskItem',
+                    attrs: { checked: false },
+                    content: [
+                        {
+                            type: 'paragraph',
+                            content: [
+                                { type: 'text', text: 'Star us on ' },
+                                {
+                                    type: 'text',
+                                    marks: [
+                                        {
+                                            type: 'link',
+                                            attrs: {
+                                                href: 'https://github.com',
+                                                target: '_blank',
+                                                class: 'text-stone-400 underline underline-offset-[3px] hover:text-stone-600 transition-colors cursor-pointer',
+                                            },
+                                        },
+                                    ],
+                                    text: 'GitHub',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 }
 
+const DEFAULT_EDITOR_CONTENT = {
+    type: 'doc',
+    content: [
+        {
+            type: 'heading',
+            attrs: { level: 1 },
+        },
+    ],
+}
+
+export { DEFAULT_EDITOR_TEST_CONTENT }
 export default DEFAULT_EDITOR_CONTENT

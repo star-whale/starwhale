@@ -35,7 +35,7 @@ export default function ReportListCard() {
 
     const renderRow = (report: IReportSchema) => {
         return [
-            <TextLink key='title' to={`/projects/${projectId}/reports/${report.id}`}>
+            <TextLink key='title' to={`/projects/${projectId}/reports/${report.id}`} style={{ maxWidth: '300px' }}>
                 {report.title}
             </TextLink>,
             <Toggle
@@ -51,7 +51,9 @@ export default function ReportListCard() {
                     }
                 }}
             />,
-            <Text key='desc'>{report.description}</Text>,
+            <Text key='desc' style={{ maxWidth: '300px' }}>
+                {report.description}
+            </Text>,
             report.owner.name,
             report.createdTime ? formatTimestampDateTime(report.createdTime) : '',
             report.modifiedTime ? formatTimestampDateTime(report.modifiedTime) : '',

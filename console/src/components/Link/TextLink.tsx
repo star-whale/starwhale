@@ -11,6 +11,8 @@ const useLinkStyles = createUseStyles({
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
+        maxWidth: '300px',
+        display: 'block',
     },
     text: {
         'display': 'initial',
