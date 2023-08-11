@@ -6,6 +6,7 @@ import { StoreType } from '@starwhale/core/context'
 import React from 'react'
 import produce from 'immer'
 
+// @FIXME move to store
 export default function useRestoreState<T>(store: StoreType, initialState: T, dynamicVars: Record<string, any>) {
     const toSave = React.useCallback(() => {
         let data = store.getState()
@@ -23,13 +24,13 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
         if (!initialState) return
         // console.log('store inited')
 
+        // @FIXME check this
         // const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
         // if (novalidVars) {
         //     // eslint-disable-next-line no-console
         //     // console.warn('missing vars', novalidVars)
         //     return
         // }
-        // @FIXME move to store
 
         try {
             let data = typeof initialState === 'string' ? JSON.parse(initialState) : initialState

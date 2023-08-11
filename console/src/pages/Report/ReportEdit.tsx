@@ -160,6 +160,7 @@ export default function ReportEdit() {
             </p>
             <div className='mb-20px flex-1'>
                 <TiptapEditor
+                    id={reportId}
                     initialContent={data?.content}
                     onContentChange={(tmp: string) => setContent(tmp)}
                     editable={!readonly}

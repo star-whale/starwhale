@@ -162,7 +162,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
         )
     )
     // eslint-disable-next-line
-    useStore.subscribe(console.log)
+    // useStore.subscribe(console.log)
     // @ts-ignore
     return useStore
 }

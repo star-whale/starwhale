@@ -115,8 +115,8 @@ function EvalSelectList({
                 if (column.key === 'sys/id')
                     return CustomColumn<any, any>({
                         ...column,
-                        renderCell: ({ value }) => {
-                            const { value: id, record } = value
+                        renderCell: (props: any) => {
+                            const { value: id, record } = props.value || {}
                             if (!id) return <></>
                             return (
                                 <TextLink to={`/projects/${record?.projectId}/evaluations/${id}/results`}>
@@ -172,8 +172,7 @@ function EvalSelectList({
                         columnTypes={unionColumnTypes}
                         columns={$override}
                         onRemove={(id) => {
-                            // remove one record, if project record is empty, remove project from map
-                            setSelectData((prev) => {
+                            const renew = (prev: EvalSelectDataT) => {
                                 const n = { ...prev }
                                 Object.entries(n).forEach(([key, item]) => {
                                     if (item.rowSelectedIds.includes(id)) {
@@ -189,8 +188,10 @@ function EvalSelectList({
                                     }
                                 })
                                 return _.pickBy(n, _.identity)
-                            })
-                            onSelectDataChange?.(selectData)
+                            }
+                            const next = renew(selectData)
+                            setSelectData(next)
+                            onSelectDataChange?.(next)
                         }}
                     >
                         <div className='flex gap-20px justify-end'>
@@ -232,17 +233,15 @@ function EvalSelectList({
                                     size='compact'
                                     onClick={() => {
                                         const next = ref.current?.getData()
-                                        setSelectData((prev) => {
-                                            // join new data, remove project than removed (undefined)
-                                            return _.pickBy(
-                                                {
-                                                    ...prev,
-                                                    ...next,
-                                                },
-                                                _.identity
-                                            )
-                                        })
-                                        onSelectDataChange?.(selectData)
+                                        const renew = _.pickBy(
+                                            {
+                                                ...selectData,
+                                                ...next,
+                                            },
+                                            _.identity
+                                        )
+                                        setSelectData(renew)
+                                        onSelectDataChange?.(renew)
                                     }}
                                 >
                                     {t('Confirm')}

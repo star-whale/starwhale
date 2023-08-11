@@ -15,10 +15,10 @@ const Component = (props: NodeViewProps) => {
     const { node, selected, editor } = props
 
     const onStateChange = useEventCallback((state: any) => {
-        if (editor.isActive('eval-select-panel'))
-            props.updateAttributes({
-                state,
-            })
+        // console.log('onStateChange', state)
+        props.updateAttributes({
+            state,
+        })
     })
 
     const memoe = React.useMemo(() => {
@@ -26,12 +26,6 @@ const Component = (props: NodeViewProps) => {
     }, [node.attrs.state, onStateChange])
 
     // console.log('node.attrs.state', node.attrs.state?.widgets)
-
-    // console.log(editor.storage['eval-select-panel'])
-
-    // console.log(node.type)
-
-    // console.log(editor)
 
     return (
         <NodeViewWrapper className={cn('project-summary-panel ', selected && 'shadow-sm border')}>

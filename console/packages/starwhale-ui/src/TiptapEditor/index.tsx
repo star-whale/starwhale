@@ -16,8 +16,9 @@ export enum SaveStatus {
     UNSAVED = 'Unsaved',
 }
 
-export default function TiptapEditor({ initialContent, editable, onSaveStatusChange, onContentChange }) {
+export default function TiptapEditor({ id = '', initialContent, editable, onSaveStatusChange, onContentChange }) {
     const [content, setContent] = useLocalStorage('content', DEFAULT_EDITOR_CONTENT)
+    const [contentId, setContentId] = useLocalStorage('content-id', '')
     const [, setSaveStatus] = useState('Saved')
     const [hydrated, setHydrated] = useState(false)
     const [serverHydrated, setServerHydrated] = useState(false)
@@ -29,6 +30,7 @@ export default function TiptapEditor({ initialContent, editable, onSaveStatusCha
             setSaveStatus(t('report.save.saving'))
             onSaveStatusChange?.(SaveStatus.SAVING)
             setContent(json)
+            setContentId(id)
             onContentChange?.(json)
             setTimeout(() => {
                 setSaveStatus(t('report.save.saved'))
@@ -53,32 +55,32 @@ export default function TiptapEditor({ initialContent, editable, onSaveStatusCha
 
     // Hydrate the editor with the content from localStorage.
     useEffect(() => {
-        if (editor && content && !hydrated) {
-            editor.commands.setContent(content)
-            // TODO: should open this to limit only once editing content
-            setHydrated(true)
-        }
-    }, [editor, content, hydrated])
+        // if diff report no load from local
+        if (!editor || !content || hydrated || serverHydrated) return
+        if (id !== contentId) return
+        editor.commands.setContent(content)
+        // TODO: should open this to limit only once editing content
+        setHydrated(true)
+        setContentId(id)
+    }, [editor, content, hydrated, serverHydrated, id, contentId, setContentId])
 
     // Hydrate the editor with the content from SERVER.
     useEffect(() => {
-        if (editor && initialContent && !serverHydrated) {
-            try {
-                const tmp = typeof initialContent === 'string' ? JSON.parse(initialContent) : initialContent
-                editor.commands.setContent(tmp)
-                // TODO: should open this to limit only once editing content
-                setServerHydrated(true)
-            } catch (e) {
-                console.log(e)
-            }
+        if (!editor || serverHydrated || !initialContent) return
+        try {
+            const tmp = typeof initialContent === 'string' ? JSON.parse(initialContent) : initialContent
+            editor.commands.setContent(tmp)
+            // should open this to limit only once editing content
+            setServerHydrated(true)
+            setContentId(id)
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.log('wrong report content:', { e })
         }
-    }, [editor, initialContent, serverHydrated])
+    }, [editor, initialContent, id, setContentId, content, serverHydrated, contentId, hydrated])
 
     useEffect(() => {
-        if (!editor) {
-            return
-        }
-
+        if (!editor) return
         editor.setEditable(editable)
     }, [editor, editable])
 
