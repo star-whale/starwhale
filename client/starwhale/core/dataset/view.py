@@ -192,9 +192,9 @@ class DatasetTermView(BaseTermView, TagViewMixin):
 
     @classmethod
     @BaseTermView._only_standalone
-    def build_from_json_file(
+    def build_from_json_files(
         cls,
-        json_file_path: str,
+        paths: t.List[PathLike],
         name: str,
         project_uri: str,
         **kwargs: t.Any,
@@ -206,7 +206,7 @@ class DatasetTermView(BaseTermView, TagViewMixin):
             auto_gen_version=False,
         )
         ds = Dataset.get_dataset(dataset_uri)
-        ds.build_from_json_file(json_file_path=json_file_path, **kwargs)
+        ds.build_from_json_files(paths, **kwargs)
 
     @classmethod
     @BaseTermView._only_standalone

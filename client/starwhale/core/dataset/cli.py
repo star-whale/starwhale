@@ -71,12 +71,14 @@ def dataset_cmd(ctx: click.Context) -> None:
     help="Build dataset from dataset.yaml file. Default uses dataset.yaml in the work directory(pwd).",
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
-    "json_file",
+    "json_files",
     "-jf",
-    "--json-file",
+    "--json",
+    multiple=True,
     help=(
-        "Build dataset from json file, the json file option is a json file path or a http downloaded url."
-        "The json content structure should be a list[dict] or tuple[dict]."
+        "Build dataset from json or json line files, local path or http downloaded url is supported."
+        "For the json file: the json content structure should be a list[dict] or tuple[dict] from the original format or ingest format by field-selector."
+        "For the json line file: each line is a json dict."
     ),
 )
 @optgroup.option(  # type: ignore[no-untyped-call]
@@ -141,6 +143,11 @@ def dataset_cmd(ctx: click.Context) -> None:
     multiple=True,
     help="dataset tags, the option can be used multiple times. `latest` and `^v\d+$` tags are reserved tags.",
 )
+@optgroup.option(  # type: ignore[no-untyped-call]
+    "file_encoding",
+    "--encoding",
+    help="The csv/json/jsonl file encoding.",
+)
 @optgroup.option("-r", "--runtime", help="runtime uri")  # type: ignore[no-untyped-call]
 @optgroup.group("\n  ** Handler Build Source Configurations")
 @optgroup.option("-w", "--workdir", default=".", help="work dir to search handler, the option only works for the handler build source.")  # type: ignore[no-untyped-call]
@@ -152,8 +159,9 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=True,
     help="Whether to auto label by the sub-folder name. The default value is True",
 )
-@optgroup.group("\n  ** JsonFile Build Source Configurations")
+@optgroup.group("\n  ** Json Build Source Configurations")
 @optgroup.option(  # type: ignore[no-untyped-call]
+    "json_field_selector",
     "--field-selector",
     default="",
     help=(
@@ -244,11 +252,6 @@ def dataset_cmd(ctx: click.Context) -> None:
     show_default=True,
     help="When True, raise exception Error if the csv is not well formed.",
 )
-@optgroup.option(  # type: ignore[no-untyped-call]
-    "csv_encoding",
-    "--encoding",
-    help="The csv file encoding.",
-)
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -265,8 +268,8 @@ def _build(
     audio_folder: str,
     video_folder: str,
     auto_label: bool,
-    json_file: str,
-    field_selector: str,
+    json_files: t.List[str],
+    json_field_selector: str,
     mode: str,
     hf_repo: str,
     hf_subsets: t.List[str],
@@ -281,7 +284,7 @@ def _build(
     csv_quotechar: str,
     csv_skipinitialspace: bool,
     csv_strict: bool,
-    csv_encoding: str,
+    file_encoding: str,
 ) -> None:
     """Build Starwhale Dataset.
     This command only supports to build standalone dataset.
@@ -328,11 +331,13 @@ def _build(
         swcli dataset build --video-folder /path/to/video/folder  # build dataset from /path/to/video/folder, search all video type files.
 
         \b
-        - from json file
-        swcli dataset build --json-file /path/to/example.json
-        swcli dataset build --json-file http://example.com/example.json
-        swcli dataset build --json-file /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
-        swcli dataset build --name qald9 --json-file https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
+        - from json or json line files
+        swcli dataset build --json /path/to/example.json
+        swcli dataset build --json http://example.com/example.json
+        swcli dataset build --json /path/to/example.json --field-selector a.b.c # extract the json_content["a"]["b"]["c"] field from the json file.
+        swcli dataset build --name qald9 --json https://raw.githubusercontent.com/ag-sc/QALD/master/9/data/qald-9-test-multilingual.json --field-selector questions
+        swcli dataset build --json /path/to/test01.jsonl --json /path/to/test02.jsonl
+        swcli dataset build --json https://modelscope.cn/api/v1/datasets/damo/100PoisonMpts/repo\?Revision\=master\&FilePath\=train.jsonl
 
         \b
         - from huggingface dataset
@@ -373,17 +378,17 @@ def _build(
             mode=mode_type,
             tags=tags,
         )
-    elif json_file:
-        json_file = json_file.strip().rstrip("/")
-        view.build_from_json_file(
-            json_file,
-            name=name or json_file.split("/")[-1].split(".")[0],
+    elif json_files:
+        view.build_from_json_files(
+            json_files,
+            name=name or f"json-{random_str()}",
             project_uri=project,
             volume_size=volume_size,
             alignment_size=alignment_size,
-            field_selector=field_selector,
+            field_selector=json_field_selector,
             mode=mode_type,
             tags=tags,
+            encoding=file_encoding,
         )
     elif csv_files:
         view.build_from_csv_files(
@@ -399,7 +404,7 @@ def _build(
             quotechar=csv_quotechar,
             skipinitialspace=csv_skipinitialspace,
             strict=csv_strict,
-            encoding=csv_encoding,
+            encoding=file_encoding,
         )
     elif python_handler:
         _workdir = Path(workdir).absolute()

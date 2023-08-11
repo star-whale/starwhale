@@ -4,6 +4,7 @@ import io
 import os
 import re
 import csv
+import json
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
@@ -1004,10 +1005,10 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         assert len(ds) == 1
         assert ds[0].features == {"a": "h", "b": "d"}
 
-    def test_from_json(self) -> None:
+    def test_from_json_text(self) -> None:
         Dataset.from_json(
-            "translation",
-            '[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
+            name="translation",
+            text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]',
             tags=["t0"],
         )
         myds = dataset("translation").with_loader_config(
@@ -1015,8 +1016,8 @@ class TestDatasetSDK(_DatasetSDKTestBase):
         )
         assert myds[0].features["en-us"] == myds[0].features["en"]
         Dataset.from_json(
-            "translation2",
-            '[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]',
+            name="translation2",
+            text='[{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}]',
         )
         myds = dataset("translation2").with_loader_config(
             field_transformer={"content.child_content[0].en": "en-us"}
@@ -1025,6 +1026,85 @@ class TestDatasetSDK(_DatasetSDKTestBase):
             myds[0].features["en-us"]
             == myds[0].features["content"]["child_content"][0]["en"]
         )
+
+    @Mocker()
+    def test_from_json_files(self, rm: Mocker) -> None:
+        json_dir = Path(self.local_storage) / "json"
+        ensure_file(
+            json_dir / "1.json",
+            json.dumps([{"a": 1, "b": 2}, {"a": 11, "b": 22}]),
+            parents=True,
+        )
+        ensure_file(
+            json_dir / "sub" / "2.json", json.dumps([{"a": 3, "b": 4}]), parents=True
+        )
+        ensure_file(json_dir / "non.txt", "")
+
+        ds = Dataset.from_json(path=json_dir, name="json-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(path=json_dir / "1.json", name="json-file")
+        assert len(ds) == 2
+
+        ds = Dataset.from_json(
+            path=[json_dir / "1.json", json_dir / "sub" / "2.json"], name="json-multi"
+        )
+        assert len(ds) == 3
+        assert ds[2].features == {"a": 3, "b": 4}
+
+        selector_text = json.dumps(
+            {"a": {"b": {"c": [{"a": 1, "b": 2}, {"a": 11, "b": 22}]}}}
+        )
+        ensure_file(json_dir / "selector.json", selector_text, parents=True)
+        ds = Dataset.from_json(
+            path=json_dir / "selector.json",
+            name="json-selector",
+            field_selector="a.b.c",
+        )
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        url = "http://example.com/1.json"
+        rm.get(url, text=selector_text)
+        ds = Dataset.from_json(path=url, name="json-http", field_selector="a.b.c")
+        assert len(ds) == 2
+
+    @Mocker()
+    def test_from_jsonl_files(self, rm: Mocker) -> None:
+        jsonl_dir = Path(self.local_storage) / "jsonl"
+        ensure_file(
+            jsonl_dir / "1.jsonl", '{"a": 1, "b": 2}\n{"a": 11, "b": 22}', parents=True
+        )
+        ensure_file(jsonl_dir / "sub" / "2.jsonl", '{"a": 3, "b": 4}', parents=True)
+
+        ds = Dataset.from_json(path=jsonl_dir, name="jsonl-folder")
+        assert len(ds) == 3
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(path=jsonl_dir / "1.jsonl", name="jsonl-file")
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+
+        ds = Dataset.from_json(
+            path=[jsonl_dir / "1.jsonl", jsonl_dir / "sub" / "2.jsonl"],
+            name="jsonl-multi",
+        )
+        assert len(ds) == 3
+        assert ds[2].features == {"a": 3, "b": 4}
+
+        selector_text = "\n".join(
+            [
+                json.dumps({"a": {"b": {"c": {"a": 1, "b": 2}}}}),
+                json.dumps({"a": {"b": {"c": {"a": 11, "b": 22}}}}),
+            ]
+        )
+        url = "http://example.com/1.jsonl"
+        rm.get(url, text=selector_text)
+        ds = Dataset.from_json(path=url, name="jsonl-http", field_selector="a.b.c")
+        assert len(ds) == 2
+        assert ds[0].features == {"a": 1, "b": 2}
+        assert ds[1].features == {"a": 11, "b": 22}
 
     def test_from_image_folder_with_mode(self) -> None:
         image_folder = Path(self.local_storage) / "images"

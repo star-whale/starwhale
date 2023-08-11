@@ -73,6 +73,7 @@ if t.TYPE_CHECKING:
 _DType = t.TypeVar("_DType", bound="Dataset")
 _ItemType = t.Union[str, int, slice]
 _GItemType = t.Optional[t.Union[DataRow, t.List[DataRow]]]
+_IterFeatureDict = t.Iterable[t.Dict[str, t.Any]]
 
 _DEFAULT_LOADER_WORKERS = 2
 _DEFAULT_LOADER_CACHE_SIZE = 20
@@ -1266,36 +1267,76 @@ class Dataset:
     def from_json(
         cls,
         name: str,
-        json_text: str,
+        path: PathLike | t.List[PathLike] | None = None,
+        text: str | None = None,
         field_selector: str = "",
         alignment_size: int | str = D_ALIGNMENT_SIZE,
         volume_size: int | str = D_FILE_VOLUME_SIZE,
         mode: DatasetChangeMode | str = DatasetChangeMode.PATCH,
         tags: t.List[str] | None = None,
+        encoding: str | None = None,
     ) -> Dataset:
         """Create a new dataset from a json text.
 
         The dataset created by the json text will use the auto increment index as the row index.
 
+        path and text arguments are mutually exclusive, one of them must be specified.
+
         Arguments:
             name: (str, required) The dataset name you would like to use.
-            json_text: (str, required) The json text from which you would like to create this dataset.
+            path: (str|Path|List[str]|List[Path], optional) Json or json line files.
+            text: (str, optional) The json text from which you would like to create this dataset.
             field_selector: (str, optional) The filed from which you would like to extract dataset array items.
                 The default value is "" which indicates that the json object is an array contains all the items.
             alignment_size: (int|str, optional) The blob alignment size. The default value is 128.
             volume_size: (int|str, optional) The blob volume size. The default value is 64MB.
             mode: (str|DatasetChangeMode, optional) The dataset change mode. The default value is `patch`. Mode choices are `patch` and `overwrite`.
             tags: (list(str), optional) The tags for the dataset version.`latest` and `^v\d+$` tags are reserved tags.
+            encoding: (str, optional) The encoding used to decode the input file. The default is None.
+                encoding does not support text parameter.
 
         Returns:
                 A Dataset Object
+
+        Json text format:
+
+        ```json
+        [
+            {"a": 1, "b": 2},
+            {"a": 10, "b": 20},
+        ]
+        ```
+        Using field_selector: p1.p2.p3 to extract dataset array items:
+        ```json
+        {
+            "p1": {
+                "p2":{
+                    "p3": [
+                        {"a": 1, "b": 2},
+                        {"a": 10, "b": 20},
+                    ]
+                }
+            }
+        }
+        ```
+
+        Json line text format:
+        ```jsonl
+        {"a": 1, "b": 2}
+        {"a": 10, "b": 20}
+        ```
+        Using field_selector: p1.p2.p3 to extract dataset array items:
+        ```jsonl
+        {"p1": {"p2": {"p3": {"a": 1, "b": 2}}}}
+        {"p1": {"p2": {"p3": {"a": 10, "b": 20}}}}
+        ```
 
         Examples:
         ```python
         from starwhale import Dataset
         myds = Dataset.from_json(
             name="translation",
-            json_text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
+            text='[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]'
         )
         print(myds[0].features.en)
         ```
@@ -1304,33 +1345,79 @@ class Dataset:
         from starwhale import Dataset
         myds = Dataset.from_json(
             name="translation",
-            json_text='{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
+            text='{"content":{"child_content":[{"en":"hello","zh-cn":"你好"},{"en":"how are you","zh-cn":"最近怎么样"}]}}',
             field_selector="content.child_content"
         )
         print(myds[0].features["zh-cn"])
         ```
-        """
-        mode = DatasetChangeMode(mode)
-        data_items = json.loads(json_text)
 
-        if field_selector:
-            # Split field selector by dots
-            fields = field_selector.split(".")
-            # Iterate over selected fields
-            for field in fields:
-                if field in data_items:
-                    data_items = data_items[field]
+        ```python
+        from starwhale import Dataset
+        # create a dataset from /path/to/data.json file.
+        Dataset.from_json(path="/path/to/data.json", name="myds"))
+
+        # create a dataset from /path/to/dir folder.
+        Dataset.from_json(path="/path/to/dir", name="myds")
+
+        # create a dataset from /path/to/data1.json, /path/to/data2.json
+        Dataset.from_json(path=["/path/to/data1.json", "/path/to/data2.json"], name="myds")
+
+        # create a dataset from http://example.com/data.json file.
+        Dataset.from_json(path="http://example.com/data.json", name="myds")
+        ```
+        """
+
+        def _selector(_data: t.Sequence | t.Dict) -> t.Sequence | t.Dict:
+            if field_selector:
+                fields = field_selector.split(".")
+                for field in fields:
+                    if not isinstance(_data, dict):
+                        raise NoSupportError(
+                            f"field_selector only supports dict type: {_data}"
+                        )
+                    if field in _data:
+                        _data = _data[field]
+                    else:
+                        raise ValueError(
+                            f"The field_selector {field_selector} isn't in json text: {_data}"
+                        )
+            return _data
+
+        def _decode() -> t.Iterable[t.Sequence | t.Dict]:
+            if path is not None and text is not None:
+                raise ValueError("paths and text arguments are mutually exclusive")
+            elif path:
+                for fp, suffix in iter_pathlike_io(
+                    path, encoding=encoding, accepted_file_types=[".json", ".jsonl"]
+                ):
+                    if suffix == ".json":
+                        yield _selector(json.load(fp))
+                    elif suffix == ".jsonl":
+                        for line in fp.readlines():
+                            _r = json.loads(line)
+                            _r = _selector(_r)
+                            if isinstance(_r, dict):
+                                _r = [_r]
+                            yield _r
+                    else:
+                        raise ValueError(f"unsupported file type: {suffix}")
+            elif text:
+                yield _selector(json.loads(text))
+            else:
+                raise ValueError("paths or text argument must be specified")
+
+        def _iter(_iter: t.Iterable[t.Sequence | t.Dict]) -> _IterFeatureDict:
+            for i in _iter:
+                if isinstance(i, (list, tuple)):
+                    for j in i:
+                        yield j
+                elif isinstance(i, dict):
+                    yield i
                 else:
-                    raise ValueError(
-                        f"The field_selector {field_selector} isn't in json_text: {json_text}"
-                    )
-        if not isinstance(data_items, list):
-            raise ValueError(
-                f"The field selected by field_selector {field_selector} isn't an array: {data_items}"
-            )
+                    raise ValueError(f"json text:{i} must be dict, list or tuple type")
 
         return cls.from_dict_items(
-            data_items,
+            _iter(_decode()),
             name=name,
             volume_size=volume_size,
             alignment_size=alignment_size,
@@ -1404,8 +1491,8 @@ class Dataset:
         ```
         """
 
-        def _iter_records() -> t.Iterator[t.Dict[str, t.Any]]:
-            for fp in iter_pathlike_io(
+        def _iter_records() -> _IterFeatureDict:
+            for fp, _ in iter_pathlike_io(
                 path=path, encoding=encoding, newline="", accepted_file_types=[".csv"]
             ):
                 for record in csv.DictReader(
@@ -1473,6 +1560,7 @@ class Dataset:
         ds = Dataset.from_dict_items(iter([(1, {"a": 1, "b: 2, "c": 3})]), name="my-dataset")
         ```
         """
+        mode = DatasetChangeMode(mode)
         StandaloneTag.check_tags_validation(tags)
 
         with cls.dataset(name) as ds:
