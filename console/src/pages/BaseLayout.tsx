@@ -27,7 +27,7 @@ const useMainStyles = createUseStyles({
         padding: '12px 20px',
         border: '8px',
         boxSizing: 'border-box',
-        minWidth: '792px',
+        // minWidth: '792px',
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,

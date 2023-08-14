@@ -46,6 +46,7 @@ export type RenderCellT<ValueT> = React.FC<{
     value: ValueT
     isMeasured?: boolean
     isSelected?: boolean
+    removable?: boolean
     onSelect?: () => void
     textQuery?: string
     x: number
@@ -151,6 +152,7 @@ export type StatefulDataTablePropsT = {
     columnable?: boolean
     viewable?: boolean
     compareable?: boolean
+    removable?: boolean
     queryable?: boolean
     selectable?: boolean
     queryinline?: boolean
@@ -181,6 +183,7 @@ export type DataTablePropsT = {
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
     onPreview?: (data: { record?: any; columnKey?: string }) => void
+    onRemove?: (id?: string) => void
 } & StatefulDataTablePropsT
 
 export type StatefulContainerPropsT = {

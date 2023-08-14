@@ -57,6 +57,7 @@ const StoreUpdater = ({
     onRowSelectedChange,
     page,
     onPageChange,
+    onRemove,
 }: StoreUpdaterProps) => {
     const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -84,6 +85,7 @@ const StoreUpdater = ({
     useDirectStoreUpdater('onRowSelectedChange', onRowSelectedChange, store.setState)
     useDirectStoreUpdater('page', page, store.setState)
     useDirectStoreUpdater('onPageChange', onPageChange, store.setState)
+    useDirectStoreUpdater('onRemove', onRemove, store.setState)
 
     // useStoreUpdater<Node[]>(nodes, setNodes)
     // useStoreUpdater(columns, store.setColumns)

@@ -6,29 +6,10 @@ import { StoreType } from '@starwhale/core/context'
 import React from 'react'
 import produce from 'immer'
 
-// const initialState = {
-//     key: 'widgets',
-//     tree: [
-//         {
-//             type: 'ui:dndList',
-//             children: [
-//                 {
-//                     type: 'ui:section',
-//                 },
-//             ],
-//         },
-//     ],
-//     widgets: {},
-//     defaults: {},
-// }
-
+// @FIXME move to store
 export default function useRestoreState<T>(store: StoreType, initialState: T, dynamicVars: Record<string, any>) {
     const toSave = React.useCallback(() => {
-        store.setState({
-            time: Date.now(),
-        })
         let data = store.getState()
-
         Object.keys(data?.widgets).forEach((id) => {
             data = produce(data, (temp) => {
                 _.set(temp.widgets, id, replacer(PANEL_DYNAMIC_MATCHES).toTemplate(temp.widgets[id]))
@@ -41,12 +22,15 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
     // use  api store
     useDeepEffect(() => {
         if (!initialState) return
-        const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
-        if (novalidVars) {
-            // eslint-disable-next-line no-console
-            console.error('missing vars', novalidVars)
-            return
-        }
+        // console.log('store inited')
+
+        // @FIXME check this
+        // const novalidVars = PANEL_DYNAMIC_MATCHES.find((match) => !(match.injectKey in dynamicVars))
+        // if (novalidVars) {
+        //     // eslint-disable-next-line no-console
+        //     // console.warn('missing vars', novalidVars)
+        //     return
+        // }
 
         try {
             let data = typeof initialState === 'string' ? JSON.parse(initialState) : initialState

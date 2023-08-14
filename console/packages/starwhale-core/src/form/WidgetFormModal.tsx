@@ -9,10 +9,10 @@ import { useFetchDatastoreAllTables } from '../datastore/hooks/useFetchDatastore
 import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
-import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTable'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
+import { tablesOfEvaluation, useFetchDatastoreByTable } from '../datastore'
 
-const PAGE_TABLE_SIZE = 100
+const PAGE_TABLE_SIZE = 200
 
 export default function WidgetFormModal({
     store,
@@ -21,6 +21,7 @@ export default function WidgetFormModal({
     isShow: isPanelModalOpen = false,
     setIsShow: setisPanelModalOpen = () => {},
     form,
+    payload,
 }: {
     store: StoreType
     form: WidgetFormModel
@@ -28,6 +29,7 @@ export default function WidgetFormModal({
     setIsShow?: any
     handleFormSubmit: (args: any) => void
     id?: string
+    payload?: any
 }) {
     const [t] = useTranslation()
     // @FIXME use event bus handle global state
@@ -38,34 +40,61 @@ export default function WidgetFormModal({
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
 
+    // @FIXME add chart with list id, only for ui:section widget
+    const prefixes = React.useMemo(() => {
+        // @FIXME combine with single rule
+        // if widget is ui:section, then config?.optionConfig is defined
+        // if widget is ui:panel, then payload is defined
+        const { evalSelectData } = config?.optionConfig || payload || {}
+        if (!evalSelectData) return undefined
+        const allPrefix: any = []
+        Object.values(evalSelectData).forEach((item: any) => {
+            allPrefix.push({
+                prefix: `${item?.project?.name}`,
+                name: item?.summaryTableName,
+            })
+            item?.rowSelectedIds.forEach((id) => {
+                allPrefix.push({
+                    prefix: `${item?.project?.name}`,
+                    name: tablesOfEvaluation(item.projectId, id),
+                })
+            })
+        })
+        // console.log(payload, allPrefix)
+        return allPrefix
+    }, [config, payload])
+
+    // console.log(prefixes)
+
     const handleFormChange = (data: any) => {
-        setFormData(data)
+        setFormData((prev) => {
+            // FIXME only when tableName changed from array to singe select, reset value
+            if (data.chartType !== prev.chartType) {
+                return {
+                    ...data,
+                    tableName: undefined,
+                }
+            }
+            return {
+                ...data,
+            }
+        })
     }
-
-    const type = formData?.chartType
-    const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
-
-    const { tables } = useFetchDatastoreAllTables(prefix)
-
-    const { getQueryParams } = useDatastorePage({
+    const { chartType: type, tableName } = formData
+    const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
+    const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
+        tableName,
     })
-
-    const { recordInfo, columnTypes } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
-    const $data = React.useMemo(() => {
-        if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
-        return {
-            records: recordInfo.data.records,
-            columnTypes,
-        }
-    }, [recordInfo.isSuccess, recordInfo.data, columnTypes])
+    const $data = useFetchDatastoreByTable(params)
 
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
     }
+
     form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField(recordInfo.data?.columnTypes)
+    form.addDataTableColumnsField($data.getTableDistinctColumnTypes())
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})

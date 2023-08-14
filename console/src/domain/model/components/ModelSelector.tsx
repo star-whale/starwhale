@@ -29,8 +29,12 @@ export default function ModelSelector({
     const [t] = useTranslation()
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const modelsInfo = useQuery(`listModels:${projectId}:${keyword}`, () =>
-        listModels(projectId, { pageNum: 1, pageSize: 100, search: keyword })
+    const modelsInfo = useQuery(
+        `listModels:${projectId}:${keyword}`,
+        () => listModels(projectId, { pageNum: 1, pageSize: 100, search: keyword }),
+        {
+            enabled: !!projectId,
+        }
     )
 
     const handleModelInputChange = _.debounce((term: string) => {

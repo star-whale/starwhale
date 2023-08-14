@@ -19,13 +19,13 @@ const PersistProperty = {
     description: true,
 }
 
-const DefaultFields = ['tableName', 'chartType', 'chartTitle']
+const DefaultFields = ['chartType', 'tableName', 'chartTitle']
 
 const PanelUISchema: UiSchema = {
     'tableName': {
         'ui:widget': 'SelectWidget',
     },
-    'ui:order': ['*', 'chartTitle'],
+    'ui:order': ['chartType', '*', 'chartTitle'],
     'ui:submitButtonOptions': {
         norender: true,
     },
@@ -73,8 +73,8 @@ class WidgetFormModel implements WidgetFieldConfig {
 
     addDataTableNamesField(tables?: any[]) {
         if (!tables) return this
-
-        this.addField(tableNameField(tables, this.widget?.config?.fieldConfig?.schema))
+        const field = tableNameField(tables, this.widget?.config?.fieldConfig?.schema)
+        this.addField(field)
         return this
     }
 

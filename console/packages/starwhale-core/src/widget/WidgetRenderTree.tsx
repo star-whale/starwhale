@@ -5,7 +5,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
-import { WidgetProps, WidgetTreeNode } from '../types'
+import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
 import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
 import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
@@ -43,7 +43,12 @@ const selector = (s: any) => ({
     onWidgetDelete: s.onWidgetDelete,
 })
 
-export function WidgetRenderTree({ initialState, onStateChange }: any) {
+export type WidgetRenderTreePropsT = {
+    initialState?: any
+    onSave?: (state: WidgetStateT) => void
+}
+
+export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreePropsT) {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
@@ -142,7 +147,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
         subscription.add(
             eventBus.getStream(PanelSaveEvent).subscribe({
                 next: async () => {
-                    onStateChange?.(toSave())
+                    onSave?.(toSave())
                 },
             })
         )
@@ -170,6 +175,7 @@ export function WidgetRenderTree({ initialState, onStateChange }: any) {
             <WidgetFormModal
                 form={form.current}
                 id={editWidget?.payload?.id}
+                payload={editWidget?.payload}
                 isShow={isPanelModalOpen}
                 setIsShow={setIsPanelModalOpen}
                 store={store}

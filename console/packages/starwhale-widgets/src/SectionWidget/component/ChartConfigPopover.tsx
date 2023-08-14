@@ -19,7 +19,7 @@ export default function ChartConfigPopover({ onOptionSelect }) {
 
     return (
         <StatefulPopover
-            dismissOnClickOutside
+            // dismissOnClickOutside
             dismissOnEsc
             placement={PLACEMENT.bottom}
             content={({ close }) => (

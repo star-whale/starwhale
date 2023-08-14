@@ -7,6 +7,8 @@ export const Privileges = {
     'project.delete': true,
     'evaluation.action': true,
     'evaluation.create': true,
+    'report.create': true,
+    'report.update': true,
     'runtime.version.revert': true,
     'model.run': true,
     'model.version.revert': true,

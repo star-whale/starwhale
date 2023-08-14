@@ -472,6 +472,14 @@ const evaluation = {
         en: 'Result Details',
         zh: '结果详情',
     },
+    'evalution.panel.add': {
+        en: 'Add Evaluations',
+        zh: '添加评测',
+    },
+    'evalution.panel.list': {
+        en: 'Evaluation List',
+        zh: '评测列表',
+    },
 }
 
 const report = {
@@ -483,9 +491,61 @@ const report = {
         en: 'Title',
         zh: '标题',
     },
+    'report.title.default': {
+        en: 'Untitled',
+        zh: '未命名',
+    },
     'report.search.by.title': {
         en: 'Search by title',
         zh: '按标题搜索',
+    },
+    'report.description.placeholder': {
+        en: 'Add a description',
+        zh: '添加描述',
+    },
+    'report.title.placeholder': {
+        en: 'Title here',
+        zh: '标题',
+    },
+    'report.save.saved': {
+        en: 'Saved',
+        zh: '已保存',
+    },
+    'report.save.unsaved': {
+        en: 'Unsaved',
+        zh: '未保存',
+    },
+    'report.save.saving': {
+        en: 'Saving...',
+        zh: '保存中...',
+    },
+    'report.mode.preview': {
+        en: 'Preview',
+        zh: '预览',
+    },
+    'report.mode.edit': {
+        en: 'Edit',
+        zh: '编辑',
+    },
+    'report.publish': {
+        en: 'Publish to project',
+        zh: '发布到项目',
+    },
+    'report.create.title': {
+        en: 'Create Report',
+        zh: '创建报告',
+    },
+    'report.edit.title': {
+        en: 'Edit Report',
+        zh: '编辑报告',
+    },
+    'report.title.error.required': {
+        en: 'Title is required',
+        zh: '标题不能为空',
+    },
+    'report.publist.publised': {
+        en: 'Published',
+        zh: '已发布',
     },
 }
 
@@ -906,6 +966,10 @@ const locales0 = {
     'Copy Link': {
         en: 'Copy Link',
         zh: '复制链接',
+    },
+    'Preview': {
+        en: 'Preview',
+        zh: '预览',
     },
     'User List': {
         en: 'User List',
@@ -1448,6 +1512,10 @@ const locales0 = {
         en: 'Edit',
         zh: '编辑',
     },
+    'Minimize': {
+        en: 'Minimize',
+        zh: '最小化',
+    },
     'Other Login Methods': {
         en: 'Other Login Methods',
         zh: '其他方式登录',
@@ -1659,6 +1727,10 @@ const locales0 = {
     'copyright': {
         en: 'Copyright © 2023 Starwhale, Inc. All rights reserved. ',
         zh: '版权所有 © 2023 Starwhale, Inc. 保留所有权利。',
+    },
+    'Done': {
+        en: 'Done',
+        zh: '完成',
     },
     ...basic,
     ...dataset,

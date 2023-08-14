@@ -10,18 +10,30 @@ export type WidgetTreeNode = {
     id?: string
     type: string
     children?: WidgetTreeNode[]
+    optionConfig?: Record<string, any>
+    fieldConfig?: Record<string, any>
+    [key: string]: any
 }
+
 export type WidgetStoreState = {
-    key: string
-    time: number
-    tree: WidgetTreeNode[]
-    widgets: Record<string, any>
-    defaults: Record<string, any>
+    isInit?: boolean
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any
     onWidgetChange?: any
     onWidgetDelete?: any
+} & WidgetStateT &
+    WideteExternalState
+
+export type WidgetStateT = {
+    key: string
+    tree: WidgetTreeNode[]
+    widgets: Record<string, any>
+    defaults: Record<string, any>
+}
+
+export type WideteExternalState = {
+    onStateChange?: any
 }
 
 // -----------the config of options/field---------------

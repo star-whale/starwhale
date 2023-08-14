@@ -42,7 +42,7 @@ import RuntimeVersionOverviewMeta from '@/pages/Runtime/RuntimeVersionOverviewMe
 import RuntimeVersionOverview from '@/pages/Runtime/RuntimeVersionOverview'
 import RuntimeOverviewLayout from '@/pages/Runtime/RuntimeOverviewLayout'
 import SystemSettings from '@/pages/Admin/SystemSettings'
-import Panel from '@/components/Editor'
+import Panel from '@/components/Editor/Editor'
 import EvaluationWidgetResults from '@/pages/Evaluation/EvaluationWidgetResults'
 import ModelVersionOverviewFiles from '@/pages/Model/ModelVersionOverviewFiles'
 import ModelVersionOverview from '@/pages/Model/ModelVersionOverview'
@@ -58,6 +58,7 @@ import ModelReadmeOverview from './pages/Model/ModelReadmeOverview'
 import ReportOverviewLayout from '@/pages/Report/ReportOverviewLayout'
 import ReportListCard from '@/pages/Report/ReportListCard'
 import ReportEdit from '@/pages/Report/ReportEdit'
+import TipTapEditor from '@starwhale/ui/TiptapEditor'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -289,10 +290,9 @@ const Routes = () => {
                                     </Switch>
                                 </ModelOverviewLayout>
                             </Route>
-                            <Route exact path='/projects/:projectId/reports/:reportId?'>
+                            <Route exact path='/projects/:projectId/reports/:reportId'>
                                 <ReportOverviewLayout>
                                     <Switch>
-                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
                                         <Route
                                             exact
                                             path='/projects/:projectId/reports/:reportId'
@@ -327,6 +327,8 @@ const Routes = () => {
                             <Route exact path='/projects/:projectId/:path*'>
                                 <ProjectLayout>
                                     <Switch>
+                                        <Route exact path='/projects/:projectId/reports' component={ReportListCard} />
+                                        <Route exact path='/projects/:projectId/new_report' component={ReportEdit} />
                                         <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                         <Route exact path='/projects/:projectId/trashes' component={ProjectTrashes} />
                                         <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
@@ -364,6 +366,7 @@ const Routes = () => {
                                     <Switch>
                                         <Route path='/projects' component={ProjectListCard} />
                                         <Route path='/panels' component={Panel} />
+                                        <Route path='/reports' component={TipTapEditor} />
                                         <Redirect path='/' to='/projects' />
                                     </Switch>
                                 </CenterLayout>

@@ -20,6 +20,7 @@ const useStyles = createUseStyles({
         'width': '100%',
         'height': '100%',
         'position': 'relative',
+        'flex': 1,
         '& .baseui-table-cell-content': {},
         '& .column-cell .string-cell': {
             overflow: 'hidden',
@@ -46,6 +47,8 @@ const useStyles = createUseStyles({
         '& .table-cell--last': {},
     },
     tablePinnable: {
+        'display': 'flex',
+        'flexDirection': 'column',
         '& .table-columns-pinned': {
             borderRight: '1px solid rgb(207, 215, 230)',
         },
@@ -75,6 +78,8 @@ const defaultEmptyMessage: any = () => <BusyPlaceholder type='notfound' style={{
 const selector = (state: IGridState) => ({
     onIncludedRowsChange: state.onIncludedRowsChange,
     onRowHighlightChange: state.onRowHighlightChange,
+    onRemove: state.onRemove,
+    getId: state.getId,
     rowSelectedIds: state.rowSelectedIds,
 })
 
@@ -88,6 +93,7 @@ function GridTable({
     queryinline = false,
     previewable = false,
     paginationable = false,
+    removable = false,
     emptyMessage = defaultEmptyMessage,
     emptyColumnMessage,
     resizableColumnWidths = true,
@@ -102,7 +108,7 @@ function GridTable({
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [, theme] = useStyletron()
     const styles = useStyles({ theme })
-    const { onIncludedRowsChange, onRowHighlightChange } = useStore(selector)
+    const { onRemove, onIncludedRowsChange, onRowHighlightChange, getId } = useStore(selector)
     const store = useStoreApi()
     // @FIXME
     useDirectStoreUpdater(
@@ -140,7 +146,13 @@ function GridTable({
             {children}
             <div
                 data-type='table-wrapper'
-                style={{ width: '100%', height: `calc(100% - ${headlineHeight + paginationHeight}px)` }}
+                style={{
+                    width: '100%',
+                    height: `calc(100% - ${headlineHeight + paginationHeight}px)`,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
             >
                 <DataTable
                     columns={$columns}
@@ -148,6 +160,7 @@ function GridTable({
                     compareable={compareable}
                     queryinline={queryinline}
                     previewable={previewable}
+                    removable={removable}
                     rawColumns={$columns}
                     emptyMessage={emptyMessage}
                     loading={isLoading}
@@ -170,6 +183,8 @@ function GridTable({
                     sortIndex={sortIndex}
                     textQuery={textQuery}
                     onPreview={onPreview as any}
+                    onRemove={onRemove}
+                    getId={getId}
                     // controlRef={controlRef}
                     // filters={$filtersEnabled}
                 />

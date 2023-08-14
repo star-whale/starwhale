@@ -121,6 +121,8 @@ export type IconTypesT =
     | 'fold21'
     | 'unfold21'
     | 'a-onlineevaluation'
+    | 'report'
+    | 'link'
 
 interface IIconFontProps {
     style?: React.CSSProperties

@@ -63,12 +63,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
         const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
-        const { page, setPage, getQueryParams } = useDatastorePage({
+        const { page, setPage, params } = useDatastorePage({
             pageNum: 1,
             pageSize: 1000,
             sortBy: tableConfig?.sortBy || 'id',
             sortDirection: tableConfig?.sortDirection || 'DESC',
             queries: tableConfig?.queries,
+            tableName,
         })
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
@@ -77,7 +78,9 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             recordQuery: query,
             columnTypes,
             records,
-        } = useFetchDatastoreByTable(getQueryParams(tableName), enableLoad)
+            getTableRecordMap,
+            getTableColumnTypeMap,
+        } = useFetchDatastoreByTable(params, enableLoad)
         useEffect(() => {
             if (enableLoad) return
             if (inViewport) setEnableload(true)
@@ -90,7 +93,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 eventBus.getStream(PanelDownloadEvent).subscribe({
                     next: (evt) => {
                         if (evt.payload?.id === id) {
-                            exportTable(query)
+                            exportTable(query as any)
                         }
                     },
                 })
@@ -111,10 +114,13 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
         const $data = React.useMemo(() => {
             if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
             return {
+                recordQuery: query,
                 records,
                 columnTypes,
+                getTableRecordMap,
+                getTableColumnTypeMap,
             }
-        }, [recordInfo.isSuccess, records, columnTypes])
+        }, [recordInfo.isSuccess, query, records, columnTypes, getTableRecordMap, getTableColumnTypeMap])
 
         return (
             <div

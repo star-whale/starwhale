@@ -22,6 +22,8 @@ import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
 import useTranslation from '@/hooks/useTranslation'
+import EvalSelectList from '@/components/Editor/EvalSelectList'
+import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -61,11 +63,13 @@ export const CONFIG: WidgetConfig = {
     optionConfig: {
         title: '',
         isExpaned: true,
+        isEvaluationList: false,
+        evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
         layoutConfig: {
             padding: 20,
             columnsPerPage: 3,
             rowsPerPage: 3,
-            boxWidth: 430,
+            boxWidth: 330,
             boxHeight: 274,
         },
         layout: {
@@ -76,7 +80,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 // eslint-disable-next-line
-type Option = typeof CONFIG['optionConfig']
+type Option = (typeof CONFIG)['optionConfig']
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {
@@ -85,7 +89,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { isExpaned = false, layoutConfig, layout } = optionConfig as Option
+    const { isExpaned = false, layoutConfig, layout, isEvaluationList, evalSelectData } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = children ? React.Children.count(children) : 0
@@ -102,8 +106,8 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
         setIsModelOpen(false)
     }
-    const handleEditPanel = (id: string) => {
-        eventBus.publish(new PanelEditEvent({ id }))
+    const handleEditPanel = (id: string, data?: any) => {
+        eventBus.publish(new PanelEditEvent({ id, evalSelectData: data }))
     }
     const handleDeletePanel = (id: string) => {
         eventBus.publish(new PanelDeleteEvent({ id }))
@@ -116,6 +120,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     }
     const handleReloadPanel = (id: string) => {
         eventBus.publish(new PanelReloadEvent({ id }))
+    }
+    const handleSelectDataChange = (data: any) => {
+        props.onOptionChange?.({
+            evalSelectData: data,
+        })
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -160,6 +169,74 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     })
     const previeRef = React.useRef<HTMLDivElement>(null)
     const wrapperRef = React.useRef<HTMLDivElement>(null)
+    const memoChildren = React.useMemo(() => {
+        return React.Children.map(children as any, (child: React.ReactElement) => {
+            if (!child) return null
+
+            return (
+                <Resizable
+                    width={rect.width}
+                    height={rect.height}
+                    axis='both'
+                    onResizeStart={(e: any) => {
+                        const parent = e.target.parentNode
+                        const parentRect = parent.getBoundingClientRect()
+                        setResizeRect({
+                            start: true,
+                            clientX: e.clientX,
+                            clientY: e.clientY,
+                            width: parentRect.width,
+                            height: parentRect.height,
+                            top: e.target.parentNode.offsetTop,
+                            left: e.target.parentNode.offsetLeft,
+                            offsetClientX: 0,
+                            offsetClientY: 0,
+                        })
+                        previeRef.current?.focus()
+                        e.stopPropagation()
+                    }}
+                    onResize={(e: any) => {
+                        const wrapperWidth =
+                            // @ts-ignore
+                            wrapperRef.current?.getBoundingClientRect()?.width - padding * 2
+                        if (resizeRect.width + e.clientX - resizeRect.clientX < boxWidth) return
+                        if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
+                        if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
+
+                        setResizeRect({
+                            ...resizeRect,
+                            offsetClientX: e.clientX - resizeRect.clientX,
+                            offsetClientY: e.clientY - resizeRect.clientY,
+                        })
+                    }}
+                    onResizeStop={() => {
+                        const rectTmp = {
+                            width: resizeRect.width + resizeRect.offsetClientX,
+                            height: resizeRect.height + resizeRect.offsetClientY,
+                        }
+                        handleLayoutChange(rectTmp)
+                        setRect(rectTmp)
+                        setResizeRect({
+                            ...resizeRect,
+                            start: false,
+                        })
+                    }}
+                >
+                    <div className={styles.panelWrapper} id={child.props.id}>
+                        <div className={styles.contentWrapper}>{child}</div>
+                        <ChartConfigGroup
+                            onEdit={() => handleEditPanel(child.props.id, evalSelectData)}
+                            onDelete={() => handleDeletePanel(child.props?.id)}
+                            onPreview={() => handlePreviewPanel(child.props?.id)}
+                            onDownload={() => handleDownloadPanel(child.props?.id)}
+                            onReload={() => handleReloadPanel(child.props?.id)}
+                        />
+                    </div>
+                </Resizable>
+            )
+        })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [children, rect, resizeRect, styles, boxHeight, boxWidth, padding])
 
     return (
         <div>
@@ -174,18 +251,27 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                         new PanelAddEvent({
                             // @ts-ignore
                             path: props.path,
+                            id: props.id,
                         })
                     )
                 }}
                 onSectionRename={() => {
                     setIsModelOpen(true)
                 }}
-                onSectionAddAbove={() => {
-                    props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
-                }}
-                onSectionAddBelow={() => {
-                    props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
-                }}
+                onSectionAddAbove={
+                    isEvaluationList
+                        ? undefined
+                        : () => {
+                              props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
+                          }
+                }
+                onSectionAddBelow={
+                    isEvaluationList
+                        ? undefined
+                        : () => {
+                              props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
+                          }
+                }
                 onSectionDelete={() => {
                     props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
                 }}
@@ -218,71 +304,13 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                         padding: `${padding}px`,
                     }}
                 >
-                    {React.Children.map(children as any, (child: React.ReactElement) => {
-                        if (!child) return null
-
-                        return (
-                            <Resizable
-                                width={rect.width}
-                                height={rect.height}
-                                axis='both'
-                                onResizeStart={(e: any) => {
-                                    const parent = e.target.parentNode
-                                    const parentRect = parent.getBoundingClientRect()
-                                    setResizeRect({
-                                        start: true,
-                                        clientX: e.clientX,
-                                        clientY: e.clientY,
-                                        width: parentRect.width,
-                                        height: parentRect.height,
-                                        top: e.target.parentNode.offsetTop,
-                                        left: e.target.parentNode.offsetLeft,
-                                        offsetClientX: 0,
-                                        offsetClientY: 0,
-                                    })
-                                    previeRef.current?.focus()
-                                }}
-                                onResize={(e: any) => {
-                                    const wrapperWidth =
-                                        // @ts-ignore
-                                        wrapperRef.current?.getBoundingClientRect()?.width - padding * 2
-                                    if (resizeRect.width + e.clientX - resizeRect.clientX < boxWidth) return
-                                    if (resizeRect.height + e.clientY - resizeRect.clientY < boxHeight) return
-                                    if (resizeRect.width + e.clientX - resizeRect.clientX > wrapperWidth) return
-
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        offsetClientX: e.clientX - resizeRect.clientX,
-                                        offsetClientY: e.clientY - resizeRect.clientY,
-                                    })
-                                }}
-                                onResizeStop={() => {
-                                    const rectTmp = {
-                                        width: resizeRect.width + resizeRect.offsetClientX,
-                                        height: resizeRect.height + resizeRect.offsetClientY,
-                                    }
-                                    handleLayoutChange(rectTmp)
-                                    setRect(rectTmp)
-                                    setResizeRect({
-                                        ...resizeRect,
-                                        start: false,
-                                    })
-                                }}
-                            >
-                                <div className={styles.panelWrapper} id={child.props.id}>
-                                    <div className={styles.contentWrapper}>{child}</div>
-                                    <ChartConfigGroup
-                                        onEdit={() => handleEditPanel(child.props.id)}
-                                        onDelete={() => handleDeletePanel(child.props?.id)}
-                                        onPreview={() => handlePreviewPanel(child.props?.id)}
-                                        onDownload={() => handleDownloadPanel(child.props?.id)}
-                                        onReload={() => handleReloadPanel(child.props?.id)}
-                                    />
-                                </div>
-                            </Resizable>
-                        )
-                    })}
+                    {memoChildren}
                 </div>
+                {isEvaluationList && (
+                    <div className='mx-20px'>
+                        <EvalSelectList value={evalSelectData} onSelectDataChange={handleSelectDataChange} />
+                    </div>
+                )}
             </SectionAccordionPanel>
             <Modal isOpen={isModelOpen} onClose={() => setIsModelOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('panel.name')}</ModalHeader>

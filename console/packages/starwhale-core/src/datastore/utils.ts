@@ -157,3 +157,14 @@ export class LRUCache<Key, Value> {
         }
     }
 }
+
+export function getTableShortNamePrefix(str: string) {
+    return `${str.split('/').splice(5).join('/')}-`
+}
+
+export function getTableShortName(str: string) {
+    if (str.split('/').length === 6) {
+        return `${str.split('/').splice(5).join('/')}`
+    }
+    return `${str.split('/').splice(-2).join('/')}`
+}

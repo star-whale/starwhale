@@ -22,6 +22,7 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
             children = (
                 <>
                     <div
+                        data-type='placeholder'
                         style={{
                             alignSelf: 'center',
                             fontSize: '50px',
@@ -43,6 +44,7 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
             children = (
                 <>
                     <div
+                        data-type='placeholder'
                         style={{
                             alignSelf: 'center',
                             fontSize: '50px',
@@ -71,6 +73,7 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
 
     return (
         <div
+            data-type='placeholder'
             style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -78,6 +81,7 @@ export default function BusyPlaceholder({ type, style, children: rawChildren }: 
                 flexDirection: 'column',
                 width: '100%',
                 height: '100%',
+                flex: 1,
                 ...style,
             }}
         >

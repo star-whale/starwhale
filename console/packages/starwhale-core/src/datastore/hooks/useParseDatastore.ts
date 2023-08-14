@@ -66,3 +66,30 @@ export function useParseRocAuc(
 
     return rocAuc
 }
+
+export function useParseBarChart(
+    rawData: {
+        records: Record<string, any>
+        x?: string
+        y?: string
+    } = { records: [] }
+) {
+    const data = React.useMemo(() => {
+        const { records, x: xattr = '', y: yattr = '' } = rawData
+        const x: number[] = []
+        const y: number[] = []
+        records.forEach((item: any) => {
+            const xnum = item?.[xattr]
+            const ynum = item?.[yattr]
+            if (xnum && !Number.isNaN(xnum)) x.push(Number(xnum))
+            if (ynum && !Number.isNaN(ynum)) y.push(Number(ynum))
+        })
+        return {
+            records,
+            x,
+            y,
+        }
+    }, [rawData])
+
+    return data
+}

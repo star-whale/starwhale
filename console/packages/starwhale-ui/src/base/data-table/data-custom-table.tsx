@@ -61,6 +61,7 @@ export function DataTable({
     compareable = false,
     queryinline = false,
     previewable = false,
+    removable = false,
     rows: allRows,
     rowActions,
     rowHeight = 44,
@@ -72,6 +73,7 @@ export function DataTable({
     getId,
     controlRef,
     onPreview,
+    onRemove,
 }: DataTablePropsT) {
     const [, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
@@ -395,6 +397,7 @@ export function DataTable({
             isQueryInline,
             isSelectable,
             previewable,
+            removable,
             onRowMouseEnter: handleRowMouseEnter,
             onSelectOne,
             columns,
@@ -403,6 +406,7 @@ export function DataTable({
             normalizedWidths,
             getId,
             onPreview,
+            onRemove,
         }
     }, [
         handleRowMouseEnter,
@@ -410,6 +414,7 @@ export function DataTable({
         isSelectable,
         isQueryInline,
         previewable,
+        removable,
         rows,
         columns,
         onSelectOne,
@@ -417,6 +422,7 @@ export function DataTable({
         normalizedWidths,
         getId,
         onPreview,
+        onRemove,
     ])
 
     const columnWidth = React.useCallback(
@@ -485,6 +491,7 @@ export function DataTable({
                             onSort: handleSort,
                             resizableColumnWidths,
                             compareable,
+                            removable,
                             rowHeight,
                             rowHighlightIndex,
                             rows,

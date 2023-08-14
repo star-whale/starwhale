@@ -1,6 +1,7 @@
-import { DatastorePageT } from '@starwhale/core/datastore'
+import { DatastorePageT, getTableShortNamePrefix } from '@starwhale/core/datastore'
 import { getQuery, getScanQuery } from '@starwhale/core/datastore/hooks/useDatastoreQueryParams'
 import React from 'react'
+import _ from 'lodash'
 
 export type DatastorePagePropsT = {
     pageNum?: number
@@ -8,6 +9,7 @@ export type DatastorePagePropsT = {
     sortBy?: string
     sortDirection?: 'ASC' | 'DESC' | string
     queries?: any[]
+    tableName?: string | string[]
 }
 
 function useDatastorePage({
@@ -16,6 +18,7 @@ function useDatastorePage({
     sortBy,
     sortDirection = 'DESC',
     queries,
+    tableName,
 }: DatastorePagePropsT) {
     const [page, setPage] = React.useState<DatastorePageT>({} as any)
 
@@ -59,6 +62,36 @@ function useDatastorePage({
         } as DatastorePageT
     }, [page, rawPage])
 
+    const getScanParams = React.useCallback(
+        (tables, options = {}) => {
+            const normalizeTables = tables.map((t) => {
+                if (_.isObject(t) && 'columnPrefix' in t) return t
+                return {
+                    tableName: t,
+                    columnPrefix: getTableShortNamePrefix(t),
+                }
+            })
+
+            return getScanQuery(normalizeTables, {
+                ...$page,
+                ...options,
+            })
+        },
+        [$page]
+    )
+
+    const getQueryParams = React.useCallback(
+        (tableNameTmp?: string, options = {}) =>
+            getQuery({
+                tableName: tableNameTmp,
+                options: {
+                    ...$page,
+                    ...options,
+                },
+            }),
+        [$page]
+    )
+
     return {
         page: $page,
         setPage: React.useCallback(
@@ -67,25 +100,14 @@ function useDatastorePage({
             },
             [setPage]
         ),
-        getScanParams: React.useCallback(
-            (tables, options = {}) =>
-                getScanQuery(tables, {
-                    ...$page,
-                    ...options,
-                }),
-            [$page]
-        ),
-        getQueryParams: React.useCallback(
-            (tableName?: string, options = {}) =>
-                getQuery({
-                    tableName,
-                    options: {
-                        ...$page,
-                        ...options,
-                    },
-                }),
-            [$page]
-        ),
+        getScanParams,
+        getQueryParams,
+        params: React.useMemo(() => {
+            if (!tableName || !tableName.length) return undefined
+            if (Array.isArray(tableName) && tableName.length > 1) return getScanParams(tableName)
+            if (Array.isArray(tableName)) return getQueryParams(tableName[0])
+            return getQueryParams(tableName)
+        }, [tableName, getScanParams, getQueryParams]),
     }
 }
 

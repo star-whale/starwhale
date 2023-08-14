@@ -1,17 +1,17 @@
 import React, { useMemo, useRef } from 'react'
 import EditorContextProvider, { StoreType } from '@starwhale/core/context/EditorContextProvider'
 import { createCustomStore } from '@starwhale/core/store'
-import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
+import WidgetRenderTree, { WidgetRenderTreePropsT } from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useFetchDatastoreAllTables, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
-import { withEditorRegister } from '.'
+import { withProject } from './Editor'
 
-function witEditorContext(EditorApp: React.FC) {
-    return function EditorContexted(props: any) {
+function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
+    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any }) {
         const { prefix } = props.dynamicVars
-        const { isLoading, isSuccess, names } = useFetchDatastoreAllTables(prefix)
+        const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
         const store = useRef<StoreType>()
         const state = useMemo(() => {
             return tranformState({
@@ -22,7 +22,6 @@ function witEditorContext(EditorApp: React.FC) {
                         children: [
                             {
                                 type: 'ui:section',
-                                // @ts-ignore
                                 optionConfig: {
                                     layout: {
                                         width: 600,
@@ -78,6 +77,7 @@ function witEditorContext(EditorApp: React.FC) {
             <EditorContextProvider
                 value={{
                     ...value,
+                    tables,
                     dynamicVars: props.dynamicVars,
                 }}
             >
@@ -87,4 +87,7 @@ function witEditorContext(EditorApp: React.FC) {
     }
 }
 
-export const FullTablesEditor = withEditorRegister(witEditorContext(WidgetRenderTree))
+const FullTablesEditor = withProject(witEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree))
+
+export { FullTablesEditor }
+export default FullTablesEditor

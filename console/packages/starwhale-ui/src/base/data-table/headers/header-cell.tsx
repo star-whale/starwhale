@@ -23,6 +23,7 @@ type HeaderCellPropsT = {
     isSelectedAll?: boolean
     isQueryInline?: boolean
     isSelectedIndeterminate?: boolean
+    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: (num: number) => void
     onSelectAll?: () => void
@@ -37,6 +38,7 @@ type HeaderCellPropsT = {
     sortDirection: SortDirectionsT
     title: string
     compareable?: boolean
+    removable?: boolean
     querySlot?: React.ReactNode
 }
 
@@ -129,6 +131,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             {props.isQueryInline && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
             )}
+            {props.removable && props.index === 0 && <p className='mx-8px w-16px' />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox
@@ -153,7 +156,11 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     flex: 1,
                 })}
             >
-                {props.title}
+                {props.title}{' '}
+                {props.selectedRowIds &&
+                    props.selectedRowIds.size > 0 &&
+                    props.index === 0 &&
+                    `(${props.selectedRowIds.size})`}
             </span>
             {props.compareable && ((props.isHovered && props.index !== 0) || props.isFocus) && (
                 <Button

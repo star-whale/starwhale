@@ -29,6 +29,7 @@ export type HeaderContextT = {
     onSort: (num: number) => void
     resizableColumnWidths: boolean
     compareable: boolean
+    removable: boolean
     rowActions: RowActionT[] | ((row: RowT) => RowActionT[])
     rowHeight: number
     rowHighlightIndex: number
@@ -63,6 +64,7 @@ export const HeaderContext = React.createContext<HeaderContextT>({
     onSort: () => {},
     resizableColumnWidths: false,
     compareable: false,
+    removable: false,
     rowActions: [],
     rowHeight: 0,
     rowHighlightIndex: -1,
@@ -85,6 +87,7 @@ type HeaderProps = {
     isQueryInline?: boolean
     isSelectedAll?: boolean
     isSelectedIndeterminate?: boolean
+    selectedRowIds: Set<any>
     onMouseEnter: (num: number) => void
     onMouseLeave: () => void
     onResize: (columnIndex: number, delta: number) => void
@@ -99,6 +102,7 @@ type HeaderProps = {
     onFocus: (arg: boolean) => void
     resizableColumnWidths: boolean
     compareable: boolean
+    removable: boolean
     resizeIndex: number
     resizeMaxWidth: number
     resizeMinWidth: number
@@ -192,10 +196,12 @@ function Header(props: HeaderProps) {
                 index={props.index}
                 sortable={props.isSortable}
                 compareable={props.compareable}
+                removable={props.removable}
                 isHovered={!isResizing && props.hoverIndex === props.index}
                 isSelectable={props.isSelectable && props.index === 0}
                 isSelectedAll={props.isSelectedAll}
                 isSelectedIndeterminate={props.isSelectedIndeterminate}
+                selectedRowIds={props.selectedRowIds}
                 onMouseEnter={() => {
                     if (!isResizing) {
                         props.onMouseEnter(props.index)

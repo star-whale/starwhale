@@ -15,6 +15,10 @@ export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
     name: 'Dragging Section',
     group: WidgetGroupType.LIST,
+    optionConfig: {
+        isSave: true,
+        isAddPanel: true,
+    },
 }
 
 const useStyles = createUseStyles({
@@ -64,7 +68,8 @@ const ITEM_HEADER_HEIGHT = 48
 function DNDListWidget(props: WidgetRendererProps) {
     const styles = useStyles()
 
-    const { onLayoutOrderChange, eventBus, children } = props
+    const { onLayoutOrderChange, eventBus, children, optionConfig = {} } = props
+    const { isSave, isAddPanel } = optionConfig
 
     const [state, setState] = useState<any[]>([])
 
@@ -152,6 +157,7 @@ function DNDListWidget(props: WidgetRendererProps) {
                 animation={50}
                 onChoose={(args) => {
                     dragSelect(args.oldIndex as number)
+                    args.stopPropagation()
                 }}
                 onUnchoose={dragUnselect}
                 onStart={dragStart}
@@ -177,24 +183,28 @@ function DNDListWidget(props: WidgetRendererProps) {
             </ReactSortable>
             <div style={{ flex: 1 }} />
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <WithCurrentAuth id='evaluation.panel.save'>
-                    <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>{t('panel.save')}</Button>
-                </WithCurrentAuth>
+                {isSave && (
+                    <WithCurrentAuth id='evaluation.panel.save'>
+                        <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>{t('panel.save')}</Button>
+                    </WithCurrentAuth>
+                )}
 
-                <Button
-                    onClick={() =>
-                        eventBus.publish(
-                            new SectionAddEvent({
-                                // @ts-ignore
-                                path: props.path,
-                                // @FIXME type const shouldn't be here
-                                type: 'ui:section',
-                            })
-                        )
-                    }
-                >
-                    {t('panel.add')}
-                </Button>
+                {isAddPanel && (
+                    <Button
+                        onClick={() =>
+                            eventBus.publish(
+                                new SectionAddEvent({
+                                    // @ts-ignore
+                                    path: props.path,
+                                    // @FIXME type const shouldn't be here
+                                    type: 'ui:section',
+                                })
+                            )
+                        }
+                    >
+                        {t('panel.add')}
+                    </Button>
+                )}
             </div>
         </div>
     )

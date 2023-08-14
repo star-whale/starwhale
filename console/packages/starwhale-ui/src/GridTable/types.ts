@@ -22,6 +22,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     previewable?: boolean
     queryinline?: boolean
     fillable?: boolean
+    removable?: boolean
     id?: string
     columns?: any[]
     storeRef?: React.MutableRefObject<ITableState | undefined>
@@ -44,7 +45,8 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     onRowHighlightChange?: (index: number) => void
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowSelectedChange?: (rows: RowT[]) => void
-    getId?: (record: any) => string | undefined
+    onRemove?: (id: string) => void
+    getId?: (record: any) => string | any
     // @FIXME type
     onInit?: (state: Partial<IGridState>) => void
     getColumns?: () => any[]

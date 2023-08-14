@@ -4,6 +4,7 @@ import type { ColumnT, RowT } from '../types'
 import { themedUseStyletron } from '../../../theme/styletron'
 import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
+import Button, { ExtendButton } from '@starwhale/ui/Button'
 
 export type CellPlacementPropsT = {
     columnIndex: number
@@ -26,6 +27,8 @@ export type CellPlacementPropsT = {
         rows: RowT[]
         textQuery: string
         normalizedWidths: number[]
+        onPreview?: (row: RowT) => void
+        onRemove?: (row: RowT) => void
     }
 }
 
@@ -37,12 +40,14 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
         isQueryInline,
         isRowSelected,
         previewable,
+        removable,
         onRowMouseEnter,
         onSelectOne,
         rows,
         columns,
         getId,
         onPreview,
+        onRemove,
     } = data
 
     const column = React.useMemo(() => columns[columnIndex] ?? null, [columns, columnIndex])
@@ -141,6 +146,14 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 >
                     <IconFont type='fullscreen' size={14} />
                 </div>
+            )}
+            {removable && columnIndex === 0 && (
+                <ExtendButton
+                    negative
+                    className='mx-8px'
+                    icon='item-reduce'
+                    onClick={() => onRemove?.(getId(value.record))}
+                />
             )}
             <Cell
                 columnKey={column.key}

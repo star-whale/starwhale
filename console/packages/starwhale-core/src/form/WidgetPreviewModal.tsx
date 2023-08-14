@@ -26,20 +26,22 @@ export default function WidgetPreviewModal({
     const type = formData?.chartType
     const tableName = Array.isArray(formData?.tableName) ? formData?.tableName[0] : formData?.tableName
 
-    const { getQueryParams } = useDatastorePage({
+    const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
+        tableName,
     })
 
-    const { recordInfo, columnTypes, records } = useFetchDatastoreByTable(getQueryParams(tableName), !!tableName)
+    const { recordInfo, columnTypes, records } = useFetchDatastoreByTable(params)
 
     const $data = React.useMemo(() => {
         if (!recordInfo.isSuccess) return { records: [], columnTypes: [] }
         return {
+            params,
             records,
             columnTypes,
         }
-    }, [recordInfo.isSuccess, records, columnTypes])
+    }, [recordInfo.isSuccess, params, records, columnTypes])
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})
