@@ -138,7 +138,7 @@ function EvalSelectList({
     )
 
     const { isEditable } = useStore(selector)
-    const editable = isEditable()
+    const editable = isEditable?.()
     // const isEditable = useStoreApi().getState().isEditable()
     const AddButton = React.useMemo(() => {
         if (!editable) return null

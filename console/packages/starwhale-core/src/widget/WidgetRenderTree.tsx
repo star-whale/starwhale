@@ -61,7 +61,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
     // @ts-ignore
     const [editWidget, setEditWidget] = useState<BusEventType>(null)
     const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
-    const [viewWidget, setViewWidget] = useState<PanelPreviewEvent>()
+    const [viewWidget, setViewWidget] = useState<PanelChartPreviewEvent>()
     const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
     const form = useRef(new WidgetFormModel())
 

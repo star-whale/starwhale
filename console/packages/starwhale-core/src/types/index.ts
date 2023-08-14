@@ -17,7 +17,7 @@ export type WidgetTreeNode = {
 
 export type WidgetStoreState = {
     editable?: boolean
-    isEditable: () => boolean
+    isEditable?: () => boolean
     isInit?: boolean
     onConfigChange?: any
     onLayoutOrderChange?: any
