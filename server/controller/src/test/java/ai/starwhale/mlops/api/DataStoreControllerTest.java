@@ -1614,12 +1614,23 @@ public class DataStoreControllerTest {
         byte[] content = "hello".getBytes();
         when(exporter.asBytes(any())).thenReturn(content);
         when(dataStore.query(any())).thenReturn(new RecordList(null, null, null, null, null));
+        when(dataStore.scan(any())).thenReturn(new RecordList(null, null, null, null, null));
         HttpServletResponse response = mock(HttpServletResponse.class);
         ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);
         controller.queryAndExport(new QueryTableRequest() {
             {
                 setTableName("t1");
+            }
+        }, response);
+        verify(outputStream).write(content);
+
+        response = mock(HttpServletResponse.class);
+        outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+        controller.scanAndExport(new ScanTableRequest() {
+            {
+                setTables(List.of());
             }
         }, response);
         verify(outputStream).write(content);

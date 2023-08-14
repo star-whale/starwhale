@@ -60,7 +60,12 @@ public interface DataStoreApi {
             @Valid @RequestBody ScanTableRequest request);
 
     @PostMapping(value = "/datastore/queryTable/export")
-    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER')")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
     void queryAndExport(
             @Valid @RequestBody QueryTableRequest request, HttpServletResponse httpResponse);
+
+    @PostMapping(value = "/datastore/scanTable/export")
+    @PreAuthorize("hasAnyRole('GUEST', 'OWNER', 'MAINTAINER', 'ANONYMOUS')")
+    void scanAndExport(
+            @Valid @RequestBody ScanTableRequest request, HttpServletResponse httpResponse);
 }
