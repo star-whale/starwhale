@@ -12,7 +12,7 @@ import useTranslation from '@/hooks/useTranslation'
 // @FIXME type define
 const Header = React.forwardRef((props, ref) => {
     // console.log('Header', props)
-    const { $expanded, children, onClick, onPanelAdd } = props as any
+    const { $expanded, children, onClick, onPanelChartAdd } = props as any
     const [t] = useTranslation()
 
     const actions = {
@@ -76,7 +76,7 @@ const Header = React.forwardRef((props, ref) => {
             />
             <Button
                 kind='secondary'
-                onClick={onPanelAdd}
+                onClick={onPanelChartAdd}
                 overrides={{
                     BaseButton: {
                         style: {

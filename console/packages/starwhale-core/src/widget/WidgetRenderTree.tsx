@@ -6,9 +6,15 @@ import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
 import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
-import { PanelAddEvent } from '../events'
 import { BusEventType } from '../events/types'
-import { PanelDeleteEvent, PanelEditEvent, PanelPreviewEvent, PanelSaveEvent, SectionAddEvent } from '../events/app'
+import {
+    PanelChartAddEvent,
+    PanelChartDeleteEvent,
+    PanelChartEditEvent,
+    PanelChartPreviewEvent,
+    PanelChartSaveEvent,
+    SectionAddEvent,
+} from '../events/app'
 import WidgetFormModal from '../form/WidgetFormModal'
 import WidgetPreviewModal from '../form/WidgetPreviewModal'
 import useRestoreState from './hooks/useRestoreState'
@@ -74,7 +80,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
         })
     }
 
-    const handleAddPanel = (formData: any) => {
+    const handleChartAddPanel = (formData: any) => {
         const { path } = editWidget?.payload
         if (path && path.length > 0)
             api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
@@ -85,7 +91,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             })
     }
 
-    const handleEditPanel = (formData: any) => {
+    const handleChartEditPanel = (formData: any) => {
         const { id } = editWidget?.payload
         api.onWidgetChange(id, {
             type: formData.chartType,
@@ -95,21 +101,21 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
         })
     }
 
-    const handelDeletePanel = (evt: PanelDeleteEvent) => {
+    const handelChartDeletePanel = (evt: PanelChartDeleteEvent) => {
         const { id } = evt?.payload
         api.onWidgetDelete(id)
     }
 
     const actions = {
-        [PanelAddEvent.type]: handleAddPanel,
-        [PanelEditEvent.type]: handleEditPanel,
+        [PanelChartAddEvent.type]: handleChartAddPanel,
+        [PanelChartEditEvent.type]: handleChartEditPanel,
     }
 
     // subscription
     useEffect(() => {
         const subscription = new Subscription()
         subscription.add(
-            eventBus.getStream(PanelAddEvent).subscribe({
+            eventBus.getStream(PanelChartAddEvent).subscribe({
                 next: (evt) => {
                     setIsPanelModalOpen(true)
                     setEditWidget(evt)
@@ -117,7 +123,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             })
         )
         subscription.add(
-            eventBus.getStream(PanelEditEvent).subscribe({
+            eventBus.getStream(PanelChartEditEvent).subscribe({
                 next: (evt) => {
                     setIsPanelModalOpen(true)
                     setEditWidget(evt)
@@ -125,12 +131,12 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             })
         )
         subscription.add(
-            eventBus.getStream(PanelDeleteEvent).subscribe({
-                next: (evt) => handelDeletePanel(evt),
+            eventBus.getStream(PanelChartDeleteEvent).subscribe({
+                next: handelChartDeletePanel,
             })
         )
         subscription.add(
-            eventBus.getStream(PanelPreviewEvent).subscribe({
+            eventBus.getStream(PanelChartPreviewEvent).subscribe({
                 next: (evt) => {
                     setIsPanelPreviewModalOpen(true)
                     setViewWidget(evt)
@@ -145,7 +151,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             })
         )
         subscription.add(
-            eventBus.getStream(PanelSaveEvent).subscribe({
+            eventBus.getStream(PanelChartSaveEvent).subscribe({
                 next: async () => {
                     onSave?.(toSave())
                 },

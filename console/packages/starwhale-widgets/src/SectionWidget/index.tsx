@@ -4,12 +4,12 @@ import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
 import {
-    PanelAddEvent,
-    PanelEditEvent,
-    PanelDeleteEvent,
-    PanelPreviewEvent,
-    PanelDownloadEvent,
-    PanelReloadEvent,
+    PanelChartAddEvent,
+    PanelChartEditEvent,
+    PanelChartDeleteEvent,
+    PanelChartPreviewEvent,
+    PanelChartDownloadEvent,
+    PanelChartReloadEvent,
 } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
@@ -107,19 +107,19 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         setIsModelOpen(false)
     }
     const handleEditPanel = (id: string, data?: any) => {
-        eventBus.publish(new PanelEditEvent({ id, evalSelectData: data }))
+        eventBus.publish(new PanelChartEditEvent({ id, evalSelectData: data }))
     }
     const handleDeletePanel = (id: string) => {
-        eventBus.publish(new PanelDeleteEvent({ id }))
+        eventBus.publish(new PanelChartDeleteEvent({ id }))
     }
     const handlePreviewPanel = (id: string) => {
-        eventBus.publish(new PanelPreviewEvent({ id }))
+        eventBus.publish(new PanelChartPreviewEvent({ id }))
     }
     const handleDownloadPanel = (id: string) => {
-        eventBus.publish(new PanelDownloadEvent({ id }))
+        eventBus.publish(new PanelChartDownloadEvent({ id }))
     }
     const handleReloadPanel = (id: string) => {
-        eventBus.publish(new PanelReloadEvent({ id }))
+        eventBus.publish(new PanelChartReloadEvent({ id }))
     }
     const handleSelectDataChange = (data: any) => {
         props.onOptionChange?.({
@@ -245,10 +245,10 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 title={title}
                 expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
-                onPanelAdd={() => {
+                onPanelChartAdd={() => {
                     // @FIXME abatract events
                     eventBus.publish(
-                        new PanelAddEvent({
+                        new PanelChartAddEvent({
                             // @ts-ignore
                             path: props.path,
                             id: props.id,

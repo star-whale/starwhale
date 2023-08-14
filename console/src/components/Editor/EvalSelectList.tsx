@@ -10,6 +10,8 @@ import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import _ from 'lodash'
 import { TextLink } from '../Link'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
+import { useStore } from '@starwhale/core/store'
+import { WidgetStoreState } from '@starwhale/core'
 
 const RenderButton = ({ count, editing, toggle }) => {
     const [t] = useTranslation()
@@ -65,6 +67,10 @@ const RenderButton = ({ count, editing, toggle }) => {
         </div>
     )
 }
+
+const selector = (state: WidgetStoreState) => ({
+    isEditable: state.isEditable,
+})
 
 function EvalSelectList({
     value,
@@ -131,6 +137,21 @@ function EvalSelectList({
         [$columns]
     )
 
+    const { isEditable } = useStore(selector)
+    const editable = isEditable()
+    // const isEditable = useStoreApi().getState().isEditable()
+    const AddButton = React.useMemo(() => {
+        if (!editable) return null
+
+        return (
+            <div className='flex pb-8px'>
+                <Button kind='tertiary' onClick={() => setIsAddOpen(true)}>
+                    {t('evalution.panel.add')}
+                </Button>
+            </div>
+        )
+    }, [editable, t])
+
     return (
         <div>
             {/* eval info button with minize/edit action */}
@@ -164,7 +185,7 @@ function EvalSelectList({
                     <GridTable
                         queryable={false}
                         columnable
-                        removable
+                        removable={editable}
                         compareable={false}
                         paginationable={false}
                         // @ts-ignore
@@ -175,8 +196,10 @@ function EvalSelectList({
                             const renew = (prev: EvalSelectDataT) => {
                                 const n = { ...prev }
                                 Object.entries(n).forEach(([key, item]) => {
-                                    if (item.rowSelectedIds.includes(id)) {
-                                        item.rowSelectedIds.splice(item.rowSelectedIds.indexOf(id), 1)
+                                    const index = item.rowSelectedIds.indexOf(id)
+                                    const ids = [...item.rowSelectedIds]
+                                    if (index >= 0) {
+                                        ids.splice(index, 1)
                                         const filter = item.records.filter((record) => record.id.value !== id) ?? []
                                         if (filter.length === 0) {
                                             // @ts-ignore
@@ -185,6 +208,8 @@ function EvalSelectList({
                                             // eslint-disable-next-line no-param-reassign
                                             item.records = filter
                                         }
+                                        // eslint-disable-next-line no-param-reassign
+                                        item.rowSelectedIds = ids
                                     }
                                 })
                                 return _.pickBy(n, _.identity)
@@ -196,11 +221,7 @@ function EvalSelectList({
                     >
                         <div className='flex gap-20px justify-end'>
                             <ToolBar columnable viewable={false} queryable={false} />
-                            <div className='flex pb-8px'>
-                                <Button kind='tertiary' onClick={() => setIsAddOpen(true)}>
-                                    {t('evalution.panel.add')}
-                                </Button>
-                            </div>
+                            {AddButton}
                         </div>
                     </GridTable>
                     <Modal

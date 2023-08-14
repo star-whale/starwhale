@@ -29,10 +29,11 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                     }
 
                     return {
-                        ...(initState as any),
                         isInit: false,
+                        mode: 'edit',
+                        ...(initState as any),
                         key: name,
-                        time: 0,
+                        isEditable: () => get().editable,
                         onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
                             update(
                                 produce((state: WidgetStoreState) => {

@@ -31,9 +31,7 @@ export function withProject(EditorApp: React.FC) {
 const empty = {}
 
 export function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
-    return function EditorContexted(
-        props: EditorAppPropsT & { dynamicVars?: any; onStateChange?: (state: WidgetStateT) => void }
-    ) {
+    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const state = useMemo(() => tranformState(rawState) as WidgetStateT, [])
         const store = useRef<StoreType>()
         const value = useMemo(() => {
