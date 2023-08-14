@@ -145,7 +145,7 @@ torch==1.13.1
 torchaudio==0.13.1
 torchmetrics==0.6.0
 torchvision==0.14.1
-tornado==6.2
+tornado==6.3.3
 tqdm==4.64.1
 transformers==4.26.1
 typing-inspect==0.8.0
