@@ -253,7 +253,9 @@ class Handler(ASDictMixin):
                         sig = inspect.signature(func)
                         for idx, (p_name, _p) in enumerate(sig.parameters.items()):
                             if (
-                                idx == 0 and args and inspect.ismethod(func.__name__)
+                                idx == 0
+                                and args
+                                and hasattr(getattr(args[0], func.__name__), "__call__")
                             ):  # if the first argument has a function with the same name it is considered as self
                                 continue
                             required = _p.default is inspect._empty or (
@@ -271,7 +273,11 @@ class Handler(ASDictMixin):
                         hargs, _, _ = parser.parse_args(handler_args)
 
                         for idx, (p_name, _p) in enumerate(sig.parameters.items()):
-                            if idx == 0 and args and inspect.ismethod(func.__name__):
+                            if (
+                                idx == 0
+                                and args
+                                and hasattr(getattr(args[0], func.__name__), "__call__")
+                            ):
                                 continue
                             parsed_args = {
                                 p_name: fetch_real_args(
