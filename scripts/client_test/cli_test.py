@@ -533,6 +533,8 @@ class TestCli:
         assert set(ctx_handle_info["basic"]["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
+            "src.evaluator:f",
+            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
         }, ctx_handle_info["basic"]["handlers"]
@@ -541,6 +543,8 @@ class TestCli:
         assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
+            "src.evaluator:f",
+            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
         }, ctx_handle_no_modules_info["basic"]["handlers"]
