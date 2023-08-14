@@ -44,7 +44,7 @@ export default function useRestoreState<T>(store: StoreType, initialState: T, dy
                 _.set(data.widgets, id, origin)
             })
 
-            store.setState(data)
+            store.getState().setRawConfigs(data)
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error(e)

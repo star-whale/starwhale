@@ -14,6 +14,8 @@ function arrayOverride(objValue: any, srcValue: any) {
     }
 }
 
+const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
+
 export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
     console.log('store init')
     const name = 'widgets'
@@ -30,10 +32,19 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
 
                     return {
                         isInit: false,
-                        mode: 'edit',
                         ...(initState as any),
                         key: name,
                         isEditable: () => get().editable,
+                        getRawConfigs: () => _.pick(get(), SYNCKESY),
+                        setRawConfigs: (configs: any) => {
+                            set(
+                                {
+                                    ..._.pick(configs, SYNCKESY),
+                                },
+                                undefined,
+                                'setRawConfigs'
+                            )
+                        },
                         onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
                             update(
                                 produce((state: WidgetStoreState) => {

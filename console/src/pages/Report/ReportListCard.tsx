@@ -94,9 +94,10 @@ export default function ReportListCard() {
                         </Copy>
                     </div>
                 </Tooltip>
-
                 <Tooltip content={t('Delete')} showArrow placement='top'>
-                    <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
+                    <div>
+                        <Button as='link' icon='delete' onClick={() => handleDelete(report.id, report.title)} />
+                    </div>
                 </Tooltip>
             </div>,
         ]
