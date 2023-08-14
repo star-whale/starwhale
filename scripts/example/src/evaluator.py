@@ -6,7 +6,19 @@ from functools import wraps
 
 import numpy
 
-from starwhale import Text, Image, Context, evaluation, multi_classification
+from starwhale import (
+    Text,
+    Image,
+    evaluation, multi_classification,
+    Context,
+    Dataset,
+    handler,
+    IntInput,
+    ListInput,
+    HandlerInput,
+    ContextInput,
+    DatasetInput,
+)
 from starwhale.utils import in_container
 
 
@@ -68,3 +80,47 @@ def evaluate(ppl_result: t.Iterator):
         result.append(_data["output/txt"])
         pr.append(_data["output/value"])
     return label, result, pr
+
+
+class MyInput(HandlerInput):
+    def parse(self, user_input):
+
+        return f"MyInput {user_input}"
+
+
+class X:
+    def __init__(self) -> None:
+        self.a = 1
+
+    @handler()
+    def f(
+        self,
+        x=ListInput(IntInput),
+        y=2,
+        mi=MyInput(),
+        ds=DatasetInput(required=True),
+        ctx=ContextInput(),
+    ):
+        assert self.a + x[0] == 3
+        assert self.a + x[1] == 2
+        assert y == 2
+        assert mi == "MyInput blab-la"
+        assert isinstance(ds, Dataset)
+        assert isinstance(ctx, Context)
+
+
+@handler()
+def f(
+    x=ListInput(IntInput()),
+    y=2,
+    mi=MyInput(),
+    ds=DatasetInput(required=True),
+    ctx=ContextInput(),
+):
+    assert x[0] == 2
+    assert x[1] == 1
+    assert y == 2
+    assert mi == "MyInput blab-la"
+
+    assert isinstance(ds, Dataset)
+    assert isinstance(ctx, Context)

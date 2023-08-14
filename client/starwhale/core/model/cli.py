@@ -530,7 +530,7 @@ def _recover(model: str, force: bool) -> None:
     help="[ONLY STANDALONE]Forbid to use packaged runtime in the model",
     hidden=True,
 )
-@click.argument("handlerargs", nargs=-1)
+@click.argument("handler_args", nargs=-1)
 def _run(
     workdir: str,
     uri: str,
@@ -550,7 +550,7 @@ def _run(
     forbid_packaged_runtime: bool,
     forbid_snapshot: bool,
     cleanup_snapshot: bool,
-    handlerargs: t.Tuple[str],
+    handler_args: t.Tuple[str],
 ) -> None:
     """Run Model.
     Model Package and the model source directory are supported.
@@ -577,7 +577,7 @@ def _run(
 
         \b
         # --> run with the args defined in your handler
-        swcli model run --workdir . --module mnist.evaluator --handler 1 -- --a=1 --b 3 --a 4 --d dataset/version/latest
+        swcli model run --workdir . --module mnist.evaluator --handler 1 -- --your-a=1 -b 3 --your-a 4 -d dataset/version/latest
     """
     # TODO: support run model in cluster mode
     run_project_uri = Project(run_project)
@@ -643,7 +643,7 @@ def _run(
                 "task_num": override_task_num,
             },
             force_generate_jobs_yaml=uri is None,
-            handlerargs=list(handlerargs) if handlerargs else [],
+            handler_args=list(handler_args) if handler_args else [],
         )
 
 

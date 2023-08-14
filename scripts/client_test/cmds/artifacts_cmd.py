@@ -67,6 +67,7 @@ class Model(BaseArtifact):
         dataset_uris: t.List[str],
         runtime_uri: t.Optional[Resource],
         run_handler: str,
+        handler_args: t.List[str] | None = None,
     ) -> str:
         version = gen_uniq_version()
         cmd = [
@@ -87,6 +88,10 @@ class Model(BaseArtifact):
 
         if runtime_uri:
             cmd += ["--runtime", str(runtime_uri)]
+
+        if handler_args:
+            cmd += ["--"]
+            cmd += handler_args
 
         check_invoke(cmd, log=True)
         return version

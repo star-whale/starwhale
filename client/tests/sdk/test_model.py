@@ -121,7 +121,7 @@ class ModelBuildTestCase(BaseTestCase):
         )
 
     @patch("starwhale.utils.load.check_python_interpreter_consistency")
-    def test_build_in_cycle_call(self, m_check_python: MagicMock) -> None:
+    def test_built_in_cycle_call(self, m_check_python: MagicMock) -> None:
         m_check_python.return_value = [True, None, None]
         workdir = Path(self.local_storage) / "user" / "workdir"
         ensure_file(workdir / "__init__.py", "", parents=True)

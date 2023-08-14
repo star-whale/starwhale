@@ -57,5 +57,5 @@ def _register_ft(
         replicas=1,
         needs=needs,
         require_dataset=True,
-        build_in=True,
+        built_in=True,
     )(func)

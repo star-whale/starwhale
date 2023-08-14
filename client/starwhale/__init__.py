@@ -5,9 +5,9 @@ from starwhale.api.job import (
     BoolInput,
     ListInput,
     FloatInput,
-    HanderInput,
     ContextInput,
     DatasetInput,
+    HandlerInput,
 )
 from starwhale.version import STARWHALE_VERSION as __version__
 from starwhale.api.metric import multi_classification
@@ -69,7 +69,7 @@ __all__ = [
     "Line",
     "Point",
     "DatasetInput",
-    "HanderInput",
+    "HandlerInput",
     "ListInput",
     "BoolInput",
     "IntInput",

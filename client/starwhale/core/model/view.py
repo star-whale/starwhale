@@ -239,7 +239,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
         forbid_snapshot: bool = False,
         cleanup_snapshot: bool = True,
         force_generate_jobs_yaml: bool = False,
-        handlerargs: t.List[str] = [],
+        handler_args: t.List[str] | None = None,
     ) -> None:
         if runtime_uri:
             RuntimeProcess(uri=runtime_uri).run()
@@ -255,7 +255,7 @@ class ModelTermView(BaseTermView, TagViewMixin):
                 forbid_snapshot=forbid_snapshot,
                 cleanup_snapshot=cleanup_snapshot,
                 force_generate_jobs_yaml=force_generate_jobs_yaml,
-                handlerargs=handlerargs,
+                handler_args=handler_args or [],
             )
 
     @classmethod

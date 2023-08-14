@@ -1202,12 +1202,12 @@ from starwhale import (
     handler,
     IntInput,
     ListInput,
-    HanderInput,
+    HandlerInput,
     ContextInput,
     DatasetInput,
 )
 
-class MyInput(HanderInput):
+class MyInput(HandlerInput):
     def parse(self, user_input):
 
         return f"MyInput {user_input}"
@@ -1349,7 +1349,7 @@ def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True
             context=context,
             workdir=self.workdir,
             step=steps[0],
-            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+            handler_args=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
         )
         result = task.execute()
         assert result.status == "success"
@@ -1364,7 +1364,7 @@ def f(x=ListInput(IntInput()), y=2, mi=MyInput(),  ds=DatasetInput(required=True
             context=context,
             workdir=self.workdir,
             step=steps[0],
-            handlerargs=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
+            handler_args=["--x", "2", "-x", "1", "--ds", "mnist", "-mi=blab-la"],
         )
         result = task.execute()
         assert result.status == "success"
