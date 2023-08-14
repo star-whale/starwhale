@@ -36,10 +36,7 @@ export default function ReportListCard() {
     }
 
     const renderRow = (report: IReportSchema) => {
-        return [
-            <TextLink key='title' to={`/projects/${projectId}/reports/${report.id}`} style={{ maxWidth: '300px' }}>
-                {report.title}
-            </TextLink>,
+        const Share = (
             <Toggle
                 key='shared'
                 value={report.shared}
@@ -52,7 +49,25 @@ export default function ReportListCard() {
                         toaster.negative(t('dataset.overview.shared.fail'))
                     }
                 }}
-            />,
+            />
+        )
+        return [
+            <TextLink key='title' to={`/projects/${projectId}/reports/${report.id}`} style={{ maxWidth: '300px' }}>
+                {report.title}
+            </TextLink>,
+            !report.shared ? (
+                <Copy
+                    key='shared'
+                    text={`${window.location.origin}/simple/report/preview/?rid=${report.uuid}`}
+                    onCopy={() => {
+                        toaster.positive(t('Copied'), { autoHideDuration: 1000 })
+                    }}
+                >
+                    <div>{Share}</div>
+                </Copy>
+            ) : (
+                Share
+            ),
             <Text key='desc' style={{ maxWidth: '300px' }}>
                 {report.description}
             </Text>,
