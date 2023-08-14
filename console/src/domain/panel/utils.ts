@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import _ from 'lodash'
-import { WidgetStoreState, WidgetTreeNode } from '@starwhale/core'
+import { WidgetStateT, WidgetTreeNode } from '@starwhale/core'
 
 interface IPanel {
     title: string
@@ -109,7 +109,7 @@ function getChart(chart: IChart | IPanel): Chart | undefined {
     return undefined
 }
 
-export function tryParseSimplified(content: any): WidgetStoreState | undefined {
+export function tryParseSimplified(content: any): WidgetStateT | undefined {
     const data = content as ILayouts
     if (!data || !('layouts' in data)) {
         return undefined
