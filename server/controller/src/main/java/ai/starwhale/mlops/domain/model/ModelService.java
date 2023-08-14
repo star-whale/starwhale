@@ -315,6 +315,12 @@ public class ModelService {
         return ModelInfoVo.builder()
                 .id(idConvertor.convert(model.getId()))
                 .name(model.getModelName())
+                .versionId(idConvertor.convert(version.getId()))
+                .versionAlias(versionAliasConvertor.convert(version.getVersionOrder()))
+                .versionName(version.getVersionName())
+                .versionTag(version.getVersionTag())
+                .createdTime(version.getCreatedTime().getTime())
+                .shared(toInt(version.getShared()))
                 .versionInfo(versionConvertor.convert(version, version, tags.get(version.getId())))
                 .build();
     }
