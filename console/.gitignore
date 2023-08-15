@@ -1,2 +1,3 @@
 node_modules/
 console/extensions
+**/console/extensions
