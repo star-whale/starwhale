@@ -64,6 +64,7 @@ export const CONFIG: WidgetConfig = {
         title: '',
         isExpaned: true,
         isEvaluationList: false,
+        isEvaluationListShow: false,
         evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
         layoutConfig: {
             padding: 20,
@@ -89,7 +90,14 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const { optionConfig, children, eventBus, type } = props
 
     // @ts-ignore
-    const { isExpaned = false, layoutConfig, layout, isEvaluationList, evalSelectData } = optionConfig as Option
+    const {
+        isExpaned = false,
+        layoutConfig,
+        layout,
+        isEvaluationList,
+        evalSelectData,
+        isEvaluationListShow,
+    } = optionConfig as Option
     const [isDragging, setIsDragging] = useState(false)
 
     const len = children ? React.Children.count(children) : 0
@@ -124,6 +132,11 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
     const handleSelectDataChange = (data: any) => {
         props.onOptionChange?.({
             evalSelectData: data,
+        })
+    }
+    const handleEvaluationListShowChange = (editing: boolean) => {
+        props.onOptionChange?.({
+            isEvaluationListShow: editing,
         })
     }
     const handleExpanded = (expanded: boolean) => {
@@ -308,7 +321,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </div>
                 {isEvaluationList && (
                     <div className='mx-20px'>
-                        <EvalSelectList value={evalSelectData} onSelectDataChange={handleSelectDataChange} />
+                        <EvalSelectList
+                            editing={isEvaluationListShow}
+                            onEditingChange={handleEvaluationListShowChange}
+                            value={evalSelectData}
+                            onSelectDataChange={handleSelectDataChange}
+                        />
                     </div>
                 )}
             </SectionAccordionPanel>
