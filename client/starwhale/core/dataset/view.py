@@ -317,6 +317,7 @@ class DatasetTermViewRich(DatasetTermView):
             "tags": lambda x: ",".join(x),
             "size": lambda x: pretty_bytes(x),
             "runtime": cls.place_holder_for_empty(),
+            "rows": lambda x: str(x),
         }
 
         cls.print_header()

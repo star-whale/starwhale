@@ -42,7 +42,8 @@ _urllib3.disable_warnings(_urllib3.exceptions.InsecureRequestWarning)
 
 
 class CloudRequestMixed:
-    def fmt_timestamp(self, ts: t.Union[float, str]) -> str:
+    @classmethod
+    def fmt_timestamp(cls, ts: t.Union[float, str]) -> str:
         return datetime.fromtimestamp(float(ts) / 1000.0).strftime(FMT_DATETIME).strip()
 
     def fmt_duration(self, ts: t.Union[float, str]) -> str:
@@ -191,6 +192,15 @@ class CloudRequestMixed:
             total=_d["total"],
             current=_d["size"],
             remain=_d["total"] - _d["size"],
+            page={
+                "page_num": _d["pageNum"],
+                "page_size": _d["pageSize"],
+                "pages": _d["pages"],
+                "pre_page": _d["prePage"],
+                "next_page": _d["nextPage"],
+                "has_pre_page": _d["hasPreviousPage"],
+                "has_next_page": _d["hasNextPage"],
+            },
         )
 
     def _fetch_bundle_info(
@@ -269,30 +279,48 @@ class CloudRequestMixed:
         filter_dict = filter_dict or {}
         _params = {"pageNum": page, "pageSize": size}
         _params.update(filter_dict)
-        r = self.do_http_request(
+        resp = self.do_http_request(
             f"/project/{project_uri.name}/{uri_typ.value}",
             params=_params,
             instance=project_uri.instance,
-        ).json()
-        objects = {}
+        )
+        resp.raise_for_status()
+        r = resp.json()
 
-        _page = page
-        _size = size
-        if filter_dict.get("latest") is not None:
-            _page = 1
-            _size = 1
+        bundles_map = dict()
+        for d in r["data"]["list"]:
+            _v = d["version"]
+            tags = [_v["alias"]]
+            if _v["latest"]:
+                tags.append("latest")
+            if _v["tags"]:
+                tags.extend(_v["tags"])
 
-        for o in r["data"]["list"]:
-            _name = f"[{o['id']}] {o['name']}"
-            objects[_name] = self._fetch_bundle_history(
-                name=o["id"],
-                project_uri=project_uri,
-                typ=uri_typ,
-                page=_page,
-                size=_size,
-            )[0]
+            bundles_map[d["name"]] = {
+                "id": d["id"],
+                "name": d["name"],
+                "version": _v["name"],
+                CREATED_AT_KEY: self.fmt_timestamp(_v["createdTime"]),
+                "tags": tags,
+                "is_removed": False,
+            }
+            # TODO: make a better meta ingest
+            if "meta" in _v:
+                _meta = yaml.safe_load(_v["meta"])
+                # for dataset meta
+                if "dataset_summary" in _meta:
+                    bundles_map[d["name"]]["rows"] = _meta["dataset_summary"].get(
+                        "rows"
+                    )
+                # for runtime meta
+                if "environment" in _meta:
+                    bundles_map[d["name"]]["mode"] = _meta["environment"]["mode"]
+                    bundles_map[d["name"]]["python"] = _meta["environment"]["python"]
 
-        return objects, self.parse_pager(r)
+            if "size" in _v and _v["size"] is not None:
+                bundles_map[d["name"]]["size"] = _v["size"]
+
+        return bundles_map, self.parse_pager(r)
 
     def get_bundle_size_from_resp(self, typ: ResourceType, item: t.Dict) -> int:
         default_size = 0
