@@ -99,7 +99,7 @@ export default function WidgetFormModal({
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editWidgetId])
+    }, [editWidgetId, config])
 
     return (
         <Modal

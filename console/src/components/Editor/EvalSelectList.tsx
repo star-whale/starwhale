@@ -162,7 +162,7 @@ function EvalSelectList({
                 count={count}
                 editing={editing}
                 toggle={() => {
-                    onEditingChange(!editing)
+                    onEditingChange?.(!editing)
                 }}
             />
 

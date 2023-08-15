@@ -85,6 +85,27 @@ function EvalProjectList({
         })
     })
 
+    const handleCurrentViewChange = useEventCallback((state: ITableState) => {
+        const ids = state.rowSelectedIds
+        const rows = ids.map((id) => records.find((r) => r.id?.value === id)).filter(Boolean)
+        if (!projectId) return
+        if (!rows.length) {
+            onSelectedDataRemove(projectId)
+            return
+        }
+        onSelectedDataChange({
+            [projectId]: {
+                projectId,
+                project,
+                rowSelectedIds: ids,
+                currentView: state.currentView,
+                summaryTableName,
+                records: rows,
+                columnTypes,
+            } as any,
+        })
+    })
+
     // init store with initial state
     useEffect(() => {
         initStore(initialSelectData[projectId])
@@ -94,7 +115,7 @@ function EvalProjectList({
         <GridCombineTable
             paginationable
             queryable
-            columnable
+            // columnable
             compareable={false}
             page={page}
             onPageChange={setPage}
@@ -103,6 +124,7 @@ function EvalProjectList({
             columnTypes={columnTypes}
             columns={$columns}
             onRowSelectedChange={handelRowSelectedChange}
+            onCurrentViewChange={handleCurrentViewChange}
         />
     )
 }

@@ -40,6 +40,7 @@ export interface ITableProps extends IToolBarProps, IPaginationProps {
     onColumnSave?: (props: any) => void
     onColumnsChange?: (props: any) => void
     onViewsChange?: (state: any, nextState: any) => void
+    currentView?: any
     onCurrentViewChange?: (state: any, nextState: any) => void
     onSelectionChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (index: number) => void

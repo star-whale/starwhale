@@ -72,15 +72,12 @@ class WidgetFormModel implements WidgetFieldConfig {
     }
 
     addDataTableNamesField(tables?: any[]) {
-        if (!tables) return this
         const field = tableNameField(tables, this.widget?.config?.fieldConfig?.schema)
         this.addField(field)
         return this
     }
 
     addDataTableColumnsField(columnTypes?: ColumnSchemaDesc[]) {
-        if (!columnTypes) return this
-
         const { schema, uiSchema = {} } = this.widget?.config?.fieldConfig ?? {}
         Object.keys(uiSchema).forEach((property) => {
             if (uiSchema[property]?.[UI_DATA_KEY] === UI_DATA.DataTableColumns) {

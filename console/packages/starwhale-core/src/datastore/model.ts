@@ -23,6 +23,7 @@ export class SwType implements ISwType {
         return value
     }
     static decode_schema(schema: any, onlyValue = true): any {
+        if (!schema) return {}
         if (schema.type === 'MAP') {
             const t = new SwMapType(schema.value)
             return {

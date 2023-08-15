@@ -4,7 +4,7 @@ import { WidgetConfig, WidgetGroupType, WidgetRendererProps } from '@starwhale/c
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { UI_DATA } from '@starwhale/core/form/schemas/fields'
 import { getBarChartConfig } from '@starwhale/ui/Plotly/utils'
-import { decordRecords, getTableShortName } from '@starwhale/core/datastore'
+import { decordRecords } from '@starwhale/core/datastore'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
@@ -13,6 +13,9 @@ export const CONFIG: WidgetConfig = {
     group: WidgetGroupType.PANEL,
     name: 'Bar Chart',
     fieldConfig: {
+        data: {
+            labels: ['sys/model_name'],
+        },
         schema: {
             /**
              * framework define field
@@ -25,24 +28,25 @@ export const CONFIG: WidgetConfig = {
                  */
                 type: 'array',
             },
-            x: {
-                title: 'X',
-                type: 'string',
+            labels: {
+                title: 'Label',
+                type: 'array',
             },
-            y: {
-                title: 'Y',
-                type: 'string',
+            metrics: {
+                title: 'Metrics',
+                type: 'array',
             },
         },
         uiSchema: {
-            x: {
+            labels: {
                 /**
                  * framework define field uiSchema
                  * 1. UI_DATA.DataTableColumns will auto fill this field by columnTypes
                  */
                 'ui:data': UI_DATA.DataTableColumns,
+                // 'ui:emptyValue': ['sys/model_name'],
             },
-            y: {
+            metrics: {
                 'ui:data': UI_DATA.DataTableColumns,
             },
         },
@@ -53,29 +57,38 @@ function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
     const { fieldConfig, data = {} } = props
     const { getTableRecordMap } = data
     const { data: formData } = fieldConfig ?? {}
-    const { chartTitle: title, x: xattr, y: yattr } = formData ?? {}
+    const { chartTitle: title, labels: xattr = [], metrics: yattr = [] } = formData ?? {}
 
     const m = getTableRecordMap()
+    const barData: { x: any[]; y: any[]; type: string; name: string }[] = []
 
-    const barData = Object.entries(m).map(([k, records]) => {
-        const x: number[] = []
-        const y: number[] = []
+    Object.entries(m).forEach(([, records]) => {
         if (records)
             decordRecords(records as any).forEach((item: any) => {
-                const xnum = item?.[xattr]
-                const ynum = item?.[yattr]
-                if (xnum && !Number.isNaN(xnum)) x.push(Number(xnum))
-                if (ynum && !Number.isNaN(ynum)) y.push(Number(ynum))
+                const x: any[] = []
+                const y: any[] = []
+                const names: string[] = []
+
+                Array.from(yattr).forEach((_y: string) => {
+                    x.push(_y)
+                    y.push(item?.[_y])
+                })
+
+                Array.from(xattr).forEach((_x: string) => {
+                    names.push(item?.[_x])
+                })
+
+                //  getTableShortName(k)]
+                barData.push({
+                    x,
+                    y,
+                    type: 'bar',
+                    name: names.join(' '),
+                })
             })
-        return {
-            x,
-            y,
-            type: 'bar',
-            name: getTableShortName(k),
-        }
     })
 
-    const vizData = getBarChartConfig(title, { x: xattr, y: yattr }, barData as any)
+    const vizData = getBarChartConfig(title, {}, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>
