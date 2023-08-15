@@ -1,0 +1,11 @@
+api_version: 1.1
+dependencies:
+  - pip:
+      - starwhale>=0.5.0
+  - requirements.txt
+environment:
+  arch: noarch
+  os: ubuntu:20.04
+  cuda: 11.7
+mode: venv
+name: SDv1-4

@@ -1,0 +1,5 @@
+data/*
+venv/*
+cache/*
+sd-model-finetuned-lora/*
+sd-pokemon-model-lora/*
