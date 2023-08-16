@@ -8,6 +8,7 @@ import { useDatastoreSummaryColumns } from '@starwhale/ui/GridDatastoreTable/hoo
 import GridCombineTable from '@starwhale/ui/GridTable/GridCombineTable'
 import { useEventCallback } from '@starwhale/core'
 import { IProjectSchema } from '@/domain/project/schemas/project'
+import usePrevious from '@starwhale/ui/utils/usePrevious'
 
 const selector = (s: ITableState) => ({
     rowSelectedIds: s.rowSelectedIds,
@@ -38,10 +39,12 @@ function EvalProjectList({
     initialSelectData,
     projectId,
     project,
+    selectData,
     onSelectedDataChange,
     onSelectedDataRemove,
 }: {
     initialSelectData?: EvalSelectDataT
+    selectData: EvalSelectDataT
     projectId: string
     project?: IProjectSchema
     onSelectedDataChange: (data: EvalSelectDataT) => void
@@ -107,9 +110,11 @@ function EvalProjectList({
     })
 
     // init store with initial state
+    const prevId = usePrevious(projectId)
     useEffect(() => {
-        if (initialSelectData) initStore(initialSelectData[projectId])
-    }, [projectId, initStore, initialSelectData])
+        if (prevId === projectId) return
+        initStore(selectData[projectId] || initialSelectData?.[projectId])
+    }, [projectId, initStore, initialSelectData, selectData, prevId])
 
     return (
         <GridCombineTable
@@ -131,6 +136,7 @@ function EvalProjectList({
 
 const EvalSelectForm = React.forwardRef(
     (
+        // eslint-disable-next-line
         { initialSelectData }: { initialSelectData?: EvalSelectDataT },
         ref: MutableRefObject<
             | {
@@ -167,6 +173,7 @@ const EvalSelectForm = React.forwardRef(
                 <div className='h-380px w-full'>
                     <EvalProjectList
                         initialSelectData={initialSelectData}
+                        selectData={selectData}
                         projectId={projectId}
                         project={projectItem}
                         onSelectedDataRemove={(pid) => {

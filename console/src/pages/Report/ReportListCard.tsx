@@ -68,7 +68,7 @@ export default function ReportListCard() {
             ) : (
                 Share
             ),
-            <Text key='desc' style={{ maxWidth: '300px' }}>
+            <Text key='desc' style={{ maxWidth: '300px' }} tooltip={report.description}>
                 {report.description}
             </Text>,
             report.owner.name,

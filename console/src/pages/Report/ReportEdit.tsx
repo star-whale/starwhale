@@ -61,12 +61,11 @@ export default function ReportEdit() {
 
         if (!rid)
             save().then(() => {
-                // history.push(`/projects/${projectId}/reports`)
-                toaster.negative(t('report.publist.publised'), { autoHideDuration: 2000 })
+                toaster.positive(t('report.publist.publised'), { autoHideDuration: 2000 })
             })
         else
             update().then(() => {
-                toaster.negative(t('report.publist.publised'), { autoHideDuration: 2000 })
+                toaster.positive(t('report.publist.publised'), { autoHideDuration: 2000 })
             })
     }, [projectId, t, rid, title, description, content])
 
