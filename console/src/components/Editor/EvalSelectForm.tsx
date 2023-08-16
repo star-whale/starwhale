@@ -41,7 +41,7 @@ function EvalProjectList({
     onSelectedDataChange,
     onSelectedDataRemove,
 }: {
-    initialSelectData: EvalSelectDataT
+    initialSelectData?: EvalSelectDataT
     projectId: string
     project?: IProjectSchema
     onSelectedDataChange: (data: EvalSelectDataT) => void
@@ -108,7 +108,7 @@ function EvalProjectList({
 
     // init store with initial state
     useEffect(() => {
-        initStore(initialSelectData[projectId])
+        if (initialSelectData) initStore(initialSelectData[projectId])
     }, [projectId, initStore, initialSelectData])
 
     return (
@@ -131,7 +131,7 @@ function EvalProjectList({
 
 const EvalSelectForm = React.forwardRef(
     (
-        { initialSelectData }: { initialSelectData: EvalSelectDataT },
+        { initialSelectData }: { initialSelectData?: EvalSelectDataT },
         ref: MutableRefObject<
             | {
                   getData: () => EvalSelectDataT

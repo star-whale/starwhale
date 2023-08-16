@@ -84,9 +84,10 @@ function EvalSelectList({
     onSelectDataChange?: (data: EvalSelectDataT) => void
 }) {
     const [isAddOpen, setIsAddOpen] = React.useState(false)
-    const [selectData, setSelectData] = React.useState<EvalSelectDataT>(value ?? {})
     const ref = React.useRef<{ getData: () => EvalSelectDataT }>()
     const [t] = useTranslation()
+
+    const selectData = value
 
     const values = React.useMemo(() => {
         return Object.values(selectData ?? {})
@@ -208,17 +209,15 @@ function EvalSelectList({
                                             // @ts-ignore
                                             n[key] = undefined
                                         } else {
-                                            // eslint-disable-next-line no-param-reassign
-                                            item.records = filter
+                                            n[key] = { ...n[key] }
+                                            n[key].rowSelectedIds = ids
+                                            n[key].records = filter
                                         }
-                                        // eslint-disable-next-line no-param-reassign
-                                        item.rowSelectedIds = ids
                                     }
                                 })
                                 return _.pickBy(n, _.identity)
                             }
-                            const next = renew(selectData)
-                            setSelectData(next)
+                            const next = renew(selectData || {})
                             onSelectDataChange?.(next)
                         }}
                     >
@@ -250,7 +249,7 @@ function EvalSelectList({
                                         setIsAddOpen(false)
                                     }}
                                 >
-                                    {t('Done')}
+                                    {t('Cancel')}
                                 </Button>
                                 &nbsp;&nbsp;
                                 <Button
@@ -264,11 +263,11 @@ function EvalSelectList({
                                             },
                                             _.identity
                                         )
-                                        setSelectData(renew)
                                         onSelectDataChange?.(renew)
+                                        setIsAddOpen(false)
                                     }}
                                 >
-                                    {t('Confirm')}
+                                    {t('add')}
                                 </Button>
                             </div>
                         </ModalFooter>

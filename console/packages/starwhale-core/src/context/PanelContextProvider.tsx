@@ -16,7 +16,6 @@ export const PanelContext: Context<PanelContextType> = createContext({} as Panel
 export const usePanelContext = () => useContext(PanelContext)
 export const usePanelDatastore = () => {
     const { evalSelectData } = useContext(PanelContext)
-    console.log(evalSelectData, useContext(PanelContext))
     return {
         // eslint-disable-next-line
         getTableRecordMap() {

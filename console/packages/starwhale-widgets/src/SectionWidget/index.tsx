@@ -192,7 +192,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         })
     }
 
-    const handelChartDeletePanel = ({ id }) => {
+    const handelChartDeletePanel = (id: string) => {
         api.onWidgetDelete(id)
     }
 

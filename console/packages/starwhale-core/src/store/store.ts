@@ -12,6 +12,9 @@ function arrayOverride(objValue: any, srcValue: any) {
     if (_.isArray(objValue)) {
         return srcValue
     }
+    if (_.isObject(objValue)) {
+        return srcValue
+    }
 }
 
 const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
@@ -63,7 +66,7 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                                 produce((state: WidgetStoreState) => {
                                     const rawConfig = _.merge({}, _.get(get(), paths))
                                     _.set(state, paths, _.mergeWith(rawConfig, config, arrayOverride))
-                                    // console.log('onConfigChange', get(), paths, config)
+                                    console.log('onConfigChange', _.mergeWith(rawConfig, config, arrayOverride))
                                 }),
                                 'onConfigChange'
                             ),

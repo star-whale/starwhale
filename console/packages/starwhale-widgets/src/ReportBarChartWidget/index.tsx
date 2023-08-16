@@ -62,29 +62,29 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
     const barData: { x: any[]; y: any[]; type: string; name: string }[] = []
 
     Object.entries(m).forEach(([, records]) => {
-        if (records)
-            decordRecords(records as any).forEach((item: any) => {
-                const x: any[] = []
-                const y: any[] = []
-                const names: string[] = []
+        if (!records) return
+        decordRecords(records as any).forEach((item: any) => {
+            const x: any[] = []
+            const y: any[] = []
+            const names: string[] = []
 
-                Array.from(yattr).forEach((_y: string) => {
-                    x.push(_y)
-                    y.push(item?.[_y])
-                })
-
-                Array.from(xattr).forEach((_x: string) => {
-                    names.push(item?.[_x])
-                })
-
-                //  getTableShortName(k)]
-                barData.push({
-                    x,
-                    y,
-                    type: 'bar',
-                    name: names.join(' '),
-                })
+            Array.from(yattr).forEach((_y: string) => {
+                x.push(_y)
+                y.push(item?.[_y])
             })
+
+            Array.from(xattr).forEach((_x: string) => {
+                names.push(item?.[_x])
+            })
+
+            //  getTableShortName(k)]
+            barData.push({
+                x,
+                y,
+                type: 'bar',
+                name: names.join(' '),
+            })
+        })
     })
 
     const vizData = getBarChartConfig(title, {}, barData as any)
