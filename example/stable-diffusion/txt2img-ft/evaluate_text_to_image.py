@@ -43,8 +43,8 @@ class StableDiffusion(PipelineHandler):
             # load attention processors
             self.pipe.unet.load_attn_procs(_ft_model_path)
 
-    def predict(self, content: Text) -> t.Any:
-        return self.pipe(content).images[0]
+    def predict(self, data: t.Dict[str, Text]) -> t.Any:
+        return self.pipe(data["text"].content).images[0]
 
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
         return ppl_result
