@@ -19,9 +19,90 @@ package ai.starwhale.mlops.domain.job.spec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class StepSpecTest {
+
+    @Test
+    public void testNoArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setExtraCmdArgs("--a 123 --b dads");
+        spec.verifyStepSpecArgs();
+    }
+
+    @Test
+    public void testRequiredArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "true")
+        ));
+        spec.setExtraCmdArgs("");
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            spec.verifyStepSpecArgs();
+        });
+    }
+
+    @Test
+    public void testNonRequiredArgs() {
+
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "false")
+        ));
+        spec.setExtraCmdArgs("--a dads");
+        spec.verifyStepSpecArgs();
+    }
+
+    @Test
+    public void testExtraRequiredArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "true")
+        ));
+        spec.setExtraCmdArgs("--a 123 --b dads");
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            spec.verifyStepSpecArgs();
+        });
+    }
+
+    @Test
+    public void testMalformedArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "false")
+        ));
+        spec.setExtraCmdArgs("-casdaf");
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            spec.verifyStepSpecArgs();
+        });
+    }
+
+    @Test
+    public void testMultipleArgs() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "false", "multiple", "true")
+        ));
+        spec.setExtraCmdArgs("--a=1 -a=2 a=3");
+        spec.verifyStepSpecArgs();
+    }
+
+    @Test
+    public void testOptionWithoutArgument() {
+        StepSpec spec = new StepSpec();
+        spec.setParametersSig(List.of(
+                Map.of("name", "a", "required", "true")
+        ));
+        spec.setExtraCmdArgs("--a");
+        Assertions.assertThrows(SwValidationException.class, () -> {
+            spec.verifyStepSpecArgs();
+        });
+    }
+
     @Test
     public void testFriendlyName() {
         var stepSpec = StepSpec.builder()

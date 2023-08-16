@@ -224,6 +224,7 @@ class TestCli:
         model_uri: Resource,
         run_handler: str,
         runtime_uris: t.Optional[t.List[Resource | None]] = None,
+        handler_args: t.List[str] | None = None,
     ) -> t.List[str]:
         logger.info("running evaluation at local...")
         self.select_local_instance()
@@ -235,6 +236,7 @@ class TestCli:
                 dataset_uris=[_ds_uri.full_uri for _ds_uri in dataset_uris],
                 runtime_uri=runtime_uri,
                 run_handler=run_handler,
+                handler_args=handler_args,
             )
             assert job_id
             assert len(self.job_api.list())
@@ -327,6 +329,20 @@ class TestCli:
             dataset_uris=[dataset_uri],
             model_uri=model_uri,
             run_handler=run_handler,
+        )
+
+        self.run_model_in_standalone(
+            dataset_uris=[],
+            model_uri=model_uri,
+            run_handler="src.evaluator:f",
+            handler_args=["--x", "2", "-x", "1", "--ds", "simple", "-mi=blab-la"],
+        )
+
+        self.run_model_in_standalone(
+            dataset_uris=[],
+            model_uri=model_uri,
+            run_handler="src.evaluator:X.f",
+            handler_args=["--x", "2", "-x", "1", "--ds", "simple", "-mi=blab-la"],
         )
 
         futures = [
@@ -517,6 +533,8 @@ class TestCli:
         assert set(ctx_handle_info["basic"]["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
+            "src.evaluator:f",
+            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
         }, ctx_handle_info["basic"]["handlers"]
@@ -525,6 +543,8 @@ class TestCli:
         assert set(ctx_handle_no_modules_info["basic"]["handlers"]) == {
             "src.evaluator:evaluate",
             "src.evaluator:predict",
+            "src.evaluator:f",
+            "src.evaluator:X.f",
             "src.sdk_model_build:context_handle",
             "src.sdk_model_build:ft",
         }, ctx_handle_no_modules_info["basic"]["handlers"]
