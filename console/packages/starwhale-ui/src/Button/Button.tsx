@@ -60,9 +60,15 @@ function Button(
                         'backgroundColor': 'transparent',
                         'color': theme.colors.buttonPrimaryFill,
                         ':hover': {
+                            color: '#5181E0',
                             backgroundColor: 'transparent',
                         },
                         ':focus': {
+                            color: '#5181E0',
+                            backgroundColor: 'transparent',
+                        },
+                        ':active': {
+                            color: '#5181E0',
                             backgroundColor: 'transparent',
                         },
                     },
@@ -84,6 +90,10 @@ function Button(
                         },
                         ':focus': {
                             backgroundColor: 'transparent',
+                            color: theme.brandPrimaryHover,
+                        },
+                        ':active': {
+                            backgroundColor: 'transparent',
                             color: 'rgba(2,16,43,0.20)',
                         },
                     },
@@ -103,6 +113,9 @@ function Button(
                             backgroundColor: '#FFDBDB',
                         },
                         ':focus': {
+                            backgroundColor: '#FFCCCC',
+                        },
+                        ':active': {
                             backgroundColor: '#FFCCCC',
                         },
                     },

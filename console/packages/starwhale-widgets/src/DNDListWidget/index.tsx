@@ -1,6 +1,6 @@
 import Button from '@starwhale/ui/Button'
 import React, { useEffect, useRef, useState } from 'react'
-import { DragStartEvent, PanelSaveEvent, SectionAddEvent } from '@starwhale/core/events'
+import { DragStartEvent, PanelChartSaveEvent, SectionAddEvent } from '@starwhale/core/events'
 import { WidgetConfig, WidgetRendererProps, WidgetGroupType } from '@starwhale/core/types'
 import WidgetPlugin from '@starwhale/core/widget/WidgetPlugin'
 import { ReactSortable } from 'react-sortablejs'
@@ -14,7 +14,7 @@ import useTranslation from '@/hooks/useTranslation'
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
     name: 'Dragging Section',
-    group: WidgetGroupType.LIST,
+    group: [WidgetGroupType.LIST],
     optionConfig: {
         isSave: true,
         isAddPanel: true,
@@ -185,7 +185,7 @@ function DNDListWidget(props: WidgetRendererProps) {
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 {isSave && (
                     <WithCurrentAuth id='evaluation.panel.save'>
-                        <Button onClick={() => eventBus.publish(new PanelSaveEvent())}>{t('panel.save')}</Button>
+                        <Button onClick={() => eventBus.publish(new PanelChartSaveEvent())}>{t('panel.save')}</Button>
                     </WithCurrentAuth>
                 )}
 

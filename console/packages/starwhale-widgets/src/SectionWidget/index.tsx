@@ -1,17 +1,11 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
-import {
-    PanelAddEvent,
-    PanelEditEvent,
-    PanelDeleteEvent,
-    PanelPreviewEvent,
-    PanelDownloadEvent,
-    PanelReloadEvent,
-} from '@starwhale/core/events'
+import { PanelChartDownloadEvent, PanelChartReloadEvent } from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
+import { PanelContextProvider, useEditorContext } from '@starwhale/core/context'
 import IconFont from '@starwhale/ui/IconFont'
 // @ts-ignore
 import { Resizable } from 'react-resizable'
@@ -24,6 +18,9 @@ import ChartConfigGroup from './component/ChartConfigGroup'
 import useTranslation from '@/hooks/useTranslation'
 import EvalSelectList from '@/components/Editor/EvalSelectList'
 import { EvalSelectDataT } from '@/components/Editor/EvalSelectForm'
+import { WidgetFormModal, WidgetFormModel } from '@starwhale/core/form'
+import WidgetPreviewModal from '@starwhale/core/form/WidgetPreviewModal'
+import shallow from 'zustand/shallow'
 
 const useStyles = createUseStyles({
     panelWrapper: {
@@ -64,6 +61,7 @@ export const CONFIG: WidgetConfig = {
         title: '',
         isExpaned: true,
         isEvaluationList: false,
+        isEvaluationListShow: false,
         evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
         layoutConfig: {
             padding: 20,
@@ -79,23 +77,38 @@ export const CONFIG: WidgetConfig = {
     },
 }
 
-// eslint-disable-next-line
-type Option = (typeof CONFIG)['optionConfig']
+type OptionConfig = (typeof CONFIG)['optionConfig']
+
+const selector = (s: any) => ({
+    onLayoutChildrenChange: s.onLayoutChildrenChange,
+    onWidgetChange: s.onWidgetChange,
+    onWidgetDelete: s.onWidgetDelete,
+})
 
 // @ts-ignore
-function SectionWidget(props: WidgetRendererProps<Option, any>) {
+function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
+    const { store } = useEditorContext()
+    const api = store(selector, shallow)
+    const [editWidget, setEditWidget] = useState<{ type?: string; path?: any[]; id?: string; data?: any }>({})
+    const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
+    const [viewWidget, setViewWidget] = useState<{ id?: string }>({})
+    const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
+
     const [t] = useTranslation()
     const styles = useStyles()
     const { optionConfig, children, eventBus, type } = props
-
-    // @ts-ignore
-    const { isExpaned = false, layoutConfig, layout, isEvaluationList, evalSelectData } = optionConfig as Option
+    const {
+        isExpaned = false,
+        layoutConfig,
+        layout,
+        isEvaluationList,
+        evalSelectData,
+        isEvaluationListShow,
+    } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
-
     const len = children ? React.Children.count(children) : 0
     const { boxWidth, boxHeight, padding } = layoutConfig
     const { width, height } = layout
-
     const title = optionConfig?.title || t('panel.name')
 
     const [isModelOpen, setIsModelOpen] = useState(false)
@@ -106,24 +119,20 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
         setIsModelOpen(false)
     }
-    const handleEditPanel = (id: string, data?: any) => {
-        eventBus.publish(new PanelEditEvent({ id, evalSelectData: data }))
-    }
-    const handleDeletePanel = (id: string) => {
-        eventBus.publish(new PanelDeleteEvent({ id }))
-    }
-    const handlePreviewPanel = (id: string) => {
-        eventBus.publish(new PanelPreviewEvent({ id }))
-    }
     const handleDownloadPanel = (id: string) => {
-        eventBus.publish(new PanelDownloadEvent({ id }))
+        eventBus.publish(new PanelChartDownloadEvent({ id }))
     }
     const handleReloadPanel = (id: string) => {
-        eventBus.publish(new PanelReloadEvent({ id }))
+        eventBus.publish(new PanelChartReloadEvent({ id }))
     }
     const handleSelectDataChange = (data: any) => {
         props.onOptionChange?.({
             evalSelectData: data,
+        })
+    }
+    const handleEvaluationListShowChange = (editing: boolean) => {
+        props.onOptionChange?.({
+            isEvaluationListShow: editing,
         })
     }
     const handleExpanded = (expanded: boolean) => {
@@ -137,7 +146,66 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         })
     }
 
-    // subscription
+    const handleSectionAddChart = () => {
+        setIsPanelModalOpen(true)
+        setEditWidget({ path: props.path, id: props.id, type: 'add' })
+    }
+
+    const handleSectionRename = () => {
+        setIsModelOpen(true)
+    }
+
+    const handleSectionAddAbove = isEvaluationList
+        ? undefined
+        : () => {
+              props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
+          }
+
+    const handleSectionAddBelow = isEvaluationList
+        ? undefined
+        : () => {
+              props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
+          }
+
+    const handleSectionDelete = () => {
+        props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
+    }
+
+    const handleChartAddSave = (formData: any) => {
+        const { path } = editWidget
+        if (!path || path.length === 0) return
+        api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
+            type: formData.chartType,
+            fieldConfig: {
+                data: formData,
+            },
+        })
+    }
+
+    const handleChartEditSave = (formData: any) => {
+        const { id } = editWidget
+        api.onWidgetChange(id, {
+            type: formData.chartType,
+            fieldConfig: {
+                data: formData,
+            },
+        })
+    }
+
+    const handelChartDeletePanel = (id: string) => {
+        api.onWidgetDelete(id)
+    }
+
+    const handleChartPreview = (id: string) => {
+        setViewWidget({ id })
+        setIsPanelPreviewModalOpen(true)
+    }
+
+    const handleChartEdit = (id: string) => {
+        setEditWidget({ id })
+        setIsPanelModalOpen(true)
+    }
+
     useEffect(() => {
         const subscription = new Subscription()
         subscription.add(
@@ -225,9 +293,9 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     <div className={styles.panelWrapper} id={child.props.id}>
                         <div className={styles.contentWrapper}>{child}</div>
                         <ChartConfigGroup
-                            onEdit={() => handleEditPanel(child.props.id, evalSelectData)}
-                            onDelete={() => handleDeletePanel(child.props?.id)}
-                            onPreview={() => handlePreviewPanel(child.props?.id)}
+                            onEdit={() => handleChartEdit(child.props.id)}
+                            onDelete={() => handelChartDeletePanel(child.props?.id)}
+                            onPreview={() => handleChartPreview(child.props?.id)}
                             onDownload={() => handleDownloadPanel(child.props?.id)}
                             onReload={() => handleReloadPanel(child.props?.id)}
                         />
@@ -238,43 +306,25 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [children, rect, resizeRect, styles, boxHeight, boxWidth, padding])
 
+    const form = useRef(new WidgetFormModel())
+    useEffect(() => {
+        form.current.initPanelSchema()
+    }, [t])
+
+    // console.log(evalSelectData)
+
     return (
-        <div>
+        <PanelContextProvider value={{ evalSelectData }}>
             <SectionAccordionPanel
                 childNums={len}
                 title={title}
                 expanded={isDragging ? false : isExpaned}
                 onExpanded={handleExpanded}
-                onPanelAdd={() => {
-                    // @FIXME abatract events
-                    eventBus.publish(
-                        new PanelAddEvent({
-                            // @ts-ignore
-                            path: props.path,
-                            id: props.id,
-                        })
-                    )
-                }}
-                onSectionRename={() => {
-                    setIsModelOpen(true)
-                }}
-                onSectionAddAbove={
-                    isEvaluationList
-                        ? undefined
-                        : () => {
-                              props.onLayoutCurrentChange?.({ type }, { type: 'addAbove' })
-                          }
-                }
-                onSectionAddBelow={
-                    isEvaluationList
-                        ? undefined
-                        : () => {
-                              props.onLayoutCurrentChange?.({ type }, { type: 'addBelow' })
-                          }
-                }
-                onSectionDelete={() => {
-                    props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
-                }}
+                onPanelChartAdd={handleSectionAddChart}
+                onSectionRename={handleSectionRename}
+                onSectionAddAbove={handleSectionAddAbove}
+                onSectionAddBelow={handleSectionAddBelow}
+                onSectionDelete={handleSectionDelete}
             >
                 {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
                 {len === 0 && <EmptyPlaceholder />}
@@ -308,7 +358,12 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 </div>
                 {isEvaluationList && (
                     <div className='mx-20px'>
-                        <EvalSelectList value={evalSelectData} onSelectDataChange={handleSelectDataChange} />
+                        <EvalSelectList
+                            editing={isEvaluationListShow}
+                            onEditingChange={handleEvaluationListShowChange}
+                            value={evalSelectData}
+                            onSelectDataChange={handleSelectDataChange}
+                        />
                     </div>
                 )}
             </SectionAccordionPanel>
@@ -318,7 +373,29 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                     <SectionForm onSubmit={handleSectionForm} formData={{ name: title }} />
                 </ModalBody>
             </Modal>
-        </div>
+            <WidgetFormModal
+                form={form.current}
+                id={editWidget.id}
+                payload={editWidget}
+                isShow={isPanelModalOpen}
+                setIsShow={setIsPanelModalOpen}
+                store={store}
+                handleFormSubmit={({ formData }: any) => {
+                    if (editWidget?.type === 'add') {
+                        handleChartAddSave(formData)
+                    } else {
+                        handleChartEditSave(formData)
+                    }
+                    setIsPanelModalOpen(false)
+                }}
+            />
+            <WidgetPreviewModal
+                id={viewWidget.id}
+                isShow={isPanelPreviewModalOpen}
+                setIsShow={setIsPanelPreviewModalOpen}
+                store={store}
+            />
+        </PanelContextProvider>
     )
 }
 

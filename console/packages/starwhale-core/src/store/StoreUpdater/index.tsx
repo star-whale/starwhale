@@ -4,7 +4,8 @@ import { useStoreApi } from '../hooks/useStore'
 import { WidgetStateT, WidgetStoreState } from '@starwhale/core/types'
 
 type StoreUpdaterProps = {
-    onStateChange: (param: WidgetStateT) => void
+    editable?: boolean
+    onStateChange?: (param: WidgetStateT) => void
 }
 
 export function useStoreUpdater<T>(value: T | undefined, setStoreState: (param: T) => void) {
@@ -37,7 +38,7 @@ const selector = (s: WidgetStoreState) => ({
     // initState: s.initState,
 })
 
-const StoreUpdater = ({ onStateChange }: StoreUpdaterProps) => {
+const StoreUpdater = ({ onStateChange, editable }: StoreUpdaterProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // const { reset } = useStore(selector, shallow)
     const store = useStoreApi()
@@ -48,8 +49,8 @@ const StoreUpdater = ({ onStateChange }: StoreUpdaterProps) => {
     //     }
     // }, [reset])
 
+    useDirectStoreUpdater('editable', editable, store.setState)
     useDirectStoreUpdater('onStateChange', onStateChange, store.setState)
-    // useStoreUpdater<WidgetStateT>(state, initState)
     return null
 }
 

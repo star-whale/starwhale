@@ -12,7 +12,12 @@ function arrayOverride(objValue: any, srcValue: any) {
     if (_.isArray(objValue)) {
         return srcValue
     }
+    if (_.isObject(objValue)) {
+        return srcValue
+    }
 }
+
+const SYNCKESY = ['key', 'tree', 'widgets', 'defaults']
 
 export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
     console.log('store init')
@@ -29,10 +34,20 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                     }
 
                     return {
-                        ...(initState as any),
                         isInit: false,
+                        ...(initState as any),
                         key: name,
-                        time: 0,
+                        isEditable: () => get().editable,
+                        getRawConfigs: () => _.pick(get(), SYNCKESY),
+                        setRawConfigs: (configs: any) => {
+                            set(
+                                {
+                                    ..._.pick(configs, SYNCKESY),
+                                },
+                                undefined,
+                                'setRawConfigs'
+                            )
+                        },
                         onLayoutOrderChange: (paths: any, newOrderList: { id: string }[]) =>
                             update(
                                 produce((state: WidgetStoreState) => {
@@ -51,7 +66,6 @@ export function createCustomStore(initState: Partial<WidgetStateT> = {}) {
                                 produce((state: WidgetStoreState) => {
                                     const rawConfig = _.merge({}, _.get(get(), paths))
                                     _.set(state, paths, _.mergeWith(rawConfig, config, arrayOverride))
-                                    // console.log('onConfigChange', get(), paths, config)
                                 }),
                                 'onConfigChange'
                             ),

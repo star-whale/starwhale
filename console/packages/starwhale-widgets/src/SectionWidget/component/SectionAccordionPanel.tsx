@@ -12,7 +12,7 @@ import useTranslation from '@/hooks/useTranslation'
 // @FIXME type define
 const Header = React.forwardRef((props, ref) => {
     // console.log('Header', props)
-    const { $expanded, children, onClick, onPanelAdd } = props as any
+    const { $expanded, children, onClick, onPanelChartAdd } = props as any
     const [t] = useTranslation()
 
     const actions = {
@@ -57,7 +57,8 @@ const Header = React.forwardRef((props, ref) => {
                             'fontSize': '14px',
                             'color': '#02102B',
                             'fontWeight': 'bold',
-                            ':hover': { color: '#02102B' },
+                            ':hover': { color: '#5181E0' },
+                            ':active': { color: '#5181E0' },
                         },
                     },
                 }}
@@ -74,21 +75,7 @@ const Header = React.forwardRef((props, ref) => {
                     actions[item.type]?.()
                 }}
             />
-            <Button
-                kind='secondary'
-                onClick={onPanelAdd}
-                overrides={{
-                    BaseButton: {
-                        style: {
-                            backgroundColor: '#fff',
-                            fontSize: '14px',
-                            color: '#02102B',
-                            height: '32px',
-                            ...expandMargin('0', '0', '0', '0'),
-                        },
-                    },
-                }}
-            >
+            <Button kind='secondary' onClick={onPanelChartAdd}>
                 {t('panel.chart.add')}
             </Button>
         </div>

@@ -17,6 +17,9 @@ export type WidgetTreeNode = {
 
 export type WidgetStoreState = {
     isInit?: boolean
+    editable?: boolean
+    isEditable: () => boolean
+    setRawConfigs: (configs: any) => void
     onConfigChange?: any
     onLayoutOrderChange?: any
     onLayoutChildrenChange?: any
@@ -40,7 +43,7 @@ export type WideteExternalState = {
 export interface WidgetBaseConfig {
     type: WidgetType
     name: string
-    group?: WidgetGroupType
+    group?: WidgetGroupType | WidgetGroupType[]
     description?: string
     meta?: WidgetMeta
 }
@@ -109,6 +112,8 @@ export type WidgetRendererType<O extends object = any, F extends object = any> =
 >
 
 export enum WidgetGroupType {
+    ALL = 'ALL',
     PANEL = 'PANEL',
     LIST = 'LIST',
+    REPORT = 'REPORT',
 }

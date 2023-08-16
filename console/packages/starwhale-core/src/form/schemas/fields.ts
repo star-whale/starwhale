@@ -68,17 +68,37 @@ export const chartTitleField = (): RJSFSchema | undefined => ({
 
 export const dataTableColumnsField = (
     property: string,
-    columnTypes: ColumnSchemaDesc[],
+    columnTypes?: ColumnSchemaDesc[],
     schema?: RJSFSchema
 ): RJSFSchema | undefined => {
-    if (!columnTypes || columnTypes.length === 0) return undefined
+    // if (!columnTypes || columnTypes.length === 0) return undefined
+    const { type } = schema?.[property] ?? {}
+
+    if (type === 'array') {
+        return {
+            [property]: {
+                type: 'array',
+                title: schema?.title,
+                uniqueItems: true,
+                minItems: 0,
+                items: {
+                    type: 'string',
+                    oneOf:
+                        columnTypes?.map((v) => ({
+                            const: v.name,
+                            title: v.name,
+                        })) ?? [],
+                },
+            },
+        }
+    }
 
     return {
         [property]: {
             type: 'string',
             title: schema?.title,
             oneOf:
-                columnTypes.map((v) => ({
+                columnTypes?.map((v) => ({
                     const: v.name,
                     title: v.name,
                 })) ?? [],

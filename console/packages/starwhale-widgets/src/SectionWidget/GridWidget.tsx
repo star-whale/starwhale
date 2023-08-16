@@ -3,7 +3,12 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
-import { PanelAddEvent, PanelEditEvent, PanelDeleteEvent, PanelPreviewEvent } from '@starwhale/core/events'
+import {
+    PanelChartAddEvent,
+    PanelChartEditEvent,
+    PanelChartDeleteEvent,
+    PanelChartPreviewEvent,
+} from '@starwhale/core/events'
 import { WidgetPlugin } from '@starwhale/core/widget'
 import IconFont from '@starwhale/ui/IconFont'
 import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
@@ -45,7 +50,7 @@ export const CONFIG: WidgetConfig = {
 }
 
 // eslint-disable-next-line
-type Option = typeof CONFIG['optionConfig']
+type Option = (typeof CONFIG)['optionConfig']
 
 // @ts-ignore
 function SectionWidget(props: WidgetRendererProps<Option, any>) {
@@ -76,13 +81,13 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
         setIsModelOpen(false)
     }
     const handleEditPanel = (id: string) => {
-        eventBus.publish(new PanelEditEvent({ id }))
+        eventBus.publish(new PanelChartEditEvent({ id }))
     }
     const handleDeletePanel = (id: string) => {
-        eventBus.publish(new PanelDeleteEvent({ id }))
+        eventBus.publish(new PanelChartDeleteEvent({ id }))
     }
     const handlePreviewPanel = (id: string) => {
-        eventBus.publish(new PanelPreviewEvent({ id }))
+        eventBus.publish(new PanelChartPreviewEvent({ id }))
     }
     const handleExpanded = (expanded: boolean) => {
         props.onOptionChange?.({
@@ -123,7 +128,7 @@ function SectionWidget(props: WidgetRendererProps<Option, any>) {
                 onPanelAdd={() => {
                     // @FIXME abatract events
                     eventBus.publish(
-                        new PanelAddEvent({
+                        new PanelChartAddEvent({
                             // @ts-ignore
                             path: props.path,
                         })

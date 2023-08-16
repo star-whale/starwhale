@@ -4,7 +4,7 @@ import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { tablesOfEvaluation, WidgetStateT } from '@starwhale/core'
+import { tablesOfEvaluation, WidgetStateT, withDefaultWidgets } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { useProject } from '@project/hooks/useProject'
@@ -31,9 +31,7 @@ export function withProject(EditorApp: React.FC) {
 const empty = {}
 
 export function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
-    return function EditorContexted(
-        props: EditorAppPropsT & { dynamicVars?: any; onStateChange?: (state: WidgetStateT) => void }
-    ) {
+    return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const state = useMemo(() => tranformState(rawState) as WidgetStateT, [])
         const store = useRef<StoreType>()
         const value = useMemo(() => {
@@ -77,7 +75,7 @@ const initialState = {
     widgets: {},
     defaults: {},
 }
-const Editor = withProject(witEditorContext(WidgetRenderTree, initialState))
+const Editor = withProject(witEditorContext(withDefaultWidgets(WidgetRenderTree), initialState))
 
 export { Editor, initialState }
 export default Editor

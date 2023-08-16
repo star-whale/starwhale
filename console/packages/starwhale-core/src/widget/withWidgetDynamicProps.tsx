@@ -7,7 +7,7 @@ import useFetchDatastoreByTable from '../datastore/hooks/useFetchDatastoreByTabl
 
 import { useIsInViewport } from '../utils'
 import { exportTable } from '../datastore'
-import { PanelDownloadEvent, PanelReloadEvent } from '../events'
+import { PanelChartDownloadEvent, PanelChartReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
@@ -90,7 +90,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             // @FIXME better use scoped eventBus
             const subscription = new Subscription()
             subscription.add(
-                eventBus.getStream(PanelDownloadEvent).subscribe({
+                eventBus.getStream(PanelChartDownloadEvent).subscribe({
                     next: (evt) => {
                         if (evt.payload?.id === id) {
                             exportTable(query as any)
@@ -99,7 +99,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 })
             )
             subscription.add(
-                eventBus.getStream(PanelReloadEvent).subscribe({
+                eventBus.getStream(PanelChartReloadEvent).subscribe({
                     next: async (evt) => {
                         if (evt.payload?.id === id) {
                             recordInfo.refetch()

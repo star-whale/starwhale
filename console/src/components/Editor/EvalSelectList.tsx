@@ -10,6 +10,9 @@ import ToolBar from '@starwhale/ui/GridTable/components/ToolBar'
 import _ from 'lodash'
 import { TextLink } from '../Link'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
+import { useStore } from '@starwhale/core/store'
+import { WidgetStoreState } from '@starwhale/core'
+import { toaster } from 'baseui/toast'
 
 const RenderButton = ({ count, editing, toggle }) => {
     const [t] = useTranslation()
@@ -66,18 +69,26 @@ const RenderButton = ({ count, editing, toggle }) => {
     )
 }
 
+const selector = (state: WidgetStoreState) => ({
+    isEditable: state.isEditable,
+})
+
 function EvalSelectList({
+    editing,
     value,
+    onEditingChange,
     onSelectDataChange,
 }: {
+    editing?: boolean
+    onEditingChange?: (editing: boolean) => void
     value?: EvalSelectDataT
     onSelectDataChange?: (data: EvalSelectDataT) => void
 }) {
-    const [editing, setEditing] = React.useState(false)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
-    const [selectData, setSelectData] = React.useState<EvalSelectDataT>(value ?? {})
     const ref = React.useRef<{ getData: () => EvalSelectDataT }>()
     const [t] = useTranslation()
+
+    const selectData = value
 
     const values = React.useMemo(() => {
         return Object.values(selectData ?? {})
@@ -131,6 +142,21 @@ function EvalSelectList({
         [$columns]
     )
 
+    const { isEditable } = useStore(selector)
+    const editable = isEditable?.()
+    // const isEditable = useStoreApi().getState().isEditable()
+    const AddButton = React.useMemo(() => {
+        if (!editable) return null
+
+        return (
+            <div className='flex pb-8px'>
+                <Button kind='tertiary' onClick={() => setIsAddOpen(true)}>
+                    {t('evalution.panel.add')}
+                </Button>
+            </div>
+        )
+    }, [editable, t])
+
     return (
         <div>
             {/* eval info button with minize/edit action */}
@@ -138,7 +164,7 @@ function EvalSelectList({
                 count={count}
                 editing={editing}
                 toggle={() => {
-                    setEditing(!editing)
+                    onEditingChange?.(!editing)
                 }}
             />
 
@@ -164,7 +190,7 @@ function EvalSelectList({
                     <GridTable
                         queryable={false}
                         columnable
-                        removable
+                        removable={editable}
                         compareable={false}
                         paginationable={false}
                         // @ts-ignore
@@ -175,32 +201,30 @@ function EvalSelectList({
                             const renew = (prev: EvalSelectDataT) => {
                                 const n = { ...prev }
                                 Object.entries(n).forEach(([key, item]) => {
-                                    if (item.rowSelectedIds.includes(id)) {
-                                        item.rowSelectedIds.splice(item.rowSelectedIds.indexOf(id), 1)
+                                    const index = item.rowSelectedIds.indexOf(id)
+                                    const ids = [...item.rowSelectedIds]
+                                    if (index >= 0) {
+                                        ids.splice(index, 1)
                                         const filter = item.records.filter((record) => record.id.value !== id) ?? []
                                         if (filter.length === 0) {
                                             // @ts-ignore
                                             n[key] = undefined
                                         } else {
-                                            // eslint-disable-next-line no-param-reassign
-                                            item.records = filter
+                                            n[key] = { ...n[key] }
+                                            n[key].rowSelectedIds = ids
+                                            n[key].records = filter
                                         }
                                     }
                                 })
                                 return _.pickBy(n, _.identity)
                             }
-                            const next = renew(selectData)
-                            setSelectData(next)
+                            const next = renew(selectData || {})
                             onSelectDataChange?.(next)
                         }}
                     >
                         <div className='flex gap-20px justify-end'>
                             <ToolBar columnable viewable={false} queryable={false} />
-                            <div className='flex pb-8px'>
-                                <Button kind='tertiary' onClick={() => setIsAddOpen(true)}>
-                                    {t('evalution.panel.add')}
-                                </Button>
-                            </div>
+                            {AddButton}
                         </div>
                     </GridTable>
                     <Modal
@@ -226,7 +250,7 @@ function EvalSelectList({
                                         setIsAddOpen(false)
                                     }}
                                 >
-                                    {t('Done')}
+                                    {t('Cancel')}
                                 </Button>
                                 &nbsp;&nbsp;
                                 <Button
@@ -240,11 +264,15 @@ function EvalSelectList({
                                             },
                                             _.identity
                                         )
-                                        setSelectData(renew)
                                         onSelectDataChange?.(renew)
+                                        setIsAddOpen(false)
+                                        const num = Object.values(renew).reduce((acc, cur) => {
+                                            return acc + (cur.rowSelectedIds?.length ?? 0)
+                                        }, 0)
+                                        toaster.positive(t('evalution.panel.add.desc', [num]))
                                     }}
                                 >
-                                    {t('Confirm')}
+                                    {t('add')}
                                 </Button>
                             </div>
                         </ModalFooter>

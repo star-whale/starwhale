@@ -120,7 +120,7 @@ export function getRocAucConfig(
 
 export function getBarChartConfig(
     title = '',
-    labels: { x: string; y: string },
+    labels?: { x: string; y: string },
     data: {
         x: any[]
         y: any[]
@@ -132,12 +132,12 @@ export function getBarChartConfig(
         xaxis: {
             ...Layout.init.xaxis,
             autotick: true,
-            title: labels.x,
+            title: labels?.x,
         },
         yaxis: {
             ...Layout.init.yaxis,
             autotick: true,
-            title: labels.y,
+            title: labels?.y,
         },
     }
 

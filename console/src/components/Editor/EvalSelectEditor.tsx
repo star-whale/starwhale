@@ -1,5 +1,5 @@
 import { witEditorContext } from './Editor'
-import { WidgetRenderTree, WidgetRenderTreePropsT } from '@starwhale/core/widget'
+import { WidgetRenderTree, WidgetRenderTreePropsT, withReportWidgets } from '@starwhale/core/widget'
 import { WidgetStateT } from '@starwhale/core'
 
 const initialState: WidgetStateT = {
@@ -16,7 +16,7 @@ const initialState: WidgetStateT = {
     defaults: {},
 }
 
-const EvalSelectEditor = witEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree, initialState)
+const EvalSelectEditor = witEditorContext<WidgetRenderTreePropsT>(withReportWidgets(WidgetRenderTree), initialState)
 
 export { EvalSelectEditor }
 export default EvalSelectEditor

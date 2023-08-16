@@ -1,34 +1,34 @@
 // eslint-disable-next-line max-classes-per-file
 import { BusEventWithPayload, BusEventBase } from './types'
 
-type PanelAddPayload = { path: any[] }
-export class PanelAddEvent extends BusEventWithPayload<PanelAddPayload> {
-    static type = 'add-panel'
+type PanelChartAddPayload = { path: any[] }
+export class PanelChartAddEvent extends BusEventWithPayload<PanelChartAddPayload> {
+    static type = 'panel-chart-add'
 }
 
-type PanelEditPayload = { id: string; evalSelectData?: any }
-export class PanelEditEvent extends BusEventWithPayload<PanelEditPayload> {
-    static type = 'edit-panel'
+type PanelChartEditPayload = { id: string; evalSelectData?: any }
+export class PanelChartEditEvent extends BusEventWithPayload<PanelChartEditPayload> {
+    static type = 'panel-chart-edit'
 }
 
-type PanelDeletePayload = { id: string }
-export class PanelDeleteEvent extends BusEventWithPayload<PanelDeletePayload> {
-    static type = 'delete-panel'
+type PanelChartDeletePayload = { id: string }
+export class PanelChartDeleteEvent extends BusEventWithPayload<PanelChartDeletePayload> {
+    static type = 'panel-chart-delete'
 }
 
-type PanelPreviewPayload = { id: string }
-export class PanelPreviewEvent extends BusEventWithPayload<PanelPreviewPayload> {
-    static type = 'preview-panel'
+type PanelChartPreviewPayload = { id: string }
+export class PanelChartPreviewEvent extends BusEventWithPayload<PanelChartPreviewPayload> {
+    static type = 'panel-chart-preview'
 }
 
-type PanelDownloadPayload = { id: string }
-export class PanelDownloadEvent extends BusEventWithPayload<PanelDownloadPayload> {
-    static type = 'download-panel'
+type PanelChartDownloadPayload = { id: string }
+export class PanelChartDownloadEvent extends BusEventWithPayload<PanelChartDownloadPayload> {
+    static type = 'panel-chart-download'
 }
 
-type PanelReloadPayload = { id: string }
-export class PanelReloadEvent extends BusEventWithPayload<PanelReloadPayload> {
-    static type = 'reload-panel'
+type PanelChartReloadPayload = { id: string }
+export class PanelChartReloadEvent extends BusEventWithPayload<PanelChartReloadPayload> {
+    static type = 'panel-chart-reload'
 }
 
 type SectionAddPayload = { path: any[]; type: string }
@@ -36,8 +36,8 @@ export class SectionAddEvent extends BusEventWithPayload<SectionAddPayload> {
     static type = 'add-section'
 }
 
-export class PanelSaveEvent extends BusEventBase {
-    static type = 'save'
+export class PanelChartSaveEvent extends BusEventBase {
+    static type = 'panel-chart-save'
 }
 
 export type SectionEvalSelectDataPayload = Record<

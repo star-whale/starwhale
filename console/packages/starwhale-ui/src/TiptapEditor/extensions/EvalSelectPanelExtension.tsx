@@ -9,9 +9,10 @@ import {
 import { cn } from '../lib/utils'
 import EvalSelectEditor from '@/components/Editor/EvalSelectEditor'
 import { useEventCallback } from '@starwhale/core'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 const Component = (props: NodeViewProps) => {
+    const [, setEditing] = React.useState(true)
     const { node, selected } = props
 
     const onStateChange = useEventCallback((state: any) => {
@@ -21,9 +22,25 @@ const Component = (props: NodeViewProps) => {
         })
     })
 
+    useEffect(() => {
+        const handle = ({ editor }) => {
+            setEditing(editor.isEditable)
+        }
+        props.editor.on('update', handle)
+        return () => {
+            props.editor.off('update', handle)
+        }
+    }, [props.editor])
+
     const memoe = React.useMemo(() => {
-        return <EvalSelectEditor initialState={node.attrs.state} onStateChange={onStateChange as any} />
-    }, [node.attrs.state, onStateChange])
+        return (
+            <EvalSelectEditor
+                editable={props.editor.isEditable}
+                initialState={node.attrs.state}
+                onStateChange={onStateChange as any}
+            />
+        )
+    }, [node.attrs.state, props.editor.isEditable, onStateChange])
 
     // console.log('node.attrs.state', node.attrs.state?.widgets)
 

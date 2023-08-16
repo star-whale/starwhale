@@ -5,6 +5,7 @@ import IconFont from '@starwhale/ui/IconFont'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import useTranslation from '@/hooks/useTranslation'
+import Button from '@starwhale/ui/Button'
 
 // @ts-ignore
 export default function SectionPopover({
@@ -102,22 +103,9 @@ export default function SectionPopover({
                 />
             )}
         >
-            <div
-                style={{
-                    alignItems: 'center',
-                    marginLeft: 'auto',
-                    right: 0,
-                    top: -6,
-                    display: 'flex',
-                    backgroundColor: '#F4F5F7',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    padding: '12px 9px',
-                    height: '32px',
-                }}
-            >
+            <Button kind='secondary'>
                 <IconFont type='more' size={14} />
-            </div>
+            </Button>
         </StatefulPopover>
     )
 }

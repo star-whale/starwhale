@@ -26,6 +26,7 @@ export default function TiptapEditor({ id = '', initialContent, editable, onSave
 
     const { run: debouncedUpdates } = useDebounceFn(
         async ({ editor }) => {
+            if (!editable) return
             const json = editor.getJSON()
             setSaveStatus(t('report.save.saving'))
             onSaveStatusChange?.(SaveStatus.SAVING)
@@ -46,6 +47,7 @@ export default function TiptapEditor({ id = '', initialContent, editable, onSave
         extensions: TiptapExtensions,
         editorProps: TiptapEditorProps,
         onUpdate: (e) => {
+            if (!editable) return
             setSaveStatus(t('report.save.unsaved'))
             onSaveStatusChange?.(SaveStatus.UNSAVED)
             debouncedUpdates(e)
