@@ -5,13 +5,13 @@ import { WidgetPlugin } from '@starwhale/core/widget'
 import { UI_DATA } from '@starwhale/core/form/schemas/fields'
 import { getBarChartConfig } from '@starwhale/ui/Plotly/utils'
 import { decordRecords } from '@starwhale/core/datastore'
-import { usePanelDatastore } from '@starwhale/core/context'
+import { usePanelDatastore } from '@starwhale/core'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
 export const CONFIG: WidgetConfig = {
-    type: 'ui:panel:barchart',
-    group: WidgetGroupType.PANEL,
+    type: 'ui:panel:reportbarchart',
+    group: WidgetGroupType.REPORT,
     name: 'Bar Chart',
     fieldConfig: {
         data: {
@@ -27,7 +27,7 @@ export const CONFIG: WidgetConfig = {
                  * framework define field type
                  * 1. use type = 'array' to make field multiple
                  */
-                type: 'array',
+                // type: 'array',
             },
             labels: {
                 title: 'Axis Label',
@@ -53,11 +53,11 @@ export const CONFIG: WidgetConfig = {
     },
 }
 
-function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
-    const { fieldConfig, data = {} } = props
-    const { getTableRecordMap } = data
+function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
+    const { fieldConfig } = props
     const { data: formData } = fieldConfig ?? {}
     const { chartTitle: title, labels: xattr = [], metrics: yattr = [] } = formData ?? {}
+    const { getTableRecordMap } = usePanelDatastore()
     const m = getTableRecordMap()
     const barData: { x: any[]; y: any[]; type: string; name: string }[] = []
 
@@ -96,6 +96,6 @@ function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
     )
 }
 
-const widget = new WidgetPlugin(PanelBarChartWidget, CONFIG)
+const widget = new WidgetPlugin(ReportBarChartWidget, CONFIG)
 
 export default widget

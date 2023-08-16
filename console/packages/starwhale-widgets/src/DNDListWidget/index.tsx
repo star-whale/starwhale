@@ -14,7 +14,7 @@ import useTranslation from '@/hooks/useTranslation'
 export const CONFIG: WidgetConfig = {
     type: 'ui:dndList',
     name: 'Dragging Section',
-    group: WidgetGroupType.LIST,
+    group: [WidgetGroupType.LIST],
     optionConfig: {
         isSave: true,
         isAddPanel: true,

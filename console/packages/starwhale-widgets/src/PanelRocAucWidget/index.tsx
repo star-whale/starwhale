@@ -11,7 +11,7 @@ const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer"
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:rocauc',
-    group: WidgetGroupType.PANEL,
+    group: [WidgetGroupType.ALL, WidgetGroupType.PANEL],
     name: 'Roc Auc',
     fieldConfig: {
         schema: {

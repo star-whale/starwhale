@@ -10,7 +10,7 @@ const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer"
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:confusion_matrix',
-    group: WidgetGroupType.PANEL,
+    group: [WidgetGroupType.ALL, WidgetGroupType.PANEL],
     name: 'Confusion Matrix',
 }
 

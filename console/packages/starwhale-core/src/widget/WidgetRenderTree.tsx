@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
 import { useEditorContext } from '../context/EditorContextProvider'
@@ -6,17 +6,7 @@ import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import WidgetFormModel from '../form/WidgetFormModel'
 import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
-import { BusEventType } from '../events/types'
-import {
-    PanelChartAddEvent,
-    PanelChartDeleteEvent,
-    PanelChartEditEvent,
-    PanelChartPreviewEvent,
-    PanelChartSaveEvent,
-    SectionAddEvent,
-} from '../events/app'
-import WidgetFormModal from '../form/WidgetFormModal'
-import WidgetPreviewModal from '../form/WidgetPreviewModal'
+import { PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
 import useTranslation from '@/hooks/useTranslation'
@@ -58,11 +48,6 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
-    // @ts-ignore
-    const [editWidget, setEditWidget] = useState<BusEventType>(null)
-    const [isPanelModalOpen, setIsPanelModalOpen] = React.useState(false)
-    const [viewWidget, setViewWidget] = useState<PanelChartPreviewEvent>()
-    const [isPanelPreviewModalOpen, setIsPanelPreviewModalOpen] = React.useState(false)
     const form = useRef(new WidgetFormModel())
 
     // @FIXME useTranslation
@@ -80,69 +65,9 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
         })
     }
 
-    const handleChartAddPanel = (formData: any) => {
-        const { path } = editWidget?.payload
-        if (path && path.length > 0)
-            api.onLayoutChildrenChange(['tree', ...path], ['tree', ...path, 'children'], {
-                type: formData.chartType,
-                fieldConfig: {
-                    data: formData,
-                },
-            })
-    }
-
-    const handleChartEditPanel = (formData: any) => {
-        const { id } = editWidget?.payload
-        api.onWidgetChange(id, {
-            type: formData.chartType,
-            fieldConfig: {
-                data: formData,
-            },
-        })
-    }
-
-    const handelChartDeletePanel = (evt: PanelChartDeleteEvent) => {
-        const { id } = evt?.payload
-        api.onWidgetDelete(id)
-    }
-
-    const actions = {
-        [PanelChartAddEvent.type]: handleChartAddPanel,
-        [PanelChartEditEvent.type]: handleChartEditPanel,
-    }
-
     // subscription
     useEffect(() => {
         const subscription = new Subscription()
-        subscription.add(
-            eventBus.getStream(PanelChartAddEvent).subscribe({
-                next: (evt) => {
-                    setIsPanelModalOpen(true)
-                    setEditWidget(evt)
-                },
-            })
-        )
-        subscription.add(
-            eventBus.getStream(PanelChartEditEvent).subscribe({
-                next: (evt) => {
-                    setIsPanelModalOpen(true)
-                    setEditWidget(evt)
-                },
-            })
-        )
-        subscription.add(
-            eventBus.getStream(PanelChartDeleteEvent).subscribe({
-                next: handelChartDeletePanel,
-            })
-        )
-        subscription.add(
-            eventBus.getStream(PanelChartPreviewEvent).subscribe({
-                next: (evt) => {
-                    setIsPanelPreviewModalOpen(true)
-                    setViewWidget(evt)
-                },
-            })
-        )
         subscription.add(
             eventBus.getStream(SectionAddEvent).subscribe({
                 next: (evt) => {
@@ -175,30 +100,7 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
         ))
     }, [tree])
 
-    return (
-        <div>
-            {Nodes}
-            <WidgetFormModal
-                form={form.current}
-                id={editWidget?.payload?.id}
-                payload={editWidget?.payload}
-                isShow={isPanelModalOpen}
-                setIsShow={setIsPanelModalOpen}
-                store={store}
-                handleFormSubmit={({ formData }: any) => {
-                    // @ts-ignore
-                    actions[editWidget?.type]?.(formData)
-                    setIsPanelModalOpen(false)
-                }}
-            />
-            <WidgetPreviewModal
-                id={viewWidget?.payload?.id}
-                isShow={isPanelPreviewModalOpen}
-                setIsShow={setIsPanelPreviewModalOpen}
-                store={store}
-            />
-        </div>
-    )
+    return <div>{Nodes}</div>
 }
 
 export default WidgetRenderTree

@@ -10,7 +10,9 @@ import WidgetFormModel from './WidgetFormModel'
 import WidgetModel from '../widget/WidgetModel'
 import useTranslation from '@/hooks/useTranslation'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
-import { tablesOfEvaluation, useFetchDatastoreByTable } from '../datastore'
+import { useFetchDatastoreByTable } from '../datastore'
+import { usePanelDatastore } from '../context'
+import _ from 'lodash'
 
 const PAGE_TABLE_SIZE = 200
 
@@ -35,36 +37,14 @@ export default function WidgetFormModal({
     // @FIXME use event bus handle global state
     const { dynamicVars } = useEditorContext()
     const { prefix } = dynamicVars
-    const widgetIdSelector = React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId])
-    const config = store(widgetIdSelector)
+    const config = store(React.useMemo(() => getWidget(editWidgetId) ?? {}, [editWidgetId]))
     const [formData, setFormData] = React.useState<Record<string, any>>({})
     const formRef = React.useRef(null)
 
-    // @FIXME add chart with list id, only for ui:section widget
-    const prefixes = React.useMemo(() => {
-        // @FIXME combine with single rule
-        // if widget is ui:section, then config?.optionConfig is defined
-        // if widget is ui:panel, then payload is defined
-        const { evalSelectData } = config?.optionConfig || payload || {}
-        if (!evalSelectData) return undefined
-        const allPrefix: any = []
-        Object.values(evalSelectData).forEach((item: any) => {
-            allPrefix.push({
-                prefix: `${item?.project?.name}`,
-                name: item?.summaryTableName,
-            })
-            item?.rowSelectedIds.forEach((id) => {
-                allPrefix.push({
-                    prefix: `${item?.project?.name}`,
-                    name: tablesOfEvaluation(item.projectId, id),
-                })
-            })
-        })
-        // console.log(payload, allPrefix)
-        return allPrefix
-    }, [config, payload])
-
-    // console.log(prefixes)
+    // for data fetch from context not current widget
+    const { getTableDistinctColumnTypes, getPrefixes } = usePanelDatastore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const prefixes = React.useMemo(() => getPrefixes(), [config, payload])
 
     const handleFormChange = (data: any) => {
         setFormData((prev) => {
@@ -89,12 +69,26 @@ export default function WidgetFormModal({
     })
     const $data = useFetchDatastoreByTable(params)
 
+    const $formData = React.useMemo(() => {
+        const defaults = form.widget?.defaults
+        const prev = { ...formData }
+        Object.entries(defaults?.fieldConfig?.data ?? {}).forEach(([key, value]) => {
+            if (_.isEmpty(prev[key])) prev[key] = value
+        })
+        return prev
+    }, [formData, form.widget?.defaults])
+
     if (formData?.chartType && form?.widget?.type !== formData?.chartType) {
         form.setWidget(new WidgetModel({ type: formData.chartType }))
     }
-
-    form.addDataTableNamesField(tables)
-    form.addDataTableColumnsField($data.getTableDistinctColumnTypes())
+    // FIXME define in widget config
+    if (form?.widget?.type === 'ui:panel:reportbarchart') {
+        form.removeField('tableName')
+        form.addDataTableColumnsField(getTableDistinctColumnTypes())
+    } else {
+        form.addDataTableNamesField(tables)
+        form.addDataTableColumnsField($data.getTableDistinctColumnTypes())
+    }
 
     useEffect(() => {
         if (config) setFormData(config.fieldConfig?.data ?? {})
@@ -138,18 +132,7 @@ export default function WidgetFormModal({
                 >
                     {!type && t('panel.add.placeholder')}
                     {type && (
-                        <div
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                overflow: 'auto',
-                                padding: '20px 20px 20px',
-                                backgroundColor: '#fff',
-                                border: '1px solid #CFD7E6',
-                                borderRadius: '4px',
-                                position: 'relative',
-                            }}
-                        >
+                        <div className='w-100% h-100% overflow-auto p-20px bg-white border-1 border-[#CFD7E6] border-radius-4px position-relative'>
                             {/* @ts-ignore */}
                             <WidgetRenderer
                                 type={type}
@@ -164,7 +147,7 @@ export default function WidgetFormModal({
                 <WidgetEditForm
                     ref={formRef}
                     form={form}
-                    formData={formData}
+                    formData={$formData}
                     onChange={handleFormChange}
                     onSubmit={handleFormSubmit}
                 />

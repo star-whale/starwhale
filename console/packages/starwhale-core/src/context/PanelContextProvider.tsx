@@ -1,0 +1,69 @@
+import React, { Context, createContext, useContext } from 'react'
+import { EventBus } from '../events/types'
+import { ColumnSchemaDesc, tablesOfEvaluation } from '../datastore'
+
+export type PanelContextType = {
+    eventBus: EventBus
+    evalSelectData: any[]
+}
+type PanelContextProviderProps = {
+    value: any
+    children: React.ReactNode
+}
+
+export const PanelContext: Context<PanelContextType> = createContext({} as PanelContextType)
+
+export const usePanelContext = () => useContext(PanelContext)
+export const usePanelDatastore = () => {
+    const { evalSelectData } = useContext(PanelContext)
+    console.log(evalSelectData, useContext(PanelContext))
+    return {
+        // eslint-disable-next-line
+        getTableRecordMap() {
+            if (!evalSelectData) return {}
+            const recordMap = {}
+            Object.values(evalSelectData).forEach((value: any) => {
+                const { records, summaryTableName } = value || {}
+                recordMap[summaryTableName] = records
+            })
+            return recordMap
+        },
+        // eslint-disable-next-line
+        getTableDistinctColumnTypes() {
+            if (!evalSelectData) return []
+
+            const newColumnType: ColumnSchemaDesc[] = []
+            const columnTypeMap = new Map()
+            Object.values(evalSelectData).forEach((value: any) => {
+                const { columnTypes } = value || {}
+                columnTypes.forEach((columnType: any) => {
+                    if (columnTypeMap.has(columnType.name)) return
+                    columnTypeMap.set(columnType.name, columnType)
+                    newColumnType.push(columnType)
+                })
+            })
+            return newColumnType
+        },
+        getPrefixes() {
+            if (!evalSelectData) return undefined
+            const allPrefix: any = []
+            Object.values(evalSelectData).forEach((item: any) => {
+                allPrefix.push({
+                    prefix: `${item?.project?.name}`,
+                    name: item?.summaryTableName,
+                })
+                item?.rowSelectedIds.forEach((id) => {
+                    allPrefix.push({
+                        prefix: `${item?.project?.name}`,
+                        name: tablesOfEvaluation(item.projectId, id),
+                    })
+                })
+            })
+            return allPrefix
+        },
+    }
+}
+
+export function PanelContextProvider({ children, value }: PanelContextProviderProps) {
+    return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>
+}

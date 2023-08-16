@@ -87,6 +87,11 @@ class WidgetFormModel implements WidgetFieldConfig {
         return this
     }
 
+    removeField(property: string) {
+        delete this.$fields?.[property]
+        return this
+    }
+
     initPanelSchema() {
         this.addField(chartTypeField())
         this.addField(chartTitleField())

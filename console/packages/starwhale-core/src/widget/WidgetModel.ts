@@ -86,7 +86,7 @@ class WidgetModel implements WidgetConfig {
     }
 
     generateId() {
-        this.id = generateId(this.defaultConfig?.group ?? '')
+        this.id = generateId()
     }
 
     get config() {

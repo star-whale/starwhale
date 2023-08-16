@@ -4,7 +4,7 @@ import { createCustomStore } from '@starwhale/core/store'
 import WidgetRenderTree from '@starwhale/core/widget/WidgetRenderTree'
 import { EventBusSrv } from '@starwhale/core/events'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { tablesOfEvaluation, WidgetStateT } from '@starwhale/core'
+import { tablesOfEvaluation, WidgetStateT, withDefaultWidgets } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { useProject } from '@project/hooks/useProject'
@@ -75,7 +75,7 @@ const initialState = {
     widgets: {},
     defaults: {},
 }
-const Editor = withProject(witEditorContext(WidgetRenderTree, initialState))
+const Editor = withProject(witEditorContext(withDefaultWidgets(WidgetRenderTree), initialState))
 
 export { Editor, initialState }
 export default Editor

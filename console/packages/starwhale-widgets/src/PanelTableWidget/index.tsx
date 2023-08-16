@@ -6,7 +6,7 @@ import { ITableState } from '@starwhale/ui/GridTable/store'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',
-    group: WidgetGroupType.PANEL,
+    group: [WidgetGroupType.ALL, WidgetGroupType.PANEL],
     name: 'Table',
     optionConfig: {},
     fieldConfig: {

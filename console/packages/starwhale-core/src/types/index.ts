@@ -43,7 +43,7 @@ export type WideteExternalState = {
 export interface WidgetBaseConfig {
     type: WidgetType
     name: string
-    group?: WidgetGroupType
+    group?: WidgetGroupType | WidgetGroupType[]
     description?: string
     meta?: WidgetMeta
 }
@@ -112,6 +112,8 @@ export type WidgetRendererType<O extends object = any, F extends object = any> =
 >
 
 export enum WidgetGroupType {
+    ALL = 'ALL',
     PANEL = 'PANEL',
     LIST = 'LIST',
+    REPORT = 'REPORT',
 }
