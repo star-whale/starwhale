@@ -480,6 +480,10 @@ const evaluation = {
         en: 'Evaluation List',
         zh: '评测列表',
     },
+    'evalution.panel.add.desc': {
+        en: '{{0}} Evaluations have benn added',
+        zh: '已添加 {{0}} 个评测',
+    },
 }
 
 const report = {

@@ -12,6 +12,7 @@ import { TextLink } from '../Link'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
 import { useStore } from '@starwhale/core/store'
 import { WidgetStoreState } from '@starwhale/core'
+import { toaster } from 'baseui/toast'
 
 const RenderButton = ({ count, editing, toggle }) => {
     const [t] = useTranslation()
@@ -265,6 +266,10 @@ function EvalSelectList({
                                         )
                                         onSelectDataChange?.(renew)
                                         setIsAddOpen(false)
+                                        const num = Object.values(renew).reduce((acc, cur) => {
+                                            return acc + (cur.rowSelectedIds?.length ?? 0)
+                                        }, 0)
+                                        toaster.positive(t('evalution.panel.add.desc', [num]))
                                     }}
                                 >
                                     {t('add')}
