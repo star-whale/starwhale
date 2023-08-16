@@ -8,4 +8,4 @@ environment:
   os: ubuntu:20.04
   cuda: 11.7
 mode: venv
-name: SDv1-4
+name: Stable-diffusion-v1-4

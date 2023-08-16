@@ -14,17 +14,18 @@
 
 import typing as t
 
-import torch
 import gradio
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
-from diffusers.loaders import AttnProcsLayers, LORA_WEIGHT_NAME_SAFE, LORA_WEIGHT_NAME
-
+import torch
+from diffusers import StableDiffusionPipeline
+from diffusers.loaders import LORA_WEIGHT_NAME
 from starwhale import Text, PipelineHandler
 from starwhale.api.service import api
+try:
+    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
+except ImportError:
+    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
 
-ROOT_DIR = Path(__file__).parent
-model_id = "CompVis/stable-diffusion-v1-4"
-model_dir = ROOT_DIR / "models"
+model_id = get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4"
 
 
 class StableDiffusion(PipelineHandler):
@@ -33,16 +34,19 @@ class StableDiffusion(PipelineHandler):
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id, torch_dtype=torch.float16
         )
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        self.pipe = pipe.to("cuda")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.pipe = pipe.to(device)
         # TODO judge whether exist the lora model file
-        # load attention processors
-        self.pipe.unet.load_attn_procs(model_dir / LORA_WEIGHT_NAME)
+        _ft_model_path = PRETRAINED_MODELS_DIR / LORA_WEIGHT_NAME
+        print(f"models path:{_ft_model_path}")
+        if _ft_model_path.exists():
+            # load attention processors
+            self.pipe.unet.load_attn_procs(_ft_model_path)
 
-    def ppl(self, content: Text) -> t.Any:
+    def predict(self, content: Text) -> t.Any:
         return self.pipe(content).images[0]
 
-    def cmp(self, ppl_result: t.Iterator) -> t.Any:
+    def evaluate(self, ppl_result: t.Iterator) -> t.Any:
         return ppl_result
 
     @api(

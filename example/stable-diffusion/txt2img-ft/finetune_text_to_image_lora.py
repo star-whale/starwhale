@@ -29,12 +29,10 @@
 import logging
 import math
 import os
-import re
 import shutil
 from pathlib import Path
 
 import datasets
-import safetensors.torch as torch_to_st
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration
@@ -58,6 +56,14 @@ from diffusers.models.attention_processor import LoRAAttnProcessor
 from diffusers.optimization import get_scheduler
 from diffusers.utils.import_utils import is_xformers_available
 
+try:
+    from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
+    from .evaluate_text_to_image import StableDiffusion
+except ImportError:
+    from utils import get_base_model_path, PRETRAINED_MODELS_DIR
+    from evaluate_text_to_image import StableDiffusion
+
+
 ROOT_DIR = Path(__file__).parent
 
 logger = get_logger(__name__, log_level="INFO")
@@ -71,7 +77,7 @@ DATASET_COLUMN_MAPPING = {
 @pass_context
 @experiment.fine_tune()
 def fine_tune(context: Context,
-              pretrained_model_name_or_path="CompVis/stable-diffusion-v1-4",
+              pretrained_model_name_or_path=get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4",
               revision=None,
               dataset_name="pokemon-blip-captions/version/latest",
               output_dir="sd-model-finetuned-lora",
@@ -523,21 +529,16 @@ def fine_tune(context: Context,
                 break
 
     # Save the lora layers
-    model_dir = ROOT_DIR / "models"
     unet = unet.to(torch.float32)
 
     # convert the model to Safetensors format and save it to a file
-    unet.save_attn_procs(save_directory=model_dir)
+    unet.save_attn_procs(save_directory=PRETRAINED_MODELS_DIR)
 
     model.build(
         workdir=ROOT_DIR,
-        name="SD-finetune",
-        modules=[StableDiffusionEvaluation],  # TODO use eval handler
+        name="Stable-diffusion-v1-4-finetune",
+        modules=[StableDiffusion],
     )
-
-
-class StableDiffusionEvaluation:
-    ...
 
 
 if __name__ == "__main__":

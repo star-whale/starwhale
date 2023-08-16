@@ -1,5 +1,7 @@
 version: 1.0
-name: SD-finetune
+name: Stable-diffusion-v1-4
 
 run:
-  handler: finetune_text_to_image_lora
+  modules:
+    - finetune_text_to_image_lora
+    - evaluate_text_to_image
