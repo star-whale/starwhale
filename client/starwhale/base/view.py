@@ -41,14 +41,15 @@ class BaseTermView(SWCliConfigMixed):
         @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             def _print(_r: t.Dict[str, t.Any]) -> None:
-                p = Panel(
-                    (
-                        f"Counts: [green] {_r['current']}/{_r['total']} [/] :sheep: ,"
-                        f"[red] {_r['remain']} [/] items does not show."
-                    ),
-                    title="Count Details",
-                    title_align="left",
+                content = (
+                    f":sheep: Counts: [green] {_r['current']}/{_r['total']}[/], "
+                    f"[red]{_r['remain']}[/] items does not show."
                 )
+                if "page" in _r:
+                    content += "\n:butterfly: Pages: " + ", ".join(
+                        [f"{k}[{v}]" for k, v in _r["page"].items()]
+                    )
+                p = Panel(content, title="Count Details", title_align="left")
                 console.print(p)
 
             rt = func(*args, **kwargs)  # type: ignore
@@ -221,27 +222,31 @@ class BaseTermView(SWCliConfigMixed):
     ) -> t.List[t.Dict[str, t.Any]]:
         result = []
         for _name, _versions in _bundles.items():
+            # compatible with standalone and cloud
+            # TODO: use a better way to handle this
+            if not isinstance(_versions, (list, tuple)):
+                _versions = [_versions]
+
             for _v in _versions:
-                if show_removed ^ _v["is_removed"]:
+                if show_removed ^ _v.get("is_removed", False):
                     continue
 
-                _version = (
-                    _v["version"]
-                    if fullname or show_removed
-                    else _v["version"][:SHORT_VERSION_CNT]
-                )
-                if _v.get("id"):
-                    _version = f"[{_v['id']:2}] {_version}"
+                _info = {
+                    "version": (
+                        _v["version"]
+                        if fullname or show_removed
+                        else _v["version"][:SHORT_VERSION_CNT]
+                    ),
+                    "name": _name,
+                    CREATED_AT_KEY: _v[CREATED_AT_KEY],
+                    "tags": _v.get("tags"),
+                }
 
-                result.append(
-                    {
-                        "name": _name,
-                        "version": _version,
-                        "tags": _v.get("tags", []),
-                        "size": _v.get("size", 0),
-                        CREATED_AT_KEY: _v.get(CREATED_AT_KEY),
-                    }
-                )
+                for k in ("rows", "mode", "python", "size"):
+                    if k in _v:
+                        _info[k] = _v[k]
+
+                result.append(_info)
 
         order_keys = [Order("name"), Order(CREATED_AT_KEY, True)]
         return sort_obj_list(result, order_keys)
