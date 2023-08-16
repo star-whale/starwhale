@@ -311,7 +311,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         form.current.initPanelSchema()
     }, [t])
 
-    console.log(evalSelectData)
+    // console.log(evalSelectData)
 
     return (
         <PanelContextProvider value={{ evalSelectData }}>

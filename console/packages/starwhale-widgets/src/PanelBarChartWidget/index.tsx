@@ -5,7 +5,6 @@ import { WidgetPlugin } from '@starwhale/core/widget'
 import { UI_DATA } from '@starwhale/core/form/schemas/fields'
 import { getBarChartConfig } from '@starwhale/ui/Plotly/utils'
 import { decordRecords } from '@starwhale/core/datastore'
-import { usePanelDatastore } from '@starwhale/core/context'
 
 const PlotlyViewer = React.lazy(() => import(/* webpackChunkName: "PlotlyViewer" */ '@starwhale/ui/Plotly'))
 
@@ -87,7 +86,7 @@ function PanelBarChartWidget(props: WidgetRendererProps<any, any>) {
             })
     })
 
-    const vizData = getBarChartConfig(title, {}, barData as any)
+    const vizData = getBarChartConfig(title, undefined, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>

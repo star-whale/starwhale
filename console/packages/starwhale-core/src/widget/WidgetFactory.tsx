@@ -78,6 +78,8 @@ function withDefaultWidgets(EditorApp: React.FC) {
         WidgetFactory.register(w.getType(), w)
     })
 
+    WidgetFactory.setPanelGroup(WidgetGroupType.PANEL)
+
     return (props: any) => {
         return <EditorApp {...props} />
     }

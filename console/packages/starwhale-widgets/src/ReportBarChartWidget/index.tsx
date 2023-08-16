@@ -87,7 +87,7 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
         })
     })
 
-    const vizData = getBarChartConfig(title, {}, barData as any)
+    const vizData = getBarChartConfig(title, undefined, barData as any)
 
     return (
         <React.Suspense fallback={<BusyPlaceholder />}>
