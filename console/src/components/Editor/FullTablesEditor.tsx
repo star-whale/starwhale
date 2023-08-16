@@ -7,6 +7,7 @@ import { useFetchDatastoreAllTables, WidgetStoreState } from '@starwhale/core'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { tranformState } from './utils'
 import { withProject } from './Editor'
+import { withDefaultWidgets } from '@starwhale/core/widget'
 
 function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any }) {
@@ -87,7 +88,7 @@ function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>)
     }
 }
 
-const FullTablesEditor = withProject(witEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree))
+const FullTablesEditor = withProject(witEditorContext<WidgetRenderTreePropsT>(withDefaultWidgets(WidgetRenderTree)))
 
 export { FullTablesEditor }
 export default FullTablesEditor
