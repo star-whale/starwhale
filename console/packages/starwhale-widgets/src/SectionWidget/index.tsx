@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
 import BusyPlaceholder from '@starwhale/ui/BusyLoaderWrapper/BusyPlaceholder'
 import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/core/types'
@@ -61,8 +61,9 @@ export const CONFIG: WidgetConfig = {
         title: '',
         isExpaned: true,
         isEvaluationList: false,
-        isEvaluationListShow: false,
+        isEvaluationListShow: true,
         evalSelectData: {} as EvalSelectDataT, // {projectId: {}}
+        evalTableCurrentViewData: {},
         layoutConfig: {
             padding: 20,
             columnsPerPage: 3,
@@ -104,6 +105,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
         layout,
         isEvaluationList,
         evalSelectData,
+        evalTableCurrentViewData,
         isEvaluationListShow,
     } = optionConfig as any
     const [isDragging, setIsDragging] = useState(false)
@@ -125,6 +127,11 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }
     const handleReloadPanel = (id: string) => {
         eventBus.publish(new PanelChartReloadEvent({ id }))
+    }
+    const handleSelectCurrentViewDataChange = (data: any) => {
+        props.onOptionChange?.({
+            evalTableCurrentViewData: data,
+        })
     }
     const handleSelectDataChange = (data: any) => {
         props.onOptionChange?.({
@@ -315,6 +322,18 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
     }, [t, api.panelGroup])
 
     // console.log(evalSelectData)
+    useLayoutEffect(() => {
+        if (!wrapperRef.current) return
+        const wrect = wrapperRef.current.getBoundingClientRect()
+        if (wrect.width < rect.width) {
+            setRect((prev) => {
+                return {
+                    ...prev,
+                    width: wrect.width - padding * 2,
+                }
+            })
+        }
+    }, [])
 
     return (
         <PanelContextProvider value={{ evalSelectData }}>
@@ -364,6 +383,8 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                         <EvalSelectList
                             editing={isEvaluationListShow}
                             onEditingChange={handleEvaluationListShowChange}
+                            currentView={evalTableCurrentViewData}
+                            onCurrentViewChange={handleSelectCurrentViewDataChange}
                             value={evalSelectData}
                             onSelectDataChange={handleSelectDataChange}
                         />
