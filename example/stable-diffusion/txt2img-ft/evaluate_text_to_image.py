@@ -28,23 +28,25 @@ except ImportError:
 model_id = get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4"
 
 
-class StableDiffusion:
+class StableDiffusion(PipelineHandler):
     def __init__(self) -> None:
+        super().__init__()
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id, torch_dtype=torch.float16
         )
         pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-
+        self.cross_attention_kwargs = {}
         # whether exist the lora model file
         _lora_model_path = PRETRAINED_MODELS_DIR / LORA_WEIGHT_NAME
         if _lora_model_path.exists():
             # load attention processors
             pipe.unet.load_attn_procs(_lora_model_path, use_safetensors=False)
+            self.cross_attention_kwargs = {"scale": 0.5}
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.pipe = pipe.to(device)
 
     def predict(self, data: t.Dict[str, str]) -> t.Any:
-        return self.pipe(data["text"]).images[0]
+        return self.pipe(data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs).images[0]
 
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
         # TODO to image
