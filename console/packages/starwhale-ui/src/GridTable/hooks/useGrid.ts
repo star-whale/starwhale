@@ -9,6 +9,7 @@ import { useStore } from './useStore'
 import shallow from 'zustand/shallow'
 import { useState } from 'react'
 import { RecordAttr } from '@starwhale/ui/GridDatastoreTable/recordAttrModel'
+import useGridCurrentView from './useGridCurrentView'
 
 const selector = (s: IGridState) => ({
     initStore: s.initStore,
@@ -16,6 +17,8 @@ const selector = (s: IGridState) => ({
 
 function useGrid() {
     const { initStore } = useStore(selector, shallow)
+    const { rows, originalColumns } = useGirdData()
+    const { ids, isAllRuns, columns, currentView, setCurrentView } = useGridCurrentView(originalColumns)
     const { onSave, onSaveAs, changed } = useGridSave()
     const { sortIndex, sortDirection } = useGridSort()
     const { textQuery, setTextQuery } = useGridQueryText()
@@ -28,7 +31,6 @@ function useGrid() {
         isSelectedIndeterminate,
         isRowSelected,
     } = useGridSelection()
-    const { ids, isAllRuns, columns, currentView, rows, originalColumns } = useGirdData()
     const { renderConfigQuery } = useGridQuery()
     const [preview, setPreview] = useState<{
         record?: RecordAttr
@@ -52,6 +54,7 @@ function useGrid() {
         ids,
         isAllRuns,
         currentView,
+        setCurrentView,
         // selection
         selectedRowIds,
         onSelectMany,

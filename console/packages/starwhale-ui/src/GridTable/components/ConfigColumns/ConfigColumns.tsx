@@ -75,7 +75,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                 <Drawer
                     size={`${314 * 2 + 52 + 20 * 2}px`}
                     isOpen={isOpen}
-                    autoFocus
+                    autoFocus={false}
                     onClose={() => setIsOpen(false)}
                     mountNode={ref.current as any}
                     showBackdrop={false}
