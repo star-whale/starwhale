@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
-import WidgetFormModel from '../form/WidgetFormModel'
 import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
 import { PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
-import useTranslation from '@/hooks/useTranslation'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -48,13 +46,6 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
-    const form = useRef(new WidgetFormModel())
-
-    // @FIXME useTranslation
-    const [t] = useTranslation()
-    useEffect(() => {
-        form.current.initPanelSchema()
-    }, [t])
 
     const { toSave } = useRestoreState(store, initialState, dynamicVars)
 

@@ -18,6 +18,7 @@ export type WidgetTreeNode = {
 export type WidgetStoreState = {
     isInit?: boolean
     editable?: boolean
+    panelGroup?: WidgetGroupType[] | WidgetGroupType
     isEditable: () => boolean
     setRawConfigs: (configs: any) => void
     onConfigChange?: any

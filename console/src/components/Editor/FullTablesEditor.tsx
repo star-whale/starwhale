@@ -9,7 +9,7 @@ import { tranformState } from './utils'
 import { withProject } from './Editor'
 import { withDefaultWidgets } from '@starwhale/core/widget'
 
-function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
+function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any }) {
         const { prefix } = props.dynamicVars
         const { isLoading, isSuccess, names, tables } = useFetchDatastoreAllTables(prefix)
@@ -88,7 +88,7 @@ function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>)
     }
 }
 
-const FullTablesEditor = withProject(witEditorContext<WidgetRenderTreePropsT>(withDefaultWidgets(WidgetRenderTree)))
+const FullTablesEditor = withProject(withDefaultWidgets(withEditorContext<WidgetRenderTreePropsT>(WidgetRenderTree)))
 
 export { FullTablesEditor }
 export default FullTablesEditor

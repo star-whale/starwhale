@@ -83,6 +83,7 @@ const selector = (s: any) => ({
     onLayoutChildrenChange: s.onLayoutChildrenChange,
     onWidgetChange: s.onWidgetChange,
     onWidgetDelete: s.onWidgetDelete,
+    panelGroup: s.panelGroup,
 })
 
 // @ts-ignore
@@ -308,8 +309,10 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
 
     const form = useRef(new WidgetFormModel())
     useEffect(() => {
-        form.current.initPanelSchema()
-    }, [t])
+        form.current.initPanelSchema({
+            panelGroup: api.panelGroup,
+        })
+    }, [t, api.panelGroup])
 
     // console.log(evalSelectData)
 
