@@ -16,7 +16,7 @@ import typing as t
 
 import gradio
 import torch
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from diffusers.loaders import LORA_WEIGHT_NAME
 from starwhale import Text, PipelineHandler
 from starwhale.api.service import api
@@ -34,19 +34,22 @@ class StableDiffusion(PipelineHandler):
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id, torch_dtype=torch.float16
         )
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+
+        # whether exist the lora model file
+        _lora_model_path = PRETRAINED_MODELS_DIR / LORA_WEIGHT_NAME
+        if _lora_model_path.exists():
+            # load attention processors
+            print(f"ft model size:{_lora_model_path.stat().st_size}")
+            pipe.unet.load_attn_procs(_lora_model_path)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.pipe = pipe.to(device)
-        # TODO judge whether exist the lora model file
-        _ft_model_path = PRETRAINED_MODELS_DIR / LORA_WEIGHT_NAME
-        print(f"models path:{_ft_model_path}")
-        if _ft_model_path.exists():
-            # load attention processors
-            self.pipe.unet.load_attn_procs(_ft_model_path)
 
-    def predict(self, data: t.Dict[str, Text]) -> t.Any:
-        return self.pipe(data["text"].content).images[0]
+    def predict(self, data: t.Dict[str, str]) -> t.Any:
+        return self.pipe(data["text"]).images[0]
 
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
+        # TODO to image
         return ppl_result
 
     @api(

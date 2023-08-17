@@ -34,7 +34,7 @@ def build_ds_from_local_fs(ds_uri):
     for line in lines:
         ds.append(
             {
-                "text": Text(line),
+                "text": line,
             }
         )
     ds.commit()
@@ -45,13 +45,13 @@ def build_ds_from_local_fs(ds_uri):
 def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captions"):
     ds = dataset(ds_uri, create="empty")
     hf_ds = load_dataset(dataset_name, cache_dir="cache")
-    max_number = 100
+    max_number = 10
     for row in hf_ds["train"]:
         if max_number < 0:
             break
         ds.append(
             {
-                "text": Text(row.get("text")),
+                "text": row.get("text"),
             }
         )
         max_number -= 1
@@ -63,8 +63,8 @@ def build_ds_from_hf(ds_uri, dataset_name: str = "lambdalabs/pokemon-blip-captio
 if __name__ == "__main__":
     instance_uri = os.getenv(SWEnv.instance_uri)
     if instance_uri:
-        _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-eval1"
+        _ds_uri = f"{instance_uri}/project/starwhale/dataset/pokemon-blip-captions-eval"
     else:
-        _ds_uri = f"pokemon-blip-captions-eval1"
+        _ds_uri = f"pokemon-blip-captions-eval"
     # build_ds_from_local_fs(_ds_uri)
     build_ds_from_hf(_ds_uri)
