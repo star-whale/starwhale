@@ -22,6 +22,5 @@ export const COLORS = [
 ]
 
 export function getColor(index: number) {
-    console.log(index, COLORS.length, index % COLORS.length)
     return COLORS[index % COLORS.length]
 }

@@ -5,7 +5,7 @@ import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
 import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
-import { PanelChartSaveEvent, SectionAddEvent } from '../events/app'
+import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
 
@@ -40,9 +40,10 @@ const selector = (s: any) => ({
 export type WidgetRenderTreePropsT = {
     initialState?: any
     onSave?: (state: WidgetStateT) => void
+    onEvalSectionDelete?: () => void
 }
 
-export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreePropsT) {
+export function WidgetRenderTree({ initialState, onSave, onEvalSectionDelete }: WidgetRenderTreePropsT) {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
@@ -70,6 +71,13 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             eventBus.getStream(PanelChartSaveEvent).subscribe({
                 next: async () => {
                     onSave?.(toSave())
+                },
+            })
+        )
+        subscription.add(
+            eventBus.getStream(EvalSectionDeleteEvent).subscribe({
+                next: async () => {
+                    onEvalSectionDelete?.()
                 },
             })
         )

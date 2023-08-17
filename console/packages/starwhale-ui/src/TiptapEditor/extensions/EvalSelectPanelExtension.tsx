@@ -38,9 +38,10 @@ const Component = (props: NodeViewProps) => {
                 editable={props.editor.isEditable}
                 initialState={node.attrs.state}
                 onStateChange={onStateChange as any}
+                onEvalSectionDelete={props.deleteNode}
             />
         )
-    }, [node.attrs.state, props.editor.isEditable, onStateChange])
+    }, [props.deleteNode, node.attrs.state, props.editor.isEditable, onStateChange])
 
     // console.log('node.attrs.state', node.attrs.state?.widgets)
 

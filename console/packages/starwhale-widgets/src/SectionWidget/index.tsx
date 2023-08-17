@@ -12,6 +12,7 @@ import { Resizable } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import { createUseStyles } from 'react-jss'
 import { DragEndEvent, DragStartEvent } from '@starwhale/core/events/common'
+import { EvalSectionDeleteEvent } from '@starwhale/core/events/app'
 import SectionAccordionPanel from './component/SectionAccordionPanel'
 import SectionForm from './component/SectionForm'
 import ChartConfigGroup from './component/ChartConfigGroup'
@@ -177,6 +178,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
 
     const handleSectionDelete = () => {
         props.onLayoutCurrentChange?.({ type }, { type: 'delete', id: props.id })
+        if (isEvaluationList) eventBus.publish(new EvalSectionDeleteEvent({ id: props.id }))
     }
 
     const handleChartAddSave = (formData: any) => {
@@ -333,6 +335,7 @@ function SectionWidget(props: WidgetRendererProps<OptionConfig, any>) {
                 }
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
