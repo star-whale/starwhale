@@ -18,7 +18,7 @@ import gradio
 import torch
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 from diffusers.loaders import LORA_WEIGHT_NAME
-from starwhale import Text, PipelineHandler
+from starwhale import Text, PipelineHandler, Image, MIMEType
 from starwhale.api.service import api
 try:
     from .utils import get_base_model_path, PRETRAINED_MODELS_DIR
@@ -46,7 +46,12 @@ class StableDiffusion(PipelineHandler):
         self.pipe = pipe.to(device)
 
     def predict(self, data: t.Dict[str, str]) -> t.Any:
-        return self.pipe(data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs).images[0]
+        return Image(
+            self.pipe(
+                data["text"], guidance_scale=7.5, cross_attention_kwargs=self.cross_attention_kwargs
+            ).images[0].tobytes(),
+            mime_type=MIMEType.PNG,
+        )
 
     def evaluate(self, ppl_result: t.Iterator) -> t.Any:
         # TODO to image
