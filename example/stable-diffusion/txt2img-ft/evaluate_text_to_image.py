@@ -28,9 +28,8 @@ except ImportError:
 model_id = get_base_model_path() if get_base_model_path().exists() else "CompVis/stable-diffusion-v1-4"
 
 
-class StableDiffusion(PipelineHandler):
+class StableDiffusion:
     def __init__(self) -> None:
-        super().__init__()
         pipe = StableDiffusionPipeline.from_pretrained(
             model_id, torch_dtype=torch.float16
         )
@@ -40,8 +39,7 @@ class StableDiffusion(PipelineHandler):
         _lora_model_path = PRETRAINED_MODELS_DIR / LORA_WEIGHT_NAME
         if _lora_model_path.exists():
             # load attention processors
-            print(f"ft model size:{_lora_model_path.stat().st_size}")
-            pipe.unet.load_attn_procs(_lora_model_path)
+            pipe.unet.load_attn_procs(_lora_model_path, use_safetensors=False)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.pipe = pipe.to(device)
 
