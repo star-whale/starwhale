@@ -82,9 +82,9 @@ Config mirror environment
 - name: SW_PYPI_TRUSTED_HOST
   value: "{{ .Values.mirror.pypi.trustedHost }}"
 - name: SW_PYPI_RETRIES
-  value: "{{ .Values.mirror.pypi.retries }}"
+  value: "{{ default "10" .Values.mirror.pypi.retries }}"
 - name: SW_PYPI_TIMEOUT
-  value: "{{ .Values.mirror.pypi.timeout }}"
+  value: "{{ default "90" .Values.mirror.pypi.timeout }}"
 {{- end}}
 {{- end}}
 
