@@ -92,7 +92,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             subscription.add(
                 eventBus.getStream(PanelChartDownloadEvent).subscribe({
                     next: (evt) => {
-                        if (evt.payload?.id === id) {
+                        if (evt.payload?.id === id && query) {
                             exportTable(query as any)
                         }
                     },
@@ -101,7 +101,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             subscription.add(
                 eventBus.getStream(PanelChartReloadEvent).subscribe({
                     next: async (evt) => {
-                        if (evt.payload?.id === id) {
+                        if (evt.payload?.id === id && query) {
                             recordInfo.refetch()
                         }
                     },
@@ -131,7 +131,7 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                 }}
             >
                 {tableName && !recordInfo.isSuccess ? (
-                    <BusyPlaceholder style={{ minHeight: 'auto' }} />
+                    <BusyPlaceholder style={{ minHeight: 'auto' }} type={recordInfo.isLoading ? 'spinner' : 'empty'} />
                 ) : (
                     <WrappedWidgetRender
                         {...props}
@@ -146,8 +146,8 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
                         onLayoutOrderChange={handleLayoutOrderChange}
                         onLayoutChildrenChange={handleLayoutChildrenChange}
                         onLayoutCurrentChange={handleLayoutCurrentChange}
-                        onDataReload={() => recordInfo.refetch()}
-                        onDataDownload={() => exportTable(query)}
+                        onDataReload={() => query && recordInfo.refetch()}
+                        onDataDownload={() => query && exportTable(query)}
                         eventBus={eventBus}
                     />
                 )}

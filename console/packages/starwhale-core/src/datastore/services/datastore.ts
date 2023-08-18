@@ -23,6 +23,7 @@ export async function listTables(query: ListTablesRequest): Promise<TableNameLis
 }
 
 export async function exportTable(query: QueryTableRequest | ScanTableRequest): Promise<void> {
+    if (!query) return
     const url = 'tableName' in query ? '/api/v1/datastore/queryTable/export' : '/api/v1/datastore/scanTable/export'
 
     await axios({

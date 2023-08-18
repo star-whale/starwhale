@@ -1,12 +1,9 @@
 import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
 import classNames from 'classnames'
 import ConfigViews from '../ConfigViews/ConfigViews'
-import ConfigColumns from '../ConfigColumns'
-import { useStore } from '../../hooks/useStore'
 import React from 'react'
 import useGrid from '../../hooks/useGrid'
 import Button from '@starwhale/ui/Button'
-import { IGridState } from '../../types'
 
 type IToolBarProps = {
     viewable?: boolean
@@ -17,15 +14,8 @@ type IToolBarProps = {
     // headlineHeight?: number
 }
 
-const selector = (s: IGridState) => ({
-    currentView: s.currentView,
-    rowSelectedIds: s.rowSelectedIds,
-    onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
-})
-
 function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IToolBarProps) {
     const [css] = themedUseStyletron()
-    const { onCurrentViewColumnsChange } = useStore(selector)
     const headlineRef = React.useRef(null)
     // const [headlineHeight, setHeadlineHeight] = React.useState(64)
     // useResizeObserver(headlineRef, (entries) => {
@@ -33,8 +23,16 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
     // })
     // debugger
 
-    const { originalColumns, isAllRuns, changed, currentView, renderConfigQuery, onSave, onSaveAs, selectedRowIds } =
-        useGrid()
+    const {
+        isAllRuns,
+        changed,
+        currentView,
+        renderConfigQuery,
+        renderStatefulConfigColumns,
+        onSave,
+        onSaveAs,
+        selectedRowIds,
+    } = useGrid()
 
     const query = React.useMemo(() => {
         return queryable && renderConfigQuery()
@@ -83,13 +81,7 @@ function ToolBar({ viewable, filterable, searchable, queryable, columnable }: IT
                     </div>
 
                     {columnable && (
-                        <div className='table-config-column flex-row-center'>
-                            <ConfigColumns
-                                view={currentView}
-                                columns={originalColumns}
-                                onColumnsChange={onCurrentViewColumnsChange}
-                            />
-                        </div>
+                        <div className='table-config-column flex-row-center'>{renderStatefulConfigColumns()}</div>
                     )}
                 </div>
             </div>

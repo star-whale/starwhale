@@ -320,13 +320,12 @@ HeaderCell.defaultProps = {
 export default HeaderCell
 
 function HeaderFirstMenu(props: HeaderCellPropsT) {
+    // @ts-ignore
     const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
-    const { wrapperRef, queryinline, columnleinline, onCurrentViewColumnsChange } = useStore(selector)
-    const [css, theme] = themedUseStyletron()
-    const { renderConfigQueryInline } = useGrid()
+    const { wrapperRef, queryinline, columnleinline } = useStore(selector)
+    const { renderConfigQueryInline, renderConfigColumns } = useGrid()
     const [isShowQuery, setIsShowQuery] = React.useState(false)
-
-    // <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
+    const [isShowConfigColumns, setIsShowConfigColumns] = React.useState(false)
 
     const COLUMN_OPTIONS = React.useMemo(
         () =>
@@ -344,10 +343,30 @@ function HeaderFirstMenu(props: HeaderCellPropsT) {
         (option: any) => {
             if (option.type === 'query') {
                 setIsShowQuery(true)
+            } else if (option.type === 'column') {
+                setIsShowConfigColumns(true)
             }
         },
         [props]
     )
+
+    const ConfigQueryComponent = React.useMemo(() => {
+        return renderConfigQueryInline({
+            width: props.wrapperWidth,
+            isOpen: isShowQuery,
+            setIsOpen: setIsShowQuery as any,
+            mountNode: wrapperRef?.current,
+        })
+    }, [isShowQuery])
+
+    const ConfigColumnComponent = React.useMemo(() => {
+        return renderConfigColumns({
+            isAction: false,
+            isOpen: isShowConfigColumns,
+            setIsOpen: setIsShowConfigColumns as any,
+            mountNode: wrapperRef?.current,
+        })
+    }, [isShowConfigColumns])
 
     if (!columnleinline && !queryinline) {
         return null
@@ -356,14 +375,9 @@ function HeaderFirstMenu(props: HeaderCellPropsT) {
     return (
         <>
             <div>
-                {renderConfigQueryInline({
-                    width: props.wrapperWidth,
-                    isOpen: isShowQuery,
-                    setIsOpen: setIsShowQuery as any,
-                    mountNode: wrapperRef?.current,
-                })}
+                {ConfigQueryComponent}
+                {ConfigColumnComponent}
             </div>
-            {/* <ConfigColumns view={currentView} columns={originalColumns} onColumnsChange={onCurrentViewColumnsChange} /> */}
             <StatefulPopover
                 focusLock
                 triggerType={TRIGGER_TYPE.hover}

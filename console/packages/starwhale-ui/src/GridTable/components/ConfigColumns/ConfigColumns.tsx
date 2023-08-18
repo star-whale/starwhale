@@ -51,21 +51,29 @@ const useStyles = createUseStyles({
     },
 })
 
-type PropsT = {
+export type PropsT = {
     isInline?: boolean
     view: ConfigT
     columns?: ColumnT[]
     onColumnsChange?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
 }
 
+//
+export type ExtraPropsT = {
+    width?: number
+    isAction?: boolean
+    mountNode?: HTMLElement
+    isOpen?: boolean
+    setIsOpen?: (isOpen: boolean) => void
+}
+
 type T = string
-const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
+const ConfigColumns = React.forwardRef<{ getConfig: () => any }>((props: PropsT & ExtraPropsT, configRef) => {
     const styles = useStyles()
     const [, theme] = useStyletron()
     const [t] = useTranslation()
-    const [isOpen, setIsOpen] = React.useState(false)
     const ref = useRef(null)
-    const { columns } = props
+    const { columns, isOpen, setIsOpen, isAction = true, mountNode } = props
 
     const Wrapper = React.useCallback(
         ({ children }) => {
@@ -76,8 +84,8 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                     size={`${314 * 2 + 52 + 20 * 2}px`}
                     isOpen={isOpen}
                     autoFocus={false}
-                    onClose={() => setIsOpen(false)}
-                    mountNode={ref.current as any}
+                    onClose={() => setIsOpen?.(false)}
+                    mountNode={mountNode || (ref.current as any)}
                     showBackdrop={false}
                     animate={false}
                     overrides={{
@@ -85,6 +93,8 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                             style: {
                                 zIndex: '102',
                                 margin: 0,
+                                position: 'absolute',
+                                // overflow: 'show',
                             },
                         },
                         DrawerContainer: {
@@ -94,6 +104,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                                 boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
                                 margin: 0,
                                 ...expandBorderRadius('0'),
+                                // position: 'absolute',
                             },
                         },
                         DrawerBody: {
@@ -113,7 +124,7 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
                 </Drawer>
             )
         },
-        [props.isInline, isOpen, styles]
+        [props.isInline, isOpen, setIsOpen, styles, mountNode]
     )
 
     const [value, setValue] = useState<any>(props.view)
@@ -134,9 +145,9 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
 
     return (
         <div ref={ref} className={cn(styles.transferWrapper, 'inherit-height')}>
-            {!props.isInline && (
+            {!props.isInline && isAction && (
                 <Button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={() => setIsOpen?.(!isOpen)}
                     icon='setting'
                     kind='tertiary'
                     overrides={{
@@ -170,11 +181,12 @@ const ConfigColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props,
     )
 })
 
-ConfigColumns.defaultProps = {
-    isInline: false,
-    columns: [],
-    onColumnsChange: () => {},
-}
-export { ConfigColumns }
+function StatefulConfigColumns(props) {
+    const [isOpen, setIsOpen] = React.useState(false)
 
-export default ConfigColumns
+    return <ConfigColumns {...props} isOpen={isOpen} setIsOpen={setIsOpen} />
+}
+
+export { ConfigColumns, StatefulConfigColumns }
+
+export default StatefulConfigColumns

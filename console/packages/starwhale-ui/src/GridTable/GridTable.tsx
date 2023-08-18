@@ -17,6 +17,7 @@ import AutoStorePagination from './components/Pagination/AutoPagination'
 
 const useStyles = createUseStyles({
     table: {
+        // do not add overflow hidden here, toolbar will be blokced
         'width': '100%',
         'height': '100%',
         'position': 'relative',

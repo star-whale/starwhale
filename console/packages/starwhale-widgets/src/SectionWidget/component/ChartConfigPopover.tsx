@@ -2,14 +2,31 @@ import React from 'react'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@starwhale/ui/IconFont'
-// @FIXME move to ui
 import { ConfirmButton } from '@starwhale/ui/Modal'
 import { expandMargin, expandPadding } from '@starwhale/ui/utils'
 import useTranslation from '@/hooks/useTranslation'
+import { themedUseStyletron } from '@starwhale/ui/theme/styletron'
+import { Button } from '@starwhale/ui/Button'
+import { createUseStyles } from 'react-jss'
+
+const useStyles = createUseStyles({
+    icon: {
+        alignItems: 'center',
+        marginLeft: 'auto',
+        display: 'flex',
+        backgroundColor: '#F4F5F7',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        padding: '4px',
+        height: '20px',
+    },
+})
 
 // @ts-ignore
 export default function ChartConfigPopover({ onOptionSelect }) {
+    const styles = useStyles()
     const [t] = useTranslation()
+    const [css] = themedUseStyletron()
     const $options = React.useMemo(() => {
         return [
             { label: t('panel.chart.edit'), type: 'edit' },
@@ -39,13 +56,13 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                                 getItemLabel: (item: { label: string; type: string }) => {
                                     const menu = (
                                         <div
-                                            style={{
+                                            className={css({
                                                 display: 'flex',
                                                 justifyContent: 'flex-start',
                                                 gap: '13px',
                                                 color: item.type === 'delete' ? '#CC3D3D' : undefined,
                                                 alignItems: 'center',
-                                            }}
+                                            })}
                                         >
                                             {item.label}
                                         </div>
@@ -85,20 +102,9 @@ export default function ChartConfigPopover({ onOptionSelect }) {
                 />
             )}
         >
-            <div
-                style={{
-                    alignItems: 'center',
-                    marginLeft: 'auto',
-                    display: 'flex',
-                    backgroundColor: '#F4F5F7',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    height: '20px',
-                }}
-            >
+            <Button kind='tertiary' className={styles.icon}>
                 <IconFont type='setting' size={12} />
-            </div>
+            </Button>
         </StatefulPopover>
     )
 }

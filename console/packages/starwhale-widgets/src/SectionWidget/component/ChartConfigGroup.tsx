@@ -3,6 +3,7 @@ import { createUseStyles } from 'react-jss'
 import IconFont from '@starwhale/ui/IconFont'
 import classnames from 'classnames'
 import ChartConfigPopover from './ChartConfigPopover'
+import Button from '@starwhale/ui/Button'
 
 const useStyles = createUseStyles({
     chartGroup: {
@@ -52,15 +53,15 @@ export default function ChartConfigGroup({
                     actions?.[item?.type]()
                 }}
             />
-            <div className={styles.icon} role='button' onClick={() => onReload()} tabIndex={0}>
+            <Button kind='tertiary' className={styles.icon} onClick={() => onReload()}>
                 <IconFont type='reset' size={12} />
-            </div>
-            <div className={styles.icon} role='button' onClick={() => onDownload()} tabIndex={0}>
+            </Button>
+            <Button kind='tertiary' className={styles.icon} onClick={() => onDownload()}>
                 <IconFont type='download' size={12} />
-            </div>
-            <div className={styles.icon} role='button' onClick={() => onPreview()} tabIndex={0}>
+            </Button>
+            <Button kind='tertiary' className={styles.icon} onClick={() => onPreview()}>
                 <IconFont type='fullscreen' size={12} />
-            </div>
+            </Button>
         </div>
     )
 }
