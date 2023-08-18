@@ -78,7 +78,7 @@ public class DataStore {
             @Value("${sw.datastore.oss-max-attempts}") int ossMaxAttempts,
             @Value("${sw.datastore.data-root-path:}") String dataRootPath,
             @Value("${sw.datastore.dump-interval:1h}") String dumpInterval,
-            @Value("${sw.datastore.min-no-update-period:1d}") String minNoUpdatePeriod,
+            @Value("${sw.datastore.min-no-update-period:4h}") String minNoUpdatePeriod,
             @Value("${sw.datastore.parquet.compression-codec:SNAPPY}") String compressionCodec,
             @Value("${sw.datastore.parquet.row-group-size:128MB}") String rowGroupSize,
             @Value("${sw.datastore.parquet.page-size:1MB}") String pageSize,
@@ -99,15 +99,18 @@ public class DataStore {
         this.parquetConfig.setPageSize((int) DataSize.parse(pageSize).toBytes());
         this.parquetConfig.setPageRowCountLimit(pageRowCountLimit);
         var it = this.walManager.readAll();
+        log.info("Start to load wal log...");
         while (it.hasNext()) {
             var entry = it.next();
             var table = this.getTable(entry.getTableName(), true, true);
+            log.info("Loading wal log for table:{}.", entry.getTableName());
             //noinspection ConstantConditions
             table.updateFromWal(entry);
             if (table.getFirstWalLogId() >= 0) {
                 this.dirtyTables.put(table, "");
             }
         }
+        log.info("Finished load wal log...");
         this.dumpThread = new DumpThread(DurationStyle.detectAndParse(dumpInterval).toMillis(),
                 DurationStyle.detectAndParse(minNoUpdatePeriod).toMillis());
         this.dumpThread.start();

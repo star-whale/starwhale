@@ -91,7 +91,7 @@ sw:
     oss-max-attempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
     data-root-path: ${SW_DATASTORE_DATA_ROOT_PATH:}
     dump-interval: ${SW_DATASTORE_DUMP_INTERVAL:1h}
-    min-no-update-period: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:1d}
+    min-no-update-period: ${SW_DATASTORE_MIN_NO_UPDATE_PERIOD:4h}
     parquet:
       compression-codec: ${SW_DATASTORE_PARQUET_COMPRESSION_CODEC:SNAPPY}
       row-group-size: ${SW_DATASTORE_PARQUET_ROW_GROUP_SIZE:128MB}
@@ -157,7 +157,7 @@ server:
 logging:
   level:
     root: ${SW_ROOT_LOG_LEVEL:warn}
-    ai.starwhale.mlops: ${SW_BIZ_LOG_LEVEL:warn}
+    ai.starwhale.mlops: ${SW_BIZ_LOG_LEVEL:info}
     org.springframework.web.filter.CommonsRequestLoggingFilter: ${SW_REQUEST_LOG_LEVEL:info}
 
 management:
