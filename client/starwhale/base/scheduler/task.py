@@ -137,7 +137,8 @@ class TaskExecutor:
                     )
         else:
             # TODO: support user custom class and function with arguments
-            if issubclass(cls_, PipelineHandler):
+            ppl_handler_subclass = issubclass(cls_, PipelineHandler)
+            if ppl_handler_subclass:
                 func_name = self._get_internal_func_name(self.step.func_name)
             else:
                 func_name = self.step.func_name
@@ -149,6 +150,8 @@ class TaskExecutor:
                         self._run_in_pipeline_handler_cls(func, "evaluate")
                     elif getattr(func, DecoratorInjectAttr.Predict, False):
                         self._run_in_pipeline_handler_cls(func, "predict")
+                    elif ppl_handler_subclass:
+                        func()
                     else:
                         func(**{"handler_args": self.handler_args})
             else:
@@ -157,6 +160,8 @@ class TaskExecutor:
                     self._run_in_pipeline_handler_cls(func, "evaluate")
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
+                elif ppl_handler_subclass:
+                    func()
                 else:
                     func(**{"handler_args": self.handler_args})
 
