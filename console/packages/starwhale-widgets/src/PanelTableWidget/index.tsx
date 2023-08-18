@@ -3,6 +3,7 @@ import { WidgetRendererProps, WidgetConfig, WidgetGroupType } from '@starwhale/c
 import { WidgetPlugin } from '@starwhale/core/widget'
 import { GridTable } from '@starwhale/ui/GridTable'
 import { ITableState } from '@starwhale/ui/GridTable/store'
+import { LabelMedium } from 'baseui/typography'
 
 export const CONFIG: WidgetConfig = {
     type: 'ui:panel:table',

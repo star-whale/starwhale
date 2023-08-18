@@ -62,9 +62,10 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
     const m = getTableRecordMap()
     const barData: { x: any[]; y: any[]; type: string; name: string; marker: any }[] = []
 
-    Object.entries(m).forEach(([, records], _index) => {
+    let curr = 0
+    Object.entries(m).forEach(([, records]) => {
         if (!records) return
-        decordRecords(records as any).forEach((item: any, index) => {
+        decordRecords(records as any).forEach((item: any) => {
             const x: any[] = []
             const y: any[] = []
             const names: string[] = []
@@ -85,9 +86,10 @@ function ReportBarChartWidget(props: WidgetRendererProps<any, any>) {
                 type: 'bar',
                 name: names.join(' '),
                 marker: {
-                    color: getColor(index + _index),
+                    color: getColor(curr),
                 },
             })
+            curr += 1
         })
     })
 
