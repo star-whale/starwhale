@@ -37,6 +37,8 @@ const locale = {
     columnUnPinColumn: 'Unpin Column',
     columnSortAsc: 'Sort asc',
     columnSortDesc: 'Sort desc',
+    columnQuery: 'Query',
+    columnConfig: 'Manage Column',
 }
 
 export type DataTableLocaleT = typeof locale

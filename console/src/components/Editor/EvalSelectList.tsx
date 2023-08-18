@@ -191,6 +191,7 @@ function EvalSelectList({
                         removable={editable}
                         compareable={false}
                         paginationable={false}
+                        queryinline
                         // @ts-ignore
                         records={uniconRecords}
                         columnTypes={unionColumnTypes}

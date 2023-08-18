@@ -31,7 +31,7 @@ function useGrid() {
         isSelectedIndeterminate,
         isRowSelected,
     } = useGridSelection()
-    const { renderConfigQuery } = useGridQuery()
+    const { renderConfigQuery, renderConfigQueryInline } = useGridQuery()
     const [preview, setPreview] = useState<{
         record?: RecordAttr
         columnKey: string
@@ -69,6 +69,7 @@ function useGrid() {
         rows,
         // query
         renderConfigQuery,
+        renderConfigQueryInline,
         // store
         initStore,
         // preview

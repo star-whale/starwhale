@@ -18,7 +18,6 @@ const selector = (s: IGridState) => ({
 })
 
 export default function Headers({ width }: { width: number }) {
-    // @FIXME css as dep will cause rerender ?
     const [css, theme] = themedUseStyletron()
     const locale = React.useContext(LocaleContext)
     const ctx = React.useContext(HeaderContext)
@@ -36,8 +35,6 @@ export default function Headers({ width }: { width: number }) {
             })),
         [columns]
     )
-
-    const { renderConfigQueryInline } = useGridQuery()
 
     const headerRender = useCallback(
         (column: ColumnT & { index: number }, index) => {
@@ -92,7 +89,7 @@ export default function Headers({ width }: { width: number }) {
                             isSelectedIndeterminate={ctx.isSelectedIndeterminate}
                             selectedRowIds={selectedRowIds}
                             isQueryInline={queryinline}
-                            querySlot={queryinline && renderConfigQueryInline({ width })}
+                            wrapperWidth={width}
                             onMouseEnter={ctx.onMouseEnter}
                             onMouseLeave={ctx.onMouseLeave}
                             onResize={ctx.onResize}
@@ -143,7 +140,6 @@ export default function Headers({ width }: { width: number }) {
             ctx.sortIndex,
             ctx.tableHeight,
             ctx.widths,
-            renderConfigQueryInline,
             ctx.compareable,
             width,
         ]

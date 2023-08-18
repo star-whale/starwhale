@@ -37,6 +37,8 @@ const datatable = {
     columnUnPinColumn: 'Unpin Column',
     columnSortAsc: 'Sort asc',
     columnSortDesc: 'Sort desc',
+    columnQuery: 'Fillter',
+    columnConfig: 'Manage Columns',
 }
 
 export default {

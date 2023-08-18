@@ -3,7 +3,7 @@ import * as React from 'react'
 import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
-import { StatefulPopover, PLACEMENT } from 'baseui/popover'
+import { StatefulPopover, PLACEMENT, Popover, TRIGGER_TYPE } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import IconFont from '../../../IconFont'
 import cn from 'classnames'
@@ -14,9 +14,16 @@ import { LocaleContext } from 'baseui/locale'
 import Checkbox from '../../../Checkbox'
 import { themedUseStyletron } from '../../../theme/styletron'
 import { DataTableLocaleT } from '../locale'
+import { IGridState } from '@starwhale/ui/GridTable/types'
+import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
+import useGridQuery from '@starwhale/ui/GridTable/hooks/useGridQuery'
+import useGrid from '@starwhale/ui/GridTable/hooks/useGrid'
+import ConfigColumns from '@starwhale/ui/GridTable/components/ConfigColumns'
+import { useHover, useHoverDirty } from 'react-use'
 
 type HeaderCellPropsT = {
     index: number
+    wrapperWidth?: number
     isHovered: boolean
     isMeasured?: boolean
     isSelectable: boolean
@@ -41,6 +48,13 @@ type HeaderCellPropsT = {
     removable?: boolean
     querySlot?: React.ReactNode
 }
+
+const selector = (s: IGridState) => ({
+    queryinline: s.queryinline,
+    columnleinline: s.columnleinline,
+    onCurrentViewColumnsChange: s.onCurrentViewColumnsChange,
+    wrapperRef: s.wrapperRef,
+})
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
     //@ts-ignore
@@ -128,10 +142,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
-            {props.isQueryInline && (
-                <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
-            )}
-            {props.removable && props.index === 0 && <p className='mx-8px w-16px' />}
+            {props.index === 0 && <HeaderFirstMenu {...props} />}
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox
@@ -238,6 +249,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 )}
                 <StatefulPopover
                     focusLock
+                    triggerType={TRIGGER_TYPE.hover}
                     placement={PLACEMENT.bottom}
                     content={({ close }) => (
                         <StatefulMenu
@@ -258,8 +270,9 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                                             }
 
                                             return (
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    {item.label} {icon?.[item.type as keyof typeof icon]}
+                                                <div className='flex gap-10px items-center'>
+                                                    {icon?.[item.type as keyof typeof icon]}
+                                                    {item.label}
                                                 </div>
                                             )
                                         },
@@ -305,3 +318,104 @@ HeaderCell.defaultProps = {
 }
 
 export default HeaderCell
+
+function HeaderFirstMenu(props: HeaderCellPropsT) {
+    const locale: { datatable: DataTableLocaleT } = React.useContext(LocaleContext)
+    const { wrapperRef, queryinline, columnleinline, onCurrentViewColumnsChange } = useStore(selector)
+    const [css, theme] = themedUseStyletron()
+    const { renderConfigQueryInline } = useGrid()
+    const [isShowQuery, setIsShowQuery] = React.useState(false)
+
+    // <span className={css({ paddingRight: theme.sizing.scale300 })}>{props.querySlot}</span>
+
+    const COLUMN_OPTIONS = React.useMemo(
+        () =>
+            [
+                queryinline && {
+                    label: locale.datatable.columnQuery,
+                    type: 'query',
+                },
+                { label: locale.datatable.columnConfig, type: 'column' },
+            ].filter(Boolean),
+        [queryinline, locale]
+    )
+
+    const handleColumnOptionSelect = React.useCallback(
+        (option: any) => {
+            if (option.type === 'query') {
+                setIsShowQuery(true)
+            }
+        },
+        [props]
+    )
+
+    if (!columnleinline && !queryinline) {
+        return null
+    }
+
+    return (
+        <>
+            <div>
+                {renderConfigQueryInline({
+                    width: props.wrapperWidth,
+                    isOpen: isShowQuery,
+                    setIsOpen: setIsShowQuery as any,
+                    mountNode: wrapperRef?.current,
+                })}
+            </div>
+            {/* <ConfigColumns view={currentView} columns={originalColumns} onColumnsChange={onCurrentViewColumnsChange} /> */}
+            <StatefulPopover
+                focusLock
+                triggerType={TRIGGER_TYPE.hover}
+                placement={PLACEMENT.bottom}
+                content={({ close }) => (
+                    <StatefulMenu
+                        items={COLUMN_OPTIONS}
+                        onItemSelect={({ item }) => {
+                            handleColumnOptionSelect(item)
+                            close()
+                        }}
+                        overrides={{
+                            List: { style: { height: '130px', width: '150px' } },
+                            Option: {
+                                props: {
+                                    getItemLabel: (item: { label: string; type: string }) => {
+                                        const icon = {
+                                            query: <IconFont type='filter' />,
+                                            column: <IconFont type='setting' />,
+                                        }
+
+                                        return (
+                                            <div className='flex gap-10px items-center'>
+                                                {icon?.[item.type as keyof typeof icon]}
+                                                {item.label}
+                                            </div>
+                                        )
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                )}
+            >
+                {/* usesd for popover postion ref  */}
+                <Button as='link'>
+                    <div
+                        style={{
+                            alignItems: 'center',
+                            marginLeft: 'auto',
+                            right: 0,
+                            top: -6,
+                            display: 'flex',
+                            width: '30px',
+                            justifyContent: 'center',
+                            marginRight: '8px',
+                        }}
+                    >
+                        <IconFont type='more' />
+                    </div>
+                </Button>
+            </StatefulPopover>
+        </>
+    )
+}

@@ -117,6 +117,7 @@ function GridTable({
         store.setState
     )
     useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
 
     const {
         selectedRowIds,
@@ -140,7 +141,12 @@ function GridTable({
 
     return (
         <div
-            className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
+            className={cn(
+                styles.table,
+                styles.tablePinnable,
+                compareable ? styles.tableCompareable : undefined,
+                'not-prose'
+            )}
             ref={wrapperRef}
         >
             {children}

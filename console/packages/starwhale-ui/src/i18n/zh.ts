@@ -37,6 +37,8 @@ const datatable = {
     columnUnPinColumn: '取消固定列',
     columnSortAsc: '升序排序',
     columnSortDesc: '降序排序',
+    columnQuery: '筛选',
+    columnConfig: '管理列',
 }
 
 export default {
