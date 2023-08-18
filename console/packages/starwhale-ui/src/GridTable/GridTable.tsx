@@ -17,6 +17,7 @@ import AutoStorePagination from './components/Pagination/AutoPagination'
 
 const useStyles = createUseStyles({
     table: {
+        // do not add overflow hidden here, toolbar will be blokced
         'width': '100%',
         'height': '100%',
         'position': 'relative',
@@ -117,6 +118,7 @@ function GridTable({
         store.setState
     )
     useDirectStoreUpdater('rows', rows, store.setState)
+    useDirectStoreUpdater('wrapperRef', wrapperRef, store.setState)
 
     const {
         selectedRowIds,
@@ -140,7 +142,12 @@ function GridTable({
 
     return (
         <div
-            className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
+            className={cn(
+                styles.table,
+                styles.tablePinnable,
+                compareable ? styles.tableCompareable : undefined,
+                'not-prose'
+            )}
             ref={wrapperRef}
         >
             {children}

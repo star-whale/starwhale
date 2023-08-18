@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import useGridData from './useGridData'
+import useGirdData from './useGridData'
+import useGridCurrentView from './useGridCurrentView'
 
-function useGridSave() {
-    const { columns, currentView } = useGridData()
+function useGridSort() {
+    const { originalColumns } = useGirdData()
+    const { columns, currentView } = useGridCurrentView(originalColumns)
 
     const [$sortIndex, $sortDirection] = useMemo(() => {
         const { sortBy, sortDirection } = currentView || {}
@@ -16,6 +18,6 @@ function useGridSave() {
     }
 }
 
-export { useGridSave }
+export { useGridSort }
 
-export default useGridSave
+export default useGridSort

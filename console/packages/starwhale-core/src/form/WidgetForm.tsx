@@ -7,6 +7,7 @@ function WidgetForm({ formData, onChange, onSubmit, form }: any, ref: any) {
     const { schema, uiSchema } = form.schemas
     return (
         <Form
+            showErrorList={false}
             schema={schema}
             widgets={Widgets}
             uiSchema={uiSchema}

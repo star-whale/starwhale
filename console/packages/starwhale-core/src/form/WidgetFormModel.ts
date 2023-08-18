@@ -92,8 +92,8 @@ class WidgetFormModel implements WidgetFieldConfig {
         return this
     }
 
-    initPanelSchema() {
-        this.addField(chartTypeField())
+    initPanelSchema({ panelGroup }) {
+        this.addField(chartTypeField(panelGroup))
         this.addField(chartTitleField())
         this.uiSchema = PanelUISchema
         return this

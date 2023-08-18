@@ -1,6 +1,6 @@
 import React from 'react'
 import { useStore, useStoreApi } from './useStore'
-import { ConfigQuery, ConfigQueryInline } from '../components/Query'
+import { ConfigQuery, ConfigQueryInline, ExtraPropsT } from '../components/Query'
 import shallow from 'zustand/shallow'
 import { IGridState } from '../types'
 import { sortColumn } from '../../GridDatastoreTable'
@@ -63,10 +63,8 @@ function useGridQuery() {
     }, [originalColumns, queries, onChange, isSimpleQuery, hasFilter, sortedColumnTypes, t])
 
     const renderConfigQueryInline = React.useCallback(
-        ({ width }: { width: number }) => {
-            return (
-                <ConfigQueryInline value={queries} onChange={onChange} width={width} columnTypes={sortedColumnTypes} />
-            )
+        (props: ExtraPropsT) => {
+            return <ConfigQueryInline {...props} value={queries} onChange={onChange} columnTypes={sortedColumnTypes} />
         },
         [sortedColumnTypes, queries, onChange]
     )

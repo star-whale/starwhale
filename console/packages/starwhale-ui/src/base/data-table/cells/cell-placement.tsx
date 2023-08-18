@@ -5,6 +5,9 @@ import { themedUseStyletron } from '../../../theme/styletron'
 import _ from 'lodash'
 import IconFont from '@starwhale/ui/IconFont'
 import Button, { ExtendButton } from '@starwhale/ui/Button'
+import { IGridState } from '@starwhale/ui/GridTable/types'
+import shallow from 'zustand/shallow'
+import { useStore } from '@starwhale/ui/GridTable/hooks/useStore'
 
 export type CellPlacementPropsT = {
     columnIndex: number
@@ -32,12 +35,18 @@ export type CellPlacementPropsT = {
     }
 }
 
+const selector = (s: IGridState) => ({
+    queryinline: s.queryinline,
+    columnleinline: s.columnleinline,
+})
+
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
+    const { queryinline, columnleinline } = useStore(selector, shallow)
+
     const [css, theme] = themedUseStyletron()
     const {
         textQuery,
         isSelectable,
-        isQueryInline,
         isRowSelected,
         previewable,
         removable,
@@ -147,13 +156,15 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                     <IconFont type='fullscreen' size={14} />
                 </div>
             )}
-            {removable && columnIndex === 0 && (
-                <ExtendButton
-                    negative
-                    className='mx-8px'
-                    icon='item-reduce'
-                    onClick={() => onRemove?.(getId(value.record))}
-                />
+            {columnIndex === 0 && (
+                <div className='flex gap-8px'>
+                    {removable ? (
+                        <ExtendButton negative icon='item-reduce' onClick={() => onRemove?.(getId(value.record))} />
+                    ) : (
+                        !isSelectable && <p className='w-30px' />
+                    )}
+                    {(columnleinline || queryinline) && <p className='w-30px' />}
+                </div>
             )}
             <Cell
                 columnKey={column.key}
@@ -162,7 +173,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 pin={column.pin}
                 onSelect={onSelect}
                 isSelected={isSelected}
-                isQueryInline={isQueryInline && columnIndex === 0}
                 textQuery={textQuery}
                 x={columnIndex}
                 y={rowIndex}

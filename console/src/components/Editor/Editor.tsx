@@ -30,7 +30,7 @@ export function withProject(EditorApp: React.FC) {
 
 const empty = {}
 
-export function witEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
+export function withEditorContext<EditorAppPropsT>(EditorApp: React.FC<EditorAppPropsT>, rawState: WidgetStateT) {
     return function EditorContexted(props: EditorAppPropsT & { dynamicVars?: any } & any) {
         const state = useMemo(() => tranformState(rawState) as WidgetStateT, [])
         const store = useRef<StoreType>()
@@ -75,7 +75,7 @@ const initialState = {
     widgets: {},
     defaults: {},
 }
-const Editor = withProject(witEditorContext(withDefaultWidgets(WidgetRenderTree), initialState))
+const Editor = withProject(withDefaultWidgets(withEditorContext(WidgetRenderTree, initialState)))
 
 export { Editor, initialState }
 export default Editor

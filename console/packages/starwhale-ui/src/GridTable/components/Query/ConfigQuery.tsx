@@ -6,11 +6,20 @@ import IconFont from '@starwhale/ui/IconFont'
 import { QueryT } from '@starwhale/ui/base/data-table/types'
 import { ColumnSchemaDesc } from '@starwhale/core'
 import { sortColumn } from '@starwhale/ui/GridDatastoreTable'
+import _ from 'lodash'
 
 type PropsT = {
     columnTypes?: ColumnSchemaDesc[]
     value: QueryT[]
     onChange: (args: QueryT[]) => void
+}
+
+export type ExtraPropsT = {
+    width?: number
+    isAction?: boolean
+    mountNode?: HTMLElement
+    isOpen?: boolean
+    setIsOpen?: (isOpen: boolean) => void
 }
 
 function ConfigQuery(props: PropsT) {
@@ -29,8 +38,9 @@ function ConfigQuery(props: PropsT) {
     return <DatastoreMixedTypeSearch fields={fields as any} value={props.value} onChange={props.onChange} />
 }
 
-function ConfigQueryInline(props: PropsT & { width: number }) {
-    const [isOpen, setIsOpen] = React.useState(false)
+function ConfigQueryInline(props: ExtraPropsT & PropsT) {
+    const { isOpen, setIsOpen } = props
+
     return (
         <>
             {isOpen && (
@@ -39,10 +49,11 @@ function ConfigQueryInline(props: PropsT & { width: number }) {
                     initialState={{
                         isOpen: true,
                     }}
+                    mountNode={props.mountNode}
                     overrides={{
                         Body: {
                             style: {
-                                width: `${props.width}px`,
+                                width: _.isNumber(props.width) ? `${props.width}px` : '100%',
                                 /* tricky here: to make sure popover to align with rows, if cell
                                  changes ,this should be reset */
                                 marginLeft: '-12px',
@@ -56,28 +67,39 @@ function ConfigQueryInline(props: PropsT & { width: number }) {
                         },
                     }}
                     dismissOnEsc={false}
-                    dismissOnClickOutside={false}
+                    // dismissOnClickOutside={false}
                     placement='topLeft'
                     content={() => <ConfigQuery {...props} />}
+                    onClose={() => {
+                        setIsOpen?.(false)
+                    }}
                 >
                     <span />
                 </StatefulPopover>
             )}
 
-            <Button onClick={() => setIsOpen(!isOpen)} as='link'>
-                <div
-                    style={{
-                        padding: '5px',
-                        backgroundColor: isOpen ? '#DBE5F9' : 'transparent',
-                        borderRadius: '4px',
-                    }}
-                >
-                    <IconFont type='filter' />
-                </div>
-            </Button>
+            {props.isAction && (
+                <Button onClick={() => setIsOpen?.(!isOpen)} as='link'>
+                    <div
+                        style={{
+                            padding: '5px',
+                            backgroundColor: isOpen ? '#DBE5F9' : 'transparent',
+                            borderRadius: '4px',
+                        }}
+                    >
+                        <IconFont type='filter' />
+                    </div>
+                </Button>
+            )}
         </>
     )
 }
 
-export { ConfigQueryInline, ConfigQuery }
+function StatefulConfigQueryInline(props) {
+    const [isOpen, setIsOpen] = React.useState(false)
+
+    return <ConfigQueryInline {...props} isOpen={isOpen} setIsOpen={setIsOpen} />
+}
+
+export { ConfigQueryInline, StatefulConfigQueryInline, ConfigQuery }
 export default ConfigQuery

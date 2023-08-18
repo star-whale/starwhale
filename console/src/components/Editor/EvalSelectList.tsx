@@ -11,7 +11,7 @@ import _ from 'lodash'
 import { TextLink } from '../Link'
 import { CustomColumn } from '@starwhale/ui/base/data-table'
 import { useStore } from '@starwhale/core/store'
-import { WidgetStoreState } from '@starwhale/core'
+import { WidgetStoreState, getTableDistinctColumnTypes } from '@starwhale/core'
 import { toaster } from 'baseui/toast'
 
 const RenderButton = ({ count, editing, toggle }) => {
@@ -78,11 +78,15 @@ function EvalSelectList({
     value,
     onEditingChange,
     onSelectDataChange,
+    currentView,
+    onCurrentViewChange,
 }: {
     editing?: boolean
     onEditingChange?: (editing: boolean) => void
     value?: EvalSelectDataT
     onSelectDataChange?: (data: EvalSelectDataT) => void
+    currentView?: any
+    onCurrentViewChange?: (data: any) => void
 }) {
     const [isAddOpen, setIsAddOpen] = React.useState(false)
     const ref = React.useRef<{ getData: () => EvalSelectDataT }>()
@@ -109,13 +113,7 @@ function EvalSelectList({
         [values]
     )
 
-    const unionColumnTypes = React.useMemo(
-        () =>
-            values.reduce((acc, cur) => {
-                return [...acc, ...(cur.columnTypes ?? [])]
-            }, []),
-        [values]
-    )
+    const unionColumnTypes = React.useMemo(() => getTableDistinctColumnTypes(selectData), [selectData])
 
     const $columns = useDatastoreSummaryColumns(unionColumnTypes as any)
 
@@ -193,6 +191,7 @@ function EvalSelectList({
                         removable={editable}
                         compareable={false}
                         paginationable={false}
+                        queryinline
                         // @ts-ignore
                         records={uniconRecords}
                         columnTypes={unionColumnTypes}
@@ -221,6 +220,8 @@ function EvalSelectList({
                             const next = renew(selectData || {})
                             onSelectDataChange?.(next)
                         }}
+                        currentView={currentView}
+                        onCurrentViewChange={(s) => onCurrentViewChange?.(s.currentView)}
                     >
                         <div className='flex gap-20px justify-end'>
                             <ToolBar columnable viewable={false} queryable={false} />
@@ -232,8 +233,8 @@ function EvalSelectList({
                         onClose={() => setIsAddOpen(false)}
                         closeable
                         animate
-                        autoFocus
                         size='80%'
+                        returnFocus={false}
                     >
                         <ModalHeader>{t('evalution.panel.add')}</ModalHeader>
                         <ModalBody>

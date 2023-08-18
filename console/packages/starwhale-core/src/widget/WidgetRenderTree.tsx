@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import deepEqual from 'fast-deep-equal'
 import { Subscription } from 'rxjs'
 import { useEditorContext } from '../context/EditorContextProvider'
 import withWidgetDynamicProps from './withWidgetDynamicProps'
 import { WidgetRenderer } from './WidgetRenderer'
-import WidgetFormModel from '../form/WidgetFormModel'
 import { WidgetProps, WidgetStateT, WidgetTreeNode } from '../types'
-import { PanelChartSaveEvent, SectionAddEvent } from '../events/app'
+import { EvalSectionDeleteEvent, PanelChartSaveEvent, SectionAddEvent } from '../events/app'
 import useRestoreState from './hooks/useRestoreState'
 import shallow from 'zustand/shallow'
-import useTranslation from '@/hooks/useTranslation'
 
 export const WrapedWidgetNode = withWidgetDynamicProps(function WidgetNode(props: WidgetProps) {
     const { childWidgets, path = [] } = props
@@ -42,19 +40,13 @@ const selector = (s: any) => ({
 export type WidgetRenderTreePropsT = {
     initialState?: any
     onSave?: (state: WidgetStateT) => void
+    onEvalSectionDelete?: () => void
 }
 
-export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreePropsT) {
+export function WidgetRenderTree({ initialState, onSave, onEvalSectionDelete }: WidgetRenderTreePropsT) {
     const { store, eventBus, dynamicVars } = useEditorContext()
     const api = store(selector, shallow)
     const tree = store((state) => state.tree, deepEqual)
-    const form = useRef(new WidgetFormModel())
-
-    // @FIXME useTranslation
-    const [t] = useTranslation()
-    useEffect(() => {
-        form.current.initPanelSchema()
-    }, [t])
 
     const { toSave } = useRestoreState(store, initialState, dynamicVars)
 
@@ -79,6 +71,13 @@ export function WidgetRenderTree({ initialState, onSave }: WidgetRenderTreeProps
             eventBus.getStream(PanelChartSaveEvent).subscribe({
                 next: async () => {
                     onSave?.(toSave())
+                },
+            })
+        )
+        subscription.add(
+            eventBus.getStream(EvalSectionDeleteEvent).subscribe({
+                next: async () => {
+                    onEvalSectionDelete?.()
                 },
             })
         )
