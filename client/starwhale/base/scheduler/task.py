@@ -130,15 +130,17 @@ class TaskExecutor:
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
                 elif getattr(func, DecoratorInjectAttr.Step, False):
-                    func(**{"handler_args": self.handler_args})
+                    if self.handler_args:
+                        func(**{"handler_args": self.handler_args})
+                    else:
+                        func()
                 else:
                     raise NoSupportError(
                         f"func({self.step.module_name}.{self.step.func_name}) should use @handler, @predict or @evaluate decorator"
                     )
         else:
             # TODO: support user custom class and function with arguments
-            ppl_handler_subclass = issubclass(cls_, PipelineHandler)
-            if ppl_handler_subclass:
+            if issubclass(cls_, PipelineHandler):
                 func_name = self._get_internal_func_name(self.step.func_name)
             else:
                 func_name = self.step.func_name
@@ -150,20 +152,22 @@ class TaskExecutor:
                         self._run_in_pipeline_handler_cls(func, "evaluate")
                     elif getattr(func, DecoratorInjectAttr.Predict, False):
                         self._run_in_pipeline_handler_cls(func, "predict")
-                    elif ppl_handler_subclass:
-                        func()
                     else:
-                        func(**{"handler_args": self.handler_args})
+                        if self.handler_args:
+                            func(**{"handler_args": self.handler_args})
+                        else:
+                            func()
             else:
                 func = getattr(cls_(), func_name)
                 if getattr(func, DecoratorInjectAttr.Evaluate, False):
                     self._run_in_pipeline_handler_cls(func, "evaluate")
                 elif getattr(func, DecoratorInjectAttr.Predict, False):
                     self._run_in_pipeline_handler_cls(func, "predict")
-                elif ppl_handler_subclass:
-                    func()
                 else:
-                    func(**{"handler_args": self.handler_args})
+                    if self.handler_args:
+                        func(**{"handler_args": self.handler_args})
+                    else:
+                        func()
 
     def execute(self) -> TaskResult:
         console.info(f"start to execute task with context({self.context}) ...")
