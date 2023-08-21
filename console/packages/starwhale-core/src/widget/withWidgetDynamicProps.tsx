@@ -11,6 +11,7 @@ import { PanelChartDownloadEvent, PanelChartReloadEvent } from '../events'
 import { BusyPlaceholder } from '@starwhale/ui/BusyLoaderWrapper'
 import shallow from 'zustand/shallow'
 import useDatastorePage from '../datastore/hooks/useDatastorePage'
+import { usePanelDatastore } from '../context'
 
 function getParentPath(paths: any[]) {
     const curr = paths.slice()
@@ -59,10 +60,14 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             [api, path]
         )
 
+        const { getPrefixes } = usePanelDatastore()
+        const prefixes = React.useMemo(() => getPrefixes(), [getPrefixes])
+
         // @FIXME show datastore be fetch at here
         // @FIXME refrech setting
         const tableName = React.useMemo(() => overrides?.fieldConfig?.data?.tableName, [overrides])
         const tableConfig = React.useMemo(() => overrides?.optionConfig?.currentView, [overrides])
+
         const { page, setPage, params } = useDatastorePage({
             pageNum: 1,
             pageSize: 1000,
@@ -70,7 +75,15 @@ export default function withWidgetDynamicProps(WrappedWidgetRender: WidgetRender
             sortDirection: tableConfig?.sortDirection || 'DESC',
             queries: tableConfig?.queries,
             tableName,
+            prefixFn: React.useCallback(
+                (tname: string) => {
+                    const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
+                    return p || ''
+                },
+                [prefixes]
+            ),
         })
+
         const inViewport = useIsInViewport(myRef as any)
         const [enableLoad, setEnableload] = React.useState(false)
         const {

@@ -62,10 +62,18 @@ export default function WidgetFormModal({
     }
     const { chartType: type, tableName } = formData
     const { tables } = useFetchDatastoreAllTables(prefix, prefixes)
+
     const { params } = useDatastorePage({
         pageNum: 1,
         pageSize: PAGE_TABLE_SIZE,
         tableName,
+        prefixFn: React.useCallback(
+            (tname: string) => {
+                const p = prefixes?.find((item: any) => tname.startsWith(item.name))?.prefix
+                return p || ''
+            },
+            [prefixes]
+        ),
     })
     const $data = useFetchDatastoreByTable(params)
 

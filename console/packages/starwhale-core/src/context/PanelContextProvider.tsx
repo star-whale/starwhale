@@ -48,8 +48,10 @@ export function getPrefixes(evalSelectData: any) {
             name: item?.summaryTableName,
         })
         item?.rowSelectedIds.forEach((id) => {
+            const record = item?.records?.find((r) => r.id.value === id)
+            if (!record) return
             allPrefix.push({
-                prefix: `${item?.project?.name}`,
+                prefix: `${item?.project?.name}/${record['sys/id'].value}`,
                 name: tablesOfEvaluation(item.projectId, id),
             })
         })
