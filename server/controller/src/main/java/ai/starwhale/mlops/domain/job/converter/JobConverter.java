@@ -213,6 +213,7 @@ public class JobConverter {
                 .jobStatus(jobEntity.getJobStatus())
                 .stopTime(jobEntity.getFinishedTime().getTime())
                 .duration(jobEntity.getDurationMs())
+                .stepSpec(jobEntity.getStepSpec())
                 .comment(jobEntity.getComment())
                 .resourcePool(systemSettingService.queryResourcePool(jobEntity.getResourcePool()).getName())
                 .exposedLinks(generateJobExposedLinks(jobEntity.getId()))
