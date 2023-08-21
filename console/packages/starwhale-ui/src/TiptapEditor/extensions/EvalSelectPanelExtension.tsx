@@ -129,6 +129,14 @@ export default Node.create({
     },
 
     addNodeView() {
-        return ReactNodeViewRenderer(Component)
+        return ReactNodeViewRenderer(Component, {
+            // https://discuss.prosemirror.net/t/make-only-part-of-a-nodeview-draggable/1145/7
+            // stopEvent({ event: e }) {
+            //     console.log(e.type, this)
+            //     return true
+            //     if (/dragstart|dragover|drangend|drop/.test(e.type)) return false
+            //     return /mousedown|drag|drop/.test(e.type)
+            // },
+        })
     },
 })

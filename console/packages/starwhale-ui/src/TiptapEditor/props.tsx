@@ -16,6 +16,17 @@ export const TiptapEditorProps: EditorProps = {
             }
             return false
         },
+        // click: (_view, event) => {
+        //     console.log(_view, event)
+        // },
+        // mousedown: (_view, event) => {
+        //     console.log(_view, event)
+        //     return true
+        // },
+        // mousemove: (_view, event) => {
+        //     console.log(_view, event)
+        //     return true
+        // },
     },
     // handlePaste: (view, event) => {
     //     if (event.clipboardData && event.clipboardData.files && event.clipboardData.files[0]) {

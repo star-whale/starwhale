@@ -156,8 +156,10 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                 <ul className='transfer-list-content-ul'>
                     <ReactSortable
                         delay={0}
-                        handle='.handle'
+                        handle='.transfer-handle'
                         list={$data}
+                        forceFallback
+                        // draggable='.transfer-item'
                         setList={(newData) => {
                             dataRef.current = newData
                         }}
@@ -178,14 +180,14 @@ function TransferList({ isDragable = false, columns, ...props }: TransferListPro
                             return (
                                 <div
                                     key={item.id}
-                                    className={`${styles.wrapper} item`}
+                                    className={`${styles.wrapper} transfer-item`}
                                     style={{
                                         boxShadow: item.chosen ? '0 2px 8px 0 rgba(0,0,0,0.20)' : undefined,
                                         zIndex: item.chosen ? 10 : 0,
                                         cursor: 'pointer',
                                     }}
                                 >
-                                    <div className={`handle ${styles.handler}`}>
+                                    <div className={`transfer-handle ${styles.handler}`}>
                                         <IconFont type='drag' />
                                     </div>
                                     <DnDCell column={item} />
